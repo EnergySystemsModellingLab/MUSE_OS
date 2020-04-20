@@ -1,0 +1,21 @@
+name: "Pull Request Docs Check"
+on: 
+- pull_request
+
+jobs:
+  html_docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ammaraskar/sphinx-action@master
+      with:
+        docs-folder: "docs/"
+        build-command: "sphinx-build -n -b html . ../build/html"
+        pre-build-command: |
+            apt install -y python3-bottleneck python3-scipy pandoc
+            python3 -m pip install --upgrade pip
+            python3 -m pip install -e .[docs]
+    - uses: actions/upload-artifact@v1
+      with:
+        name: DocumentationHTML
+        path: build/html/
