@@ -10,12 +10,38 @@ jobs:
     - uses: ammaraskar/sphinx-action@master
       with:
         docs-folder: "docs/"
-        build-command: "sphinx-build -n -b html . ../build/html"
         pre-build-command: |
+            apt update -y 
             apt install -y python3-bottleneck python3-scipy pandoc
             python3 -m pip install --upgrade pip
             python3 -m pip install -e .[docs]
+        build-command: "sphinx-build -n -b html . ../build/html"
     - uses: actions/upload-artifact@v1
       with:
         name: DocumentationHTML
         path: build/html/
+  pdf_docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ammaraskar/sphinx-action@master
+      with:
+        docs-folder: "docs/"
+        pre-build-command: |
+            apt update -y 
+            apt install -y python3-bottleneck python3-scipy pandoc
+            python3 -m pip install --upgrade pip
+            python3 -m pip install -e .[docs]
+        build-command: sphinx-build -n -b latex . ../build/latex
+    - name: build latex
+      run: |
+        sudo apt update -y 
+        sudo apt install -y latexmk texlive-latex-recommended \
+                texlive-latex-extra texlive-fonts-recommended
+        sudo chown -R $(whoami) build
+        cd build/latex
+        latexmk -interaction=nonstopmode -pdf muse
+    - uses: actions/upload-artifact@v1
+      with:
+        name: DocumentationPDF
+        path: build/latex/muse.pdf
