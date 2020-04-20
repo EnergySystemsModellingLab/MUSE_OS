@@ -82,6 +82,7 @@ setup(
         "xarray>0.14",
         "bottleneck",
         "coloredlogs",
+        "toml",
     ],
     extras_require={
         "dev": tests_require,
