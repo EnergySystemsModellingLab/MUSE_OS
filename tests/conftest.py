@@ -112,9 +112,16 @@ def pytest_collection_modifyitems(config, items):
     try:
         __import__("SGIModelData")
     except ImportError:
-        skip_legacy = mark.skip(reason="No legacy data or code")
+        skip_sgi_data = mark.skip(reason="Test reqires private data")
         for item in items:
-            if "legacy" in item.keywords or "sgidata" in item.keywords:
+            if "sgidata" in item.keywords:
+                item.add_marker(skip_sgi_data)
+    try:
+        __import__("muse_legacy")
+    except ImportError:
+        skip_legacy = mark.skip(reason="Test reqires legacy code")
+        for item in items:
+            if "legacy" in item.keywords:
                 item.add_marker(skip_legacy)
 
 
