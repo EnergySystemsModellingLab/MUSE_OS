@@ -1,0 +1,4 @@
+ProcessName,RegionName,Time,Level,electricity,gas,heat,CO2f,wind
+Unit,-,Year,-,GWh/PJ,PJ/PJ,PJ/PJ,kt/PJ,PJ/PJ
+gasCCGT,USA,2020,fixed,0,1.666666667,0,0,0
+windturbine,USA,2020,fixed,0,0,0,0,1

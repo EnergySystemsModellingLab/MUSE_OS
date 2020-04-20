@@ -1,0 +1,124 @@
+# Global settings
+time_framework = 'REQUIRED'
+# foresight must  be a multiple of the minimum separation between the years in time
+# framework
+foresight = 'REQUIRED'
+regions = 'REQUIRED'
+interest_rate = 0.1
+interpolation_mode = 'Active'
+log_level = 'info'
+
+# Convergence parameters
+expect_equilibrium = true
+equilibrium_variable = 'demand'
+maximum_iterations = 3
+tolerance = 0.1
+tolerance_unmet_demand = -0.1
+excluded_commodities = []
+
+# Carbon budget control
+[carbon_budget_control]
+budget = []          # Same length as time_framework
+commodities = []
+method = 'fitting'
+debug = true
+control_undershoot = true
+control_overshoot = true
+method_options.sample_size = 4
+method_options.refine_price = true
+method_options.price_too_high_threshold = 10
+method_options.fitter = 'slinear'
+
+# Custom modules
+# Rather than a section, it can also be a list, e.g.:
+# plugins = ["{cwd}/plugin/x.py"]
+# Or even just a string:
+# plugins = "{cwd}/plugin/x.py"
+[plugins]
+plugins = []  # paths to each additional plugin
+
+# Global input files contain data that are NOT sector specific - DEFAULTS ALL
+# All paths and filenames will have a default value (those indicated below) so only need to be included
+# if any of those names are different. This whole section is optional.
+[global_input_files]
+path = '{path}'
+projections = '{path}/Projections.csv'
+regions = 'OPTIONAL'
+global_commodities = '{path}/MUSEGlobalCommodities.csv'
+base_year_export = "OPTIONAL"
+base_year_import = "OPTIONAL"
+
+# Definition of the sector-specific options -  REQUIRED at least one
+# All paths and filenames will have a default value for each sector (those indicated below) so only need to be included
+# if any of those names are different.
+# As the number os sectors included in MUSE grow, it will be necessary to add another [sectors.whatever] section with the
+# corresponding information.
+[sectors.residential]
+type = 'default'
+priority = 'demand'
+interpolation = "slinear"
+investment_production = 'share'
+dispatch_production = 'share'
+demand_share = 'new_and_retro'
+
+path = '{muse_sectors}/Residential'
+agents = '{path}/BuildingAgentResidential.csv'
+technodata = '{path}/technodataResidential.csv'
+commodities_in = '{path}/commINtechnodataResidential.csv'
+commodities_out = '{path}/commOUTtechnodataResidential.csv'
+existing_capacity = '{path}/ExistingResidential.csv'
+
+[[sectors.residential.interactions]] 
+net = 'new_to_retro'
+interaction = 'transfer'
+
+
+[sectors.presets]
+type = 'presets'
+timeslice_shares_path = 'OPTIONAL'
+consumption_path = 'OPTIONAL'  # 'output/residential/*Consumption.csv'
+macrodrivers_path = 'OPTIONAL' # alternative to consumption_path, specifies regressions
+regression_path = 'OPTIONAL'   # alternative to consumption_path, specifies regressions
+supply_path = 'OPTIONAL'       # 'output/residential/*[0-9]Supply.csv'
+costs_path = 'OPTIONAL'        # Projections.csv or BaseYearXXX.csv format
+lcoe_path = 'OPTIONAL'         # alternative to costs, uses supply and lcoe
+forecast = 0
+
+[timeslices]
+winter.weekday.night = 396
+winter.weekday.morning = 396
+winter.weekday.afternoon = 264
+winter.weekday.early-peak = 66
+winter.weekday.late-peak = 66
+winter.weekday.evening = 396
+winter.weekend.night = 156
+winter.weekend.morning = 156
+winter.weekend.afternoon = 156
+winter.weekend.evening = 156
+spring-autumn.weekday.night = 792
+spring-autumn.weekday.morning = 792
+spring-autumn.weekday.afternoon = 528
+spring-autumn.weekday.early-peak = 132
+spring-autumn.weekday.late-peak = 132
+spring-autumn.weekday.evening = 792
+spring-autumn.weekend.night = 300
+spring-autumn.weekend.morning = 300
+spring-autumn.weekend.afternoon = 300
+spring-autumn.weekend.evening = 300
+summer.weekday.night = 396
+summer.weekday.morning  = 396
+summer.weekday.afternoon = 264
+summer.weekday.early-peak = 66
+summer.weekday.late-peak = 66
+summer.weekday.evening = 396
+summer.weekend.night = 150
+summer.weekend.morning = 150
+summer.weekend.afternoon = 150
+summer.weekend.evening = 150
+level_names = ["month", "day", "hour"]
+
+
+[timeslices.aggregates]
+all-day = ["night", "morning", "afternoon", "early-peak", "late-peak", "evening"]
+all-week = ["weekday", "weekend"]
+all-year = ["winter", "summer", "spring-autumn"]

@@ -1,0 +1,15 @@
+*
+!README.m
+!docs
+!setup.py
+!setup.cfg
+!tests/
+!src/muse/
+!docs/bibliography.bib
+!docs/bibliography.rst
+!docs/conf.py
+!docs/developer_guide
+!docs/index,rs
+!docs/installation.rst
+!docs/user_gide/
+!docs/model/
