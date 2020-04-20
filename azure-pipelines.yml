@@ -1,10 +1,10 @@
 trigger:
   branches:
     include:
-      - updatedevelopment
+      - development
       - master
 pr:
-  - updatedevelopment
+  - development
   - master
 
 strategy:
