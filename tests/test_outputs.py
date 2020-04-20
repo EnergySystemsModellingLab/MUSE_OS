@@ -116,25 +116,22 @@ def test_save_with_fullpath_to_excel_with_sink(tmpdir):
 
 
 @mark.sgidata
+@mark.legacy
 def test_from_sector_with_single_string(buildings, market, tmpdir):
-    from os import chdir
     from muse.defaults import DEFAULT_OUTPUT_DIRECTORY
     from muse.outputs import factory
 
-    cwd = Path.cwd()
-    try:
-        chdir(tmpdir)
+    with tmpdir.as_cwd():
         output_func = factory("streetcred")
         output_func(
             buildings.capacity, market, buildings.technologies, sector="Residential"
         )
         assert (DEFAULT_OUTPUT_DIRECTORY / "Residential2010Streetcred.csv").exists()
         assert (DEFAULT_OUTPUT_DIRECTORY / "Residential2010Streetcred.csv").is_file()
-    finally:
-        chdir(cwd)
 
 
 @mark.sgidata
+@mark.legacy
 def test_from_sector_with_directory(buildings, market, tmpdir):
     from muse.outputs import factory
 
