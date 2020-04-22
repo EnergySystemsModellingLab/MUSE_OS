@@ -4,15 +4,6 @@
 Agents
 ======
 
-
-.. warning::
-
-   In the current implementation, the agents are each responsible for parcelling out the
-   demand they will fulfill from the needed demand or the missing demand. In this
-   exposition, we ignore this implementational problem and pretend the sector has fully
-   figured out what demand each agent will fulfill.
-
-
 .. currentmodule:: muse
 
 The main role of the agent is to invest in order to fulfill a given future demand. This
