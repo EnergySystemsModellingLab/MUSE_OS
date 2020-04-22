@@ -25,11 +25,14 @@ The same models can be instanciated in a python script as follows:
     model.run()
 """
 from pathlib import Path
-from typing import Optional, Text, Union
+from typing import List, Optional, Text, Union, cast
 
-from xarray import Dataset
+from xarray import DataArray, Dataset
 
 from muse.mca import MCA
+from muse.sectors import AbstractSector
+
+__all__ = ["model", "technodata"]
 
 
 def example_data_dir() -> Path:
@@ -64,10 +67,9 @@ def copy_model(
     permission to ``overwrite`` is given, then all files inside the directory are
     deleted.
     """
-    from shutil import copytree, copyfile, rmtree
-    from toml import load, dump
+    from shutil import rmtree
 
-    if name.lower() not in {"default", "multiple-agents"}:
+    if name.lower() not in {"default", "multiple-agents", "medium"}:
         raise ValueError(f"Unknown model {name}")
 
     path = Path() if path is None else Path(path)
@@ -83,32 +85,18 @@ def copy_model(
             raise IOError(f"{path} exists and ``overwrite`` is not allowed")
         rmtree(path)
 
-    copytree(example_data_dir() / "default" / "input", path / "input")
-    copytree(example_data_dir() / "default" / "technodata", path / "technodata")
     if name.lower() == "default":
-        copyfile(
-            example_data_dir() / "default" / "settings.toml", path / "settings.toml"
-        )
-    if name.lower() == "multiple-agents":
-        toml = load(example_data_dir() / "default" / "settings.toml")
-        toml["sectors"]["residential"][
-            "agents"
-        ] = "{path}/technodata/residential/Agents.csv"
-        with (path / "settings.toml").open("w") as fileobj:
-            dump(toml, fileobj)
-        copyfile(
-            example_data_dir() / "multiple_agents" / "Agents.csv",
-            path / "technodata" / "residential" / "Agents.csv",
-        )
-        copyfile(
-            example_data_dir() / "multiple_agents" / "residential" / "technodata.csv",
-            path / "technodata" / "residential" / "technodata.csv",
-        )
+        _copy_default(path)
+    elif name.lower() == "medium":
+        _copy_medium(path)
+    elif name.lower() == "multiple-agents":
+        _copy_multiple_agents(path)
     return path
 
 
-def technodata(sector: Text) -> Dataset:
-    """Technology for a sector of the default example model."""
+def technodata(sector: Text, model: Text = "default") -> Dataset:
+    """Technology for a sector of a given example model."""
+    from tempfile import TemporaryDirectory
     from muse.readers.csv import read_technologies
 
     sector = sector.lower()
@@ -117,9 +105,142 @@ def technodata(sector: Text) -> Dataset:
         raise RuntimeError("The preset sector has no technodata.")
     if sector not in allowed:
         raise RuntimeError(f"This model only knows about sectors {allowed}.")
-    return read_technologies(
-        example_data_dir() / "technodata" / sector.title() / "Technodata.csv",
-        example_data_dir() / "technodata" / sector.title() / "CommOut.csv",
-        example_data_dir() / "technodata" / sector.title() / "CommIn.csv",
-        example_data_dir() / "input" / "GlobalCommodities.csv",
+    with TemporaryDirectory() as tmpdir:
+        path = copy_model(model, tmpdir)
+        return read_technologies(
+            path / "technodata" / sector.title() / "Technodata.csv",
+            path / "technodata" / sector.title() / "CommOut.csv",
+            path / "technodata" / sector.title() / "CommIn.csv",
+            path / "input" / "GlobalCommodities.csv",
+        )
+
+
+def search_space(sector: Text, model: Text = "default") -> DataArray:
+    """Determines which technology is considered for which asset.
+
+    Used in constraints or during investment.
+    """
+    from numpy import ones
+
+    technology = technodata(sector, model).technology
+    return DataArray(
+        ones((len(technology), len(technology)), dtype=bool),
+        coords=dict(asset=technology.values, replacement=technology.values),
+        dims=("asset", "replacement"),
     )
+
+
+def sector(sector: Text, model: Text = "default") -> AbstractSector:
+    from tempfile import TemporaryDirectory
+    from muse.readers.toml import read_settings
+    from muse.sectors import SECTORS_REGISTERED
+
+    with TemporaryDirectory() as tmpdir:
+        path = copy_model(model, tmpdir)
+        settings = read_settings(path / "settings.toml")
+        kind = getattr(settings.sectors, sector).type
+        return SECTORS_REGISTERED[kind](sector, settings)
+
+
+def available_sectors(*sectors: Text, model: Text = "default") -> List[Text]:
+    from tempfile import TemporaryDirectory
+    from muse.readers.toml import read_settings, undo_damage
+
+    with TemporaryDirectory() as tmpdir:
+        path = copy_model(model, tmpdir)
+        settings = read_settings(path / "settings.toml").sectors
+        return [u for u in undo_damage(settings).keys() if u != "list"]
+
+
+def mca_market(model: Text = "default") -> Dataset:
+    """Initial market as seen by the MCA."""
+    from tempfile import TemporaryDirectory
+    from xarray import zeros_like
+    from muse.readers.csv import read_initial_market
+    from muse.readers.toml import read_settings
+
+    with TemporaryDirectory() as tmpdir:
+        path = copy_model(model, tmpdir)
+        settings = read_settings(path / "settings.toml")
+
+        market = (
+            read_initial_market(
+                settings.global_input_files.projections,
+                base_year_export=getattr(
+                    settings.global_input_files, "base_year_export", None
+                ),
+                base_year_import=getattr(
+                    settings.global_input_files, "base_year_import", None
+                ),
+                timeslices=settings.timeslices,
+            )
+            .sel(region=settings.regions)
+            .interp(year=settings.time_framework, method=settings.interpolation_mode)
+        )
+        market["supply"] = zeros_like(market.exports)
+        market["consumption"] = zeros_like(market.exports)
+
+        return cast(Dataset, market)
+
+
+def residential_market(model: Text = "default") -> Dataset:
+    """Initial market as seen by the residential sector."""
+    from muse.mca import single_year_iteration
+
+    market = mca_market(model)
+    sectors = [sector("residential_presets", model=model)]
+    return cast(
+        Dataset,
+        single_year_iteration(market, sectors)[0][
+            ["prices", "supply", "consumption"]
+        ].drop_vars("units_prices"),
+    )
+
+
+def _copy_default(path: Path):
+    from shutil import copytree, copyfile
+
+    copytree(example_data_dir() / "default" / "input", path / "input")
+    copytree(example_data_dir() / "default" / "technodata", path / "technodata")
+    copyfile(example_data_dir() / "default" / "settings.toml", path / "settings.toml")
+
+
+def _copy_multiple_agents(path: Path):
+    from shutil import copytree, copyfile
+    from toml import load, dump
+
+    copytree(example_data_dir() / "default" / "technodata", path / "technodata")
+    toml = load(example_data_dir() / "default" / "settings.toml")
+    toml["sectors"]["residential"][
+        "agents"
+    ] = "{path}/technodata/residential/Agents.csv"
+    with (path / "settings.toml").open("w") as fileobj:
+        dump(toml, fileobj)
+    copyfile(
+        example_data_dir() / "multiple_agents" / "Agents.csv",
+        path / "technodata" / "residential" / "Agents.csv",
+    )
+    copyfile(
+        example_data_dir() / "multiple_agents" / "residential" / "technodata.csv",
+        path / "technodata" / "residential" / "technodata.csv",
+    )
+
+
+def _copy_medium(path: Path):
+    from shutil import copytree, copyfile
+
+    copytree(example_data_dir() / "medium" / "input", path / "input")
+    copytree(example_data_dir() / "medium" / "technodata", path / "technodata")
+    copytree(
+        example_data_dir() / "default" / "technodata" / "power",
+        path / "technodata" / "power",
+    )
+    copytree(
+        example_data_dir() / "default" / "technodata" / "gas",
+        path / "technodata" / "gas",
+    )
+    copyfile(
+        example_data_dir() / "default" / "technodata" / "Agents.csv",
+        path / "technodata" / "Agents.csv",
+    )
+    copyfile(example_data_dir() / "default" / "settings.toml", path / "settings.toml")
