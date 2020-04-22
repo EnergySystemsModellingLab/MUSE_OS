@@ -24,17 +24,25 @@ a whole.
 .. code-block:: TOML
 
    time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
+   foresight = 5
    regions = ["USA"]
+   interest_rate = 0.1
    interpolation_mode = 'Active'
    log_level = 'info'
 
+   expect_equilibrium = true
    equilibrium_variable = 'demand'
    maximum_iterations = 100
    tolerance = 0.1
    tolerance_unmet_demand = -0.1
 
 time_framework
-   Required. List of years for which the simulation will run.
+   Required. List of years for which the simulation will run. The base year is defined by
+   the first element of the list.
+
+foresight
+   Required. Integer defining the interval where prices are updated and are kept at a
+   a flat-forward trajectory after that.
 
 region
    Subset of regions to consider. If not given, defaults to all regions found in the
@@ -47,6 +55,10 @@ interpolation_mode
 log_level:
    verbosity of the output.
 
+expect_equilibrium:
+   If false, equilibrium search on matching demand and supply not performed. Useful to 
+   test external price trajectories.
+
 equilibirum_variable
    whether equilibrium of `demand` or `prices` should be sought. Defaults to `demand`.
 
@@ -54,14 +66,20 @@ maximum_iterations
    Maximum number of iterations when searching for equilibrium. Defaults to 3.
 
 tolerance
-   Tolerance criteria when checking for equilibrium. Defaults to 0.1.,
+   Tolerance criteria when checking for equilibrium. Defaults to 0.1, meaning that up to
+   10 % deviation form the previously the converged value of the controlled variable is 
+   accepted and equilibrium is considered reached.
 
 tolerance_unmet_demand
-   Criteria checking whether the demand has been met.  Defaults to -0.1.
+   Criteria checking whether the demand has been met by the supply for each commodity in
+   a year. Defaults to -0.1 meaning that if the difference between the supply and demand
+   is higher than 10 % of demand a warning is raised about checking the technology data.
+
 
 excluded_commodities
    List of commodities excluded from the equilibrium considerations. Defaults to the
-   list `["CO2f", "CO2r", "CO2c", "CO2s", "CH4", "N2O", "f-gases"]`.
+   list of environmental commodities such as CO2 from combustion, CO2 from reaction, 
+   CO2 captured, CO2 sequestered, methane, Nitrous oxide, F-gases.
 
 plugins
     Path or list of paths to extra python plugins, i.e. files with registered functions
@@ -83,25 +101,37 @@ Example
    budget = []
 
 budget
-   Yearly budget. There should be one item for each year the simulation will run. In
+   A list of maximum emissions allowed per year of the simulation.
+   There should be one item for each year the simulation will run. In
    other words, if given and not empty, this is a list with the same length as
    `time_framework` from the main section. If not given or an empty list, then the
    carbon market feature is disabled. Defaults to an empty list.
 
 method
-   Method used to equilibrate the carbon market. Defaults to a simple iterative scheme.
+   Method used to equilibrate the carbon market setting a global carbon price.
+   Defaults to a simple iterative scheme ('fitting'). The value used as a 
+   starting point for the carbon price is read from the projections file. 
+   See :ref:`inputs-projection`.
 
 commodities
-   Commodities that make up the carbon market. Defaults to an empty list.
+   Commodities that make up the carbon market (i.e. commodities over which budget is 
+   constrained). TO be used to either constrain exclusively CO2 from combustion 
+   or all the greenhouse gases. Defaults to an empty list.
 
 control_undershoot
-   Whether to control carbon budget undershoots. Defaults to True.
+   Whether to control carbon budget undershoots (if emissions are below the limit in 
+   a period, then the difference can be moved to the follodinwg periods). 
+   Defaults to True.
 
 control_overshoot
-   Whether to control carbon budget overshoots. Defaults to True.
+   Whether to control carbon budget overshoots (if emissions are above the limit in 
+   a period then the difference is reduced from the following periods).
+   Defaults to True.
 
 method_options:
-   Additional options for the specific carbon method.
+   Additional options for the specific carbon method to refine the number of iteration
+   for the carbon price estimate (sample_size, default=4), increase/reduce the escalation 
+   of the price (refine_price, default to 'true'; price_too_high_threshold, default to 10)
 
 
 ------------------
@@ -121,10 +151,6 @@ explained in :ref:`toml-primer`.
 projections:
    Path to a csv file giving initial market projection. See :ref:`inputs-projection`
 
-regions:
-   Path to a csv file describing the regions. See
-   :ref:`user_guide/inputs/regions:regional data`.
-
 global_commodities:
    Path to a csv file describing the comodities in the simulation. See
    :ref:`user_guide/inputs/commodities:commodity description`.
@@ -134,8 +160,8 @@ global_commodities:
 Timeslices
 ----------
 
-Time-slices represent a sub-year disaggregation of commodity demand. Generally,
-timeslices are expected to introduce several levels, e.g. season, day, or hour. The
+Time-slices represent a sub-year disaggregation of commodity (production and consumption).
+Generally, timeslices are expected to introduce several levels, e.g. season, day, or hour. The
 simplest is to show the TOML for the default timeslice:
 
 .. code-block:: TOML
@@ -178,9 +204,9 @@ Other simulations may want fewer or more levels.  The ``month`` level is split i
 three points of data, ``winter``, ``spring-autumn``, ``summer``. Then ``day`` splits out
 weekdays from weekends, and so on. Each line indicates the number of hours for the
 relevant slice. It should be noted that the slices are not a cartesian products of each
-levels. For instance, there no ``peak`` periods during weekends. All that matters is
-that the relative weights (i.e. the number of hours) are consistent and sum up to a
-year.
+levels. For instance, there no ``peak`` periods during weekends. The user needs to ensure that 
+the relative weights (i.e. the number of hours) are consistent and sum up to a
+year (8670 hour per year) in order to obtain plausible results,
 
 The input above defines the finest times slice in the code. In order to define rougher
 timeslices we can introduce items in each levels that represent aggregates at that
@@ -223,6 +249,8 @@ sectors with a finer timeslice framework will be lost.
 ----------------
 Standard sectors
 ----------------
+
+A basic simulation requires at least one sector.
 
 Sectors are declared in the TOML file by adding a subsection to the `sectors` section:
 
@@ -309,8 +337,12 @@ dispatch_production
 
 demand_share
     A method used to split the MCA demand into seperate parts to be serviced by specific
-    agents. There is currently only one option, "new_and_retro", corresponding to *new*
-    and *retro* agents.
+    agents. A basic distinction is between *new* and *retrofit* agents: the former asked to 
+    respond to an increase of commodity demand investing in new assets; the latter asked to
+    invest in new asset to balance the decommissined assets.
+    There is currently only one option, "new_and_retro", meaning the assets owned by 
+    each *new* agent are then passed to the corresponding *retrofit* agent. A *new* agent 
+    is associated to a corresponding *retro* agent which shares the same name.
 
 interactions
    Defines interactions between agents. These interactions take place right before new
@@ -417,8 +449,9 @@ technodata
    the sector, e.g. lifetime, capital costs, etc... See :ref:`inputs-technodata`.
 
 timeslice_levels
-   Slices to consider in a level. If absent, defaults to the finest timeslices.  See
+   Sector could run on different time Slices compared to the deafult one 
    :ref:`user_guide/inputs/toml:timeslices`
+   
 
 commodities_in
    Path to a csv file describing the inputs of each technology involved in the sector.
@@ -447,12 +480,15 @@ simulation.
 
 Preset sectors are defined in :py:class:`~muse.sectors.PresetSector`.
 
-The three components, production, consumption, and prices, can be set independantly and
-not all three need to be set. Production and consumption default to zero, and prices
+There are two ways that the preset sector can run.
+
+In one case (first configuration), the three components, production, consumption, and prices, can be set independantly and
+not all three need to be set. 
+Production and consumption by default are set to zero, and prices
 default to leaving things unchanged.
 
-The following defines a standard preset sector where consumption is defined as a
-function of macro-economic data, i.e. population and gdp.
+In a second case (second configuration), standard preset sector has consumption is defined as a
+function of macro-economic data, i.e. population and gdp. 
 
 
 .. code-block:: TOML
@@ -480,6 +516,7 @@ timeslices_levels:
 
 .. _preset-consumption:
 
+First configuration:
 consumption_path:
    CSV output files, one per year. This attribute can include wild cards, i.e. '*',
    which can match anything. For instance: `consumption_path =
@@ -506,16 +543,14 @@ supply_path:
    CSV file, one per year, indicating the amount of a commodities produced. It follows
    the same format as :ref:`consumption_path <preset-consumption>`.
 
-supply_path:
-   CSV file, one per year, indicating the amount of a commodities produced. It follows
-   the same format as :ref:`consumption_path <preset-consumption>`.
 
 prices_path:
-   CSV file indicating the amount of a commodities produced. The format of the CSV files
+   CSV file indicating the prices of commodities. The format of the CSV files
    follows that of :ref:`inputs-projection`.
 
 .. _preset-demand:
 
+Second configuration:
 demand_path:
    Incompatible with :ref:`consumption_path<preset-consumption>` or
    :ref:`macrodrivers_path<preset-macro>`. A CSV file containing the consumption in the
@@ -537,7 +572,9 @@ regression_path:
    Also requires :ref:`macrodrivers_path<preset-macro>`.
 
 timeslice_shares_path
-   Optional csv file giving shares per timeslice. Requires
+   Optional csv file giving shares per timeslice. 
+   The timeslice share definition needs to have a consistent number of timeslices as the
+   sectoral level time slices. Requires
    :ref:`macrodrivers_path<preset-consumption>`.
 
 filters:
@@ -548,61 +585,3 @@ filters:
 
       filters.region = ["USA", "ASEA"]
       filters.commodity = ["algae", "fluorescent light"]
-
-
---------------
-Legacy Sectors
---------------
-
-Legacy sectors wrap sectors developed for a previous version of MUSE to the open-source
-version. 
-
-Preset sectors are defined in :py:class:`~muse.sectors.PresetSector`.
-
-The can be defined in the TOML file as follows:
-
-.. code-block:: TOML
-
-   [global_input_files]
-   macrodrivers = '{path}/input/Macrodrivers.csv'
-   regions = '{path}/input/Regions.csv'
-   global_commodities = '{path}/input/MUSEGlobalCommodities.csv'
-
-   [sectors.Industry]
-   type = 'legacy'
-   priority = 'demand'
-   agregation_level = 'month'
-   excess = 0
-
-   userdata_path = '{muse_sectors}/Industry'
-   technodata_path = '{muse_sectors}/Industry'
-   timeslices_path = '{muse_sectors}/Industry/TimeslicesIndustry.csv'
-   output_path = '{path}/output'
-
-For historical reasons, the three `global_input_files` above are required. The sector
-itself can use the following attributes.
-
-type:
-   See the attribute in the standard mode, :ref:`type<sector-type>`. *Legacy* sectors
-   are those with type "legacy".
-
-priority
-   See the attribute in the standard mode, :ref:`priority<sector-priority>`.
-
-agregation_level:
-   Information relevant to the sector's timeslice.
-
-excess:
-   Excess factor used to model early obsolescence.
-
-timeslices_path:
-   Path to a timeslice  :ref:`time_slices<inputs-legacy-timeslices>`.
-
-userdata_path:
-   Path to a directory with sector-specific data files.
-
-technodata_path:
-   Path to a technodata CSV file. See. :ref:`inputs-technodata`.
-
-output_path:
-   Path to a diretory where the sector will write output files.
