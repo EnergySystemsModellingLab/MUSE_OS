@@ -27,8 +27,14 @@ MUSE requires at least:
    * a file descring the :ref:`output commodities<inputs-ocomms>` for each technology
    * a file descring the :ref:`existing capacity<inputs-existing-capacity>` of a given
      sector
-* for each preset sector:
+* for each preset sector, which is used to model energy services:
    * a csv file describing consumption for the duration of the simulation
+   * alternatively, a user can model a correlation of macroeconomic inputs (such as GDP and 
+Population) to describe how services consumprion can vary in time. Two files need to be 
+specified: a file describing the type of correlation function and the correlation parameters.
+By default, MUSE comes with an implementation of the following correlation functions: linear,
+logistic, log-log, and exponential functions. Additional functions should be implemented
+by the user.
    
 
 .. _TOML: https://github.com/toml-lang/toml
