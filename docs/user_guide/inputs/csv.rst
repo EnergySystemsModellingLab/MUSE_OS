@@ -13,7 +13,6 @@ Most of the technical data in MUSE must be given in CSV format.
    :caption: Contents:
 
    projections
-   regions
    commodities
    technodata
    timeslices
