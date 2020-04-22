@@ -604,10 +604,3 @@ def warnings_as_errors():
 
     simplefilter("error", FutureWarning)
     simplefilter("error", PendingDeprecationWarning)
-
-
-@fixture
-def fullsim_dir() -> Path:
-    import muse
-
-    return Path(muse.__file__).parent / "data" / "example"

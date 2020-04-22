@@ -83,12 +83,14 @@ def copy_model(
             raise IOError(f"{path} exists and ``overwrite`` is not allowed")
         rmtree(path)
 
-    copytree(example_data_dir() / "input", path / "input")
-    copytree(example_data_dir() / "technodata", path / "technodata")
+    copytree(example_data_dir() / "default" / "input", path / "input")
+    copytree(example_data_dir() / "default" / "technodata", path / "technodata")
     if name.lower() == "default":
-        copyfile(example_data_dir() / "settings.toml", path / "settings.toml")
+        copyfile(
+            example_data_dir() / "default" / "settings.toml", path / "settings.toml"
+        )
     if name.lower() == "multiple-agents":
-        toml = load(example_data_dir() / "settings.toml")
+        toml = load(example_data_dir() / "default" / "settings.toml")
         toml["sectors"]["residential"][
             "agents"
         ] = "{path}/technodata/residential/Agents.csv"
