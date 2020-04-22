@@ -482,13 +482,13 @@ Preset sectors are defined in :py:class:`~muse.sectors.PresetSector`.
 
 There are two ways that the preset sector can run.
 
-In one case (first configuration), the three components, production, consumption, and prices, can be set independantly and
-not all three need to be set. 
+In one case, the three components, production, consumption, and prices, can be set independantly and
+not all three need to be set (_preset-consumption). 
 Production and consumption by default are set to zero, and prices
 default to leaving things unchanged.
 
-In a second case (second configuration), standard preset sector has consumption is defined as a
-function of macro-economic data, i.e. population and gdp. 
+In a second case, standard preset sector has consumption is defined as a
+function of macro-economic data, i.e. population and gdp (_preset-macro, _preset-regression). 
 
 
 .. code-block:: TOML
@@ -516,7 +516,6 @@ timeslices_levels:
 
 .. _preset-consumption:
 
-First configuration:
 consumption_path:
    CSV output files, one per year. This attribute can include wild cards, i.e. '*',
    which can match anything. For instance: `consumption_path =
@@ -536,7 +535,10 @@ consumption_path:
 
    The index column as well as "RegionName", "ProcessName", and "TimeSlice" must be
    present. Further columns are reserved for commodities. "TimeSlice" refers to the
-   index of the timeslice.
+   index of the timeslice. Timeslices should be defined consistently to the sectoral
+   level timeslices.
+   THe column "ProcessName" needs to be present and filled in, in order for the data
+   to be read properly but it does not affect the simulation.
 
 
 supply_path:
@@ -550,7 +552,6 @@ prices_path:
 
 .. _preset-demand:
 
-Second configuration:
 demand_path:
    Incompatible with :ref:`consumption_path<preset-consumption>` or
    :ref:`macrodrivers_path<preset-macro>`. A CSV file containing the consumption in the
