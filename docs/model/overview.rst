@@ -4,7 +4,7 @@ Overview
 
 The model is organised in hierarchical manner. At the top resides the |mca|. It is
 responsible for the market itself, including the carbon market if requested, and for
-running sectors.
+running energy sectors such as residential and commercial buildings, transport, industry, power and refining plants.
 
 The market has the main goal of governing the prices of commodities, where a commodity is either a service demand 
 like hot water in residential buildings or a fuel burned in a biomass boiler. The market ensures that 
@@ -33,17 +33,13 @@ This price  is used to update the foward trajectory of prices from the next time
 
 If nor the equilibrium or the budget mode are imposed then the |mca| applies a user-defined trajectory of prices for the whole time of the simulation. 
 
-.. note::
-
-   TODO: short description of |mca| cum carbon market.
-
 
 Sectors are organised into Demand, Supply, and Conversion, where Demand
 sectors consume energy, the Supply sector provide commodities required for producing
 energy, and the conversion sectors produced energy in one form or another. In practice,
 sectors take as input the current market and return another market with the sector's
 consumption and production of commodities, and, optionally,  altered prices for the
-commodities it is responsible for. From the point of view of the |mca|, 
+commodities it is responsible for. 
 
 The standard implementation for a sector revolves around agents. Agents represent the key players
 in each energy sector. For example, they can represent risk-conservative oil companies
@@ -69,15 +65,5 @@ a forwad trajectory of demand to satisfy:
    it's own preferences
 #. rate the technologies according to a given set of metrics
 #. invest according to the input demand and the computed ratings
-
-
-.. note::
-
-   For historical reasons, in the current implementation, the job of splitting the
-   demand given by the |mca| to the sector between the agents owned by the sector is not
-   fully contained within the sector. The implementation is somewhat more complicated.
-   The job of splitting the demand is done in part in the sector, and in part within
-   each agent.
-
 
 .. |mca| replace:: market-clearing algorithm
