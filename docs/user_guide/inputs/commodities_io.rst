@@ -3,7 +3,7 @@
 =================
 Input Commodities
 =================
-Input commodities are the commodities consumed (also called consumables in MUSE) by each
+Input commodities are the commodities consumed by each
 technology.  They are defined in a csv file which describes the commodity inputs to each
 technology, calculated per unit of technology activity. See :ref:`below
 <inputs-iocomms>` for a description.
@@ -15,7 +15,7 @@ technology, calculated per unit of technology activity. See :ref:`below
 Output Commodities
 ==================
 
-Output commodities are the commodities produced (also called products in MUSE) by each
+Output commodities are the commodities produced by each
 technology.  They are defined in a csv file which describes the commodity outputs from
 each technology, defined per unit of technology activity. Emissions, such as CO2
 (produced from fuel combustion and reactions), CH4, N2O, F-gases, can also be accounted
