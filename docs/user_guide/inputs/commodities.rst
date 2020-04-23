@@ -31,9 +31,10 @@ HeatRate
    represents the lower heating value of an energy commodity 
 
 Unit
-   is the unit used as a basis for all the input data More specifically the model allows
-   a totally flexible way of defining the commodities CommodityName is currently the
-   only column used internally as it defines the names of commodities and needs to be
+   is the unit used as a basis for all the input data.
+   MUSE does not perform a consistent check on the units reported in this file (or in any
+   technology data file). They are present only as a reference for the user.
+   CommodityName defines the names of commodities and needs to be
    used consistently across all the input data files. The remaining columns of the file
    are only relevant for the user internal reference for the original sets of
    assumptions used.

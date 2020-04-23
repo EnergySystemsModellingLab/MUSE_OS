@@ -2,14 +2,12 @@
 Running the demo simulation
 ===========================
 
-All the input files for the demonstration simulation can be found in **[INSERT LINK HERE]**. Click
-on the link and expand the zip file. Assuming the installation process worked, then
-running a simulation should be as simple as opening an anaconda prompt and navigating to
-the input files. For instance, if the files were unzipped on the desktop:
+Assuming you have an existing model in the current folder (if not, keep reading), then
+the MUSE simulation can be started with:
 
 .. code-block:: Bash
 
-   python -m muse settings.toml
+    python -m muse settings.toml
 
 A description of the input file can be found in :ref:`input-files`.
 
@@ -32,7 +30,13 @@ The full model can be copied to a path of your choosing with
 
 .. code-block:: Bash
 
-   python -m muse --model default --copy XXX
+    python -m muse --model default --copy XXX
+
+Once a model has been copied to folder, run it with:
+
+.. code-block:: Bash
+
+    python -m muse XXX/settings.toml
 
 The models are also available directly in python. They can be instanciated and run as
 follows:
