@@ -41,6 +41,7 @@ def drivers():
 
 
 @mark.sgidata
+@mark.legacy
 def test_exponential_adj_factory(loaded_residential_settings):
     from xarray import Dataset
     from muse.regressions import ExponentialAdj
@@ -61,6 +62,7 @@ def test_exponential_adj_factory(loaded_residential_settings):
 
 
 @mark.sgidata
+@mark.legacy
 def test_logistic_factory(loaded_residential_settings):
     from xarray import Dataset
     from muse.regressions import Logistic

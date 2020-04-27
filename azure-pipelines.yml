@@ -1,10 +1,10 @@
 trigger:
   branches:
     include:
-      - updatedevelopment
+      - development
       - master
 pr:
-  - updatedevelopment
+  - development
   - master
 
 strategy:
@@ -89,22 +89,4 @@ steps:
       codeCoverageTool: cobertura
       summaryFileLocation: StarMuse/coverage/coverage.xml
       reportDirectory: coverage
-    condition: and(succeededOrFailed(), eq(variables['Agent.OS'], 'Linux'))
-
-  - script: |
-      sudo apt update
-      sudo apt install texlive-latex-base texlive-fonts-recommended \
-            texlive-latex-recommended texlive-latex-extra pandoc latexmk
-      pip install -e StarMuse[docs]
-      cd StarMuse
-      sphinx-build -n -W -b latex docs/ build/latex
-      cd build/latex
-      latexmk -interaction=nonstopmode -pdf muse
-    condition: and(succeededOrFailed(), eq(variables['Agent.OS'], 'Linux'))
-    name: build_documentation
-    
-
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathToPublish: "StarMuse/build/latex/muse.pdf"
     condition: and(succeededOrFailed(), eq(variables['Agent.OS'], 'Linux'))

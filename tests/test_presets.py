@@ -58,6 +58,7 @@ def test_presets_from_outputs(commercial_path):
 
 
 @mark.sgidata
+@mark.legacy
 def test_presets_from_regression(sectors_dir, commercial_path):
     from xarray import Dataset
     from muse.sectors import PresetSector
@@ -78,6 +79,7 @@ def test_presets_from_regression(sectors_dir, commercial_path):
 
 
 @mark.sgidata
+@mark.legacy
 def test_presets_from_regression_with_forecast(sectors_dir, commercial_path):
     from xarray import Dataset
     from muse.sectors import PresetSector
@@ -100,6 +102,7 @@ def test_presets_from_regression_with_forecast(sectors_dir, commercial_path):
     assert all(presets.next(market).year == market.year)
 
 
+@mark.legacy
 def test_presets_from_projection(commercial_path):
     from xarray import Dataset
     from muse.sectors import PresetSector
@@ -116,6 +119,7 @@ def test_presets_from_projection(commercial_path):
 
 
 @mark.sgidata
+@mark.legacy
 def test_presets_from_demand(sectors_dir, commercial_path):
     from muse.sectors import PresetSector
     from muse.readers.toml import convert

@@ -28,7 +28,7 @@ tests_require = [
     "nbformat",
     "mypy",
 ]
-docs_require = ["sphinx", "recommonmark", "nbsphinx", "sphinxcontrib-bibtex"]
+docs_require = ["sphinx", "recommonmark", "nbsphinx", "sphinxcontrib-bibtex", "ipython"]
 
 
 def find_data_files(directory, suffixes=(".toml", ".csv")):
@@ -82,6 +82,7 @@ setup(
         "xarray>0.14",
         "bottleneck",
         "coloredlogs",
+        "toml",
     ],
     extras_require={
         "dev": tests_require,

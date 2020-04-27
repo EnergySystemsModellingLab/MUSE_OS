@@ -24,10 +24,12 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.viewcode",
     "sphinxcontrib.bibtex",
+    "IPython.sphinxext.ipython_console_highlighting",
+    "IPython.sphinxext.ipython_directive",
 ]
 source_suffix = {".rst": "restructuredtext", ".txt": "markdown", ".md": "markdown"}
 templates_path = ["_templates"]
-exclude_patterns = []
+exclude_patterns = ["build", "**.ipynb_checkpoints", "**/ResidentialBracket*.txt"]
 
 modindex_common_prefix = ["muse"]
 autodoc_typehints = "none"
