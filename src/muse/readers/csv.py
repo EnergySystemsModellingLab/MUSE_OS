@@ -16,7 +16,7 @@ __all__ = [
 ]
 
 from pathlib import Path
-from typing import List, Optional, Sequence, Text, Union
+from typing import List, Optional, Sequence, Text, Union, cast
 
 from xarray import DataArray, Dataset
 
@@ -665,7 +665,7 @@ def read_csv_outputs(
     if isinstance(paths, Text):
         allfiles = expand_paths(paths)
     else:
-        allfiles = [expand_paths(p) for p in paths]
+        allfiles = [expand_paths(p) for p in cast(Sequence, paths)]
     if len(allfiles) == 0:
         raise IOError(f"No files found with paths {paths}")
 
