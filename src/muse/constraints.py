@@ -243,7 +243,9 @@ def demand(
     from muse.commodities import is_enduse
 
     enduse = technologies.commodity.sel(commodity=is_enduse(technologies.comm_usage))
-    b = market.consumption.sel(commodity=market.commodity.isin(enduse))
+    b = market.consumption.sel(commodity=market.commodity.isin(enduse)).interp(
+        year=market.year.min() + forecast
+    )
     return Dataset(dict(b=b, production=1), attrs=dict(kind=ConstraintKind.EQUALITY))
 
 
@@ -340,7 +342,7 @@ def lp_costs(technologies: Dataset, costs: DataArray, timeslices: DataArray) -> 
 
         The capacity costs correspond exactly to the input costs:
 
-        >>> assert (costs == lpcosts.capa_costs).all()
+        >>> assert (costs == lpcosts.capacity).all()
 
         They should correspond to a data-array with dimensions ``(asset, replacement)``
         (and possibly ``region`` as well).
@@ -478,7 +480,7 @@ def lp_constraint_matrix(b: DataArray, constraint: DataArray, lpcosts: DataArray
         >>> constraint = cs.max_production(assets, search, market, technologies)
         >>> lpcosts = cs.lp_costs(
         ...     technologies.interp(year=market.year.min() + 5).drop_vars("year"),
-        ...     lpcosts=search * np.arange(np.prod(search.shape)).reshape(search.shape),
+        ...     costs=search * np.arange(np.prod(search.shape)).reshape(search.shape),
         ...     timeslices=market.timeslice,
         ... )
 
@@ -574,7 +576,9 @@ def scipy_adapter(
 
     Example:
 
-        Lets first setup constraints and a cost matrix:
+        Lets give a fist simple example. The constraint
+        :py:func:`~muse.constraints.max_capacity_expansion` limits how much each
+        capacity can be expanded in a given year.
 
         >>> from muse import examples
         >>> from muse import constraints as cs
@@ -583,15 +587,81 @@ def scipy_adapter(
         >>> search = examples.search_space("residential", model="medium")
         >>> assets = next(a.assets for a in res.agents if a.category == "retrofit")
         >>> costs = search * np.arange(np.prod(search.shape)).reshape(search.shape)
-        >>> constraints = [
-        ...     cs.max_production(assets, search, market, res.technologies),
-        ...     cs.demand(assets, search, market, res.technologies),
-        ...     cs.max_capacity_expansion(assets, search, market, res.technologies),
-        ... ]
-        >>> technologies = res.technologies.sel(year=market.year.min())
-        >>> timeslices = market.timeslice
+        >>> constraint = cs.max_capacity_expansion(
+        ...     assets, search, market, res.technologies,
+        ... )
+        >>> constraint
+        <xarray.Dataset>
+        Dimensions:      (region: 1, replacement: 4)
+        Coordinates:
+          * region       (region) object 'USA'
+            technology   (replacement) object 'estove' 'gasboiler' 'gasstove' 'heatpump'
+          * replacement  (replacement) object 'estove' 'gasboiler' 'gasstove' 'heatpump'
+        Data variables:
+            b            (replacement, region) float64 500.0 500.0 500.0 500.0
+            capacity     ... 1
+            production   ... 0
+        Attributes:
+            kind:     ConstraintKind.UPPER_BOUND
+
+        As shown above, it does not bind the production decision variables. Hence,
+        production is zero. The matrix operator for the capacity is simply the identity.
+        Hence it can be inputed as the dimensionless scalar 1. The upper bound is simply
+        the maximum for replacement technology (and region, if that particular dimension
+        exists in the problem).
+
+        The lp problem then becomes:
+
+        >>> technologies = res.technologies.interp(year=market.year.min() + 5)
+        >>> inputs = cs.scipy_adapter(
+        ...     technologies, costs, market.timeslice, constraint
+        ... )
+
+        The decision variables are always constrained between zero and infinity:
+
+        >>> assert inputs["bounds"] == (0, None)
+
+        The problem is an upper-bound one. There are no equality constraints:
+
+        >>> assert inputs["A_eq"] is None
+        >>> assert inputs["b_eq"] is None
+
+        The upper bound matrix and vector, and the costs are consistent in their
+        dimensions:
+
+        >>> assert inputs["c"].ndim == 1
+        >>> assert inputs["b_ub"].ndim == 1
+        >>> assert inputs["A_ub"].ndim == 2
+        >>> assert inputs["b_ub"].size == inputs["A_ub"].shape[0]
+        >>> assert inputs["c"].size == inputs["A_ub"].shape[1]
+        >>> assert inputs["c"].ndim == 1
+
+        In practice, :py:func:`~muse.constraints.lpcosts` helps us define the decision
+        variables (and ``c``). We can verify that the sizes are consistent:
+
+        >>> lpcosts = cs.lp_costs(technologies, costs, market.timeslice)
+        >>> capsize = lpcosts.capacity.size
+        >>> prodsize = lpcosts.production.size
+        >>> assert inputs["c"].size == capsize + prodsize
+
+        The upper bound itself is over each replacement technology:
+
+        >>> assert inputs["b_ub"].size == lpcosts.replacement.size
+
+        The production decision variables are not involved:
+
+        >>> from pytest import approx
+        >>> assert inputs["A_ub"][:, capsize:] == approx(0)
+
+        The matrix for the capacity decision variables is a sum over assets for a given
+        replacement technology. Hence, each row is constituted of zeros and ones and
+        sums to the number of assets:
+
+        >>> assert inputs["A_ub"][:, :capsize].sum(axis=1) == approx(lpcosts.asset.size)
+        >>> assert set(inputs["A_ub"][:, :capsize].flatten()) == {0.0, 1.0}
     """
     from xarray import merge
+    from pandas import MultiIndex
     from numpy import concatenate, ndarray
 
     assert "year" not in technologies.dims
@@ -610,6 +680,14 @@ def scipy_adapter(
             data[f"b{i}"] = -data[f"b{i}"]  # type: ignore
             data[f"capacity{i}"] = -data[f"capacity{i}"]  # type: ignore
             data[f"production{i}"] = -data[f"production{i}"]  # type: ignore
+
+    data = data.set_index(
+        {
+            dim: list(data.get_index(dim))
+            for dim in data.dims
+            if isinstance(data.get_index(dim), MultiIndex)
+        }
+    )
 
     def extract(data, name):
         result = data[[u for u in data.data_vars if u.startswith(name)]]

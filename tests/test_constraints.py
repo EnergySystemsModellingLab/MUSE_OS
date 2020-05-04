@@ -17,6 +17,11 @@ def residential(model):
 
 
 @fixture
+def timeslices(market):
+    return market.timeslice
+
+
+@fixture
 def technologies(residential):
     return residential.technologies
 
@@ -36,13 +41,18 @@ def search_space(model):
 
 
 @fixture
-def lpcosts(technologies, search_space, market):
+def costs(technologies, search_space, market):
+    shape = search_space.shape
+    return search_space * np.arange(np.prod(shape)).reshape(shape)
+
+
+@fixture
+def lpcosts(technologies, market, costs):
     from muse.constraints import lp_costs
 
-    shape = search_space.shape
     return lp_costs(
         technologies.interp(year=market.year.min() + 5).drop_vars("year"),
-        costs=search_space * np.arange(np.prod(shape)).reshape(shape),
+        costs=costs,
         timeslices=market.timeslice,
     )
 
@@ -53,10 +63,40 @@ def assets(residential):
 
 
 @fixture
-def constraint(assets, search_space, market, technologies):
-    from muse.constraints import max_production as cons
+def max_production(assets, search_space, market, technologies):
+    from muse.constraints import max_production
 
-    return cons(assets, search_space, market, technologies)
+    return max_production(assets, search_space, market, technologies)
+
+
+@fixture
+def constraint(max_production):
+    return max_production
+
+
+@fixture
+def demand(assets, search_space, market, technologies):
+    from muse.constraints import demand
+
+    return demand(assets, search_space, market, technologies)
+
+
+@fixture
+def max_capacity_expansion(assets, search_space, market, technologies):
+    from muse.constraints import max_capacity_expansion
+
+    return max_capacity_expansion(assets, search_space, market, technologies)
+
+
+@fixture
+def constraints(assets, search_space, market, technologies):
+    from muse import constraints as cs
+
+    return [
+        cs.max_production(assets, search_space, market, technologies),
+        cs.demand(assets, search_space, market, technologies),
+        cs.max_capacity_expansion(assets, search_space, market, technologies),
+    ]
 
 
 def test_lp_constraints_matrix_b_is_scalar(constraint, lpcosts):
@@ -128,3 +168,89 @@ def test_lp_constraint(constraint, lpcosts):
 
     assert set(result.b.dims) == constraint_dims
     assert result.b.values == approx(0)
+
+
+def test_scipy_adapter_maxprod(technologies, costs, max_production, timeslices):
+    from muse.constraints import scipy_adapter, lp_costs
+
+    technologies = technologies.interp(year=2025)
+
+    inputs = scipy_adapter(technologies, costs, timeslices, max_production)
+    assert set(inputs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
+    assert inputs["bounds"] == (0, None)
+    assert inputs["A_eq"] is None
+    assert inputs["b_eq"] is None
+    assert inputs["c"].ndim == 1
+    assert inputs["b_ub"].ndim == 1
+    assert inputs["A_ub"].ndim == 2
+    assert inputs["b_ub"].size == inputs["A_ub"].shape[0]
+    assert inputs["c"].size == inputs["A_ub"].shape[1]
+
+    lpcosts = lp_costs(technologies, costs, timeslices)
+    capsize = lpcosts.capacity.size
+    prodsize = lpcosts.production.size
+    assert inputs["c"].size == capsize + prodsize
+    assert inputs["b_ub"].size == prodsize
+    assert inputs["b_ub"] == approx(0)
+    assert inputs["A_ub"][:, capsize:] == approx(-np.eye(prodsize))
+
+
+def test_scipy_adapter_demand(technologies, costs, demand, timeslices):
+    from muse.constraints import scipy_adapter, lp_costs
+
+    technologies = technologies.interp(year=2025)
+
+    inputs = scipy_adapter(technologies, costs, timeslices, demand)
+    assert set(inputs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
+    assert inputs["bounds"] == (0, None)
+    assert inputs["A_ub"] is None
+    assert inputs["b_ub"] is None
+    assert inputs["A_eq"] is not None
+    assert inputs["b_eq"] is not None
+    assert inputs["c"].ndim == 1
+    assert inputs["b_eq"].ndim == 1
+    assert inputs["A_eq"].ndim == 2
+    assert inputs["b_eq"].size == inputs["A_eq"].shape[0]
+    assert inputs["c"].size == inputs["A_eq"].shape[1]
+
+    lpcosts = lp_costs(technologies, costs, timeslices)
+    capsize = lpcosts.capacity.size
+    prodsize = lpcosts.production.size
+    assert inputs["c"].size == capsize + prodsize
+    assert inputs["b_eq"].size == lpcosts.commodity.size * lpcosts.timeslice.size
+    assert inputs["A_eq"][:, :capsize] == approx(0)
+    assert inputs["A_eq"][:, capsize:].sum(axis=1) == approx(
+        lpcosts.asset.size * lpcosts.replacement.size
+    )
+    assert set(inputs["A_eq"][:, capsize:].flatten()) == {0.0, 1.0}
+
+
+def test_scipy_adapter_max_capacity_expansion(
+    technologies, costs, max_capacity_expansion, timeslices
+):
+    from muse.constraints import scipy_adapter, lp_costs
+
+    technologies = technologies.interp(year=2025)
+
+    inputs = scipy_adapter(technologies, costs, timeslices, max_capacity_expansion)
+    assert set(inputs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
+    assert inputs["bounds"] == (0, None)
+    assert inputs["A_ub"] is not None
+    assert inputs["b_ub"] is not None
+    assert inputs["A_eq"] is None
+    assert inputs["b_eq"] is None
+    assert inputs["c"].ndim == 1
+    assert inputs["b_ub"].ndim == 1
+    assert inputs["A_ub"].ndim == 2
+    assert inputs["b_ub"].size == inputs["A_ub"].shape[0]
+    assert inputs["c"].size == inputs["A_ub"].shape[1]
+    assert inputs["c"].ndim == 1
+
+    lpcosts = lp_costs(technologies, costs, timeslices)
+    capsize = lpcosts.capacity.size
+    prodsize = lpcosts.production.size
+    assert inputs["c"].size == capsize + prodsize
+    assert inputs["b_ub"].size == lpcosts.replacement.size
+    assert inputs["A_ub"][:, capsize:] == approx(0)
+    assert inputs["A_ub"][:, :capsize].sum(axis=1) == approx(lpcosts.asset.size)
+    assert set(inputs["A_ub"][:, :capsize].flatten()) == {0.0, 1.0}
