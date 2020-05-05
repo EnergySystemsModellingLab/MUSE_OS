@@ -108,9 +108,9 @@ def technodata(sector: Text, model: Text = "default") -> Dataset:
     with TemporaryDirectory() as tmpdir:
         path = copy_model(model, tmpdir)
         return read_technologies(
-            path / "technodata" / sector.title() / "Technodata.csv",
-            path / "technodata" / sector.title() / "CommOut.csv",
-            path / "technodata" / sector.title() / "CommIn.csv",
+            path / "technodata" / sector.lower() / "Technodata.csv",
+            path / "technodata" / sector.lower() / "CommOut.csv",
+            path / "technodata" / sector.lower() / "CommIn.csv",
             path / "input" / "GlobalCommodities.csv",
         )
 
