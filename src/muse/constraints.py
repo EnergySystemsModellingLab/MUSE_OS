@@ -63,14 +63,14 @@ inefficient defininition of :math:`A_c`, :math:`A_p` and :math:`b`.
 from enum import Enum, auto
 from typing import (
     Callable,
-    Optional,
     List,
     Mapping,
     MutableMapping,
+    Optional,
     Sequence,
     Text,
-    Union,
     Tuple,
+    Union,
     cast,
 )
 
