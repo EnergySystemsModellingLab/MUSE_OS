@@ -7,6 +7,57 @@ every year.
 Functions to compute constraints should be registered via the decorator
 :py:func:`register_constraints`. This registration step makes it possible for
 constraints to be declared in the TOML file.
+
+Generally, LP solvers accept linear constraint defined as:
+
+.. math::
+
+    A x \\leq b
+
+with :math:`A` a matrix, :math:`x` the decision variables, and :math:`b` a vector.
+However, these quantities are dimensionless. They do no have timeslices, assets, or
+replacement technologies, or any other dimensions that users have set-up in their model.
+The crux is to translates from MUSE's data-structures to a consistent dimensionless
+format.
+
+In MUSE, users can register constraints functions that return fully dimensional
+quantities. The matrix operator is split over the capacity decision variables and the
+production decision variables:
+
+.. math::
+
+    A_c .* x_c + A_p .* x_p \\leq b
+
+The operator :math:`.*` means the standard elementwise multiplication of xarray,
+including automatic broadcasting (adding missing dimensions by repeating the smaller
+matrix along the missing dimension).  Constraint functions return the three quantities
+:math:`A_c`, :math:`A_p`, and :math:`b`. These three quantities will often not have the
+same dimension. E.g. one might include timeslices where another might not. The
+transformation from :math:`A_c`, :math:`A_p`, :math:`b` to :math:`A` and :math:`b`
+happens as described below.
+
+- :math:`b` remains the same. It defines the rows of :math:`A`.
+- :math:`x_c` and :math:`x_p` are concatenated one on top of the other and define the
+  columns of :math:`A`.
+- :math:`A` is split into a left submatrix for capacities and a right submatrix for
+  production, following the concatenation of :math:`x_c` and :math:`x_p`
+- Any dimension in :math:`A_c .* x_c` (:math:`A_p .* x_p`) that is also in :math:`b`
+  defines diagonal entries into the left (right) submatrix of :math:`A`.
+- Any dimension in :math:`A_c .* x_c` (:math:`A_p .* x_b`) and missing from
+  :math:`b` is reduce by summation over a row in the left (right) submatrix of
+  :math:`A`. In other words, those dimension do become part of a standard tensor
+  reduction or matrix multiplication.
+
+There are two additional rules. However, they are likely to be the result of an
+inefficient defininition of :math:`A_c`, :math:`A_p` and :math:`b`.
+
+- Any dimension in :math:`A_c` (:math:`A_b`) that is neither in :math:`b` nor in
+  :math:`x_c` (:math:`x_p`) is reduced by summation before consideration for the
+  elementwise multiplication. For instance, if :math:`d` is such a dimension, present
+  only in :math:`A_c`, then the problem becomes :math:`(\\sum_d A_c) .* x_c + A_p .* x_p
+  \\leq b`.
+- Any dimension missing from :math:`A_c .* x_c` (:math:`A_p .* x_p`) and present in
+  :math:`b` is added by repeating the resulting row in :math:`A`.
 """
 
 from enum import Enum, auto
