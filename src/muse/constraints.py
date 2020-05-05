@@ -63,6 +63,7 @@ inefficient defininition of :math:`A_c`, :math:`A_p` and :math:`b`.
 from enum import Enum, auto
 from typing import (
     Callable,
+    Hashable,
     List,
     Mapping,
     MutableMapping,
@@ -734,7 +735,7 @@ def scipy_adapter(
 
     data = data.set_index(
         {
-            dim: list(data.get_index(dim))
+            dim: cast(Sequence[Hashable], list(data.get_index(dim)))
             for dim in data.dims
             if isinstance(data.get_index(dim), MultiIndex)
         }
