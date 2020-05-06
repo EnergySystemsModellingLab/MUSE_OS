@@ -20,7 +20,7 @@ class Sector(AbstractSector):  # type: ignore
     def factory(cls, name: Text, settings: Any) -> Sector:
         from muse.readers import read_timeslices, read_technologies
         from muse.utilities import nametuple_to_dict
-        from muse.outputs import factory as ofactory
+        from muse.outputs.sector import factory as ofactory
         from muse.production import factory as pfactory
         from muse.interactions import factory as interaction_factory
         from muse.demand_share import factory as share_factory
@@ -123,7 +123,7 @@ class Sector(AbstractSector):  # type: ignore
         demand_share: Optional[DEMAND_SHARE_SIGNATURE] = None,
     ):
         from muse.production import maximum_production
-        from muse.outputs import factory as ofactory
+        from muse.outputs.sector import factory as ofactory
         from muse.interactions import factory as interaction_factory
         from muse.demand_share import factory as share_factory
 
