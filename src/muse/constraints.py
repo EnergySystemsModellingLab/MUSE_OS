@@ -60,6 +60,9 @@ inefficient defininition of :math:`A_c`, :math:`A_p` and :math:`b`.
   :math:`b` is added by repeating the resulting row in :math:`A`.
 """
 
+from __future__ import annotations
+
+from dataclasses import dataclass
 from enum import Enum, auto
 from typing import (
     Callable,
@@ -75,6 +78,8 @@ from typing import (
     cast,
 )
 
+from numpy import ndarray
+from pandas import Index
 from xarray import DataArray, Dataset
 
 from muse.registration import registrator
@@ -621,9 +626,8 @@ def lp_constraint_matrix(b: DataArray, constraint: DataArray, lpcosts: DataArray
     return result
 
 
-def scipy_adapter(
-    technologies: Dataset, costs: DataArray, timeslices, *constraints: Constraint
-):
+@dataclass
+class ScipyAdapter:
     """Creates the input for the scipy solvers.
 
     Example:
@@ -665,28 +669,28 @@ def scipy_adapter(
         The lp problem then becomes:
 
         >>> technologies = res.technologies.interp(year=market.year.min() + 5)
-        >>> inputs = cs.scipy_adapter(
+        >>> inputs = cs.ScipyAdapter.factory(
         ...     technologies, costs, market.timeslice, constraint
         ... )
 
         The decision variables are always constrained between zero and infinity:
 
-        >>> assert inputs["bounds"] == (0, None)
+        >>> assert inputs.bounds == (0, None)
 
         The problem is an upper-bound one. There are no equality constraints:
 
-        >>> assert inputs["A_eq"] is None
-        >>> assert inputs["b_eq"] is None
+        >>> assert inputs.A_eq is None
+        >>> assert inputs.b_eq is None
 
         The upper bound matrix and vector, and the costs are consistent in their
         dimensions:
 
-        >>> assert inputs["c"].ndim == 1
-        >>> assert inputs["b_ub"].ndim == 1
-        >>> assert inputs["A_ub"].ndim == 2
-        >>> assert inputs["b_ub"].size == inputs["A_ub"].shape[0]
-        >>> assert inputs["c"].size == inputs["A_ub"].shape[1]
-        >>> assert inputs["c"].ndim == 1
+        >>> assert inputs.c.ndim == 1
+        >>> assert inputs.b_ub.ndim == 1
+        >>> assert inputs.A_ub.ndim == 2
+        >>> assert inputs.b_ub.size == inputs.A_ub.shape[0]
+        >>> assert inputs.c.size == inputs.A_ub.shape[1]
+        >>> assert inputs.c.ndim == 1
 
         In practice, :py:func:`~muse.constraints.lpcosts` helps us define the decision
         variables (and ``c``). We can verify that the sizes are consistent:
@@ -694,112 +698,179 @@ def scipy_adapter(
         >>> lpcosts = cs.lp_costs(technologies, costs, market.timeslice)
         >>> capsize = lpcosts.capacity.size
         >>> prodsize = lpcosts.production.size
-        >>> assert inputs["c"].size == capsize + prodsize
+        >>> assert inputs.c.size == capsize + prodsize
 
         The upper bound itself is over each replacement technology:
 
-        >>> assert inputs["b_ub"].size == lpcosts.replacement.size
+        >>> assert inputs.b_ub.size == lpcosts.replacement.size
 
         The production decision variables are not involved:
 
         >>> from pytest import approx
-        >>> assert inputs["A_ub"][:, capsize:] == approx(0)
+        >>> assert inputs.A_ub[:, capsize:] == approx(0)
 
         The matrix for the capacity decision variables is a sum over assets for a given
         replacement technology. Hence, each row is constituted of zeros and ones and
         sums to the number of assets:
 
-        >>> assert inputs["A_ub"][:, :capsize].sum(axis=1) == approx(lpcosts.asset.size)
-        >>> assert set(inputs["A_ub"][:, :capsize].flatten()) == {0.0, 1.0}
+        >>> assert inputs.A_ub[:, :capsize].sum(axis=1) == approx(lpcosts.asset.size)
+        >>> assert set(inputs.A_ub[:, :capsize].flatten()) == {0.0, 1.0}
     """
-    from xarray import merge
-    from pandas import MultiIndex
-    from numpy import concatenate, ndarray
 
-    assert "year" not in technologies.dims
-    lpcosts = lp_costs(technologies, costs, timeslices)
-    data = merge(
-        [lpcosts.rename({k: f"d({k})" for k in lpcosts.dims})]
-        + [
-            lp_constraint(constraint, lpcosts).rename(
-                b=f"b{i}", capacity=f"capacity{i}", production=f"production{i}"
-            )
-            for i, constraint in enumerate(constraints)
-        ]
-    )
-    for i, constraint in enumerate(constraints):
-        if constraint.kind == ConstraintKind.LOWER_BOUND:
-            data[f"b{i}"] = -data[f"b{i}"]  # type: ignore
-            data[f"capacity{i}"] = -data[f"capacity{i}"]  # type: ignore
-            data[f"production{i}"] = -data[f"production{i}"]  # type: ignore
+    c: ndarray
+    to_muse: Callable[[ndarray], Dataset]
+    bounds: Tuple[Optional[float], Optional[float]] = (0, None)
+    A_ub: Optional[ndarray] = None
+    b_ub: Optional[ndarray] = None
+    A_eq: Optional[ndarray] = None
+    b_eq: Optional[ndarray] = None
 
-    data = data.set_index(
-        {
-            dim: cast(Sequence[Hashable], list(data.get_index(dim)))
-            for dim in data.dims
-            if isinstance(data.get_index(dim), MultiIndex)
+    @classmethod
+    def factory(
+        cls,
+        technologies: Dataset,
+        costs: DataArray,
+        timeslices: Index,
+        *constraints: Constraint,
+    ) -> ScipyAdapter:
+
+        lpcosts = lp_costs(technologies, costs, timeslices)
+        data = cls._unified_dataset(technologies, lpcosts, *constraints)
+        capacities = cls._stacked_quantity(data, "capacity")
+        productions = cls._stacked_quantity(data, "production")
+        bs = cls._stacked_quantity(data, "b")
+        kwargs = cls._to_scipy_adapter(capacities, productions, bs, *constraints)
+
+        def to_muse(x: ndarray) -> Dataset:
+            return ScipyAdapter._back_to_muse(x, capacities, productions)
+
+        return ScipyAdapter(to_muse=to_muse, **kwargs)
+
+    @property
+    def kwargs(self):
+        return {
+            "c": self.c,
+            "A_eq": self.A_eq,
+            "b_eq": self.b_eq,
+            "A_ub": self.A_ub,
+            "b_ub": self.b_ub,
+            "bounds": self.bounds,
         }
-    )
 
-    def extract(data, name):
-        result = data[[u for u in data.data_vars if u.startswith(name)]]
-        return result.rename(
+    @staticmethod
+    def _unified_dataset(
+        technologies: Dataset, lpcosts: Dataset, *constraints: Constraint
+    ) -> Dataset:
+        """Creates single dataset from costs and contraints."""
+        from xarray import merge
+        from pandas import MultiIndex
+
+        assert "year" not in technologies.dims
+        data = merge(
+            [lpcosts.rename({k: f"d({k})" for k in lpcosts.dims})]
+            + [
+                lp_constraint(constraint, lpcosts).rename(
+                    b=f"b{i}", capacity=f"capacity{i}", production=f"production{i}"
+                )
+                for i, constraint in enumerate(constraints)
+            ]
+        )
+        for i, constraint in enumerate(constraints):
+            if constraint.kind == ConstraintKind.LOWER_BOUND:
+                data[f"b{i}"] = -data[f"b{i}"]  # type: ignore
+                data[f"capacity{i}"] = -data[f"capacity{i}"]  # type: ignore
+                data[f"production{i}"] = -data[f"production{i}"]  # type: ignore
+
+        return data.set_index(
             {
-                k: ("costs" if k == name else int(k.replace(name, "")))
-                for k in result.data_vars
+                dim: cast(Sequence[Hashable], list(data.get_index(dim)))
+                for dim in data.dims
+                if isinstance(data.get_index(dim), MultiIndex)
             }
         )
 
-    bs = extract(data, "b")
+    @staticmethod
+    def _stacked_quantity(data: Dataset, name: Text) -> Dataset:
+        result = cast(
+            Dataset, data[[u for u in data.data_vars if str(u).startswith(name)]]
+        )
+        result = result.rename(
+            {
+                k: ("costs" if k == name else int(str(k).replace(name, "")))
+                for k in result.data_vars
+            }
+        )
+        if len(result):
+            result = result.stack(decision=sorted(result.get("costs", result).dims))
+        return result
 
-    capacities = extract(data, "capacity")
-    capacities = capacities.stack(decision=sorted(capacities.costs.dims))
+    @staticmethod
+    def _to_scipy_adapter(
+        capacities: Dataset, productions: Dataset, bs: Dataset, *constraints
+    ):
+        from numpy import concatenate, ndarray
 
-    productions = extract(data, "production")
-    productions = productions.stack(decision=sorted(productions.costs.dims))
+        def extract_bA(constraints, *kinds):
+            indices = [i for i in range(len(bs)) if constraints[i].kind in kinds]
+            capa_constraints = [
+                capacities[i]
+                .stack(constraint=sorted(bs[i].dims))
+                .transpose("constraint", "decision")
+                .values
+                for i in indices
+            ]
+            prod_constraints = [
+                productions[i]
+                .stack(constraint=sorted(bs[i].dims))
+                .transpose("constraint", "decision")
+                .values
+                for i in indices
+            ]
+            if capa_constraints:
+                A: Optional[ndarray] = concatenate(
+                    (
+                        concatenate(capa_constraints, axis=0),
+                        concatenate(prod_constraints, axis=0),
+                    ),
+                    axis=1,
+                )
+                b: Optional[ndarray] = concatenate(
+                    [bs[i].stack(constraint=sorted(bs[i].dims)) for i in indices],
+                    axis=0,
+                )
+            else:
+                A = None
+                b = None
+            return A, b
 
-    c = concatenate((capacities["costs"].values, productions["costs"].values), axis=0)
+        c = concatenate(
+            (capacities["costs"].values, productions["costs"].values), axis=0
+        )
+        A_ub, b_ub = extract_bA(
+            constraints, ConstraintKind.UPPER_BOUND, ConstraintKind.LOWER_BOUND
+        )
+        A_eq, b_eq = extract_bA(constraints, ConstraintKind.EQUALITY)
 
-    def extract_bA(*kinds):
-        indices = [i for i in range(len(bs)) if constraints[i].kind in kinds]
-        capa_constraints = [
-            capacities[i]
-            .stack(constraint=sorted(bs[i].dims))
-            .transpose("constraint", "decision")
-            .values
-            for i in indices
-        ]
-        prod_constraints = [
-            productions[i]
-            .stack(constraint=sorted(bs[i].dims))
-            .transpose("constraint", "decision")
-            .values
-            for i in indices
-        ]
-        if capa_constraints:
-            A: Optional[ndarray] = concatenate(
-                (
-                    concatenate(capa_constraints, axis=0),
-                    concatenate(prod_constraints, axis=0),
-                ),
-                axis=1,
-            )
-            b: Optional[ndarray] = concatenate(
-                [bs[i].stack(constraint=sorted(bs[i].dims)) for i in indices], axis=0
-            )
-        else:
-            A = None
-            b = None
-        return A, b
+        return {
+            "c": c,
+            "A_ub": A_ub,
+            "b_ub": b_ub,
+            "A_eq": A_eq,
+            "b_eq": b_eq,
+            "bounds": (0, None),
+        }
 
-    A_ub, b_ub = extract_bA(ConstraintKind.UPPER_BOUND, ConstraintKind.LOWER_BOUND)
-    A_eq, b_eq = extract_bA(ConstraintKind.EQUALITY)
+    @staticmethod
+    def _back_to_muse_quantity(
+        x: ndarray, template: Union[DataArray, Dataset]
+    ) -> DataArray:
+        result = DataArray(x, coords=template.coords, dims=template.dims).unstack(
+            "decision"
+        )
+        return result.rename({k: str(k)[2:-1] for k in result.dims})
 
-    return {
-        "c": c,
-        "A_ub": A_ub,
-        "b_ub": b_ub,
-        "A_eq": A_eq,
-        "b_eq": b_eq,
-        "bounds": (0, None),
-    }
+    @staticmethod
+    def _back_to_muse(x: ndarray, capacity: Dataset, production: Dataset) -> Dataset:
+        capa = ScipyAdapter._back_to_muse_quantity(x[: capacity.costs.size], capacity)
+        prod = ScipyAdapter._back_to_muse_quantity(x[capacity.costs.size :], production)
+        return Dataset({"capacity": capa, "production": prod})
