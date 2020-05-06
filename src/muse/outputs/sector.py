@@ -53,7 +53,7 @@ def register_output_quantity(function: OUTPUT_QUANTITY_SIGNATURE = None) -> Call
 
 
 def factory(
-    *parameters: OUTPUTS_PARAMETERS,
+    *parameters: OUTPUTS_PARAMETERS, sector_name: Text = "default"
 ) -> Callable[[DataArray, Dataset, Dataset], None]:
     """Creates outputs functions for post-mortem analysis.
 
@@ -74,6 +74,7 @@ def factory(
     They default to `{'quantity': string}` (and the sink will default to
     "csv").
     """
+
     if isinstance(parameters, Text):
         params: List = [{"quantity": parameters}]
     elif isinstance(parameters, Mapping):
@@ -84,17 +85,11 @@ def factory(
         ]
 
     def save_multiple_outputs(
-        capacity: DataArray,
-        market: Dataset,
-        technologies: Dataset,
-        sector: Text = "default",
+        capacity: DataArray, market: Dataset, technologies: Dataset
     ):
 
         for outputs in params:
-            config = outputs.copy()
-            config["sector"] = sector
-            config["year"] = int(market.year.min())
-            save_output(config, capacity, market, technologies)
+            save_output(capacity, market, technologies, sector=sector_name, **outputs)
 
     return save_multiple_outputs
 
@@ -164,7 +159,7 @@ def costs(
 
 
 def save_output(
-    config: Mapping, capacity: DataArray, market: Dataset, technologies: Dataset
+    capacity: DataArray, market: Dataset, technologies: Dataset, **config
 ) -> Optional[Text]:
     """Computes output quantity and saves it to the sink.
 
@@ -209,6 +204,8 @@ def save_output(
     if len(set(sink_params).intersection(config)) != 0:
         raise ValueError("duplicate settings in output section")
     sink_params.update(config)
+    if "year" not in sink_params:
+        sink_params["year"] = int(market.year.min())
     if sink[0] == ".":
         sink = sink[1:]
     data = OUTPUT_QUANTITIES[quantity](  # type: ignore

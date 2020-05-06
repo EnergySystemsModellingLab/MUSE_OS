@@ -33,7 +33,7 @@ def test_save_with_dir(tmpdir):
         "year": 2010,
     }
     # can use None because we **know** none of the arguments are used here
-    result = save_output(config, None, None, None)
+    result = save_output(None, None, None, **config)
     assert result == path / "Yoyo2010Streetcred.csv"
     assert result.is_file()
     read_csv(result)
@@ -50,19 +50,19 @@ def test_overwrite(tmpdir):
         "year": 2010,
     }
     # can use None because we **know** none of the arguments are used here
-    result = save_output(config, None, None, None)
+    result = save_output(None, None, None, **config)
     assert result == path / "Yoyo2010Streetcred.csv"
     assert result.is_file()
 
     with raises(IOError):
-        result = save_output(config, None, None, None)
+        save_output(None, None, None, **config)
 
     config["overwrite"] = False
     with raises(IOError):
-        result = save_output(config, None, None, None)
+        save_output(None, None, None, **config)
 
     config["overwrite"] = True
-    save_output(config, None, None, None)
+    save_output(None, None, None, **config)
 
 
 def test_save_with_path_to_nc_with_suffix(tmpdir):
@@ -74,10 +74,10 @@ def test_save_with_path_to_nc_with_suffix(tmpdir):
         "filename": path / "{Sector}{year}{Quantity}{suffix}",
         "quantity": "streetcred",
         "sector": "yoyo",
-        "year": 2010,
         "suffix": "nc",
+        "year": 2010,
     }
-    result = save_output(config, None, None, None)
+    result = save_output(None, None, None, **config)
     assert result == path / "Yoyo2010Streetcred.nc"
     assert result.is_file()
     open_dataset(result)
@@ -92,10 +92,10 @@ def test_save_with_path_to_nc_with_sink(tmpdir):
         "filename": path / "{sector}{year}{quantity}.csv",
         "quantity": "streetcred",
         "sector": "yoyo",
-        "year": 2010,
         "sink": "nc",
+        "year": 2010,
     }
-    result = save_output(config, None, None, None)
+    result = save_output(None, None, None, **config)
     assert result == path / "yoyo2010streetcred.csv"
     assert result.is_file()
     open_dataset(result)
@@ -119,25 +119,28 @@ def test_save_with_fullpath_to_excel_with_sink(tmpdir):
 @mark.legacy
 def test_from_sector_with_single_string(buildings, market, tmpdir):
     from muse.defaults import DEFAULT_OUTPUT_DIRECTORY
-    from muse.outputs import factory
+    from muse.outputs.sector import factory
 
     with tmpdir.as_cwd():
-        output_func = factory("streetcred")
-        output_func(
-            buildings.capacity, market, buildings.technologies, sector="Residential"
-        )
-        assert (DEFAULT_OUTPUT_DIRECTORY / "Residential2010Streetcred.csv").exists()
-        assert (DEFAULT_OUTPUT_DIRECTORY / "Residential2010Streetcred.csv").is_file()
+        output_func = factory("streetcred", sector_name="Residential")
+        output_func(buildings.capacity, market, buildings.technologies)
+        assert (
+            Path(tmpdir) / DEFAULT_OUTPUT_DIRECTORY / "Residential2010Streetcred.csv"
+        ).exists()
+        assert (
+            Path(tmpdir) / DEFAULT_OUTPUT_DIRECTORY / "Residential2010Streetcred.csv"
+        ).is_file()
 
 
 @mark.sgidata
 @mark.legacy
 def test_from_sector_with_directory(buildings, market, tmpdir):
-    from muse.outputs import factory
+    from muse.outputs.sector import factory
 
-    output_func = factory({"quantity": "streetcred", "filename": tmpdir / "abc.csv"})
-    output_func(
-        buildings.capacity, market, buildings.technologies, sector="Residential"
+    output_func = factory(
+        {"quantity": "streetcred", "filename": tmpdir / "abc.csv"},
+        sector_name="Residential",
     )
+    output_func(buildings.capacity, market, buildings.technologies)
     assert (Path(tmpdir) / "abc.csv").exists()
     assert (Path(tmpdir) / "abc.csv").is_file()
