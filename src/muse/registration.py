@@ -3,11 +3,6 @@ __all__ = ["registrator"]
 
 from typing import Callable, Mapping, Optional, Sequence, Text, Union
 
-from xarray import DataArray
-
-# Registry of available decorators
-DECORATORS_REGISTRY = {}
-
 
 def name_variations(*args):
     """Standard name variations when registering functions with MUSE."""
@@ -168,7 +163,7 @@ def registrator(
             inner_decorated = decorator(function)
 
         @wraps(function)
-        def decorated(*args, **kwargs) -> DataArray:
+        def decorated(*args, **kwargs):
             if loglevel is not None and hasattr(logger, loglevel):
                 getattr(logger, loglevel)(msg)
             result = inner_decorated(*args, **kwargs)
@@ -191,7 +186,5 @@ def registrator(
                 registry[n] = decorated
 
         return decorated
-
-    DECORATORS_REGISTRY[decorator.__name__] = register
 
     return register
