@@ -136,7 +136,7 @@ def registrator(
         overwrite: bool = False,
     ):
         from logging import getLogger
-        from inspect import signature
+        from inspect import signature, isclass
         from itertools import chain
 
         # allows specifyng the registered name as a keyword argument
@@ -162,12 +162,17 @@ def registrator(
         else:
             inner_decorated = decorator(function)
 
-        @wraps(function)
-        def decorated(*args, **kwargs):
-            if loglevel is not None and hasattr(logger, loglevel):
-                getattr(logger, loglevel)(msg)
-            result = inner_decorated(*args, **kwargs)
-            return result
+        if not isclass(function):
+
+            @wraps(function)
+            def decorated(*args, **kwargs):
+                if loglevel is not None and hasattr(logger, loglevel):
+                    getattr(logger, loglevel)(msg)
+                result = inner_decorated(*args, **kwargs)
+                return result
+
+        else:
+            decorated = function
 
         # There's just one name for the decorator
         if not vary_name:
