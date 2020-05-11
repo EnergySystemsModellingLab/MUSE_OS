@@ -19,6 +19,7 @@ technologies in the market. It returns a single DataArray object.
 
 The function should never modify it's arguments.
 """
+from pathlib import Path
 from typing import Callable, List, Mapping, Optional, Text, Union
 
 from xarray import DataArray, Dataset
@@ -52,9 +53,26 @@ def register_output_quantity(function: OUTPUT_QUANTITY_SIGNATURE = None) -> Call
     return decorated
 
 
+def quantities_factory(parameters: List[Mapping]) -> List[Callable]:
+    from functools import partial
+
+    quantities: List[Callable] = []
+    for outputs in parameters:
+        config = dict(**outputs)
+        params = config.pop("quantity")
+        if isinstance(params, Mapping):
+            params = dict(**params)
+            quantity = params.pop("name")
+        else:
+            quantity = params
+            params = {}
+        quantities.append(partial(OUTPUT_QUANTITIES[quantity], **params))
+    return quantities
+
+
 def factory(
     *parameters: OUTPUTS_PARAMETERS, sector_name: Text = "default"
-) -> Callable[[DataArray, Dataset, Dataset], None]:
+) -> Callable[[DataArray, Dataset, Dataset], List[Path]]:
     """Creates outputs functions for post-mortem analysis.
 
     Each parameter is a dictionary containing the following:
@@ -74,6 +92,7 @@ def factory(
     They default to `{'quantity': string}` (and the sink will default to
     "csv").
     """
+    from muse.outputs.sinks import factory as sinks_factory
 
     if isinstance(parameters, Text):
         params: List = [{"quantity": parameters}]
@@ -84,12 +103,18 @@ def factory(
             {"quantity": o} if isinstance(o, Text) else o for o in parameters
         ]
 
+    quantities = quantities_factory(params)
+    sinks = sinks_factory(params, sector_name=sector_name)
+
     def save_multiple_outputs(
         capacity: DataArray, market: Dataset, technologies: Dataset
-    ):
+    ) -> List[Path]:
 
-        for outputs in params:
-            save_output(capacity, market, technologies, sector=sector_name, **outputs)
+        paths = []
+        for quantity, sink in zip(quantities, sinks):
+            data = quantity(capacity=capacity, market=market, technologies=technologies)
+            paths.append(sink(data, year=int(market.year.min())))
+        return paths
 
     return save_multiple_outputs
 

@@ -1,4 +1,4 @@
-"""Sinks where output quantities can be stored
+"""Sinks where output quantities can be stored.
 
 Sinks take as argument a DataArray and store it somewhere. Additionally they
 take a dictionary as argument. This dictionary will always contains the items
@@ -17,10 +17,10 @@ The signature of a sink is:
         pass
 """
 
-from typing import Callable, Mapping, Optional, Text
-from mypy_extensions import KwArg
+from typing import Callable, List, Mapping, Optional, Text
 
 import xarray as xr
+from mypy_extensions import KwArg
 
 from muse.registration import registrator
 
@@ -29,6 +29,37 @@ OUTPUT_SINK_SIGNATURE = Callable[[xr.DataArray, KwArg()], Optional[Text]]
 
 OUTPUT_SINKS: Mapping[Text, OUTPUT_SINK_SIGNATURE] = {}
 """Stores a quantity somewhere."""
+
+
+def factory(parameters: List[Mapping], sector_name: Text = "default") -> List[Callable]:
+    from pathlib import Path
+    from functools import partial
+    from muse.outputs.sinks import OUTPUT_SINKS
+
+    sinks: List[Callable] = []
+    for outputs in parameters:
+        config = dict(**outputs)
+        config.pop("quantity")
+        params = config.pop("sink", None)
+        if isinstance(params, Mapping):
+            params = dict(**params)
+            sink = params.pop("name")
+        elif isinstance(params, Text):
+            sink = params
+            params = {}
+        else:
+            filename = config.get("filename", None)
+            sink = config.get("suffix", Path(filename).suffix if filename else "csv")
+            params = {}
+
+        if len(set(params).intersection(config)) != 0:
+            raise ValueError("duplicate settings in output section")
+        params.update(config)
+        params["sector"] = sector_name.lower()
+        if sink[0] == ".":
+            sink = sink[1:]
+        sinks.append(partial(OUTPUT_SINKS[sink], **params))
+    return sinks
 
 
 @registrator(registry=OUTPUT_SINKS, loglevel=None)
