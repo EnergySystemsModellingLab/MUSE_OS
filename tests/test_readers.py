@@ -378,3 +378,21 @@ def test_split_toml_incorrect_inner_name(tmpdir):
 
     with raises(IOError):
         read_split_toml(tmpdir / "outer.toml")
+
+
+def test_path_formatting():
+    from muse.readers.toml import format_path
+
+    path = "this_path"
+    cwd = "current_path"
+    muse_sectors = "sectors_path"
+
+    assert format_path("{cwd}/{other_param}", cwd=cwd) == str(
+        Path(cwd).absolute() / "{other_param}"
+    )
+    assert format_path("{path}/{other_param}", path=path) == str(
+        Path(path).absolute() / "{other_param}"
+    )
+    assert format_path(
+        "{muse_sectors}/{other_param}", muse_sectors=muse_sectors
+    ) == str(Path(muse_sectors).absolute() / "{other_param}")
