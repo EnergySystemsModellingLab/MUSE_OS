@@ -17,7 +17,7 @@ The signature of a sink is:
         pass
 """
 
-from typing import Callable, List, Mapping, Optional, Text
+from typing import Callable, Mapping, Optional, Text, Union
 
 import xarray as xr
 from mypy_extensions import KwArg
@@ -27,60 +27,47 @@ from muse.registration import registrator
 OUTPUT_SINK_SIGNATURE = Callable[[xr.DataArray, KwArg()], Optional[Text]]
 """Signature of functions used to save quantities."""
 
-OUTPUT_SINKS: Mapping[Text, OUTPUT_SINK_SIGNATURE] = {}
+OUTPUT_SINKS: Mapping[Text, Union[OUTPUT_SINK_SIGNATURE, Callable]] = {}
 """Stores a quantity somewhere."""
 
 
-def factory(parameters: List[Mapping], sector_name: Text = "default") -> List[Callable]:
+def factory(parameters: Mapping, sector_name: Text = "default") -> Callable:
     from pathlib import Path
+    from inspect import isclass
     from functools import partial
     from muse.outputs.sinks import OUTPUT_SINKS
 
-    sinks: List[Callable] = []
-    for outputs in parameters:
-        config = dict(**outputs)
-        config.pop("quantity")
-        params = config.pop("sink", None)
-        if isinstance(params, Mapping):
-            params = dict(**params)
-            sink = params.pop("name")
-        elif isinstance(params, Text):
-            sink = params
-            params = {}
-        else:
-            filename = config.get("filename", None)
-            sink = config.get("suffix", Path(filename).suffix if filename else "csv")
-            params = {}
+    config = dict(**parameters)
+    config.pop("quantity", None)
+    params = config.pop("sink", None)
+    if isinstance(params, Mapping):
+        params = dict(**params)
+        sink_name = params.pop("name")
+    elif isinstance(params, Text):
+        sink_name = params
+        params = {}
+    else:
+        filename = config.get("filename", None)
+        sink_name = config.get("suffix", Path(filename).suffix if filename else "csv")
+        params = {}
 
-        if len(set(params).intersection(config)) != 0:
-            raise ValueError("duplicate settings in output section")
-        params.update(config)
-        params["sector"] = sector_name.lower()
-        if sink[0] == ".":
-            sink = sink[1:]
-        sinks.append(partial(OUTPUT_SINKS[sink], **params))
-    return sinks
+    if len(set(params).intersection(config)) != 0:
+        raise ValueError("duplicate settings in output section")
+    params.update(config)
+    params["sector"] = sector_name.lower()
+    if sink_name[0] == ".":
+        sink_name = sink_name[1:]
+    sink = OUTPUT_SINKS[sink_name]
+    if isclass(sink):
+        return sink(**params)  # type: ignore
+    else:
+        return partial(sink, **params)
 
 
 @registrator(registry=OUTPUT_SINKS, loglevel=None)
 def register_output_sink(function: OUTPUT_SINK_SIGNATURE = None) -> Callable:
     """Registers a function to save quantities."""
-    from functools import wraps
-    from logging import getLogger
-
-    logger = getLogger(function.__module__)
-
     assert function is not None
-
-    @wraps(function)
-    def decorated(quantity: xr.DataArray, **config: Mapping) -> Optional[Text]:
-        assert function is not None
-        result = function(quantity, **config)
-        if result is not None:
-            msg = "Saving %s to %s" % (config["quantity"], result)
-            logger.info(msg)
-        return result
-
     return function
 
 

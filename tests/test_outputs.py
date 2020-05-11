@@ -139,3 +139,40 @@ def test_from_sector_with_directory(buildings, market, tmpdir):
     output_func(buildings.capacity, market, buildings.technologies)
     assert (Path(tmpdir) / "abc.csv").exists()
     assert (Path(tmpdir) / "abc.csv").is_file()
+
+
+def test_can_register_class():
+    from muse.outputs.sinks import register_output_sink, factory
+
+    @register_output_sink
+    class AClass:
+        def __init__(self, sector, some_args=3):
+            self.sector = sector
+            self.some_args = some_args
+
+        def __call__(self, x):
+            pass
+
+    settings = {"sink": {"name": "AClass"}}
+    sink = factory(settings, sector_name="yoyo")
+    assert isinstance(sink, AClass)
+    assert sink.sector == "yoyo"
+    assert sink.some_args == 3
+
+    settings = {"sink": {"name": "AClass", "some_args": 5}}
+    sink = factory(settings, sector_name="yoyo")
+    assert isinstance(sink, AClass)
+    assert sink.sector == "yoyo"
+    assert sink.some_args == 5
+
+
+def test_can_register_function():
+    from muse.outputs.sinks import register_output_sink, factory
+
+    @register_output_sink
+    def a_function(*args):
+        pass
+
+    settings = {"sink": "a_function"}
+    sink = factory(settings, sector_name="yoyo")
+    assert sink.func is a_function
