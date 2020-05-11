@@ -742,7 +742,7 @@ class ScipyAdapter:
         kwargs = cls._to_scipy_adapter(capacities, productions, bs, *constraints)
 
         def to_muse(x: ndarray) -> Dataset:
-            return ScipyAdapter._back_to_muse(x, capacities, productions)
+            return ScipyAdapter._back_to_muse(x, capacities.costs, productions.costs)
 
         return ScipyAdapter(to_muse=to_muse, **kwargs)
 
@@ -800,8 +800,8 @@ class ScipyAdapter:
                 for k in result.data_vars
             }
         )
-        if len(result):
-            result = result.stack(decision=sorted(result.get("costs", result).dims))
+        if len(result) and "costs" in result.data_vars:
+            result = result.stack(decision=sorted(result["costs"].dims))
         return result
 
     @staticmethod
@@ -870,7 +870,9 @@ class ScipyAdapter:
         return result.rename({k: str(k)[2:-1] for k in result.dims})
 
     @staticmethod
-    def _back_to_muse(x: ndarray, capacity: Dataset, production: Dataset) -> Dataset:
-        capa = ScipyAdapter._back_to_muse_quantity(x[: capacity.costs.size], capacity)
-        prod = ScipyAdapter._back_to_muse_quantity(x[capacity.costs.size :], production)
+    def _back_to_muse(
+        x: ndarray, capacity: DataArray, production: DataArray
+    ) -> Dataset:
+        capa = ScipyAdapter._back_to_muse_quantity(x[: capacity.size], capacity)
+        prod = ScipyAdapter._back_to_muse_quantity(x[capacity.size :], production)
         return Dataset({"capacity": capa, "production": prod})
