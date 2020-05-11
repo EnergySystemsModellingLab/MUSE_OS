@@ -83,7 +83,7 @@ excluded_commodities
 
 plugins
     Path or list of paths to extra python plugins, i.e. files with registered functions
-    such as :py:meth:`~muse.outputs.register_output_quantity`.
+    such as :py:meth:`~muse.outputs.sector.register_output_quantity`.
 
 
 -------------
@@ -415,16 +415,16 @@ output
    - quantity: Name of the quantity to save. Currently, only `capacity` exists,
       refering to :py:func:`muse.outputs.capacity`. However, users can
       customize and create further output quantities by registering with MUSE via
-      :py:func:`muse.outputs.register_output_quantity`. See
-      :py:mod:`muse.outputs` for more details.
+      :py:func:`muse.outputs.sector.register_output_quantity`. See
+      :py:mod:`muse.outputs.sector` for more details.
 
    - sink: the sink is the place (disk, cloud, database, etc...) and format with which
       the computed quantity is saved. Currently only sinks that save to files are
       implemented. The filename can specified via `filename`, as given below. The
       following sinks are available: "csv", "netcfd", "excel". However, more sinks can
       be added by interested users, and registered with MUSE via
-      :py:func:`muse.outputs.register_output_sink`. See
-      :py:mod:`muse.outputs` for more details.
+      :py:func:`muse.outputs.sinks.register_output_sink`. See
+      :py:mod:`muse.outputs.sinks` for more details.
    
    - filename: defines format of the file where to save the data. There several
       standard values that are automatically substituted:
