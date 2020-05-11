@@ -6,7 +6,18 @@ from collections import namedtuple
 from copy import deepcopy
 from logging import getLogger
 from pathlib import Path
-from typing import IO, Dict, List, Mapping, MutableMapping, Optional, Text, Tuple, Union
+from typing import (
+    IO,
+    Dict,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Text,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 from pandas import MultiIndex
@@ -96,6 +107,7 @@ def format_paths(
     path: Optional[Union[Text, Path]] = None,
     cwd: Optional[Union[Text, Path]] = None,
     muse_sectors: Optional[Text] = None,
+    suffixes: Sequence[Text] = (".csv", ".nc", ".xls", ".xlsx", ".py", ".toml"),
 ):
     """Format paths passed to settings.
 
@@ -139,8 +151,8 @@ def format_paths(
         True
 
         Any property ending in `_path`, `_dir`, `_file`, or with a value that can be
-        interpreted as a path with suffix `.csv` or `.toml` is considered a path and
-        transformed:
+        interpreted as a path with suffix `.csv`, `.nc`, `.xls`, `.xlsx`, `.py` or
+        `.toml` is considered a path and transformed:
 
         >>> a = format_paths({"path": "{cwd}/a/b", "a_dir": "{path}/c"})
         >>> str(Path().absolute() / "a" / "b" / "c") == a["a_dir"]
@@ -211,7 +223,7 @@ def format_paths(
 
     def is_a_path(key, value):
         return any(re.search(x, key) is not None for x in path_names) or (
-            isinstance(value, Text) and Path(value).suffix in (".csv", ".toml")
+            isinstance(value, Text) and Path(value).suffix in suffixes
         )
 
     path = format(settings.get("path", str(patterns["path"])))
@@ -227,8 +239,12 @@ def format_paths(
             result[key] = format_paths(value, patterns, path)
         elif isinstance(value, List):
             result[key] = [
-                format_paths(u, patterns, path) if isinstance(u, Mapping) else u
-                for u in result[key]
+                format_paths(item, patterns, path)
+                if isinstance(item, Mapping)
+                else format_path(item, patterns, path)
+                if is_a_path("", item)
+                else item
+                for item in result[key]
             ]
 
     return result
