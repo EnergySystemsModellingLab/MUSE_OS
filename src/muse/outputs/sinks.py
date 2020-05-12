@@ -214,6 +214,8 @@ class YearlyAggregate:
         self.axis = axis
 
     def __call__(self, data: xr.DataArray, year: int):
+        if self.axis in data.dims:
+            data = data.sel(dict([(self.axis, year)]))
         if self.aggregate is None:
             self.aggregate = data
         else:
