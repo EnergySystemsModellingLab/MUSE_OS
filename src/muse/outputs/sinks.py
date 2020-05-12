@@ -197,8 +197,18 @@ def to_excel(quantity: xr.DataArray, filename: Text, **params) -> None:
 class YearlyAggregate:
     """Incrementally aggregates data from year to year."""
 
-    def __init__(self, final_sink: Mapping[Text, Any], sector: Text = "", axis="year"):
-        final_sink["sink"]["overwrite"] = True
+    def __init__(
+        self,
+        final_sink: Optional[MutableMapping[Text, Any]] = None,
+        sector: Text = "",
+        axis="year",
+        **kwargs,
+    ):
+        if final_sink is None:
+            final_sink = dict(**kwargs)
+        else:
+            final_sink["sink"].update(**kwargs)
+        final_sink["overwrite"] = True
         self.sink = factory(final_sink, sector_name=sector)
         self.aggregate: Optional[xr.DataArray] = None
         self.axis = axis
