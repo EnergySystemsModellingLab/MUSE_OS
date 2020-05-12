@@ -208,7 +208,11 @@ class YearlyAggregate:
             final_sink = dict(**kwargs)
         else:
             final_sink["sink"].update(**kwargs)
-        final_sink["overwrite"] = True
+        if "overwrite" not in final_sink and not (
+            isinstance(final_sink.get("sink", None), Mapping)
+            and "overwrite" in final_sink["sink"]
+        ):
+            final_sink["overwrite"] = True
         self.sink = factory(final_sink, sector_name=sector)
         self.aggregate: Optional[xr.DataArray] = None
         self.axis = axis

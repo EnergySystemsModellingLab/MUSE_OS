@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Text
 
 import numpy as np
-import xarray as xr
 import pandas as pd
+import xarray as xr
 from pytest import approx, importorskip, mark
 
 from muse.outputs.sector import factory, register_output_quantity
@@ -186,15 +186,19 @@ def test_yearly_aggregate():
     received_data = None
     gyear = None
     gsector = None
+    goverwrite = None
 
     @register_output_sink(name="dummy")
-    def dummy(data, year: int, sector: Text):
-        nonlocal received_data, gyear, gsector
+    def dummy(data, year: int, sector: Text, overwrite: bool):
+        nonlocal received_data, gyear, gsector, goverwrite
         received_data = data
         gyear = year
         gsector = sector
+        goverwrite = overwrite
 
-    sink = factory({"sink": {"aggregate": "dummy"}}, sector_name="yoyo")
+    sink = factory(
+        dict(overwrite=True, sink=dict(aggregate="dummy")), sector_name="yoyo"
+    )
 
     data = xr.DataArray([1, 0], coords=dict(a=[2, 4]), dims="a")
     data["year"] = 2010
@@ -202,6 +206,7 @@ def test_yearly_aggregate():
     assert sink(data, 2010) is None
     assert gyear == 2010
     assert gsector == "yoyo"
+    assert goverwrite is True
     assert received_data is data
 
     data = xr.DataArray([0, 1], coords=dict(a=[2, 4]), dims="a")
