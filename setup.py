@@ -19,7 +19,7 @@ if sys.version_info < (3, 7):
 
 tests_require = [
     "pytest>4.0.2",
-    "flake8",
+    "flake8!=3.8.1,!=3.8.0",
     "black",
     "pytest-flake8",
     "IPython",
