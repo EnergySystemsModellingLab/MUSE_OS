@@ -83,7 +83,7 @@ excluded_commodities
 
 plugins
     Path or list of paths to extra python plugins, i.e. files with registered functions
-    such as :py:meth:`~muse.outputs.sector.register_output_quantity`.
+    such as :py:func:`~muse.outputs.sector.register_output_quantity`.
 
 
 -------------
@@ -274,7 +274,7 @@ A sector accepts a number of attributes and subsections.
 type
    Defines the kind of sector this is. *Standard* sectors are those with type
    "default". This value corresponds to the name with which a sector class is registerd
-   with MUSE, via :py:meth:`~muse.sectors.register_sector`.
+   with MUSE, via :py:func:`~muse.sectors.register_sector`.
 
 .. _sector-priority:
 
@@ -413,7 +413,7 @@ output
    The following attributes are available:
 
    - quantity: Name of the quantity to save. Currently, only `capacity` exists,
-      refering to :py:func:`muse.outputs.capacity`. However, users can
+      refering to :py:func:`muse.outputs.sector.capacity`. However, users can
       customize and create further output quantities by registering with MUSE via
       :py:func:`muse.outputs.sector.register_output_quantity`. See
       :py:mod:`muse.outputs.sector` for more details.
