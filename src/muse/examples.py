@@ -75,7 +75,7 @@ def copy_model(
     if path.exists() and not path.is_dir():
         raise IOError(f"{path} exists and is not a directory")
 
-    path /= f"model"
+    path /= "model"
     if path.exists():
         if not path.is_dir():
             raise IOError(f"{path} exists and is not a directory")

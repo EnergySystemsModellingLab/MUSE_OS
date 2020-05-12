@@ -136,8 +136,8 @@ def reference_timeslice(
     indices = MultiIndex.from_tuples(levels, names=level_names)
 
     if any(
-        reduce(set.union, indices.levels[:l], set()).intersection(indices.levels[l])
-        for l in range(1, indices.nlevels)
+        reduce(set.union, indices.levels[:i], set()).intersection(indices.levels[i])
+        for i in range(1, indices.nlevels)
     ):
         raise ValueError("Names from different levels should not overlap.")
 
