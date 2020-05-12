@@ -444,6 +444,28 @@ output
       overwrite an existing file. Defaults to `False`. With MUSE, shooting oneself in
       the foot is an elective.
 
+   There is a special output sink for aggregating over years. It can be invoked as
+   follows:
+
+   .. code-block:: TOML
+
+      [[sectors.commercial.outputs]]
+      quantity = "capacity"
+      sink.aggregate = 'csv'
+
+   Or, if specifying additional output, where ... can be any parameter for the final
+   sink:
+
+   .. code-block:: TOML
+
+      [[sectors.commercial.outputs]]
+      quantity = "capacity"
+      sink.aggregate.name = { ... }
+
+   Note that the aggregate sink always overwrites the final file, since it will
+   overwrite itself.
+
+
 technodata
    Path to a csv file containing the characterization of the technologies involved in
    the sector, e.g. lifetime, capital costs, etc... See :ref:`inputs-technodata`.

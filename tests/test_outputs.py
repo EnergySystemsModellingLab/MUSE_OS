@@ -1,9 +1,10 @@
 """Test saving outputs to file."""
 from pathlib import Path
+from typing import Text
 
 import numpy as np
 import xarray as xr
-from pytest import importorskip, mark
+from pytest import importorskip, mark, approx
 
 from muse.outputs.sector import factory, register_output_quantity
 
@@ -176,3 +177,36 @@ def test_can_register_function():
     settings = {"sink": "a_function"}
     sink = factory(settings, sector_name="yoyo")
     assert sink.func is a_function
+
+
+def test_yearly_aggregate():
+    from muse.outputs.sinks import register_output_sink, factory
+
+    received_data = None
+    gyear = None
+    gsector = None
+
+    @register_output_sink(name="dummy")
+    def dummy(data, year: int, sector: Text):
+        nonlocal received_data, gyear, gsector
+        received_data = data
+        gyear = year
+        gsector = sector
+
+    sink = factory({"sink": {"aggregate": "dummy"}}, sector_name="yoyo")
+
+    data = xr.DataArray([1, 0], coords=dict(a=[2, 4]), dims="a")
+    data["year"] = 2010
+
+    assert sink(data, 2010) is None
+    assert gyear == 2010
+    assert gsector == "yoyo"
+    assert received_data is data
+
+    data = xr.DataArray([0, 1], coords=dict(a=[2, 4]), dims="a")
+    data["year"] = 2020
+    assert sink(data, 2020) is None
+    assert gyear == 2020
+    assert gsector == "yoyo"
+    assert received_data.sel(year=2010).values == approx(np.array([1, 0]))
+    assert received_data.sel(year=2020).values == approx(np.array([0, 1]))
