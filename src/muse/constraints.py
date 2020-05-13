@@ -379,27 +379,17 @@ def lp_costs(technologies: Dataset, costs: DataArray, timeslices: DataArray) -> 
         >>> lpcosts = lp_costs(
         ...     technologies.sel(year=2020, region="USA"), costs, timeslices
         ... )
-        >>> lpcosts
-        <xarray.Dataset>
-        Dimensions:      (asset: 4, commodity: 2, replacement: 4, timeslice: 6)
-        Coordinates:
-          * asset        (asset) object 'estove' 'gasboiler' 'gasstove' 'heatpump'
-          * replacement  (replacement) object 'estove' 'gasboiler' 'gasstove' 'heatpump'
-          * timeslice    (timeslice) MultiIndex
-          - month        (timeslice) object 'all-year' 'all-year' ... 'all-year'
-          - day          (timeslice) object 'all-week' 'all-week' ... 'all-week'
-          - hour         (timeslice) object 'night' 'morning' ... 'late-peak' 'evening'
-          * commodity    (commodity) object 'cook' 'heat'
-            region       <U3 'USA'
-            year         ... 2020
-            comm_usage   (commodity) ...
-        Data variables:
-            capacity     (asset, replacement) int64 0 1 2 3 4 5 6 ... 10 11 12 13 14 15
-            production   (timeslice, asset, replacement, commodity) float64 0.0 ... 0.0
+        >>> assert "capacity" in lpcosts.data_vars
+        >>> assert "production" in lpcosts.data_vars
 
         The capacity costs correspond exactly to the input costs:
 
         >>> assert (costs == lpcosts.capacity).all()
+
+        The production is zero in this context. It does not enter the cost function of
+        the LP problem:
+
+        >>> assert (lpcosts.production == 0).all()
 
         They should correspond to a data-array with dimensions ``(asset, replacement)``
         (and possibly ``region`` as well).
@@ -646,19 +636,25 @@ class ScipyAdapter:
         >>> constraint = cs.max_capacity_expansion(
         ...     assets, search, market, res.technologies,
         ... )
-        >>> constraint
-        <xarray.Dataset>
-        Dimensions:      (region: 1, replacement: 4)
-        Coordinates:
-          * region       (region) object 'USA'
-            technology   (replacement) object 'estove' 'gasboiler' 'gasstove' 'heatpump'
-          * replacement  (replacement) object 'estove' 'gasboiler' 'gasstove' 'heatpump'
-        Data variables:
-            b            (replacement, region) float64 500.0 500.0 500.0 500.0
-            capacity     ... 1
-            production   ... 0
-        Attributes:
-            kind:     ConstraintKind.UPPER_BOUND
+
+        The constraint acts over capacity decision variables only:
+
+        >>> assert constraint.production.data == np.array(0)
+        >>> assert len(constraint.production.dims) == 0
+
+        It is an upper bound for a straightforward sum over the capacities for a given
+        technology. The matrix operator is simply the identity:
+
+        >>> assert constraint.capacity.data == np.array(1)
+        >>> assert len(constraint.capacity.dims) == 0
+
+        And the upperbound is exanded over the replacement technologies (and region),
+        but not over the assets. Hence the assets will be summed over in the final
+        constraint:
+
+        >>> assert (constraint.b.data == np.array([[500.0]] * 4)).all()
+        >>> assert set(constraint.b.dims) == {"replacement", "region"}
+        >>> assert constraint.kind == cs.ConstraintKind.UPPER_BOUND
 
         As shown above, it does not bind the production decision variables. Hence,
         production is zero. The matrix operator for the capacity is simply the identity.
