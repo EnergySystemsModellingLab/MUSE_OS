@@ -78,11 +78,10 @@ from typing import (
     cast,
 )
 
+from muse.registration import registrator
 from numpy import ndarray
 from pandas import Index
 from xarray import DataArray, Dataset
-
-from muse.registration import registrator
 
 CAPACITY_DIMS = "asset", "replacement", "region"
 """Default dimensions for capacity decision variables."""
@@ -241,12 +240,14 @@ def max_capacity_expansion(
     year = market.year.min()
     forecast_year = forecast + year
 
+    kwargs = dict(technology=search_space.replacement, year=year)
+    if "region" in assets and "region" in technologies.dims:
+        kwargs["region"] = assets.region
     techs = filter_input(
         technologies[
             ["max_capacity_addition", "max_capacity_growth", "total_capacity_limit"]
         ],
-        technology=search_space.replacement,
-        year=year,
+        **kwargs,
     )
     assert isinstance(techs, Dataset)
 
@@ -648,12 +649,12 @@ class ScipyAdapter:
         >>> assert constraint.capacity.data == np.array(1)
         >>> assert len(constraint.capacity.dims) == 0
 
-        And the upperbound is exanded over the replacement technologies (and region),
+        And the upperbound is exanded over the replacement technologies,
         but not over the assets. Hence the assets will be summed over in the final
         constraint:
 
         >>> assert (constraint.b.data == np.array([[500.0]] * 4)).all()
-        >>> assert set(constraint.b.dims) == {"replacement", "region"}
+        >>> assert set(constraint.b.dims) == {"replacement"}
         >>> assert constraint.kind == cs.ConstraintKind.UPPER_BOUND
 
         As shown above, it does not bind the production decision variables. Hence,

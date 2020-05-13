@@ -42,14 +42,15 @@ __all__ = [
     "register_investment",
     "INVESTMENT_SIGNATURE",
 ]
-from typing import Callable, Mapping, MutableMapping, Optional, Text, Union
+from typing import Callable, List, Mapping, MutableMapping, Optional, Text, Union
 
+from muse.constraints import Constraint
+from muse.registration import registrator
+from mypy_extensions import KwArg
 from xarray import DataArray, Dataset
 
-from muse.registration import registrator
-
 INVESTMENT_SIGNATURE = Callable[
-    [DataArray, DataArray, DataArray, DataArray, Dataset], DataArray
+    [DataArray, DataArray, DataArray, DataArray, Dataset, KwArg()], DataArray
 ]
 """Investment signature. """
 
@@ -148,8 +149,8 @@ def factory(settings: Union[Text, Mapping] = "match_demand") -> Callable:
     def compute_investment(
         demand: DataArray,
         search: Dataset,
-        max_capacity: DataArray,
         technologies: Dataset,
+        constraints: List[Constraint],
         **kwargs,
     ) -> DataArray:
         """Computes investment needed to fulfill demand.
@@ -169,7 +170,7 @@ def factory(settings: Union[Text, Mapping] = "match_demand") -> Callable:
         return function(  # type: ignore
             demand,
             search.decision.rank("replacement").astype(int),
-            max_capacity,
+            constraints[0].b,
             search.space,
             technologies,
             **params,

@@ -1,5 +1,5 @@
 """Test buildings agents."""
-from pytest import approx, fixture, mark
+from pytest import fixture
 
 
 @fixture
@@ -58,49 +58,6 @@ def test_create_retrofit(agent_args, technologies, stock):
     assert len(agent.assets.capacity) != 0
 
 
-@mark.parametrize("time_period", [1, 5, 0.01])
-@mark.parametrize("scale_growth", [1, 0.01])
-@mark.parametrize("scale_add", [1, 0.01])
-@mark.parametrize("scale_limit", [1, 0.01])
-def test_max_capacity_expansion(
-    retro_agent, technologies, time_period, scale_growth, scale_limit, scale_add
-):
-    # disable/enable constraints by adding a factor
-    technologies.max_capacity_growth[:] *= scale_growth
-    technologies.max_capacity_growth[:] *= scale_limit
-    technologies.total_capacity_limit[:] *= scale_add
-
-    max_cap = retro_agent.max_capacity_expansion(technologies, time_period=time_period)
-
-    techs = technologies.sel(year=retro_agent.year, region=retro_agent.region)
-    assets = (
-        retro_agent.assets.groupby("technology")
-        .sum("asset")
-        .reindex_like(techs.technology)
-        .fillna(0)
-    )
-
-    current_cap = assets.capacity.sel(year=retro_agent.year)
-    forecast_cap = assets.capacity.interp(
-        year=retro_agent.forecast_year, method="linear"
-    )
-
-    tot_cap_lim = techs.total_capacity_limit
-    max_cap_gro = techs.max_capacity_growth
-    max_cap_add = techs.max_capacity_addition
-
-    left = tot_cap_lim + 1e-12 >= forecast_cap + max_cap
-    right = tot_cap_lim <= forecast_cap + 1e-12
-    assert (left | right).all()
-    decom = current_cap - forecast_cap
-    left = time_period * max_cap_gro * current_cap + decom + 1e-12
-    assert (left >= max_cap).where(current_cap > 0, True).all()
-    assert (time_period * max_cap_add + 1e-12 >= max_cap).all()
-    is_new_tech = ~technologies.technology.isin(retro_agent.assets.technology)
-    assert max_cap.sel(technology=is_new_tech).values != approx(0)
-
-
-# Some random numbers dont result in viable retro agent
 def test_run_retro_agent(retro_agent, technologies, agent_market, demand_share):
     from copy import deepcopy
 

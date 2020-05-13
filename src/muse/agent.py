@@ -3,9 +3,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Callable, List, Mapping, Optional, Sequence, Text, Union
 
-from xarray import DataArray, Dataset
-
 from muse.defaults import DEFAULT_SECTORS_DIRECTORY
+from xarray import DataArray, Dataset
 
 
 class AgentBase(ABC):
@@ -247,7 +246,9 @@ class Agent(AgentBase):
             demand, search.space, technologies, market
         )
 
-        new_assets = self._compute_new_assets(demand, search, technologies, time_period)
+        new_assets = self._compute_new_assets(
+            demand, search, technologies, market, time_period
+        )
 
         # add invested capacity to current assets
         self.assets = self.merge_transform(
@@ -255,89 +256,6 @@ class Agent(AgentBase):
         )
 
         self.year += time_period
-
-    def max_capacity_expansion(
-        self,
-        technologies: Dataset,
-        technology: Optional[DataArray] = None,
-        time_period: int = 1,
-    ) -> DataArray:
-        r"""Maximum capacity expansion.
-
-        Limits by how much the capacity of each technology owned by an agent can grow in
-        a given year. This is a constraint on the agent's ability to invest in a
-        technology.
-
-        Let :math:`L_t^r(y)` be the total capacity limit for a given year, technology,
-        and region. :math:`G_t^r(y)` is the maximum growth. And :math:`W_t^r(y)` is
-        the maximum additional capacity. :math:`y=y_0` is the current year and
-        :math:`y=y_1` is the year marking the end of the investment period.
-
-        Let :math:`\mathcal{A}^{i, r}_{t, \iota}(y)` be the current assets, before
-        invesment, and let :math:`\Delta\mathcal{A}^{i,r}_t` be the future investements.
-        The the constraint on agent :math:`i` are given as:
-
-        .. math::
-
-            L_t^r(y_0) - \sum_\iota \mathcal{A}^{i, r}_{t, \iota}(y_1)
-                \geq \Delta\mathcal{A}^{i,r}_t
-
-            (y_1 - y_0 + 1) G_t^r(y_0) \sum_\iota \mathcal{A}^{i, r}_{t, \iota}(y_0)
-                - \sum_\iota \mathcal{A}^{i, r}_{t, \iota}(y_1)
-                \geq \Delta\mathcal{A}^{i,r}_t
-
-            (y_1 - y_0)W_t^r(y_0) \geq  \Delta\mathcal{A}^{i,r}_t
-
-        The three constraints are combined into a single one which is returned as the
-        maximum capacity expansion, :math:`\Gamma_t^{r, i}`. The maximum capacity
-        expansion cannot impose negative investments:
-
-        .. math::
-
-            \Gamma_t^{r, i} \geq 0
-        """
-        if technology is None:
-            technology = technologies.technology
-
-        techs = self.filter_input(
-            technologies[
-                ["max_capacity_addition", "max_capacity_growth", "total_capacity_limit"]
-            ],
-            year=self.year,
-            technology=technology,
-        )
-        assert isinstance(techs, Dataset)
-
-        if len(self.assets.technology) != 0:
-            capacity = (
-                self.assets.capacity.groupby("technology")
-                .sum("asset")
-                .interp(year=[self.year, self.forecast_year], method=self.interpolation)
-                .rename(technology=technology.dims[0])
-                .reindex_like(technology)
-                .fillna(0)
-            )
-        else:
-            capacity = (
-                self.assets.capacity.sum("asset")
-                .interp(year=[self.year, self.forecast_year], method=self.interpolation)
-                .fillna(0)
-            )
-
-        add_cap = techs.max_capacity_addition * time_period
-
-        limit = techs.total_capacity_limit
-        forecasted = capacity.sel(year=self.forecast_year, drop=True)
-        total_cap = (limit - forecasted).clip(min=0).rename("total_cap")
-
-        max_growth = techs.max_capacity_growth
-        initial = capacity.sel(year=self.year, drop=True)
-        growth_cap = initial * (max_growth * time_period + 1) - forecasted
-
-        zero_cap = add_cap.where(add_cap < total_cap, total_cap)
-        with_growth = zero_cap.where(zero_cap < growth_cap, growth_cap)
-        result = with_growth.where(initial > 0, zero_cap)
-        return result.rename("maximum capacity expansion")
 
     def _compute_objective(
         self,
@@ -355,16 +273,20 @@ class Agent(AgentBase):
         demand: DataArray,
         search: Dataset,
         technologies: Dataset,
+        market: Dataset,
         time_period: int,
     ) -> DataArray:
         """Computes investment and retirement profile."""
         from muse.investments import cliff_retirement_profile
+        from muse.constraints import max_capacity_expansion
 
-        max_cap = self.max_capacity_expansion(
-            technologies, technology=search.replacement, time_period=time_period
+        max_cap = max_capacity_expansion(
+            self.assets, search, market, technologies, forecast=self.forecast
         ).drop_vars("technology")
 
-        investments = self.invest(demand, search, max_cap, technologies, year=self.year)
+        investments = self.invest(
+            demand, search, technologies, [max_cap], year=self.year
+        )
         investments = investments.sum("asset")
         investments = investments.where(investments > self.tolerance, 0)
 
