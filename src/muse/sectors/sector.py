@@ -1,6 +1,17 @@
 from __future__ import annotations
 
-from typing import Any, Callable, List, Mapping, Optional, Sequence, Text, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Text,
+    Tuple,
+    Union,
+    cast,
+)
 
 from pandas import MultiIndex
 from xarray import DataArray, Dataset
@@ -162,8 +173,8 @@ class Sector(AbstractSector):  # type: ignore
 
         :py:mod:`muse.interactions` contains MUSE's base interactions
         """
-        self.outputs: Callable = (  # type: ignore
-            ofactory() if outputs is None else outputs
+        self.outputs: Callable = (
+            cast(Callable, ofactory()) if outputs is None else outputs
         )
         """A function for outputing data for post-mortem analysis."""
         self.production = production if production is not None else maximum_production
@@ -256,7 +267,7 @@ class Sector(AbstractSector):  # type: ignore
         # > output to mca
         result = self.market_variables(market, technologies)
         # < output to mca
-        self.outputs(self.capacity, result, technologies)
+        self.outputs(result, self.capacity, technologies)
         # > to mca timeslices
         result = self.convert_market_timeslice(
             result.groupby("region").sum("asset"), mca_market.timeslice
@@ -366,7 +377,9 @@ class Sector(AbstractSector):  # type: ignore
         from muse.utilities import reduce_assets, coords_to_multiindex
 
         capa = reduce_assets(capacity, ("region", "technology"))
-        return coords_to_multiindex(capa, "asset").unstack("asset").fillna(0)
+        return cast(
+            DataArray, coords_to_multiindex(capa, "asset").unstack("asset").fillna(0)
+        )
 
     @staticmethod
     def convert_market_timeslice(

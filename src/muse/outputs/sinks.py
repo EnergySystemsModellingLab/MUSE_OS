@@ -48,9 +48,10 @@ def factory(parameters: Mapping, sector_name: Text = "default") -> Callable:
         elif isinstance(params, Text):
             params = dict(name=params)
         else:
-            params = dict(
-                name=config.get("suffix", Path(filename).suffix if filename else "csv")
-            )
+            suffix = config.get("suffix", Path(filename).suffix if filename else "csv")
+            if not suffix:
+                suffix = "csv"
+            params = dict(name=suffix)
         if "aggregate" in params:
             params["name"] = "aggregate"
             params["final_sink"] = dict(
