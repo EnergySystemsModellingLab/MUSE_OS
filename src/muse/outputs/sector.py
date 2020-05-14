@@ -1,7 +1,7 @@
-"""Output quantities and sinks.
+"""Output quantities.
 
-Functions that compute quantities for post-simulation analysis should all follow
-the same signature:
+Functions that compute sectorial quantities for post-simulation analysis should all
+follow the same signature:
 
 .. code-block:: python
 
@@ -18,23 +18,8 @@ a dataset containing market-related quantities, and a dataset characterizing the
 technologies in the market. It returns a single DataArray object.
 
 The function should never modify it's arguments.
-
-Sinks take as argument a DataArray and store it somewhere. Additionally they
-take a dictionary as argument. This dictionary will always contains the items
-('quantity', 'sector', 'year') referring to the name of the quantity, the name
-of the calling sector, the current year. They may contain additional parameters
-which depend on the actual sink, such as 'filename'.
-
-Optionally, a description of the storage (filename, etc) can be returned.
-
-The signature of a sink is:
-
-.. code-block:: python
-
-    @register_output_sink(name="netcfd")
-    def to_netcfd(quantity: DataArray, config: Mapping) -> Optional[Text]:
-        pass
 """
+from pathlib import Path
 from typing import Callable, List, Mapping, Optional, Text, Union
 
 from xarray import DataArray, Dataset
@@ -46,13 +31,6 @@ OUTPUT_QUANTITY_SIGNATURE = Callable[[DataArray, Dataset, Dataset], DataArray]
 
 OUTPUT_QUANTITIES: Mapping[Text, OUTPUT_QUANTITY_SIGNATURE] = {}
 """Quantity for post-simulation analysis."""
-
-OUTPUT_SINKS: Mapping[Text, Callable] = {}
-"""Stores a quantity somewhere."""
-
-
-OUTPUT_SINK_SIGNATURE = Callable[[DataArray, Mapping], Optional[Text]]
-"""Signature of functions used to save quantities."""
 
 OUTPUTS_PARAMETERS = Union[Text, Mapping]
 """Acceptable Datastructures for outputs parameters"""
@@ -75,31 +53,26 @@ def register_output_quantity(function: OUTPUT_QUANTITY_SIGNATURE = None) -> Call
     return decorated
 
 
-@registrator(registry=OUTPUT_SINKS, loglevel=None)
-def register_output_sink(function: OUTPUT_SINK_SIGNATURE = None) -> Callable:
-    """Registers a function to save quantities."""
-    from functools import wraps
-    from logging import getLogger
+def quantities_factory(parameters: List[Mapping]) -> List[Callable]:
+    from functools import partial
 
-    logger = getLogger(function.__module__)
-
-    assert function is not None
-
-    @wraps(function)
-    def decorated(quantity: DataArray, config: Mapping) -> Optional[Text]:
-        assert function is not None
-        result = function(quantity, config)
-        if result is not None:
-            msg = "Saving %s to %s" % (config["quantity"], result)
-            logger.info(msg)
-        return result
-
-    return function
+    quantities: List[Callable] = []
+    for outputs in parameters:
+        config = dict(**outputs)
+        params = config.pop("quantity")
+        if isinstance(params, Mapping):
+            params = dict(**params)
+            quantity = params.pop("name")
+        else:
+            quantity = params
+            params = {}
+        quantities.append(partial(OUTPUT_QUANTITIES[quantity], **params))
+    return quantities
 
 
 def factory(
-    *parameters: OUTPUTS_PARAMETERS,
-) -> Callable[[DataArray, Dataset, Dataset], None]:
+    *parameters: OUTPUTS_PARAMETERS, sector_name: Text = "default"
+) -> Callable[[DataArray, Dataset, Dataset], List[Path]]:
     """Creates outputs functions for post-mortem analysis.
 
     Each parameter is a dictionary containing the following:
@@ -119,6 +92,8 @@ def factory(
     They default to `{'quantity': string}` (and the sink will default to
     "csv").
     """
+    from muse.outputs.sinks import factory as sinks_factory
+
     if isinstance(parameters, Text):
         params: List = [{"quantity": parameters}]
     elif isinstance(parameters, Mapping):
@@ -128,18 +103,18 @@ def factory(
             {"quantity": o} if isinstance(o, Text) else o for o in parameters
         ]
 
-    def save_multiple_outputs(
-        capacity: DataArray,
-        market: Dataset,
-        technologies: Dataset,
-        sector: Text = "default",
-    ):
+    quantities = quantities_factory(params)
+    sinks = sinks_factory(params, sector_name=sector_name)
 
-        for outputs in params:
-            config = outputs.copy()
-            config["sector"] = sector
-            config["year"] = int(market.year.min())
-            save_output(config, capacity, market, technologies)
+    def save_multiple_outputs(
+        capacity: DataArray, market: Dataset, technologies: Dataset
+    ) -> List[Path]:
+
+        paths = []
+        for quantity, sink in zip(quantities, sinks):
+            data = quantity(capacity=capacity, market=market, technologies=technologies)
+            paths.append(sink(data, year=int(market.year.min())))
+        return paths
 
     return save_multiple_outputs
 
@@ -209,7 +184,7 @@ def costs(
 
 
 def save_output(
-    config: Mapping, capacity: DataArray, market: Dataset, technologies: Dataset
+    capacity: DataArray, market: Dataset, technologies: Dataset, **config
 ) -> Optional[Text]:
     """Computes output quantity and saves it to the sink.
 
@@ -228,6 +203,7 @@ def save_output(
     Returns: Optionally, text describing where the data was saved, e.g. filename.
     """
     from pathlib import Path
+    from muse.outputs.sinks import OUTPUT_SINKS
 
     config = dict(**config)
     quantity_params = config.pop("quantity")
@@ -253,118 +229,11 @@ def save_output(
     if len(set(sink_params).intersection(config)) != 0:
         raise ValueError("duplicate settings in output section")
     sink_params.update(config)
+    if "year" not in sink_params:
+        sink_params["year"] = int(market.year.min())
     if sink[0] == ".":
         sink = sink[1:]
     data = OUTPUT_QUANTITIES[quantity](  # type: ignore
         capacity, market, technologies, **quantity_params
     )
     return OUTPUT_SINKS[sink](data, **sink_params)
-
-
-def sink_to_file(suffix: Text):
-    """Simplifies sinks to files.
-
-    The decorator takes care of figuring out the path to the file, as well as trims the
-    configuration dictionary to include only parameters for the sink itself. The
-    decorated function returns the path to the output file.
-    """
-    from functools import wraps
-    from logging import getLogger
-    from pathlib import Path
-    from muse.defaults import DEFAULT_OUTPUT_DIRECTORY
-
-    def decorator(function: Callable[[DataArray, Text], None]):
-        @wraps(function)
-        def decorated(quantity: DataArray, **config) -> Path:
-            params = config.copy()
-            filestring = str(
-                params.pop(
-                    "filename", "{default_output_dir}/{Sector}{year}{Quantity}{suffix}"
-                )
-            )
-            overwrite = params.pop("overwrite", False)
-            year = params.pop("year", None)
-            sector = params.pop("sector", "")
-            lsuffix = params.pop("suffix", suffix)
-            if lsuffix is not None and len(lsuffix) > 0 and lsuffix[0] != ".":
-                lsuffix = "." + lsuffix
-            # assumes directory if filename has no suffix and does not exist
-            name = getattr(quantity, "name", function.__name__)
-            filename = Path(
-                filestring.format(
-                    cwd=str(Path().absolute()),
-                    quantity=name,
-                    Quantity=name.title(),
-                    sector=sector,
-                    Sector=sector.title(),
-                    year=year,
-                    suffix=lsuffix,
-                    default_output_dir=str(DEFAULT_OUTPUT_DIRECTORY),
-                )
-            )
-            if filename.exists():
-                if overwrite:
-                    filename.unlink()
-                else:
-                    msg = (
-                        f"File {filename} already exists and overwrite argument has "
-                        "not been given."
-                    )
-                    getLogger(function.__module__).critical(msg)
-                    raise IOError(msg)
-
-            filename.parent.mkdir(parents=True, exist_ok=True)
-            function(quantity, filename, **params)  # type: ignore
-            return filename
-
-        return decorated
-
-    return decorator
-
-
-@register_output_sink(name="csv")
-@sink_to_file(".csv")
-def to_csv(quantity: DataArray, filename: Text, **params) -> None:
-    """Saves data array to csv format, using pandas.to_csv.
-
-    Arguments:
-        quantity: The data to be saved
-        filename: File to which the data should be saved
-        params: A configuration dictionary accepting any argument to `pandas.to_csv`
-    """
-    params.update({"float_format": "%.11f"})
-    quantity.to_dataframe().to_csv(filename, **params)
-
-
-@register_output_sink(name=("netcdf", "nc"))
-@sink_to_file(".nc")
-def to_netcdf(quantity: DataArray, filename: Text, **params) -> None:
-    """Saves data array to csv format, using xarray.to_netcdf.
-
-    Arguments:
-        quantity: The data to be saved
-        filename: File to which the data should be saved
-        params: A configuration dictionary accepting any argument to `xarray.to_netcdf`
-    """
-    name = quantity.name if quantity.name is not None else "quantity"
-    Dataset({name: quantity}).to_netcdf(filename, **params)
-
-
-@register_output_sink(name=("excel", "xlsx"))
-@sink_to_file(".xlsx")
-def to_excel(quantity: DataArray, filename: Text, **params) -> None:
-    """Saves data array to csv format, using pandas.to_excel.
-
-    Arguments:
-        quantity: The data to be saved
-        filename: File to which the data should be saved
-        params: A configuration dictionary accepting any argument to `pandas.to_excel`
-    """
-    from logging import getLogger
-
-    try:
-        quantity.to_dataframe().to_excel(filename, **params)
-    except ModuleNotFoundError as e:
-        msg = "Cannot save to excel format: missing python package (%s)" % e
-        getLogger(__name__).critical(msg)
-        raise
