@@ -242,7 +242,6 @@ def save_output(
 
 def aggregate_sector(sector: AbstractSector, year) -> DataArray:
     """Sector output to desired dimensions using reduce_assets"""
-    from muse.utilities import reduce_assets
 
     capa_sector = []
     agent_name = sorted(list(set([a.name for a in sector.agents])))
