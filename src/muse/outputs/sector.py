@@ -239,26 +239,28 @@ def save_output(
     )
     return OUTPUT_SINKS[sink](data, **sink_params)
 
+
 def aggregate_sector(sector: AbstractSector, year) -> DataArray:
     """Sector output to desired dimensions using reduce_assets"""
     from muse.utilities import reduce_assets
+
     capa_sector = []
-    agent_name = sorted(list(set([a.name for a in sector.agents])) )
+    agent_name = sorted(list(set([a.name for a in sector.agents])))
     capa_sector = []
     for u in sector.agents:
         for a in agent_name:
             if u.name == a:
                 capa_agent = u.assets.capacity.sel(year=year)
-                capa_agent['agent'] = u.name
-                capa_agent['type'] = u.category
-                capa_agent['sector'] = sector.name
+                capa_agent["agent"] = u.name
+                capa_agent["type"] = u.category
+                capa_agent["sector"] = sector.name
                 capa_sector.append(capa_agent)
     capa_sector = concat(capa_sector, dim="asset")
- #   capa_reduced = reduce_assets(capa_sector, coords=(["agent","type","sector","region","year","technology"]))
+    #   capa_reduced = reduce_assets(capa_sector, coords=(["agent","type","sector","region","year","technology"]))
     return capa_sector
 
 
 def aggregate_sectors(sectors: List[AbstractSector], year) -> DataArray:
     """Aggregate outputs from all sectors"""
-    alldata = [aggregate_sector(sector, year)  for sector in sectors]
+    alldata = [aggregate_sector(sector, year) for sector in sectors]
     return concat(alldata, dim="asset")
