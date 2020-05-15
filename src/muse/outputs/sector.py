@@ -255,7 +255,6 @@ def aggregate_sector(sector: AbstractSector, year) -> DataArray:
                 capa_agent["sector"] = sector.name
                 capa_sector.append(capa_agent)
     capa_sector = concat(capa_sector, dim="asset")
-    #   capa_reduced = reduce_assets(capa_sector, coords=(["agent","type","sector","region","year","technology"]))
     return capa_sector
 
 
