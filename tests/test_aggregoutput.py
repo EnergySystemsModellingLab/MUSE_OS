@@ -1,10 +1,7 @@
 import numpy as np
-import pandas as pd
-from xarray import DataArray, concat
-from muse.utilities import reduce_assets
+from xarray import DataArray
 from muse import examples
 from muse.outputs.sector import aggregate_sector, aggregate_sectors
-from typing import List
 
 
 def test_aggregate_sector():
