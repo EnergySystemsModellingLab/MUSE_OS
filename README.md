@@ -93,7 +93,7 @@ The file can viewed from any web browser.
 [vscode](https://code.visualstudio.com/) users will find that the repository is setup
 with default settings file.  Users will still need to [choose the virtual
 environment](https://code.visualstudio.com/docs/python/environments#_select-and-activate-an-environment),
-or conda environment where to run the code. This will change the `.vscode/settings.toml`
+or conda environment where to run the code. This will change the `.vscode/settings.json`
 file and add a user-specific path to it. In order to avoid committing those changes, it
 is a good idea to run the following command once per worktree (e.g. right after
 cloning):
