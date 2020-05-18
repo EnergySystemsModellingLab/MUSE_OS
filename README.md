@@ -94,14 +94,8 @@ The file can viewed from any web browser.
 with default settings file.  Users will still need to [choose the virtual
 environment](https://code.visualstudio.com/docs/python/environments#_select-and-activate-an-environment),
 or conda environment where to run the code. This will change the `.vscode/settings.json`
-file and add a user-specific path to it. In order to avoid committing those changes, it
-is a good idea to run the following command once per worktree (e.g. right after
-cloning):
-
-```bash
-git update-index --skip-worktree .vscode/settings.json
-```
-
+file and add a user-specific path to it. Users should try and avoid commiting changes to
+`.vscode/settings.json` indiscriminately.
 
 Private SGI Model and Data
 --------------------------
