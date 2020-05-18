@@ -245,7 +245,6 @@ def aggregate_sector(sector: AbstractSector, year) -> DataArray:
 
     capa_sector = []
     agent_name = sorted(list(set([a.name for a in sector.agents])))
-    capa_sector = []
     for u in sector.agents:
         for a in agent_name:
             if u.name == a:
