@@ -461,7 +461,7 @@ def maximum_production(technologies: Dataset, capacity: DataArray, **filters):
         technologies[["fixed_outputs", "utilization_factor"]], capa
     )
     ftechs = filter_input(
-        btechs, **{k: v for k, v in filters.items() if k in technologies.dims}
+        btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
     )
     result = capa * ftechs.fixed_outputs * ftechs.utilization_factor
     result[{"commodity": ~is_enduse(result.comm_usage)}] = 0
