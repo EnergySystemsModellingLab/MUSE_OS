@@ -143,7 +143,6 @@ junit/
 other/
 JUnits.xml
 .DS_Store
-.vscode/
 docs/developer_guide/tutorial/*.md
 docs/developer_guide/tutorial/Results
 docs/developer_guide/tutorial/model/
@@ -153,3 +152,11 @@ docs/developer_guide/tutorial/mynewfunctions.py
 .local/
 .envrc
 shell.nix
+
+.vscode
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/extension.json
+!.vscode/tasks.json
+
+model/
