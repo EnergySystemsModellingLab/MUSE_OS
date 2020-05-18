@@ -100,7 +100,7 @@ def copy_model(
         )
         copyfile(
             example_data_dir() / "multiple_agents" / "residential" / "technodata.csv",
-            path / "technodata" / "residential" / "technodata.csv",
+            path / "technodata" / "residential" / "Technodata.csv",
         )
     return path
 
