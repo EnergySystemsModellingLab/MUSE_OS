@@ -114,9 +114,16 @@ upper bound constraint.
 
 
 CONSTRAINT_SIGNATURE = Callable[
-    [Dataset, DataArray, Dataset, Dataset, KwArg()], Constraint
+    [Dataset, DataArray, Dataset, Dataset, KwArg()], Optional[Constraint]
 ]
-"""Basic signature for functions producing constraints."""
+"""Basic signature for functions producing constraints.
+
+.. note::
+
+    A constraint can return `None`, in which case it is ignored. This makes it simple to
+    add cosntraints that are only used if some condition is met, e.g. minimum service
+    conditions are defined in the technodata.
+"""
 CONSTRAINTS: MutableMapping[Text, CONSTRAINT_SIGNATURE] = {}
 """Registry of constraint functions."""
 
@@ -132,24 +139,25 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
         market: Dataset,
         technologies: Dataset,
         **kwargs,
-    ) -> Constraint:
+    ) -> Optional[Constraint]:
         """Computes and standardizes a constraint."""
         constraint = function(  # type: ignore
             assets, search_space, market, technologies, **kwargs
         )
-        if "kind" not in constraint.attrs:
-            constraint.attrs["kind"] = ConstraintKind.UPPER_BOUND
-        if (
-            "capacity" not in constraint.data_vars
-            and "production" not in constraint.data_vars
-        ):
-            raise RuntimeError("Invalid constraint format")
-        if "capacity" not in constraint.data_vars:
-            constraint["capacity"] = 0
-        if "production" not in constraint.data_vars:
-            constraint["production"] = 0
-        if "b" not in constraint.data_vars:
-            constraint["b"] = 0
+        if constraint is not None:
+            if "kind" not in constraint.attrs:
+                constraint.attrs["kind"] = ConstraintKind.UPPER_BOUND
+            if (
+                "capacity" not in constraint.data_vars
+                and "production" not in constraint.data_vars
+            ):
+                raise RuntimeError("Invalid constraint format")
+            if "capacity" not in constraint.data_vars:
+                constraint["capacity"] = 0
+            if "production" not in constraint.data_vars:
+                constraint["production"] = 0
+            if "b" not in constraint.data_vars:
+                constraint["b"] = 0
 
         return constraint
 
@@ -179,10 +187,11 @@ def factory(
         technologies: Dataset,
         year: int,
     ) -> List[Constraint]:
-        return [
+        constraints = [
             function(assets, search_space, market, technologies, year=year)
             for function in constraint_closures
         ]
+        return [constraint for constraint in constraints if constraint is not None]
 
     return constraints
 
