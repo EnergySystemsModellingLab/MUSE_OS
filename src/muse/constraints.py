@@ -79,6 +79,7 @@ from typing import (
 )
 
 from muse.registration import registrator
+from mypy_extensions import KwArg
 from numpy import ndarray
 from pandas import Index
 from xarray import DataArray, Dataset
@@ -112,7 +113,9 @@ upper bound constraint.
 """
 
 
-CONSTRAINT_SIGNATURE = Callable[[Dataset, DataArray, Dataset, Dataset], Constraint]
+CONSTRAINT_SIGNATURE = Callable[
+    [Dataset, DataArray, Dataset, Dataset, KwArg()], Constraint
+]
 """Basic signature for functions producing constraints."""
 CONSTRAINTS: MutableMapping[Text, CONSTRAINT_SIGNATURE] = {}
 """Registry of constraint functions."""
@@ -156,6 +159,8 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
 def factory(
     settings: Union[Text, Mapping, Sequence[Mapping]] = "max_capacity_expansion"
 ) -> Callable:
+    from functools import partial
+
     if isinstance(settings, Text):
         names = [settings]
         params: List[Mapping] = [{}]
@@ -163,18 +168,20 @@ def factory(
         names = [settings["name"]]
         params = [{k: v for k, v in settings.items() if k != "name"}]
 
+    constraint_closures = [
+        partial(CONSTRAINTS[name], **param) for name, param in zip(names, params)
+    ]
+
     def constraints(
         assets: Dataset,
         search_space: DataArray,
+        market: Dataset,
         technologies: Dataset,
         year: int,
-        **kwargs,
     ) -> List[Constraint]:
         return [
-            CONSTRAINTS[name](  # type: ignore
-                assets, search_space, technologies, year=year, **{**param, **kwargs}
-            )
-            for name, param in zip(names, params)
+            function(assets, search_space, market, technologies, year=year)
+            for function in constraint_closures
         ]
 
     return constraints
@@ -186,6 +193,7 @@ def max_capacity_expansion(
     search_space: DataArray,
     market: Dataset,
     technologies: Dataset,
+    year: Optional[int] = None,
     forecast: int = 5,
     interpolation: Text = "linear",
 ) -> Constraint:
@@ -237,7 +245,8 @@ def max_capacity_expansion(
     """
     from muse.utilities import filter_input
 
-    year = market.year.min()
+    if year is None:
+        year = int(market.year.min())
     forecast_year = forecast + year
 
     kwargs = dict(technology=search_space.replacement, year=year)
@@ -283,6 +292,7 @@ def demand(
     search_space: DataArray,
     market: Dataset,
     technologies: Dataset,
+    year: Optional[int] = None,
     forecast: int = 5,
     interpolation: Text = "linear",
 ) -> Constraint:
@@ -300,6 +310,8 @@ def demand(
     """
     from muse.commodities import is_enduse
 
+    if year is None:
+        year = int(market.year.min())
     enduse = technologies.commodity.sel(commodity=is_enduse(technologies.comm_usage))
     b = market.consumption.sel(commodity=market.commodity.isin(enduse)).interp(
         year=market.year.min() + forecast
@@ -313,6 +325,7 @@ def max_production(
     search_space: DataArray,
     market: Dataset,
     technologies: Dataset,
+    year: Optional[int] = None,
     forecast: int = 5,
     interpolation: Text = "linear",
 ) -> Constraint:
@@ -335,13 +348,13 @@ def max_production(
     from muse.commodities import is_enduse
     from muse.timeslices import convert_timeslice, QuantityType
 
+    if year is None:
+        year = market.year.min()
     commodities = technologies.commodity.sel(
         commodity=is_enduse(technologies.comm_usage)
     )
     techs = technologies[["fixed_outputs", "utilization_factor"]].sel(
-        year=market.year.min(),
-        commodity=commodities,
-        technology=search_space.replacement,
+        year=year, commodity=commodities, technology=search_space.replacement,
     )
     capacity = convert_timeslice(
         techs.fixed_outputs * techs.utilization_factor,

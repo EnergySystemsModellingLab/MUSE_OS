@@ -20,6 +20,7 @@ class AgentBase(ABC):
         assets: Optional[Dataset] = None,
         interpolation: Text = "linear",
         category: Optional[Text] = None,
+        constraints: Optional[Callable] = None,
     ):
         """Creates a standard MUSE agent.
 
@@ -36,6 +37,7 @@ class AgentBase(ABC):
                 different agents together.
         """
         from uuid import uuid4
+        from muse.constraints import factory as csfactory
 
         super().__init__()
         self.name = name
@@ -50,6 +52,8 @@ class AgentBase(ABC):
         """Interpolation method."""
         self.category = category
         """Attribute to classify different sets of agents."""
+        self.constraints = constraints if callable(constraints) else csfactory()
+        """Creates a set of constraints limiting investment."""
 
     def filter_input(
         self,
@@ -278,14 +282,13 @@ class Agent(AgentBase):
     ) -> DataArray:
         """Computes investment and retirement profile."""
         from muse.investments import cliff_retirement_profile
-        from muse.constraints import max_capacity_expansion
 
-        max_cap = max_capacity_expansion(
-            self.assets, search, market, technologies, forecast=self.forecast
-        ).drop_vars("technology")
+        constraints = self.constraints(
+            self.assets, search, market, technologies, year=int(market.year.min())
+        )
 
         investments = self.invest(
-            demand, search, technologies, [max_cap], year=self.year
+            demand, search, technologies, constraints, year=self.year
         )
         investments = investments.sum("asset")
         investments = investments.where(investments > self.tolerance, 0)
