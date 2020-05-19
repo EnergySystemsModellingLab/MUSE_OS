@@ -183,7 +183,7 @@ def costs(
         drop=drop,
     )
 
-  
+
 def aggregate_sector(sector: AbstractSector, year) -> DataArray:
     """Sector output to desired dimensions using reduce_assets"""
 
