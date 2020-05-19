@@ -63,12 +63,6 @@ Production
    :members:
 
 
-Outputs
-~~~~~~~
-
-.. automodule:: muse.outputs
-   :members:
-
 Agent Interactions
 ~~~~~~~~~~~~~~~~~~
 
@@ -145,6 +139,26 @@ Reading the inputs
    :members:
 
 .. automodule:: muse.decorators
+   :members:
+
+---------------
+Writing Outputs
+---------------
+
+.. automodule:: muse.outputs
+   :members:
+
+Sinks
+~~~~~
+
+.. automodule:: muse.outputs.sinks
+   :members:
+
+
+Sectorial Outputs
+~~~~~~~~~~~~~~~~~
+
+.. automodule:: muse.outputs.sector
    :members:
 
 

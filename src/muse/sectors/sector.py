@@ -20,7 +20,7 @@ class Sector(AbstractSector):  # type: ignore
     def factory(cls, name: Text, settings: Any) -> Sector:
         from muse.readers import read_timeslices, read_technologies
         from muse.utilities import nametuple_to_dict
-        from muse.outputs import factory as ofactory
+        from muse.outputs.sector import factory as ofactory
         from muse.production import factory as pfactory
         from muse.interactions import factory as interaction_factory
         from muse.demand_share import factory as share_factory
@@ -72,7 +72,7 @@ class Sector(AbstractSector):  # type: ignore
             technologies = technologies.sel(year=years, method="bfill")
             technologies["year"] = "year", years
 
-        outputs = ofactory(*sector_settings.pop("outputs", []))
+        outputs = ofactory(*sector_settings.pop("outputs", []), sector_name=name)
 
         production_args = sector_settings.pop(
             "production", sector_settings.pop("investment_production", {})
@@ -123,7 +123,7 @@ class Sector(AbstractSector):  # type: ignore
         demand_share: Optional[DEMAND_SHARE_SIGNATURE] = None,
     ):
         from muse.production import maximum_production
-        from muse.outputs import factory as ofactory
+        from muse.outputs.sector import factory as ofactory
         from muse.interactions import factory as interaction_factory
         from muse.demand_share import factory as share_factory
 
@@ -256,7 +256,7 @@ class Sector(AbstractSector):  # type: ignore
         # > output to mca
         result = self.market_variables(market, technologies)
         # < output to mca
-        self.outputs(self.capacity, result, technologies, sector=self.name)
+        self.outputs(self.capacity, result, technologies)
         # > to mca timeslices
         result = self.convert_market_timeslice(
             result.groupby("region").sum("asset"), mca_market.timeslice
@@ -367,109 +367,6 @@ class Sector(AbstractSector):  # type: ignore
 
         capa = reduce_assets(capacity, ("region", "technology"))
         return coords_to_multiindex(capa, "asset").unstack("asset").fillna(0)
-
-    def demands(
-        self, year: int, capacity: DataArray, market: Dataset, technologies: Dataset
-    ) -> Dataset:
-        r"""Asset-based demands.
-
-        Computes the demands for all agents and regions in one go.
-        The demands are:
-
-        - new_demand: considering the supply in current year, extra demand needed
-          (compared to current year) to fulfill the additional demand from forecast
-          year.
-        - retrofit_demand: the lesser of the unmet demand in current and forecast year.
-
-        Args:
-            capacity: generally, the aggregate assets across the sector,
-                :math:`A^{r}_a(y) = \sum_iA^{i, r}_a(y)`.
-            market: the input MCA market transformed to sector timeslices
-            technologies: quantities describing the technologies.
-
-        Pseudo-code:
-
-        #. the capacity is expanded over timeslices (extensive quantity) and aggregated
-           over agents. Generally:
-
-           .. math::
-
-               A_{a, s}^r = w_s\sum_i A_a^{r, i}
-
-           with :math:`w_s` a weight associated with each timeslice and determined via
-           :py:func:`muse.timeslices.convert_timeslice`.
-
-        #. An intermediate quantity, the *unmet* demand :math:`U` is defined from
-           :math:`P[\mathcal{M}, \mathcal{A}]`, a function giving the production for a
-           given market :math:`\mathcal{M}`, the associated consumption
-           :math:`\mathcal{C}`, and aggregate assets :math:`\mathcal{A}`:
-
-           .. math::
-               U[\mathcal{M}, \mathcal{A}] =
-                 \max(\mathcal{C} - P[\mathcal{M}, \mathcal{A}], 0)
-
-           where :math:`\max` operates element-wise, and indices have been dropped for
-           simplicity. The resulting expression has the same indices as the consumption
-           :math:`\mathcal{C}_{c, s}^r`.
-
-           :math:`P` is any function registered with
-           :py:func:`@register_production<muse.production.register_production>`.
-           It is the the attribute :py:attr:`production`.
-
-
-        #. the *retrofit* demand :math:`M` is the lesser of the current and future
-           *unmet* demand defined previously:
-
-           .. math::
-
-               M = \min\left(
-                   U[\mathcal{M}^r(y), \mathcal{A}_{a, s}^r(y)],
-                   U[\mathcal{M}^r(y+1), \mathcal{A}_{a, s}^r(y + 1)]
-               \right)
-
-        #. the *new* demand :math:`N` is defined as the lesser between the
-            year-on-year (or period to period) increase in consumption and the *unmet*
-            demand for the future period from the current capacity.
-
-            .. math::
-
-                N = \min\left(
-                    \mathcal{C}_{c, s}^r(y + 1) - \mathcal{C}_{c, s}^r(y),
-                    U[\mathcal{M}^r(y+1), \mathcal{A}_{a, s}^r(y)]
-                \right)
-
-        .. SeeAlso::
-
-            :ref:`indices`, :ref:`quantities`,
-            :ref:`Agent investments<model, agent investment>`,
-            :py:func:`muse.quantities.maximum_production`
-        """
-        from muse.timeslices import convert_timeslice, QuantityType
-
-        data = market.copy(deep=False)
-        data["ts_capa"] = convert_timeslice(
-            capacity, market.timeslice, QuantityType.EXTENSIVE
-        )
-        current = data.sel(year=year, drop=True)
-        forecast = data.sel(year=year + self.forecast, drop=True)
-
-        market_vars = list(market.data_vars.keys())
-        delta = (forecast.consumption - current.consumption).clip(min=0)
-        missing = self._trajectory(forecast[market_vars], current.ts_capa, technologies)
-        now = self._trajectory(current[market_vars], forecast.ts_capa, technologies)
-        future = self._trajectory(forecast[market_vars], forecast.ts_capa, technologies)
-
-        result = Dataset(
-            {
-                "new_demand": delta.where(delta < missing, missing),
-                "retrofit_demand": now.where(now < future, future),
-            }
-        )
-
-        if getattr(getattr(result, "region", None), "size", 0) > 1:
-            result = result.groupby("region")
-
-        return result
 
     @staticmethod
     def convert_market_timeslice(

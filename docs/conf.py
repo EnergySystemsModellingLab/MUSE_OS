@@ -9,7 +9,7 @@
 project = "MUSE"
 copyright = "2019, Sustainable Gas Institute"
 author = "Imperial College London"
-release = "0.6"
+release = "0.7"
 
 # -- General configuration ---------------------------------------------------
 
