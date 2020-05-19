@@ -1,4 +1,3 @@
-import numpy as np
 from xarray import DataArray
 from muse import examples
 from muse.outputs.sector import aggregate_sector, aggregate_sectors
@@ -36,8 +35,6 @@ def test_aggregate_sector():
 
 def test_aggregate_sectors() -> DataArray:
     """Test for aggregate_sectors function"""
-    from operator import attrgetter
-
     mca = examples.model("multiple-agents")
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
     alldata = aggregate_sectors(sector_list, 2020)
