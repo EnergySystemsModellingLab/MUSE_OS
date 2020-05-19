@@ -467,8 +467,7 @@ def maximum_production(technologies: Dataset, capacity: DataArray, **filters):
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
     )
     result = capa * ftechs.fixed_outputs * ftechs.utilization_factor
-    result[{"commodity": ~is_enduse(result.comm_usage)}] = 0
-    return result
+    return result.where(is_enduse(result.comm_usage), 0)
 
 
 def demand_matched_production(
@@ -540,10 +539,9 @@ def capacity_in_use(
         btechs, **{k: v for k, v in filters.items() if k in technologies.dims}
     )
     factor = 1 / (ftechs.fixed_outputs * ftechs.utilization_factor)
-    capa_in_use = (
-        (prod * factor)
-        .where(~isinf(factor), 0)
-        .where(is_enduse(technologies.comm_usage), 0)
+    capa_in_use = (prod * factor).where(~isinf(factor), 0)
+    capa_in_use = capa_in_use.where(
+        is_enduse(technologies.comm_usage.sel(commodity=capa_in_use.commodity)), 0
     )
     if max_dim:
         capa_in_use = capa_in_use.max(max_dim)

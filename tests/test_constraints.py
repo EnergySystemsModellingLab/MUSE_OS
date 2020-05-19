@@ -22,7 +22,7 @@ def timeslices(market):
 
 @fixture
 def technologies(residential):
-    return residential.technologies
+    return residential.technologies.squeeze("region")
 
 
 @fixture
@@ -33,10 +33,11 @@ def market(model):
 
 
 @fixture
-def search_space(model):
+def search_space(model, assets):
     from muse import examples
 
-    return examples.search_space("residential", model)
+    space = examples.search_space("residential", model)
+    return space.sel(asset=assets.technology.values)
 
 
 @fixture
@@ -62,10 +63,23 @@ def assets(residential):
 
 
 @fixture
-def max_production(assets, search_space, market, technologies):
+def market_demand(assets, technologies, market):
+    from muse.quantities import maximum_production
+    from muse.timeslices import convert_timeslice
+
+    return 0.8 * maximum_production(
+        technologies.interp(year=2025),
+        convert_timeslice(
+            assets.capacity.sel(year=2025).groupby("technology").sum("asset"), market,
+        ),
+    ).rename(technology="asset")
+
+
+@fixture
+def max_production(market_demand, assets, search_space, market, technologies):
     from muse.constraints import max_production
 
-    return max_production(assets, search_space, market, technologies)
+    return max_production(market_demand, assets, search_space, market, technologies)
 
 
 @fixture
@@ -74,27 +88,31 @@ def constraint(max_production):
 
 
 @fixture
-def demand(assets, search_space, market, technologies):
+def demand_constraint(market_demand, assets, search_space, market, technologies):
     from muse.constraints import demand
 
-    return demand(assets, search_space, market, technologies)
+    return demand(market_demand, assets, search_space, market, technologies)
 
 
 @fixture
-def max_capacity_expansion(assets, search_space, market, technologies):
+def max_capacity_expansion(market_demand, assets, search_space, market, technologies):
     from muse.constraints import max_capacity_expansion
 
-    return max_capacity_expansion(assets, search_space, market, technologies)
+    return max_capacity_expansion(
+        market_demand, assets, search_space, market, technologies
+    )
 
 
 @fixture
-def constraints(assets, search_space, market, technologies):
+def constraints(market_demand, assets, search_space, market, technologies):
     from muse import constraints as cs
 
     return [
-        cs.max_production(assets, search_space, market, technologies),
-        cs.demand(assets, search_space, market, technologies),
-        cs.max_capacity_expansion(assets, search_space, market, technologies),
+        cs.max_production(market_demand, assets, search_space, market, technologies),
+        cs.demand(market_demand, assets, search_space, market, technologies),
+        cs.max_capacity_expansion(
+            market_demand, assets, search_space, market, technologies
+        ),
     ]
 
 
@@ -194,12 +212,12 @@ def test_to_scipy_adapter_maxprod(technologies, costs, max_production, timeslice
     assert adapter.A_ub[:, capsize:] == approx(-np.eye(prodsize))
 
 
-def test_to_scipy_adapter_demand(technologies, costs, demand, timeslices):
+def test_to_scipy_adapter_demand(technologies, costs, demand_constraint, timeslices):
     from muse.constraints import ScipyAdapter, lp_costs
 
     technologies = technologies.interp(year=2025)
 
-    adapter = ScipyAdapter.factory(technologies, costs, timeslices, demand)
+    adapter = ScipyAdapter.factory(technologies, costs, timeslices, demand_constraint)
     assert set(adapter.kwargs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
     assert adapter.bounds == (0, None)
     assert adapter.A_ub is None
@@ -216,11 +234,12 @@ def test_to_scipy_adapter_demand(technologies, costs, demand, timeslices):
     capsize = lpcosts.capacity.size
     prodsize = lpcosts.production.size
     assert adapter.c.size == capsize + prodsize
-    assert adapter.b_eq.size == lpcosts.commodity.size * lpcosts.timeslice.size
-    assert adapter.A_eq[:, :capsize] == approx(0)
-    assert adapter.A_eq[:, capsize:].sum(axis=1) == approx(
-        lpcosts.asset.size * lpcosts.replacement.size
+    assert (
+        adapter.b_eq.size
+        == lpcosts.commodity.size * lpcosts.timeslice.size * lpcosts.asset.size
     )
+    assert adapter.A_eq[:, :capsize] == approx(0)
+    assert adapter.A_eq[:, capsize:].sum(axis=1) == approx(lpcosts.replacement.size)
     assert set(adapter.A_eq[:, capsize:].flatten()) == {0.0, 1.0}
 
 

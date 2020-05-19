@@ -50,7 +50,7 @@ from mypy_extensions import KwArg
 from xarray import DataArray, Dataset
 
 INVESTMENT_SIGNATURE = Callable[
-    [DataArray, DataArray, DataArray, DataArray, Dataset, KwArg()], DataArray
+    [DataArray, DataArray, Dataset, List[Constraint], KwArg()], DataArray
 ]
 """Investment signature. """
 
@@ -65,12 +65,10 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
 
     @wraps(function)
     def decorated(
-        demand: DataArray,
         ranking: DataArray,
-        max_capacity: DataArray,
         search_space: DataArray,
         technologies: Dataset,
-        *args,
+        constraints: List[Constraint],
         log_mismatch_params: float = 1e-3,
         **kwargs,
     ) -> DataArray:
@@ -78,7 +76,7 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
         from muse.commodities import is_enduse
 
         result = function(  # type: ignore
-            demand, ranking, max_capacity, search_space, technologies, *args, **kwargs
+            ranking, search_space, technologies, constraints, **kwargs
         )
         result = result.rename("investment")
 
@@ -86,6 +84,7 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
         if log_mismatch_params <= 0:
             return result
 
+        demand = next((c for c in constraints if c.name == "demand")).b
         mismatch = demand - (
             result
             * technologies.fixed_outputs.sel(
@@ -147,11 +146,7 @@ def factory(settings: Union[Text, Mapping] = "match_demand") -> Callable:
         params["log_mismatch_params"] = 1e-3
 
     def compute_investment(
-        demand: DataArray,
-        search: Dataset,
-        technologies: Dataset,
-        constraints: List[Constraint],
-        **kwargs,
+        search: Dataset, technologies: Dataset, constraints: List[Constraint], **kwargs,
     ) -> DataArray:
         """Computes investment needed to fulfill demand.
 
@@ -167,12 +162,11 @@ def factory(settings: Union[Text, Mapping] = "match_demand") -> Callable:
             )
 
         function = INVESTMENTS[name]
-        return function(  # type: ignore
-            demand,
+        return function(
             search.decision.rank("replacement").astype(int),
-            constraints[0].b,
             search.space,
             technologies,
+            constraints,
             **params,
             **kwargs,
         ).rename("investment")
@@ -242,23 +236,22 @@ def cliff_retirement_profile(
 
 @register_investment(name="demand_matching")
 def match_demand(
-    demand: DataArray,
     ranking: DataArray,
-    max_capacity: DataArray,
     search_space: DataArray,
     technologies: Dataset,
+    constraints: List[Constraint],
     year: int,
     timeslice_op: Optional[Callable[[DataArray], DataArray]] = None,
 ) -> DataArray:
-    from muse.commodities import is_enduse
+    from xarray import DataArray
     from muse.demand_matching import demand_matching
     from muse.quantities import maximum_production, capacity_in_use
     from muse.timeslices import convert_timeslice, QuantityType
 
-    demand = demand.sel(
-        commodity=is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
-    )
-    technologies = technologies.sel(commodity=is_enduse(technologies.comm_usage))
+    demand = next((c for c in constraints if c.name == "demand")).b
+    max_capacity = next(
+        (c for c in constraints if c.name == "max capacity expansion")
+    ).b
     max_prod = maximum_production(
         technologies,
         max_capacity,

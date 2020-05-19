@@ -3,8 +3,9 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Callable, List, Mapping, Optional, Sequence, Text, Union
 
-from muse.defaults import DEFAULT_SECTORS_DIRECTORY
 from xarray import DataArray, Dataset
+
+from muse.defaults import DEFAULT_SECTORS_DIRECTORY
 
 
 class AgentBase(ABC):
@@ -52,7 +53,11 @@ class AgentBase(ABC):
         """Interpolation method."""
         self.category = category
         """Attribute to classify different sets of agents."""
-        self.constraints = constraints if callable(constraints) else csfactory()
+        if not callable(constraints):
+            constraints = csfactory(
+                ["max_capacity_expansion", "max_production", "demand"]
+            )
+        self.constraints = constraints
         """Creates a set of constraints limiting investment."""
 
     def filter_input(
@@ -284,12 +289,15 @@ class Agent(AgentBase):
         from muse.investments import cliff_retirement_profile
 
         constraints = self.constraints(
-            self.assets, search, market, technologies, year=int(market.year.min())
+            demand,
+            self.assets,
+            search,
+            market,
+            technologies,
+            year=int(market.year.min()),
         )
 
-        investments = self.invest(
-            demand, search, technologies, constraints, year=self.year
-        )
+        investments = self.invest(search, technologies, constraints, year=self.year)
         investments = investments.sum("asset")
         investments = investments.where(investments > self.tolerance, 0)
 

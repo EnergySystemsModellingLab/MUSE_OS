@@ -64,11 +64,15 @@ def test_match_demand_smoke_test(
     search.demand[{"commodity": ~is_enduse(comm_usage)}] = 0
 
     capacity = match_demand(
-        search.demand,
         search.ranks,
-        search.max_capacity,
         search_space,
         technologies,
+        [
+            Dataset(
+                dict(b=search.max_capacity), attrs=dict(name="max capacity expansion")
+            ),
+            Dataset(dict(b=search.demand), attrs=dict(name="demand")),
+        ],
         year=retro_agent.year,
     )
     assert set(capacity.dims) == {"timeslice", "replacement", "asset"}
