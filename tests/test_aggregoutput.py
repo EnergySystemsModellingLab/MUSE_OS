@@ -27,7 +27,7 @@ def test_aggregate_sector():
     ]
 
     assert sorted(capa.agent.values) == sorted(agent_names)
-    assert sorted([str(capa.region.values) for _ in capa.agent.values]) == sorted(
+    assert sorted([capa.region.values for _ in capa.agent.values]) == sorted(
         region_names
     )
     assert sorted(capa.technology.values) == sorted(technology_names)
@@ -51,8 +51,44 @@ def test_aggregate_sectors() -> DataArray:
         for u in sector.agents
     ]
     assert sorted(alldata.agent.values) == sorted(agent_names)
-    assert sorted([str(alldata.region.values) for _ in alldata.agent.values]) == sorted(
+    assert sorted([alldata.region.values for _ in alldata.agent.values]) == sorted(
         region_names
     )
     assert sorted(alldata.technology.values) == sorted(technology_names)
     assert (expected_capacity == alldata.values).all()
+
+
+def test_aggregate_sector_manyregions():
+    """Test for aggregate_sector function with two regions
+    check colum titles, number of agents/region/technologies
+    and assets capacities."""
+    from operator import attrgetter
+
+    mca = examples.model("multiple-agents")
+    residential = next(
+        (sector for sector in mca.sectors if sector.name == "residential")
+    )
+    residential.agents[0].assets["region"] = "BELARUS"
+    residential.agents[1].assets["region"] = "BELARUS"
+    residential.agents[0].region = "BELARUS"
+    residential.agents[1].region = "BELARUS"
+    sector_list = [sector for sector in mca.sectors if "residential" == sector.name]
+    capa = aggregate_sector(sector_list[0], 2020)
+    assert "region" in capa.coords
+    assert "agent" in capa.coords
+    assert "sector" in capa.coords
+    assert "year" in capa.coords
+    assert "technology" in capa.coords
+    agent_names = [a.name for a in sector_list[0].agents]
+    region_names = [a.region for a in sector_list[0].agents]
+    technology_names = [a.assets.technology.values[0] for a in sector_list[0].agents]
+
+    expected_capacity = [
+        u.assets.capacity.sel(year=2020).sum(dim="asset").values
+        for u in sorted(sector_list[0].agents, key=attrgetter("name"))
+    ]
+
+    assert sorted(capa.agent.values) == sorted(agent_names)
+    assert sorted(capa.region.values) == sorted(region_names)
+    assert sorted(capa.technology.values) == sorted(technology_names)
+    assert (expected_capacity == capa.values).all()
