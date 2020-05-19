@@ -58,6 +58,42 @@ inefficient defininition of :math:`A_c`, :math:`A_p` and :math:`b`.
   \\leq b`.
 - Any dimension missing from :math:`A_c .* x_c` (:math:`A_p .* x_p`) and present in
   :math:`b` is added by repeating the resulting row in :math:`A`.
+
+Constraints are registered using the decorator
+:py:func:`~muse.constraints.register_constraints`. The decorated functions must follow
+the following signature:
+
+.. code-block:: python
+
+    @register_constraints
+    def constraints(
+        demand: DataArray,
+        assets: Dataset,
+        search_space: DataArray,
+        market: Dataset,
+        technologies: Dataset,
+        year: Optional[int] = None,
+        **kwargs,
+    ) -> Constraint:
+        pass
+
+demand:
+    The demand for the sectors products. In practice it is a demand share obtained in
+    :py:mod:`~muse.demand_share`. It is a data-array with dimensions including `asset`,
+    `commodity`, `timeslice`.
+assets:
+    The capacity of the assets owned by the agent.
+search_space:
+    A matrix `asset` vs `replacement` technology defining which replacement technologies
+    will be considered for each existing asset.
+market:
+    The market as obtained from the MCA.
+technologies:
+    Technodata characterizing the competing technologies.
+year:
+    current year.
+**kwargs:
+    Any other parameter.
 """
 
 from __future__ import annotations
@@ -193,8 +229,10 @@ def factory(
         search_space: DataArray,
         market: Dataset,
         technologies: Dataset,
-        year: int,
+        year: Optional[int] = None,
     ) -> List[Constraint]:
+        if year is None:
+            year = int(market.year.min())
         constraints = [
             function(demand, assets, search_space, market, technologies, year=year)
             for function in constraint_closures
