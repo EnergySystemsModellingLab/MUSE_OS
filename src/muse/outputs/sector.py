@@ -93,7 +93,7 @@ def factory(
     They default to `{'quantity': string}` (and the sink will default to
     "csv").
     """
-    from muse.outputs.sinks import factory as sinks_factory
+    from muse.outputs.sinks import factory as sink_factory
 
     if isinstance(parameters, Text):
         params: List = [{"quantity": parameters}]
@@ -105,7 +105,7 @@ def factory(
         ]
 
     quantities = quantities_factory(params)
-    sinks = sinks_factory(params, sector_name=sector_name)
+    sinks = [sink_factory(param, sector_name=sector_name) for param in params]
 
     def save_multiple_outputs(
         capacity: DataArray, market: Dataset, technologies: Dataset
@@ -183,63 +183,7 @@ def costs(
         drop=drop,
     )
 
-
-def save_output(
-    capacity: DataArray, market: Dataset, technologies: Dataset, **config
-) -> Optional[Text]:
-    """Computes output quantity and saves it to the sink.
-
-    Arguments:
-        config: A configuration dictionary which must contain at least `quantity`.
-            It should also contain either `filename` or all three of `sink`, `sector`,
-            and `year`. In the latter case, it can also optionally be given
-            `dictionary`. If `sink` is not given, then it is guessed from the
-            extension of the `filename`. If neither `sink` nor `filename` are given,
-            then `sink` defaults to `csv`. Finally, the dictionary can be given
-            any argument relevant to the sink.
-        capacity: Asset capacity aggregated over the whole sector
-        market: Market quantities
-        technologies: Characteristics of the technologies
-
-    Returns: Optionally, text describing where the data was saved, e.g. filename.
-    """
-    from pathlib import Path
-    from muse.outputs.sinks import OUTPUT_SINKS
-
-    config = dict(**config)
-    quantity_params = config.pop("quantity")
-    if isinstance(quantity_params, Mapping):
-        quantity_params = dict(**quantity_params)
-        quantity = quantity_params.pop("name")
-    else:
-        quantity = quantity_params
-        quantity_params = {}
-
-    sink_params = config.pop("sink", None)
-    if isinstance(sink_params, Mapping):
-        sink_params = dict(**sink_params)
-        sink = sink_params.pop("name")
-    elif isinstance(sink_params, Text):
-        sink = sink_params
-        sink_params = {}
-    else:
-        filename = config.get("filename", None)
-        sink = config.get("suffix", Path(filename).suffix if filename else "csv")
-        sink_params = {}
-
-    if len(set(sink_params).intersection(config)) != 0:
-        raise ValueError("duplicate settings in output section")
-    sink_params.update(config)
-    if "year" not in sink_params:
-        sink_params["year"] = int(market.year.min())
-    if sink[0] == ".":
-        sink = sink[1:]
-    data = OUTPUT_QUANTITIES[quantity](  # type: ignore
-        capacity, market, technologies, **quantity_params
-    )
-    return OUTPUT_SINKS[sink](data, **sink_params)
-
-
+  
 def aggregate_sector(sector: AbstractSector, year) -> DataArray:
     """Sector output to desired dimensions using reduce_assets"""
 

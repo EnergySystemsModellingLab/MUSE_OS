@@ -1,9 +1,11 @@
 """Test saving outputs to file."""
 from pathlib import Path
+from typing import Text
 
 import numpy as np
+import pandas as pd
 import xarray as xr
-from pytest import importorskip, mark
+from pytest import approx, importorskip, mark
 
 from muse.outputs.sector import factory, register_output_quantity
 
@@ -139,3 +141,99 @@ def test_from_sector_with_directory(buildings, market, tmpdir):
     output_func(buildings.capacity, market, buildings.technologies)
     assert (Path(tmpdir) / "abc.csv").exists()
     assert (Path(tmpdir) / "abc.csv").is_file()
+
+
+def test_can_register_class():
+    from muse.outputs.sinks import register_output_sink, factory
+
+    @register_output_sink
+    class AClass:
+        def __init__(self, sector, some_args=3):
+            self.sector = sector
+            self.some_args = some_args
+
+        def __call__(self, x):
+            pass
+
+    settings = {"sink": {"name": "AClass"}}
+    sink = factory(settings, sector_name="yoyo")
+    assert isinstance(sink, AClass)
+    assert sink.sector == "yoyo"
+    assert sink.some_args == 3
+
+    settings = {"sink": {"name": "AClass", "some_args": 5}}
+    sink = factory(settings, sector_name="yoyo")
+    assert isinstance(sink, AClass)
+    assert sink.sector == "yoyo"
+    assert sink.some_args == 5
+
+
+def test_can_register_function():
+    from muse.outputs.sinks import register_output_sink, factory
+
+    @register_output_sink
+    def a_function(*args):
+        pass
+
+    settings = {"sink": "a_function"}
+    sink = factory(settings, sector_name="yoyo")
+    assert sink.func is a_function
+
+
+def test_yearly_aggregate():
+    from muse.outputs.sinks import register_output_sink, factory
+
+    received_data = None
+    gyear = None
+    gsector = None
+    goverwrite = None
+
+    @register_output_sink(name="dummy")
+    def dummy(data, year: int, sector: Text, overwrite: bool):
+        nonlocal received_data, gyear, gsector, goverwrite
+        received_data = data
+        gyear = year
+        gsector = sector
+        goverwrite = overwrite
+
+    sink = factory(
+        dict(overwrite=True, sink=dict(aggregate="dummy")), sector_name="yoyo"
+    )
+
+    data = xr.DataArray([1, 0], coords=dict(a=[2, 4]), dims="a")
+    data["year"] = 2010
+
+    assert sink(data, 2010) is None
+    assert gyear == 2010
+    assert gsector == "yoyo"
+    assert goverwrite is True
+    assert received_data is data
+
+    data = xr.DataArray([0, 1], coords=dict(a=[2, 4]), dims="a")
+    data["year"] = 2020
+    assert sink(data, 2020) is None
+    assert gyear == 2020
+    assert gsector == "yoyo"
+    assert received_data.sel(year=2010).values == approx(np.array([1, 0]))
+    assert received_data.sel(year=2020).values == approx(np.array([0, 1]))
+
+
+def test_yearly_aggregate_file(tmpdir):
+    from muse.outputs.sinks import factory
+
+    path = Path(tmpdir) / "file.csv"
+    sink = factory(dict(filename=str(path), sink="aggregate"), sector_name="yoyo")
+
+    data = xr.DataArray([1, 0], coords=dict(a=[2, 4]), dims="a", name="georges")
+    data["year"] = 2010
+    assert sink(data, 2010) == path
+    dataframe = pd.read_csv(path)
+    assert set(dataframe.columns) == {"a", "year", "georges"}
+    assert dataframe.shape[0] == 2
+
+    data = xr.DataArray([0, 1], coords=dict(a=[2, 4]), dims="a", name="georges")
+    data["year"] = 2020
+    assert sink(data, 2020) == path
+    dataframe = pd.read_csv(path)
+    assert set(dataframe.columns) == {"a", "year", "georges"}
+    assert dataframe.shape[0] == 4
