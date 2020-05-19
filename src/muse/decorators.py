@@ -1,19 +1,17 @@
-from typing import Callable
 from logging import getLogger
-from collections import namedtuple
+from typing import Callable, Text, Mapping
 
-from muse.registration import registrator, DECORATORS_REGISTRY
-
-
-SETTINGS_CHECKS = {}
-"""Dictionary of settings checks."""
+from muse.registration import registrator
 
 SETTINGS_CHECKS_SIGNATURE = Callable[[dict], None]
 """settings checks signature."""
 
+SETTINGS_CHECKS: Mapping[Text, SETTINGS_CHECKS_SIGNATURE] = {}
+"""Dictionary of settings checks."""
+
 
 @registrator(registry=SETTINGS_CHECKS, loglevel="info")
-def register_settings_check(function: SETTINGS_CHECKS_SIGNATURE = None):
+def register_settings_check(function: SETTINGS_CHECKS_SIGNATURE):
     """Decorator to register a function as a settings check.
 
     Registers a function as a settings check so that it can be applied easily
@@ -25,8 +23,8 @@ def register_settings_check(function: SETTINGS_CHECKS_SIGNATURE = None):
     from functools import wraps
 
     @wraps(function)
-    def decorated(*args, **kwargs) -> None:
-        result = function(*args, **kwargs)
+    def decorated(settings) -> None:
+        result = function(settings)
 
         msg = " {} PASSED".format(function.__name__)
         getLogger(__name__).info(msg)
@@ -34,8 +32,3 @@ def register_settings_check(function: SETTINGS_CHECKS_SIGNATURE = None):
         return result
 
     return decorated
-
-
-decorators = namedtuple("Decorators", list(DECORATORS_REGISTRY.keys()))(
-    **DECORATORS_REGISTRY
-)

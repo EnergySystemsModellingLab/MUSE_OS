@@ -303,7 +303,7 @@ def read_split_toml(
 
             if "include_path" in section and len(section) > 1:
                 raise IOError(
-                    f"Sections with an `include_path` option "
+                    "Sections with an `include_path` option "
                     "should contain only that option."
                 )
             elif "include_path" in section:
