@@ -186,17 +186,16 @@ def costs(
 
 def aggregate_sector(sector: AbstractSector, year) -> DataArray:
     """Sector output to desired dimensions using reduce_assets"""
+    from operator import attrgetter
 
     capa_sector = []
-    agent_name = sorted(list(set([a.name for a in sector.agents])))
-    for u in sector.agents:
-        for a in agent_name:
-            if u.name == a:
-                capa_agent = u.assets.capacity.sel(year=year)
-                capa_agent["agent"] = u.name
-                capa_agent["type"] = u.category
-                capa_agent["sector"] = sector.name
-                capa_sector.append(capa_agent)
+    agents = sorted(sector.agents, key=attrgetter("name"))
+    for agent in agents:
+        capa_agent = agent.assets.capacity.sel(year=year)
+        capa_agent["agent"] = agent.name
+        capa_agent["type"] = agent.category
+        capa_agent["sector"] = sector.name
+        capa_sector.append(capa_agent)
     capa_sector = concat(capa_sector, dim="asset")
     return capa_sector
 

@@ -25,6 +25,7 @@ def test_aggregate_sector():
         u.assets.capacity.sel(year=2020).sum(dim="asset").values
         for u in sorted(sector_list[0].agents, key=attrgetter("name"))
     ]
+
     assert sorted(capa.agent.values) == sorted(agent_names)
     assert sorted([str(capa.region.values) for _ in capa.agent.values]) == sorted(
         region_names
