@@ -22,9 +22,10 @@ The function should never modify it's arguments.
 from pathlib import Path
 from typing import Callable, List, Mapping, Optional, Text, Union
 
-from xarray import DataArray, Dataset
+from xarray import DataArray, Dataset, concat
 
 from muse.registration import registrator
+from muse.sectors import AbstractSector
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[[DataArray, Dataset, Dataset], DataArray]
 """Signature of functions computing quantities for later analysis."""
@@ -181,3 +182,25 @@ def costs(
         sum_over=sum_over,
         drop=drop,
     )
+
+
+def aggregate_sector(sector: AbstractSector, year) -> DataArray:
+    """Sector output to desired dimensions using reduce_assets"""
+    from operator import attrgetter
+
+    capa_sector = []
+    agents = sorted(sector.agents, key=attrgetter("name"))
+    for agent in agents:
+        capa_agent = agent.assets.capacity.sel(year=year)
+        capa_agent["agent"] = agent.name
+        capa_agent["type"] = agent.category
+        capa_agent["sector"] = sector.name
+        capa_sector.append(capa_agent)
+    capa_sector = concat(capa_sector, dim="asset")
+    return capa_sector
+
+
+def aggregate_sectors(sectors: List[AbstractSector], year) -> DataArray:
+    """Aggregate outputs from all sectors"""
+    alldata = [aggregate_sector(sector, year) for sector in sectors]
+    return concat(alldata, dim="asset")
