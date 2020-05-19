@@ -1,3 +1,4 @@
+import numpy as np
 from xarray import DataArray
 from muse import examples
 from muse.outputs.sector import aggregate_sector, aggregate_sectors
@@ -27,9 +28,7 @@ def test_aggregate_sector():
     ]
 
     assert sorted(capa.agent.values) == sorted(agent_names)
-    assert sorted([capa.region.values for _ in capa.agent.values]) == sorted(
-        region_names
-    )
+    assert sorted(np.unique(capa.region.values)) == sorted(np.unique(region_names))
     assert sorted(capa.technology.values) == sorted(technology_names)
     assert (expected_capacity == capa.values).all()
 
@@ -89,6 +88,6 @@ def test_aggregate_sector_manyregions():
     ]
 
     assert sorted(capa.agent.values) == sorted(agent_names)
-    assert sorted(capa.region.values) == sorted(region_names)
+    assert sorted(np.unique(capa.region.values)) == sorted(np.unique(region_names))
     assert sorted(capa.technology.values) == sorted(technology_names)
     assert (expected_capacity == capa.values).all()
