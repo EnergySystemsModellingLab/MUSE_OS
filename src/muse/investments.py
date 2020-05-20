@@ -37,17 +37,19 @@ Returns:
     of newly invested capacity.
 """
 __all__ = [
-    "match_demand",
+    "adhoc_match_demand",
     "cliff_retirement_profile",
     "register_investment",
     "INVESTMENT_SIGNATURE",
 ]
-from typing import Callable, List, Mapping, MutableMapping, Optional, Text, Union
+from typing import Callable, List, Mapping, MutableMapping, Optional, Text, Union, cast
+
+import numpy as np
+from mypy_extensions import KwArg
+from xarray import DataArray, Dataset
 
 from muse.constraints import Constraint
 from muse.registration import registrator
-from mypy_extensions import KwArg
-from xarray import DataArray, Dataset
 
 INVESTMENT_SIGNATURE = Callable[
     [DataArray, DataArray, Dataset, List[Constraint], KwArg()], DataArray
@@ -234,8 +236,8 @@ def cliff_retirement_profile(
     return profile.sel(year=goodyears).astype(bool)
 
 
-@register_investment(name="demand_matching")
-def match_demand(
+@register_investment(name="adhoc")
+def adhoc_match_demand(
     ranking: DataArray,
     search_space: DataArray,
     technologies: Dataset,
@@ -278,3 +280,29 @@ def match_demand(
     if "timeslice" in capacity.dims and timeslice_op is not None:
         capacity = timeslice_op(capacity)
     return capacity.rename("capacity addition")
+
+
+@register_investment(name="match_demand")
+def scipy_match_demand(
+    ranking: DataArray,
+    search_space: DataArray,
+    technologies: Dataset,
+    constraints: List[Constraint],
+    year: int,
+    timeslice_op: Optional[Callable[[DataArray], DataArray]] = None,
+) -> DataArray:
+    from muse.constraints import ScipyAdapter
+    from scipy.optimize import linprog
+    from logging import getLogger
+
+    if "timeslice" in ranking.dims and timeslice_op is not None:
+        ranking = timeslice_op(ranking)
+    timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
+    adapter = ScipyAdapter.factory(
+        technologies.interp(year=year), ranking, timeslice, *constraints
+    )
+    res = linprog(**adapter.kwargs)
+    if not res.success:
+        getLogger(__name__).info(res.message)
+
+    return cast(Callable[[np.ndarray], Dataset], adapter.to_muse)(res.x).capacity
