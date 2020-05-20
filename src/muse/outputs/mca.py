@@ -94,7 +94,41 @@ def supply(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArra
 
 @register_output_quantity
 def prices(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
-    """Current supply."""
+    """Current MCA market prices."""
     from muse.outputs.sector import market_quantity
 
     return market_quantity(market.prices, **kwargs)
+
+
+@register_output_quantity
+def capacity(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
+    """Current capacity across all sectors."""
+    return sectors_capacity(sectors)
+
+
+def sector_capacity(sector: AbstractSector) -> DataArray:
+    """Sector capacity with agent annotations."""
+    from operator import attrgetter
+    from xarray import concat
+
+    capa_sector: List[DataArray] = []
+    agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
+    for agent in agents:
+        capa_agent = agent.assets.capacity
+        capa_agent["agent"] = agent.name
+        capa_agent["type"] = agent.category
+        capa_agent["sector"] = getattr(sector, "name", "unnamed")
+        capa_sector.append(capa_agent)
+    if len(capa_sector) == 0:
+        return DataArray()
+    return concat(capa_sector, dim="asset")
+
+
+def sectors_capacity(sectors: List[AbstractSector]) -> DataArray:
+    """Aggregate outputs from all sectors."""
+    from xarray import concat
+
+    alldata = [sector_capacity(sector) for sector in sectors]
+    if len(alldata) == 0:
+        return DataArray()
+    return concat((data for data in alldata if data.ndim > 0), dim="asset")
