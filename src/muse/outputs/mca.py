@@ -16,7 +16,7 @@ The function should never modify it's arguments. It can return either a pandas d
 or an xarray DataArray.
 """
 from pathlib import Path
-from typing import Callable, List, Mapping, Text, Union
+from typing import Callable, List, Mapping, Optional, Sequence, Text, Union
 
 import pandas as pd
 from mypy_extensions import KwArg
@@ -98,11 +98,24 @@ def supply(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArra
 
 
 @register_output_quantity
-def prices(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
+def prices(
+    market: Dataset,
+    sectors: List[AbstractSector],
+    drop_empty: bool = True,
+    keep_columns: Optional[Union[Sequence[Text], Text]] = "prices",
+    **kwargs,
+) -> pd.DataFrame:
     """Current MCA market prices."""
     from muse.outputs.sector import market_quantity
 
-    return market_quantity(market.prices, **kwargs)
+    result = market_quantity(market.prices, **kwargs).to_dataframe()
+    if drop_empty:
+        result = result[result.prices != 0]
+    if isinstance(keep_columns, Text):
+        result = result[[keep_columns]]
+    elif keep_columns is not None and len(keep_columns) > 0:
+        result = result[[u for u in result.columns if u in keep_columns]]
+    return result
 
 
 @register_output_quantity
