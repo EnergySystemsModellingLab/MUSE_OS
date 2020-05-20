@@ -8,6 +8,7 @@ from typing import (
     Sequence,
     Text,
     Union,
+    cast,
 )
 
 from numpy import ndarray
@@ -30,7 +31,9 @@ def multiindex_to_coords(data: Union[Dataset, DataArray], dimension: Text = "ass
     return result
 
 
-def coords_to_multiindex(data: Dataset, dimension: Text = "asset"):
+def coords_to_multiindex(
+    data: Union[Dataset, DataArray], dimension: Text = "asset"
+) -> Union[Dataset, DataArray]:
     """Creates a multi-index from flattened multiple coords."""
     from pandas import MultiIndex
 
@@ -150,8 +153,9 @@ def reduce_assets(
 
     if not isinstance(assets, DataArray):
         assets = concat(assets, dim=dim)
+    assert isinstance(assets, DataArray)
     if coords is None:
-        coords = [k for k, v in assets.coords.items() if v.dims == (dim,)]
+        coords = [cast(Text, k) for k, v in assets.coords.items() if v.dims == (dim,)]
     elif isinstance(coords, Text):
         coords = (coords,)
     coords = [k for k in coords if k in assets.coords and assets[k].dims == (dim,)]
@@ -167,13 +171,13 @@ def reduce_assets(
 
 
 def broadcast_techs(
-    technologies: Dataset,
+    technologies: Union[Dataset, DataArray],
     template: Union[DataArray, Dataset],
     dimension: Text = "asset",
     interpolation: Text = "linear",
     installed_as_year: bool = True,
     **kwargs,
-) -> Dataset:
+) -> Union[Dataset, DataArray]:
     """Broadcasts technologies to the shape of template in given dimension.
 
     The dimensions of the technologies are fully explicit, in that each concept
@@ -220,7 +224,9 @@ def broadcast_techs(
         elif (not installed_as_year) and "year" in template.dims:
             year = template["year"]
         if year is not None and len(year) > 0:
-            techs = techs.interp(year=sorted(set(year.values)), method=interpolation)
+            techs = techs.interp(
+                year=sorted(set(cast(Iterable, year.values))), method=interpolation
+            )
         if installed_as_year and "installed" in names:
             techs = techs.rename(year="installed")
 
