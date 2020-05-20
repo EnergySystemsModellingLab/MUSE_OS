@@ -23,12 +23,14 @@ def test_aggregate_sector():
 
     assert sorted(capa.agent.values) == sorted(agent_names)
     assert sorted(np.unique(capa.region.values)) == sorted(np.unique(region_names))
-    assert sorted(capa.technology.values) == sorted(technology_names)
+    assert sorted(np.unique(capa.technology.values)) == sorted(
+        np.unique(technology_names)
+    )
     expected_capacity = [
-        u.assets.capacity.sel(year=2020).sum(dim="asset").values
+        [u.assets.capacity.sel(year=2020).sum(dim="asset").values]
         for u in sorted(sector_list[0].agents, key=attrgetter("name"))
     ]
-    assert (expected_capacity == capa.sel(year=2020)).all()
+    assert (expected_capacity == capa.sel(year=2020).values).all()
 
 
 def test_aggregate_sectors():
@@ -43,16 +45,16 @@ def test_aggregate_sectors():
     ]
 
     assert sorted(alldata.agent.values) == sorted(agent_names)
-    assert sorted([alldata.region.values for _ in alldata.agent.values]) == sorted(
-        region_names
+    assert sorted(np.unique(alldata.region.values)) == sorted(np.unique(region_names))
+    assert sorted(np.unique(alldata.technology.values)) == sorted(
+        np.unique(technology_names)
     )
-    assert sorted(alldata.technology.values) == sorted(technology_names)
     expected_capacity = [
         u.assets.capacity.sel(year=2020).sum(dim="asset").values
         for sector in sector_list
         for u in sector.agents
     ]
-    assert (expected_capacity == alldata.sel(year=2020)).all()
+    assert (expected_capacity == alldata.sel(year=2020).sum("technology").values).all()
 
 
 def test_aggregate_sector_manyregions():
@@ -81,9 +83,12 @@ def test_aggregate_sector_manyregions():
 
     assert sorted(capa.agent.values) == sorted(agent_names)
     assert sorted(np.unique(capa.region.values)) == sorted(np.unique(region_names))
-    assert sorted(capa.technology.values) == sorted(technology_names)
+    assert sorted(np.unique(capa.technology.values)) == sorted(
+        np.unique(technology_names)
+    )
+
     expected_capacity = [
-        u.assets.capacity.sel(year=2020).sum(dim="asset").values
+        [u.assets.capacity.sel(year=2020).sum(dim="asset").values]
         for u in sorted(sector_list[0].agents, key=attrgetter("name"))
     ]
     assert (expected_capacity == capa.sel(year=2020)).all()

@@ -136,10 +136,12 @@ def sector_capacity(sector: AbstractSector) -> DataArray:
         capa_agent["agent"] = agent.name
         capa_agent["type"] = agent.category
         capa_agent["sector"] = getattr(sector, "name", "unnamed")
-        capa_sector.append(capa_agent)
+        capa_sector.append(
+            capa_agent.groupby("technology", "installed").sum("asset").fillna(0)
+        )
     if len(capa_sector) == 0:
         return DataArray()
-    return concat(capa_sector, dim="asset")
+    return concat(capa_sector, dim="asset", fill_value=0)
 
 
 def sectors_capacity(sectors: List[AbstractSector]) -> DataArray:
@@ -149,4 +151,6 @@ def sectors_capacity(sectors: List[AbstractSector]) -> DataArray:
     alldata = [sector_capacity(sector) for sector in sectors]
     if len(alldata) == 0:
         return DataArray()
-    return concat((data for data in alldata if data.ndim > 0), dim="asset")
+    return concat(
+        (data for data in alldata if data.ndim > 0), dim="asset", fill_value=0
+    )
