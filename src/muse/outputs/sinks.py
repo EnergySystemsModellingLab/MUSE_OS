@@ -246,7 +246,7 @@ class YearlyAggregate:
         if self.axis in dataframe.columns:
             dataframe = dataframe[dataframe[self.axis] == year]
         elif self.axis in getattr(dataframe.index, "names", []):
-            dataframe = dataframe.xs(year, level=self.axis)
+            dataframe = dataframe.xs(year, level=self.axis).assign(year=year)
         if self.aggregate is None:
             self.aggregate = dataframe
         else:

@@ -219,22 +219,22 @@ def test_yearly_aggregate():
         dict(overwrite=True, sink=dict(aggregate="dummy")), sector_name="yoyo"
     )
 
-    data = xr.DataArray([1, 0], coords=dict(a=[2, 4]), dims="a")
+    data = xr.DataArray([1, 0], coords=dict(a=[2, 4]), dims="a", name="nada")
     data["year"] = 2010
 
     assert isinstance(sink(data, 2010), MySpecialReturn)
     assert gyear == 2010
     assert gsector == "yoyo"
     assert goverwrite is True
-    assert received_data is data
+    assert isinstance(received_data, pd.DataFrame)
 
-    data = xr.DataArray([0, 1], coords=dict(a=[2, 4]), dims="a")
+    data = xr.DataArray([0, 1], coords=dict(a=[2, 4]), dims="a", name="nada")
     data["year"] = 2020
     assert isinstance(sink(data, 2020), MySpecialReturn)
     assert gyear == 2020
     assert gsector == "yoyo"
-    assert received_data.sel(year=2010).values == approx(np.array([1, 0]))
-    assert received_data.sel(year=2020).values == approx(np.array([0, 1]))
+    assert received_data[received_data.year == 2010].nada.values == approx([1, 0])
+    assert received_data[received_data.year == 2020].nada.values == approx([0, 1])
 
 
 def test_yearly_aggregate_file(tmpdir):
