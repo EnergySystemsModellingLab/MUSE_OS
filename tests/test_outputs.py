@@ -299,13 +299,13 @@ def test_path_formatting(tmpdir):
     settings_file = tmpdir / "model" / "settings.toml"
     settings = load(settings_file)
     settings["outputs"] = [
-        {"quantity": "dummy", "sink": "dummy", "filename": "{path}/{quantity}{suffix}"}
+        {"quantity": "dummy", "sink": "dummy", "filename": "{path}/{Quantity}{suffix}"}
     ]
     dump(settings, (settings_file))
 
     @register_output_sink(name="dummy")
     @sink_to_file(".dummy")
-    def to_dummy() -> None:
+    def to_dummy(*args, **kwargs) -> None:
         pass
 
     @register_output_quantity
@@ -313,5 +313,7 @@ def test_path_formatting(tmpdir):
         return None
 
     mca = MCA.factory(Path(settings_file))
-    mca.outputs(None)  # Reguires "market" as an input
 
+    assert str(mca.outputs(mca.market)[0]) == settings["outputs"][0]["filename"].format(
+        path=tmpdir / "model", Quantity="dummy", suffix=".dummy"
+    )
