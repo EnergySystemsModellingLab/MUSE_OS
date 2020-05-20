@@ -10,7 +10,7 @@ follow the same signature:
         capacity: DataArray,
         market: Dataset,
         technologies: Dataset
-    ) -> DataArray:
+    ) -> Union[DataArray, DataFrame]:
         pass
 
 They take as input the current capacity profile, aggregated across a sectoar,
@@ -20,13 +20,16 @@ technologies in the market. It returns a single DataArray object.
 The function should never modify it's arguments.
 """
 from typing import Any, Callable, List, Mapping, Optional, Text, Union
+
 from mypy_extensions import KwArg
 from xarray import DataArray, Dataset
-
+import pandas as pd
 
 from muse.registration import registrator
 
-OUTPUT_QUANTITY_SIGNATURE = Callable[[Dataset, DataArray, Dataset, KwArg()], DataArray]
+OUTPUT_QUANTITY_SIGNATURE = Callable[
+    [Dataset, DataArray, Dataset, KwArg()], Union[pd.DataFrame, DataArray]
+]
 """Signature of functions computing quantities for later analysis."""
 
 OUTPUT_QUANTITIES: Mapping[Text, OUTPUT_QUANTITY_SIGNATURE] = {}
@@ -46,7 +49,7 @@ def register_output_quantity(function: OUTPUT_QUANTITY_SIGNATURE = None) -> Call
     @wraps(function)
     def decorated(*args, **kwargs):
         result = function(*args, **kwargs)
-        if isinstance(result, DataArray):
+        if isinstance(result, (pd.DataFrame, DataArray)):
             result.name = function.__name__
         return result
 

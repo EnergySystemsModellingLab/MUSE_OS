@@ -19,12 +19,15 @@ The signature of a sink is:
 
 from typing import Any, Callable, Mapping, MutableMapping, Optional, Text, Union
 
+import pandas as pd
 import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.registration import registrator
 
-OUTPUT_SINK_SIGNATURE = Callable[[xr.DataArray, int, KwArg()], Optional[Text]]
+OUTPUT_SINK_SIGNATURE = Callable[
+    [Union[xr.DataArray, pd.DataFrame], int, KwArg()], Optional[Text]
+]
 """Signature of functions used to save quantities."""
 
 OUTPUT_SINKS: Mapping[Text, Union[OUTPUT_SINK_SIGNATURE, Callable]] = {}
@@ -94,9 +97,11 @@ def sink_to_file(suffix: Text):
     from pathlib import Path
     from muse.defaults import DEFAULT_OUTPUT_DIRECTORY
 
-    def decorator(function: Callable[[xr.DataArray, Text], None]):
+    def decorator(function: Callable[[Union[pd.DataFrame, xr.DataArray], Text], None]):
         @wraps(function)
-        def decorated(quantity: xr.DataArray, year: int, **config) -> Path:
+        def decorated(
+            quantity: Union[pd.DataFrame, xr.DataArray], year: int, **config
+        ) -> Path:
             params = config.copy()
             filestring = str(
                 params.pop(
@@ -148,7 +153,9 @@ def sink_to_file(suffix: Text):
 
 @register_output_sink(name="csv")
 @sink_to_file(".csv")
-def to_csv(quantity: xr.DataArray, filename: Text, **params) -> None:
+def to_csv(
+    quantity: Union[pd.DataFrame, xr.DataArray], filename: Text, **params
+) -> None:
     """Saves data array to csv format, using pandas.to_csv.
 
     Arguments:
@@ -157,12 +164,16 @@ def to_csv(quantity: xr.DataArray, filename: Text, **params) -> None:
         params: A configuration dictionary accepting any argument to `pandas.to_csv`
     """
     params.update({"float_format": "%.11f"})
-    quantity.to_dataframe().to_csv(filename, **params)
+    if isinstance(quantity, xr.DataArray):
+        quantity = quantity.to_dataframe()
+    quantity.to_csv(filename, **params)
 
 
 @register_output_sink(name=("netcdf", "nc"))
 @sink_to_file(".nc")
-def to_netcdf(quantity: xr.DataArray, filename: Text, **params) -> None:
+def to_netcdf(
+    quantity: Union[xr.DataArray, pd.DataFrame], filename: Text, **params
+) -> None:
     """Saves data array to csv format, using xarray.to_netcdf.
 
     Arguments:
@@ -170,13 +181,20 @@ def to_netcdf(quantity: xr.DataArray, filename: Text, **params) -> None:
         filename: File to which the data should be saved
         params: A configuration dictionary accepting any argument to `xarray.to_netcdf`
     """
-    name = quantity.name if quantity.name is not None else "quantity"
-    xr.Dataset({name: quantity}).to_netcdf(filename, **params)
+    name = quantity.name if getattr(quantity, "name", None) is not None else "quantity"
+    assert name is not None
+    if isinstance(quantity, pd.DataFrame):
+        dataset = xr.Dataset.from_dataframe(quantity)
+    else:
+        dataset = xr.Dataset({name: quantity})
+    dataset.to_netcdf(filename, **params)
 
 
 @register_output_sink(name=("excel", "xlsx"))
 @sink_to_file(".xlsx")
-def to_excel(quantity: xr.DataArray, filename: Text, **params) -> None:
+def to_excel(
+    quantity: Union[pd.DataFrame, xr.DataArray], filename: Text, **params
+) -> None:
     """Saves data array to csv format, using pandas.to_excel.
 
     Arguments:
@@ -186,8 +204,10 @@ def to_excel(quantity: xr.DataArray, filename: Text, **params) -> None:
     """
     from logging import getLogger
 
+    if isinstance(quantity, xr.DataArray):
+        quantity = quantity.to_dataframe()
     try:
-        quantity.to_dataframe().to_excel(filename, **params)
+        quantity.to_excel(filename, **params)
     except ModuleNotFoundError as e:
         msg = "Cannot save to excel format: missing python package (%s)" % e
         getLogger(__name__).critical(msg)
@@ -218,11 +238,20 @@ class YearlyAggregate:
         self.aggregate: Optional[xr.DataArray] = None
         self.axis = axis
 
-    def __call__(self, data: xr.DataArray, year: int):
-        if self.axis in data.dims:
-            data = data.sel(dict([(self.axis, year)]))
-        if self.aggregate is None:
-            self.aggregate = data
+    def __call__(self, data: Union[pd.DataFrame, xr.DataArray], year: int):
+        if isinstance(data, xr.DataArray):
+            dataframe = data.to_dataframe()
         else:
-            self.aggregate = xr.concat((self.aggregate, data), self.axis)
+            dataframe = data
+        if self.axis in dataframe.columns:
+            dataframe = dataframe[dataframe[self.axis] == year]
+        elif self.axis in getattr(dataframe.index, "names", []):
+            dataframe = dataframe.xs(year, level=self.axis)
+        if self.aggregate is None:
+            self.aggregate = dataframe
+        else:
+            self.aggregate = pd.concat((self.aggregate, dataframe))
+        assert self.aggregate is not None
+        if getattr(data, "name", None) is not None:
+            self.aggregate.name = data.name
         return self.sink(self.aggregate, year=year)

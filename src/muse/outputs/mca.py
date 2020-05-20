@@ -6,14 +6,19 @@ same signature:
 .. code-block:: python
 
     @register_output_quantity
-    def quantity(sectors: List[AbstractSector], market: Dataset, **kwargs) -> DataArray:
+    def quantity(
+        sectors: List[AbstractSector],
+        market: Dataset, **kwargs
+    ) -> Union[pd.DataFrame, DataArray]:
         pass
 
-The function should never modify it's arguments.
+The function should never modify it's arguments. It can return either a pandas dataframe
+or an xarray DataArray.
 """
 from pathlib import Path
 from typing import Callable, List, Mapping, Text, Union
 
+import pandas as pd
 from mypy_extensions import KwArg
 from xarray import DataArray, Dataset
 
@@ -21,7 +26,7 @@ from muse.registration import registrator
 from muse.sectors import AbstractSector
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
-    [Dataset, List[AbstractSector], KwArg()], DataArray
+    [Dataset, List[AbstractSector], KwArg()], Union[DataArray, pd.DataFrame]
 ]
 """Signature of functions computing quantities for later analysis."""
 
@@ -42,7 +47,7 @@ def register_output_quantity(function: OUTPUT_QUANTITY_SIGNATURE = None) -> Call
     @wraps(function)
     def decorated(*args, **kwargs):
         result = function(*args, **kwargs)
-        if isinstance(result, DataArray):
+        if isinstance(result, (pd.DataFrame, DataArray)):
             result.name = function.__name__
         return result
 
