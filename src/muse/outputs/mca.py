@@ -138,9 +138,7 @@ def sector_capacity(sector: AbstractSector) -> DataArray:
         capa_agent["sector"] = getattr(sector, "name", "unnamed")
 
         capa_sector.append(
-            capa_agent.groupby(
-                "technology", squeeze="installed", restore_coord_dims=None
-            )
+            capa_agent.groupby("technology", squeeze=True, restore_coord_dims=None)
             .sum("asset")
             .fillna(0)
         )
