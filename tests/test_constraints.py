@@ -1,4 +1,7 @@
+from typing import Union
+
 import numpy as np
+import pandas as pd
 import xarray as xr
 from pytest import approx, fixture, mark
 
@@ -15,9 +18,12 @@ def residential(model):
     return examples.sector("residential", model=model)
 
 
-@fixture
-def timeslices(market):
-    return market.timeslice
+@fixture(params=["timeslice_as_list", "timeslice_as_multindex"])
+def timeslices(market, request):
+    timeslice = market.timeslice
+    if request.param == "timeslice_as_multindex":
+        timeslice = _as_list(timeslice)
+    return timeslice
 
 
 @fixture
@@ -70,7 +76,7 @@ def market_demand(assets, technologies, market):
     return 0.8 * maximum_production(
         technologies.interp(year=2025),
         convert_timeslice(
-            assets.capacity.sel(year=2025).groupby("technology").sum("asset"), market,
+            assets.capacity.sel(year=2025).groupby("technology").sum("asset"), market
         ),
     ).rename(technology="asset")
 
@@ -103,17 +109,20 @@ def max_capacity_expansion(market_demand, assets, search_space, market, technolo
     )
 
 
-@fixture
-def constraints(market_demand, assets, search_space, market, technologies):
+@fixture(params=["timeslice_as_list", "timeslice_as_multindex"])
+def constraints(request, market_demand, assets, search_space, market, technologies):
     from muse import constraints as cs
 
-    return [
+    constraints = [
         cs.max_production(market_demand, assets, search_space, market, technologies),
         cs.demand(market_demand, assets, search_space, market, technologies),
         cs.max_capacity_expansion(
             market_demand, assets, search_space, market, technologies
         ),
     ]
+    if request.param == "timeslice_as_multindex":
+        constraints = [_as_list(cs) for cs in constraints]
+    return constraints
 
 
 def test_lp_constraints_matrix_b_is_scalar(constraint, lpcosts):
@@ -392,3 +401,44 @@ def test_scipy_adapter_back_to_muse(technologies, costs, timeslices):
     adapter = ScipyAdapter.factory(technologies, costs, timeslices)
     assert (adapter.to_muse(x).capacity == copy.capacity).all()
     assert (adapter.to_muse(x).production == copy.production).all()
+
+
+def _as_list(data: Union[xr.DataArray, xr.Dataset]) -> Union[xr.DataArray, xr.Dataset]:
+    if "timeslice" in data.dims:
+        data = data.copy(deep=False)
+        data["timeslice"] = pd.MultiIndex.from_tuples(
+            data.get_index("timeslice"), names=("month", "day", "hour")
+        )
+    return data
+
+
+def test_scipy_adapter_standard_constraints(
+    technologies, costs, constraints, timeslices
+):
+    from muse.constraints import ScipyAdapter
+
+    technologies = technologies.interp(year=2025)
+
+    adapter = ScipyAdapter.factory(technologies, costs, timeslices, *constraints)
+    maxprod = next(cs for cs in constraints if cs.name == "max_production")
+    maxcapa = next(cs for cs in constraints if cs.name == "max capacity expansion")
+    demand = next(cs for cs in constraints if cs.name == "demand")
+    assert adapter.c.size == costs.size + maxprod.production.size
+    assert adapter.b_eq.size == demand.b.size
+    assert adapter.A_eq.shape == (adapter.b_eq.size, adapter.c.size)
+    assert adapter.A_ub.shape == (adapter.b_ub.size, adapter.c.size)
+    assert adapter.b_ub.size == maxprod.b.size + maxcapa.b.size
+
+
+def test_scipy_solver(technologies, costs, constraints, timeslices):
+    from muse.investments import scipy_match_demand
+
+    solution = scipy_match_demand(
+        ranking=costs,
+        search_space=xr.ones_like(costs),
+        technologies=technologies,
+        constraints=constraints,
+        year=2025,
+    )
+    assert isinstance(solution, xr.DataArray)
+    assert set(solution.dims) == {"asset", "replacement"}

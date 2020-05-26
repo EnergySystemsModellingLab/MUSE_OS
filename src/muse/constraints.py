@@ -67,11 +67,11 @@ the following signature:
 
     @register_constraints
     def constraints(
-        demand: DataArray,
-        assets: Dataset,
-        search_space: DataArray,
-        market: Dataset,
-        technologies: Dataset,
+        demand: xr.DataArray,
+        assets: xr.Dataset,
+        search_space: xr.DataArray,
+        market: xr.Dataset,
+        technologies: xr.Dataset,
         year: Optional[int] = None,
         **kwargs,
     ) -> Constraint:
@@ -102,7 +102,6 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import (
     Callable,
-    Hashable,
     List,
     Mapping,
     MutableMapping,
@@ -114,10 +113,10 @@ from typing import (
     cast,
 )
 
+import numpy as np
+import pandas as pd
+import xarray as xr
 from mypy_extensions import KwArg
-from numpy import ndarray
-from pandas import Index
-from xarray import DataArray, Dataset
 
 from muse.registration import registrator
 
@@ -133,7 +132,7 @@ class ConstraintKind(Enum):
     LOWER_BOUND = auto()
 
 
-Constraint = Dataset
+Constraint = xr.Dataset
 """An investment constraint :math:`A * x ~ b`
 
 Where :math:`~` is one of :math:`=,\\leq,\\geq`.
@@ -151,7 +150,8 @@ upper bound constraint.
 
 
 CONSTRAINT_SIGNATURE = Callable[
-    [DataArray, Dataset, DataArray, Dataset, Dataset, KwArg()], Optional[Constraint]
+    [xr.DataArray, xr.Dataset, xr.DataArray, xr.Dataset, xr.Dataset, KwArg()],
+    Optional[Constraint],
 ]
 """Basic signature for functions producing constraints.
 
@@ -171,11 +171,11 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
 
     @wraps(function)
     def decorated(
-        demand: DataArray,
-        assets: Dataset,
-        search_space: DataArray,
-        market: Dataset,
-        technologies: Dataset,
+        demand: xr.DataArray,
+        assets: xr.Dataset,
+        search_space: xr.DataArray,
+        market: xr.Dataset,
+        technologies: xr.Dataset,
         **kwargs,
     ) -> Optional[Constraint]:
         """Computes and standardizes a constraint."""
@@ -224,11 +224,11 @@ def factory(
     ]
 
     def constraints(
-        demand: DataArray,
-        assets: Dataset,
-        search_space: DataArray,
-        market: Dataset,
-        technologies: Dataset,
+        demand: xr.DataArray,
+        assets: xr.Dataset,
+        search_space: xr.DataArray,
+        market: xr.Dataset,
+        technologies: xr.Dataset,
         year: Optional[int] = None,
     ) -> List[Constraint]:
         if year is None:
@@ -244,11 +244,11 @@ def factory(
 
 @register_constraints
 def max_capacity_expansion(
-    demand: DataArray,
-    assets: Dataset,
-    search_space: DataArray,
-    market: Dataset,
-    technologies: Dataset,
+    demand: xr.DataArray,
+    assets: xr.Dataset,
+    search_space: xr.DataArray,
+    market: xr.Dataset,
+    technologies: xr.Dataset,
     year: Optional[int] = None,
     forecast: int = 5,
     interpolation: Text = "linear",
@@ -303,7 +303,7 @@ def max_capacity_expansion(
         ],
         **kwargs,
     )
-    assert isinstance(techs, Dataset)
+    assert isinstance(techs, xr.Dataset)
 
     capacity = (
         assets.capacity.groupby("technology")
@@ -326,7 +326,7 @@ def max_capacity_expansion(
     zero_cap = add_cap.where(add_cap < total_cap, total_cap)
     with_growth = zero_cap.where(zero_cap < growth_cap, growth_cap)
     constraint = with_growth.where(initial > 0, zero_cap)
-    return Dataset(
+    return xr.Dataset(
         dict(b=constraint, capacity=1),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND, name="max capacity expansion"),
     )
@@ -334,11 +334,11 @@ def max_capacity_expansion(
 
 @register_constraints
 def demand(
-    demand: DataArray,
-    assets: Dataset,
-    search_space: DataArray,
-    market: Dataset,
-    technologies: Dataset,
+    demand: xr.DataArray,
+    assets: xr.Dataset,
+    search_space: xr.DataArray,
+    market: xr.Dataset,
+    technologies: xr.Dataset,
     year: Optional[int] = None,
     forecast: int = 5,
     interpolation: Text = "linear",
@@ -349,16 +349,16 @@ def demand(
     enduse = technologies.commodity.sel(commodity=is_enduse(technologies.comm_usage))
     b = demand.sel(commodity=demand.commodity.isin(enduse))
     assert "year" not in b.dims
-    return Dataset(dict(b=b, production=1), attrs=dict(kind=ConstraintKind.EQUALITY))
+    return xr.Dataset(dict(b=b, production=1), attrs=dict(kind=ConstraintKind.EQUALITY))
 
 
 @register_constraints
 def max_production(
-    demand: DataArray,
-    assets: Dataset,
-    search_space: DataArray,
-    market: Dataset,
-    technologies: Dataset,
+    demand: xr.DataArray,
+    assets: xr.Dataset,
+    search_space: xr.DataArray,
+    market: xr.Dataset,
+    technologies: xr.Dataset,
     year: Optional[int] = None,
     forecast: int = 5,
     interpolation: Text = "linear",
@@ -399,13 +399,15 @@ def max_production(
     ).expand_dims(asset=search_space.asset)
     production = -ones_like(capacity)
     b = zeros_like(production)
-    return Dataset(
+    return xr.Dataset(
         dict(capacity=capacity, production=production, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
     )
 
 
-def lp_costs(technologies: Dataset, costs: DataArray, timeslices: DataArray) -> Dataset:
+def lp_costs(
+    technologies: xr.Dataset, costs: xr.DataArray, timeslices: xr.DataArray
+) -> xr.Dataset:
     """Creates costs for solving with scipy's LP solver.
 
     Example:
@@ -467,15 +469,18 @@ def lp_costs(technologies: Dataset, costs: DataArray, timeslices: DataArray) -> 
             technology=technologies.technology.isin(costs.replacement),
         ).rename(technology="replacement")
     )
-    return Dataset(dict(capacity=costs, production=production))
+    for dim in production.dims:
+        if isinstance(production.get_index(dim), pd.MultiIndex):
+            production[dim] = pd.Index(production.get_index(dim), tupleize_cols=False)
+    return xr.Dataset(dict(capacity=costs, production=production))
 
 
 def merge_lp(
-    costs: Dataset, *constraints: Constraint
-) -> Tuple[Dataset, List[Constraint]]:
+    costs: xr.Dataset, *constraints: Constraint
+) -> Tuple[xr.Dataset, List[Constraint]]:
     """Unify coordinate systems of costs and constraints.
 
-    In practice, this function brings costs and constraints into a single dataset and
+    In practice, this function brings costs and constraints into a single xr.Dataset and
     then splits things up again. This ensures the dimensions are not only compatible,
     but also such that that their order in memory is the same.
     """
@@ -491,9 +496,9 @@ def merge_lp(
         ]
     )
 
-    unified_costs = cast(Dataset, data[["capacity", "production"]])
+    unified_costs = cast(xr.Dataset, data[["capacity", "production"]])
     unified_constraints = [
-        Dataset(
+        xr.Dataset(
             {
                 "capacity": data[f"capacity{i}"],
                 "production": data[f"production{i}"],
@@ -507,7 +512,7 @@ def merge_lp(
     return unified_costs, unified_constraints
 
 
-def lp_constraint(constraint: Constraint, lpcosts: Dataset) -> Constraint:
+def lp_constraint(constraint: Constraint, lpcosts: xr.Dataset) -> Constraint:
     """Transforms the constraint to LP data.
 
     The goal is to create from ``lpcosts.capacity``, ``constraint.capacity``, and
@@ -528,6 +533,10 @@ def lp_constraint(constraint: Constraint, lpcosts: Dataset) -> Constraint:
     See :py:func:`muse.constraints.lp_constraint_matrix` for a more detailed explanation
     of the transformations applied here.
     """
+    constraint = constraint.copy(deep=False)
+    for dim in constraint.dims:
+        if isinstance(constraint.get_index(dim), pd.MultiIndex):
+            constraint[dim] = pd.Index(constraint.get_index(dim), tupleize_cols=False)
     b = constraint.b.drop_vars(set(constraint.b.coords) - set(constraint.b.dims))
     b = b.rename({k: f"c({k})" for k in b.dims})
     capacity = lp_constraint_matrix(constraint.b, constraint.capacity, lpcosts.capacity)
@@ -536,12 +545,14 @@ def lp_constraint(constraint: Constraint, lpcosts: Dataset) -> Constraint:
         constraint.b, constraint.production, lpcosts.production
     )
     production = production.drop_vars(set(production.coords) - set(production.dims))
-    return Dataset(
+    return xr.Dataset(
         {"b": b, "capacity": capacity, "production": production}, attrs=constraint.attrs
     )
 
 
-def lp_constraint_matrix(b: DataArray, constraint: DataArray, lpcosts: DataArray):
+def lp_constraint_matrix(
+    b: xr.DataArray, constraint: xr.DataArray, lpcosts: xr.DataArray
+):
     """Transforms one constraint block into an lp matrix.
 
    The goal is to create from ``lpcosts``, ``constraint``, and ``b`` a 2d-matrix of
@@ -661,14 +672,14 @@ def lp_constraint_matrix(b: DataArray, constraint: DataArray, lpcosts: DataArray
             return constraint[dim].values
 
         diagonal_submats = [
-            DataArray(
+            xr.DataArray(
                 eye(len(b[k])),
                 coords={f"c({k})": get_dimension(k), f"d({k})": get_dimension(k)},
                 dims=(f"c({k})", f"d({k})"),
             )
             for k in diag_dims
         ]
-        result = result * reduce(DataArray.__mul__, diagonal_submats)
+        result = result * reduce(xr.DataArray.__mul__, diagonal_submats)
     return result
 
 
@@ -778,20 +789,20 @@ class ScipyAdapter:
         >>> assert set(inputs.A_ub[:, :capsize].flatten()) == {0.0, 1.0}
     """
 
-    c: ndarray
-    to_muse: Callable[[ndarray], Dataset]
+    c: np.ndarray
+    to_muse: Callable[[np.ndarray], xr.Dataset]
     bounds: Tuple[Optional[float], Optional[float]] = (0, None)
-    A_ub: Optional[ndarray] = None
-    b_ub: Optional[ndarray] = None
-    A_eq: Optional[ndarray] = None
-    b_eq: Optional[ndarray] = None
+    A_ub: Optional[np.ndarray] = None
+    b_ub: Optional[np.ndarray] = None
+    A_eq: Optional[np.ndarray] = None
+    b_eq: Optional[np.ndarray] = None
 
     @classmethod
     def factory(
         cls,
-        technologies: Dataset,
-        costs: DataArray,
-        timeslices: Index,
+        technologies: xr.Dataset,
+        costs: xr.DataArray,
+        timeslices: pd.Index,
         *constraints: Constraint,
     ) -> ScipyAdapter:
 
@@ -802,7 +813,7 @@ class ScipyAdapter:
         bs = cls._stacked_quantity(data, "b")
         kwargs = cls._to_scipy_adapter(capacities, productions, bs, *constraints)
 
-        def to_muse(x: ndarray) -> Dataset:
+        def to_muse(x: np.ndarray) -> xr.Dataset:
             return ScipyAdapter._back_to_muse(x, capacities.costs, productions.costs)
 
         return ScipyAdapter(to_muse=to_muse, **kwargs)
@@ -820,11 +831,10 @@ class ScipyAdapter:
 
     @staticmethod
     def _unified_dataset(
-        technologies: Dataset, lpcosts: Dataset, *constraints: Constraint
-    ) -> Dataset:
-        """Creates single dataset from costs and contraints."""
+        technologies: xr.Dataset, lpcosts: xr.Dataset, *constraints: Constraint
+    ) -> xr.Dataset:
+        """Creates single xr.Dataset from costs and contraints."""
         from xarray import merge
-        from pandas import MultiIndex
 
         assert "year" not in technologies.dims
         data = merge(
@@ -842,18 +852,12 @@ class ScipyAdapter:
                 data[f"capacity{i}"] = -data[f"capacity{i}"]  # type: ignore
                 data[f"production{i}"] = -data[f"production{i}"]  # type: ignore
 
-        return data.set_index(
-            {
-                dim: cast(Sequence[Hashable], list(data.get_index(dim)))
-                for dim in data.dims
-                if isinstance(data.get_index(dim), MultiIndex)
-            }
-        )
+        return data
 
     @staticmethod
-    def _stacked_quantity(data: Dataset, name: Text) -> Dataset:
+    def _stacked_quantity(data: xr.Dataset, name: Text) -> xr.Dataset:
         result = cast(
-            Dataset, data[[u for u in data.data_vars if str(u).startswith(name)]]
+            xr.Dataset, data[[u for u in data.data_vars if str(u).startswith(name)]]
         )
         result = result.rename(
             {
@@ -867,10 +871,8 @@ class ScipyAdapter:
 
     @staticmethod
     def _to_scipy_adapter(
-        capacities: Dataset, productions: Dataset, bs: Dataset, *constraints
+        capacities: xr.Dataset, productions: xr.Dataset, bs: xr.Dataset, *constraints
     ):
-        from numpy import concatenate, ndarray
-
         def extract_bA(constraints, *kinds):
             indices = [i for i in range(len(bs)) if constraints[i].kind in kinds]
             capa_constraints = [
@@ -888,14 +890,14 @@ class ScipyAdapter:
                 for i in indices
             ]
             if capa_constraints:
-                A: Optional[ndarray] = concatenate(
+                A: Optional[np.ndarray] = np.concatenate(
                     (
-                        concatenate(capa_constraints, axis=0),
-                        concatenate(prod_constraints, axis=0),
+                        np.concatenate(capa_constraints, axis=0),
+                        np.concatenate(prod_constraints, axis=0),
                     ),
                     axis=1,
                 )
-                b: Optional[ndarray] = concatenate(
+                b: Optional[np.ndarray] = np.concatenate(
                     [bs[i].stack(constraint=sorted(bs[i].dims)) for i in indices],
                     axis=0,
                 )
@@ -904,7 +906,7 @@ class ScipyAdapter:
                 b = None
             return A, b
 
-        c = concatenate(
+        c = np.concatenate(
             (capacities["costs"].values, productions["costs"].values), axis=0
         )
         A_ub, b_ub = extract_bA(
@@ -923,17 +925,17 @@ class ScipyAdapter:
 
     @staticmethod
     def _back_to_muse_quantity(
-        x: ndarray, template: Union[DataArray, Dataset]
-    ) -> DataArray:
-        result = DataArray(x, coords=template.coords, dims=template.dims).unstack(
+        x: np.ndarray, template: Union[xr.DataArray, xr.Dataset]
+    ) -> xr.DataArray:
+        result = xr.DataArray(x, coords=template.coords, dims=template.dims).unstack(
             "decision"
         )
         return result.rename({k: str(k)[2:-1] for k in result.dims})
 
     @staticmethod
     def _back_to_muse(
-        x: ndarray, capacity: DataArray, production: DataArray
-    ) -> Dataset:
+        x: np.ndarray, capacity: xr.DataArray, production: xr.DataArray
+    ) -> xr.Dataset:
         capa = ScipyAdapter._back_to_muse_quantity(x[: capacity.size], capacity)
         prod = ScipyAdapter._back_to_muse_quantity(x[capacity.size :], production)
-        return Dataset({"capacity": capa, "production": prod})
+        return xr.Dataset({"capacity": capa, "production": prod})
