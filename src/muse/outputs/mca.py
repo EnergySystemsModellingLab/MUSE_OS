@@ -141,7 +141,10 @@ def sector_capacity(sector: AbstractSector) -> DataArray:
             capa_sector.append(capa_agent.groupby("technology").sum("asset").fillna(0))
     if len(capa_sector) == 0:
         return DataArray()
-    return concat(capa_sector, dim="asset", fill_value=0)
+    capacity = concat(capa_sector, dim="asset")
+    if "year" in capacity.dims:
+        capacity = capacity.ffill("year")
+    return capacity
 
 
 def sectors_capacity(sectors: List[AbstractSector]) -> DataArray:
