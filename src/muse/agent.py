@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Callable, List, Mapping, Optional, Sequence, Text, Union
 
-from xarray import DataArray, Dataset
+import xarray as xr
 
 from muse.defaults import DEFAULT_SECTORS_DIRECTORY
 
@@ -18,7 +18,7 @@ class AgentBase(ABC):
         self,
         name: Text = "Agent",
         region: Text = "",
-        assets: Optional[Dataset] = None,
+        assets: Optional[xr.Dataset] = None,
         interpolation: Text = "linear",
         category: Optional[Text] = None,
         constraints: Optional[Callable] = None,
@@ -45,7 +45,7 @@ class AgentBase(ABC):
         """ Name associated with the agent """
         self.region = region
         """ Region the agent operates in """
-        self.assets = assets if assets is not None else Dataset()
+        self.assets = assets if assets is not None else xr.Dataset()
         """Current stock of technologies."""
         self.uuid = uuid4()
         """A unique identifier for the agent."""
@@ -62,10 +62,10 @@ class AgentBase(ABC):
 
     def filter_input(
         self,
-        dataset: Union[Dataset, DataArray],
+        dataset: Union[xr.Dataset, xr.DataArray],
         year: Optional[Union[Sequence[int], int]] = None,
         **kwargs,
-    ) -> Union[Dataset, DataArray]:
+    ) -> Union[xr.Dataset, xr.DataArray]:
         """Filter inputs for usage in agent.
 
         For instance, filters down to agent's region, etc.
@@ -79,9 +79,9 @@ class AgentBase(ABC):
     @abstractmethod
     def next(
         self,
-        technologies: Dataset,
-        market: Dataset,
-        demand: DataArray,
+        technologies: xr.Dataset,
+        market: xr.Dataset,
+        demand: xr.DataArray,
         time_period: int = 1,
     ):
         """Iterates agent one turn.
@@ -99,7 +99,7 @@ class Agent(AgentBase):
         self,
         name: Text = "Agent",
         region: Text = "USA",
-        assets: Optional[Dataset] = None,
+        assets: Optional[xr.Dataset] = None,
         interpolation: Text = "linear",
         search_rules: Optional[Callable] = None,
         objectives: Optional[Callable] = None,
@@ -216,9 +216,9 @@ class Agent(AgentBase):
 
     def next(
         self,
-        technologies: Dataset,
-        market: Dataset,
-        demand: DataArray,
+        technologies: xr.Dataset,
+        market: xr.Dataset,
+        demand: xr.DataArray,
         time_period: int = 1,
     ):
         """Iterates agent one turn.
@@ -242,7 +242,7 @@ class Agent(AgentBase):
         # dataset with intermediate computational results from search
         # makes it easier to pass intermediate results to functions, as well as
         # filter them when inside a function
-        search = Dataset()
+        search = xr.Dataset()
         if demand.size == 0 or demand.sum() < 1e-12:
             self.year += time_period
             return
@@ -261,30 +261,30 @@ class Agent(AgentBase):
 
         # add invested capacity to current assets
         self.assets = self.merge_transform(
-            self.assets, Dataset({"capacity": new_assets})
+            self.assets, xr.Dataset({"capacity": new_assets})
         )
 
         self.year += time_period
 
     def _compute_objective(
         self,
-        demand: DataArray,
-        search_space: DataArray,
-        technologies: Dataset,
-        market: Dataset,
-    ) -> DataArray:
+        demand: xr.DataArray,
+        search_space: xr.DataArray,
+        technologies: xr.Dataset,
+        market: xr.Dataset,
+    ) -> xr.DataArray:
         objectives = self.objectives(self, demand, search_space, technologies, market)
         result = self.decision(objectives)
         return result.rank("replacement")
 
     def _compute_new_assets(
         self,
-        demand: DataArray,
-        search: Dataset,
-        technologies: Dataset,
-        market: Dataset,
+        demand: xr.DataArray,
+        search: xr.Dataset,
+        technologies: xr.Dataset,
+        market: xr.Dataset,
         time_period: int,
-    ) -> DataArray:
+    ) -> xr.DataArray:
         """Computes investment and retirement profile."""
         from muse.investments import cliff_retirement_profile
 
@@ -325,8 +325,8 @@ class Agent(AgentBase):
 
 
 def create_retrofit_agent(
-    technologies: Dataset,
-    capacity: DataArray,
+    technologies: xr.Dataset,
+    capacity: xr.DataArray,
     share: Text,
     year: int,
     region: Text,
@@ -361,7 +361,7 @@ def create_retrofit_agent(
     existing = capacity.interp({"year": year}, method=interpolation)
 
     techs = ((existing > 0) & (shares > 0)).values
-    assets = Dataset({"capacity": (capacity * shares).sel(asset=techs).copy()})
+    assets = xr.Dataset({"capacity": (capacity * shares).sel(asset=techs).copy()})
 
     if isinstance(search_rules, Text):
         search_rules = [search_rules]
@@ -402,7 +402,7 @@ def create_retrofit_agent(
 
 
 def create_newcapa_agent(
-    capacity: DataArray,
+    capacity: xr.DataArray,
     year: int,
     region: Text,
     interpolation: Text = "linear",
@@ -417,7 +417,6 @@ def create_newcapa_agent(
     **kwargs,
 ):
     """Creates newcapa agent from muse primitives."""
-    from xarray import zeros_like
     from muse.hooks import housekeeping_factory, asset_merge_factory
     from muse.filters import factory as filter_factory
     from muse.registration import name_variations
@@ -430,8 +429,8 @@ def create_newcapa_agent(
     existing = capacity.interp(year=year, method=interpolation) > 0
     assert set(existing.dims) == {"asset"}
     years = [capacity.year.min().values, capacity.year.max().values]
-    assets = Dataset()
-    assets["capacity"] = zeros_like(capacity.sel(asset=existing.values, year=years))
+    assets = xr.Dataset()
+    assets["capacity"] = xr.zeros_like(capacity.sel(asset=existing.values, year=years))
 
     if isinstance(search_rules, Text):
         search_rules = [search_rules]
@@ -558,8 +557,8 @@ def factory(
 
 def agents_factory(
     params_or_path: Union[Text, Path, List],
-    capacity: Union[DataArray, Text, Path],
-    technologies: Dataset,
+    capacity: Union[xr.DataArray, Text, Path],
+    technologies: xr.Dataset,
     regions: Optional[Sequence[Text]] = None,
     year: Optional[int] = None,
     **kwargs,
@@ -575,7 +574,7 @@ def agents_factory(
         params = params_or_path
     if isinstance(capacity, (Text, Path)):
         capacity = read_initial_capacity(capacity)
-    assert isinstance(capacity, DataArray)
+    assert isinstance(capacity, xr.DataArray)
     if year is None:
         year = int(capacity.year.min())
 
