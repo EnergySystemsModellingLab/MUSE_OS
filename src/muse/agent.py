@@ -274,8 +274,10 @@ class Agent(AgentBase):
         market: xr.Dataset,
     ) -> xr.DataArray:
         objectives = self.objectives(self, demand, search_space, technologies, market)
-        result = self.decision(objectives)
-        return result.rank("replacement")
+        decision = self.decision(objectives)
+        nobroadcast_dims = [d for d in decision.dims if d not in search_space.dims]
+        decision = xr.broadcast(decision, search_space, exclude=nobroadcast_dims)[0]
+        return decision.sel({k: search_space[k] for k in search_space.dims})
 
     def _compute_new_assets(
         self,
