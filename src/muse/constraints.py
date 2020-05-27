@@ -199,6 +199,10 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
             if "name" not in constraint.data_vars and "name" not in constraint.attrs:
                 constraint.attrs["name"] = function.__name__
 
+            # ensure that the constraint and the search space match
+            dims = [d for d in constraint.dims if d in search_space.dims]
+            constraint = constraint.sel({k: search_space[k] for k in dims})
+
         return constraint
 
     return decorated
@@ -397,10 +401,10 @@ def max_production(
         market.timeslice,
         QuantityType.EXTENSIVE,
     ).expand_dims(asset=search_space.asset)
-    production = -ones_like(capacity)
+    production = ones_like(capacity)
     b = zeros_like(production)
     return xr.Dataset(
-        dict(capacity=capacity, production=production, b=b),
+        dict(capacity=cast(xr.DataArray, -capacity), production=production, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
     )
 
@@ -747,7 +751,7 @@ class ScipyAdapter:
 
         The decision variables are always constrained between zero and infinity:
 
-        >>> assert inputs.bounds == (0, None)
+        >>> assert inputs.bounds == (0, np.inf)
 
         The problem is an upper-bound one. There are no equality constraints:
 
@@ -791,7 +795,7 @@ class ScipyAdapter:
 
     c: np.ndarray
     to_muse: Callable[[np.ndarray], xr.Dataset]
-    bounds: Tuple[Optional[float], Optional[float]] = (0, None)
+    bounds: Tuple[Optional[float], Optional[float]] = (0, np.inf)
     A_ub: Optional[np.ndarray] = None
     b_ub: Optional[np.ndarray] = None
     A_eq: Optional[np.ndarray] = None
@@ -920,7 +924,7 @@ class ScipyAdapter:
             "b_ub": b_ub,
             "A_eq": A_eq,
             "b_eq": b_eq,
-            "bounds": (0, None),
+            "bounds": (0, np.inf),
         }
 
     @staticmethod

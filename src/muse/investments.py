@@ -148,7 +148,7 @@ def factory(settings: Union[Text, Mapping] = "match_demand") -> Callable:
         params["log_mismatch_params"] = 1e-3
 
     def compute_investment(
-        search: Dataset, technologies: Dataset, constraints: List[Constraint], **kwargs,
+        search: Dataset, technologies: Dataset, constraints: List[Constraint], **kwargs
     ) -> DataArray:
         """Computes investment needed to fulfill demand.
 
@@ -165,7 +165,7 @@ def factory(settings: Union[Text, Mapping] = "match_demand") -> Callable:
 
         function = INVESTMENTS[name]
         return function(
-            search.decision.rank("replacement").astype(int),
+            search.decision.rank("replacement"),
             search.space,
             technologies,
             constraints,
@@ -282,7 +282,7 @@ def adhoc_match_demand(
     return capacity.rename("capacity addition")
 
 
-@register_investment(name="match_demand")
+@register_investment(name=["scipy"])
 def scipy_match_demand(
     ranking: DataArray,
     search_space: DataArray,
@@ -290,6 +290,7 @@ def scipy_match_demand(
     constraints: List[Constraint],
     year: int,
     timeslice_op: Optional[Callable[[DataArray], DataArray]] = None,
+    **options,
 ) -> DataArray:
     from muse.constraints import ScipyAdapter
     from scipy.optimize import linprog
@@ -301,8 +302,72 @@ def scipy_match_demand(
     adapter = ScipyAdapter.factory(
         technologies.interp(year=year), ranking, timeslice, *constraints
     )
-    res = linprog(**adapter.kwargs)
+    res = linprog(**adapter.kwargs, options=dict(disp=True))
     if not res.success:
         getLogger(__name__).info(res.message)
 
-    return cast(Callable[[np.ndarray], Dataset], adapter.to_muse)(res.x).capacity
+    solution = cast(Callable[[np.ndarray], Dataset], adapter.to_muse)(res.x)
+    return solution.capacity
+
+
+@register_investment(name=["cvxopt", "match_demand"])
+def cvxopt_match_demand(
+    ranking: DataArray,
+    search_space: DataArray,
+    technologies: Dataset,
+    constraints: List[Constraint],
+    year: int,
+    timeslice_op: Optional[Callable[[DataArray], DataArray]] = None,
+    **options,
+) -> DataArray:
+    from muse.constraints import ScipyAdapter
+    from logging import getLogger
+
+    def default_to_scipy():
+        return scipy_match_demand(
+            ranking,
+            search_space,
+            technologies,
+            constraints,
+            year=year,
+            timeslice_op=timeslice_op,
+        )
+
+    try:
+        from cvxopt import matrix, solvers
+    except ImportError:
+        msg = (
+            "cvxopt is not installed\n"
+            "It can be installed with `pip install cvxopt`\n"
+            "Using the scipy linear solver instead."
+        )
+        getLogger(__name__).critical(msg)
+        default_to_scipy()
+
+    if "timeslice" in ranking.dims and timeslice_op is not None:
+        ranking = timeslice_op(ranking)
+    timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
+    adapter = ScipyAdapter.factory(
+        technologies.interp(year=year), ranking, timeslice, *constraints
+    )
+    G = np.zeros((0, adapter.c.size)) if adapter.A_ub is None else adapter.A_ub
+    h = np.zeros((0,)) if adapter.b_ub is None else adapter.b_ub
+    if adapter.bounds[0] != -np.inf and adapter.bounds[0] is not None:
+        G = np.concatenate((G, -np.eye(adapter.c.size)))
+        h = np.concatenate((h, np.full(adapter.c.size, adapter.bounds[0])))
+    if adapter.bounds[1] != np.inf and adapter.bounds[1] is not None:
+        G = np.concatenate((G, np.eye(adapter.c.size)))
+        h = np.concatenate((h, np.full(adapter.c.size, adapter.bounds[1])))
+
+    args = [adapter.c, G, h]
+    if adapter.A_eq is not None:
+        args += [adapter.A_eq, adapter.b_eq]
+    res = solvers.lp(*map(matrix, args), **options)
+    if res["status"] != "optimal":
+        getLogger(__name__).info(res["status"])
+    if res["x"] is None:
+        getLogger(__name__).critical("infeasible system")
+        raise RuntimeError("Infeasible system")
+
+    solution = cast(Callable[[np.ndarray], Dataset], adapter.to_muse)(list(res["x"]))
+    return solution.capacity
