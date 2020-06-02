@@ -352,8 +352,11 @@ def demand(
 
     enduse = technologies.commodity.sel(commodity=is_enduse(technologies.comm_usage))
     b = demand.sel(commodity=demand.commodity.isin(enduse))
-    assert "year" not in b.dims
-    return xr.Dataset(dict(b=b, production=1), attrs=dict(kind=ConstraintKind.EQUALITY))
+    assert "year" not in b.dim
+
+    return xr.Dataset(
+        dict(b=b, production=1), attrs=dict(kind=ConstraintKind.LOWER_BOUND)
+    )
 
 
 @register_constraints
