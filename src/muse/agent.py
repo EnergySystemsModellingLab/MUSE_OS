@@ -54,9 +54,7 @@ class AgentBase(ABC):
         self.category = category
         """Attribute to classify different sets of agents."""
         if not callable(constraints):
-            constraints = csfactory(
-                ["max_capacity_expansion", "max_production", "demand"]
-            )
+            constraints = csfactory()
         self.constraints = constraints
         """Creates a set of constraints limiting investment."""
 
@@ -293,7 +291,7 @@ class Agent(AgentBase):
         constraints = self.constraints(
             demand,
             self.assets,
-            search,
+            search.space,
             market,
             technologies,
             year=int(market.year.min()),
