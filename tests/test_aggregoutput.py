@@ -7,60 +7,78 @@ from muse.outputs.mca import sector_capacity, sectors_capacity
 def test_aggregate_sector():
     """Test for aggregate_sector function check colum titles, number of
     agents/region/technologies and assets capacities."""
-    from operator import attrgetter
+    from pandas import concat, DataFrame
 
     mca = examples.model("multiple-agents")
-    sector_list = [sector for sector in mca.sectors if "residential" == sector.name]
-    capa = sector_capacity(sector_list[0])
-    assert "region" in capa.coords
-    assert "agent" in capa.coords
-    assert "sector" in capa.coords
-    assert "year" in capa.coords
-    assert "technology" in capa.coords
-    agent_names = [a.name for a in sector_list[0].agents]
-    region_names = [a.region for a in sector_list[0].agents]
-    technology_names = [a.assets.technology.values[0] for a in sector_list[0].agents]
+    year = [2020, 2025]
+    sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
+    agent_list = [a.agents for a in sector_list]
+    alldata = sectors_capacity(mca.sectors)
+    alldatadict = alldata.to_dict("split")
+    columns = ["region", "agent", "type", "sector", "capacity"]
+    assert (sorted(columns)) == sorted(alldatadict["columns"])
+    frame = DataFrame()
+    for a, ai in enumerate(agent_list):
+        for ii in range(0, len(ai)):
+            for y in year:
+                if y in ai[ii].assets.year:
+                    if ai[ii].assets.capacity.sel(year=y).values > 0.0:
+                        data = DataFrame(
+                            {
+                                "region": ai[ii].region,
+                                "agent": ai[ii].name,
+                                "type": ai[ii].category,
+                                "sector": sector_list[a].name,
+                                "capacity": ai[ii]
+                                .assets.capacity.sel(year=y)
+                                .values[0],
+                            },
+                            index=[(y, ai[ii].assets.technology.values[0],)],
+                        )
+                        frame = concat([frame, data])
 
-    assert sorted(capa.agent.values) == sorted(agent_names)
-    assert sorted(np.unique(capa.region.values)) == sorted(np.unique(region_names))
-    assert sorted(np.unique(capa.technology.values)) == sorted(
-        np.unique(technology_names)
-    )
-    expected_capacity = [
-        [u.assets.capacity.sel(year=2020).sum(dim="asset").values]
-        for u in sorted(sector_list[0].agents, key=attrgetter("name"))
-    ]
-    assert (expected_capacity == capa.sel(year=2020).values).all()
+    assert (frame[columns].values == alldata[columns].values).all()
 
 
 def test_aggregate_sectors():
     """Test for aggregate_sectors function."""
-    mca = examples.model("multiple-agents")
-    sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
-    alldata = sectors_capacity(mca.sectors)
-    agent_names = [a.name for sector in sector_list for a in sector.agents]
-    region_names = [a.region for sector in sector_list for a in sector.agents]
-    technology_names = [
-        a.assets.technology.values[0] for sector in sector_list for a in sector.agents
-    ]
+    from pandas import DataFrame, concat
 
-    assert sorted(alldata.agent.values) == sorted(agent_names)
-    assert sorted(np.unique(alldata.region.values)) == sorted(np.unique(region_names))
-    assert sorted(np.unique(alldata.technology.values)) == sorted(
-        np.unique(technology_names)
-    )
-    expected_capacity = [
-        u.assets.capacity.sel(year=2020).sum(dim="asset").values
-        for sector in sector_list
-        for u in sector.agents
-    ]
-    assert (expected_capacity == alldata.sel(year=2020).sum("technology").values).all()
+    mca = examples.model("multiple-agents")
+    year = [2020, 2025]
+    sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
+    agent_list = [a.agents for a in sector_list]
+    alldata = sectors_capacity(mca.sectors)
+    alldatadict = alldata.to_dict("split")
+    columns = ["region", "agent", "type", "sector", "capacity"]
+    assert (sorted(columns)) == sorted(alldatadict["columns"])
+    frame = DataFrame()
+    for a, ai in enumerate(agent_list):
+        for ii in range(0, len(ai)):
+            for y in year:
+                if y in ai[ii].assets.year:
+                    if ai[ii].assets.capacity.sel(year=y).values > 0.0:
+                        data = DataFrame(
+                            {
+                                "region": ai[ii].region,
+                                "agent": ai[ii].name,
+                                "type": ai[ii].category,
+                                "sector": sector_list[a].name,
+                                "capacity": ai[ii]
+                                .assets.capacity.sel(year=y)
+                                .values[0],
+                            },
+                            index=[(y, ai[ii].assets.technology.values[0],)],
+                        )
+                        frame = concat([frame, data])
+
+    assert (frame[columns].values == alldata[columns].values).all()
 
 
 def test_aggregate_sector_manyregions():
     """Test for aggregate_sector function with two regions check colum titles, number of
     agents/region/technologies and assets capacities."""
-    from operator import attrgetter
+    from pandas import DataFrame, concat
 
     mca = examples.model("multiple-agents")
     residential = next(
@@ -70,25 +88,31 @@ def test_aggregate_sector_manyregions():
     residential.agents[1].assets["region"] = "BELARUS"
     residential.agents[0].region = "BELARUS"
     residential.agents[1].region = "BELARUS"
-    sector_list = [sector for sector in mca.sectors if "residential" == sector.name]
-    capa = sector_capacity(sector_list[0])
-    assert "region" in capa.coords
-    assert "agent" in capa.coords
-    assert "sector" in capa.coords
-    assert "year" in capa.coords
-    assert "technology" in capa.coords
-    agent_names = [a.name for a in sector_list[0].agents]
-    region_names = [a.region for a in sector_list[0].agents]
-    technology_names = [a.assets.technology.values[0] for a in sector_list[0].agents]
+    year = [2020, 2025]
+    sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
+    agent_list = [a.agents for a in sector_list]
+    alldata = sectors_capacity(mca.sectors)
+    alldatadict = alldata.to_dict("split")
+    columns = ["region", "agent", "type", "sector", "capacity"]
+    assert (sorted(columns)) == sorted(alldatadict["columns"])
+    frame = DataFrame()
+    for a, ai in enumerate(agent_list):
+        for ii in range(0, len(ai)):
+            for y in year:
+                if y in ai[ii].assets.year:
+                    if ai[ii].assets.capacity.sel(year=y).values > 0.0:
+                        data = DataFrame(
+                            {
+                                "region": ai[ii].region,
+                                "agent": ai[ii].name,
+                                "type": ai[ii].category,
+                                "sector": sector_list[a].name,
+                                "capacity": ai[ii]
+                                .assets.capacity.sel(year=y)
+                                .values[0],
+                            },
+                            index=[(y, ai[ii].assets.technology.values[0],)],
+                        )
+                        frame = concat([frame, data])
 
-    assert sorted(capa.agent.values) == sorted(agent_names)
-    assert sorted(np.unique(capa.region.values)) == sorted(np.unique(region_names))
-    assert sorted(np.unique(capa.technology.values)) == sorted(
-        np.unique(technology_names)
-    )
-
-    expected_capacity = [
-        [u.assets.capacity.sel(year=2020).sum(dim="asset").values]
-        for u in sorted(sector_list[0].agents, key=attrgetter("name"))
-    ]
-    assert (expected_capacity == capa.sel(year=2020)).all()
+    assert (frame[columns].values == alldata[columns].values).all()
