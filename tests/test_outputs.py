@@ -34,7 +34,7 @@ def test_save_with_dir(tmpdir):
     }
     market = xr.DataArray([1], coords={"year": [2010]}, dims="year")
     # can use None because we **know** none of the arguments are used here
-    result = factory(config, sector_name="Yoyo")(None, market, None)
+    result = factory(config, sector_name="Yoyo")(market, None, None)
     assert len(result) == 1
     assert result[0] == path / "Yoyo2010Streetcred.csv"
     assert result[0].exists()
@@ -53,16 +53,16 @@ def test_overwrite(tmpdir):
     market = xr.DataArray([1], coords={"year": [2010]}, dims="year")
     # can use None because we **know** none of the arguments are used here
     outputter = factory(config, sector_name="Yoyo")
-    result = outputter(None, market, None)
+    result = outputter(market, None, None)
     assert result[0] == path / "Yoyo2010Streetcred.csv"
     assert result[0].is_file()
 
     # default is to never overwrite
     with raises(IOError):
-        outputter(None, market, None)
+        outputter(market, None, None)
 
     config["overwrite"] = True
-    factory(config, sector_name="Yoyo")(None, market, None)
+    factory(config, sector_name="Yoyo")(market, None, None)
 
 
 def test_save_with_path_to_nc_with_suffix(tmpdir):
@@ -74,7 +74,7 @@ def test_save_with_path_to_nc_with_suffix(tmpdir):
     }
     market = xr.DataArray([1], coords={"year": [2010]}, dims="year")
     # can use None because we **know** none of the arguments are used here
-    result = factory(config, sector_name="Yoyo")(None, market, None)
+    result = factory(config, sector_name="Yoyo")(market, None, None)
     assert result[0] == path / "Yoyo2010Streetcred.nc"
     assert result[0].is_file()
     xr.open_dataset(result[0])
@@ -89,7 +89,7 @@ def test_save_with_path_to_nc_with_sink(tmpdir):
         "sink": "nc",
     }
     market = xr.DataArray([1], coords={"year": [2010]}, dims="year")
-    result = factory(config, sector_name="Yoyo")(None, market, None)
+    result = factory(config, sector_name="Yoyo")(market, None, None)
     assert result[0] == path / "yoyo2010streetcred.csv"
     assert result[0].is_file()
     xr.open_dataset(result[0])
@@ -106,7 +106,7 @@ def test_save_with_fullpath_to_excel_with_sink(tmpdir):
     config = {"filename": path, "quantity": "streetcred", "sink": "xlsx"}
     market = xr.DataArray([1], coords={"year": [2010]}, dims="year")
     # can use None because we **know** none of the arguments are used here
-    result = factory(config, sector_name="Yoyo")(None, market, None)
+    result = factory(config, sector_name="Yoyo")(market, None, None)
     assert result[0] == path
     assert result[0].is_file()
     read_excel(result[0])
@@ -141,6 +141,21 @@ def test_from_sector_with_directory(buildings, market, tmpdir):
     output_func(buildings.capacity, market, buildings.technologies)
     assert (Path(tmpdir) / "abc.csv").exists()
     assert (Path(tmpdir) / "abc.csv").is_file()
+
+
+def test_no_sink_or_suffix(tmpdir):
+    from muse.outputs.sector import factory
+
+    config = dict(
+        quantity="streetcred",
+        filename=f"{tmpdir}/{{Sector}}{{Quantity}}{{year}}{{suffix}}",
+    )
+    outputs = factory(config)
+    market = xr.DataArray([1], coords={"year": [2010]}, dims="year")
+    result = outputs(market, None, None)
+    assert len(result) == 1
+    assert result[0].is_file()
+    assert result[0].suffix == ".csv"
 
 
 def test_can_register_class():
@@ -188,34 +203,38 @@ def test_yearly_aggregate():
     gsector = None
     goverwrite = None
 
+    class MySpecialReturn:
+        pass
+
     @register_output_sink(name="dummy")
-    def dummy(data, year: int, sector: Text, overwrite: bool):
+    def dummy(data, year: int, sector: Text, overwrite: bool) -> MySpecialReturn:
         nonlocal received_data, gyear, gsector, goverwrite
         received_data = data
         gyear = year
         gsector = sector
         goverwrite = overwrite
+        return MySpecialReturn()
 
     sink = factory(
         dict(overwrite=True, sink=dict(aggregate="dummy")), sector_name="yoyo"
     )
 
-    data = xr.DataArray([1, 0], coords=dict(a=[2, 4]), dims="a")
+    data = xr.DataArray([1, 0], coords=dict(a=[2, 4]), dims="a", name="nada")
     data["year"] = 2010
 
-    assert sink(data, 2010) is None
+    assert isinstance(sink(data, 2010), MySpecialReturn)
     assert gyear == 2010
     assert gsector == "yoyo"
     assert goverwrite is True
-    assert received_data is data
+    assert isinstance(received_data, pd.DataFrame)
 
-    data = xr.DataArray([0, 1], coords=dict(a=[2, 4]), dims="a")
+    data = xr.DataArray([0, 1], coords=dict(a=[2, 4]), dims="a", name="nada")
     data["year"] = 2020
-    assert sink(data, 2020) is None
+    assert isinstance(sink(data, 2020), MySpecialReturn)
     assert gyear == 2020
     assert gsector == "yoyo"
-    assert received_data.sel(year=2010).values == approx(np.array([1, 0]))
-    assert received_data.sel(year=2020).values == approx(np.array([0, 1]))
+    assert received_data[received_data.year == 2010].nada.values == approx([1, 0])
+    assert received_data[received_data.year == 2020].nada.values == approx([0, 1])
 
 
 def test_yearly_aggregate_file(tmpdir):
@@ -237,3 +256,31 @@ def test_yearly_aggregate_file(tmpdir):
     dataframe = pd.read_csv(path)
     assert set(dataframe.columns) == {"a", "year", "georges"}
     assert dataframe.shape[0] == 4
+
+
+def test_yearly_aggregate_no_outputs(tmpdir):
+    from muse.outputs.mca import factory
+
+    outputs = factory()
+    assert len(outputs(None, year=2010)) == 0
+
+
+def test_mca_aggregate_outputs(tmpdir):
+    from toml import load, dump
+    from muse import examples
+    from muse.mca import MCA
+
+    examples.copy_model(path=str(tmpdir))
+    settings = load(str(tmpdir / "model" / "settings.toml"))
+    settings["outputs"] = [
+        dict(filename="{path}/{Quantity}{suffix}", quantity="prices", sink="aggregate")
+    ]
+    settings["time_framework"] = settings["time_framework"][:2]
+    dump(settings, (tmpdir / "model" / "settings.toml"))
+
+    mca = MCA.factory(str(tmpdir / "model" / "settings.toml"))
+    mca.run()
+
+    assert (tmpdir / "model" / "Prices.csv").exists()
+    data = pd.read_csv(tmpdir / "model" / "Prices.csv")
+    assert set(data.year) == set(settings["time_framework"])

@@ -221,8 +221,8 @@ def _copy_multiple_agents(path: Path):
         path / "technodata" / "residential" / "Agents.csv",
     )
     copyfile(
-        example_data_dir() / "multiple_agents" / "residential" / "technodata.csv",
-        path / "technodata" / "residential" / "technodata.csv",
+        example_data_dir() / "multiple_agents" / "residential" / "Technodata.csv",
+        path / "technodata" / "residential" / "Technodata.csv",
     )
 
 
