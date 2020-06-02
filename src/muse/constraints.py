@@ -209,9 +209,12 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
 
 
 def factory(
-    settings: Union[
-        Text, Mapping, Sequence[Text], Sequence[Mapping]
-    ] = "max_capacity_expansion"
+    settings: Union[Text, Mapping, Sequence[Text], Sequence[Mapping]] = (
+        "max_production",
+        "max_capacity_expansion",
+        "demand",
+        "search_space",
+    )
 ) -> Callable:
     from functools import partial
 
@@ -352,11 +355,28 @@ def demand(
 
     enduse = technologies.commodity.sel(commodity=is_enduse(technologies.comm_usage))
     b = demand.sel(commodity=demand.commodity.isin(enduse))
-    assert "year" not in b.dim
-
+    assert "year" not in b.dims
     return xr.Dataset(
         dict(b=b, production=1), attrs=dict(kind=ConstraintKind.LOWER_BOUND)
     )
+
+
+@register_constraints
+def search_space(
+    demand: xr.DataArray,
+    assets: xr.Dataset,
+    search_space: xr.DataArray,
+    market: xr.Dataset,
+    technologies: xr.Dataset,
+    year: Optional[int] = None,
+    forecast: int = 5,
+    interpolation: Text = "linear",
+) -> Constraint:
+    b = ~search_space.astype(bool)
+    b = b.sel(asset=b.any("replacement"))
+    if b.size == 0:
+        return None
+    return xr.Dataset(dict(b=b, capacity=1), attrs=dict(kind=ConstraintKind.EQUALITY))
 
 
 @register_constraints
