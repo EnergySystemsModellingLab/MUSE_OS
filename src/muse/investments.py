@@ -304,7 +304,8 @@ def scipy_match_demand(
     )
     res = linprog(**adapter.kwargs, options=dict(disp=True))
     if not res.success:
-        getLogger(__name__).info(res.message)
+        getLogger(__name__).critical(res.message)
+        raise RuntimeError("LP system could not be solved")
 
     solution = cast(Callable[[np.ndarray], Dataset], adapter.to_muse)(res.x)
     return solution.capacity
