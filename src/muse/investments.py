@@ -343,7 +343,7 @@ def cvxopt_match_demand(
             "Using the scipy linear solver instead."
         )
         getLogger(__name__).critical(msg)
-        default_to_scipy()
+        return default_to_scipy()
 
     if "timeslice" in ranking.dims and timeslice_op is not None:
         ranking = timeslice_op(ranking)
