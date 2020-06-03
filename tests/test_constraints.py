@@ -203,7 +203,7 @@ def test_to_scipy_adapter_maxprod(technologies, costs, max_production, timeslice
 
     adapter = ScipyAdapter.factory(technologies, costs, timeslices, max_production)
     assert set(adapter.kwargs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
-    assert adapter.bounds == (0, None)
+    assert adapter.bounds == (0, np.inf)
     assert adapter.A_eq is None
     assert adapter.b_eq is None
     assert adapter.c.ndim == 1
@@ -228,7 +228,7 @@ def test_to_scipy_adapter_demand(technologies, costs, demand_constraint, timesli
 
     adapter = ScipyAdapter.factory(technologies, costs, timeslices, demand_constraint)
     assert set(adapter.kwargs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
-    assert adapter.bounds == (0, None)
+    assert adapter.bounds == (0, np.inf)
     assert adapter.A_ub is None
     assert adapter.b_ub is None
     assert adapter.A_eq is not None
@@ -263,7 +263,7 @@ def test_to_scipy_adapter_max_capacity_expansion(
         technologies, costs, timeslices, max_capacity_expansion
     )
     assert set(adapter.kwargs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
-    assert adapter.bounds == (0, None)
+    assert adapter.bounds == (0, np.inf)
     assert adapter.A_ub is not None
     assert adapter.b_ub is not None
     assert adapter.A_eq is None
@@ -292,7 +292,7 @@ def test_to_scipy_adapter_no_constraint(technologies, costs, timeslices):
 
     adapter = ScipyAdapter.factory(technologies, costs, timeslices)
     assert set(adapter.kwargs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
-    assert adapter.bounds == (0, None)
+    assert adapter.bounds == (0, np.inf)
     assert adapter.A_ub is None
     assert adapter.b_ub is None
     assert adapter.A_eq is None
