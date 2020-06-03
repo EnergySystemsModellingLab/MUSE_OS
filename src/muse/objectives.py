@@ -473,9 +473,10 @@ def lifetime_levelized_cost_of_energy(
     techs = agent.filter_input(technologies, technology=search_space.replacement.values)
     assert isinstance(techs, Dataset)
     prices = agent.filter_input(market.prices)
-    assert isinstance(techs, DataArray)
-    return lifetimeLCOE(prices, techs, agent.year, **kwargs).rename(
-        replacement="technology"
+    return (
+        lifetimeLCOE(prices, techs, agent.year, **kwargs)
+        .rename(technology="replacement")
+        .max("timeslice")
     )
 
 
@@ -520,7 +521,6 @@ def net_present_value(
     **kwargs,
 ):
     """Net present value (NPV) of the relevant technologies.
-
 
     The net present value of a Component is the present value  of all the revenues that
     a Component earns over its lifetime minus all the costs of installing and operating
@@ -688,8 +688,7 @@ def net_present_cost(
 
 
 def discount_factor(years, interest_rate, mask=1.0):
-    """Calculate an array with the rate (aka discount factor) values over the
-    years."""
+    """Calculate an array with the rate (aka discount factor) values over the years."""
     return mask / (1 + interest_rate) ** years
 
 
