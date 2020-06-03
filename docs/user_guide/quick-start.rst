@@ -2,8 +2,12 @@
 Running the demo simulation
 ===========================
 
-Assuming you have an existing model in the current folder (if not, keep reading), then
-the MUSE simulation can be started with:
+A simulation can be created from scratch, defining sector and input data,
+or using either the standard or the example models as a reference.
+
+Once a model has been created, the simulation can be started in a
+standard way with the command "python -m muse" followed by the path
+to the input toml file, as shown below.
 
 .. code-block:: Bash
 
@@ -11,8 +15,14 @@ the MUSE simulation can be started with:
 
 A description of the input file can be found in :ref:`input-files`.
 
-There are a few standard models available directly with MUSE. They can be run as
-follows:
+There are a few standard models available directly with MUSE:
+
+- the default model with 3 sectors (residential, power, gas supply)
+  and 1 agent is available in the folder src/muse/data/model
+- a multi-agent model with 1 sector (residential) and two agents
+  is available in the folder folder src/muse/data/model/example
+
+The standard model can run as follows:
 
 .. code-block:: Bash
 
@@ -26,7 +36,7 @@ do:
 
     python -m muse --help
 
-The full model can be copied to a path of your choosing with
+The standard model can be copied to a path of your choosing with
 
 .. code-block:: Bash
 
@@ -38,7 +48,7 @@ Once a model has been copied to folder, run it with:
 
     python -m muse XXX/settings.toml
 
-The models are also available directly in python. They can be instanciated and run as
+The additional models available in the "example" subfolder can be instanciated and run as
 follows:
 
 .. code-block:: Python
