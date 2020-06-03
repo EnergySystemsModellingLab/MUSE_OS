@@ -632,13 +632,13 @@ def lp_constraint_matrix(
         >>> result = cs.lp_constraint_matrix(
         ...     xr.DataArray(1), constraint.capacity, lpcosts.capacity
         ... )
-        >>> assert result.values == approx(1)
+        >>> assert result.values == approx(-1)
         >>> assert set(result.dims) == {f"d({x})" for x in lpcosts.capacity.dims}
         >>> result = cs.lp_constraint_matrix(
         ...     xr.DataArray(1), constraint.production, lpcosts.production
         ... )
         >>> assert set(result.dims) == {f"d({x})" for x in lpcosts.production.dims}
-        >>> assert result.values == approx(-1)
+        >>> assert result.values == approx(1)
 
         As expected, the cpacicity vector is 1, whereas the production vector is -1.
         These are the values the :py:func:`~muse.constraints.max_production` is set up
@@ -670,7 +670,7 @@ def lp_constraint_matrix(
         >>> assert set(result.dims) == decision_dims.union(constraint_dims)
         >>> stacked = result.stack(d=sorted(decision_dims), c=sorted(constraint_dims))
         >>> assert stacked.shape[0] == stacked.shape[1]
-        >>> assert stacked.values == approx(-np.eye(stacked.shape[0]))
+        >>> assert stacked.values == approx(np.eye(stacked.shape[0]))
     """
     from numpy import eye
     from functools import reduce

@@ -136,13 +136,13 @@ def test_lp_constraints_matrix_b_is_scalar(constraint, lpcosts):
     lpconstraint = lp_constraint_matrix(
         xr.DataArray(1), constraint.capacity, lpcosts.capacity
     )
-    assert lpconstraint.values == approx(1)
+    assert lpconstraint.values == approx(-1)
     assert set(lpconstraint.dims) == {f"d({x})" for x in lpcosts.capacity.dims}
 
     lpconstraint = lp_constraint_matrix(
         xr.DataArray(1), constraint.production, lpcosts.production
     )
-    assert lpconstraint.values == approx(-1)
+    assert lpconstraint.values == approx(1)
     assert set(lpconstraint.dims) == {f"d({x})" for x in lpcosts.production.dims}
 
 
@@ -171,7 +171,7 @@ def test_max_production_constraint_diagonal(constraint, lpcosts):
     assert set(result.dims) == decision_dims.union(constraint_dims)
     stacked = result.stack(d=sorted(decision_dims), c=sorted(constraint_dims))
     assert stacked.shape[0] == stacked.shape[1]
-    assert stacked.values == approx(-np.eye(stacked.shape[0]))
+    assert stacked.values == approx(np.eye(stacked.shape[0]))
 
 
 def test_lp_constraint(constraint, lpcosts):
@@ -190,7 +190,7 @@ def test_lp_constraint(constraint, lpcosts):
         d=sorted(decision_dims), c=sorted(constraint_dims)
     )
     assert stacked.shape[0] == stacked.shape[1]
-    assert stacked.values == approx(-np.eye(stacked.shape[0]))
+    assert stacked.values == approx(np.eye(stacked.shape[0]))
 
     assert set(result.b.dims) == constraint_dims
     assert result.b.values == approx(0)
@@ -218,7 +218,7 @@ def test_to_scipy_adapter_maxprod(technologies, costs, max_production, timeslice
     assert adapter.c.size == capsize + prodsize
     assert adapter.b_ub.size == prodsize
     assert adapter.b_ub == approx(0)
-    assert adapter.A_ub[:, capsize:] == approx(-np.eye(prodsize))
+    assert adapter.A_ub[:, capsize:] == approx(np.eye(prodsize))
 
 
 def test_to_scipy_adapter_demand(technologies, costs, demand_constraint, timeslices):
