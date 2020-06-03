@@ -229,27 +229,27 @@ def test_to_scipy_adapter_demand(technologies, costs, demand_constraint, timesli
     adapter = ScipyAdapter.factory(technologies, costs, timeslices, demand_constraint)
     assert set(adapter.kwargs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
     assert adapter.bounds == (0, np.inf)
-    assert adapter.A_ub is None
-    assert adapter.b_ub is None
-    assert adapter.A_eq is not None
-    assert adapter.b_eq is not None
+    assert adapter.A_ub is not None
+    assert adapter.b_ub is not None
+    assert adapter.A_eq is None
+    assert adapter.b_eq is None
     assert adapter.c.ndim == 1
-    assert adapter.b_eq.ndim == 1
-    assert adapter.A_eq.ndim == 2
-    assert adapter.b_eq.size == adapter.A_eq.shape[0]
-    assert adapter.c.size == adapter.A_eq.shape[1]
+    assert adapter.b_ub.ndim == 1
+    assert adapter.A_ub.ndim == 2
+    assert adapter.b_ub.size == adapter.A_ub.shape[0]
+    assert adapter.c.size == adapter.A_ub.shape[1]
 
     lpcosts = lp_costs(technologies, costs, timeslices)
     capsize = lpcosts.capacity.size
     prodsize = lpcosts.production.size
     assert adapter.c.size == capsize + prodsize
     assert (
-        adapter.b_eq.size
+        adapter.b_ub.size
         == lpcosts.commodity.size * lpcosts.timeslice.size * lpcosts.asset.size
     )
-    assert adapter.A_eq[:, :capsize] == approx(0)
-    assert adapter.A_eq[:, capsize:].sum(axis=1) == approx(lpcosts.replacement.size)
-    assert set(adapter.A_eq[:, capsize:].flatten()) == {0.0, 1.0}
+    assert adapter.A_ub[:, :capsize] == approx(0)
+    assert adapter.A_ub[:, capsize:].sum(axis=1) == approx(-lpcosts.replacement.size)
+    assert set(adapter.A_ub[:, capsize:].flatten()) == {0.0, -1.0}
 
 
 def test_to_scipy_adapter_max_capacity_expansion(
@@ -424,10 +424,10 @@ def test_scipy_adapter_standard_constraints(
     maxcapa = next(cs for cs in constraints if cs.name == "max capacity expansion")
     demand = next(cs for cs in constraints if cs.name == "demand")
     assert adapter.c.size == costs.size + maxprod.production.size
-    assert adapter.b_eq.size == demand.b.size
-    assert adapter.A_eq.shape == (adapter.b_eq.size, adapter.c.size)
+    assert adapter.b_eq is None
+    assert adapter.A_eq is None
     assert adapter.A_ub.shape == (adapter.b_ub.size, adapter.c.size)
-    assert adapter.b_ub.size == maxprod.b.size + maxcapa.b.size
+    assert adapter.b_ub.size == demand.b.size + maxprod.b.size + maxcapa.b.size
 
 
 def test_scipy_solver(technologies, costs, constraints, timeslices):
