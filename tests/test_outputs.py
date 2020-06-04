@@ -305,11 +305,11 @@ def test_path_formatting(tmpdir):
 
     @register_output_sink(name="dummy")
     @sink_to_file(".dummy")
-    def to_dummy(*args, **kwargs) -> None:
+    def to_dummy(quantity, filename, **params) -> None:
         pass
 
     @register_output_quantity
-    def dummy(*args, **kwargs):
+    def dummy(market, **kwargs):
         return None
 
     mca = MCA.factory(Path(settings_file))
