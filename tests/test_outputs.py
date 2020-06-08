@@ -299,11 +299,15 @@ def test_path_formatting(tmpdir):
     settings_file = tmpdir / "model" / "settings.toml"
     settings = load(settings_file)
     settings["outputs"] = [
-        {"quantity": "dummy", "sink": "dummy", "filename": "{path}/{Quantity}{suffix}"}
+        {
+            "quantity": "dummy",
+            "sink": "dummy_sink",
+            "filename": "{path}/{Quantity}{suffix}",
+        }
     ]
     dump(settings, (settings_file))
 
-    @register_output_sink(name="dummy")
+    @register_output_sink(name="dummy_sink")
     @sink_to_file(".dummy")
     def to_dummy(quantity, filename, **params) -> None:
         pass
