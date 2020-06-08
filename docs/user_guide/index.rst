@@ -9,3 +9,4 @@ User Guide
 
    quick-start
    inputs
+   outputs
