@@ -843,13 +843,19 @@ def check_sectors_files(settings: Dict) -> None:
     if "list" in sectors:
         sectors = {k: sectors[k] for k in sectors["list"]}
 
-    for sector in sectors.values():
+    for name, sector in sectors.items():
         if sector["type"].lower().strip() == "default":
             for path in path_options:
                 if path not in sector:
-                    raise AssertionError(f"Unknown path option {path}")
+                    raise AssertionError(
+                        f"Settings for sector '{name}' "
+                        f"are missing an input for '{path}'"
+                    )
                 if not Path(sector[path]).exists():
-                    raise AssertionError(f"{sector[path]} could  not be found.")
+                    raise AssertionError(
+                        f"Input '{path}' of sector '{name}' "
+                        "does not refer to a is not a valid file"
+                    )
 
         # Finally the priority of the sectors is used to set the order of execution
         sector["priority"] = sector.get("priority", priorities["last"])
