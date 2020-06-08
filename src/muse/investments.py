@@ -231,7 +231,14 @@ def cliff_retirement_profile(
     return profile.sel(year=goodyears).astype(bool)
 
 
-@register_investment(name="adhoc")
+class LinearProblemError(RuntimeError):
+    """Error returned for infeasible LP problems."""
+
+    def __init__(self, *args):
+        super().__init__(*args)
+
+
+@register_investment(name=["adhoc"])
 def adhoc_match_demand(
     ranking: DataArray,
     search_space: DataArray,
@@ -277,7 +284,7 @@ def adhoc_match_demand(
     return capacity.rename("capacity addition")
 
 
-@register_investment(name=["scipy"])
+@register_investment(name=["scipy", "match_demand"])
 def scipy_match_demand(
     ranking: DataArray,
     search_space: DataArray,
@@ -300,13 +307,13 @@ def scipy_match_demand(
     res = linprog(**adapter.kwargs, options=dict(disp=True))
     if not res.success:
         getLogger(__name__).critical(res.message)
-        raise RuntimeError("LP system could not be solved")
+        raise LinearProblemError("LP system could not be solved", res)
 
     solution = cast(Callable[[np.ndarray], Dataset], adapter.to_muse)(res.x)
     return solution.capacity
 
 
-@register_investment(name=["cvxopt", "match_demand"])
+@register_investment(name=["cvxopt"])
 def cvxopt_match_demand(
     ranking: DataArray,
     search_space: DataArray,
@@ -363,7 +370,7 @@ def cvxopt_match_demand(
         getLogger(__name__).info(res["status"])
     if res["x"] is None:
         getLogger(__name__).critical("infeasible system")
-        raise RuntimeError("Infeasible system")
+        raise LinearProblemError("Infeasible system", res)
 
     solution = cast(Callable[[np.ndarray], Dataset], adapter.to_muse)(list(res["x"]))
     return solution.capacity

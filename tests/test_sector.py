@@ -93,9 +93,9 @@ def test_calls_to_agents(mock_sector, real_market):
 @mark.parametrize("agent_id", range(6))
 def test_call_each_agent(mock_sector, real_market, agent_id):
     """Checks logic of calling next on sector using mocked agents."""
-
     from copy import deepcopy
     from muse.outputs.sector import factory
+    from muse.investments import LinearProblemError
 
     mock_sector.outputs.sector = factory()
     mock_sector.next(real_market)
@@ -104,4 +104,7 @@ def test_call_each_agent(mock_sector, real_market, agent_id):
     real = deepcopy(mock_sector.real_agents[agent_id])
     assert mock.next.call_count == 1
     real.investments = "normalized"
-    real.next(*mock.next.call_args[0], **mock.next.call_args[1])
+    try:
+        real.next(*mock.next.call_args[0], **mock.next.call_args[1])
+    except LinearProblemError:
+        pass
