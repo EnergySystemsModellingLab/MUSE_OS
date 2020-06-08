@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import toml
-from pytest import fixture, raises, mark
+from pytest import fixture, mark, raises
 
 
 @fixture
@@ -378,3 +378,26 @@ def test_split_toml_incorrect_inner_name(tmpdir):
 
     with raises(IOError):
         read_split_toml(tmpdir / "outer.toml")
+
+
+@mark.parametrize("suffix", (".xlsx", ".csv", ".toml", ".py", ".xls", ".nc"))
+def test_path_formatting(suffix, tmpdir):
+    from muse.readers.toml import read_split_toml
+
+    settings = {"this": 0, "plugins": f"{{path}}/thisfile{suffix}"}
+    input_file = tmpdir.join("settings.toml")
+    with open(input_file, "w") as f:
+        toml.dump(settings, f)
+
+    result = read_split_toml(input_file, path=str(tmpdir))
+    assert result["plugins"] == str(tmpdir / f"thisfile{suffix}")
+
+    settings["plugins"] = [f"{{cwd}}/other/thisfile{suffix}"]
+    input_file = tmpdir.join("settings.toml")
+    with open(input_file, "w") as f:
+        toml.dump(settings, f)
+
+    result = read_split_toml(input_file, path="hello")
+    assert result["plugins"][0] == str(
+        (Path() / "other" / f"thisfile{suffix}").absolute()
+    )
