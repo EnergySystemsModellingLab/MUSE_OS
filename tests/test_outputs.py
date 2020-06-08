@@ -310,10 +310,9 @@ def test_path_formatting(tmpdir):
 
     @register_output_quantity
     def dummy(market, **kwargs):
-        return None
+        return xr.DataArray()
 
     mca = MCA.factory(Path(settings_file))
-
     assert str(mca.outputs(mca.market)[0]) == settings["outputs"][0]["filename"].format(
-        path=tmpdir / "model", Quantity="dummy", suffix=".dummy"
+        path=tmpdir / "model", Quantity="Dummy", suffix=".dummy"
     )
