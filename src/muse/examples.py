@@ -75,7 +75,7 @@ def copy_model(
     if path.exists() and not path.is_dir():
         raise IOError(f"{path} exists and is not a directory")
 
-    path /= f"model"
+    path /= "model"
     if path.exists():
         if not path.is_dir():
             raise IOError(f"{path} exists and is not a directory")
@@ -100,7 +100,7 @@ def copy_model(
         )
         copyfile(
             example_data_dir() / "multiple_agents" / "residential" / "technodata.csv",
-            path / "technodata" / "residential" / "technodata.csv",
+            path / "technodata" / "residential" / "Technodata.csv",
         )
     return path
 

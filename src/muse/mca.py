@@ -1,7 +1,18 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, List, Mapping, NamedTuple, Optional, Sequence, Text, Union, cast
+from typing import (
+    Any,
+    Callable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Text,
+    Union,
+    cast,
+)
 
 from xarray import Dataset, zeros_like
 
@@ -30,6 +41,7 @@ class MCA(object):
         from logging import getLogger
         from muse.readers import read_settings
         from muse.readers.toml import convert
+        from muse.outputs.mca import factory as ofactory
 
         if isinstance(settings, (Text, Path)):
             settings = read_settings(settings)  # type: ignore
@@ -62,6 +74,8 @@ class MCA(object):
             sectors.append(SECTORS_REGISTERED[kind](sector, settings))
             getLogger(__name__).info(f"Created sector {sector}")
 
+        outputs = ofactory(*getattr(settings, "outputs", []))
+
         extras = {
             "foresight",
             "regions",
@@ -71,6 +85,7 @@ class MCA(object):
             "timeslices",
             "root",
             "plugins",
+            "outputs",
         }
         global_kw = {
             k: v
@@ -87,13 +102,14 @@ class MCA(object):
             carbon_kw[f"carbon_{key}"] = carbon_kw[key]
             carbon_kw.pop(key)
         return cls(  # type: ignore
-            sectors=sectors, market=market, **global_kw, **carbon_kw
+            sectors=sectors, market=market, outputs=outputs, **global_kw, **carbon_kw
         )
 
     def __init__(
         self,
         sectors: List[AbstractSector],
         market: Dataset,
+        outputs: Optional[Callable[[List[AbstractSector], Dataset], Any]] = None,
         time_framework: Sequence[int] = list(range(2010, 2100, 10)),
         equilibrium: bool = True,
         expect_equilibrium: bool = True,
@@ -116,6 +132,7 @@ class MCA(object):
         from xarray import DataArray
         from logging import getLogger
         from muse.carbon_budget import CARBON_BUDGET_METHODS
+        from muse.outputs.mca import factory as ofactory
 
         getLogger(__name__).info("MCA Initialisation")
 
@@ -168,6 +185,7 @@ class MCA(object):
         self.control_overshoot = control_overshoot
         self.carbon_method = CARBON_BUDGET_METHODS[carbon_method]
         self.method_options = method_options
+        self.outputs = ofactory() if outputs is None else outputs
 
     def find_equilibrium(
         self, market: Dataset, sectors: Optional[List[AbstractSector]] = None
@@ -326,6 +344,7 @@ class MCA(object):
                 self.market.prices.sel(dims), new_market.prices.sel(year=years[1])
             )
 
+            self.outputs(self.market, self.sectors, year=self.time_framework[year_idx])
             getLogger(__name__).info(f"Finish simulation year {years[0]}!")
 
     def calibrate_legacy_sectors(self):
@@ -565,5 +584,4 @@ def check_equilibrium(
         )
     else:
         delta = market.prices.sel(year=year) - int_market.prices.sel(year=year)
-
     return bool((abs(delta.sum("timeslice")) < tolerance).all())

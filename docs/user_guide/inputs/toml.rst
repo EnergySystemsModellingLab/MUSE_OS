@@ -83,7 +83,7 @@ excluded_commodities
 
 plugins
     Path or list of paths to extra python plugins, i.e. files with registered functions
-    such as :py:meth:`~muse.outputs.register_output_quantity`.
+    such as :py:func:`~muse.outputs.sector.register_output_quantity`.
 
 
 -------------
@@ -274,7 +274,7 @@ A sector accepts a number of attributes and subsections.
 type
    Defines the kind of sector this is. *Standard* sectors are those with type
    "default". This value corresponds to the name with which a sector class is registerd
-   with MUSE, via :py:meth:`~muse.sectors.register_sector`.
+   with MUSE, via :py:func:`~muse.sectors.register_sector`.
 
 .. _sector-priority:
 
@@ -413,18 +413,18 @@ output
    The following attributes are available:
 
    - quantity: Name of the quantity to save. Currently, only `capacity` exists,
-      refering to :py:func:`muse.outputs.capacity`. However, users can
+      refering to :py:func:`muse.outputs.sector.capacity`. However, users can
       customize and create further output quantities by registering with MUSE via
-      :py:func:`muse.outputs.register_output_quantity`. See
-      :py:mod:`muse.outputs` for more details.
+      :py:func:`muse.outputs.sector.register_output_quantity`. See
+      :py:mod:`muse.outputs.sector` for more details.
 
    - sink: the sink is the place (disk, cloud, database, etc...) and format with which
       the computed quantity is saved. Currently only sinks that save to files are
       implemented. The filename can specified via `filename`, as given below. The
       following sinks are available: "csv", "netcfd", "excel". However, more sinks can
       be added by interested users, and registered with MUSE via
-      :py:func:`muse.outputs.register_output_sink`. See
-      :py:mod:`muse.outputs` for more details.
+      :py:func:`muse.outputs.sinks.register_output_sink`. See
+      :py:mod:`muse.outputs.sinks` for more details.
    
    - filename: defines format of the file where to save the data. There several
       standard values that are automatically substituted:
@@ -443,6 +443,28 @@ output
    - overwrite: If `False`, then MUSE will issue an error and abort, rather than
       overwrite an existing file. Defaults to `False`. With MUSE, shooting oneself in
       the foot is an elective.
+
+   There is a special output sink for aggregating over years. It can be invoked as
+   follows:
+
+   .. code-block:: TOML
+
+      [[sectors.commercial.outputs]]
+      quantity = "capacity"
+      sink.aggregate = 'csv'
+
+   Or, if specifying additional output, where ... can be any parameter for the final
+   sink:
+
+   .. code-block:: TOML
+
+      [[sectors.commercial.outputs]]
+      quantity = "capacity"
+      sink.aggregate.name = { ... }
+
+   Note that the aggregate sink always overwrites the final file, since it will
+   overwrite itself.
+
 
 technodata
    Path to a csv file containing the characterization of the technologies involved in
