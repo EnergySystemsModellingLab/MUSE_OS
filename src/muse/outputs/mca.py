@@ -127,7 +127,7 @@ def capacity(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataAr
 def sector_capacity(sector: AbstractSector) -> DataArray:
     """Sector capacity with agent annotations."""
     from operator import attrgetter
-    from xarray import concat
+    from pandas import DataFrame
 
     capa_sector: List[DataArray] = []
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
@@ -136,17 +136,25 @@ def sector_capacity(sector: AbstractSector) -> DataArray:
         capa_agent["agent"] = agent.name
         capa_agent["type"] = agent.category
         capa_agent["sector"] = getattr(sector, "name", "unnamed")
-        capa_sector.append(capa_agent)
+
+        if len(capa_agent) > 0 and len(capa_agent.technology.values) > 0:
+            capa_sector.append(capa_agent.groupby("technology").sum("asset").fillna(0))
     if len(capa_sector) == 0:
-        return DataArray()
-    return concat(capa_sector, dim="asset")
+        return DataFrame()
+
+    capacity = pd.concat([u.to_dataframe() for u in capa_sector])
+    capacity = capacity[capacity.capacity != 0]
+
+    if "year" in capacity.columns:
+        capacity = capacity.ffill("year")
+    return capacity
 
 
 def sectors_capacity(sectors: List[AbstractSector]) -> DataArray:
     """Aggregate outputs from all sectors."""
-    from xarray import concat
+    from pandas import concat, DataFrame
 
     alldata = [sector_capacity(sector) for sector in sectors]
     if len(alldata) == 0:
-        return DataArray()
-    return concat((data for data in alldata if data.ndim > 0), dim="asset")
+        return DataFrame()
+    return concat(alldata)

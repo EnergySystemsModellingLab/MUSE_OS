@@ -18,6 +18,12 @@ of MUSE itself, and developers, who do.
 
    .. __: https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019
 
+   The package "pandoc" has to be installed manually from the command with the following line
+
+   .. code-block:: bash
+   
+      conda install pandoc
+
 For users
 =========
 
