@@ -87,7 +87,7 @@ OBJECTIVES: Mapping[Text, OBJECTIVE_SIGNATURE] = {}
 
 
 def factory(
-    settings: Union[Text, Mapping, Sequence[Union[Text, Mapping]]] = "fixed_costs"
+    settings: Union[Text, Mapping, Sequence[Union[Text, Mapping]]] = "LCOE"
 ) -> Callable:
     """Creates a function computing multiple objectives.
 
