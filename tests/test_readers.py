@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import toml
-from pytest import fixture, raises, mark
+from pytest import fixture, mark, raises
 
 
 @fixture
@@ -396,3 +396,26 @@ def test_format_path(tmpdir):
     assert format_path(
         "{muse_sectors}/{other_param}", muse_sectors=muse_sectors
     ) == str(Path(muse_sectors).absolute() / "{other_param}")
+
+    
+@mark.parametrize("suffix", (".xlsx", ".csv", ".toml", ".py", ".xls", ".nc"))
+def test_suffix_path_formatting(suffix, tmpdir):
+    from muse.readers.toml import read_split_toml
+
+    settings = {"this": 0, "plugins": f"{{path}}/thisfile{suffix}"}
+    input_file = tmpdir.join("settings.toml")
+    with open(input_file, "w") as f:
+        toml.dump(settings, f)
+
+    result = read_split_toml(input_file, path=str(tmpdir))
+    assert result["plugins"] == str(tmpdir / f"thisfile{suffix}")
+
+    settings["plugins"] = [f"{{cwd}}/other/thisfile{suffix}"]
+    input_file = tmpdir.join("settings.toml")
+    with open(input_file, "w") as f:
+        toml.dump(settings, f)
+
+    result = read_split_toml(input_file, path="hello")
+    assert result["plugins"][0] == str(
+        (Path() / "other" / f"thisfile{suffix}").absolute()
+    )
