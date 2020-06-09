@@ -249,7 +249,6 @@ def match_demand(
     year: int,
     timeslice_op: Optional[Callable[[DataArray], DataArray]] = None,
 ) -> DataArray:
-    from xarray import DataArray
     from muse.commodities import is_enduse
     from muse.demand_matching import demand_matching
     from muse.quantities import maximum_production, capacity_in_use

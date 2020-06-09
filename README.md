@@ -90,6 +90,12 @@ The main page for the documentation can then be found at
 `build\\sphinx\\html\\index.html` (or `build/sphinx/html/index.html` on Mac and Linux).
 The file can viewed from any web browser.
 
+[vscode](https://code.visualstudio.com/) users will find that the repository is setup
+with default settings file.  Users will still need to [choose the virtual
+environment](https://code.visualstudio.com/docs/python/environments#_select-and-activate-an-environment),
+or conda environment where to run the code. This will change the `.vscode/settings.json`
+file and add a user-specific path to it. Users should try and avoid commiting changes to
+`.vscode/settings.json` indiscriminately.
 
 Private SGI Model and Data
 --------------------------

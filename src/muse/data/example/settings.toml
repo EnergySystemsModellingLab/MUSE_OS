@@ -12,6 +12,16 @@ maximum_iterations = 100
 tolerance = 0.1
 tolerance_unmet_demand = -0.1
 
+[[outputs]]
+quantity = "prices"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+
+[[outputs]]
+quantity = "capacity"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+
 # Carbon budget control
 [carbon_budget_control]
 budget = []

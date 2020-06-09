@@ -83,7 +83,7 @@ excluded_commodities
 
 plugins
     Path or list of paths to extra python plugins, i.e. files with registered functions
-    such as :py:meth:`~muse.outputs.register_output_quantity`.
+    such as :py:func:`~muse.outputs.sector.register_output_quantity`.
 
 
 -------------
@@ -247,6 +247,34 @@ timeslice framework, the market will be expressed within it. Hence information f
 sectors with a finer timeslice framework will be lost.
 
 ----------------
+Market Output
+----------------
+As opposed to sector results (with a disaggregation by sector, milestone year, and variable)
+the simulation can output in an aggregated fashion, using the same rules as for sinks
+available for sector outpts (as reported in the output section below) but quantity would be
+available for all the milestone years, assets, and region in the same file.
+The aggregated price, capacity, and supply for all the assets will present the format shown in
+:ref:`output-files`. The TOML would specify the following output in an aggregated way:
+
+.. code-block:: TOML
+   
+   [[outputs]]
+   quantity = "prices"
+   filename = "{path}/{default_output_dir}/MCA{Quantity}{suffix}"
+   sink = "aggregate"
+
+   [[outputs]]
+   quantity = "capacity"
+   filename = "{path}/{default_output_dir}/MCA{Quantity}{suffix}"
+   sink = "aggregate"
+
+   [[outputs]]
+   quantity = "supply"
+   filename = "{path}/{default_output_dir}/MCA{Quantity}{suffix}"
+   sink = "aggregate"
+   
+
+----------------
 Standard sectors
 ----------------
 
@@ -274,7 +302,7 @@ A sector accepts a number of attributes and subsections.
 type
    Defines the kind of sector this is. *Standard* sectors are those with type
    "default". This value corresponds to the name with which a sector class is registerd
-   with MUSE, via :py:meth:`~muse.sectors.register_sector`.
+   with MUSE, via :py:func:`~muse.sectors.register_sector`.
 
 .. _sector-priority:
 
@@ -393,7 +421,7 @@ interactions
    facilities are defined in :py:mod:`muse.interactions`.
 
 
-output
+output:
    Outputs have several moving components to them. MUSE is designed to allow users to
    mix-and-match how and what to save.
 
@@ -413,18 +441,18 @@ output
    The following attributes are available:
 
    - quantity: Name of the quantity to save. Currently, only `capacity` exists,
-      refering to :py:func:`muse.outputs.capacity`. However, users can
+      referring to :py:func:`muse.outputs.sector.capacity`. However, users can
       customize and create further output quantities by registering with MUSE via
-      :py:func:`muse.outputs.register_output_quantity`. See
-      :py:mod:`muse.outputs` for more details.
+      :py:func:`muse.outputs.sector.register_output_quantity`. See
+      :py:mod:`muse.outputs.sector` for more details.
 
    - sink: the sink is the place (disk, cloud, database, etc...) and format with which
       the computed quantity is saved. Currently only sinks that save to files are
       implemented. The filename can specified via `filename`, as given below. The
       following sinks are available: "csv", "netcfd", "excel". However, more sinks can
       be added by interested users, and registered with MUSE via
-      :py:func:`muse.outputs.register_output_sink`. See
-      :py:mod:`muse.outputs` for more details.
+      :py:func:`muse.outputs.sinks.register_output_sink`. See
+      :py:mod:`muse.outputs.sinks` for more details.
    
    - filename: defines format of the file where to save the data. There several
       standard values that are automatically substituted:
@@ -443,6 +471,28 @@ output
    - overwrite: If `False`, then MUSE will issue an error and abort, rather than
       overwrite an existing file. Defaults to `False`. With MUSE, shooting oneself in
       the foot is an elective.
+
+   There is a special output sink for aggregating over years. It can be invoked as
+   follows:
+
+   .. code-block:: TOML
+
+      [[sectors.commercial.outputs]]
+      quantity = "capacity"
+      sink.aggregate = 'csv'
+
+   Or, if specifying additional output, where ... can be any parameter for the final
+   sink:
+
+   .. code-block:: TOML
+
+      [[sectors.commercial.outputs]]
+      quantity = "capacity"
+      sink.aggregate.name = { ... }
+
+   Note that the aggregate sink always overwrites the final file, since it will
+   overwrite itself.
+
 
 technodata
    Path to a csv file containing the characterization of the technologies involved in
@@ -584,5 +634,5 @@ filters:
 
    .. code-block::
 
-      filters.region = ["USA", "ASEA"]
+      filters.region = ["USA", "ASEAN"]
       filters.commodity = ["algae", "fluorescent light"]

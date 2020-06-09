@@ -1,6 +1,5 @@
 from typing import Callable, Mapping, Optional, Sequence, Text, Type, Union
 
-from muse.registration import DECORATORS_REGISTRY
 from muse.sectors.abstract import AbstractSector
 
 SECTORS_REGISTERED: Mapping[Text, Callable] = {}
@@ -57,6 +56,3 @@ def register_sector(
     getLogger(__name__).info(f"Sector {names[0]} registered{aliases}.")
 
     return sector_class
-
-
-DECORATORS_REGISTRY[register_sector.__name__] = register_sector
