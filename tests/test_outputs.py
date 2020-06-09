@@ -317,6 +317,8 @@ def test_path_formatting(tmpdir):
         return xr.DataArray()
 
     mca = MCA.factory(Path(settings_file))
-    assert str(mca.outputs(mca.market)[0]) == settings["outputs"][0]["filename"].format(
-        path=tmpdir / "model", Quantity="Dummy", suffix=".dummy"
+    assert mca.outputs(mca.market)[0] == Path(
+        settings["outputs"][0]["filename"].format(
+            path=tmpdir / "model", Quantity="Dummy", suffix=".dummy"
+        )
     )
