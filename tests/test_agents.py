@@ -59,24 +59,10 @@ def test_create_retrofit(agent_args, technologies, stock):
 
 
 def test_run_retro_agent(retro_agent, technologies, agent_market, demand_share):
-    from copy import deepcopy
-
-    assets = deepcopy(retro_agent.assets.capacity)
-
-    # make sure capacity limit is not reached
-    capa_year = (
-        assets.interp(year=retro_agent.forecast_year, method="linear")
-        .groupby("technology")
-        .sum("asset")
-    )
-    tot_lim = technologies.total_capacity_limit.sel(
-        technology=list(set(assets.technology.values))
-    )
-    technologies.total_capacity_limit.loc[
-        {"technology": list(set(assets.technology.values))}
-    ] = tot_lim.where(
-        tot_lim > capa_year, (capa_year + 10).sel(technology=tot_lim.technology)
-    )
+    # make sure capacity limits are no reached
+    technologies.total_capacity_limit[:] = retro_agent.assets.capacity.sum() * 100
+    technologies.max_capacity_addition[:] = retro_agent.assets.capacity.sum() * 100
+    technologies.max_capacity_growth[:] = retro_agent.assets.capacity.sum() * 100
 
     retro_agent.next(technologies, agent_market, demand_share)
 
