@@ -14,6 +14,7 @@ from typing import (
     Mapping,
     MutableMapping,
     Optional,
+    Sequence,
     Text,
     Tuple,
     Union,
@@ -107,6 +108,7 @@ def format_paths(
     path: Optional[Union[Text, Path]] = None,
     cwd: Optional[Union[Text, Path]] = None,
     muse_sectors: Optional[Text] = None,
+    suffixes: Sequence[Text] = (".csv", ".nc", ".xls", ".xlsx", ".py", ".toml"),
 ):
     """Format paths passed to settings.
 
@@ -150,8 +152,8 @@ def format_paths(
         True
 
         Any property ending in `_path`, `_dir`, `_file`, or with a value that can be
-        interpreted as a path with suffix `.csv` or `.toml` is considered a path and
-        transformed:
+        interpreted as a path with suffix `.csv`, `.nc`, `.xls`, `.xlsx`, `.py` or
+        `.toml` is considered a path and transformed:
 
         >>> a = format_paths({"path": "{cwd}/a/b", "a_dir": "{path}/c"})
         >>> str(Path().absolute() / "a" / "b" / "c") == a["a_dir"]
@@ -222,7 +224,7 @@ def format_paths(
 
     def is_a_path(key, value):
         return any(re.search(x, key) is not None for x in path_names) or (
-            isinstance(value, Text) and Path(value).suffix in (".csv", ".toml")
+            isinstance(value, Text) and Path(value).suffix in suffixes
         )
 
     path = format(settings.get("path", str(patterns["path"])))
@@ -238,8 +240,12 @@ def format_paths(
             result[key] = format_paths(value, patterns, path)
         elif isinstance(value, List):
             result[key] = [
-                format_paths(u, patterns, path) if isinstance(u, Mapping) else u
-                for u in result[key]
+                format_paths(item, patterns, path)
+                if isinstance(item, Mapping)
+                else format_path(item, patterns, path)
+                if is_a_path("", item)
+                else item
+                for item in result[key]
             ]
 
     return result
@@ -838,13 +844,19 @@ def check_sectors_files(settings: Dict) -> None:
     if "list" in sectors:
         sectors = {k: sectors[k] for k in sectors["list"]}
 
-    for sector in sectors.values():
+    for name, sector in sectors.items():
         if sector["type"].lower().strip() == "default":
             for path in path_options:
                 if path not in sector:
-                    raise AssertionError(f"Unknown path option {path}")
+                    raise AssertionError(
+                        f"Settings for sector '{name}' "
+                        f"are missing an input for '{path}'"
+                    )
                 if not Path(sector[path]).exists():
-                    raise AssertionError(f"{sector[path]} could  not be found.")
+                    raise AssertionError(
+                        f"Input '{path}' of sector '{name}' "
+                        "does not refer to a is not a valid file"
+                    )
 
         # Finally the priority of the sectors is used to set the order of execution
         sector["priority"] = sector.get("priority", priorities["last"])
