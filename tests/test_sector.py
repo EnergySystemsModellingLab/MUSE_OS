@@ -90,7 +90,7 @@ def test_calls_to_agents(mock_sector, real_market):
 
 @mark.sgidata
 @mark.legacy
-@mark.parametrize("agent_id", range(6))
+@mark.parametrize("agent_id", range(5))
 def test_call_each_agent(mock_sector, real_market, agent_id):
     """Checks logic of calling next on sector using mocked agents."""
     from copy import deepcopy
