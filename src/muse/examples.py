@@ -209,6 +209,7 @@ def _copy_multiple_agents(path: Path):
     from shutil import copytree, copyfile
     from toml import load, dump
 
+    copytree(example_data_dir() / "default" / "input", path / "input")
     copytree(example_data_dir() / "default" / "technodata", path / "technodata")
     toml = load(example_data_dir() / "default" / "settings.toml")
     toml["sectors"]["residential"][
