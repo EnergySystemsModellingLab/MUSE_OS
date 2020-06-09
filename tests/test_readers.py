@@ -397,7 +397,7 @@ def test_format_path(tmpdir):
         "{muse_sectors}/{other_param}", muse_sectors=muse_sectors
     ) == str(Path(muse_sectors).absolute() / "{other_param}")
 
-    
+
 @mark.parametrize("suffix", (".xlsx", ".csv", ".toml", ".py", ".xls", ".nc"))
 def test_suffix_path_formatting(suffix, tmpdir):
     from muse.readers.toml import read_split_toml
