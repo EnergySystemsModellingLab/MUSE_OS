@@ -20,4 +20,9 @@ def test_fullsim_regression(tmpdir, compare_dirs):
     with tmpdir.as_cwd():
         MCA.factory(Path(tmpdir) / "model" / "settings.toml").run()
 
-    compare_dirs(tmpdir / "Results", example_data_dir() / "outputs" / "default")
+    compare_dirs(
+        tmpdir / "Results",
+        example_data_dir() / "outputs" / "default",
+        rtol=1e-5,
+        atol=1e-7,
+    )
