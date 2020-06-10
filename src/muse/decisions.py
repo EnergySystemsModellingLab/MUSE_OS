@@ -75,8 +75,8 @@ asset and replacement technology. They are also known as multi-objectives.
 def register_decision(function: DECISION_SIGNATURE, name: Text):
     """Decorator to register a function as a decision.
 
-    Registers a function as a decision so that it can be applied easily when
-    aggregating different objectives together.
+    Registers a function as a decision so that it can be applied easily when aggregating
+    different objectives together.
     """
     from functools import wraps
 
@@ -193,7 +193,9 @@ def lexical_comparison(
     assert set(objectives.data_vars).issuperset([u[0] for u in parameters])
     order = [u[0] for u in parameters]
     binsize = (Dataset(dict(parameters)) * objectives).min("replacement")
-    return lexical_comparison(objectives, binsize, order=order, bin_last=False)
+    return lexical_comparison(objectives, binsize, order=order, bin_last=False).rank(
+        "replacement"
+    )
 
 
 @register_decision(name="retro_lexo")
@@ -221,7 +223,9 @@ def retro_lexical_comparison(
 
     order = [u[0] for u in parameters]
     binsize = Dataset(dict(parameters)) * objectives.sel(replacement=objectives.asset)
-    return lexical_comparison(objectives, binsize, order=order, bin_last=False)
+    return lexical_comparison(objectives, binsize, order=order, bin_last=False).rank(
+        "replacement"
+    )
 
 
 def _epsilon_constraints(
@@ -283,8 +287,8 @@ def retro_epsilon_constraints(
 ) -> DataArray:
     """Epsilon constraints where the current tech is included.
 
-    Modifies the parameters to the function such that the existing technologies
-    are always competitive.
+    Modifies the parameters to the function such that the existing technologies are
+    always competitive.
     """
     asset_objectives = objectives.sel(replacement=objectives.asset)
 
