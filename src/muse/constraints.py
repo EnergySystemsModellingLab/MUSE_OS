@@ -404,7 +404,7 @@ def max_production(
     forecast: int = 5,
     interpolation: Text = "linear",
 ) -> Constraint:
-    """Constructs contraint between capacity and maximum production.
+    """Constructs constraint between capacity and maximum production.
 
     Constrains the production decision variable by the maximum production for a given
     capacity.
@@ -444,6 +444,23 @@ def max_production(
         dict(capacity=cast(xr.DataArray, -capacity), production=production, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
     )
+
+
+@register_constraints
+def minimum_service(
+    demand: xr.DataArray,
+    assets: xr.Dataset,
+    search_space: xr.DataArray,
+    market: xr.Dataset,
+    technologies: xr.Dataset,
+    year: Optional[int] = None,
+    forecast: int = 5,
+    interpolation: Text = "linear",
+) -> Constraint:
+    maxprod = max_production(demand, assets, search_space, market, technologies)
+    maxprod.attrs = dict(kind=ConstraintKind.LOWER_BOUND)
+    minimum_service.capacity * delta  # delta is read from new technodata file
+    return minimum_service
 
 
 def lp_costs(
