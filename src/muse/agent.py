@@ -21,7 +21,6 @@ class AgentBase(ABC):
         assets: Optional[xr.Dataset] = None,
         interpolation: Text = "linear",
         category: Optional[Text] = None,
-        constraints: Optional[Callable] = None,
     ):
         """Creates a standard MUSE agent.
 
@@ -38,7 +37,6 @@ class AgentBase(ABC):
                 different agents together.
         """
         from uuid import uuid4
-        from muse.constraints import factory as csfactory
 
         super().__init__()
         self.name = name
@@ -53,10 +51,6 @@ class AgentBase(ABC):
         """Interpolation method."""
         self.category = category
         """Attribute to classify different sets of agents."""
-        if not callable(constraints):
-            constraints = csfactory()
-        self.constraints = constraints
-        """Creates a set of constraints limiting investment."""
 
     def filter_input(
         self,
@@ -102,6 +96,7 @@ class Agent(AgentBase):
         search_rules: Optional[Callable] = None,
         objectives: Optional[Callable] = None,
         decision: Optional[Callable] = None,
+        constraints: Optional[Callable] = None,
         investment: Optional[Callable] = None,
         year: int = 2010,
         maturity_threshhold: float = 0,
@@ -137,6 +132,7 @@ class Agent(AgentBase):
         from muse.investments import factory as ifactory
         from muse.objectives import factory as objectives_factory
         from muse.decisions import factory as decision_factory
+        from muse.constraints import factory as csfactory
 
         super().__init__(
             name=name,
@@ -177,6 +173,10 @@ class Agent(AgentBase):
             decision = decision_factory()
         self.decision = decision
         """Creates single decision objective from one or more objectives."""
+        if not callable(constraints):
+            constraints = csfactory()
+        self.constraints = constraints
+        """Creates a set of constraints limiting investment."""
         if investment is None:
             investment = ifactory()
         self.invest = investment
@@ -338,6 +338,7 @@ def create_retrofit_agent(
         Callable, Text, Mapping, Sequence[Union[Text, Mapping]]
     ] = "fixed_costs",
     decision: Union[Callable, Text, Mapping] = "mean",
+    investment: Union[Callable, Text, Mapping] = "adhoc",
     **kwargs,
 ):
     """Creates retrofit agent from muse primitives."""
@@ -346,6 +347,7 @@ def create_retrofit_agent(
     from muse.hooks import housekeeping_factory, asset_merge_factory
     from muse.objectives import factory as objectives_factory
     from muse.decisions import factory as decision_factory
+    from muse.investments import factory as investment_factory
 
     if "region" in capacity.dims:
         capacity = capacity.sel(region=region)
@@ -387,6 +389,8 @@ def create_retrofit_agent(
             getLogger(__name__).warning(msg)
         decision = decision_factory(decision)
     assert callable(decision)
+    if not callable(investment):
+        investment = investment_factory(investment)
 
     return Agent(
         assets=assets,
@@ -396,6 +400,7 @@ def create_retrofit_agent(
         merge_transform=merge_transform,
         objectives=objectives,
         decision=decision,
+        investment=investment,
         year=year,
         **kwargs,
     )
@@ -414,6 +419,7 @@ def create_newcapa_agent(
         Callable, Text, Mapping, Sequence[Union[Text, Mapping]]
     ] = "fixed_costs",
     decision: Union[Callable, Text, Mapping] = "mean",
+    investment: Union[Callable, Text, Mapping] = "adhoc",
     **kwargs,
 ):
     """Creates newcapa agent from muse primitives."""
@@ -422,6 +428,7 @@ def create_newcapa_agent(
     from muse.registration import name_variations
     from muse.objectives import factory as objectives_factory
     from muse.decisions import factory as decision_factory
+    from muse.investments import factory as investment_factory
 
     if "region" in capacity.dims:
         capacity = capacity.sel(region=region)
@@ -454,6 +461,8 @@ def create_newcapa_agent(
         objectives = objectives_factory(objectives)
     if not callable(decision):
         decision = decision_factory(decision)
+    if not callable(investment):
+        investment = investment_factory(investment)
 
     result = Agent(
         assets=assets,
@@ -463,6 +472,7 @@ def create_newcapa_agent(
         merge_transform=merge_transform,
         objectives=objectives,
         decision=decision,
+        investment=investment,
         year=year,
         **kwargs,
     )
@@ -484,6 +494,7 @@ def factory(
     sector: Optional[Text] = None,
     sectors_directory: Union[Text, Path] = DEFAULT_SECTORS_DIRECTORY,
     baseyear: int = 2010,
+    **settings,
 ) -> List[Agent]:
     """Reads list of agents from standard MUSE input files."""
     from logging import getLogger
@@ -525,7 +536,7 @@ def factory(
         param["category"] = param["agent_type"]
         param["capacity"] = deepcopy(capa.sel(region=param["region"]))
         param["year"] = baseyear
-        result.append(create_agent(**param))
+        result.append(create_agent(**param, **settings))
 
     nregs = len({u.region for u in result})
     types = [u.name for u in result]

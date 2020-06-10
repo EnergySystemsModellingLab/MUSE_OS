@@ -43,6 +43,7 @@ type = 'default'
 priority = 1
 investment_production = 'share'
 dispatch_production = 'share'
+lpsolver = "scipy"
 
 agents = '{path}/technodata/Agents.csv'
 technodata = '{path}/technodata/residential/Technodata.csv'
@@ -75,6 +76,7 @@ type = 'default'
 priority = 2
 investment_production = 'share'
 dispatch_production = 'share'
+lpsolver = "scipy"
 
 agents = '{path}/technodata/Agents.csv'
 technodata = '{path}/technodata/power/Technodata.csv'
@@ -98,6 +100,7 @@ type = 'default'
 priority = 3
 investment_production = 'share'
 dispatch_production = 'share'
+lpsolver = "scipy"
 
 agents = '{path}/technodata/Agents.csv'
 technodata = '{path}/technodata/gas/Technodata.csv'
