@@ -107,7 +107,6 @@ Decision Methods
    :members:
 
 
-
 Investment Methods
 ~~~~~~~~~~~~~~~~~~
 
@@ -120,6 +119,13 @@ Demand Share
 
 .. automodule:: muse.demand_share
    :members:
+
+Constraints:
+~~~~~~~~~~~~
+
+.. automodule:: muse.constraints
+    :members:
+
 
 Initial and Final Asset Transforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

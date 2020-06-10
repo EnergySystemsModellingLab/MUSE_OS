@@ -92,7 +92,7 @@ technologies:
     Technodata characterizing the competing technologies.
 year:
     current year.
-**kwargs:
+``**kwargs``:
     Any other parameter.
 """
 
@@ -477,8 +477,8 @@ def lp_costs(
         ('asset', 'replacement')
 
         The production costs are zero by default. However, the production expands over
-        not only the dimensions of the capacity, but also the ``timeslice``(s) during
-        which production occurs and the ``commodity``(s) produced.
+        not only the dimensions of the capacity, but also the ``timeslice`` during
+        which production occurs and the ``commodity`` produced.
 
         >>> lpcosts.production.dims
         ('timeslice', 'asset', 'replacement', 'commodity')
