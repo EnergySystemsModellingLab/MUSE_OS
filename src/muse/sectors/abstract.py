@@ -30,3 +30,6 @@ class AbstractSector(ABC):
     def next(self, mca_market: Dataset) -> Dataset:
         """Advance sector by one time period."""
         pass
+
+    def __repr__(self):
+        return f"<{self.name.title()} sector - object at {hex(id(self))}>"
