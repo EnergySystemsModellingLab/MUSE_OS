@@ -50,7 +50,7 @@ muse_legacy = pattern(package="StarMUSELegacy", repo="StarMuse", sha="archive/le
 
 setup(
     name="StarMUSE",
-    version="0.7",
+    version="0.8",
     description="Energy System Model",
     classifiers=[
         "Development Status :: 3 - Alpha",
