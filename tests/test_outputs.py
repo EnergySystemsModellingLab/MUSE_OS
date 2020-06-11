@@ -284,3 +284,41 @@ def test_mca_aggregate_outputs(tmpdir):
     assert (tmpdir / "model" / "Prices.csv").exists()
     data = pd.read_csv(tmpdir / "model" / "Prices.csv")
     assert set(data.year) == set(settings["time_framework"])
+
+
+def test_path_formatting(tmpdir):
+    from muse.mca import MCA
+    from muse.examples import copy_model
+    from muse.outputs.sinks import register_output_sink, sink_to_file
+    from muse.outputs.mca import register_output_quantity
+    from toml import load, dump
+
+    # Copy the data to tmpdir
+    copy_model(path=tmpdir)
+
+    settings_file = tmpdir / "model" / "settings.toml"
+    settings = load(settings_file)
+    settings["outputs"] = [
+        {
+            "quantity": "dummy",
+            "sink": "dummy_sink",
+            "filename": "{path}/{Quantity}{suffix}",
+        }
+    ]
+    dump(settings, (settings_file))
+
+    @register_output_sink(name="dummy_sink")
+    @sink_to_file(".dummy")
+    def to_dummy(quantity, filename, **params) -> None:
+        pass
+
+    @register_output_quantity
+    def dummy(market, **kwargs):
+        return xr.DataArray()
+
+    mca = MCA.factory(Path(settings_file))
+    assert mca.outputs(mca.market)[0] == Path(
+        settings["outputs"][0]["filename"].format(
+            path=tmpdir / "model", Quantity="Dummy", suffix=".dummy"
+        )
+    )
