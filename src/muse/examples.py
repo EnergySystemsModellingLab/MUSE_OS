@@ -27,7 +27,8 @@ The same models can be instanciated in a python script as follows:
 from pathlib import Path
 from typing import Optional, Text, Union
 
-from xarray import Dataset
+import numpy as np
+import xarray as xr
 
 from muse.mca import MCA
 
@@ -105,7 +106,7 @@ def copy_model(
     return path
 
 
-def technodata(sector: Text) -> Dataset:
+def technodata(sector: Text) -> xr.Dataset:
     """Technology for a sector of the default example model."""
     from muse.readers.csv import read_technologies
 
@@ -121,3 +122,25 @@ def technodata(sector: Text) -> Dataset:
         example_data_dir() / "technodata" / sector.title() / "CommIn.csv",
         example_data_dir() / "input" / "GlobalCommodities.csv",
     )
+
+
+def random_agent_assets(rng: np.random.Generator):
+    """Creates random set of assets for testing and debugging."""
+    nassets = rng.integers(low=1, high=6)
+    nyears = rng.integers(low=2, high=5)
+    years = rng.choice(list(range(2030, 2051)), size=nyears, replace=False)
+    installed = rng.choice([2030, 2030, 2025, 2010], size=nassets)
+    technologies = rng.choice(["stove", "thermomix", "oven"], size=nassets)
+    capacity = rng.integers(101, size=(nassets, nyears))
+    result = xr.Dataset()
+    result["capacity"] = xr.DataArray(
+        capacity.astype("int64"),
+        coords=dict(
+            installed=("asset", installed.astype("int64")),
+            technology=("asset", technologies),
+            region=rng.choice(["USA", "EU18", "Brexitham"]),
+            year=sorted(years.astype("int64")),
+        ),
+        dims=("asset", "year"),
+    )
+    return result

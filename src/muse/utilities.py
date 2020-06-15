@@ -1,5 +1,6 @@
 """Collection of functions and stand-alone algorithms."""
 from typing import (
+    Any,
     Callable,
     Hashable,
     Iterable,
@@ -514,3 +515,66 @@ def future_propagation(
         ),
         future,
     )
+
+
+def agent_concatenation(
+    data: Mapping[Hashable, Union[xr.DataArray, xr.Dataset]],
+    dim: Text = "asset",
+    name: Text = "agent",
+    fill_value: Any = 0,
+) -> Union[xr.DataArray, xr.Dataset]:
+    """Concatenates input map along given dimension.
+
+    Example:
+
+        Lets creates sets of random assets to work with. We set the seed so that this
+        test can be reproduced exactly.
+
+        >>> from muse.examples import random_agent_assets
+        >>> rng = np.random.default_rng(1234)
+        >>> assets = {i: random_agent_assets(rng) for i in range(5)}
+
+        The concatenation will create a new dataset (or datarray) combining all the
+        inputs along the dimension "asset". The origin of each datum is retained in a
+        new coordinate "agent" with dimension "asset".
+
+        >>> from muse.utilities import agent_concatenation
+        >>> aggregate = agent_concatenation(assets)
+        >>> aggregate
+        <xarray.Dataset>
+        Dimensions:     (asset: 19, year: 12)
+        Coordinates:
+          * year        (year) int64 2033 2035 2036 2037 2039 ... 2046 2047 2048 2049
+            technology  (asset) <U9 'oven' 'stove' 'oven' ... 'stove' 'oven' 'thermomix'
+            region      (asset) <U9 'Brexitham' 'Brexitham' ... 'Brexitham' 'Brexitham'
+            agent       (asset) ... 0 0 0 0 0 1 1 1 2 2 2 2 3 3 3 4 4 4 4
+            installed   (asset) int64 2030 2025 2030 2010 2030 ... 2025 2030 2010 2025
+        Dimensions without coordinates: asset
+        Data variables:
+            capacity    (asset, year) float64 26.0 26.0 26.0 56.0 ... 62.0 62.0 62.0
+
+        Note that the `dtype` of the capacity has changed from integers to floating
+        points. This is due to how ``xarray`` performs the operation.
+
+        We can check that all the data from each agent is indeed present in the
+        aggregate.
+
+        >>> for agent, inventory in assets.items():
+        ...    assert (aggregate.sel(asset=aggregate.agent == agent) == inventory).all()
+
+        However, it should be noted that the data is not always strictly equivalent:
+        dimensions outside of "assets" (most notably "year") will include all points
+        from all agents. Missing values for the "year" dimension are forward filled (and
+        backfilled with zeros). Others are left with "NaN".
+    """
+    data = {k: v.copy() for k, v in data.items()}
+    for key, datum in data.items():
+        if name in datum.data_vars:
+            raise ValueError(f"Coordinate {name} already exists")
+        datum[name] = key
+    result = xr.concat(data.values(), dim=dim).set_coords("agent")
+    if "year" in result.dims:
+        result = result.ffill("year")
+    if fill_value is not np.nan:
+        result = result.fillna(fill_value)
+    return result
