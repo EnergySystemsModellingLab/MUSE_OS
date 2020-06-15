@@ -51,7 +51,7 @@ def coords_to_multiindex(
 
 
 def reduce_assets(
-    assets: Union[xr.DataArray, Sequence[xr.DataArray]],
+    assets: Union[xr.DataArray, xr.Dataset, Sequence[Union[xr.Dataset, xr.DataArray]]],
     coords: Optional[Union[Text, Sequence[Text]]] = None,
     dim: Text = "asset",
     operation: Optional[Callable] = None,
@@ -152,9 +152,9 @@ def reduce_assets(
 
     assert operation is not None
 
-    if not isinstance(assets, xr.DataArray):
+    if not isinstance(assets, (xr.Dataset, xr.DataArray)):
         assets = xr.concat(assets, dim=dim)
-    assert isinstance(assets, xr.DataArray)
+    assert isinstance(assets, (xr.Dataset, xr.DataArray))
     if coords is None:
         coords = [cast(Text, k) for k, v in assets.coords.items() if v.dims == (dim,)]
     elif isinstance(coords, Text):
@@ -578,3 +578,57 @@ def agent_concatenation(
     if fill_value is not np.nan:
         result = result.fillna(fill_value)
     return result
+
+
+def aggregate_technology_model(
+    data: Union[xr.DataArray, xr.Dataset],
+    dim: Text = "asset",
+    drop: Union[Text, Sequence[Text]] = "installed",
+) -> Union[xr.DataArray, xr.Dataset]:
+    """Aggregate together assets with the same installation year.
+
+    The assets of a given agent, region, and technology but different installation year
+    are grouped together and summed over.
+
+    Example:
+
+        We first create a random set of agent assets and aggregate them.
+        Some of these agents own assets from the same technology but potentially with
+        different installation year. This function will aggregate together all assets
+        of a given agent with same technology.
+
+        >>> from muse.examples import random_agent_assets
+        >>> from muse.utilities import agent_concatenation, aggregate_technology_model
+        >>> rng = np.random.default_rng(1234)
+        >>> agent_assets = {i: random_agent_assets(rng) for i in range(5)}
+        >>> assets = agent_concatenation(agent_assets)
+        >>> reduced = aggregate_technology_model(assets)
+
+        We can check that the tuples (agent, technology) are unique (each agent works in
+        a single region):
+
+        >>> ids = list(zip(reduced.agent.values, reduced.technology.values))
+        >>> assert len(set(ids)) == len(ids)
+
+        And we can check they correspond to the right summation:
+
+        >>> for agent, technology in set(ids):
+        ...     techsel = assets.technology == technology
+        ...     agsel = assets.agent == agent
+        ...     expected = assets.sel(asset=techsel & agsel).sum("asset")
+        ...     techsel = reduced.technology == technology
+        ...     agsel = reduced.agent == agent
+        ...     actual = reduced.sel(asset=techsel & agsel)
+        ...     assert len(actual.asset) == 1
+        ...     assert (actual == expected).all()
+    """
+    if isinstance(drop, Text):
+        drop = (drop,)
+    return reduce_assets(
+        data,
+        [
+            cast(Text, u)
+            for u in data.coords
+            if u not in drop and data[u].dims == (dim,)
+        ],
+    )
