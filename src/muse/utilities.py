@@ -1,6 +1,7 @@
 """Collection of functions and stand-alone algorithms."""
 from typing import (
     Callable,
+    Hashable,
     Iterable,
     Mapping,
     NamedTuple,
@@ -319,7 +320,7 @@ def filter_with_template(
     match = {d: template[d].isin(data[d]).values for d in match_indices if d != "year"}
     if "year" in match_indices:
         match["year"] = template.year.values
-    return filter_input(data, **match, **kwargs)
+    return filter_input(data, **match, **kwargs)  # type: ignore
 
 
 def tupled_dimension(array: np.ndarray, axis: int):
@@ -340,7 +341,7 @@ def tupled_dimension(array: np.ndarray, axis: int):
 def lexical_comparison(
     objectives: xr.Dataset,
     binsize: xr.Dataset,
-    order: Optional[Sequence[Text]] = None,
+    order: Optional[Sequence[Hashable]] = None,
     bin_last: bool = True,
 ) -> xr.DataArray:
     """Lexical comparison over the objectives.
@@ -365,7 +366,7 @@ def lexical_comparison(
         An array of tuples which can subsquently be compared lexicographically.
     """
     if order is None:
-        order = list(binsize.data_vars)
+        order = [u for u in binsize.data_vars]
 
     assert set(order) == set(binsize.data_vars)
     assert set(order).issuperset(objectives)
@@ -381,7 +382,7 @@ def lexical_comparison(
 def merge_assets(
     capa_a: xr.DataArray,
     capa_b: xr.DataArray,
-    interpolation: Optional[Text] = "linear",
+    interpolation: Text = "linear",
     dimension: Text = "asset",
 ) -> xr.DataArray:
     """Merge two capacity arrays."""
@@ -415,7 +416,7 @@ def avoid_repetitions(data: xr.DataArray, dim: Text = "year") -> xr.DataArray:
 
     The first and last year are always preserved.
     """
-    roll = data.rolling(**{dim: 3, "center": True}).construct("window")
+    roll = data.rolling({dim: 3}, center=True).construct("window")
     years = ~(roll == roll.isel(window=0)).all([u for u in roll.dims if u != dim])
     return data.year[years]
 
