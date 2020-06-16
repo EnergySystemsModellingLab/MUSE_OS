@@ -78,7 +78,7 @@ Agents and associated functionalities
    :members: agents_factory, create_agent, create_retrofit_agent, create_newcapa_agent
 
 
-.. autoclass:: muse.agent.AgentBase
+.. autoclass:: muse.agent.AbstractAgent
    :members:
 
 .. autoclass:: muse.agent.Agent

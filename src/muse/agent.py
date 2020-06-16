@@ -8,7 +8,7 @@ import xarray as xr
 from muse.defaults import DEFAULT_SECTORS_DIRECTORY
 
 
-class AgentBase(ABC):
+class AbstractAgent(ABC):
     """Base class for all agents."""
 
     tolerance = 1e-12
@@ -90,7 +90,7 @@ class AgentBase(ABC):
         )
 
 
-class Agent(AgentBase):
+class Agent(AbstractAgent):
     """Base class for buildings agents."""
 
     def __init__(

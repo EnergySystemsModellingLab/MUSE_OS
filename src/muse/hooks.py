@@ -30,7 +30,7 @@ def housekeeping_factory(settings: Union[Text, Mapping] = "noop") -> Callable:
     Available housekeeping functions should be registered with
     :py:func:`@register_initial_asset_transform<register_initial_asset_transform>`.
     """
-    from muse.agent import AgentBase
+    from muse.agent import AbstractAgent
 
     if isinstance(settings, Text):
         name = settings
@@ -41,7 +41,7 @@ def housekeeping_factory(settings: Union[Text, Mapping] = "noop") -> Callable:
 
     transform = INITIAL_ASSET_TRANSFORM[name]
 
-    def initial_assets_transform(agent: AgentBase, assets: Dataset) -> Dataset:
+    def initial_assets_transform(agent: AbstractAgent, assets: Dataset) -> Dataset:
         return transform(agent, assets, **params)
 
     return initial_assets_transform

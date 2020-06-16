@@ -12,7 +12,7 @@ should all have the following signature:
 
     @register_demand_share
     def demand_share(
-        agents: List[AgentBase],
+        agents: List[AbstractAgent],
         market: Dataset,
         technologies: Dataset,
         **kwargs
@@ -31,7 +31,7 @@ Arguments:
         shared. These keyword arguments can be modified from the TOML file.
 
 Returns:
-    A dictionnary mapping the :py:attr:`muse.agent.AgentBase.uuid` (`Universally
+    A dictionnary mapping the :py:attr:`muse.agent.AbstractAgent.uuid` (`Universally
     Unique Identifier`__) of the agent to the demand share. In most cases, it is
     expected summing over shares should return the *unmet* consumption for the forecast
     year.
@@ -50,11 +50,11 @@ from uuid import UUID
 
 from xarray import DataArray, Dataset
 
-from muse.agent import AgentBase
+from muse.agent import AbstractAgent
 from muse.registration import registrator
 
 DEMAND_SHARE_SIGNATURE = Callable[
-    [List[AgentBase], Dataset, Dataset], Mapping[UUID, DataArray]
+    [List[AbstractAgent], Dataset, Dataset], Mapping[UUID, DataArray]
 ]
 """Demand share signature."""
 
@@ -79,7 +79,7 @@ def factory(
         params = {k: v for k, v in settings.items() if k != "name"}
 
     def demand_share(
-        agents: List[AgentBase], market: Dataset, technologies: Dataset, **kwargs
+        agents: List[AbstractAgent], market: Dataset, technologies: Dataset, **kwargs
     ) -> Mapping[UUID, DataArray]:
         function = DEMAND_SHARE[name]
         keywords = dict(**params)
@@ -91,7 +91,7 @@ def factory(
 
 @register_demand_share(name="default")
 def new_and_retro(
-    agents: List[AgentBase],
+    agents: List[AbstractAgent],
     market: Dataset,
     technologies: Dataset,
     production: Union[Text, Mapping, Callable] = "maximum_production",
