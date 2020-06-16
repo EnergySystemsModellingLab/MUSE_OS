@@ -16,7 +16,7 @@ from typing import (
 from pandas import MultiIndex
 from xarray import DataArray, Dataset
 
-from muse.agent import AbstractAgent
+from muse.agents import AbstractAgent
 from muse.demand_share import DEMAND_SHARE_SIGNATURE
 from muse.production import PRODUCTION_SIGNATURE
 from muse.sectors.abstract import AbstractSector
@@ -35,7 +35,7 @@ class Sector(AbstractSector):  # type: ignore
         from muse.production import factory as pfactory
         from muse.interactions import factory as interaction_factory
         from muse.demand_share import factory as share_factory
-        from muse.agent import agents_factory
+        from muse.agents import agents_factory
         from logging import getLogger
 
         sector_settings = getattr(settings.sectors, name)._asdict()

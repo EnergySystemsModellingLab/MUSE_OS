@@ -1,7 +1,7 @@
 """MUSE model"""
 
 from muse import sectors  # noqa
-from muse.agent import Agent, create_agent
+from muse.agents import Agent, create_agent
 from muse.readers import (
     read_csv_agent_parameters,
     read_csv_timeslices,

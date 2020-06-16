@@ -74,7 +74,7 @@ from typing import Callable, Mapping, Sequence, Text, Union
 
 from xarray import DataArray, Dataset
 
-from muse.agent import Agent
+from muse.agents import Agent
 from muse.registration import registrator
 
 OBJECTIVE_SIGNATURE = Callable[

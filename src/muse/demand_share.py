@@ -31,10 +31,10 @@ Arguments:
         shared. These keyword arguments can be modified from the TOML file.
 
 Returns:
-    A dictionnary mapping the :py:attr:`muse.agent.AbstractAgent.uuid` (`Universally
-    Unique Identifier`__) of the agent to the demand share. In most cases, it is
-    expected summing over shares should return the *unmet* consumption for the forecast
-    year.
+    A dictionnary mapping the :py:attr:`~muse.agents.agent.AbstractAgent.uuid`
+    (`Universally Unique Identifier`__) of the agent to the demand share. In most cases,
+    it is expected summing over shares should return the *unmet* consumption for the
+    forecast year.
 
 __ :: https://en.wikipedia.org/wiki/Universally_unique_identifier
 """
@@ -50,7 +50,7 @@ from uuid import UUID
 
 from xarray import DataArray, Dataset
 
-from muse.agent import AbstractAgent
+from muse.agents import AbstractAgent
 from muse.registration import registrator
 
 DEMAND_SHARE_SIGNATURE = Callable[

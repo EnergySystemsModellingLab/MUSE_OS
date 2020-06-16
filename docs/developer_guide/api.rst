@@ -74,18 +74,18 @@ Agent Interactions
 Agents and associated functionalities
 -------------------------------------
 
-.. automodule:: muse.agent
+.. automodule:: muse.agents.factories
    :members: agents_factory, create_agent, create_retrofit_agent, create_newcapa_agent
 
 
-.. autoclass:: muse.agent.AbstractAgent
+.. autoclass:: muse.agents.agent.AbstractAgent
    :members:
 
-.. autoclass:: muse.agent.Agent
+.. autoclass:: muse.agents.agent.Agent
    :members:
    :private-members:
 
-.. autoclass:: muse.agent.InvestingAgent
+.. autoclass:: muse.agents.agent.InvestingAgent
    :members:
    :private-members:
 

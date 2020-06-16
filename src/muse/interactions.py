@@ -23,7 +23,7 @@ __all__ = [
 
 from typing import Callable, List, Mapping, Optional, Sequence, Text, Tuple, Union
 
-from muse.agent import Agent, AbstractAgent
+from muse.agents import Agent, AbstractAgent
 from muse.registration import registrator
 
 AGENT_INTERACTIONS: Mapping[Text, Callable] = {}

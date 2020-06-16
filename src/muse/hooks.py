@@ -14,7 +14,7 @@ from typing import Callable, Mapping, MutableMapping, Text, Union
 
 from xarray import Dataset
 
-from muse.agent import Agent
+from muse.agents import Agent
 from muse.registration import registrator
 
 INITIAL_ASSET_TRANSFORM: MutableMapping[Text, Callable] = {}
@@ -30,7 +30,7 @@ def housekeeping_factory(settings: Union[Text, Mapping] = "noop") -> Callable:
     Available housekeeping functions should be registered with
     :py:func:`@register_initial_asset_transform<register_initial_asset_transform>`.
     """
-    from muse.agent import AbstractAgent
+    from muse.agents import AbstractAgent
 
     if isinstance(settings, Text):
         name = settings

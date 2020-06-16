@@ -5,7 +5,7 @@ from pandas import DataFrame
 from pytest import fixture, mark
 from xarray import DataArray, Dataset
 
-from muse.agent import Agent
+from muse.agents import Agent
 
 
 @fixture(autouse=True)
