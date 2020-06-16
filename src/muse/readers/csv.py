@@ -442,7 +442,8 @@ def read_csv_agent_parameters(filename) -> List:
             "newcapa": "newcapa",
             "retrofit": "retrofit",
             "retro": "retrofit",
-        }[row.Type.lower()]
+            "agent": "agent",
+        }[getattr(row, "Type", "agent").lower()]
         data = {
             "name": row.Name,
             "region": row.RegionName,

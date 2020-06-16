@@ -85,6 +85,10 @@ Agents and associated functionalities
    :members:
    :private-members:
 
+.. autoclass:: muse.agent.InvestingAgent
+   :members:
+   :private-members:
+
 
 Objectives
 ~~~~~~~~~~

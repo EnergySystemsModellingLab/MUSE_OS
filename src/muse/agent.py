@@ -91,7 +91,10 @@ class AbstractAgent(ABC):
 
 
 class Agent(AbstractAgent):
-    """Base class for buildings agents."""
+    """Agent that is capable of computing a search-space and a cost metric.
+
+    This agent will not perform any investment itself.
+    """
 
     def __init__(
         self,
@@ -102,8 +105,6 @@ class Agent(AbstractAgent):
         search_rules: Optional[Callable] = None,
         objectives: Optional[Callable] = None,
         decision: Optional[Callable] = None,
-        constraints: Optional[Callable] = None,
-        investment: Optional[Callable] = None,
         year: int = 2010,
         maturity_threshhold: float = 0,
         forecast: int = 5,
@@ -135,10 +136,8 @@ class Agent(AbstractAgent):
         """
         from muse.hooks import housekeeping_factory, asset_merge_factory
         from muse.filters import factory as filter_factory
-        from muse.investments import factory as ifactory
         from muse.objectives import factory as objectives_factory
         from muse.decisions import factory as decision_factory
-        from muse.constraints import factory as csfactory
 
         super().__init__(
             name=name,
@@ -179,14 +178,6 @@ class Agent(AbstractAgent):
             decision = decision_factory()
         self.decision = decision
         """Creates single decision objective from one or more objectives."""
-        if not callable(constraints):
-            constraints = csfactory()
-        self.constraints = constraints
-        """Creates a set of constraints limiting investment."""
-        if investment is None:
-            investment = ifactory()
-        self.invest = investment
-        """Method to use when fulfilling demand from rated set of techs."""
         if housekeeping is None:
             housekeeping = housekeeping_factory()
         self.housekeeping = housekeeping
@@ -224,7 +215,7 @@ class Agent(AbstractAgent):
         market: xr.Dataset,
         demand: xr.DataArray,
         time_period: int = 1,
-    ):
+    ) -> Optional[xr.Dataset]:
         """Iterates agent one turn.
 
         The goal is to figure out from market variables which technologies to
@@ -246,29 +237,21 @@ class Agent(AbstractAgent):
         # dataset with intermediate computational results from search
         # makes it easier to pass intermediate results to functions, as well as
         # filter them when inside a function
-        search = xr.Dataset()
         if demand.size == 0 or demand.sum() < 1e-12:
             self.year += time_period
-            return
+            return None
 
-        search["space"] = self.search_rules(self, demand, technologies, market)
-        search["space"] = search["space"].fillna(0).astype(int)
-        if any(u == 0 for u in search.space.shape):
+        search_space = (
+            self.search_rules(self, demand, technologies, market).fillna(0).astype(int)
+        )
+        if any(u == 0 for u in search_space.shape):
             getLogger(__name__).critical("Search space is empty")
-        search["decision"] = self._compute_objective(
-            demand, search.space, technologies, market
-        )
-
-        new_assets = self._compute_new_assets(
-            demand, search, technologies, market, time_period
-        )
-
-        # add invested capacity to current assets
-        self.assets = self.merge_transform(
-            self.assets, xr.Dataset({"capacity": new_assets})
-        )
+            self.year += time_period
+            return None
+        decision = self._compute_objective(demand, search_space, technologies, market)
 
         self.year += time_period
+        return xr.Dataset(dict(search_space=search_space, decision=decision))
 
     def _compute_objective(
         self,
@@ -283,6 +266,67 @@ class Agent(AbstractAgent):
         decision = xr.broadcast(decision, search_space, exclude=nobroadcast_dims)[0]
         return decision.sel({k: search_space[k] for k in search_space.dims})
 
+
+class InvestingAgent(Agent):
+    """Agent that performs investment for itself."""
+
+    def __init__(
+        self,
+        *args,
+        constraints: Optional[Callable] = None,
+        investment: Optional[Callable] = None,
+        **kwargs,
+    ):
+        """Creates a standard buildings agent.
+
+        Arguments:
+            *args: See :py:class:`muse.agent.Agent`
+            *kwargs: See :py:class:`muse.agent.Agent`
+            investment: A function to perform investments
+        """
+        from muse.investments import factory as ifactory
+        from muse.constraints import factory as csfactory
+
+        super().__init__(*args, **kwargs)
+
+        if investment is None:
+            investment = ifactory()
+        self.invest = investment
+        """Method to use when fulfilling demand from rated set of techs."""
+        if not callable(constraints):
+            constraints = csfactory()
+        self.constraints = constraints
+        """Creates a set of constraints limiting investment."""
+
+    def next(
+        self,
+        technologies: xr.Dataset,
+        market: xr.Dataset,
+        demand: xr.DataArray,
+        time_period: int = 1,
+    ):
+        """Iterates agent one turn.
+
+        The goal is to figure out from market variables which technologies to
+        invest in and by how much.
+
+        This function will modify `self.assets` and increment `self.year`.
+        Other attributes are left unchanged. Arguments to the function are
+        never modified.
+        """
+        search = super().next(technologies, market, demand, time_period=time_period)
+        if search is None:
+            return None
+
+        new_assets = self._compute_new_assets(
+            demand, search, technologies, market, time_period, self.year - time_period
+        )
+        self.add_assets(xr.Dataset({"capacity": new_assets}))
+
+    def add_assets(self, newassets: xr.Dataset):
+        """Add new assets to the agent."""
+        self.assets = self.merge_transform(self.assets, newassets)
+
     def _compute_new_assets(
         self,
         demand: xr.DataArray,
@@ -290,6 +334,7 @@ class Agent(AbstractAgent):
         technologies: xr.Dataset,
         market: xr.Dataset,
         time_period: int,
+        current_year: int,
     ) -> xr.DataArray:
         """Computes investment and retirement profile."""
         from muse.investments import cliff_retirement_profile
@@ -297,30 +342,30 @@ class Agent(AbstractAgent):
         constraints = self.constraints(
             demand,
             self.assets,
-            search.space,
+            search.search_space,
             market,
             technologies,
             year=int(market.year.min()),
         )
 
-        investments = self.invest(search, technologies, constraints, year=self.year)
+        investments = self.invest(search, technologies, constraints, year=current_year)
         investments = investments.sum("asset")
         investments = investments.where(investments > self.tolerance, 0)
 
         # figures out the retirement profile for the new investments
         lifetime = self.filter_input(
             technologies.technical_life,
-            year=self.year,
+            year=current_year,
             technology=investments.replacement,
         )
         profile = cliff_retirement_profile(
             lifetime.clip(min=time_period),
-            current_year=self.year + time_period,
+            current_year=current_year + time_period,
             protected=max(self.forecast - time_period - 1, 0),
         )
 
         new_assets = (investments * profile).rename(replacement="asset")
-        new_assets["installed"] = "asset", [self.year] * len(new_assets.asset)
+        new_assets["installed"] = "asset", [current_year] * len(new_assets.asset)
 
         # The new assets have picked up quite a few coordinates along the way.
         # we try and keep only those that were there originally.
@@ -398,7 +443,7 @@ def create_retrofit_agent(
     if not callable(investment):
         investment = investment_factory(investment)
 
-    return Agent(
+    return InvestingAgent(
         assets=assets,
         region=region,
         search_rules=filter_factory(search_rules),
@@ -416,9 +461,8 @@ def create_newcapa_agent(
     capacity: xr.DataArray,
     year: int,
     region: Text,
-    interpolation: Text = "linear",
     search_rules="all",
-    housekeeping: Union[Text, Mapping, Callable] = "noop",
+    interpolation: Text = "linear",
     merge_transform: Union[Text, Mapping, Callable] = "new",
     quantity: float = 0.3,
     objectives: Union[
@@ -426,6 +470,7 @@ def create_newcapa_agent(
     ] = "fixed_costs",
     decision: Union[Callable, Text, Mapping] = "mean",
     investment: Union[Callable, Text, Mapping] = "adhoc",
+    housekeeping: Union[Text, Mapping, Callable] = "noop",
     **kwargs,
 ):
     """Creates newcapa agent from muse primitives."""
@@ -470,7 +515,7 @@ def create_newcapa_agent(
     if not callable(investment):
         investment = investment_factory(investment)
 
-    result = Agent(
+    result = InvestingAgent(
         assets=assets,
         region=region,
         search_rules=filter_factory(search_rules),
