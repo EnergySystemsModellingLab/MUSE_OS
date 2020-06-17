@@ -434,7 +434,7 @@ def test_scipy_solver(technologies, costs, constraints, timeslices):
     from muse.investments import scipy_match_demand
 
     solution = scipy_match_demand(
-        ranking=costs,
+        costs=costs,
         search_space=xr.ones_like(costs),
         technologies=technologies,
         constraints=constraints,

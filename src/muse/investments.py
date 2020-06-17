@@ -67,7 +67,7 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
 
     @wraps(function)
     def decorated(
-        ranking: DataArray,
+        costs: DataArray,
         search_space: DataArray,
         technologies: Dataset,
         constraints: List[Constraint],
@@ -78,7 +78,7 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
         from muse.commodities import is_enduse
 
         result = function(  # type: ignore
-            ranking, search_space, technologies, constraints, **kwargs
+            costs, search_space, technologies, constraints, **kwargs
         )
         result = result.rename("investment")
 
@@ -240,7 +240,7 @@ class LinearProblemError(RuntimeError):
 
 @register_investment(name=["adhoc"])
 def adhoc_match_demand(
-    ranking: DataArray,
+    costs: DataArray,
     search_space: DataArray,
     technologies: Dataset,
     constraints: List[Constraint],
@@ -259,7 +259,7 @@ def adhoc_match_demand(
         technologies,
         max_capacity,
         year=year,
-        technology=ranking.replacement,
+        technology=costs.replacement,
         commodity=demand.commodity,
     ).drop_vars("technology")
     if "timeslice" in demand.dims and "timeslice" not in max_prod.dims:
@@ -267,9 +267,9 @@ def adhoc_match_demand(
 
     # Push disabled techs to last rank.
     # Any production assigned to them by the demand-matching algorithm will be removed.
-    minobj = ranking.min()
-    maxobj = ranking.where(search_space, minobj).max("replacement") + 1
-    decision = ranking.where(search_space, maxobj)
+    minobj = costs.min()
+    maxobj = costs.where(search_space, minobj).max("replacement") + 1
+    decision = costs.where(search_space, maxobj)
 
     production = demand_matching(
         demand.sel(asset=demand.asset.isin(search_space.asset)), decision, max_prod
@@ -285,7 +285,7 @@ def adhoc_match_demand(
 
 @register_investment(name=["scipy", "match_demand"])
 def scipy_match_demand(
-    ranking: DataArray,
+    costs: DataArray,
     search_space: DataArray,
     technologies: Dataset,
     constraints: List[Constraint],
@@ -297,11 +297,11 @@ def scipy_match_demand(
     from scipy.optimize import linprog
     from logging import getLogger
 
-    if "timeslice" in ranking.dims and timeslice_op is not None:
-        ranking = timeslice_op(ranking)
+    if "timeslice" in costs.dims and timeslice_op is not None:
+        costs = timeslice_op(costs)
     timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
     adapter = ScipyAdapter.factory(
-        technologies.interp(year=year), ranking, timeslice, *constraints
+        technologies.interp(year=year), costs, timeslice, *constraints
     )
     res = linprog(**adapter.kwargs, options=dict(disp=True))
     if not res.success:
@@ -314,7 +314,7 @@ def scipy_match_demand(
 
 @register_investment(name=["cvxopt"])
 def cvxopt_match_demand(
-    ranking: DataArray,
+    costs: DataArray,
     search_space: DataArray,
     technologies: Dataset,
     constraints: List[Constraint],
@@ -327,7 +327,7 @@ def cvxopt_match_demand(
 
     def default_to_scipy():
         return scipy_match_demand(
-            ranking,
+            costs,
             search_space,
             technologies,
             constraints,
@@ -346,11 +346,11 @@ def cvxopt_match_demand(
         getLogger(__name__).critical(msg)
         return default_to_scipy()
 
-    if "timeslice" in ranking.dims and timeslice_op is not None:
-        ranking = timeslice_op(ranking)
+    if "timeslice" in costs.dims and timeslice_op is not None:
+        costs = timeslice_op(costs)
     timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
     adapter = ScipyAdapter.factory(
-        technologies.interp(year=year), ranking, timeslice, *constraints
+        technologies.interp(year=year), costs, timeslice, *constraints
     )
     G = np.zeros((0, adapter.c.size)) if adapter.A_ub is None else adapter.A_ub
     h = np.zeros((0,)) if adapter.b_ub is None else adapter.b_ub
