@@ -305,7 +305,7 @@ def scipy_match_demand(
         costs = timeslice_op(costs)
     timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
     adapter = ScipyAdapter.factory(
-        technologies.interp(year=year), costs, timeslice, *constraints
+        technologies.interp(year=year), -costs, timeslice, *constraints  # type: ignore
     )
     res = linprog(**adapter.kwargs, options=dict(disp=True))
     if not res.success:
@@ -354,7 +354,7 @@ def cvxopt_match_demand(
         costs = timeslice_op(costs)
     timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
     adapter = ScipyAdapter.factory(
-        technologies.interp(year=year), costs, timeslice, *constraints
+        technologies.interp(year=year), -costs, timeslice, *constraints  # type: ignore
     )
     G = np.zeros((0, adapter.c.size)) if adapter.A_ub is None else adapter.A_ub
     h = np.zeros((0,)) if adapter.b_ub is None else adapter.b_ub
