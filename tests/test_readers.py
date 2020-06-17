@@ -380,8 +380,26 @@ def test_split_toml_incorrect_inner_name(tmpdir):
         read_split_toml(tmpdir / "outer.toml")
 
 
+def test_format_path(tmpdir):
+    from muse.readers.toml import format_path
+
+    path = "this_path"
+    cwd = "current_path"
+    muse_sectors = "sectors_path"
+
+    assert format_path("{cwd}/{other_param}", cwd=cwd) == str(
+        Path(cwd).absolute() / "{other_param}"
+    )
+    assert format_path("{path}/{other_param}", path=path) == str(
+        Path(path).absolute() / "{other_param}"
+    )
+    assert format_path(
+        "{muse_sectors}/{other_param}", muse_sectors=muse_sectors
+    ) == str(Path(muse_sectors).absolute() / "{other_param}")
+
+
 @mark.parametrize("suffix", (".xlsx", ".csv", ".toml", ".py", ".xls", ".nc"))
-def test_path_formatting(suffix, tmpdir):
+def test_suffix_path_formatting(suffix, tmpdir):
     from muse.readers.toml import read_split_toml
 
     settings = {"this": 0, "plugins": f"{{path}}/thisfile{suffix}"}
