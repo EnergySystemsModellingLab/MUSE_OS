@@ -280,7 +280,7 @@ def adhoc_match_demand(
     ).drop_vars("technology")
     if "timeslice" in capacity.dims and timeslice_op is not None:
         capacity = timeslice_op(capacity)
-    return capacity.rename("capacity addition")
+    return capacity.rename("investment")
 
 
 @register_investment(name=["scipy", "match_demand"])
