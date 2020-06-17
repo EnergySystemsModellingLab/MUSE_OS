@@ -15,22 +15,26 @@ have the following signature:
 .. code-block:: python
 
     @register_investment
-    def investment(agent: Agent, demand: DataArray,
-                   ranking: DataArray, max_capacity: DataArray,
-                   technologies: Dataset) -> DataArray:
+    def investment(
+        costs: DataArray,
+        search_space: DataArray,
+        technologies: Dataset,
+        constraints: List[Constraint],
+        year: int,
+        **kwargs
+    ) -> DataArray:
         pass
 
 Arguments:
-    agent: the agent relevant to the investment procedure. The agent can be
-        queried for parameters specific to the investment procedure.
-    demand: specifies the demand that is expected to be fulfilled. It is an
-        array with dimensions `asset` and `technology`.
-    ranking: specifies for each `asset` which `technology` should be invested in
-        preferentially (lower is more favorable). This should be an integer or
-        floating point array with dimensions `asset` and `technology`.
-    max_capacity: a limit on how much capacity each technology can be ramped up.
+    costs: specifies for each `asset` which `replacement` technology should be invested
+        in preferentially. This should be an integer or floating point array with
+        dimensions `asset` and `replacement`.
+    search_space: an `asset` by `replacement` matrix defining allowed and disallowed
+        replacement technologies for each asset
     technologies: a dataset containing all constant data characterizing the
         technologies.
+    constraints: a list of constraints as defined in :py:mod:`~muse.constraints`.
+    year: the current year.
 
 Returns:
     A data array with dimensions `asset` and `technology` specifying the amount
