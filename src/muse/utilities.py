@@ -527,7 +527,7 @@ def agent_concatenation(
 
     Example:
 
-        Lets creates sets of random assets to work with. We set the seed so that this
+        Lets create sets of random assets to work with. We set the seed so that this
         test can be reproduced exactly.
 
         >>> from muse.examples import random_agent_assets
