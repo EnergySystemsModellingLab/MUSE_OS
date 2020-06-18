@@ -8,6 +8,7 @@ from logging import getLogger
 from pathlib import Path
 from typing import (
     IO,
+    Any,
     Dict,
     List,
     Mapping,
@@ -347,7 +348,7 @@ def read_split_toml(
 def read_settings(
     settings_file: Union[Text, Path, IO[Text], Mapping],
     path: Optional[Union[Text, Path]] = None,
-) -> tuple:
+) -> Any:
     """Loads the input settings for any MUSE simulation.
 
     Loads a MUSE settings file. This must be a TOML formatted file. Missing settings are

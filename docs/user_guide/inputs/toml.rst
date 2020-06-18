@@ -420,7 +420,21 @@ interactions
    "new_to_retro" nor "transfer" take any arguments at this point. MUSE interaction
    facilities are defined in :py:mod:`muse.interactions`.
 
+lpsolver:
+    The solver for linear problems to use when figuring out investments. The solvers are
+    registered via :py:func:`~muse.investments.register_investment`. At time of
+    writing, three are available:
 
+    - an "adhoc" solver: Simple in-house solver that ranks the technologies
+          according to cost and sevice the demand incrementally.
+
+    - "scipy" solver: Formulates investment as a true LP problem and solves it using the
+      `scipy solver`_.
+
+    - "cvxopt" solver: Formulates investment as a true LP problem and solves it using
+      the python package `cvxopt`_. `cvxopt`_ is *not* installed by default. Users can
+      install it with ``pip install cvxopt`` or ``conda install cvxopt``.
+     
 output:
    Outputs have several moving components to them. MUSE is designed to allow users to
    mix-and-match how and what to save.
@@ -636,3 +650,8 @@ filters:
 
       filters.region = ["USA", "ASEAN"]
       filters.commodity = ["algae", "fluorescent light"]
+
+.. _`scipy solver`:
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html
+
+.. _cvxopt: https://cvxopt.org/ 

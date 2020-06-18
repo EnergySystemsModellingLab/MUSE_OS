@@ -15,41 +15,48 @@ have the following signature:
 .. code-block:: python
 
     @register_investment
-    def investment(agent: Agent, demand: DataArray,
-                   ranking: DataArray, max_capacity: DataArray,
-                   technologies: Dataset) -> DataArray:
+    def investment(
+        costs: DataArray,
+        search_space: DataArray,
+        technologies: Dataset,
+        constraints: List[Constraint],
+        year: int,
+        **kwargs
+    ) -> DataArray:
         pass
 
 Arguments:
-    agent: the agent relevant to the investment procedure. The agent can be
-        queried for parameters specific to the investment procedure.
-    demand: specifies the demand that is expected to be fulfilled. It is an
-        array with dimensions `asset` and `technology`.
-    ranking: specifies for each `asset` which `technology` should be invested in
-        preferentially (lower is more favorable). This should be an integer or
-        floating point array with dimensions `asset` and `technology`.
-    max_capacity: a limit on how much capacity each technology can be ramped up.
+    costs: specifies for each `asset` which `replacement` technology should be invested
+        in preferentially. This should be an integer or floating point array with
+        dimensions `asset` and `replacement`.
+    search_space: an `asset` by `replacement` matrix defining allowed and disallowed
+        replacement technologies for each asset
     technologies: a dataset containing all constant data characterizing the
         technologies.
+    constraints: a list of constraints as defined in :py:mod:`~muse.constraints`.
+    year: the current year.
 
 Returns:
     A data array with dimensions `asset` and `technology` specifying the amount
     of newly invested capacity.
 """
 __all__ = [
-    "match_demand",
+    "adhoc_match_demand",
     "cliff_retirement_profile",
     "register_investment",
     "INVESTMENT_SIGNATURE",
 ]
-from typing import Callable, Mapping, MutableMapping, Optional, Text, Union
+from typing import Callable, List, Mapping, MutableMapping, Optional, Text, Union, cast
 
+import numpy as np
+from mypy_extensions import KwArg
 from xarray import DataArray, Dataset
 
+from muse.constraints import Constraint
 from muse.registration import registrator
 
 INVESTMENT_SIGNATURE = Callable[
-    [DataArray, DataArray, DataArray, DataArray, Dataset], DataArray
+    [DataArray, DataArray, Dataset, List[Constraint], KwArg()], DataArray
 ]
 """Investment signature. """
 
@@ -64,12 +71,10 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
 
     @wraps(function)
     def decorated(
-        demand: DataArray,
-        ranking: DataArray,
-        max_capacity: DataArray,
+        costs: DataArray,
         search_space: DataArray,
         technologies: Dataset,
-        *args,
+        constraints: List[Constraint],
         log_mismatch_params: float = 1e-3,
         **kwargs,
     ) -> DataArray:
@@ -77,7 +82,7 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
         from muse.commodities import is_enduse
 
         result = function(  # type: ignore
-            demand, ranking, max_capacity, search_space, technologies, *args, **kwargs
+            costs, search_space, technologies, constraints, **kwargs
         )
         result = result.rename("investment")
 
@@ -85,6 +90,7 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
         if log_mismatch_params <= 0:
             return result
 
+        demand = next((c for c in constraints if c.name == "demand")).b
         mismatch = demand - (
             result
             * technologies.fixed_outputs.sel(
@@ -146,11 +152,7 @@ def factory(settings: Union[Text, Mapping] = "match_demand") -> Callable:
         params["log_mismatch_params"] = 1e-3
 
     def compute_investment(
-        demand: DataArray,
-        search: Dataset,
-        max_capacity: DataArray,
-        technologies: Dataset,
-        **kwargs,
+        search: Dataset, technologies: Dataset, constraints: List[Constraint], **kwargs
     ) -> DataArray:
         """Computes investment needed to fulfill demand.
 
@@ -166,14 +168,8 @@ def factory(settings: Union[Text, Mapping] = "match_demand") -> Callable:
             )
 
         function = INVESTMENTS[name]
-        return function(  # type: ignore
-            demand,
-            search.decision.rank("replacement").astype(int),
-            max_capacity,
-            search.space,
-            technologies,
-            **params,
-            **kwargs,
+        return function(
+            search.decision, search.space, technologies, constraints, **params, **kwargs
         ).rename("investment")
 
     return compute_investment
@@ -239,30 +235,35 @@ def cliff_retirement_profile(
     return profile.sel(year=goodyears).astype(bool)
 
 
-@register_investment(name="demand_matching")
-def match_demand(
-    demand: DataArray,
-    ranking: DataArray,
-    max_capacity: DataArray,
+class LinearProblemError(RuntimeError):
+    """Error returned for infeasible LP problems."""
+
+    def __init__(self, *args):
+        super().__init__(*args)
+
+
+@register_investment(name=["adhoc"])
+def adhoc_match_demand(
+    costs: DataArray,
     search_space: DataArray,
     technologies: Dataset,
+    constraints: List[Constraint],
     year: int,
     timeslice_op: Optional[Callable[[DataArray], DataArray]] = None,
 ) -> DataArray:
-    from muse.commodities import is_enduse
     from muse.demand_matching import demand_matching
     from muse.quantities import maximum_production, capacity_in_use
     from muse.timeslices import convert_timeslice, QuantityType
 
-    demand = demand.sel(
-        commodity=is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
-    )
-    technologies = technologies.sel(commodity=is_enduse(technologies.comm_usage))
+    demand = next((c for c in constraints if c.name == "demand")).b
+    max_capacity = next(
+        (c for c in constraints if c.name == "max capacity expansion")
+    ).b
     max_prod = maximum_production(
         technologies,
         max_capacity,
         year=year,
-        technology=ranking.replacement,
+        technology=costs.replacement,
         commodity=demand.commodity,
     ).drop_vars("technology")
     if "timeslice" in demand.dims and "timeslice" not in max_prod.dims:
@@ -270,9 +271,9 @@ def match_demand(
 
     # Push disabled techs to last rank.
     # Any production assigned to them by the demand-matching algorithm will be removed.
-    minobj = ranking.min()
-    maxobj = ranking.where(search_space, minobj).max("replacement") + 1
-    decision = ranking.where(search_space, maxobj)
+    minobj = costs.min()
+    maxobj = costs.where(search_space, minobj).max("replacement") + 1
+    decision = costs.where(search_space, maxobj)
 
     production = demand_matching(
         demand.sel(asset=demand.asset.isin(search_space.asset)), decision, max_prod
@@ -283,4 +284,96 @@ def match_demand(
     ).drop_vars("technology")
     if "timeslice" in capacity.dims and timeslice_op is not None:
         capacity = timeslice_op(capacity)
-    return capacity.rename("capacity addition")
+    return capacity.rename("investment")
+
+
+@register_investment(name=["scipy", "match_demand"])
+def scipy_match_demand(
+    costs: DataArray,
+    search_space: DataArray,
+    technologies: Dataset,
+    constraints: List[Constraint],
+    year: int,
+    timeslice_op: Optional[Callable[[DataArray], DataArray]] = None,
+    **options,
+) -> DataArray:
+    from muse.constraints import ScipyAdapter
+    from scipy.optimize import linprog
+    from logging import getLogger
+
+    if "timeslice" in costs.dims and timeslice_op is not None:
+        costs = timeslice_op(costs)
+    timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
+    adapter = ScipyAdapter.factory(
+        technologies.interp(year=year), -costs, timeslice, *constraints  # type: ignore
+    )
+    res = linprog(**adapter.kwargs, options=dict(disp=True))
+    if not res.success:
+        getLogger(__name__).critical(res.message)
+        raise LinearProblemError("LP system could not be solved", res)
+
+    solution = cast(Callable[[np.ndarray], Dataset], adapter.to_muse)(res.x)
+    return solution.capacity
+
+
+@register_investment(name=["cvxopt"])
+def cvxopt_match_demand(
+    costs: DataArray,
+    search_space: DataArray,
+    technologies: Dataset,
+    constraints: List[Constraint],
+    year: int,
+    timeslice_op: Optional[Callable[[DataArray], DataArray]] = None,
+    **options,
+) -> DataArray:
+    from muse.constraints import ScipyAdapter
+    from logging import getLogger
+
+    def default_to_scipy():
+        return scipy_match_demand(
+            costs,
+            search_space,
+            technologies,
+            constraints,
+            year=year,
+            timeslice_op=timeslice_op,
+        )
+
+    try:
+        from cvxopt import matrix, solvers
+    except ImportError:
+        msg = (
+            "cvxopt is not installed\n"
+            "It can be installed with `pip install cvxopt`\n"
+            "Using the scipy linear solver instead."
+        )
+        getLogger(__name__).critical(msg)
+        return default_to_scipy()
+
+    if "timeslice" in costs.dims and timeslice_op is not None:
+        costs = timeslice_op(costs)
+    timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
+    adapter = ScipyAdapter.factory(
+        technologies.interp(year=year), -costs, timeslice, *constraints  # type: ignore
+    )
+    G = np.zeros((0, adapter.c.size)) if adapter.A_ub is None else adapter.A_ub
+    h = np.zeros((0,)) if adapter.b_ub is None else adapter.b_ub
+    if adapter.bounds[0] != -np.inf and adapter.bounds[0] is not None:
+        G = np.concatenate((G, -np.eye(adapter.c.size)))
+        h = np.concatenate((h, np.full(adapter.c.size, adapter.bounds[0])))
+    if adapter.bounds[1] != np.inf and adapter.bounds[1] is not None:
+        G = np.concatenate((G, np.eye(adapter.c.size)))
+        h = np.concatenate((h, np.full(adapter.c.size, adapter.bounds[1])))
+
+    args = [adapter.c, G, h]
+    if adapter.A_eq is not None:
+        args += [adapter.A_eq, adapter.b_eq]
+    res = solvers.lp(*map(matrix, args), **options)
+    if res["status"] != "optimal":
+        getLogger(__name__).info(res["status"])
+    if res["x"] is None:
+        getLogger(__name__).critical("infeasible system")
+        raise LinearProblemError("Infeasible system", res)
+
+    solution = cast(Callable[[np.ndarray], Dataset], adapter.to_muse)(list(res["x"]))
+    return solution.capacity

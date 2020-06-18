@@ -65,6 +65,7 @@ class Sector(AbstractSector):  # type: ignore
             technologies=technologies,
             regions=settings.regions,
             year=min(settings.time_framework),
+            investment=sector_settings.pop("lpsolver", "adhoc"),
         )
 
         # make sure technologies includes the requisite years

@@ -4,7 +4,7 @@ This module is meant to collect functions computing quantities of interest to th
 e.g. lcoe, maximum production for a given capacity, etc, especially where these
 functions are used in different areas of the model.
 """
-from typing import Callable, Optional, Sequence, Text, Tuple, Union
+from typing import Callable, Optional, Sequence, Text, Tuple, Union, cast
 
 from xarray import DataArray, Dataset
 
@@ -107,16 +107,19 @@ def gross_margin(
     from muse.timeslices import convert_timeslice, QuantityType
 
     tech = broadcast_techs(  # type: ignore
-        technologies[
-            [
-                "technical_life",
-                "interest_rate",
-                "var_par",
-                "var_exp",
-                "fixed_outputs",
-                "fixed_inputs",
-            ]
-        ],
+        cast(
+            Dataset,
+            technologies[
+                [
+                    "technical_life",
+                    "interest_rate",
+                    "var_par",
+                    "var_exp",
+                    "fixed_outputs",
+                    "fixed_inputs",
+                ]
+            ],
+        ),
         capacity,
     )
 
@@ -458,14 +461,13 @@ def maximum_production(technologies: Dataset, capacity: DataArray, **filters):
         capacity, **{k: v for k, v in filters.items() if k in capacity.dims}
     )
     btechs = broadcast_techs(  # type: ignore
-        technologies[["fixed_outputs", "utilization_factor"]], capa
+        cast(Dataset, technologies[["fixed_outputs", "utilization_factor"]]), capa
     )
     ftechs = filter_input(
-        btechs, **{k: v for k, v in filters.items() if k in technologies.dims}
+        btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
     )
     result = capa * ftechs.fixed_outputs * ftechs.utilization_factor
-    result[{"commodity": ~is_enduse(result.comm_usage)}] = 0
-    return result
+    return result.where(is_enduse(result.comm_usage), 0)
 
 
 def demand_matched_production(
@@ -537,10 +539,9 @@ def capacity_in_use(
         btechs, **{k: v for k, v in filters.items() if k in technologies.dims}
     )
     factor = 1 / (ftechs.fixed_outputs * ftechs.utilization_factor)
-    capa_in_use = (
-        (prod * factor)
-        .where(~isinf(factor), 0)
-        .where(is_enduse(technologies.comm_usage), 0)
+    capa_in_use = (prod * factor).where(~isinf(factor), 0)
+    capa_in_use = capa_in_use.where(
+        is_enduse(technologies.comm_usage.sel(commodity=capa_in_use.commodity)), 0
     )
     if max_dim:
         capa_in_use = capa_in_use.max(max_dim)

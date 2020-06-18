@@ -3,12 +3,12 @@ from pytest import mark
 
 @mark.usefixtures("save_timeslice_globals")
 @mark.regression
-def test_fullsim_regression(fullsim_dir, tmpdir, compare_dirs):
+def test_fullsim_regression(tmpdir, compare_dirs):
     from warnings import simplefilter
     from pathlib import Path
     from pandas.errors import DtypeWarning
     from muse.mca import MCA
-    from muse.examples import copy_model
+    from muse.examples import copy_model, example_data_dir
 
     # fail the test if this warning crops up
     simplefilter("error", DtypeWarning)
@@ -20,4 +20,9 @@ def test_fullsim_regression(fullsim_dir, tmpdir, compare_dirs):
     with tmpdir.as_cwd():
         MCA.factory(Path(tmpdir) / "model" / "settings.toml").run()
 
-    compare_dirs(tmpdir / "Results", fullsim_dir / "output")
+    compare_dirs(
+        tmpdir / "Results",
+        example_data_dir() / "outputs" / "default",
+        rtol=1e-5,
+        atol=1e-7,
+    )
