@@ -27,7 +27,8 @@ The same models can be instanciated in a python script as follows:
 from pathlib import Path
 from typing import List, Optional, Text, Union, cast
 
-from xarray import DataArray, Dataset
+import numpy as np
+import xarray as xr
 
 from muse.mca import MCA
 from muse.sectors import AbstractSector
@@ -94,7 +95,7 @@ def copy_model(
     return path
 
 
-def technodata(sector: Text, model: Text = "default") -> Dataset:
+def technodata(sector: Text, model: Text = "default") -> xr.Dataset:
     """Technology for a sector of a given example model."""
     from tempfile import TemporaryDirectory
     from muse.readers.csv import read_technologies
@@ -115,7 +116,7 @@ def technodata(sector: Text, model: Text = "default") -> Dataset:
         )
 
 
-def search_space(sector: Text, model: Text = "default") -> DataArray:
+def search_space(sector: Text, model: Text = "default") -> xr.DataArray:
     """Determines which technology is considered for which asset.
 
     Used in constraints or during investment.
@@ -123,7 +124,7 @@ def search_space(sector: Text, model: Text = "default") -> DataArray:
     from numpy import ones
 
     technology = technodata(sector, model).technology
-    return DataArray(
+    return xr.DataArray(
         ones((len(technology), len(technology)), dtype=bool),
         coords=dict(asset=technology.values, replacement=technology.values),
         dims=("asset", "replacement"),
@@ -152,7 +153,7 @@ def available_sectors(*sectors: Text, model: Text = "default") -> List[Text]:
         return [u for u in undo_damage(settings).keys() if u != "list"]
 
 
-def mca_market(model: Text = "default") -> Dataset:
+def mca_market(model: Text = "default") -> xr.Dataset:
     """Initial market as seen by the MCA."""
     from tempfile import TemporaryDirectory
     from xarray import zeros_like
@@ -180,17 +181,17 @@ def mca_market(model: Text = "default") -> Dataset:
         market["supply"] = zeros_like(market.exports)
         market["consumption"] = zeros_like(market.exports)
 
-        return cast(Dataset, market)
+        return cast(xr.Dataset, market)
 
 
-def residential_market(model: Text = "default") -> Dataset:
+def residential_market(model: Text = "default") -> xr.Dataset:
     """Initial market as seen by the residential sector."""
     from muse.mca import single_year_iteration
 
     market = mca_market(model)
     sectors = [sector("residential_presets", model=model)]
     return cast(
-        Dataset,
+        xr.Dataset,
         single_year_iteration(market, sectors)[0][
             ["prices", "supply", "consumption"]
         ].drop_vars("units_prices"),
@@ -245,3 +246,25 @@ def _copy_medium(path: Path):
         path / "technodata" / "Agents.csv",
     )
     copyfile(example_data_dir() / "default" / "settings.toml", path / "settings.toml")
+
+
+def random_agent_assets(rng: np.random.Generator):
+    """Creates random set of assets for testing and debugging."""
+    nassets = rng.integers(low=1, high=6)
+    nyears = rng.integers(low=2, high=5)
+    years = rng.choice(list(range(2030, 2051)), size=nyears, replace=False)
+    installed = rng.choice([2030, 2030, 2025, 2010], size=nassets)
+    technologies = rng.choice(["stove", "thermomix", "oven"], size=nassets)
+    capacity = rng.integers(101, size=(nassets, nyears))
+    result = xr.Dataset()
+    result["capacity"] = xr.DataArray(
+        capacity.astype("int64"),
+        coords=dict(
+            installed=("asset", installed.astype("int64")),
+            technology=("asset", technologies),
+            region=rng.choice(["USA", "EU18", "Brexitham"]),
+            year=sorted(years.astype("int64")),
+        ),
+        dims=("asset", "year"),
+    )
+    return result

@@ -83,6 +83,12 @@ class AgentBase(ABC):
         """
         pass
 
+    def __repr__(self):
+        return (
+            f"<{self.region}:({self.name}, {self.category}) - object at "
+            f"{hex(id(self))}>"
+        )
+
 
 class Agent(AgentBase):
     """Base class for buildings agents."""
