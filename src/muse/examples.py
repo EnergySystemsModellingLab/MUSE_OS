@@ -70,7 +70,7 @@ def copy_model(
     """
     from shutil import rmtree
 
-    if name.lower() not in {"default", "multiple-agents", "medium"}:
+    if name.lower() not in {"default", "multiple-agents", "medium", "msc"}:
         raise ValueError(f"Unknown model {name}")
 
     path = Path() if path is None else Path(path)
@@ -92,6 +92,8 @@ def copy_model(
         _copy_medium(path)
     elif name.lower() == "multiple-agents":
         _copy_multiple_agents(path)
+    elif name.lower() == "msc":
+        _copy_msc(path)
     return path
 
 
@@ -252,6 +254,14 @@ def _copy_medium(path: Path):
         path / "technodata" / "Agents.csv",
     )
     copyfile(example_data_dir() / "default" / "settings.toml", path / "settings.toml")
+
+
+def _copy_msc(path: Path):
+    from shutil import copytree, copyfile
+
+    copytree(example_data_dir() / "msc" / "input", path / "input")
+    copytree(example_data_dir() / "msc" / "technodata", path / "technodata")
+    copyfile(example_data_dir() / "msc" / "settings.toml", path / "settings.toml")
 
 
 def random_agent_assets(rng: np.random.Generator):
