@@ -1,0 +1,82 @@
+# Global settings - most REQUIRED
+time_framework = [2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050]
+foresight = 5   # Has to be a multiple of the minimum separation between the years in time framework
+regions = ["R1"]
+interest_rate = 0.1
+interpolation_mode = 'Active'
+log_level = 'info'
+
+# Convergence parameters
+equilibrium_variable = 'demand'
+maximum_iterations = 1
+tolerance = 0.1
+tolerance_unmet_demand = -0.1
+
+# Carbon budget control
+[carbon_budget_control]
+budget = []
+
+# Global input files contain data that are NOT sector specific - DEFAULTS ALL
+# All paths and filenames will have a default value (those indicated below) so only need to be included
+# if any of those names are different. This whole section is optional.
+[global_input_files]
+projections = '{path}/inputs/Projections.csv'
+#regions = '{path}/inputs/Regions.csv'
+global_commodities = '{path}/inputs/MUSEGlobalCommodities.csv'
+
+[[outputs]]
+quantity = "supply"
+sink = "aggregate"
+filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
+
+[[outputs]]
+quantity = "capacity"
+sink = "aggregate"
+filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
+
+# Definition of the sector-specific options -  REQUIRED at least one
+# All paths and filenames will have a default value for each sector (those indicated below) so only need to be included
+# if any of those names are different.
+# As the number of sectors included in MUSE grow, it will be necessary to add another [sectors.whatever] section with the
+# corresponding information.
+[sectors.industry]
+type = 'default'
+priority = 1
+investment_production = 'share'
+dispatch_production = 'share'
+lpsolver = "scipy"
+
+agents = '{path}/technodata/industry/agentindustry.csv'
+technodata = '{path}/technodata/industry/technodataindustry.csv'
+commodities_in = '{path}/technodata/industry/commINtechnodataindustry.csv'
+commodities_out = '{path}/technodata/industry/commOUTtechnodataindustry.csv'
+existing_capacity = '{path}/technodata/industry/existingindustry.csv'
+
+[[sectors.industry.outputs]]
+filename = '{path}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+quantity = "capacity"
+sink = 'csv'
+overwrite = true
+
+[[sectors.industry.outputs]]
+filename = '{path}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+quantity.name = "supply"
+quantity.sum_over = "timeslice"
+quantity.drop = ["comm_usage", "units_prices"]
+sink = 'csv'
+overwrite = true
+
+[[sectors.industry.interactions]] 
+net = 'new_to_retro'
+interaction = 'transfer'
+
+[sectors.industry_presets]
+type = 'presets'
+priority = 0
+consumption_path= "{path}/technodata/preset/*Consumption.csv"
+
+[timeslices]
+winter.all-week.all-day = 2920
+summer.all-week.all-day = 2920
+spring-autumn.all-week.all-day = 2920
+level_names = ["month", "day", "hour"]
