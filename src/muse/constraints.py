@@ -140,7 +140,7 @@ A constraint should contain a data-array `b` corresponding to right-hand-side ve
 of the contraint. It should also contain a data-array `capacity` corresponding to the
 left-hand-side matrix operator which will be applied to the capacity-related decision
 variables.  It should contain a similar matrix `production` corresponding to
-the left-hand-side matrix operator which will be applied to teh production-related
+the left-hand-side matrix operator which will be applied to the production-related
 decision variables. Should any of these three objects be missing, they default to the
 scalar 0. Finally, the constraint should contain an attribute `kind` of type
 :py:class:`ConstraintKind` defining the operation. If it is missing, it defaults to an
