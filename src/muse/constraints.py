@@ -470,9 +470,12 @@ def minimum_service(
     kwargs = dict(technology=search_space.replacement, year=year, commodity=commodities)
     if getattr(assets, "region", None) is not None and "region" in technologies.dims:
         kwargs["region"] = assets.region
-    techs = technologies[
-        ["fixed_outputs", "utilization_factor", "minimum_service_factor"]
-    ].sel(**kwargs)
+    try:
+        techs = technologies[
+            ["fixed_outputs", "utilization_factor", "minimum_service_factor"]
+        ].sel(**kwargs)
+    except KeyError:
+        return xr.Dataset()
     capacity = convert_timeslice(
         techs.fixed_outputs * techs.utilization_factor * techs.minimum_service_factor,
         market.timeslice,
