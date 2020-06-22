@@ -457,10 +457,33 @@ def minimum_service(
     forecast: int = 5,
     interpolation: Text = "linear",
 ) -> Constraint:
-    maxprod = max_production(demand, assets, search_space, market, technologies)
-    maxprod.attrs = dict(kind=ConstraintKind.LOWER_BOUND)
-    minimum_service.capacity * delta  # delta is read from new technodata file
-    return minimum_service
+    """ Constructs constraint between capacity and minimum service. """
+    from xarray import zeros_like, ones_like
+    from muse.commodities import is_enduse
+    from muse.timeslices import convert_timeslice, QuantityType
+
+    if year is None:
+        year = market.year.min()
+    commodities = technologies.commodity.sel(
+        commodity=is_enduse(technologies.comm_usage)
+    )
+    kwargs = dict(technology=search_space.replacement, year=year, commodity=commodities)
+    if getattr(assets, "region", None) is not None and "region" in technologies.dims:
+        kwargs["region"] = assets.region
+    techs = technologies[
+        ["fixed_outputs", "utilization_factor", "minimum_service_factor"]
+    ].sel(**kwargs)
+    capacity = convert_timeslice(
+        techs.fixed_outputs * techs.utilization_factor * techs.minimum_service_factor,
+        market.timeslice,
+        QuantityType.EXTENSIVE,
+    ).expand_dims(asset=search_space.asset)
+    production = ones_like(capacity)
+    b = zeros_like(production)
+    return xr.Dataset(
+        dict(capacity=cast(xr.DataArray, -capacity), production=production, b=b),
+        attrs=dict(kind=ConstraintKind.LOWER_BOUND),
+    )
 
 
 def lp_costs(

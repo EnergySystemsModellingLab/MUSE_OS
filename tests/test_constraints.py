@@ -119,6 +119,7 @@ def constraints(request, market_demand, assets, search_space, market, technologi
         cs.max_capacity_expansion(
             market_demand, assets, search_space, market, technologies
         ),
+        cs.minimum_service(market_demand, assets, search_space, market, technologies),
     ]
     if request.param == "timeslice_as_multindex":
         constraints = [_as_list(cs) for cs in constraints]
