@@ -1,11 +1,41 @@
 """Holds all building agents."""
 from pathlib import Path
-from typing import Callable, List, Mapping, Optional, Sequence, Text, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Text, Union
 
 import xarray as xr
 
 from muse.agents.agent import Agent, InvestingAgent
 from muse.defaults import DEFAULT_SECTORS_DIRECTORY
+
+
+def create_standard_agent(
+    technologies: xr.Dataset,
+    capacity: xr.DataArray,
+    share: Text,
+    year: int,
+    region: Text,
+    interpolation: Text = "linear",
+    **kwargs,
+):
+    """Creates retrofit agent from muse primitives."""
+    from muse.filters import factory as filter_factory
+
+    assets = _shared_capacity(
+        technologies, capacity, region, year, share=share, interpolation=interpolation
+    )
+
+    kwargs = _standardize_inputs(**kwargs)
+    search_rules = kwargs.pop("search_rules")
+    if len(search_rules) < 1 or search_rules[-1] != "compress":
+        search_rules.insert(-1, "compress")
+
+    return Agent(
+        assets=xr.Dataset(dict(capacity=assets)),
+        region=region,
+        search_rules=filter_factory(search_rules),
+        year=year,
+        **kwargs,
+    )
 
 
 def create_retrofit_agent(
@@ -15,53 +45,13 @@ def create_retrofit_agent(
     year: int,
     region: Text,
     interpolation: Text = "linear",
-    search_rules="all",
-    housekeeping: Union[Text, Mapping, Callable] = "clean",
-    merge_transform: Union[Text, Mapping, Callable] = "merge",
-    objectives: Union[
-        Callable, Text, Mapping, Sequence[Union[Text, Mapping]]
-    ] = "fixed_costs",
     decision: Union[Callable, Text, Mapping] = "mean",
-    investment: Union[Callable, Text, Mapping] = "adhoc",
     **kwargs,
 ):
     """Creates retrofit agent from muse primitives."""
     from logging import getLogger
     from muse.filters import factory as filter_factory
-    from muse.hooks import housekeeping_factory, asset_merge_factory
-    from muse.objectives import factory as objectives_factory
-    from muse.decisions import factory as decision_factory
-    from muse.investments import factory as investment_factory
 
-    if "region" in capacity.dims:
-        capacity = capacity.sel(region=region)
-    if "region" in technologies.dims:
-        technologies = technologies.sel(region=region)
-
-    shares = technologies[share].sel(technology=capacity.technology)
-    if "region" in shares.dims:
-        shares = shares.sel(region=region)
-    if "year" in shares.dims:
-        shares = shares.interp({"year": year}, method=interpolation)
-
-    existing = capacity.interp({"year": year}, method=interpolation)
-
-    techs = ((existing > 0) & (shares > 0)).values
-    assets = xr.Dataset({"capacity": (capacity * shares).sel(asset=techs).copy()})
-
-    if isinstance(search_rules, Text):
-        search_rules = [search_rules]
-    if len(search_rules) == 0 or search_rules[-1] != "compress":
-        search_rules.append("compress")
-    if len(search_rules) < 2 or search_rules[-2] != "with_asset_technology":
-        search_rules.insert(-1, "with_asset_technology")
-
-    if not callable(housekeeping):
-        housekeeping = housekeeping_factory(housekeeping)
-    if not callable(merge_transform):
-        merge_transform = asset_merge_factory(merge_transform)
-    if not callable(objectives):
-        objectives = objectives_factory(objectives)
     if not callable(decision):
         name = decision if isinstance(decision, Text) else decision["name"]
         unusual = {"lexo", "lexical_comparison", "epsilon_constaints", "epsilon"}
@@ -71,20 +61,20 @@ def create_retrofit_agent(
                 f"Expected retro_{name} rather than {name}."
             )
             getLogger(__name__).warning(msg)
-        decision = decision_factory(decision)
-    assert callable(decision)
-    if not callable(investment):
-        investment = investment_factory(investment)
+
+    assets = _shared_capacity(
+        technologies, capacity, region, year, share=share, interpolation=interpolation
+    )
+
+    kwargs = _standardize_investing_inputs(decision=decision, **kwargs)
+    search_rules = kwargs.pop("search_rules")
+    if len(search_rules) < 2 or search_rules[-2] != "with_asset_technology":
+        search_rules.insert(-1, "with_asset_technology")
 
     return InvestingAgent(
-        assets=assets,
+        assets=xr.Dataset(dict(capacity=assets)),
         region=region,
         search_rules=filter_factory(search_rules),
-        housekeeping=housekeeping,
-        merge_transform=merge_transform,
-        objectives=objectives,
-        decision=decision,
-        investment=investment,
         year=year,
         **kwargs,
     )
@@ -94,25 +84,16 @@ def create_newcapa_agent(
     capacity: xr.DataArray,
     year: int,
     region: Text,
-    search_rules="all",
+    search_rules: Union[Text, Sequence[Text]] = "all",
     interpolation: Text = "linear",
     merge_transform: Union[Text, Mapping, Callable] = "new",
     quantity: float = 0.3,
-    objectives: Union[
-        Callable, Text, Mapping, Sequence[Union[Text, Mapping]]
-    ] = "fixed_costs",
-    decision: Union[Callable, Text, Mapping] = "mean",
-    investment: Union[Callable, Text, Mapping] = "adhoc",
     housekeeping: Union[Text, Mapping, Callable] = "noop",
     **kwargs,
 ):
     """Creates newcapa agent from muse primitives."""
-    from muse.hooks import housekeeping_factory, asset_merge_factory
     from muse.filters import factory as filter_factory
     from muse.registration import name_variations
-    from muse.objectives import factory as objectives_factory
-    from muse.decisions import factory as decision_factory
-    from muse.investments import factory as investment_factory
 
     if "region" in capacity.dims:
         capacity = capacity.sel(region=region)
@@ -123,8 +104,9 @@ def create_newcapa_agent(
     assets = xr.Dataset()
     assets["capacity"] = xr.zeros_like(capacity.sel(asset=existing.values, year=years))
 
-    if isinstance(search_rules, Text):
-        search_rules = [search_rules]
+    kwargs = _standardize_investing_inputs(
+        housekeeping=housekeeping, merge_transform=merge_transform, **kwargs
+    )
     # ensure newcapa agents do not use currently_existing_tech filter, since it would
     # turn off all replacement techs
     variations = set(name_variations("existing")).union(
@@ -132,31 +114,13 @@ def create_newcapa_agent(
     )
     search_rules = [
         "currently_referenced_tech" if name in variations else name
-        for name in search_rules
+        for name in kwargs.pop("search_rules")
     ]
-    if len(search_rules) == 0 or search_rules[-1] != "compress":
-        search_rules.append("compress")
-
-    if not callable(housekeeping):
-        housekeeping = housekeeping_factory(housekeeping)
-    if not callable(merge_transform):
-        merge_transform = asset_merge_factory(merge_transform)
-    if not callable(objectives):
-        objectives = objectives_factory(objectives)
-    if not callable(decision):
-        decision = decision_factory(decision)
-    if not callable(investment):
-        investment = investment_factory(investment)
 
     result = InvestingAgent(
         assets=assets,
         region=region,
         search_rules=filter_factory(search_rules),
-        housekeeping=housekeeping,
-        merge_transform=merge_transform,
-        objectives=objectives,
-        decision=decision,
-        investment=investment,
         year=year,
         **kwargs,
     )
@@ -165,9 +129,13 @@ def create_newcapa_agent(
 
 
 def create_agent(agent_type: Text, **kwargs) -> Agent:
-    method = {"retrofit": create_retrofit_agent, "newcapa": create_newcapa_agent}[
-        agent_type.lower()
-    ]
+    method = {
+        "retrofit": create_retrofit_agent,
+        "newcapa": create_newcapa_agent,
+        "agent": create_standard_agent,
+        "default": create_standard_agent,
+        "standard": create_standard_agent,
+    }[agent_type.lower()]
     return method(**kwargs)  # type: ignore
 
 
@@ -297,3 +265,83 @@ def agents_factory(
         )
     getLogger(__name__).info(msg)
     return result
+
+
+def _shared_capacity(
+    technologies: xr.Dataset,
+    capacity: xr.DataArray,
+    region: Text,
+    year: int,
+    interpolation: Text = "linear",
+    share: Optional[Text] = None,
+) -> xr.DataArray:
+    if "region" in capacity.dims:
+        capacity = capacity.sel(region=region)
+    if "region" in technologies.dims:
+        technologies = technologies.sel(region=region)
+
+    shares = technologies[share].sel(technology=capacity.technology)
+    if "region" in shares.dims:
+        shares = shares.sel(region=region)
+    if "year" in shares.dims:
+        shares = shares.interp({"year": year}, method=interpolation)
+
+    existing = capacity.interp({"year": year}, method=interpolation)
+
+    techs = ((existing > 0) & (shares > 0)).values
+    return (capacity * shares).sel(asset=techs).copy()
+
+
+def _standardize_inputs(
+    search_rules: Union[Text, Sequence[Text]] = "all",
+    housekeeping: Union[Text, Mapping, Callable] = "clean",
+    merge_transform: Union[Text, Mapping, Callable] = "merge",
+    objectives: Union[
+        Callable, Text, Mapping, Sequence[Union[Text, Mapping]]
+    ] = "fixed_costs",
+    decision: Union[Callable, Text, Mapping] = "mean",
+    **kwargs,
+):
+    from muse.hooks import housekeeping_factory, asset_merge_factory
+    from muse.objectives import factory as objectives_factory
+    from muse.decisions import factory as decision_factory
+
+    if isinstance(search_rules, Text):
+        search_rules = [search_rules]
+    search_rules = list(search_rules)
+    if len(search_rules) == 0 or search_rules[-1] != "compress":
+        search_rules.append("compress")
+
+    if not callable(housekeeping):
+        housekeeping = housekeeping_factory(housekeeping)
+    if not callable(merge_transform):
+        merge_transform = asset_merge_factory(merge_transform)
+    if not callable(objectives):
+        objectives = objectives_factory(objectives)
+    if not callable(decision):
+        decision = decision_factory(decision)
+
+    kwargs["search_rules"] = search_rules
+    kwargs["housekeeping"] = housekeeping
+    kwargs["merge_transform"] = merge_transform
+    kwargs["objectives"] = objectives
+    kwargs["decision"] = decision
+    return kwargs
+
+
+def _standardize_investing_inputs(
+    investment: Union[Callable, Text, Mapping] = "adhoc",
+    constraints: Optional[
+        Union[Callable, Text, Mapping, Sequence[Union[Text, Mapping]]]
+    ] = None,
+    **kwargs,
+) -> Dict[Text, Any]:
+    from muse.investments import factory as investment_factory
+    from muse.constraints import factory as constraints_factory
+
+    kwargs = _standardize_inputs(**kwargs)
+    if not callable(investment):
+        kwargs["investment"] = investment_factory(investment)
+    if not callable(constraints):
+        kwargs["constraints"] = constraints_factory(constraints)
+    return kwargs

@@ -209,14 +209,17 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
 
 
 def factory(
-    settings: Union[Text, Mapping, Sequence[Text], Sequence[Mapping]] = (
-        "max_production",
-        "max_capacity_expansion",
-        "demand",
-        "search_space",
-    )
+    settings: Optional[Union[Text, Mapping, Sequence[Text], Sequence[Mapping]]] = None
 ) -> Callable:
     from functools import partial
+
+    if settings is None:
+        settings = (
+            "max_production",
+            "max_capacity_expansion",
+            "demand",
+            "search_space",
+        )
 
     def normalize(x):
         return dict(name=x) if isinstance(x, Text) else x

@@ -318,7 +318,7 @@ class InvestingAgent(Agent):
         new_assets = self._compute_new_assets(
             demand, search, technologies, market, time_period, self.year - time_period
         )
-        self.add_assets(xr.Dataset({"capacity": new_assets}))
+        self.add_assets(xr.Dataset(dict(capacity=new_assets)))
 
     def add_assets(self, newassets: xr.Dataset):
         """Add new assets to the agent."""
