@@ -16,7 +16,7 @@ should all have the following signature:
         market: xr.Dataset,
         technologies: xr.Dataset,
         **kwargs
-    ) -> MutableMapping[UUID, xr.DataArray]:
+    ) -> xr.DataArray:
         pass
 
 Arguments:
@@ -31,10 +31,10 @@ Arguments:
         shared. These keyword arguments can be modified from the TOML file.
 
 Returns:
-    A dictionnary mapping the :py:attr:`~muse.agents.agent.AbstractAgent.uuid`
-    (`Universally Unique Identifier`__) of the agent to the demand share. In most cases,
-    it is expected summing over shares should return the *unmet* consumption for the
-    forecast year.
+    The unmet consumption. Unless indicated, all agents will compete for a the full
+    demand. However, if there exists a coordinate "agent" of dimension "asset" giving
+    the :py:attr:`~muse.agents.agent.AbstractAgent.uuid` of the agent, then agents will
+    only service that par of the demand.
 
 __ :: https://en.wikipedia.org/wiki/Universally_unique_identifier
 """
@@ -45,8 +45,18 @@ __all__ = [
     "unmet_demand",
     "DEMAND_SHARE_SIGNATURE",
 ]
-from typing import Any, Callable, List, Mapping, MutableMapping, Optional, Text, Union
-from uuid import UUID
+from typing import (
+    Any,
+    Callable,
+    Hashable,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Text,
+    Union,
+    cast,
+)
 
 import xarray as xr
 
@@ -54,7 +64,7 @@ from muse.agents import AbstractAgent
 from muse.registration import registrator
 
 DEMAND_SHARE_SIGNATURE = Callable[
-    [List[AbstractAgent], xr.Dataset, xr.Dataset], Mapping[UUID, xr.DataArray]
+    [List[AbstractAgent], xr.Dataset, xr.Dataset], xr.DataArray
 ]
 """Demand share signature."""
 
@@ -83,7 +93,7 @@ def factory(
         market: xr.Dataset,
         technologies: xr.Dataset,
         **kwargs
-    ) -> Mapping[UUID, xr.DataArray]:
+    ) -> xr.DataArray:
         function = DEMAND_SHARE[name]
         keywords = dict(**params)
         keywords.update(**kwargs)
@@ -100,7 +110,7 @@ def new_and_retro(
     production: Union[Text, Mapping, Callable] = "maximum_production",
     current_year: Optional[int] = None,
     forecast: int = 5,
-) -> MutableMapping[UUID, xr.DataArray]:
+) -> xr.DataArray:
     r"""Splits demand across new and retro agents.
 
     The input demand is split amongst both *new* and *retro* agents. *New* agents get a
@@ -207,7 +217,7 @@ def new_and_retro(
     """
     from functools import partial
     from muse.commodities import is_enduse
-    from muse.utilities import reduce_assets
+    from muse.utilities import reduce_assets, agent_concatenation
     from muse.quantities import maximum_production
 
     if current_year is None:
@@ -234,27 +244,27 @@ def new_and_retro(
             technologies, capacity, year=[current_year, current_year + forecast]
         ).squeeze("year")
 
-    results: MutableMapping[UUID, xr.DataArray] = {}
+    id_to_share: MutableMapping[Hashable, xr.DataArray] = {}
     for region in demands.region.values:
         regional_techs = technologies.sel(region=region)
-        retro_capacity = {
+        retro_capacity: MutableMapping[Hashable, xr.DataArray] = {
             agent.uuid: agent.assets.capacity
             for agent in agents
             if agent.category == "retrofit" and agent.region == region
         }
-        retro_demands = _inner_split(
+        retro_demands: MutableMapping[Hashable, xr.DataArray] = _inner_split(
             retro_capacity, demands.retrofit.sel(region=region), decommissioning
         )
-        results.update(retro_demands)
+        id_to_share.update(retro_demands)
 
-        name_to_uuid = {
+        name_to_id = {
             (agent.name, agent.region): agent.uuid
             for agent in agents
             if agent.category == "retrofit" and agent.region == region
         }
-        assert len(name_to_uuid) == len(retro_capacity)
-        new_capacity = {
-            agent.uuid: retro_capacity[name_to_uuid[(agent.name, agent.region)]]
+        assert len(name_to_id) == len(retro_capacity)
+        new_capacity: Mapping[Hashable, xr.DataArray] = {
+            agent.uuid: retro_capacity[name_to_id[(agent.name, agent.region)]]
             * getattr(agent, "quantity", 0.3)
             for agent in agents
             if agent.category != "retrofit" and agent.region == region
@@ -264,16 +274,17 @@ def new_and_retro(
             demands.new.sel(region=region),
             partial(maximum_production, technologies=regional_techs, year=current_year),
         )
-        results.update(new_demands)
-    return results
+        id_to_share.update(new_demands)
+    result = cast(xr.DataArray, agent_concatenation(id_to_share))
+    return result
 
 
 def _inner_split(
-    assets: Mapping[UUID, xr.DataArray],
+    assets: Mapping[Hashable, xr.DataArray],
     demand: xr.DataArray,
     method: Callable,
     **filters
-) -> Mapping[UUID, xr.DataArray]:
+) -> MutableMapping[Hashable, xr.DataArray]:
     r"""compute share of the demand for a set of agents.
 
     The input ``demand`` is split between agents according to their share of the
@@ -282,19 +293,19 @@ def _inner_split(
     from numpy import logical_and
 
     shares = {
-        uuid: method(capacity=capacity)
+        key: method(capacity=capacity)
         .groupby("technology")
         .sum("asset")
         .rename(technology="asset")
-        for uuid, capacity in assets.items()
+        for key, capacity in assets.items()
     }
     total = sum(shares.values()).sum("asset")  # type: ignore
-    unassigned = (demand / (len(shares) * len(sum(shares.values()).asset))).where(
-        logical_and(demand > 1e-12, total <= 1e-12), 0
-    )
+    unassigned = (
+        demand / (len(shares) * len(cast(xr.DataArray, sum(shares.values())).asset))
+    ).where(logical_and(demand > 1e-12, total <= 1e-12), 0)
     return {
-        uuid: ((share / total).fillna(0) * demand).fillna(0) + unassigned
-        for uuid, share in shares.items()
+        key: ((share / total).fillna(0) * demand).fillna(0) + unassigned
+        for key, share in shares.items()
     }
 
 

@@ -256,7 +256,7 @@ def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_f
 
     results = new_and_retro(agents, market, technologies, current_year=2010, forecast=5)
 
-    for share in results.values():
+    for agent, share in results.groupby("agent"):
         assert share.sel(
             commodity=~is_enduse(technologies.comm_usage)
         ).values == approx(0)
@@ -266,8 +266,8 @@ def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_f
     for category in {"retrofit", "new"}:
         subset = {
             uuid_to_name[uuid]: share.sel(commodity=is_enduse(technologies.comm_usage))
-            for uuid, share in results.items()
-            if uuid_to_category[uuid] == category
+            for uuid, share in results.groupby("agent")
+            if uuid_to_category[uuid] == category and (share.region == "USA").all()
         }
         expected, actual = broadcast(0.3 * sum(subset.values()), subset["a"])
         assert actual.values == approx(expected.values)

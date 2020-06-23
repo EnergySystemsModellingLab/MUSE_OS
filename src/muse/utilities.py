@@ -569,10 +569,12 @@ def agent_concatenation(
     """
     data = {k: v.copy() for k, v in data.items()}
     for key, datum in data.items():
-        if name in datum.data_vars:
+        if name in datum.coords:
             raise ValueError(f"Coordinate {name} already exists")
         datum[name] = key
-    result = xr.concat(data.values(), dim=dim).set_coords("agent")
+    result = xr.concat(data.values(), dim=dim)
+    if isinstance(result, xr.Dataset):
+        result = result.set_coords("agent")
     if "year" in result.dims:
         result = result.ffill("year")
     if fill_value is not np.nan:
