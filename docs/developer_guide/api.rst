@@ -75,7 +75,8 @@ Agents and associated functionalities
 -------------------------------------
 
 .. automodule:: muse.agents.factories
-   :members: agents_factory, create_agent, create_retrofit_agent, create_newcapa_agent
+   :members: agents_factory, create_agent, create_retrofit_agent, create_newcapa_agent,
+       factory
 
 
 .. autoclass:: muse.agents.agent.AbstractAgent
@@ -128,8 +129,9 @@ Constraints:
 ~~~~~~~~~~~~
 
 .. automodule:: muse.constraints
-    :members:
-
+    :members: demand, factory, max_capacity_expansion, max_production, lp_costs,
+        lp_constraint, lp_constraint_matrix, register_constraints, search_space,
+        ScipyAdapter
 
 Initial and Final Asset Transforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
