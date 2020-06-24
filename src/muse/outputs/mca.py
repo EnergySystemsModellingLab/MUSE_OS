@@ -124,6 +124,26 @@ def capacity(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataAr
     return sectors_capacity(sectors)
 
 
+def sector_lcoe(market: Dataset, sector: AbstractSector, **kwargs) -> DataArray:
+    """Sector annual levelised cost with agent annotations."""
+    from operator import attrgetter
+    from pandas import DataFrame, concat
+    from muse.quantities import annual_levelized_cost_of_energy
+
+    annual_lcoe_sector: List[DataArray] = []
+
+    agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
+    technologies = sector.technologies
+    annual_lcoe = annual_levelized_cost_of_energy(market.market.prices, technologies)
+
+    lcoe = concat([u.to_dataframe() for u in annual_lcoe])
+    lcoe = lcoe[lcoe != 0]
+
+    if "year" in lcoe.columns:
+        lcoe = lcoe.ffill("year")
+    return lcoe
+
+
 def sector_capacity(sector: AbstractSector) -> DataArray:
     """Sector capacity with agent annotations."""
     from operator import attrgetter
