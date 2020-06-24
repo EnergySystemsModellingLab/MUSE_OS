@@ -185,7 +185,7 @@ def costs(
     sum_over: Optional[List[Text]] = None,
     drop: Optional[List[Text]] = None,
 ) -> DataArray:
-    """Current supply."""
+    """Current costs."""
     from muse.commodities import is_pollutant
 
     return market_quantity(
