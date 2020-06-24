@@ -132,10 +132,14 @@ def factory(
 
 @register_output_quantity
 def capacity(
-    market: xr.Dataset, capacity: xr.DataArray, technologies: xr.Dataset
-) -> xr.DataArray:
+    market: xr.Dataset,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
+    rounding: int = 4,
+) -> pd.DataFrame:
     """Current capacity."""
-    return capacity
+    result = capacity.to_dataframe().round(rounding)
+    return result[result.capacity != 0]
 
 
 def market_quantity(
@@ -162,9 +166,16 @@ def consumption(
     technologies: xr.Dataset,
     sum_over: Optional[List[Text]] = None,
     drop: Optional[List[Text]] = None,
+    rounding: int = 4,
 ) -> xr.DataArray:
     """Current consumption."""
-    return market_quantity(market.consumption, sum_over=sum_over, drop=drop)
+    result = (
+        market_quantity(market.consumption, sum_over=sum_over, drop=drop)
+        .rename("consumption")
+        .to_dataframe()
+        .round(rounding)
+    )
+    return result[result.consumption != 0]
 
 
 @register_output_quantity
@@ -174,9 +185,16 @@ def supply(
     technologies: xr.Dataset,
     sum_over: Optional[List[Text]] = None,
     drop: Optional[List[Text]] = None,
+    rounding: int = 4,
 ) -> xr.DataArray:
     """Current supply."""
-    return market_quantity(market.supply, sum_over=sum_over, drop=drop)
+    result = (
+        market_quantity(market.supply, sum_over=sum_over, drop=drop)
+        .rename("supply")
+        .to_dataframe()
+        .round(rounding)
+    )
+    return result[result.supply != 0]
 
 
 @register_output_quantity
@@ -186,12 +204,19 @@ def costs(
     technologies: xr.Dataset,
     sum_over: Optional[List[Text]] = None,
     drop: Optional[List[Text]] = None,
+    rounding: int = 4,
 ) -> xr.DataArray:
     """Current supply."""
     from muse.commodities import is_pollutant
 
-    return market_quantity(
-        market.costs.sel(commodity=~is_pollutant(market.comm_usage)),
-        sum_over=sum_over,
-        drop=drop,
+    result = (
+        market_quantity(
+            market.costs.sel(commodity=~is_pollutant(market.comm_usage)),
+            sum_over=sum_over,
+            drop=drop,
+        )
+        .rename("costs")
+        .to_dataframe()
+        .round(rounding)
     )
+    return result[result.costs != 0]
