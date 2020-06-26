@@ -88,7 +88,7 @@ from typing import Callable, Mapping, MutableMapping, Optional, Sequence, Text, 
 
 from xarray import DataArray, Dataset
 
-from muse.agent import Agent
+from muse.agents import Agent
 from muse.registration import registrator
 
 SSF_SIGNATURE = Callable[[Agent, DataArray, Dataset, Dataset], DataArray]

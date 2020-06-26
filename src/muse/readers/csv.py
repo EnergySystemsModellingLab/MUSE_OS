@@ -412,7 +412,7 @@ def read_csv_agent_parameters(filename) -> List:
     """Reads standard MUSE agent-declaration csv-files.
 
     Returns a list of dictionaries, where each dictionary can be used to instantiate an
-    agent in `muse.agent.factory`.
+    agent in :py:func:`muse.agents.factories.factory`.
     """
     from pandas import read_csv
     from re import sub
@@ -442,7 +442,8 @@ def read_csv_agent_parameters(filename) -> List:
             "newcapa": "newcapa",
             "retrofit": "retrofit",
             "retro": "retrofit",
-        }[row.Type.lower()]
+            "agent": "agent",
+        }[getattr(row, "Type", "agent").lower()]
         data = {
             "name": row.Name,
             "region": row.RegionName,

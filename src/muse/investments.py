@@ -169,7 +169,12 @@ def factory(settings: Union[Text, Mapping] = "match_demand") -> Callable:
 
         function = INVESTMENTS[name]
         return function(
-            search.decision, search.space, technologies, constraints, **params, **kwargs
+            search.decision,
+            search.search_space,
+            technologies,
+            constraints,
+            **params,
+            **kwargs,
         ).rename("investment")
 
     return compute_investment

@@ -175,7 +175,7 @@ investments. Then the constraints are:
 
 :math:`\Gamma_t^{i, r}` is an upper bound on investments for a given agent, replacement
 technology :math:`r` and current technology :math:`t`. It is computed as a function of
-the current asset profile in :py:meth:`~muse.constraints.max_capacity_expansion`. The
+the current asset profile in :py:func:`~muse.constraints.max_capacity_expansion`. The
 second constraints imposes that investments cannot be negative (e.g. they can only add
 to the agent's assets, and never remove).
 
@@ -216,5 +216,5 @@ new.
 Outputs
 -------
 
-No direct output. However, :py:attr:`agent.AgentBase.assets` is likely to have been
-modified, reflecting new investments.
+No direct output. However, :py:attr:`agents.agent.AbstractAgent.assets` is likely to
+have been modified, reflecting new investments.

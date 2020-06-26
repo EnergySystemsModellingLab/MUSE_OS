@@ -74,14 +74,19 @@ Agent Interactions
 Agents and associated functionalities
 -------------------------------------
 
-.. automodule:: muse.agent
-   :members: agents_factory, create_agent, create_retrofit_agent, create_newcapa_agent
+.. automodule:: muse.agents.factories
+   :members: agents_factory, create_agent, create_retrofit_agent, create_newcapa_agent,
+       factory
 
 
-.. autoclass:: muse.agent.AgentBase
+.. autoclass:: muse.agents.agent.AbstractAgent
    :members:
 
-.. autoclass:: muse.agent.Agent
+.. autoclass:: muse.agents.agent.Agent
+   :members:
+   :private-members:
+
+.. autoclass:: muse.agents.agent.InvestingAgent
    :members:
    :private-members:
 
@@ -124,8 +129,9 @@ Constraints:
 ~~~~~~~~~~~~
 
 .. automodule:: muse.constraints
-    :members:
-
+    :members: demand, factory, max_capacity_expansion, max_production, lp_costs,
+        lp_constraint, lp_constraint_matrix, register_constraints, search_space,
+        ScipyAdapter
 
 Initial and Final Asset Transforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
