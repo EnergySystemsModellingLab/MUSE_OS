@@ -206,7 +206,7 @@ def costs(
     drop: Optional[List[Text]] = None,
     rounding: int = 4,
 ) -> xr.DataArray:
-    """Current supply."""
+    """Current costs."""
     from muse.commodities import is_pollutant
 
     result = (

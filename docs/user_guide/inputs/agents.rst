@@ -10,8 +10,8 @@ one agent per row, using a somewhat historical format meant specifically for ret
 and new-capacity agent pairs. This CSV file can be read using
 :py:func:`~muse.readers.csv.read_csv_agent_parameters`. The data is also
 interpreted to some degree in the factory functions
-:py:func:`~muse.agent.create_retrofit_agent` and
-:py:func:`~muse.agent.create_newcapa_agent`.
+:py:func:`~muse.agents.factories.create_retrofit_agent` and
+:py:func:`~muse.agents.factories.create_newcapa_agent`.
 
 For instance, we have the following CSV table:
 

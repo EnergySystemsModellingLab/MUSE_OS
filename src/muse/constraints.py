@@ -5,8 +5,8 @@ instance, the constraints could ensure that only so much of a new asset can be b
 every year.
 
 Functions to compute constraints should be registered via the decorator
-:py:func:`register_constraints`. This registration step makes it possible for
-constraints to be declared in the TOML file.
+:py:meth:`~muse.constraints.register_constraints`. This registration step makes it
+possible for constraints to be declared in the TOML file.
 
 Generally, LP solvers accept linear constraint defined as:
 
@@ -60,7 +60,7 @@ inefficient defininition of :math:`A_c`, :math:`A_p` and :math:`b`.
   :math:`b` is added by repeating the resulting row in :math:`A`.
 
 Constraints are registered using the decorator
-:py:func:`~muse.constraints.register_constraints`. The decorated functions must follow
+:py:meth:`~muse.constraints.register_constraints`. The decorated functions must follow
 the following signature:
 
 .. code-block:: python
@@ -95,7 +95,6 @@ year:
 ``**kwargs``:
     Any other parameter.
 """
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -167,6 +166,10 @@ CONSTRAINTS: MutableMapping[Text, CONSTRAINT_SIGNATURE] = {}
 
 @registrator(registry=CONSTRAINTS)
 def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE:
+    """Registers a constraint with MUSE.
+
+    See :py:mod:`muse.constraints`.
+    """
     from functools import wraps
 
     @wraps(function)
@@ -209,14 +212,22 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
 
 
 def factory(
-    settings: Union[Text, Mapping, Sequence[Text], Sequence[Mapping]] = (
-        "max_production",
-        "max_capacity_expansion",
-        "demand",
-        "search_space",
-    )
+    settings: Optional[Union[Text, Mapping, Sequence[Text], Sequence[Mapping]]] = None
 ) -> Callable:
+    """Creates a list of constraints from standard settings.
+
+    The standard settings can be a string naming the constraint, a dictionary including
+    at least "name", or a list of strings and dictionaries.
+    """
     from functools import partial
+
+    if settings is None:
+        settings = (
+            "max_production",
+            "max_capacity_expansion",
+            "demand",
+            "search_space",
+        )
 
     def normalize(x):
         return dict(name=x) if isinstance(x, Text) else x
@@ -372,6 +383,7 @@ def search_space(
     forecast: int = 5,
     interpolation: Text = "linear",
 ) -> Constraint:
+    """Removes disabled technologies."""
     b = ~search_space.astype(bool)
     b = b.sel(asset=b.any("replacement"))
     if b.size == 0:
@@ -791,7 +803,7 @@ class ScipyAdapter:
         >>> assert inputs.c.size == inputs.A_ub.shape[1]
         >>> assert inputs.c.ndim == 1
 
-        In practice, :py:func:`~muse.constraints.lpcosts` helps us define the decision
+        In practice, :py:func:`~muse.constraints.lp_costs` helps us define the decision
         variables (and ``c``). We can verify that the sizes are consistent:
 
         >>> lpcosts = cs.lp_costs(technologies, costs, market.timeslice)

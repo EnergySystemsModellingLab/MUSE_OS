@@ -23,7 +23,7 @@ __all__ = [
 
 from typing import Callable, List, Mapping, Optional, Sequence, Text, Tuple, Union
 
-from muse.agent import Agent, AgentBase
+from muse.agents import Agent, AbstractAgent
 from muse.registration import registrator
 
 AGENT_INTERACTIONS: Mapping[Text, Callable] = {}
@@ -85,7 +85,7 @@ def register_agent_interaction(function: AGENT_INTERACTION_SIGNATURE):
 
 def factory(
     inputs: Optional[Sequence[Union[Mapping, Tuple[Text, Text]]]] = None
-) -> Callable[[Sequence[AgentBase]], None]:
+) -> Callable[[Sequence[AbstractAgent]], None]:
     """Creates an interaction functor."""
 
     if inputs is None:
@@ -110,7 +110,7 @@ def factory(
 
         interactions.append(((net, net_params), (interaction, action_params)))
 
-    def compute_interactions(agents: Sequence[AgentBase]) -> None:
+    def compute_interactions(agents: Sequence[AbstractAgent]) -> None:
         """Applies interaction net and agent interaction functions."""
         from logging import getLogger
 

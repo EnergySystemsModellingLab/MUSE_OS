@@ -454,11 +454,14 @@ output:
 
    The following attributes are available:
 
-   - quantity: Name of the quantity to save. Currently, only `capacity` exists,
-      referring to :py:func:`muse.outputs.sector.capacity`. However, users can
-      customize and create further output quantities by registering with MUSE via
-      :py:func:`muse.outputs.sector.register_output_quantity`. See
-      :py:mod:`muse.outputs.sector` for more details.
+   - quantity: Name of the quantity to save. At time of writing, the following
+        quantities are available: :py:func:`~muse.outputs.sector.capacity`,
+        :py:func:`~muse.outputs.sector.supply`,
+        :py:func:`~muse.outputs.sector.consumption`,
+        :py:func:`~muse.outputs.sector.costs`.  However, users can customize and create
+        further output quantities by registering with MUSE via
+        :py:func:`~muse.outputs.sector.register_output_quantity`. See
+        :py:mod:`muse.outputs.sector` for more details.
 
    - sink: the sink is the place (disk, cloud, database, etc...) and format with which
       the computed quantity is saved. Currently only sinks that save to files are

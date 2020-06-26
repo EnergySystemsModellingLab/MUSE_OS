@@ -16,7 +16,7 @@ from typing import (
 from pandas import MultiIndex
 from xarray import DataArray, Dataset
 
-from muse.agent import AgentBase
+from muse.agents import AbstractAgent
 from muse.demand_share import DEMAND_SHARE_SIGNATURE
 from muse.production import PRODUCTION_SIGNATURE
 from muse.sectors.abstract import AbstractSector
@@ -35,7 +35,7 @@ class Sector(AbstractSector):  # type: ignore
         from muse.production import factory as pfactory
         from muse.interactions import factory as interaction_factory
         from muse.demand_share import factory as share_factory
-        from muse.agent import agents_factory
+        from muse.agents import agents_factory
         from logging import getLogger
 
         sector_settings = getattr(settings.sectors, name)._asdict()
@@ -125,9 +125,9 @@ class Sector(AbstractSector):  # type: ignore
         self,
         name: Text,
         technologies: Dataset,
-        agents: Sequence[AgentBase] = [],
+        agents: Sequence[AbstractAgent] = [],
         timeslices: Optional[MultiIndex] = None,
-        interactions: Optional[Callable[[Sequence[AgentBase]], None]] = None,
+        interactions: Optional[Callable[[Sequence[AbstractAgent]], None]] = None,
         interpolation: Text = "linear",
         outputs: Optional[Callable] = None,
         production: Optional[PRODUCTION_SIGNATURE] = None,
@@ -141,7 +141,7 @@ class Sector(AbstractSector):  # type: ignore
 
         self.name: Text = name
         """Name of the sector."""
-        self.agents: List[AgentBase] = list(agents)
+        self.agents: List[AbstractAgent] = list(agents)
         """Agents controlled by this object."""
         self.technologies: Dataset = technologies
         """Parameters describing the sector's technologies."""
