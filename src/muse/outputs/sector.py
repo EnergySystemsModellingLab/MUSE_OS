@@ -204,6 +204,7 @@ def costs(
     technologies: xr.Dataset,
     sum_over: Optional[List[Text]] = None,
     drop: Optional[List[Text]] = None,
+    rounding: int = 4,
 ) -> xr.DataArray:
     """Current costs."""
     from muse.commodities import is_pollutant
