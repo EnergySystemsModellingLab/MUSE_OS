@@ -1,23 +1,10 @@
 """Test saving multiple outputs to file."""
-from pathlib import Path
-from typing import Text
+
 
 import numpy as np
 import pandas
-import xarray
-from xarray import Dataset, DataArray, broadcast, concat
-import os
-from pytest import approx, importorskip, mark
-
-from muse.outputs.sector import factory, register_output_quantity
-
 from muse import examples
-from muse.outputs.mca import (
-    sector_capacity,
-    sectors_capacity,
-    sector_alcoe,
-    sector_llcoe,
-)
+from muse.outputs.mca import sector_alcoe
 
 
 def test_aggregate_alcoe_sector():
@@ -42,17 +29,3 @@ def test_aggregate_alcoe_sector():
                 assert np.unique(alldata.loc[[r], ["alcoe"]]) == lcoe.sel(
                     year=r[2], technology=r[1], timeslice=r[0]
                 )
-
-
-@register_output_quantity
-def streetcred(*args, **kwargs):
-
-    return DataArray(
-        np.random.randint(0, 5, (3, 2)),
-        coords={
-            "year": [2010, 2015],
-            "technology": ("asset", ["a", "b", "c"]),
-            "installed": ("asset", [2010, 2011, 2011]),
-        },
-        dims=("asset", "year"),
-    )

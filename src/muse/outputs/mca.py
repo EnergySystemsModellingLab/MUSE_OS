@@ -175,15 +175,12 @@ def sector_alcoe(market: Dataset, sector: AbstractSector, **kwargs) -> DataArray
 
 def sector_llcoe(market: Dataset, sector: AbstractSector, **kwargs) -> DataArray:
     """Sector lifetime levelised cost with agent annotations."""
-    from operator import attrgetter
+
     from pandas import DataFrame, concat
-    from muse.utilities import broadcast_techs
+
     from muse.quantities import lifetime_levelized_cost_of_energy
 
     data_sector: List[DataArray] = []
-
-    agents = getattr(sector, "agents", [])
-
     technologies = getattr(sector, "technologies", [])
 
     if len(technologies) > 0:
