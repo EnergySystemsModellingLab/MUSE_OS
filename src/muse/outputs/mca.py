@@ -138,21 +138,18 @@ def llcoe(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray
 
 def sector_alcoe(market: Dataset, sector: AbstractSector, **kwargs) -> DataArray:
     """Sector annual levelised cost with agent annotations."""
-    from operator import attrgetter
     from pandas import DataFrame, concat
-    from muse.utilities import broadcast_techs
     from muse.quantities import annual_levelized_cost_of_energy
+    from operator import attrgetter
 
     data_sector: List[DataArray] = []
 
-    agents = getattr(sector, "agents", [])
-
     technologies = getattr(sector, "technologies", [])
-
+    agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
     if len(technologies) > 0:
         annual_lcoe = annual_levelized_cost_of_energy(market.prices, technologies)
 
-        for a in sector.agents:
+        for a in agents:
             data_agent = annual_lcoe.sel(
                 technology=a.assets.technology.values, region=a.assets.region.values
             )
@@ -177,16 +174,16 @@ def sector_llcoe(market: Dataset, sector: AbstractSector, **kwargs) -> DataArray
     """Sector lifetime levelised cost with agent annotations."""
 
     from pandas import DataFrame, concat
-
+    from operator import attrgetter
     from muse.quantities import lifetime_levelized_cost_of_energy
 
     data_sector: List[DataArray] = []
     technologies = getattr(sector, "technologies", [])
-
+    agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
     if len(technologies) > 0:
         life_lcoe = lifetime_levelized_cost_of_energy(market.prices, technologies)
 
-        for a in sector.agents:
+        for a in agents:
             data_agent = life_lcoe.sel(
                 technology=a.assets.technology.values, region=a.assets.region.values
             )
@@ -256,7 +253,7 @@ def sectors_llcoe(market: Dataset, sectors: List[AbstractSector]) -> DataArray:
     """Aggregate life levelised cost from all sectors."""
     from pandas import concat, DataFrame
 
-    alldata = [sector_llcoe(sector) for sector in sectors]
+    alldata = [sector_llcoe(market, sector) for sector in sectors]
     if len(alldata) == 0:
         return DataFrame()
     return concat(alldata)

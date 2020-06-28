@@ -2,7 +2,6 @@
 
 
 import numpy as np
-import pandas
 from muse import examples
 from muse.outputs.mca import sector_alcoe
 
@@ -10,11 +9,11 @@ from muse.outputs.mca import sector_alcoe
 def test_aggregate_alcoe_sector():
     """Test for aggregate_sector function check colum titles, number of
     agents/region/technologies and alcoe."""
-    from pandas import DataFrame
+
     from muse.quantities import annual_levelized_cost_of_energy
 
     mca = examples.model("multiple-agents")
-    year = [2020, 2025]
+
     residential = next(
         (sector for sector in mca.sectors if sector.name == "residential")
     )
