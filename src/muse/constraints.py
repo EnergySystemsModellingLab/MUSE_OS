@@ -696,7 +696,7 @@ def lp_constraint_matrix(
         >>> assert set(result.dims) == {f"d({x})" for x in lpcosts.production.dims}
         >>> assert result.values == approx(1)
 
-        As expected, the cpacicity vector is 1, whereas the production vector is -1.
+        As expected, the capacicity vector is 1, whereas the production vector is -1.
         These are the values the :py:func:`~muse.constraints.max_production` is set up
         to create.
 

@@ -447,24 +447,25 @@ def test_scipy_solver(technologies, costs, constraints, timeslices):
 def test_minimum_service(market_demand, assets, search_space, market, technologies):
     from muse import constraints as cs
 
-    constraint = cs.minimum_service(
+    minium_service_constraint = cs.minimum_service(
         market_demand, assets, search_space, market, technologies
     )
-    # use this constraint (and others) to
 
     # test it is none (when appropriate)
-    assert constraint is None
+    assert minium_service_constraint is None
+
+    # use this constraint (and others) to find a solution
 
     # add the column to technologies
     minimum_service_factor = 0.4 * xr.ones_like(technologies.technology, dtype=float)
     technologies["minimum_service_factor"] = minimum_service_factor
 
-    # append msc to constraints
-    constraint = cs.minimum_service(
+    # append minium_service_constraint to constraints
+    minium_service_constraint = cs.minimum_service(
         market_demand, assets, search_space, market, technologies
     )
 
-    assert isinstance(constraint, xr.Dataset)
-
     # test that it is no longer none
-    # test solution is different from first solution
+    assert isinstance(minium_service_constraint, xr.Dataset)
+
+    # test solution using new constraint is different from first solution
