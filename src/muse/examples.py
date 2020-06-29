@@ -259,10 +259,10 @@ def _copy_medium(path: Path):
 def _copy_minimum_service(path: Path):
     from shutil import copytree, copyfile
 
-    copytree(example_data_dir() / "minimum-service" / "input", path / "input")
-    copytree(example_data_dir() / "minimum-service" / "technodata", path / "technodata")
+    copytree(example_data_dir() / "minimum_service" / "input", path / "input")
+    copytree(example_data_dir() / "minimum_service" / "technodata", path / "technodata")
     copyfile(
-        example_data_dir() / "minimum-service" / "settings.toml", path / "settings.toml"
+        example_data_dir() / "minimum_service" / "settings.toml", path / "settings.toml"
     )
 
 
