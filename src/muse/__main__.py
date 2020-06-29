@@ -6,7 +6,7 @@ if "__main__" == __name__:
 
     INPUT_PATH = click.Path(exists=False, file_okay=True, resolve_path=True)
     MODEL_PATH = click.Path(file_okay=False, resolve_path=True)
-    MODELS = click.Choice(["default", "multiple-agents", "medium"])
+    MODELS = click.Choice(["default", "multiple-agents", "medium", "minimum-service"])
 
     @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
     @click.argument("settings", default="settings.toml", type=INPUT_PATH)
