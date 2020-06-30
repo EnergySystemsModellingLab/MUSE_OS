@@ -25,6 +25,6 @@ def test_aggregate_alcoe_sector():
     for r, i in alldata.iterrows():
         for a in agent_list:
             if a.assets.technology == r[1]:
-                assert np.unique(alldata.loc[[r], ["alcoe"]]) == lcoe.sel(
+                assert np.unique(alldata.loc[[r], ["ALCOE"]]) == lcoe.sel(
                     year=r[2], technology=r[1], timeslice=r[0]
                 )

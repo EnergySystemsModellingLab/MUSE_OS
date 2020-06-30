@@ -78,7 +78,6 @@ def factory(
     """
     from muse.outputs.sector import _factory
 
-    print(parameters)
     return _factory(OUTPUT_QUANTITIES, *parameters, sector_name="MCA")
 
 
