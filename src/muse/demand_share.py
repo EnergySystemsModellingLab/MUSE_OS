@@ -12,7 +12,7 @@ should all have the following signature:
 
     @register_demand_share
     def demand_share(
-        agents: List[AbstractAgent],
+        agents: Sequence[AbstractAgent],
         market: xr.Dataset,
         technologies: xr.Dataset,
         **kwargs
@@ -20,8 +20,8 @@ should all have the following signature:
         pass
 
 Arguments:
-    agents: a list of  agent relevant to the demand share procedure. The agent can be
-        queried for parameters specific to the demand share procedure. For instance,
+    agents: a sequence of  agent relevant to the demand share procedure. The agent can
+        be queried for parameters specific to the demand share procedure. For instance,
         :py:func`new_and_retro` will query the agents for the assets they own, the
         region they are contained with, their category (new or retrofit), etc...
     market: Market variables, including prices, consumption and supply.
@@ -49,7 +49,7 @@ from typing import (
     Any,
     Callable,
     Hashable,
-    List,
+    Sequence,
     Mapping,
     MutableMapping,
     Optional,
@@ -62,9 +62,10 @@ import xarray as xr
 
 from muse.agents import AbstractAgent
 from muse.registration import registrator
+from mypy_extensions import KwArg
 
 DEMAND_SHARE_SIGNATURE = Callable[
-    [List[AbstractAgent], xr.Dataset, xr.Dataset], xr.DataArray
+    [Sequence[AbstractAgent], xr.Dataset, xr.Dataset, KwArg()], xr.DataArray
 ]
 """Demand share signature."""
 
@@ -88,23 +89,24 @@ def factory(
         name = settings.get("name", "new_and_retro")
         params = {k: v for k, v in settings.items() if k != "name"}
 
+    function = DEMAND_SHARE[name]
+    keywords = dict(**params)
+
     def demand_share(
-        agents: List[AbstractAgent],
+        agents: Sequence[AbstractAgent],
         market: xr.Dataset,
         technologies: xr.Dataset,
         **kwargs
     ) -> xr.DataArray:
-        function = DEMAND_SHARE[name]
-        keywords = dict(**params)
         keywords.update(**kwargs)
-        return function(agents, market, technologies, **keywords)  # type: ignore
+        return function(agents, market, technologies, **keywords)
 
-    return demand_share
+    return cast(DEMAND_SHARE_SIGNATURE, demand_share)
 
 
 @register_demand_share(name="default")
 def new_and_retro(
-    agents: List[AbstractAgent],
+    agents: Sequence[AbstractAgent],
     market: xr.Dataset,
     technologies: xr.Dataset,
     production: Union[Text, Mapping, Callable] = "maximum_production",
@@ -277,6 +279,26 @@ def new_and_retro(
         id_to_share.update(new_demands)
     result = cast(xr.DataArray, agent_concatenation(id_to_share))
     return result
+
+
+@register_demand_share(name="market_demand")
+def market_demand(
+    agents: Sequence[AbstractAgent],
+    market: xr.Dataset,
+    technologies: xr.Dataset,
+    current_year: Optional[int] = None,
+    forecast: int = 5,
+) -> xr.DataArray:
+    """The consumption for the forecast year is returned as is."""
+    from muse.commodities import is_enduse
+
+    if current_year is None:
+        current_year = market.year.min()
+
+    forecasted = market.consumption.interp(year=current_year + forecast)
+    return forecasted.where(
+        is_enduse(technologies.comm_usage.sel(commodity=forecasted.commodity)), 0
+    )
 
 
 def _inner_split(

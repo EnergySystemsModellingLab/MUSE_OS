@@ -271,3 +271,19 @@ def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_f
         }
         expected, actual = broadcast(0.3 * sum(subset.values()), subset["a"])
         assert actual.values == approx(expected.values)
+
+
+def test_market_demand(technologies, matching_market, stock):
+    from muse.demand_share import market_demand
+    from muse.commodities import is_enduse
+
+    result = market_demand(
+        agents=[], market=matching_market, technologies=technologies[["comm_usage"]]
+    )
+    comm_usage = technologies.comm_usage.sel(commodity=matching_market.commodity)
+    enduse = is_enduse(comm_usage)
+    assert (result.commodity == comm_usage.commodity).all()
+    assert result.sel(commodity=~enduse).values == approx(0)
+    assert result.sel(commodity=enduse).values == approx(
+        matching_market.consumption.sel(year=2015, commodity=enduse).values
+    )
