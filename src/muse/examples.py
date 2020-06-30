@@ -143,6 +143,12 @@ def sector(sector: Text, model: Text = "default") -> AbstractSector:
         return SECTORS_REGISTERED[kind](sector, settings)
 
 
+def agents(sector: Text, model: Text = "default") -> AbstractSector:
+    from muse.examples import sector as sector_func
+
+    return getattr(sector_func(sector, model), "agents", [])
+
+
 def available_sectors(*sectors: Text, model: Text = "default") -> List[Text]:
     from tempfile import TemporaryDirectory
     from muse.readers.toml import read_settings, undo_damage

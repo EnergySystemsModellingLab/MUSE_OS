@@ -1,0 +1,103 @@
+from typing import (
+    Callable,
+    Hashable,
+    List,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Text,
+    Tuple,
+)
+
+import xarray as xr
+
+from muse.agents import Agent
+
+
+class Subsector:
+    def __init__(
+        self,
+        agents: Sequence[Agent],
+        commodities: Sequence[Text],
+        demand_share: Optional[Callable] = None,
+        constraints: Optional[Callable] = None,
+        forecast: int = 5,
+    ):
+        from muse import demand_share as ds, constraints as cs
+
+        self.agents: Sequence[Agent] = list(agents)
+        self.commodities: List[Text] = list(commodities)
+        self.demand_share = demand_share or ds.factory()
+        self.constraints = constraints or cs.factory()
+        self.forecast = forecast
+
+    def invest(
+        self,
+        technologies: xr.Dataset,
+        market: xr.Dataset,
+        time_period: int = 5,
+        current_year: Optional[int] = None,
+    ) -> None:
+        if current_year is None:
+            current_year = market.year.min()
+        lp_problem = self.aggregate_lp(
+            technologies, market, time_period, current_year=current_year
+        )
+        if lp_problem is None:
+            return
+        solution = self.solve(*lp_problem)
+        self.assign_back_to_agents(solution)
+
+    def solve(self, cost: xr.Dataset, constraints: Sequence[xr.Dataset]) -> xr.Dataset:
+        raise NotImplementedError()
+
+    def assign_back_to_agents(self, solution: xr.Dataset):
+        raise NotImplementedError()
+
+    def aggregate_lp(
+        self,
+        technologies: xr.Dataset,
+        market: xr.Dataset,
+        time_period: int = 5,
+        current_year: Optional[int] = None,
+    ) -> Optional[Tuple[xr.Dataset, Sequence[xr.Dataset]]]:
+        from muse.utilities import agent_concatenation, reduce_assets
+
+        if current_year is None:
+            current_year = market.year.min()
+
+        demands = self.demand_share(
+            self.agents,
+            market,
+            technologies,
+            current_year=current_year,
+            forecast=self.forecast,
+        )
+        agent_market = market.copy()
+        agent_market["capacity"] = reduce_assets(
+            agent_concatenation(
+                {agent.uuid: agent.assets.capacity for agent in self.agents}
+            ),
+            coords=("region", "technology"),
+        ).interp(year=market.year, method="linear", kwargs={"fill_value": 0.0})
+
+        agent_lps: MutableMapping[Hashable, xr.Dataset] = {}
+        for agent in self.agents:
+            if "agent" in demands.coords:
+                share = demands.sel(asset=demands.agent == agent.uuid)
+            else:
+                share = demands
+            result = agent.next(
+                technologies, agent_market, share, time_period=time_period
+            )
+            if result is not None:
+                agent_lps[agent.uuid] = result
+
+        if len(agent_lps) == 0:
+            return None
+
+        lps = agent_concatenation(agent_lps)
+        constraints = self.constraints(
+            technologies, lps.costs, demands, lps.search_spaces
+        )
+        return lps.costs, constraints

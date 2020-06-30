@@ -4,6 +4,7 @@ from typing import (
     Callable,
     Hashable,
     Iterable,
+    Iterator,
     Mapping,
     NamedTuple,
     Optional,
@@ -162,7 +163,9 @@ def reduce_assets(
     coords = [k for k in coords if k in assets.coords and assets[k].dims == (dim,)]
     assets = copy(assets)
     dtypes = [(d, assets[d].dtype) for d in coords]
-    grouper = np.array(list(zip(*(assets[d].values for d in coords))), dtype=dtypes)
+    grouper = np.array(
+        list(zip(*(cast(Iterator, assets[d].values) for d in coords))), dtype=dtypes
+    )
     assert "grouper" not in assets.coords
     assets["grouper"] = "asset", grouper
     result = operation(assets.groupby("grouper")).rename(grouper=dim)
