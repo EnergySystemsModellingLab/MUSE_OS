@@ -11,26 +11,32 @@ from muse.defaults import DEFAULT_SECTORS_DIRECTORY
 def create_standard_agent(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
-    share: Text,
     year: int,
     region: Text,
+    share: Optional[Text] = None,
     interpolation: Text = "linear",
     **kwargs,
 ):
     """Creates retrofit agent from muse primitives."""
     from muse.filters import factory as filter_factory
 
-    assets = _shared_capacity(
-        technologies, capacity, region, year, share=share, interpolation=interpolation
-    )
-
+    if share is not None:
+        capacity = _shared_capacity(
+            technologies, capacity, region, share, year, interpolation=interpolation
+        )
+    else:
+        existing = capacity.interp(year=year, method=interpolation) > 0
+        assert set(existing.dims) == {"asset"}
+        years = [capacity.year.min().values, capacity.year.max().values]
+        capacity = xr.zeros_like(capacity.sel(asset=existing.values, year=years))
+    assets = xr.Dataset(dict(capacity=capacity))
     kwargs = _standardize_inputs(**kwargs)
     search_rules = kwargs.pop("search_rules")
     if len(search_rules) < 1 or search_rules[-1] != "compress":
         search_rules.insert(-1, "compress")
 
     return Agent(
-        assets=xr.Dataset(dict(capacity=assets)),
+        assets=assets,
         region=region,
         search_rules=filter_factory(search_rules),
         year=year,
@@ -63,7 +69,7 @@ def create_retrofit_agent(
             getLogger(__name__).warning(msg)
 
     assets = _shared_capacity(
-        technologies, capacity, region, year, share=share, interpolation=interpolation
+        technologies, capacity, region, share, year, interpolation=interpolation
     )
 
     kwargs = _standardize_investing_inputs(decision=decision, **kwargs)
@@ -271,9 +277,9 @@ def _shared_capacity(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
     region: Text,
+    share: Text,
     year: int,
     interpolation: Text = "linear",
-    share: Optional[Text] = None,
 ) -> xr.DataArray:
     if "region" in capacity.dims:
         capacity = capacity.sel(region=region)
