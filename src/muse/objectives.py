@@ -155,12 +155,17 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
     from functools import wraps
 
     @wraps(function)
-    def decorated(
+    def decorated_objective(
         agent: Agent, demand: xr.DataArray, search_space: xr.DataArray, *args, **kwargs
     ) -> xr.DataArray:
         from logging import getLogger
 
-        reduced_demand = demand.sel(asset=search_space.asset)
+        reduced_demand = demand.sel(
+            {
+                k: search_space[k]
+                for k in set(demand.dims).intersection(search_space.dims)
+            }
+        )
         result = function(agent, reduced_demand, search_space, *args, **kwargs)
 
         dtype = result.values.dtype
@@ -185,7 +190,7 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
         result.name = function.__name__
         return result
 
-    return decorated
+    return decorated_objective
 
 
 @register_objective
