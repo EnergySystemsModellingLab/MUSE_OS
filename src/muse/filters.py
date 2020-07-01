@@ -88,7 +88,16 @@ __all__ = [
     "initialize_from_technologies",
 ]
 
-from typing import Callable, Mapping, MutableMapping, Optional, Sequence, Text, Union
+from typing import (
+    Any,
+    Callable,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Text,
+    Union,
+)
 
 import numpy as np
 import xarray as xr
@@ -153,7 +162,8 @@ def register_initializer(function: SSI_SIGNATURE) -> Callable:
 
 
 def factory(
-    settings: Optional[Union[Text, Mapping, Sequence[Union[Text, Mapping]]]] = None
+    settings: Optional[Union[Text, Mapping, Sequence[Union[Text, Mapping]]]] = None,
+    separator: Text = "->",
 ):
     """Creates filters from input TOML data.
 
@@ -182,23 +192,23 @@ def factory(
     registered with :py:func:`register_initializer`. Otherwise,
     :py:func:`initialize_from_technologies` is automatically inserted.
     """
-    from typing import List, Dict
     from functools import partial
 
     if settings is None:
-        settings = []
-    elif isinstance(settings, (Text, Mapping)):
-        settings = [settings]
-    if len(settings) == 0:
-        settings = [{"name": "initialize_from_technologies"}]
+        parameters: Sequence[Mapping[Text, Any]] = []
+    elif isinstance(settings, Mapping):
+        parameters = [settings]
+    elif isinstance(settings, Text):
+        parameters = [{"name": name.strip()} for name in settings.split(separator)]
+    else:
+        parameters = [
+            {"name": item} if isinstance(item, Text) else item for item in settings
+        ]
 
-    parameters: List[Dict] = [
-        {"name": item} if isinstance(item, Text) else dict(**item) for item in settings
-    ]
-    if parameters[0]["name"] not in SEARCH_SPACE_INITIALIZERS:
-        parameters = [{"name": "initialize_from_technologies"}] + parameters
-
-    initial_settings, parameters = parameters[0], parameters[1:]
+    if len(parameters) == 0 or parameters[0]["name"] not in SEARCH_SPACE_INITIALIZERS:
+        initial_settings = {"name": "initialize_from_technologies"}
+    else:
+        initial_settings, parameters = parameters[0], parameters[1:]
 
     functions = [
         partial(
