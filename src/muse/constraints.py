@@ -231,16 +231,16 @@ def factory(
             "search_space",
         )
 
-    def normalize(x):
+    def normalize(x) -> MutableMapping:
         return dict(name=x) if isinstance(x, Text) else x
 
     if isinstance(settings, (Text, Mapping)):
         settings = cast(Union[Sequence[Text], Sequence[Mapping]], [settings])
-    settings = [normalize(x) for x in settings]
-    names = [x.pop("name") for x in settings]
+    parameters = [normalize(x) for x in settings]
+    names = [x.pop("name") for x in parameters]
 
     constraint_closures = [
-        partial(CONSTRAINTS[name], **param) for name, param in zip(names, settings)
+        partial(CONSTRAINTS[name], **param) for name, param in zip(names, parameters)
     ]
 
     def constraints(
@@ -384,7 +384,7 @@ def search_space(
     year: Optional[int] = None,
     forecast: int = 5,
     interpolation: Text = "linear",
-) -> Constraint:
+) -> Optional[Constraint]:
     """Removes disabled technologies."""
     b = ~search_space.astype(bool)
     b = b.sel(asset=b.any("replacement"))
