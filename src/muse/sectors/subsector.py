@@ -75,11 +75,11 @@ class Subsector:
             forecast=self.forecast,
         )
         agent_market = market.copy()
+        assets = agent_concatenation(
+            {agent.uuid: agent.assets for agent in self.agents}
+        )
         agent_market["capacity"] = reduce_assets(
-            agent_concatenation(
-                {agent.uuid: agent.assets.capacity for agent in self.agents}
-            ),
-            coords=("region", "technology"),
+            assets.capacity, coords=("region", "technology")
         ).interp(year=market.year, method="linear", kwargs={"fill_value": 0.0})
 
         agent_lps: MutableMapping[Hashable, xr.Dataset] = {}
@@ -99,9 +99,14 @@ class Subsector:
 
         lps = agent_concatenation(agent_lps)
         constraints = self.constraints(
-            technologies, lps.costs, demands, lps.search_space
+            demand=demands,
+            assets=assets,
+            search_space=lps.search_space,
+            market=market,
+            technologies=technologies,
+            year=current_year,
         )
-        return lps.costs, constraints
+        return lps.decision, constraints
 
 
 def aggregate_enduses(
