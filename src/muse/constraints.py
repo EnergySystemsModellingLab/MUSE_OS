@@ -212,7 +212,9 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
 
 
 def factory(
-    settings: Optional[Union[Text, Mapping, Sequence[Text], Sequence[Mapping]]] = None
+    settings: Optional[
+        Union[Text, Mapping, Sequence[Text], Sequence[Union[Text, Mapping]]]
+    ] = None
 ) -> Callable:
     """Creates a list of constraints from standard settings.
 
