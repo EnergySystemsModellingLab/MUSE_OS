@@ -1,0 +1,9 @@
+commodity,region,year,asset,installed,technology,supply
+CO2f,R1,2010,0,2010,procammonia_1,92114.12600000000
+CO2f,R1,2010,1,2010,procammonia_2,68771.56909999999
+CO2f,R1,2015,0,2010,procammonia_1,94223.66959999999
+CO2f,R1,2015,1,2010,procammonia_2,70346.53509999999
+ammonia,R1,2010,0,2010,procammonia_1,22.10000000000
+ammonia,R1,2010,1,2010,procammonia_2,22.10000000000
+ammonia,R1,2015,0,2010,procammonia_1,22.60610000000
+ammonia,R1,2015,1,2010,procammonia_2,22.60610000000

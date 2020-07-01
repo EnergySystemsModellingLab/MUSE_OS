@@ -20,19 +20,19 @@ budget = []
 # All paths and filenames will have a default value (those indicated below) so only need to be included
 # if any of those names are different. This whole section is optional.
 [global_input_files]
-projections = '{path}/inputs/Projections.csv'
-#regions = '{path}/inputs/Regions.csv'
-global_commodities = '{path}/inputs/MUSEGlobalCommodities.csv'
+projections = '{path}/input/Projections.csv'
+#regions = '{path}/input/Regions.csv'
+global_commodities = '{path}/input/MUSEGlobalCommodities.csv'
 
 [[outputs]]
 quantity = "supply"
 sink = "aggregate"
-filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
 quantity = "capacity"
 sink = "aggregate"
-filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 # Definition of the sector-specific options -  REQUIRED at least one
 # All paths and filenames will have a default value for each sector (those indicated below) so only need to be included
@@ -53,13 +53,13 @@ commodities_out = '{path}/technodata/industry/commOUTtechnodataindustry.csv'
 existing_capacity = '{path}/technodata/industry/existingindustry.csv'
 
 [[sectors.industry.outputs]]
-filename = '{path}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "capacity"
 sink = 'csv'
 overwrite = true
 
 [[sectors.industry.outputs]]
-filename = '{path}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity.name = "supply"
 quantity.sum_over = "timeslice"
 quantity.drop = ["comm_usage", "units_prices"]
