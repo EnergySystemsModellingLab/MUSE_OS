@@ -365,6 +365,18 @@ def compress(
 
 
 @register_filter
+def reduce_asset(
+    agent: Agent,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
+    market: xr.Dataset,
+    **kwargs
+) -> xr.DataArray:
+    """Reduce over assets."""
+    return search_space.any("asset")
+
+
+@register_filter
 def with_asset_technology(
     agent: Agent,
     search_space: xr.DataArray,
