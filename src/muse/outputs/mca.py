@@ -124,10 +124,92 @@ def capacity(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataAr
     return sectors_capacity(sectors)
 
 
+@register_output_quantity(
+    name=["ALCOE", "alcoe", "Annualized Levelized Cost of Energy"]
+)
+def alcoe(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
+    """Current annual levelised cost across all sectors."""
+    return sectors_alcoe(market, sectors)
+
+
+@register_output_quantity
+def llcoe(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
+    """Current lifetime levelised cost across all sectors."""
+    return sectors_llcoe(market, sectors)
+
+
+def sector_alcoe(market: Dataset, sector: AbstractSector, **kwargs) -> DataArray:
+    """Sector annual levelised cost (ALCOE) with agent annotations."""
+    from pandas import DataFrame, concat
+    from muse.quantities import annual_levelized_cost_of_energy
+    from operator import attrgetter
+
+    data_sector: List[DataArray] = []
+
+    technologies = getattr(sector, "technologies", [])
+    agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
+    if len(technologies) > 0:
+        annual_lcoe = annual_levelized_cost_of_energy(market.prices, technologies)
+
+        for a in agents:
+            data_agent = annual_lcoe.sel(
+                technology=a.assets.technology.values, region=a.assets.region.values
+            )
+            data_agent["agent"] = a.name
+            data_agent["category"] = a.category
+            data_agent["sector"] = getattr(sector, "name", "unnamed")
+
+            if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
+                data_sector.append(data_agent.groupby("technology").fillna(0))
+    if len(data_sector) > 0:
+        alcoe = concat([u.to_dataframe("ALCOE") for u in data_sector])
+        alcoe = alcoe[alcoe != 0]
+        if "year" in alcoe.columns:
+            alcoe = alcoe.ffill("year")
+    else:
+        alcoe = DataFrame()
+
+    return alcoe
+
+
+def sector_llcoe(market: Dataset, sector: AbstractSector, **kwargs) -> DataArray:
+    """Sector lifetime levelised cost with agent annotations."""
+
+    from pandas import DataFrame, concat
+    from operator import attrgetter
+    from muse.quantities import lifetime_levelized_cost_of_energy
+
+    data_sector: List[DataArray] = []
+    technologies = getattr(sector, "technologies", [])
+    agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
+    if len(technologies) > 0:
+        life_lcoe = lifetime_levelized_cost_of_energy(market.prices, technologies)
+
+        for a in agents:
+            data_agent = life_lcoe.sel(
+                technology=a.assets.technology.values, region=a.assets.region.values
+            )
+            data_agent["agent"] = a.name
+            data_agent["category"] = a.category
+            data_agent["sector"] = getattr(sector, "name", "unnamed")
+
+            if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
+                data_sector.append(data_agent.groupby("technology").fillna(0))
+    if len(data_sector) > 0:
+        lcoe = concat([u.to_dataframe("lcoe") for u in data_sector])
+        lcoe = lcoe[lcoe != 0]
+    else:
+        lcoe = DataFrame()
+    if "year" in lcoe.columns:
+        lcoe = lcoe.ffill("year")
+
+    return lcoe
+
+
 def sector_capacity(sector: AbstractSector) -> DataArray:
     """Sector capacity with agent annotations."""
     from operator import attrgetter
-    from pandas import DataFrame
+    from pandas import DataFrame, concat
 
     capa_sector: List[DataArray] = []
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
@@ -142,9 +224,8 @@ def sector_capacity(sector: AbstractSector) -> DataArray:
     if len(capa_sector) == 0:
         return DataFrame()
 
-    capacity = pd.concat([u.to_dataframe() for u in capa_sector])
+    capacity = concat([u.to_dataframe() for u in capa_sector])
     capacity = capacity[capacity.capacity != 0]
-
     if "year" in capacity.columns:
         capacity = capacity.ffill("year")
     return capacity
@@ -155,6 +236,26 @@ def sectors_capacity(sectors: List[AbstractSector]) -> DataArray:
     from pandas import concat, DataFrame
 
     alldata = [sector_capacity(sector) for sector in sectors]
+    if len(alldata) == 0:
+        return DataFrame()
+    return concat(alldata)
+
+
+def sectors_alcoe(market: Dataset, sectors: List[AbstractSector]) -> pd.DataFrame:
+    """Aggregate annual levelised cost (ALCOE) from all sectors."""
+    from pandas import concat, DataFrame
+
+    alldata = [sector_alcoe(market, sector) for sector in sectors]
+    if len(alldata) == 0:
+        return DataFrame()
+    return concat(alldata)
+
+
+def sectors_llcoe(market: Dataset, sectors: List[AbstractSector]) -> pd.DataFrame:
+    """Aggregate life levelised cost from all sectors."""
+    from pandas import concat, DataFrame
+
+    alldata = [sector_llcoe(market, sector) for sector in sectors]
     if len(alldata) == 0:
         return DataFrame()
     return concat(alldata)
