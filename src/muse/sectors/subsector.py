@@ -7,6 +7,7 @@ from typing import (
     Sequence,
     Text,
     Tuple,
+    Union,
 )
 
 import xarray as xr
@@ -98,6 +99,25 @@ class Subsector:
 
         lps = agent_concatenation(agent_lps)
         constraints = self.constraints(
-            technologies, lps.costs, demands, lps.search_spaces
+            technologies, lps.costs, demands, lps.search_space
         )
         return lps.costs, constraints
+
+
+def aggregate_enduses(
+    assets: Sequence[Union[xr.Dataset, xr.DataArray]], technologies: xr.Dataset
+) -> Sequence[Text]:
+    """Aggregate enduse commodities for input assets.
+
+    This function is meant as a helper to figure out the commodities attached to a group
+    of agents.
+    """
+    from muse.commodities import is_enduse
+
+    techs = set.union(*(set(data.technology.values) for data in assets))
+    outputs = technologies.fixed_outputs.sel(
+        commodity=is_enduse(technologies.comm_usage), technology=list(techs)
+    )
+    return outputs.commodity.sel(
+        commodity=outputs.any([u for u in outputs.dims if u != "commodity"])
+    )

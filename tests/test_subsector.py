@@ -30,20 +30,13 @@ def rg():
     return default_rng()
 
 
-def test_subsector_aggregation(market, model, technologies):
+def test_subsector_investing_aggregation(market, model, technologies):
     from copy import deepcopy
     from muse import examples
-    from muse.sectors.subsector import Subsector
-    from muse.commodities import is_enduse
+    from muse.sectors.subsector import Subsector, aggregate_enduses
 
     agents = examples.agents("residential", model)
-    techs = set.union(*(set(agent.assets.technology.values) for agent in agents))
-    outputs = technologies.fixed_outputs.sel(
-        commodity=is_enduse(technologies.comm_usage), technology=list(techs)
-    )
-    commodities = outputs.commodity.sel(
-        commodity=outputs.any([u for u in outputs.dims if u != "commodity"])
-    )
+    commodities = aggregate_enduses((agent.assets for agent in agents), technologies)
     market = market.sel(
         commodity=technologies.commodity, region=technologies.region
     ).interp(year=[2020, 2025])
