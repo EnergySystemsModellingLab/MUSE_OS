@@ -361,10 +361,14 @@ def compress(
     the data is represented. In other words, this is mostly an
     *optimization* for later steps, to avoid unnecessary computations.
     """
-    return search_space.sel(replacement=search_space.any("asset"))
+    if len(search_space.dims) == 1 and search_space.dims[0] == "replacement":
+        condition = search_space
+    else:
+        condition = search_space.any("asset")
+    return search_space.sel(replacement=condition)
 
 
-@register_filter
+@register_filter(name=["reduce_asset", "reduce_assets"])
 def reduce_asset(
     agent: Agent,
     search_space: xr.DataArray,
@@ -373,7 +377,7 @@ def reduce_asset(
     **kwargs
 ) -> xr.DataArray:
     """Reduce over assets."""
-    return search_space.any("asset")
+    return search_space.any("asset") if "asset" in search_space.dims else search_space
 
 
 @register_filter
@@ -388,7 +392,7 @@ def with_asset_technology(
     return search_space | (search_space.asset == search_space.replacement)
 
 
-@register_initializer
+@register_initializer(name="from_techs")
 def initialize_from_technologies(
     agent: Agent, demand: xr.DataArray, technologies: xr.Dataset, *args, **kwargs
 ):
@@ -407,7 +411,7 @@ def initialize_from_technologies(
     )
 
 
-@register_initializer
+@register_initializer(name="from_assets")
 def initialize_from_assets(
     agent: Agent,
     demand: xr.DataArray,
@@ -424,7 +428,7 @@ def initialize_from_assets(
         coords={"replacement": technologies.technology.values},
         dims="replacement",
     )
-    if "asset" not in agent.assets.dims:
+    if "asset" not in agent.assets.dims or len(agent.assets.asset) == 0:
         return replacement
     assets = xr.ones_like(reduce_assets(agent.assets.asset, coords=coords), dtype=bool)
     return (assets * replacement).transpose("asset", "replacement")
