@@ -31,14 +31,11 @@ def create_standard_agent(
         capacity = xr.zeros_like(capacity.sel(asset=existing.values, year=years))
     assets = xr.Dataset(dict(capacity=capacity))
     kwargs = _standardize_inputs(**kwargs)
-    search_rules = kwargs.pop("search_rules")
-    if len(search_rules) < 1 or search_rules[-1] != "compress":
-        search_rules.insert(-1, "compress")
 
     return Agent(
         assets=assets,
         region=region,
-        search_rules=filter_factory(search_rules),
+        search_rules=filter_factory(kwargs.pop("search_rules", None)),
         year=year,
         **kwargs,
     )
@@ -299,7 +296,6 @@ def _shared_capacity(
 
 
 def _standardize_inputs(
-    search_rules: Union[Text, Sequence[Text]] = "all",
     housekeeping: Union[Text, Mapping, Callable] = "clean",
     merge_transform: Union[Text, Mapping, Callable] = "merge",
     objectives: Union[
@@ -312,12 +308,6 @@ def _standardize_inputs(
     from muse.objectives import factory as objectives_factory
     from muse.decisions import factory as decision_factory
 
-    if isinstance(search_rules, Text):
-        search_rules = [search_rules]
-    search_rules = list(search_rules)
-    if len(search_rules) == 0 or search_rules[-1] != "compress":
-        search_rules.append("compress")
-
     if not callable(housekeeping):
         housekeeping = housekeeping_factory(housekeeping)
     if not callable(merge_transform):
@@ -327,7 +317,6 @@ def _standardize_inputs(
     if not callable(decision):
         decision = decision_factory(decision)
 
-    kwargs["search_rules"] = search_rules
     kwargs["housekeeping"] = housekeeping
     kwargs["merge_transform"] = merge_transform
     kwargs["objectives"] = objectives
@@ -336,6 +325,7 @@ def _standardize_inputs(
 
 
 def _standardize_investing_inputs(
+    search_rules: Optional[Union[Text, Sequence[Text]]] = None,
     investment: Union[Callable, Text, Mapping] = "adhoc",
     constraints: Optional[
         Union[Callable, Text, Mapping, Sequence[Union[Text, Mapping]]]
@@ -346,6 +336,14 @@ def _standardize_investing_inputs(
     from muse.constraints import factory as constraints_factory
 
     kwargs = _standardize_inputs(**kwargs)
+    if search_rules is None:
+        search_rules = list()
+    if isinstance(search_rules, Text):
+        search_rules = [search_rules]
+    search_rules = list(search_rules)
+    if len(search_rules) == 0 or search_rules[-1] != "compress":
+        search_rules.append("compress")
+    kwargs["search_rules"] = search_rules
     if not callable(investment):
         kwargs["investment"] = investment_factory(investment)
     if not callable(constraints):
