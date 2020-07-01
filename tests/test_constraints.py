@@ -488,4 +488,4 @@ def test_minimum_service(
         year=2025,
     )
 
-    assert minserv_solution.equals(solution) is False
+    assert np.allclose(minserv_solution, solution) is False
