@@ -393,3 +393,26 @@ def initialize_from_technologies(
         dims=[u[0] for u in coords],
         name="search_space",
     )
+
+
+@register_initializer
+def initialize_from_assets(
+    agent: Agent,
+    demand: xr.DataArray,
+    technologies: xr.Dataset,
+    *args,
+    coords: Sequence[Text] = ("region", "technology"),
+    **kwargs
+):
+    """Initialize a search space from existing technologies."""
+    from muse.utilities import reduce_assets
+
+    replacement = xr.DataArray(
+        np.ones_like(technologies.technology, dtype=bool),
+        coords={"replacement": technologies.technology.values},
+        dims="replacement",
+    )
+    if "asset" not in agent.assets.dims:
+        return replacement
+    assets = xr.ones_like(reduce_assets(agent.assets.asset, coords=coords), dtype=bool)
+    return (assets * replacement).transpose("asset", "replacement")
