@@ -21,7 +21,6 @@ budget = []
 # if any of those names are different. This whole section is optional.
 [global_input_files]
 projections = '{path}/input/Projections.csv'
-#regions = '{path}/input/Regions.csv'
 global_commodities = '{path}/input/MUSEGlobalCommodities.csv'
 
 [[outputs]]

@@ -229,6 +229,7 @@ def factory(
             "max_capacity_expansion",
             "demand",
             "search_space",
+            "minimum_service",
         )
 
     def normalize(x) -> MutableMapping:
