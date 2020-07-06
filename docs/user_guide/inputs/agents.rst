@@ -170,9 +170,12 @@ SearchRule
 
    - :py:func:`maturity <maturity>`: Only allows technologies that have achieved a given
      market share.
+
+   - :py:func:`reduce_assets <reduce_assets>`: Reduce over the asset coordinate. This is
+     useful for agents which do not split the demand across the original assets.
    
-   The implementation allows for combining these filters. However, the CSV data format
-   described here does not.
+   To specify multiple filters from the csv format, separate them with "->", as in
+   "same_enduse -> same_fuels -> reduce_assets". The combination imply **and** logic.
 
 .. py:currentmodule:: muse.decisions
 

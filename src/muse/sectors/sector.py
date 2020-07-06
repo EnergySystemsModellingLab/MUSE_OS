@@ -327,22 +327,21 @@ class Sector(AbstractSector):  # type: ignore
 
         for agent in self.agents:
             assert market.year.min() == getattr(agent, "year", market.year.min())
-            if shares[agent.uuid].size == 0:
+            share = shares.sel(asset=shares.agent == agent.uuid).drop_vars("agent")
+            if share.size == 0:
                 getLogger(__name__).critical(
                     "Demand share is empty, no investment needed "
                     f"for {agent.category} agent {agent.name} "
                     f"of {self.name} sector in year {int(agent_market.year.min())}."
                 )
-            elif shares[agent.uuid].sum() < 1e-12:
+            elif share.sum() < 1e-12:
                 getLogger(__name__).critical(
                     "No demand, no investment needed for "
                     f"for {agent.category} agent {agent.name} "
                     f"of {self.name} sector in year {int(agent_market.year.min())}."
                 )
 
-            agent.next(
-                technologies, agent_market, shares[agent.uuid], time_period=time_period
-            )
+            agent.next(technologies, agent_market, share, time_period=time_period)
 
     @property
     def capacity(self) -> DataArray:

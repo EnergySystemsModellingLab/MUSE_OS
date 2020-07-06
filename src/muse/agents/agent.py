@@ -82,7 +82,8 @@ class AbstractAgent(ABC):
 
     def __repr__(self):
         return (
-            f"<{self.region}:({self.name}, {self.category}) - object at "
+            f"<{self.region}:({self.name}, {self.category}) "
+            f"- {self.__class__.__name__} at "
             f"{hex(id(self))}>"
         )
 
