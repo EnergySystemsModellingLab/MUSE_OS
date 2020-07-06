@@ -21,8 +21,8 @@ from typing import (
 )
 
 import numpy as np
-import xarray as xr
 import pandas as pd
+import xarray as xr
 
 from muse.decorators import SETTINGS_CHECKS, register_settings_check
 from muse.defaults import DATA_DIRECTORY, DEFAULT_SECTORS_DIRECTORY
@@ -867,3 +867,54 @@ def check_sectors_files(settings: Dict) -> None:
         settings["sectors"].keys(), key=lambda x: settings["sectors"][x]["priority"]
     )
     settings["sectors"] = sectors
+
+
+def read_technodata(
+    settings: Any,
+    sector_name: Optional[Text] = None,
+    time_framework: Optional[Sequence[int]] = None,
+    commodities: Optional[Union[Text, Path]] = None,
+    regions: Optional[Sequence[Text]] = None,
+) -> xr.Dataset:
+    """Helper function to create technodata for a given sector."""
+    from muse.readers import read_technologies
+
+    if time_framework is None:
+        time_framework = getattr(settings, "time_framework", [2010, 2050])
+
+    if commodities is None:
+        commodities = settings.global_input_files.global_commodities
+
+    if regions is None:
+        regions = settings.regions
+
+    if sector_name is not None:
+        settings = getattr(settings.sectors, sector_name)
+
+    technologies = read_technologies(
+        settings.technodata,
+        settings.commodities_out,
+        settings.commodities_in,
+        commodities=commodities,
+    )
+    ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
+    outs = (technologies.fixed_outputs > 0).any(("year", "region", "technology"))
+    techcomms = technologies.commodity[ins | outs]
+    technologies = technologies.sel(commodity=techcomms, region=regions)
+
+    # make sure technologies includes the requisite years
+    maxyear = getattr(settings, "forecast", 5) + max(time_framework)
+    if technologies.year.max() < maxyear:
+        msg = "Forward-filling technodata to fit simulation timeframe"
+        getLogger(__name__).info(msg)
+        years = technologies.year.data.tolist() + [maxyear]
+        technologies = technologies.sel(year=years, method="ffill")
+        technologies["year"] = "year", years
+    minyear = min(time_framework)
+    if technologies.year.min() > minyear:
+        msg = "Back-filling technodata to fit simulation timeframe"
+        getLogger(__name__).info(msg)
+        years = [minyear] + technologies.year.data.tolist()
+        technologies = technologies.sel(year=years, method="bfill")
+        technologies["year"] = "year", years
+    return technologies

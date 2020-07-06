@@ -29,14 +29,14 @@ class Sector(AbstractSector):  # type: ignore
 
     @classmethod
     def factory(cls, name: Text, settings: Any) -> Sector:
-        from muse.readers import read_timeslices, read_technologies
+        from muse.readers import read_timeslices
+        from muse.readers.toml import read_technodata
         from muse.utilities import nametuple_to_dict
         from muse.outputs.sector import factory as ofactory
         from muse.production import factory as pfactory
         from muse.interactions import factory as interaction_factory
         from muse.demand_share import factory as share_factory
         from muse.agents import agents_factory
-        from logging import getLogger
 
         sector_settings = getattr(settings.sectors, name)._asdict()
         for attribute in ("name", "type", "priority", "path"):
@@ -47,16 +47,7 @@ class Sector(AbstractSector):  # type: ignore
         ).get_index("timeslice")
 
         # We get and filter the technologies
-        technologies = read_technologies(
-            sector_settings.pop("technodata"),
-            sector_settings.pop("commodities_out"),
-            sector_settings.pop("commodities_in"),
-            commodities=settings.global_input_files.global_commodities,
-        )
-        ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
-        outs = (technologies.fixed_outputs > 0).any(("year", "region", "technology"))
-        techcomms = technologies.commodity[ins | outs]
-        technologies = technologies.sel(commodity=techcomms, region=settings.regions)
+        technologies = read_technodata(settings, name, settings.time_framework)
 
         # Finally, we create the agents
         agents = agents_factory(
@@ -67,22 +58,6 @@ class Sector(AbstractSector):  # type: ignore
             year=min(settings.time_framework),
             investment=sector_settings.pop("lpsolver", "adhoc"),
         )
-
-        # make sure technologies includes the requisite years
-        maxyear = max(a.forecast for a in agents) + max(settings.time_framework)
-        if technologies.year.max() < maxyear:
-            msg = "Forward-filling technodata to fit simulation timeframe"
-            getLogger(__name__).info(msg)
-            years = technologies.year.data.tolist() + [maxyear]
-            technologies = technologies.sel(year=years, method="ffill")
-            technologies["year"] = "year", years
-        minyear = min(settings.time_framework)
-        if technologies.year.min() > minyear:
-            msg = "Back-filling technodata to fit simulation timeframe"
-            getLogger(__name__).info(msg)
-            years = [minyear] + technologies.year.data.tolist()
-            technologies = technologies.sel(year=years, method="bfill")
-            technologies["year"] = "year", years
 
         outputs = ofactory(*sector_settings.pop("outputs", []), sector_name=name)
 
@@ -108,6 +83,8 @@ class Sector(AbstractSector):  # type: ignore
 
         demand_share = share_factory(sector_settings.pop("demand_share", None))
 
+        for attr in ("technodata", "commodities_out", "commodities_in"):
+            sector_settings.pop(attr)
         return cls(
             name,
             technologies,
