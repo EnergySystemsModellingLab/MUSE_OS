@@ -315,13 +315,13 @@ def annual_levelized_cost_of_energy(
         QuantityType.EXTENSIVE,
     )
 
-    o_and_e_costs = technologies.fix_par + technologies.var_par
+    o_and_e_costs = techs.fix_par + techs.var_par
 
-    fuel_costs = (technologies.fixed_inputs * prices).sum("commodity")
+    fuel_costs = (techs.fixed_inputs * prices).sum("commodity")
 
     env_costs = (
-        (technologies.fixed_outputs * prices)
-        .sel(commodity=is_pollutant(technologies.comm_usage))
+        (techs.fixed_outputs * prices)
+        .sel(commodity=is_pollutant(techs.comm_usage))
         .sum("commodity")
     )
     return annualized_capital_costs + o_and_e_costs + env_costs + fuel_costs
