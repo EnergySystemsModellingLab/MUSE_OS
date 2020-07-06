@@ -604,3 +604,10 @@ def warnings_as_errors():
 
     simplefilter("error", FutureWarning)
     simplefilter("error", PendingDeprecationWarning)
+
+
+@fixture
+def rng():
+    from numpy.random import default_rng
+
+    return default_rng()

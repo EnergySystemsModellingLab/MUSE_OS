@@ -212,7 +212,9 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
 
 
 def factory(
-    settings: Optional[Union[Text, Mapping, Sequence[Text], Sequence[Mapping]]] = None
+    settings: Optional[
+        Union[Text, Mapping, Sequence[Text], Sequence[Union[Text, Mapping]]]
+    ] = None
 ) -> Callable:
     """Creates a list of constraints from standard settings.
 
@@ -229,16 +231,16 @@ def factory(
             "search_space",
         )
 
-    def normalize(x):
+    def normalize(x) -> MutableMapping:
         return dict(name=x) if isinstance(x, Text) else x
 
     if isinstance(settings, (Text, Mapping)):
         settings = cast(Union[Sequence[Text], Sequence[Mapping]], [settings])
-    settings = [normalize(x) for x in settings]
-    names = [x.pop("name") for x in settings]
+    parameters = [normalize(x) for x in settings]
+    names = [x.pop("name") for x in parameters]
 
     constraint_closures = [
-        partial(CONSTRAINTS[name], **param) for name, param in zip(names, settings)
+        partial(CONSTRAINTS[name], **param) for name, param in zip(names, parameters)
     ]
 
     def constraints(
@@ -382,7 +384,7 @@ def search_space(
     year: Optional[int] = None,
     forecast: int = 5,
     interpolation: Text = "linear",
-) -> Constraint:
+) -> Optional[Constraint]:
     """Removes disabled technologies."""
     b = ~search_space.astype(bool)
     b = b.sel(asset=b.any("replacement"))
