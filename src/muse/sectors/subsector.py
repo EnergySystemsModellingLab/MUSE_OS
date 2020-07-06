@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from typing import (
+    Any,
     Callable,
     Hashable,
     List,
@@ -107,6 +110,42 @@ class Subsector:
             year=current_year,
         )
         return lps.decision, constraints
+
+    @classmethod
+    def factory(
+        cls,
+        settings: Any,
+        technologies: xr.Dataset,
+        regions: Optional[Sequence[Text]] = None,
+        current_year: Optional[int] = None,
+    ) -> Subsector:
+        from muse.agents import agents_factory
+        from muse.demand_share import factory as share_factory
+        from muse.constraints import factory as constraints_factory
+
+        agents = agents_factory(
+            settings.agents,
+            settings.existing_capacity,
+            technologies=technologies,
+            regions=regions,
+            year=current_year or int(technologies.year.min()),
+            investment=getattr(settings, "lpsolver", "adhoc"),
+        )
+
+        if hasattr(settings, "commodities"):
+            commodities = settings.commodities
+        else:
+            commodities = aggregate_enduses(
+                [agent.assets for agent in agents], technologies
+            )
+        if len(commodities) == 0:
+            raise RuntimeError("Subsector commodities cannot be empty")
+
+        demand_share = share_factory(getattr(settings, "demand_share", None))
+        constraints = constraints_factory(getattr(settings, "constraints", None))
+        forecast = getattr(settings, "forecast", 5)
+
+        return cls(agents, commodities, demand_share, constraints, forecast)
 
 
 def aggregate_enduses(

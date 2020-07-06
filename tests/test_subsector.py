@@ -1,4 +1,4 @@
-from typing import Text, Sequence
+from typing import Sequence, Text
 
 import xarray as xr
 from pytest import fixture
@@ -96,3 +96,17 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
     assert all((isinstance(u, xr.Dataset) for u in lpconstraints))
     # makes sure agent investment got called
     assert all(agent.year == 2025 for agent in agents)
+
+
+def test_factory_smoke_test(model, technologies, tmp_path):
+    from muse import examples
+    from muse.readers import read_settings
+    from muse.sectors.subsector import Subsector
+
+    examples.copy_model(model, tmp_path)
+    settings = read_settings(tmp_path / "model" / "settings.toml")
+
+    subsector = Subsector.factory(settings.sectors.residential, technologies)
+
+    assert isinstance(subsector, Subsector)
+    assert len(subsector.agents) == 2
