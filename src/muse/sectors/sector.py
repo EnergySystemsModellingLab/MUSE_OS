@@ -332,24 +332,6 @@ class Sector(AbstractSector):  # type: ignore
 
         return reduce_assets([u.assets.capacity for u in self.agents])
 
-    def _trajectory(self, market: Dataset, capacity: DataArray, technologies: Dataset):
-        from muse.quantities import supply
-
-        production = self.production(
-            market=market, capacity=capacity, technologies=technologies
-        )
-        supp = supply(production, market.consumption, technologies).sum("asset")
-        return (market.consumption - supp).clip(min=0)
-
-    def decommissioning_demand(
-        self, capacity: DataArray, technologies: Dataset, year: int
-    ) -> DataArray:
-        from muse.quantities import decommissioning_demand
-
-        return decommissioning_demand(
-            technologies, capacity, [int(year), int(year) + self.forecast]
-        )
-
     def asset_capacity(self, capacity: DataArray) -> DataArray:
         from muse.utilities import reduce_assets, coords_to_multiindex
 
