@@ -21,8 +21,8 @@ from typing import (
 )
 
 import numpy as np
-from pandas import MultiIndex
-from xarray import DataArray, Dataset
+import xarray as xr
+import pandas as pd
 
 from muse.decorators import SETTINGS_CHECKS, register_settings_check
 from muse.defaults import DATA_DIRECTORY, DEFAULT_SECTORS_DIRECTORY
@@ -404,9 +404,9 @@ def read_settings(
 
 def read_ts_multiindex(
     settings: Optional[Union[Mapping, Text]] = None,
-    timeslice: Optional[DataArray] = None,
+    timeslice: Optional[xr.DataArray] = None,
     transforms: Optional[Dict[Tuple, np.ndarray]] = None,
-) -> MultiIndex:
+) -> pd.MultiIndex:
     """Read multiindex for a timeslice from TOML.
 
     Example:
@@ -460,7 +460,6 @@ def read_ts_multiindex(
     """
     from toml import loads
     from itertools import product
-    from pandas import MultiIndex
     from muse.timeslices import TIMESLICE, TRANSFORMS
 
     indices = (TIMESLICE if timeslice is None else timeslice).get_index("timeslice")
@@ -488,7 +487,7 @@ def read_ts_multiindex(
         unexpected = set(level).difference(known)
         if unexpected:
             raise ValueError("Unexpected slice(s): " + ", ".join(unexpected))
-    return MultiIndex.from_tuples(
+    return pd.MultiIndex.from_tuples(
         [index for index in product(*levels) if index in transforms],
         names=indices.names,
     )
@@ -496,9 +495,9 @@ def read_ts_multiindex(
 
 def read_timeslices(
     settings: Optional[Union[Text, Mapping]] = None,
-    timeslice: Optional[DataArray] = None,
+    timeslice: Optional[xr.DataArray] = None,
     transforms: Optional[Dict[Tuple, np.ndarray]] = None,
-) -> Dataset:
+) -> xr.Dataset:
     """Reads timeslice levels and create resulting timeslice coordinate.
 
     Args:
@@ -513,7 +512,7 @@ def read_timeslices(
             then this funtion should be called *after* the timeslice module has been
             setup with a call to :py:func:`~muse.timeslice.setup_module`.
     Returns:
-        A Dataset with the timeslice coordinates.
+        A xr.Dataset with the timeslice coordinates.
 
     Example:
         >>> toml = \"\"\"
@@ -556,19 +555,19 @@ def read_timeslices(
     if timeslice is None:
         timeslice = TIMESLICE
     if settings is None:
-        return Dataset({"represent_hours": timeslice}).set_coords("represent_hours")
+        return xr.Dataset({"represent_hours": timeslice}).set_coords("represent_hours")
     indices = read_ts_multiindex(settings, timeslice=timeslice, transforms=transforms)
-    units = DataArray(
+    units = xr.DataArray(
         np.ones(len(indices)), coords={"timeslice": indices}, dims="timeslice"
     )
     proj = timeslice_projector(units, finest=timeslice, transforms=transforms)
-    proj *= DataArray(
+    proj *= xr.DataArray(
         timeslice.values,
         coords={"finest_timeslice": proj.finest_timeslice},
         dims="finest_timeslice",
     )
 
-    return Dataset({"represent_hours": proj.sum("finest_timeslice")}).set_coords(
+    return xr.Dataset({"represent_hours": proj.sum("finest_timeslice")}).set_coords(
         "represent_hours"
     )
 
@@ -719,14 +718,14 @@ def check_budget_parameters(settings: Dict) -> None:
             assert length + 1 == len(settings["time_framework"]), msg
             coords = settings["time_framework"][:-1]
 
-        # If Ok, we transform the list into an DataArray
-        settings["carbon_budget_control"]["budget"] = DataArray(
+        # If Ok, we transform the list into an xr.DataArray
+        settings["carbon_budget_control"]["budget"] = xr.DataArray(
             np.array(settings["carbon_budget_control"]["budget"]),
             dims="year",
             coords={"year": coords},
         )
     else:
-        settings["carbon_budget_control"]["budget"] = DataArray([])
+        settings["carbon_budget_control"]["budget"] = xr.DataArray([])
 
 
 @register_settings_check(vary_name=False)
@@ -776,7 +775,7 @@ def check_iteration_control(settings: Dict) -> None:
 def check_time_slices(settings: Dict) -> None:
     """Check the time slices.
 
-    If there is no error, they are transformed into a DataArray
+    If there is no error, they are transformed into a xr.DataArray
     """
     from muse.timeslices import setup_module
 
