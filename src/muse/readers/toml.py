@@ -382,12 +382,6 @@ def read_settings(
     msg = "ERROR - There must be at least 1 sector."
     assert len(user_settings["sectors"]) >= 1, msg
 
-    # Those sectors and agents not in the input settings are removed
-    default_settings["sectors"] = {
-        k: default_settings["sectors"][k]
-        for k in set(user_settings["sectors"]).intersection(default_settings["sectors"])
-    }
-
     # timeslice information cannot be merged. Accept only information from one.
     if "timeslices" in user_settings:
         default_settings.pop("timeslices", None)

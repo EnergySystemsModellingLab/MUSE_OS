@@ -48,41 +48,6 @@ global_commodities = '{path}/MUSEGlobalCommodities.csv'
 base_year_export = "OPTIONAL"
 base_year_import = "OPTIONAL"
 
-# Definition of the sector-specific options -  REQUIRED at least one
-# All paths and filenames will have a default value for each sector (those indicated below) so only need to be included
-# if any of those names are different.
-# As the number os sectors included in MUSE grow, it will be necessary to add another [sectors.whatever] section with the
-# corresponding information.
-[sectors.residential]
-type = 'default'
-priority = 'demand'
-interpolation = "slinear"
-dispatch_production = 'share'
-demand_share = 'new_and_retro'
-
-path = '{muse_sectors}/Residential'
-agents = '{path}/BuildingAgentResidential.csv'
-technodata = '{path}/technodataResidential.csv'
-commodities_in = '{path}/commINtechnodataResidential.csv'
-commodities_out = '{path}/commOUTtechnodataResidential.csv'
-existing_capacity = '{path}/ExistingResidential.csv'
-
-[[sectors.residential.interactions]] 
-net = 'new_to_retro'
-interaction = 'transfer'
-
-
-[sectors.presets]
-type = 'presets'
-timeslice_shares_path = 'OPTIONAL'
-consumption_path = 'OPTIONAL'  # 'output/residential/*Consumption.csv'
-macrodrivers_path = 'OPTIONAL' # alternative to consumption_path, specifies regressions
-regression_path = 'OPTIONAL'   # alternative to consumption_path, specifies regressions
-supply_path = 'OPTIONAL'       # 'output/residential/*[0-9]Supply.csv'
-costs_path = 'OPTIONAL'        # Projections.csv or BaseYearXXX.csv format
-lcoe_path = 'OPTIONAL'         # alternative to costs, uses supply and lcoe
-forecast = 0
-
 [timeslices]
 winter.weekday.night = 396
 winter.weekday.morning = 396
