@@ -25,6 +25,7 @@ class Subsector:
         commodities: Sequence[Text],
         demand_share: Optional[Callable] = None,
         constraints: Optional[Callable] = None,
+        name: Text = "subsector",
         forecast: int = 5,
     ):
         from muse import demand_share as ds, constraints as cs
@@ -34,6 +35,7 @@ class Subsector:
         self.demand_share = demand_share or ds.factory()
         self.constraints = constraints or cs.factory()
         self.forecast = forecast
+        self.name = name
 
     def invest(
         self,
@@ -118,6 +120,7 @@ class Subsector:
         technologies: xr.Dataset,
         regions: Optional[Sequence[Text]] = None,
         current_year: Optional[int] = None,
+        name: Text = "subsector",
     ) -> Subsector:
         from muse.agents import agents_factory
         from muse.demand_share import factory as share_factory
@@ -145,7 +148,14 @@ class Subsector:
         constraints = constraints_factory(getattr(settings, "constraints", None))
         forecast = getattr(settings, "forecast", 5)
 
-        return cls(agents, commodities, demand_share, constraints, forecast)
+        return cls(
+            agents=agents,
+            commodities=commodities,
+            demand_share=demand_share,
+            constraints=constraints,
+            forecast=forecast,
+            name=name,
+        )
 
 
 def aggregate_enduses(
@@ -164,4 +174,4 @@ def aggregate_enduses(
     )
     return outputs.commodity.sel(
         commodity=outputs.any([u for u in outputs.dims if u != "commodity"])
-    )
+    ).values.tolist()

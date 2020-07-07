@@ -143,12 +143,6 @@ def sector(sector: Text, model: Text = "default") -> AbstractSector:
         return SECTORS_REGISTERED[kind](sector, settings)
 
 
-def agents(sector: Text, model: Text = "default") -> AbstractSector:
-    from muse.examples import sector as sector_func
-
-    return getattr(sector_func(sector, model), "agents", [])
-
-
 def available_sectors(*sectors: Text, model: Text = "default") -> List[Text]:
     from tempfile import TemporaryDirectory
     from muse.readers.toml import read_settings, undo_damage
@@ -219,7 +213,7 @@ def _copy_multiple_agents(path: Path):
     copytree(example_data_dir() / "default" / "input", path / "input")
     copytree(example_data_dir() / "default" / "technodata", path / "technodata")
     toml = load(example_data_dir() / "default" / "settings.toml")
-    toml["sectors"]["residential"][
+    toml["sectors"]["residential"]["subsectors"]["retro_and_new"][
         "agents"
     ] = "{path}/technodata/residential/Agents.csv"
     with (path / "settings.toml").open("w") as fileobj:

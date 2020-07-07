@@ -106,8 +106,7 @@ corresponds to its newly decommisioned assets. A more detailled description can 
 :py:func:`here <muse.demand_share.new_and_retro>`.
 
 
-The computation is called in in :py:meth:`sectors.Sector.next`, via
-:py:meth:`sectors.Sector.investment`
+The computation is called in in :py:meth:`sectors.Sector.next`, via each subsector.
 
 .. literalinclude:: ../../src/muse/sectors/sector.py
     :lineno-match:

@@ -28,7 +28,7 @@ def test_subsector_investing_aggregation(market, model, technologies):
     from muse import examples
     from muse.sectors.subsector import Subsector, aggregate_enduses
 
-    agents = examples.agents("residential", model)
+    agents = list(examples.sector("residential", model).agents)
     commodities = aggregate_enduses((agent.assets for agent in agents), technologies)
     market = market.sel(
         commodity=technologies.commodity, region=technologies.region
@@ -106,7 +106,9 @@ def test_factory_smoke_test(model, technologies, tmp_path):
     examples.copy_model(model, tmp_path)
     settings = read_settings(tmp_path / "model" / "settings.toml")
 
-    subsector = Subsector.factory(settings.sectors.residential, technologies)
+    subsector = Subsector.factory(
+        settings.sectors.residential.subsectors.retro_and_new, technologies
+    )
 
     assert isinstance(subsector, Subsector)
     assert len(subsector.agents) == 2

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import (
     Any,
     Callable,
-    List,
+    Iterator,
     Mapping,
     Optional,
     Sequence,
@@ -17,10 +17,10 @@ from pandas import MultiIndex
 from xarray import DataArray, Dataset
 
 from muse.agents import AbstractAgent
-from muse.demand_share import DEMAND_SHARE_SIGNATURE
 from muse.production import PRODUCTION_SIGNATURE
 from muse.sectors.abstract import AbstractSector
 from muse.sectors.register import register_sector
+from muse.sectors.subsector import Subsector
 
 
 @register_sector(name="default")
@@ -35,8 +35,6 @@ class Sector(AbstractSector):  # type: ignore
         from muse.outputs.sector import factory as ofactory
         from muse.production import factory as pfactory
         from muse.interactions import factory as interaction_factory
-        from muse.demand_share import factory as share_factory
-        from muse.agents import agents_factory
 
         sector_settings = getattr(settings.sectors, name)._asdict()
         for attribute in ("name", "type", "priority", "path"):
@@ -46,18 +44,29 @@ class Sector(AbstractSector):  # type: ignore
             sector_settings.pop("timeslice_levels", None)
         ).get_index("timeslice")
 
-        # We get and filter the technologies
         technologies = read_technodata(settings, name, settings.time_framework)
 
-        # Finally, we create the agents
-        agents = agents_factory(
-            sector_settings.pop("agents"),
-            sector_settings.pop("existing_capacity"),
-            technologies=technologies,
-            regions=settings.regions,
-            year=min(settings.time_framework),
-            investment=sector_settings.pop("lpsolver", "adhoc"),
+        if "subsectors" not in sector_settings:
+            raise RuntimeError(f"Missing 'subsectors' section in sector {name}")
+        if len(sector_settings["subsectors"]._asdict()) == 0:
+            raise RuntimeError(f"Empty 'subsectors' section in sector {name}")
+        subsectors = [
+            Subsector.factory(
+                subsec_settings,
+                technologies,
+                regions=settings.regions,
+                current_year=int(min(settings.time_framework)),
+                name=subsec_name,
+            )
+            for subsec_name, subsec_settings in sector_settings.pop("subsectors")
+            ._asdict()
+            .items()
+        ]
+        are_disjoint_commodities = sum((len(s.commodities) for s in subsectors)) == len(
+            set().union(*(set(s.commodities) for s in subsectors))
         )
+        if not are_disjoint_commodities:
+            raise RuntimeError("Subsector commodities are not disjoint")
 
         outputs = ofactory(*sector_settings.pop("outputs", []), sector_name=name)
 
@@ -72,19 +81,16 @@ class Sector(AbstractSector):  # type: ignore
 
         interactions = interaction_factory(sector_settings.pop("interactions", None))
 
-        demand_share = share_factory(sector_settings.pop("demand_share", None))
-
         for attr in ("technodata", "commodities_out", "commodities_in"):
             sector_settings.pop(attr)
         return cls(
             name,
             technologies,
-            agents,
+            subsectors=subsectors,
             timeslices=timeslices,
             supply_prod=supply,
             outputs=outputs,
             interactions=interactions,
-            demand_share=demand_share,
             **sector_settings,
         )
 
@@ -92,23 +98,21 @@ class Sector(AbstractSector):  # type: ignore
         self,
         name: Text,
         technologies: Dataset,
-        agents: Sequence[AbstractAgent] = [],
+        subsectors: Sequence[Subsector] = [],
         timeslices: Optional[MultiIndex] = None,
         interactions: Optional[Callable[[Sequence[AbstractAgent]], None]] = None,
         interpolation: Text = "linear",
         outputs: Optional[Callable] = None,
         supply_prod: Optional[PRODUCTION_SIGNATURE] = None,
-        demand_share: Optional[DEMAND_SHARE_SIGNATURE] = None,
     ):
         from muse.production import maximum_production
         from muse.outputs.sector import factory as ofactory
         from muse.interactions import factory as interaction_factory
-        from muse.demand_share import factory as share_factory
 
         self.name: Text = name
         """Name of the sector."""
-        self.agents: List[AbstractAgent] = list(agents)
-        """Agents controlled by this object."""
+        self.subsectors: Sequence[Subsector] = list(subsectors)
+        """Subsectors controlled by this object."""
         self.technologies: Dataset = technologies
         """Parameters describing the sector's technologies."""
         self.timeslices: Optional[MultiIndex] = timeslices
@@ -152,14 +156,6 @@ class Sector(AbstractSector):  # type: ignore
         It can be anything registered with
         :py:func:`@register_production<muse.production.register_production>`.
         """
-        if demand_share is None:
-            demand_share = share_factory()
-        self.demand_share = demand_share
-        """Method defining how to split the input demand amongst agents.
-
-        This is a function registered by :py:func:`@register_demand_share
-        <muse.demand_share.register_demand_share>`.
-        """
 
     @property
     def forecast(self):
@@ -177,7 +173,12 @@ class Sector(AbstractSector):  # type: ignore
             return 5
         return max(1, max(forecasts))
 
-    def next(self, mca_market: Dataset, time_period: Optional[int] = None) -> Dataset:
+    def next(
+        self,
+        mca_market: Dataset,
+        time_period: Optional[int] = None,
+        current_year: Optional[int] = None,
+    ) -> Dataset:
         """Advance sector by one time period.
 
         Args:
@@ -195,7 +196,9 @@ class Sector(AbstractSector):  # type: ignore
 
         if time_period is None:
             time_period = int(mca_market.year.max() - mca_market.year.min())
-        getLogger(__name__).info(f"Running {self.name} for year {time_period}")
+        if current_year is None:
+            current_year = int(mca_market.year.min())
+        getLogger(__name__).info(f"Running {self.name} for year {current_year}")
 
         # > to sector timeslice
         market = self.convert_market_timeslice(
@@ -204,9 +207,9 @@ class Sector(AbstractSector):  # type: ignore
             ).interp(
                 year=sorted(
                     {
-                        int(mca_market.year.min()),
-                        int(mca_market.year.min()) + time_period,
-                        int(mca_market.year.min()) + self.forecast,
+                        current_year,
+                        current_year + time_period,
+                        current_year + self.forecast,
                     }
                 ),
                 **self.interpolation,
@@ -214,7 +217,7 @@ class Sector(AbstractSector):  # type: ignore
             self.timeslices,
         )
         # > agent interactions
-        self.interactions(self.agents)
+        self.interactions(list(self.agents))
         # > investment
         years = sorted(
             set(
@@ -224,7 +227,10 @@ class Sector(AbstractSector):  # type: ignore
             )
         )
         technologies = self.technologies.interp(year=years, **self.interpolation)
-        self.investment(market, technologies, time_period=time_period)
+        for subsector in self.subsectors:
+            subsector.invest(
+                technologies, market, time_period=time_period, current_year=current_year
+            )
         # > output to mca
         result = self.market_variables(market, technologies)
         # < output to mca
@@ -261,48 +267,6 @@ class Sector(AbstractSector):  # type: ignore
         ).sum("technology")
         return result
 
-    def investment(
-        self, market: Dataset, technologies: Dataset, time_period: Optional[int] = None
-    ) -> None:
-        """Computes demand share for each agent and run investment."""
-        from logging import getLogger
-
-        if time_period is None:
-            time_period = int(market.year.max() - market.year.min())
-
-        shares = self.demand_share(  # type: ignore
-            self.agents,
-            market,
-            technologies,
-            current_year=market.year.min(),
-            forecast=self.forecast,
-        )
-        capacity = self.capacity.interp(
-            year=market.year,
-            method=self.interpolation["method"],
-            kwargs={"fill_value": 0.0},
-        )
-        agent_market = market.copy()
-        agent_market["capacity"] = self.asset_capacity(capacity)
-
-        for agent in self.agents:
-            assert market.year.min() == getattr(agent, "year", market.year.min())
-            share = shares.sel(asset=shares.agent == agent.uuid).drop_vars("agent")
-            if share.size == 0:
-                getLogger(__name__).critical(
-                    "Demand share is empty, no investment needed "
-                    f"for {agent.category} agent {agent.name} "
-                    f"of {self.name} sector in year {int(agent_market.year.min())}."
-                )
-            elif share.sum() < 1e-12:
-                getLogger(__name__).critical(
-                    "No demand, no investment needed for "
-                    f"for {agent.category} agent {agent.name} "
-                    f"of {self.name} sector in year {int(agent_market.year.min())}."
-                )
-
-            agent.next(technologies, agent_market, share, time_period=time_period)
-
     @property
     def capacity(self) -> DataArray:
         """Aggregates capacity across agents.
@@ -315,13 +279,11 @@ class Sector(AbstractSector):  # type: ignore
 
         return reduce_assets([u.assets.capacity for u in self.agents])
 
-    def asset_capacity(self, capacity: DataArray) -> DataArray:
-        from muse.utilities import reduce_assets, coords_to_multiindex
-
-        capa = reduce_assets(capacity, ("region", "technology"))
-        return cast(
-            DataArray, coords_to_multiindex(capa, "asset").unstack("asset").fillna(0)
-        )
+    @property
+    def agents(self) -> Iterator[AbstractAgent]:
+        """Iterator over all agents in the sector."""
+        for subsector in self.subsectors:
+            yield from subsector.agents
 
     @staticmethod
     def convert_market_timeslice(

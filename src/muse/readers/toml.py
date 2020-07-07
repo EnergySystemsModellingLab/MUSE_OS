@@ -826,13 +826,7 @@ def check_sectors_files(settings: Dict) -> None:
         "last": 100,
     }
 
-    path_options = {
-        "agents",
-        "technodata",
-        "commodities_in",
-        "commodities_out",
-        "existing_capacity",
-    }
+    path_options = {"technodata", "commodities_in", "commodities_out"}
 
     if "list" in sectors:
         sectors = {k: sectors[k] for k in sectors["list"]}
