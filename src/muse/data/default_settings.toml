@@ -57,7 +57,6 @@ base_year_import = "OPTIONAL"
 type = 'default'
 priority = 'demand'
 interpolation = "slinear"
-investment_production = 'share'
 dispatch_production = 'share'
 demand_share = 'new_and_retro'
 

@@ -61,15 +61,6 @@ class Sector(AbstractSector):  # type: ignore
 
         outputs = ofactory(*sector_settings.pop("outputs", []), sector_name=name)
 
-        production_args = sector_settings.pop(
-            "production", sector_settings.pop("investment_production", {})
-        )
-        if isinstance(production_args, Text):
-            production_args = {"name": production_args}
-        else:
-            production_args = nametuple_to_dict(production_args)
-        production = pfactory(**production_args)
-
         supply_args = sector_settings.pop(
             "supply", sector_settings.pop("dispatch_production", {})
         )
@@ -90,7 +81,6 @@ class Sector(AbstractSector):  # type: ignore
             technologies,
             agents,
             timeslices=timeslices,
-            production=production,
             supply_prod=supply,
             outputs=outputs,
             interactions=interactions,
@@ -107,7 +97,6 @@ class Sector(AbstractSector):  # type: ignore
         interactions: Optional[Callable[[Sequence[AbstractAgent]], None]] = None,
         interpolation: Text = "linear",
         outputs: Optional[Callable] = None,
-        production: Optional[PRODUCTION_SIGNATURE] = None,
         supply_prod: Optional[PRODUCTION_SIGNATURE] = None,
         demand_share: Optional[DEMAND_SHARE_SIGNATURE] = None,
     ):
@@ -155,12 +144,6 @@ class Sector(AbstractSector):  # type: ignore
             cast(Callable, ofactory()) if outputs is None else outputs
         )
         """A function for outputing data for post-mortem analysis."""
-        self.production = production if production is not None else maximum_production
-        """ Computes production as used for investment demands.
-
-        It can be anything registered with
-        :py:func:`@register_production<muse.production.register_production>`.
-        """
         self.supply_prod = (
             supply_prod if supply_prod is not None else maximum_production
         )

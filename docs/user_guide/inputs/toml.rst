@@ -327,35 +327,6 @@ interpolation
    
    .. _scipy method's kind attribute: https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
 
-investment_production
-   In its simplest form, this is the name of a method to compute the production from a
-   sector, as used when splitting the demand across agents. In other words, this the
-   computation of the production which affects future investments. In it's more general
-   form, *production* can be a subsection of its own, with a "name" attribute. For
-   instance:
-
-   .. code-block:: TOML
-
-      [sectors.residential.production]
-      name = "match"
-      costing = "prices"
-
-   MUSE provides two methods in :py:mod:`muse.production`:
-   
-   - share: the production is the maximum production for the existing capacity and
-      the technology's utilization factor.
-      See :py:func:`muse.production.maximum_production`.
-   - match: production and demand are matched according to a given cost metric. The
-      cost metric defaults to "prices". It can be modified by using the general form
-      given above, with a "costing" attribute. The latter can be "prices",
-      "gross_margin", or "lcoe".
-      See :py:func:`muse.production.demand_matched_production`.
-
-   *production* can also refer to any custom production method registered with MUSE via
-   :py:func:`muse.production.register_production`.
-
-   Defaults to "share".
-
 dispatch_production
    The name of the production method used to compute the sector's output, as returned
    to the muse market clearing algorithm. In other words, this is computation of the
@@ -368,9 +339,14 @@ demand_share
     agents. A basic distinction is between *new* and *retrofit* agents: the former asked to 
     respond to an increase of commodity demand investing in new assets; the latter asked to
     invest in new asset to balance the decommissined assets.
-    There is currently only one option, "new_and_retro", meaning the assets owned by 
-    each *new* agent are then passed to the corresponding *retrofit* agent. A *new* agent 
-    is associated to a corresponding *retro* agent which shares the same name.
+
+    There are currently two options:
+
+    - :py:func:`~muse.demand_share.new_and_retro`: the demand is split into a retrofit
+      demand corresponding to demand that used to be serviced by decommisioned assets,
+      and the *new* demand.
+    - :py:func:`~muse.demand_share.market_demand`: simply the consumption for the
+      forecast year.
 
 interactions
    Defines interactions between agents. These interactions take place right before new

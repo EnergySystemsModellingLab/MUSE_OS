@@ -41,7 +41,6 @@ global_commodities = '{path}/input/GlobalCommodities.csv'
 [sectors.residential]
 type = 'default'
 priority = 1
-investment_production = 'share'
 dispatch_production = 'share'
 lpsolver = "scipy"
 
@@ -74,7 +73,6 @@ interaction = 'transfer'
 [sectors.power]
 type = 'default'
 priority = 2
-investment_production = 'share'
 dispatch_production = 'share'
 lpsolver = "scipy"
 
@@ -98,7 +96,6 @@ interaction = 'transfer'
 [sectors.gas]
 type = 'default'
 priority = 3
-investment_production = 'share'
 dispatch_production = 'share'
 lpsolver = "scipy"
 
