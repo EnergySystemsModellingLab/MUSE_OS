@@ -83,9 +83,11 @@ class Subsector:
         assets = agent_concatenation(
             {agent.uuid: agent.assets for agent in self.agents}
         )
-        agent_market["capacity"] = reduce_assets(
-            assets.capacity, coords=("region", "technology")
-        ).interp(year=market.year, method="linear", kwargs={"fill_value": 0.0})
+        agent_market["capacity"] = (
+            reduce_assets(assets.capacity, coords=("region", "technology"))
+            .interp(year=market.year, method="linear", kwargs={"fill_value": 0.0})
+            .swap_dims(dict(asset="technology"))
+        )
 
         agent_lps: MutableMapping[Hashable, xr.Dataset] = {}
         for agent in self.agents:
