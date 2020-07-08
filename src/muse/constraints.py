@@ -463,6 +463,10 @@ def minimum_service(
     from muse.commodities import is_enduse
     from muse.timeslices import convert_timeslice, QuantityType
 
+    if "minimum_service_factor" not in technologies.data_vars:
+        return None
+    if np.all(technologies["minimum_service_factor"] == 0):
+        return None
     if year is None:
         year = market.year.min()
     commodities = technologies.commodity.sel(
@@ -471,8 +475,6 @@ def minimum_service(
     kwargs = dict(technology=search_space.replacement, year=year, commodity=commodities)
     if getattr(assets, "region", None) is not None and "region" in technologies.dims:
         kwargs["region"] = assets.region
-    if "minimum_service_factor" not in technologies.data_vars:
-        return None
     techs = technologies[
         ["fixed_outputs", "utilization_factor", "minimum_service_factor"]
     ].sel(**kwargs)
@@ -697,7 +699,7 @@ def lp_constraint_matrix(
         >>> assert set(result.dims) == {f"d({x})" for x in lpcosts.production.dims}
         >>> assert result.values == approx(1)
 
-        As expected, the capacicity vector is 1, whereas the production vector is -1.
+        As expected, the capacity vector is 1, whereas the production vector is -1.
         These are the values the :py:func:`~muse.constraints.max_production` is set up
         to create.
 
