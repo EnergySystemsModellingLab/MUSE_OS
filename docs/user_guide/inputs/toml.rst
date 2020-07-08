@@ -323,9 +323,9 @@ priority
 
 subsectors
 
-    Subsectors group together agents into separate groups servicing the demand for
-    different commodities. There should be at least one subsector. And there can be as
-    many as required. For instance, a one-subsector setup would look like:
+    Subsectors group together agents producing the same commodity. There should be at
+    least one subsector. And there can be as many as required. For instance, a
+    one-subsector setup would look like:
 
     .. code-block:: toml
 
@@ -365,7 +365,10 @@ subsectors
         writing, three are available:
 
         - an "adhoc" solver: Simple in-house solver that ranks the technologies
-          according to cost and sevice the demand incrementally.
+          according to cost and sevice the demand incrementally. The ad-hoc solver only
+          accepts the maximum capacity expansion, the demand, the search-space, and the
+          maximum production constraint. It will ignore other constraints, e.g. the
+          minimum service constraint.
 
         - "scipy" solver: Formulates investment as a true LP problem and solves it using
           the `scipy solver`_.
