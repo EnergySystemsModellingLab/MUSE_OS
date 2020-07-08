@@ -457,7 +457,7 @@ def minimum_service(
     year: Optional[int] = None,
     forecast: int = 5,
     interpolation: Text = "linear",
-) -> Constraint:
+) -> Optional[Constraint]:
     """ Constructs constraint between capacity and minimum service. """
     from xarray import zeros_like, ones_like
     from muse.commodities import is_enduse
