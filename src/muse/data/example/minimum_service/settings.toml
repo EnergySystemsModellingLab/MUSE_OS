@@ -21,7 +21,7 @@ budget = []
 # if any of those names are different. This whole section is optional.
 [global_input_files]
 projections = '{path}/input/Projections.csv'
-global_commodities = '{path}/input/MUSEGlobalCommodities.csv'
+global_commodities = '{path}/input/GlobalCommodities.csv'
 
 [[outputs]]
 quantity = "supply"
@@ -45,11 +45,11 @@ investment_production = 'share'
 dispatch_production = 'share'
 lpsolver = "scipy"
 
-agents = '{path}/technodata/industry/agentindustry.csv'
-technodata = '{path}/technodata/industry/technodataindustry.csv'
-commodities_in = '{path}/technodata/industry/commINtechnodataindustry.csv'
-commodities_out = '{path}/technodata/industry/commOUTtechnodataindustry.csv'
-existing_capacity = '{path}/technodata/industry/existingindustry.csv'
+agents = '{path}/technodata/Agents.csv'
+technodata = '{path}/technodata/industry/Technodata.csv'
+commodities_in = '{path}/technodata/industry/CommIn.csv'
+commodities_out = '{path}/technodata/industry/CommOut.csv'
+existing_capacity = '{path}/technodata/industry/Existing.csv'
 
 [[sectors.industry.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'

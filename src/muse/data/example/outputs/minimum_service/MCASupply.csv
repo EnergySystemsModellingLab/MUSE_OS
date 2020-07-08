@@ -30,7 +30,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('winter', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2015
 "('winter', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2015
 "('winter', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.92004000000,2015
-"('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,54308.16755797088,2015
+"('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,55113.51746010078,2015
 "('winter', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2015
 "('winter', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2015
 "('winter', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2015
@@ -39,7 +39,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('summer', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2015
 "('summer', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2015
 "('summer', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,15.37216242000,2015
-"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,55953.86958973992,2015
+"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,56783.62403412961,2015
 "('summer', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2015
 "('summer', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2015
 "('summer', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2015
@@ -48,7 +48,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('spring-autumn', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2015
 "('spring-autumn', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2015
 "('spring-autumn', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.92004000000,2015
-"('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,54308.16755797088,2015
+"('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,55113.51746010078,2015
 "('spring-autumn', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2015
 "('spring-autumn', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2015
 "('spring-autumn', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2015
@@ -57,7 +57,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('winter', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2020
 "('winter', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2020
 "('winter', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.92004000000,2020
-"('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,54200.69993817034,2020
+"('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,56295.53446764919,2020
 "('winter', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2020
 "('winter', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2020
 "('winter', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2020
@@ -66,7 +66,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('summer', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2020
 "('summer', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2020
 "('summer', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,15.37216242000,2020
-"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,55843.14537543051,2020
+"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,58001.45973854036,2020
 "('summer', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2020
 "('summer', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2020
 "('summer', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2020
@@ -75,7 +75,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('spring-autumn', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2020
 "('spring-autumn', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2020
 "('spring-autumn', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.92004000000,2020
-"('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,54200.69993817034,2020
+"('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,56295.53446764919,2020
 "('spring-autumn', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2020
 "('spring-autumn', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2020
 "('spring-autumn', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2020
@@ -84,7 +84,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('winter', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2025
 "('winter', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2025
 "('winter', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.93093245500,2025
-"('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,54224.76172350251,2025
+"('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,57445.60096516926,2025
 "('winter', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2025
 "('winter', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2025
 "('winter', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2025
@@ -93,7 +93,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('summer', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2025
 "('summer', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2025
 "('summer', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,15.38338495000,2025
-"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,55867.93630797820,2025
+"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,59186.37673800194,2025
 "('summer', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2025
 "('summer', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2025
 "('summer', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2025
@@ -102,7 +102,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('spring-autumn', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2025
 "('spring-autumn', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2025
 "('spring-autumn', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.93093245500,2025
-"('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,54224.76172350251,2025
+"('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,57445.60096516926,2025
 "('spring-autumn', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2025
 "('spring-autumn', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2025
 "('spring-autumn', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2025
@@ -111,7 +111,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('winter', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2030
 "('winter', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2030
 "('winter', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.94182491000,2030
-"('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,53958.30925961892,2030
+"('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,58518.66682802211,2030
 "('winter', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2030
 "('winter', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2030
 "('winter', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2030
@@ -120,7 +120,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('summer', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2030
 "('summer', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2030
 "('summer', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,15.39460748000,2030
-"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,55593.40952927033,2030
+"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,60291.95975033663,2030
 "('summer', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2030
 "('summer', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2030
 "('summer', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2030
@@ -129,7 +129,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('spring-autumn', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2030
 "('spring-autumn', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2030
 "('spring-autumn', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.94182491000,2030
-"('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,53958.30925961892,2030
+"('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,58518.66682802211,2030
 "('spring-autumn', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2030
 "('spring-autumn', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2030
 "('spring-autumn', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2030
@@ -138,7 +138,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('winter', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2035
 "('winter', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2035
 "('winter', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.72397569000,2035
-"('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,52487.97268562203,2035
+"('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,58985.15192288098,2035
 "('winter', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2035
 "('winter', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2035
 "('winter', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2035
@@ -147,7 +147,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('summer', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2035
 "('summer', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2035
 "('summer', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,15.17015677000,2035
-"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,54078.51730705785,2035
+"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,60772.58076295910,2035
 "('summer', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2035
 "('summer', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2035
 "('summer', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2035
@@ -156,7 +156,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('spring-autumn', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2035
 "('spring-autumn', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2035
 "('spring-autumn', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.72397569000,2035
-"('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,52487.97268562203,2035
+"('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,58985.15192288098,2035
 "('spring-autumn', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2035
 "('spring-autumn', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2035
 "('spring-autumn', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2035
@@ -165,7 +165,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('winter', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2040
 "('winter', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2040
 "('winter', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.50612647000,2040
-"('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,51307.32366823401,2040
+"('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,58680.98925798903,2040
 "('winter', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2040
 "('winter', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2040
 "('winter', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2040
@@ -174,7 +174,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('summer', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2040
 "('summer', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2040
 "('summer', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.94570606000,2040
-"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,52862.09105211988,2040
+"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,60459.20105368568,2040
 "('summer', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2040
 "('summer', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2040
 "('summer', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2040
@@ -183,7 +183,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('spring-autumn', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2040
 "('spring-autumn', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2040
 "('spring-autumn', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.50612647000,2040
-"('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,51307.32366823401,2040
+"('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,58680.98925798903,2040
 "('spring-autumn', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2040
 "('spring-autumn', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2040
 "('spring-autumn', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2040
@@ -192,7 +192,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('winter', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2045
 "('winter', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2045
 "('winter', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.09732842000,2045
-"('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,49861.42879687261,2045
+"('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,56747.97610455735,2045
 "('winter', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2045
 "('winter', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2045
 "('winter', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2045
@@ -201,7 +201,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('summer', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2045
 "('summer', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2045
 "('summer', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.52452019000,2045
-"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,51372.38118358483,2045
+"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,58467.61174286957,2045
 "('summer', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2045
 "('summer', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2045
 "('summer', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2045
@@ -210,7 +210,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('spring-autumn', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2045
 "('spring-autumn', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2045
 "('spring-autumn', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.09732842000,2045
-"('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,49861.42879687261,2045
+"('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,56747.97610455735,2045
 "('spring-autumn', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2045
 "('spring-autumn', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2045
 "('spring-autumn', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2045
@@ -219,7 +219,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('winter', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2050
 "('winter', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2050
 "('winter', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,13.68853037000,2050
-"('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,47803.82235645341,2050
+"('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,54828.11030482109,2050
 "('winter', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2050
 "('winter', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2050
 "('winter', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2050
@@ -228,7 +228,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('summer', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2050
 "('summer', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2050
 "('summer', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.10333432000,2050
-"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,49252.42303180517,2050
+"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,56489.56819041845,2050
 "('summer', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2050
 "('summer', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2050
 "('summer', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2050
@@ -237,7 +237,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('spring-autumn', 'all-week', 'all-day')",fuel1,R1,MUS$2010/PJ,0.00000000000,2050
 "('spring-autumn', 'all-week', 'all-day')",fuel2,R1,MUS$2010/PJ,0.00000000000,2050
 "('spring-autumn', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,13.68853037000,2050
-"('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,47803.82235645341,2050
+"('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,54828.11030482109,2050
 "('spring-autumn', 'all-week', 'all-day')",CO2r,R1,MUS$2010/kt,0.00000000000,2050
 "('spring-autumn', 'all-week', 'all-day')",CO2c,R1,MUS$2010/kt,0.00000000000,2050
 "('spring-autumn', 'all-week', 'all-day')",CO2s,R1,MUS$2010/kt,0.00000000000,2050
