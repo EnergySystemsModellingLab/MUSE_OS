@@ -38,7 +38,9 @@ OUTPUTS_PARAMETERS = Union[Text, Mapping]
 
 
 @registrator(registry=OUTPUT_QUANTITIES)
-def register_output_quantity(function: OUTPUT_QUANTITY_SIGNATURE = None) -> Callable:
+def register_output_quantity(
+    function: Optional[OUTPUT_QUANTITY_SIGNATURE] = None,
+) -> Callable:
     """Registers a function to compute an output quantity."""
     from functools import wraps
 
@@ -52,6 +54,24 @@ def register_output_quantity(function: OUTPUT_QUANTITY_SIGNATURE = None) -> Call
         return result
 
     return decorated
+
+
+def round_values(function: Callable) -> OUTPUT_QUANTITY_SIGNATURE:
+    """Rounds the outputs to given number of decimals and drops columns with zeros."""
+    from functools import wraps
+
+    @wraps(function)
+    def rounded(
+        market: Dataset, sectors: List[AbstractSector], rounding: int = 4, **kwargs
+    ) -> DataArray:
+        result = function(market, sectors, **kwargs)
+        if hasattr(result, "to_dataframe"):
+            result = result.to_dataframe()
+        result = result.round(rounding)
+        name = getattr(result, "name", function.__name__)
+        return result[result[name] != 0]
+
+    return rounded
 
 
 def factory(
@@ -82,6 +102,7 @@ def factory(
 
 
 @register_output_quantity
+@round_values
 def consumption(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
     """Current consumption."""
     from muse.outputs.sector import market_quantity
@@ -90,6 +111,7 @@ def consumption(market: Dataset, sectors: List[AbstractSector], **kwargs) -> Dat
 
 
 @register_output_quantity
+@round_values
 def supply(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
     """Current supply."""
     from muse.outputs.sector import market_quantity
@@ -98,6 +120,7 @@ def supply(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArra
 
 
 @register_output_quantity
+@round_values
 def prices(
     market: Dataset,
     sectors: List[AbstractSector],
@@ -119,6 +142,7 @@ def prices(
 
 
 @register_output_quantity
+@round_values
 def capacity(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
     """Current capacity across all sectors."""
     return sectors_capacity(sectors)
@@ -127,12 +151,14 @@ def capacity(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataAr
 @register_output_quantity(
     name=["ALCOE", "alcoe", "Annualized Levelized Cost of Energy"]
 )
+@round_values
 def alcoe(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
     """Current annual levelised cost across all sectors."""
     return sectors_alcoe(market, sectors)
 
 
 @register_output_quantity
+@round_values
 def llcoe(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
     """Current lifetime levelised cost across all sectors."""
     return sectors_llcoe(market, sectors)
