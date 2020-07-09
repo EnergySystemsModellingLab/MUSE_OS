@@ -35,14 +35,13 @@ Returns:
     demand. However, if there exists a coordinate "agent" of dimension "asset" giving
     the :py:attr:`~muse.agents.agent.AbstractAgent.uuid` of the agent, then agents will
     only service that par of the demand.
-
-__ :: https://en.wikipedia.org/wiki/Universally_unique_identifier
 """
 __all__ = [
     "new_and_retro",
     "factory",
     "register_demand_share",
     "unmet_demand",
+    "market_demand",
     "DEMAND_SHARE_SIGNATURE",
 ]
 from typing import (

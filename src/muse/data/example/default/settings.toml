@@ -26,30 +26,32 @@ filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 [carbon_budget_control]
 budget = []
 
-# Global input files contain data that are NOT sector specific - DEFAULTS ALL
-# All paths and filenames will have a default value (those indicated below) so only need to be included
-# if any of those names are different. This whole section is optional.
 [global_input_files]
 projections = '{path}/input/Projections.csv'
 global_commodities = '{path}/input/GlobalCommodities.csv'
 
-# Definition of the sector-specific options -  REQUIRED at least one
-# All paths and filenames will have a default value for each sector (those indicated below) so only need to be included
-# if any of those names are different.
-# As the number of sectors included in MUSE grow, it will be necessary to add another [sectors.whatever] section with the
-# corresponding information.
+
 [sectors.residential]
 type = 'default'
 priority = 1
-investment_production = 'share'
 dispatch_production = 'share'
-lpsolver = "scipy"
 
-agents = '{path}/technodata/Agents.csv'
 technodata = '{path}/technodata/residential/Technodata.csv'
 commodities_in = '{path}/technodata/residential/CommIn.csv'
 commodities_out = '{path}/technodata/residential/CommOut.csv'
+
+[sectors.residential.subsectors.retro_and_new]
+agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/residential/Existing.csv'
+lpsolver = "scipy"  # Optional, defaults to "adhoc" 
+constraints = [  # Optional, defaults to the constraints below
+    "max_production",
+    "max_capacity_expansion",
+    "demand",
+    "search_space",
+]
+demand_share = "new_and_retro"  # Optional, default to new_and_retro
+forecast = 5  # Optional, defaults to 5 
 
 [[sectors.residential.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
@@ -74,15 +76,16 @@ interaction = 'transfer'
 [sectors.power]
 type = 'default'
 priority = 2
-investment_production = 'share'
 dispatch_production = 'share'
-lpsolver = "scipy"
 
-agents = '{path}/technodata/Agents.csv'
 technodata = '{path}/technodata/power/Technodata.csv'
 commodities_in = '{path}/technodata/power/CommIn.csv'
 commodities_out = '{path}/technodata/power/CommOut.csv'
+
+[sectors.power.subsectors.retro_and_new]
+agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/power/Existing.csv'
+lpsolver = "scipy"
 
 [[sectors.power.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
@@ -98,15 +101,17 @@ interaction = 'transfer'
 [sectors.gas]
 type = 'default'
 priority = 3
-investment_production = 'share'
 dispatch_production = 'share'
-lpsolver = "scipy"
 
-agents = '{path}/technodata/Agents.csv'
 technodata = '{path}/technodata/gas/Technodata.csv'
 commodities_in = '{path}/technodata/gas/CommIn.csv'
 commodities_out = '{path}/technodata/gas/CommOut.csv'
+
+[sectors.gas.subsectors.retro_and_new]
+agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/gas/Existing.csv'
+lpsolver = "scipy"
+
 
 [[sectors.gas.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'

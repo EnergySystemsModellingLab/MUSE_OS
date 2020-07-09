@@ -163,34 +163,6 @@ def test_check_global_data_dir(settings: dict, user_data_files):
         check_global_data_files(settings)
 
 
-def test_check_sectors_files(settings: dict, tmpdir: Path, sectors_files):
-    """Tests the check_sectors_files function."""
-    from muse.readers.toml import check_sectors_files
-
-    # Now we run check_sectors_files, which should succeed in finding the files
-    check_sectors_files(settings)
-
-    # Now we change the name of one of the files and check if there's an exception
-    path = Path(settings["sectors"]["residential"]["technodata"])
-    path.rename(path.parent / "my_file")
-    with raises(AssertionError):
-        check_sectors_files(settings)
-
-
-def test_check_sectors_dir(settings: dict, tmpdir: Path, sectors_files):
-    """Tests the check_sectors_files function."""
-    from muse.readers.toml import check_sectors_files
-
-    # Now we run check_setors_files, which should succeed in finding the files
-    check_sectors_files(settings)
-
-    # Now we change the name of the directory and check if there's an exception
-    path = Path(settings["sectors"]["residential"]["path"])
-    path.rename(path.parent / "my_directory")
-    with raises(AssertionError):
-        check_sectors_files(settings)
-
-
 def test_check_plugins(settings: dict, plugins: Path):
     from muse.readers.toml import check_plugins
 
@@ -201,13 +173,6 @@ def test_check_plugins(settings: dict, plugins: Path):
     settings["plugins"] = plugins.parent / f"{plugins.stem}_2{plugins.suffix}"
     with raises(IOError):
         check_plugins(settings)
-
-
-def test_load_settings(input_file: Path):
-    """Tests the whole loading settings function."""
-    from muse.readers.toml import read_settings
-
-    read_settings(input_file)
 
 
 @mark.sgidata

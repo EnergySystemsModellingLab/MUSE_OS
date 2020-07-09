@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from typing import (
+    Any,
     Callable,
     Hashable,
     List,
@@ -22,6 +25,7 @@ class Subsector:
         commodities: Sequence[Text],
         demand_share: Optional[Callable] = None,
         constraints: Optional[Callable] = None,
+        name: Text = "subsector",
         forecast: int = 5,
     ):
         from muse import demand_share as ds, constraints as cs
@@ -31,6 +35,7 @@ class Subsector:
         self.demand_share = demand_share or ds.factory()
         self.constraints = constraints or cs.factory()
         self.forecast = forecast
+        self.name = name
 
     def invest(
         self,
@@ -78,9 +83,11 @@ class Subsector:
         assets = agent_concatenation(
             {agent.uuid: agent.assets for agent in self.agents}
         )
-        agent_market["capacity"] = reduce_assets(
-            assets.capacity, coords=("region", "technology")
-        ).interp(year=market.year, method="linear", kwargs={"fill_value": 0.0})
+        agent_market["capacity"] = (
+            reduce_assets(assets.capacity, coords=("region", "technology"))
+            .interp(year=market.year, method="linear", kwargs={"fill_value": 0.0})
+            .swap_dims(dict(asset="technology"))
+        )
 
         agent_lps: MutableMapping[Hashable, xr.Dataset] = {}
         for agent in self.agents:
@@ -108,6 +115,50 @@ class Subsector:
         )
         return lps.decision, constraints
 
+    @classmethod
+    def factory(
+        cls,
+        settings: Any,
+        technologies: xr.Dataset,
+        regions: Optional[Sequence[Text]] = None,
+        current_year: Optional[int] = None,
+        name: Text = "subsector",
+    ) -> Subsector:
+        from muse.agents import agents_factory
+        from muse.demand_share import factory as share_factory
+        from muse.constraints import factory as constraints_factory
+
+        agents = agents_factory(
+            settings.agents,
+            settings.existing_capacity,
+            technologies=technologies,
+            regions=regions,
+            year=current_year or int(technologies.year.min()),
+            investment=getattr(settings, "lpsolver", "adhoc"),
+        )
+
+        if hasattr(settings, "commodities"):
+            commodities = settings.commodities
+        else:
+            commodities = aggregate_enduses(
+                [agent.assets for agent in agents], technologies
+            )
+        if len(commodities) == 0:
+            raise RuntimeError("Subsector commodities cannot be empty")
+
+        demand_share = share_factory(getattr(settings, "demand_share", None))
+        constraints = constraints_factory(getattr(settings, "constraints", None))
+        forecast = getattr(settings, "forecast", 5)
+
+        return cls(
+            agents=agents,
+            commodities=commodities,
+            demand_share=demand_share,
+            constraints=constraints,
+            forecast=forecast,
+            name=name,
+        )
+
 
 def aggregate_enduses(
     assets: Sequence[Union[xr.Dataset, xr.DataArray]], technologies: xr.Dataset
@@ -125,4 +176,4 @@ def aggregate_enduses(
     )
     return outputs.commodity.sel(
         commodity=outputs.any([u for u in outputs.dims if u != "commodity"])
-    )
+    ).values.tolist()

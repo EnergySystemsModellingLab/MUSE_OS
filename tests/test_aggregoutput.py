@@ -10,7 +10,7 @@ def test_aggregate_sector():
     mca = examples.model("multiple-agents")
     year = [2020, 2025]
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
-    agent_list = [a.agents for a in sector_list]
+    agent_list = [list(a.agents) for a in sector_list]
     alldata = sector_capacity(sector_list[0])
     alldatadict = alldata.to_dict("split")
     columns = ["region", "agent", "type", "sector", "capacity"]
@@ -29,7 +29,7 @@ def test_aggregate_sector():
                             "sector": sector_list[0].name,
                             "capacity": ai.assets.capacity.sel(year=y).values[0],
                         },
-                        index=[(y, ai.assets.technology.values[0],)],
+                        index=[(y, ai.assets.technology.values[0])],
                     )
                     frame = concat([frame, data])
 
@@ -43,7 +43,7 @@ def test_aggregate_sectors():
     mca = examples.model("multiple-agents")
     year = [2020, 2025]
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
-    agent_list = [a.agents for a in sector_list]
+    agent_list = [list(a.agents) for a in sector_list]
     alldata = sectors_capacity(mca.sectors)
     alldatadict = alldata.to_dict("split")
     columns = ["region", "agent", "type", "sector", "capacity"]
@@ -64,7 +64,7 @@ def test_aggregate_sectors():
                                 .assets.capacity.sel(year=y)
                                 .values[0],
                             },
-                            index=[(y, ai[ii].assets.technology.values[0],)],
+                            index=[(y, ai[ii].assets.technology.values[0])],
                         )
                         frame = concat([frame, data])
 
@@ -80,13 +80,14 @@ def test_aggregate_sector_manyregions():
     residential = next(
         (sector for sector in mca.sectors if sector.name == "residential")
     )
-    residential.agents[0].assets["region"] = "BELARUS"
-    residential.agents[1].assets["region"] = "BELARUS"
-    residential.agents[0].region = "BELARUS"
-    residential.agents[1].region = "BELARUS"
+    agents = list(residential.agents)
+    agents[0].assets["region"] = "BELARUS"
+    agents[1].assets["region"] = "BELARUS"
+    agents[0].region = "BELARUS"
+    agents[1].region = "BELARUS"
     year = [2020, 2025]
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
-    agent_list = [a.agents for a in sector_list]
+    agent_list = [list(a.agents) for a in sector_list]
     alldata = sectors_capacity(mca.sectors)
     alldatadict = alldata.to_dict("split")
     columns = ["region", "agent", "type", "sector", "capacity"]
@@ -107,7 +108,7 @@ def test_aggregate_sector_manyregions():
                                 .assets.capacity.sel(year=y)
                                 .values[0],
                             },
-                            index=[(y, ai[ii].assets.technology.values[0],)],
+                            index=[(y, ai[ii].assets.technology.values[0])],
                         )
                         frame = concat([frame, data])
 

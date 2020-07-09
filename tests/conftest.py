@@ -129,10 +129,18 @@ def pytest_collection_modifyitems(config, items):
 def loaded_residential_settings(residential_input_file):
     """Initialized MCA with the default settings and the residential sector."""
     from muse.readers import read_settings
+    from muse.readers.toml import undo_damage, convert
 
-    settings = read_settings(residential_input_file)
+    settings = undo_damage(read_settings(residential_input_file))
+    residential = settings["sectors"]["residential"]
+    residential["subsectors"] = dict(
+        new_and_retro=dict(
+            agents=residential.pop("agents"),
+            existing_capacity=residential.pop("existing_capacity"),
+        )
+    )
 
-    return settings
+    return convert(settings)
 
 
 @fixture(scope="session")
