@@ -1,9 +1,4 @@
-asset,year,region,technology,installed,capacity
-0,2020,USA,gassupply1,2020,11.62790000000
-0,2025,USA,gassupply1,2020,469.42660000000
-0,2030,USA,gassupply1,2020,11.62790000000
-0,2035,USA,gassupply1,2020,11.62790000000
-0,2040,USA,gassupply1,2020,11.62790000000
-0,2045,USA,gassupply1,2020,11.62790000000
-0,2050,USA,gassupply1,2020,11.62790000000
-0,2059,USA,gassupply1,2020,457.79870000000
+asset,year,region,installed,technology,capacity
+0,2020,R1,2020,gassupply1,15.00000000000
+0,2025,R1,2020,gassupply1,15.00000000000
+0,2030,R1,2020,gassupply1,7.50000000000

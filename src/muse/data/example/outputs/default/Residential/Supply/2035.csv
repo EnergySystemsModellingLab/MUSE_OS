@@ -1,5 +1,7 @@
 commodity,region,year,asset,technology,installed,supply
-heat,USA,2035,3,heatpump,2025,6.11110000000
-heat,USA,2035,4,heatpump,2030,13.88890000000
-heat,USA,2040,4,heatpump,2030,13.88890000000
-heat,USA,2040,5,heatpump,2035,9.44440000000
+heat,R1,2035,0,gasboiler,2025,1.72220000000
+heat,R1,2035,3,heatpump,2025,4.38890000000
+heat,R1,2035,4,heatpump,2030,13.88890000000
+heat,R1,2040,4,heatpump,2030,13.88890000000
+heat,R1,2040,5,heatpump,2035,9.44440000000
+CO2f,R1,2035,0,gasboiler,2025,111.44500000000
