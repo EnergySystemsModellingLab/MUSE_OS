@@ -470,7 +470,7 @@ def lp_costs(
 
         >>> from muse.constraints import lp_costs
         >>> lpcosts = lp_costs(
-        ...     technologies.sel(year=2020, region="USA"), costs, timeslices
+        ...     technologies.sel(year=2020, region="R1"), costs, timeslices
         ... )
         >>> assert "capacity" in lpcosts.data_vars
         >>> assert "production" in lpcosts.data_vars
