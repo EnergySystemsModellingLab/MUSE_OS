@@ -32,7 +32,7 @@ def test_aggregate_sector():
                         index=[(y, ai.assets.technology.values[0])],
                     )
                     frame = concat([frame, data])
-
+    print()
     assert (frame[columns].values == alldata[columns].values).all()
 
 
@@ -41,7 +41,7 @@ def test_aggregate_sectors():
     from pandas import DataFrame, concat
 
     mca = examples.model("multiple-agents")
-    year = [2020, 2025]
+    year = [2020, 2025, 2030]
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
     agent_list = [list(a.agents) for a in sector_list]
     alldata = sectors_capacity(mca.sectors)
@@ -67,6 +67,7 @@ def test_aggregate_sectors():
                             index=[(y, ai[ii].assets.technology.values[0])],
                         )
                         frame = concat([frame, data])
+                        print(frame, "frame, year)")
 
     assert (frame[columns].values == alldata[columns].values).all()
 
@@ -85,7 +86,7 @@ def test_aggregate_sector_manyregions():
     agents[1].assets["region"] = "BELARUS"
     agents[0].region = "BELARUS"
     agents[1].region = "BELARUS"
-    year = [2020, 2025]
+    year = [2020, 2025, 2030]
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
     agent_list = [list(a.agents) for a in sector_list]
     alldata = sectors_capacity(mca.sectors)
