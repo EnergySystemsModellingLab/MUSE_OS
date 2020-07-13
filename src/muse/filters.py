@@ -77,6 +77,7 @@ __all__ = [
     "register_filter",
     "register_initializer",
     "identity",
+    "reduce_asset",
     "similar_technology",
     "same_enduse",
     "same_fuels",

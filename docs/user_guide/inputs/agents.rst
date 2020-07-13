@@ -145,33 +145,33 @@ SearchRule
    The search rule allows users to par down the search space of technologies to those an
    agent is likely to consider.
    The search rule is any function with a given signature, and registered with MUSE via
-   :py:func:`@register_filter <register_filter>`. The following search rules, defined
+   :py:func:`~muse.filters.register_filter`. The following search rules, defined
    in :py:mod:`~muse.filters`, are available with MUSE:
 
-   - :py:func:`same_enduse <same_enduse>`: Only allow technologies that provide the same
+   - :py:func:`~muse.filters.same_enduse`: Only allow technologies that provide the same
      enduse as the current set of technologies owned by the agent.
 
-   - :py:func:`identity <identity>`: Allows all current technologies. E.g. disables
+   - :py:func:`~muse.filters.identity`: Allows all current technologies. E.g. disables
      filtering. Aliased to "all".
 
-   - :py:func:`similar_technology <similar_technology>`: Only allows technologies that
+   - :py:func:`~muse.filters.similar_technology`: Only allows technologies that
      have the same type as current crop of technologies in the agent, as determined by
      "tech_type" in :ref:`inputs-technodata`. Aliased to "similar".
 
-   - :py:func:`same_fuels <same_fuels>`: Only allows technologies that consume the same
+   - :py:func:`~muse.filters.same_fuels`: Only allows technologies that consume the same
      fuels as the current crop of technologies in the agent. Aliased to
      "fueltype".
 
-   - :py:func:`currently_existing_tech <currently_existing_tech>`: Only allows
+   - :py:func:`~muse.filters.currently_existing_tech`: Only allows
      technologies that the agent already owns. Aliased to "existing".
 
-   - :py:func:`currently_referenced_tech <currently_referenced_tech>`: Only allows
+   - :py:func:`~muse.filters.currently_referenced_tech`: Only allows
      technologies that are currently present in the market with non-zero capacity.
 
-   - :py:func:`maturity <maturity>`: Only allows technologies that have achieved a given
-     market share.
+   - :py:func:`~muse.filters.maturity`: Only allows technologies that have achieved a
+     given market share.
 
-   - :py:func:`reduce_assets <reduce_assets>`: Reduce over the asset coordinate. This is
+   - :py:func:`~muse.filters.reduce_asset`: Reduce over the asset coordinate. This is
      useful for agents which do not split the demand across the original assets.
    
    To specify multiple filters from the csv format, separate them with "->", as in

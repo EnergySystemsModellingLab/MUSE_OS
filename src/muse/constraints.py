@@ -515,7 +515,7 @@ def lp_costs(
 
         >>> from muse.constraints import lp_costs
         >>> lpcosts = lp_costs(
-        ...     technologies.sel(year=2020, region="USA"), costs, timeslices
+        ...     technologies.sel(year=2020, region="R1"), costs, timeslices
         ... )
         >>> assert "capacity" in lpcosts.data_vars
         >>> assert "production" in lpcosts.data_vars
@@ -814,7 +814,7 @@ class ScipyAdapter:
         but not over the assets. Hence the assets will be summed over in the final
         constraint:
 
-        >>> assert (constraint.b.data == np.array([[500.0]] * 4)).all()
+        >>> assert (constraint.b.data == np.array([500.0, 55.0, 55.0, 500.0 ])).all()
         >>> assert set(constraint.b.dims) == {"replacement"}
         >>> assert constraint.kind == cs.ConstraintKind.UPPER_BOUND
 
@@ -937,7 +937,6 @@ class ScipyAdapter:
                 data[f"b{i}"] = -data[f"b{i}"]  # type: ignore
                 data[f"capacity{i}"] = -data[f"capacity{i}"]  # type: ignore
                 data[f"production{i}"] = -data[f"production{i}"]  # type: ignore
-
         return data
 
     @staticmethod
@@ -968,6 +967,7 @@ class ScipyAdapter:
                 .values
                 for i in indices
             ]
+
             prod_constraints = [
                 productions[i]
                 .stack(constraint=sorted(bs[i].dims))

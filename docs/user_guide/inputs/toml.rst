@@ -321,40 +321,96 @@ priority
    
    Defaults to "last".
 
+subsectors
+
+    Subsectors group together agents producing the same commodity. There should be at
+    least one subsector. And there can be as many as required. For instance, a
+    one-subsector setup would look like:
+
+    .. code-block:: toml
+
+        [sectors.gas.subsectors.all]
+        agents = '{path}/technodata/Agents.csv'
+        existing_capacity = '{path}/technodata/gas/Existing.csv'
+
+    A two-subsector could look like:
+
+    .. code-block:: toml
+
+        [sectors.gas.subsectors.methane_and_ethanol]
+        agents = '{path}/technodata/me_agents.csv'
+        existing_capacity = '{path}/technodata/gas/me_existing.csv'
+        commodities = ["methane", "ethanol"]
+
+        [sectors.gas.subsectors.natural]
+        agents = '{path}/technodata/nat_agents.csv'
+        existing_capacity = '{path}/technodata/gas/nat_existing.csv'
+        commodities = ["refined", "crude"]
+
+    In the case of multiple subsectors, it is important to specify disjoint sets of
+    commodities so that each subsector can service a separate demand.
+    The subsectors accept the following keywords:
+
+    agents
+        Path to a csv file describing the agents in the sector.
+        See :ref:`user_guide/inputs/agents:agents`.
+
+    existing_capacity
+       Path to a csv file describing the initial capacity of the sector.
+       See :ref:`user_guide/inputs/existing_capacity:existing sectoral capacity`.
+
+    lpsolver:
+        The solver for linear problems to use when figuring out investments. The solvers
+        are registered via :py:func:`~muse.investments.register_investment`. At time of
+        writing, three are available:
+
+        - an "adhoc" solver: Simple in-house solver that ranks the technologies
+          according to cost and sevice the demand incrementally. The ad-hoc solver only
+          accepts the maximum capacity expansion, the demand, the search-space, and the
+          maximum production constraint. It will ignore other constraints, e.g. the
+          minimum service constraint.
+
+        - "scipy" solver: Formulates investment as a true LP problem and solves it using
+          the `scipy solver`_.
+
+        - "cvxopt" solver: Formulates investment as a true LP problem and solves it
+          using the python package `cvxopt`_. `cvxopt`_ is *not* installed by default.
+          Users can install it with ``pip install cvxopt`` or ``conda install cvxopt``.
+
+    demand_share
+        A method used to split the MCA demand into seperate parts to be serviced by
+        specific agents. A basic distinction is between *new* and *retrofit* agents: the
+        former asked to respond to an increase of commodity demand investing in new
+        assets; the latter asked to invest in new asset to balance the decommissined
+        assets.
+
+        There are currently two options:
+
+        - :py:func:`~muse.demand_share.new_and_retro`: the demand is split into a
+          retrofit demand corresponding to demand that used to be serviced by
+          decommisioned assets, and the *new* demand.
+        - :py:func:`~muse.demand_share.market_demand`: simply the consumption for the
+          forecast year.
+
+    constraints
+        The list of constraints to apply to the LP problem solved by the sector. By
+        default all of the following are included:
+
+        - :py:func:`~muse.constraints.demand`: a lower-bound of the production decision
+          variables specifying the target demand.
+        - :py:func:`~muse.constraints.max_production`: an upper bound limiting how much
+          can be produced for a given capacity.
+        - :py:func:`~muse.constraints.max_capacity_expansion`: an upper bound limiting
+          how much the capacity can grow during each investment event.
+        - :py:func:`~muse.constraints.search_space`: a binary (on-off) constraint
+          specifying which technologies are considered for investment.
+
+
 interpolation
    Interpolation method user when filling in missing values. Available interpolation
    methods depend on the underlying `scipy method's kind attribute`_.
    
    .. _scipy method's kind attribute: https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
-
-investment_production
-   In its simplest form, this is the name of a method to compute the production from a
-   sector, as used when splitting the demand across agents. In other words, this the
-   computation of the production which affects future investments. In it's more general
-   form, *production* can be a subsection of its own, with a "name" attribute. For
-   instance:
-
-   .. code-block:: TOML
-
-      [sectors.residential.production]
-      name = "match"
-      costing = "prices"
-
-   MUSE provides two methods in :py:mod:`muse.production`:
-   
-   - share: the production is the maximum production for the existing capacity and
-      the technology's utilization factor.
-      See :py:func:`muse.production.maximum_production`.
-   - match: production and demand are matched according to a given cost metric. The
-      cost metric defaults to "prices". It can be modified by using the general form
-      given above, with a "costing" attribute. The latter can be "prices",
-      "gross_margin", or "lcoe".
-      See :py:func:`muse.production.demand_matched_production`.
-
-   *production* can also refer to any custom production method registered with MUSE via
-   :py:func:`muse.production.register_production`.
-
-   Defaults to "share".
 
 dispatch_production
    The name of the production method used to compute the sector's output, as returned
@@ -362,15 +418,6 @@ dispatch_production
    production method which will affect other sectors.
 
    It has the same format and options as the *production* attribute above.
-
-demand_share
-    A method used to split the MCA demand into seperate parts to be serviced by specific
-    agents. A basic distinction is between *new* and *retrofit* agents: the former asked to 
-    respond to an increase of commodity demand investing in new assets; the latter asked to
-    invest in new asset to balance the decommissined assets.
-    There is currently only one option, "new_and_retro", meaning the assets owned by 
-    each *new* agent are then passed to the corresponding *retrofit* agent. A *new* agent 
-    is associated to a corresponding *retro* agent which shares the same name.
 
 interactions
    Defines interactions between agents. These interactions take place right before new
@@ -420,21 +467,6 @@ interactions
    "new_to_retro" nor "transfer" take any arguments at this point. MUSE interaction
    facilities are defined in :py:mod:`muse.interactions`.
 
-lpsolver:
-    The solver for linear problems to use when figuring out investments. The solvers are
-    registered via :py:func:`~muse.investments.register_investment`. At time of
-    writing, three are available:
-
-    - an "adhoc" solver: Simple in-house solver that ranks the technologies
-          according to cost and sevice the demand incrementally.
-
-    - "scipy" solver: Formulates investment as a true LP problem and solves it using the
-      `scipy solver`_.
-
-    - "cvxopt" solver: Formulates investment as a true LP problem and solves it using
-      the python package `cvxopt`_. `cvxopt`_ is *not* installed by default. Users can
-      install it with ``pip install cvxopt`` or ``conda install cvxopt``.
-     
 output:
    Outputs have several moving components to them. MUSE is designed to allow users to
    mix-and-match how and what to save.
@@ -527,14 +559,6 @@ commodities_in
 commodities_out
    Path to a csv file describing the outputs of each technology involved in the sector.
    See :ref:`user_guide/inputs/commodities_io:output commodities`.
-
-existing_capacity
-   Path to a csv file describing the initial capacity of the sector.
-   See :ref:`user_guide/inputs/existing_capacity:existing sectoral capacity`.
-
-agents
-    Path to a csv file describing the agents in the sector.
-    See :ref:`user_guide/inputs/agents:agents`.
 
 
 --------------

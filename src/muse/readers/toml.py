@@ -21,8 +21,8 @@ from typing import (
 )
 
 import numpy as np
-from pandas import MultiIndex
-from xarray import DataArray, Dataset
+import pandas as pd
+import xarray as xr
 
 from muse.decorators import SETTINGS_CHECKS, register_settings_check
 from muse.defaults import DATA_DIRECTORY, DEFAULT_SECTORS_DIRECTORY
@@ -382,12 +382,6 @@ def read_settings(
     msg = "ERROR - There must be at least 1 sector."
     assert len(user_settings["sectors"]) >= 1, msg
 
-    # Those sectors and agents not in the input settings are removed
-    default_settings["sectors"] = {
-        k: default_settings["sectors"][k]
-        for k in set(user_settings["sectors"]).intersection(default_settings["sectors"])
-    }
-
     # timeslice information cannot be merged. Accept only information from one.
     if "timeslices" in user_settings:
         default_settings.pop("timeslices", None)
@@ -404,9 +398,9 @@ def read_settings(
 
 def read_ts_multiindex(
     settings: Optional[Union[Mapping, Text]] = None,
-    timeslice: Optional[DataArray] = None,
+    timeslice: Optional[xr.DataArray] = None,
     transforms: Optional[Dict[Tuple, np.ndarray]] = None,
-) -> MultiIndex:
+) -> pd.MultiIndex:
     """Read multiindex for a timeslice from TOML.
 
     Example:
@@ -460,7 +454,6 @@ def read_ts_multiindex(
     """
     from toml import loads
     from itertools import product
-    from pandas import MultiIndex
     from muse.timeslices import TIMESLICE, TRANSFORMS
 
     indices = (TIMESLICE if timeslice is None else timeslice).get_index("timeslice")
@@ -488,7 +481,7 @@ def read_ts_multiindex(
         unexpected = set(level).difference(known)
         if unexpected:
             raise ValueError("Unexpected slice(s): " + ", ".join(unexpected))
-    return MultiIndex.from_tuples(
+    return pd.MultiIndex.from_tuples(
         [index for index in product(*levels) if index in transforms],
         names=indices.names,
     )
@@ -496,9 +489,9 @@ def read_ts_multiindex(
 
 def read_timeslices(
     settings: Optional[Union[Text, Mapping]] = None,
-    timeslice: Optional[DataArray] = None,
+    timeslice: Optional[xr.DataArray] = None,
     transforms: Optional[Dict[Tuple, np.ndarray]] = None,
-) -> Dataset:
+) -> xr.Dataset:
     """Reads timeslice levels and create resulting timeslice coordinate.
 
     Args:
@@ -513,7 +506,7 @@ def read_timeslices(
             then this funtion should be called *after* the timeslice module has been
             setup with a call to :py:func:`~muse.timeslice.setup_module`.
     Returns:
-        A Dataset with the timeslice coordinates.
+        A xr.Dataset with the timeslice coordinates.
 
     Example:
         >>> toml = \"\"\"
@@ -556,19 +549,19 @@ def read_timeslices(
     if timeslice is None:
         timeslice = TIMESLICE
     if settings is None:
-        return Dataset({"represent_hours": timeslice}).set_coords("represent_hours")
+        return xr.Dataset({"represent_hours": timeslice}).set_coords("represent_hours")
     indices = read_ts_multiindex(settings, timeslice=timeslice, transforms=transforms)
-    units = DataArray(
+    units = xr.DataArray(
         np.ones(len(indices)), coords={"timeslice": indices}, dims="timeslice"
     )
     proj = timeslice_projector(units, finest=timeslice, transforms=transforms)
-    proj *= DataArray(
+    proj *= xr.DataArray(
         timeslice.values,
         coords={"finest_timeslice": proj.finest_timeslice},
         dims="finest_timeslice",
     )
 
-    return Dataset({"represent_hours": proj.sum("finest_timeslice")}).set_coords(
+    return xr.Dataset({"represent_hours": proj.sum("finest_timeslice")}).set_coords(
         "represent_hours"
     )
 
@@ -719,14 +712,14 @@ def check_budget_parameters(settings: Dict) -> None:
             assert length + 1 == len(settings["time_framework"]), msg
             coords = settings["time_framework"][:-1]
 
-        # If Ok, we transform the list into an DataArray
-        settings["carbon_budget_control"]["budget"] = DataArray(
+        # If Ok, we transform the list into an xr.DataArray
+        settings["carbon_budget_control"]["budget"] = xr.DataArray(
             np.array(settings["carbon_budget_control"]["budget"]),
             dims="year",
             coords={"year": coords},
         )
     else:
-        settings["carbon_budget_control"]["budget"] = DataArray([])
+        settings["carbon_budget_control"]["budget"] = xr.DataArray([])
 
 
 @register_settings_check(vary_name=False)
@@ -776,7 +769,7 @@ def check_iteration_control(settings: Dict) -> None:
 def check_time_slices(settings: Dict) -> None:
     """Check the time slices.
 
-    If there is no error, they are transformed into a DataArray
+    If there is no error, they are transformed into a xr.DataArray
     """
     from muse.timeslices import setup_module
 
@@ -833,13 +826,7 @@ def check_sectors_files(settings: Dict) -> None:
         "last": 100,
     }
 
-    path_options = {
-        "agents",
-        "technodata",
-        "commodities_in",
-        "commodities_out",
-        "existing_capacity",
-    }
+    path_options = {"technodata", "commodities_in", "commodities_out"}
 
     if "list" in sectors:
         sectors = {k: sectors[k] for k in sectors["list"]}
@@ -868,3 +855,54 @@ def check_sectors_files(settings: Dict) -> None:
         settings["sectors"].keys(), key=lambda x: settings["sectors"][x]["priority"]
     )
     settings["sectors"] = sectors
+
+
+def read_technodata(
+    settings: Any,
+    sector_name: Optional[Text] = None,
+    time_framework: Optional[Sequence[int]] = None,
+    commodities: Optional[Union[Text, Path]] = None,
+    regions: Optional[Sequence[Text]] = None,
+) -> xr.Dataset:
+    """Helper function to create technodata for a given sector."""
+    from muse.readers import read_technologies
+
+    if time_framework is None:
+        time_framework = getattr(settings, "time_framework", [2010, 2050])
+
+    if commodities is None:
+        commodities = settings.global_input_files.global_commodities
+
+    if regions is None:
+        regions = settings.regions
+
+    if sector_name is not None:
+        settings = getattr(settings.sectors, sector_name)
+
+    technologies = read_technologies(
+        settings.technodata,
+        settings.commodities_out,
+        settings.commodities_in,
+        commodities=commodities,
+    )
+    ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
+    outs = (technologies.fixed_outputs > 0).any(("year", "region", "technology"))
+    techcomms = technologies.commodity[ins | outs]
+    technologies = technologies.sel(commodity=techcomms, region=regions)
+
+    # make sure technologies includes the requisite years
+    maxyear = getattr(settings, "forecast", 5) + max(time_framework)
+    if technologies.year.max() < maxyear:
+        msg = "Forward-filling technodata to fit simulation timeframe"
+        getLogger(__name__).info(msg)
+        years = technologies.year.data.tolist() + [maxyear]
+        technologies = technologies.sel(year=years, method="ffill")
+        technologies["year"] = "year", years
+    minyear = min(time_framework)
+    if technologies.year.min() > minyear:
+        msg = "Back-filling technodata to fit simulation timeframe"
+        getLogger(__name__).info(msg)
+        years = [minyear] + technologies.year.data.tolist()
+        technologies = technologies.sel(year=years, method="bfill")
+        technologies["year"] = "year", years
+    return technologies

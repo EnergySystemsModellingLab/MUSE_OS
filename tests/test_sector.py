@@ -44,13 +44,14 @@ def mock_sector(buildings):
         type(result).uuid = PropertyMock(return_value=agent.uuid)
         type(result).category = PropertyMock(return_value=agent.category)
         type(result).name = PropertyMock(return_value=agent.name)
+        type(result).next = Mock(return_value=None)
         if hasattr(agent, "quantity"):
             type(result).quantity = PropertyMock(return_value=agent.quantity)
         return result
 
     result = deepcopy(buildings)
-    result.real_agents = result.agents
-    result.agents = [mocker(u) for u in result.agents]
+    result.subsectors[0].real_agents = result.subsectors[0].agents
+    result.subsectors[0].agents = [mocker(u) for u in result.subsectors[0].agents]
     return result
 
 
@@ -99,7 +100,7 @@ def test_call_each_agent(mock_sector, real_market, agent_id):
     mock_sector.outputs.sector = factory()
     mock_sector.next(real_market)
 
-    mock = mock_sector.agents[agent_id]
-    real = deepcopy(mock_sector.real_agents[agent_id])
+    mock = mock_sector.subsectors[0].agents[agent_id]
+    real = deepcopy(mock_sector.subsectors[0].real_agents[agent_id])
     assert mock.next.call_count == 1
     real.next(*mock.next.call_args[0], **mock.next.call_args[1])
