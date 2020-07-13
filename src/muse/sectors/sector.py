@@ -81,8 +81,14 @@ class Sector(AbstractSector):  # type: ignore
 
         interactions = interaction_factory(sector_settings.pop("interactions", None))
 
-        for attr in ("technodata", "commodities_out", "commodities_in"):
-            sector_settings.pop(attr)
+        for attr in (
+            "technodata",
+            "commodities_out",
+            "commodities_in",
+            "existing_trade",
+            "possible_trade",
+        ):
+            sector_settings.pop(attr, None)
         return cls(
             name,
             technologies,

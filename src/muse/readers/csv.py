@@ -706,3 +706,34 @@ def read_csv_outputs(
             camel_to_snake(u) for u in result.commodity.values
         ]
     return result
+
+
+def read_trade(
+    filename: Union[Text, Path],
+    columns_are_source: bool = True,
+    skiprows: Optional[Sequence[int]] = None,
+    name: Optional[Text] = None,
+) -> xr.DataArray:
+    """Read CSV table with source and destination regions."""
+    from functools import partial
+
+    if columns_are_source:
+        col_region = "src_region"
+        row_region = "dst_region"
+    else:
+        row_region = "src_region"
+        col_region = "dst_region"
+    csv = pd.read_csv(filename, skiprows=skiprows)
+    csv = csv.apply(partial(pd.to_numeric, errors="ignore"), axis=0)
+    csv = csv.rename(
+        columns=dict(Time="year", Commodity="commodity", RegionName=row_region)
+    )
+    indices = {"year", "commodity", row_region}.intersection(csv.columns)
+    csv.index = pd.MultiIndex.from_arrays([csv[u] for u in indices])
+    csv = csv.drop(columns=indices)
+    csv = csv.stack()
+    csv.index.names = csv.index.names[:-1] + [col_region]
+
+    result = xr.DataArray.from_series(csv).rename(src_region="region")
+    result.name = name
+    return result

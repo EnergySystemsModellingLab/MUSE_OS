@@ -863,9 +863,10 @@ def read_technodata(
     time_framework: Optional[Sequence[int]] = None,
     commodities: Optional[Union[Text, Path]] = None,
     regions: Optional[Sequence[Text]] = None,
+    **kwargs,
 ) -> xr.Dataset:
     """Helper function to create technodata for a given sector."""
-    from muse.readers import read_technologies
+    from muse.readers.csv import read_technologies, read_trade
 
     if time_framework is None:
         time_framework = getattr(settings, "time_framework", [2010, 2050])
@@ -890,6 +891,13 @@ def read_technodata(
     techcomms = technologies.commodity[ins | outs]
     technologies = technologies.sel(commodity=techcomms, region=regions)
 
+    if getattr(settings, "existing_trade", None) is not None:
+        technologies["existing_trade"] = read_trade(
+            settings.existing_trade, skiprows=[1]
+        )
+    if getattr(settings, "possible_trade", None) is not None:
+        technologies["possible_trade"] = read_trade(settings.possible_trade) != 0
+
     # make sure technologies includes the requisite years
     maxyear = getattr(settings, "forecast", 5) + max(time_framework)
     if technologies.year.max() < maxyear:
@@ -905,4 +913,7 @@ def read_technodata(
         years = [minyear] + technologies.year.data.tolist()
         technologies = technologies.sel(year=years, method="bfill")
         technologies["year"] = "year", years
+
+    year = sorted(set(time_framework).union(technologies.year.data.tolist()))
+    technologies = technologies.interp(year=year, **kwargs)
     return technologies
