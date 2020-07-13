@@ -247,8 +247,7 @@ def agents_factory(
     for param in params:
         if regions is not None and param["region"] not in regions:
             continue
-        if param["agent_type"] == "retrofit":
-            param["technologies"] = technologies.sel(region=param["region"])
+        param["technologies"] = technologies.sel(region=param["region"])
         param["category"] = param["agent_type"]
 
         # We deepcopy the capacity  as it changes every iteration and needs to be

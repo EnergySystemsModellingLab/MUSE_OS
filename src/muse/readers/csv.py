@@ -451,6 +451,7 @@ def read_csv_agent_parameters(filename) -> List:
             "retrofit": "retrofit",
             "retro": "retrofit",
             "agent": "agent",
+            "default": "agent",
         }[getattr(row, "Type", "agent").lower()]
         data = {
             "name": row.Name,
