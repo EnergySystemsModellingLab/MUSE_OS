@@ -159,13 +159,22 @@ def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
     return result
 
 
-def read_initial_capacity(filename: Union[Text, Path]) -> xr.DataArray:
+def read_initial_assets(filename: Union[Text, Path]) -> xr.DataArray:
     """Reads and formats data about initial capacity into a dataframe."""
+
+    data = pd.read_csv(filename, float_precision="high", low_memory=False)
+    if "Time" in data.columns:
+        return read_trade(data, skiprows=[1], columns_are_source=True)
+    return read_initial_capacity(data)
+
+
+def read_initial_capacity(data: Union[Text, Path, pd.DataFrame]) -> xr.DataArray:
     from re import match
 
-    data = pd.read_csv(filename, float_precision="high", low_memory=False).drop(
-        "Unit", axis=1
-    )
+    if not isinstance(data, pd.DataFrame):
+        data = pd.read_csv(data, float_precision="high", low_memory=False)
+    if "Unit" in data.columns:
+        data = data.drop(columns="Unit")
 
     data.index = pd.MultiIndex.from_arrays(
         [data.ProcessName, data.RegionName], names=("asset", "region")
@@ -709,7 +718,7 @@ def read_csv_outputs(
 
 
 def read_trade(
-    filename: Union[Text, Path],
+    data: Union[pd.DataFrame, Text, Path],
     columns_are_source: bool = True,
     skiprows: Optional[Sequence[int]] = None,
     name: Optional[Text] = None,
@@ -717,23 +726,25 @@ def read_trade(
     """Read CSV table with source and destination regions."""
     from functools import partial
 
+    if not isinstance(data, pd.DataFrame):
+        data = pd.read_data(data, skiprows=skiprows)
+
     if columns_are_source:
         col_region = "src_region"
         row_region = "dst_region"
     else:
         row_region = "src_region"
         col_region = "dst_region"
-    csv = pd.read_csv(filename, skiprows=skiprows)
-    csv = csv.apply(partial(pd.to_numeric, errors="ignore"), axis=0)
-    csv = csv.rename(
+    data = data.apply(partial(pd.to_numeric, errors="ignore"), axis=0)
+    data = data.rename(
         columns=dict(Time="year", Commodity="commodity", RegionName=row_region)
     )
-    indices = {"year", "commodity", row_region}.intersection(csv.columns)
-    csv.index = pd.MultiIndex.from_arrays([csv[u] for u in indices])
-    csv = csv.drop(columns=indices)
-    csv = csv.stack()
-    csv.index.names = csv.index.names[:-1] + [col_region]
+    indices = {"year", "commodity", row_region}.intersection(data.columns)
+    data.index = pd.MultiIndex.from_arrays([data[u] for u in indices])
+    data = data.drop(columns=indices)
+    data = data.stack()
+    data.index.names = data.index.names[:-1] + [col_region]
 
-    result = xr.DataArray.from_series(csv).rename(src_region="region")
+    result = xr.DataArray.from_series(data).rename(src_region="region")
     result.name = name
     return result

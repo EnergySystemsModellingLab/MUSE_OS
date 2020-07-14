@@ -866,7 +866,7 @@ def read_technodata(
     **kwargs,
 ) -> xr.Dataset:
     """Helper function to create technodata for a given sector."""
-    from muse.readers.csv import read_technologies, read_trade
+    from muse.readers.csv import read_technologies
 
     if time_framework is None:
         time_framework = getattr(settings, "time_framework", [2010, 2050])
@@ -891,13 +891,6 @@ def read_technodata(
     techcomms = technologies.commodity[ins | outs]
     technologies = technologies.sel(commodity=techcomms, region=regions)
 
-    if getattr(settings, "existing_trade", None) is not None:
-        technologies["existing_trade"] = read_trade(
-            settings.existing_trade, skiprows=[1]
-        )
-    if getattr(settings, "possible_trade", None) is not None:
-        technologies["possible_trade"] = read_trade(settings.possible_trade) != 0
-
     # make sure technologies includes the requisite years
     maxyear = getattr(settings, "forecast", 5) + max(time_framework)
     if technologies.year.max() < maxyear:
@@ -917,3 +910,20 @@ def read_technodata(
     year = sorted(set(time_framework).union(technologies.year.data.tolist()))
     technologies = technologies.interp(year=year, **kwargs)
     return technologies
+
+
+def read_trade(settings: Any) -> xr.Dataset:
+    from muse.readers.csv import read_trade as read_csv_trade
+
+    result = xr.Dataset()
+    settings = getattr(settings, "trade", settings)
+    if not hasattr(settings, "existing"):
+        raise ValueError("Existing trade file not given")
+    result["existing"] = read_csv_trade(settings.existing, skiprows=[1])
+    if getattr(settings, "possible", None) is not None:
+        result["possible"] = read_trade(settings.possible) != 0
+    else:
+        result["possible"] = xr.ones_like(result.region, dtype=bool) * xr.ones_like(
+            result.dst_region, dtype=bool
+        )
+    return
