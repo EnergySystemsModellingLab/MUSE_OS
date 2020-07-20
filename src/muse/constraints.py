@@ -157,7 +157,7 @@ CONSTRAINT_SIGNATURE = Callable[
 .. note::
 
     A constraint can return `None`, in which case it is ignored. This makes it simple to
-    add cosntraints that are only used if some condition is met, e.g. minimum service
+    add constraints that are only used if some condition is met, e.g. minimum service
     conditions are defined in the technodata.
 """
 CONSTRAINTS: MutableMapping[Text, CONSTRAINT_SIGNATURE] = {}
@@ -442,7 +442,7 @@ def max_production(
     production = ones_like(capacity)
     b = zeros_like(production)
     return xr.Dataset(
-        dict(capacity=cast(xr.DataArray, -capacity), production=production, b=b),
+        dict(capacity=-capacity, production=production, b=b),  # type: ignore
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
     )
 
@@ -458,7 +458,7 @@ def minimum_service(
     forecast: int = 5,
     interpolation: Text = "linear",
 ) -> Optional[Constraint]:
-    """ Constructs constraint between capacity and minimum service. """
+    """Constructs constraint between capacity and minimum service."""
     from xarray import zeros_like, ones_like
     from muse.commodities import is_enduse
     from muse.timeslices import convert_timeslice, QuantityType
