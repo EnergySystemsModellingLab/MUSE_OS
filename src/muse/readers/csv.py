@@ -265,16 +265,15 @@ def read_technologies(
     result = read_technodictionary(tpath)
     if any(result[u].isnull().any() for u in result.data_vars):
         raise ValueError(f"Inconsistent data in {tpath} (e.g. inconsistent years)")
-    outs = (
-        read_io_technodata(opath)
-        .rename(flexible="flexible_outputs", fixed="fixed_outputs")
-        .interp(year=result.year)
+    outs = read_io_technodata(opath).rename(
+        flexible="flexible_outputs", fixed="fixed_outputs"
     )
-    ins = (
-        read_io_technodata(ipath)
-        .rename(flexible="flexible_inputs", fixed="fixed_inputs")
-        .interp(year=result.year)
+    ins = read_io_technodata(ipath).rename(
+        flexible="flexible_inputs", fixed="fixed_inputs"
     )
+    if "year" in result.dims:
+        outs = outs.interp(year=result.year)
+        ins = ins.interp(year=result.year)
 
     result = result.merge(outs).merge(ins)
 
