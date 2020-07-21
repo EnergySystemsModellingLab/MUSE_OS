@@ -263,11 +263,17 @@ def read_technologies(
     logger.info(msg)
 
     result = read_technodictionary(tpath)
-    outs = read_io_technodata(opath).rename(
-        flexible="flexible_outputs", fixed="fixed_outputs"
+    if any(result[u].isnull().any() for u in result.data_vars):
+        raise ValueError(f"Inconsistent data in {tpath} (e.g. inconsistent years)")
+    outs = (
+        read_io_technodata(opath)
+        .rename(flexible="flexible_outputs", fixed="fixed_outputs")
+        .interp(year=result.year)
     )
-    ins = read_io_technodata(ipath).rename(
-        flexible="flexible_inputs", fixed="fixed_inputs"
+    ins = (
+        read_io_technodata(ipath)
+        .rename(flexible="flexible_inputs", fixed="fixed_inputs")
+        .interp(year=result.year)
     )
 
     result = result.merge(outs).merge(ins)
