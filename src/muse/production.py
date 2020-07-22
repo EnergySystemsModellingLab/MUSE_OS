@@ -216,8 +216,9 @@ def costed_dispatch(
     demand = market.consumption.sel(year=year, commodity=commodity).copy()
 
     constraints = (
-        xr.Dataset(dict(maxprod=maxprod, costs=costs))
+        xr.Dataset(dict(maxprod=maxprod, costs=costs, has_output=maxprod > 0))
         .set_coords("costs")
+        .set_coords("has_output")
         .sel(commodity=commodity)
     )
     if not apply_minimum_service_constraint:
@@ -229,18 +230,18 @@ def costed_dispatch(
         demand = np.maximum(demand - group_assets(production), 0)
 
     for cost in sorted(set(constraints.costs.values.flatten())):
-        condition = (constraints.costs == cost) & (constraints.maxprod > 0)
-        cost_constraints = constraints.where(condition, 0)
-        fullprod = group_assets(cost_constraints.maxprod)
+        condition = (constraints.costs == cost) & constraints.has_output
+        current_maxprod = constraints.maxprod.where(condition, 0)
+        fullprod = group_assets(current_maxprod)
         if (fullprod <= demand + 1e-10).all():
             demand -= fullprod
-            production += cost_constraints.maxprod
+            production += current_maxprod
         else:
             demand_prod = (
                 broadcast_techs(demand, production)
-                * (cost_constraints.maxprod / cost_constraints.maxprod.sum("asset"))
+                * (current_maxprod / current_maxprod.sum("asset"))
             ).where(condition, 0)
-            current_prod = np.minimum(demand_prod, cost_constraints.maxprod)
+            current_prod = np.minimum(demand_prod, current_maxprod)
             demand = np.maximum((demand - group_assets(current_prod)), 0)
             production += current_prod
 
