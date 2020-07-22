@@ -271,7 +271,7 @@ def read_technologies(
     ins = read_io_technodata(ipath).rename(
         flexible="flexible_inputs", fixed="fixed_inputs"
     )
-    if "year" in result.dims:
+    if "year" in result.dims and len(result.year) > 1:
         outs = outs.interp(year=result.year)
         ins = ins.interp(year=result.year)
 
