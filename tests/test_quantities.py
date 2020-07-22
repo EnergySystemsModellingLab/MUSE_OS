@@ -493,8 +493,8 @@ def test_demand_matched_production(
     assert (production <= max_prod + 1e-8).all()
 
 
-def test_costed_dispatch_exact_match(market, capacity, technologies, cost="llcoe"):
-    from muse.production import costed_dispatch
+def test_costed_production_exact_match(market, capacity, technologies, cost="llcoe"):
+    from muse.production import costed_production
     from muse.quantities import maximum_production
     from muse.timeslices import convert_timeslice, QuantityType
 
@@ -511,7 +511,7 @@ def test_costed_dispatch_exact_match(market, capacity, technologies, cost="llcoe
         QuantityType.EXTENSIVE,
     )
     market["consumption"] = maxdemand
-    result = costed_dispatch(market, capacity, technologies, cost_function=cost)
+    result = costed_production(market, capacity, technologies, cost_function=cost)
     assert isinstance(result, xr.DataArray)
     actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
     expected = maxdemand.sel(year=market.year.min())
@@ -521,8 +521,8 @@ def test_costed_dispatch_exact_match(market, capacity, technologies, cost="llcoe
     assert np.abs(actual - expected).max() < 1e-8
 
 
-def test_costed_dispatch_single_region(market, capacity, technologies, cost="llcoe"):
-    from muse.production import costed_dispatch
+def test_costed_production_single_region(market, capacity, technologies, cost="llcoe"):
+    from muse.production import costed_production
     from muse.quantities import maximum_production
     from muse.timeslices import convert_timeslice, QuantityType
 
@@ -535,7 +535,7 @@ def test_costed_dispatch_single_region(market, capacity, technologies, cost="llc
         QuantityType.EXTENSIVE,
     )
     market["consumption"] = maxdemand
-    result = costed_dispatch(market, capacity, technologies, cost_function=cost)
+    result = costed_production(market, capacity, technologies, cost_function=cost)
     assert isinstance(result, xr.DataArray)
     actual = result.sum("asset")
     expected = maxdemand.sel(year=market.year.min())
@@ -545,8 +545,8 @@ def test_costed_dispatch_single_region(market, capacity, technologies, cost="llc
     assert np.abs(actual - expected).max() < 1e-8
 
 
-def test_costed_dispatch_over_capacity(market, capacity, technologies, cost="llcoe"):
-    from muse.production import costed_dispatch
+def test_costed_production_over_capacity(market, capacity, technologies, cost="llcoe"):
+    from muse.production import costed_production
     from muse.quantities import maximum_production
     from muse.timeslices import convert_timeslice, QuantityType
 
@@ -563,7 +563,7 @@ def test_costed_dispatch_over_capacity(market, capacity, technologies, cost="llc
         QuantityType.EXTENSIVE,
     )
     market["consumption"] = maxdemand * 0.9
-    result = costed_dispatch(market, capacity, technologies, cost_function=cost)
+    result = costed_production(market, capacity, technologies, cost_function=cost)
     assert isinstance(result, xr.DataArray)
     actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
     expected = maxdemand.sel(year=market.year.min())
@@ -573,10 +573,10 @@ def test_costed_dispatch_over_capacity(market, capacity, technologies, cost="llc
     assert np.abs(actual - 0.9 * expected).max() < 1e-8
 
 
-def test_costed_dispatch_with_minimum_service(
+def test_costed_production_with_minimum_service(
     market, capacity, technologies, rng, cost="llcoe"
 ):
-    from muse.production import costed_dispatch
+    from muse.production import costed_production
     from muse.quantities import maximum_production
     from muse.timeslices import convert_timeslice, QuantityType
     from muse.utilities import broadcast_techs
@@ -595,7 +595,7 @@ def test_costed_dispatch_with_minimum_service(
     minprod = maxprod * broadcast_techs(technologies.minimum_service_factor, maxprod)
     maxdemand = xr.Dataset(dict(mp=minprod)).groupby("region").sum("asset").mp
     market["consumption"] = maxdemand * 0.9
-    result = costed_dispatch(market, capacity, technologies, cost_function=cost)
+    result = costed_production(market, capacity, technologies, cost_function=cost)
     assert isinstance(result, xr.DataArray)
     actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
     expected = maxdemand.sel(year=market.year.min())

@@ -157,8 +157,8 @@ def demand_matched_production(
     )
 
 
-@register_production
-def costed_dispatch(
+@register_production(name="costed")
+def costed_production(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
@@ -201,19 +201,29 @@ def costed_dispatch(
         def group_assets(x: xr.DataArray) -> xr.DataArray:
             return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
 
-    if year is None:
+    if year is None and "year" in market.dims:
         year = market.year.min()
+    elif "year" in capacity.dims:
+        raise ValueError("Year dimension missing from market")
     technodata = broadcast_techs(technologies, capacity)
+    if "year" in capacity.dims:
+        capacity = capacity.sel(year=year)
+
     costs = cost_callable(market.prices.sel(region=technodata.region), technodata).rank(
         "asset"
     )
     maxprod = convert_timeslice(
-        maximum_production(technodata, capacity.sel(year=year)),
+        maximum_production(technodata, capacity),
         market.timeslice,
         QuantityType.EXTENSIVE,
     )
     commodity = (maxprod > 0).any([i for i in maxprod.dims if i != "commodity"])
-    demand = market.consumption.sel(year=year, commodity=commodity).copy()
+    commodity = commodity.drop_vars(
+        [u for u in commodity.coords if u not in commodity.dims]
+    )
+    demand = market.consumption.sel(commodity=commodity).copy()
+    if "year" in demand.dims:
+        demand = demand.sel(year=year)
 
     constraints = (
         xr.Dataset(dict(maxprod=maxprod, costs=costs, has_output=maxprod > 0))
