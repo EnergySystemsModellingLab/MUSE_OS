@@ -272,8 +272,10 @@ def read_technologies(
         flexible="flexible_inputs", fixed="fixed_inputs"
     )
     if "year" in result.dims and len(result.year) > 1:
-        outs = outs.interp(year=result.year)
-        ins = ins.interp(year=result.year)
+        if all(len(outs[d]) > 1 for d in outs.dims if outs[d].dtype.kind in "uifc"):
+            outs = outs.interp(year=result.year)
+        if all(len(ins[d]) > 1 for d in ins.dims if ins[d].dtype.kind in "uifc"):
+            ins = ins.interp(year=result.year)
 
     result = result.merge(outs).merge(ins)
 
