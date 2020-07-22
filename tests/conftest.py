@@ -615,7 +615,7 @@ def warnings_as_errors():
 
 
 @fixture
-def rng():
+def rng(request):
     from numpy.random import default_rng
 
-    return default_rng()
+    return default_rng(getattr(request.config.option, "randomly_seed", None))
