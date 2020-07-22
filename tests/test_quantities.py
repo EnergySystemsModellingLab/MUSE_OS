@@ -521,6 +521,30 @@ def test_costed_dispatch_exact_match(market, capacity, technologies, cost="llcoe
     assert np.abs(actual - expected).max() < 1e-8
 
 
+def test_costed_dispatch_single_region(market, capacity, technologies, cost="llcoe"):
+    from muse.production import costed_dispatch
+    from muse.quantities import maximum_production
+    from muse.timeslices import convert_timeslice, QuantityType
+
+    capacity = capacity.drop_vars("region")
+    capacity["region"] = "USA"
+    market = market.sel(region=[capacity.region.values])
+    maxdemand = convert_timeslice(
+        maximum_production(technologies, capacity).sum("asset"),
+        market,
+        QuantityType.EXTENSIVE,
+    )
+    market["consumption"] = maxdemand
+    result = costed_dispatch(market, capacity, technologies, cost_function=cost)
+    assert isinstance(result, xr.DataArray)
+    actual = result.sum("asset")
+    expected = maxdemand.sel(year=market.year.min())
+    assert set(actual.dims) == set(expected.dims)
+    for dim in actual.dims:
+        assert (actual[dim] == expected[dim]).all()
+    assert np.abs(actual - expected).max() < 1e-8
+
+
 def test_costed_dispatch_over_capacity(market, capacity, technologies, cost="llcoe"):
     from muse.production import costed_dispatch
     from muse.quantities import maximum_production

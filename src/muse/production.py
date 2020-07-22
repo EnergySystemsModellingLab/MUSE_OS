@@ -191,6 +191,16 @@ def costed_dispatch(
     else:
         raise ValueError(f"Unknown cost {cost_function}")
 
+    if len(capacity.region.dims) == 0:
+
+        def group_assets(x: xr.DataArray) -> xr.DataArray:
+            return x.sum("asset")
+
+    else:
+
+        def group_assets(x: xr.DataArray) -> xr.DataArray:
+            return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
+
     if year is None:
         year = market.year.min()
     technodata = broadcast_techs(technologies, capacity)
@@ -216,16 +226,14 @@ def costed_dispatch(
         production = (
             getattr(technodata, "minimum_service_factor", 0) * constraints.maxprod
         )
-        demand = np.maximum(
-            demand - xr.Dataset(dict(p=production)).groupby("region").sum("asset").p, 0
-        )
+        demand = np.maximum(demand - group_assets(production), 0)
 
     for cost in sorted(set(constraints.costs.values.flatten())):
         condition = (constraints.costs == cost) & (constraints.maxprod > 0)
         cost_constraints = constraints.where(condition, 0)
-        fullprod = cost_constraints.groupby("region").sum("asset")
-        if (fullprod.maxprod <= demand + 1e-10).all():
-            demand -= fullprod.maxprod
+        fullprod = group_assets(cost_constraints.maxprod)
+        if (fullprod <= demand + 1e-10).all():
+            demand -= fullprod
             production += cost_constraints.maxprod
         else:
             demand_prod = (
@@ -233,16 +241,7 @@ def costed_dispatch(
                 * (cost_constraints.maxprod / cost_constraints.maxprod.sum("asset"))
             ).where(condition, 0)
             current_prod = np.minimum(demand_prod, cost_constraints.maxprod)
-            demand = np.maximum(
-                (
-                    demand
-                    - xr.Dataset(dict(current_prod=current_prod))
-                    .groupby("region")
-                    .sum("asset")
-                    .current_prod
-                ),
-                0,
-            )
+            demand = np.maximum((demand - group_assets(current_prod)), 0)
             production += current_prod
 
     result = xr.zeros_like(maxprod)
