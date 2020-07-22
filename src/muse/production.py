@@ -205,7 +205,6 @@ def costed_dispatch(
     commodity = (maxprod > 0).any([i for i in maxprod.dims if i != "commodity"])
     demand = market.consumption.sel(year=year, commodity=commodity).copy()
 
-    visited = (maxprod <= 0).sel(commodity=commodity)
     constraints = (
         xr.Dataset(dict(maxprod=maxprod, costs=costs))
         .set_coords("costs")
@@ -223,8 +222,6 @@ def costed_dispatch(
 
     for cost in sorted(set(constraints.costs.values.flatten())):
         condition = (constraints.costs == cost) & (constraints.maxprod > 0)
-        assert ((~visited) & condition).sum() == condition.sum()
-        visited |= condition
         cost_constraints = constraints.where(condition, 0)
         fullprod = cost_constraints.groupby("region").sum("asset")
         if (fullprod.maxprod <= demand + 1e-10).all():
@@ -247,8 +244,6 @@ def costed_dispatch(
                 0,
             )
             production += current_prod
-
-    assert visited.all()
 
     result = xr.zeros_like(maxprod)
     result[dict(commodity=commodity)] += production
