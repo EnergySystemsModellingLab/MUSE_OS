@@ -206,8 +206,8 @@ def test_yearly_aggregate():
     class MySpecialReturn:
         pass
 
-    @register_output_sink(name="dummy")
-    def dummy(data, year: int, sector: Text, overwrite: bool) -> MySpecialReturn:
+    @register_output_sink
+    def dummy_ya(data, year: int, sector: Text, overwrite: bool) -> MySpecialReturn:
         nonlocal received_data, gyear, gsector, goverwrite
         received_data = data
         gyear = year
@@ -216,7 +216,7 @@ def test_yearly_aggregate():
         return MySpecialReturn()
 
     sink = factory(
-        dict(overwrite=True, sink=dict(aggregate="dummy")), sector_name="yoyo"
+        dict(overwrite=True, sink=dict(aggregate="dummy_ya")), sector_name="yoyo"
     )
 
     data = xr.DataArray([1, 0], coords=dict(a=[2, 4]), dims="a", name="nada")
