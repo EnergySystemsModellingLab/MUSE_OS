@@ -391,14 +391,21 @@ def lifetime_levelized_cost_of_energy(
         year=installation_year,
         **{k: v for k, v in filters.items() if k in techs.dims},
     )
-    fprices = filter_input(
-        prices,
-        year=range(
+    lifetime_years = list(
+        range(
             installation_year,
             installation_year + ftechs.technical_life.astype(int).max().values,
-        ),
+        )
+    )
+    fprices = filter_input(
+        prices,
+        year=lifetime_years,
         **{k: v for k, v in filters.items() if k in prices.dims},
-    ).ffill("year")
+    )
+    if "year" in fprices.dims:
+        fprices = fprices.ffill("year")
+    else:
+        fprices = fprices.drop_vars("year").expand_dims(year=lifetime_years)
 
     assert {"timeslice", "commodity"}.issubset(fprices.dims)
 
