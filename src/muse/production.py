@@ -165,6 +165,7 @@ def costed_dispatch(
     costing: Text = "prices",
     cost_function: Union[Callable, Text] = "llcoe",
     year: Optional[int] = None,
+    apply_minimum_service_constraint: bool = True,
 ) -> xr.DataArray:
     """Computes production from ranked assets.
 
@@ -201,17 +202,25 @@ def costed_dispatch(
         market.timeslice,
         QuantityType.EXTENSIVE,
     )
-    minprod = getattr(technodata, "minimum_service_factor", 0) * maxprod
     commodity = (maxprod > 0).any([i for i in maxprod.dims if i != "commodity"])
     demand = market.consumption.sel(year=year, commodity=commodity).copy()
 
     visited = (maxprod <= 0).sel(commodity=commodity)
     constraints = (
-        xr.Dataset(dict(maxprod=maxprod, minprod=minprod, costs=costs))
+        xr.Dataset(dict(maxprod=maxprod, costs=costs))
         .set_coords("costs")
         .sel(commodity=commodity)
     )
-    production = xr.zeros_like(constraints.maxprod)
+    if not apply_minimum_service_constraint:
+        production = xr.zeros_like(constraints.maxprod)
+    else:
+        production = (
+            getattr(technodata, "minimum_service_factor", 0) * constraints.maxprod
+        )
+        demand = np.maximum(
+            demand - xr.Dataset(dict(p=production)).groupby("region").sum("asset").p, 0
+        )
+
     for cost in sorted(set(constraints.costs.values.flatten())):
         condition = (constraints.costs == cost) & (constraints.maxprod > 0)
         assert ((~visited) & condition).sum() == condition.sum()
@@ -226,10 +235,7 @@ def costed_dispatch(
                 broadcast_techs(demand, production)
                 * (cost_constraints.maxprod / cost_constraints.maxprod.sum("asset"))
             ).where(condition, 0)
-            current_prod = np.maximum(
-                np.minimum(demand_prod, cost_constraints.maxprod),
-                cost_constraints.minprod,
-            )
+            current_prod = np.minimum(demand_prod, cost_constraints.maxprod)
             demand = np.maximum(
                 (
                     demand
