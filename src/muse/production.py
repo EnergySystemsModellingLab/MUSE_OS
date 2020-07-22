@@ -36,8 +36,9 @@ __all__ = [
     "register_production",
     "PRODUCTION_SIGNATURE",
 ]
-from typing import Any, Callable, Mapping, MutableMapping, Text, Union, cast
+from typing import Any, Callable, Mapping, MutableMapping, Optional, Text, Union, cast
 
+import numpy as np
 import xarray as xr
 
 from muse.registration import registrator
@@ -154,3 +155,95 @@ def demand_matched_production(
         capacity=capacity,
         technologies=technologies,
     )
+
+
+@register_production
+def costed_dispatch(
+    market: xr.Dataset,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
+    costing: Text = "prices",
+    cost_function: Union[Callable, Text] = "llcoe",
+    year: Optional[int] = None,
+) -> xr.DataArray:
+    """Computes production from ranked assets.
+
+    The assets are ranked according to their cost. Currently only llcoe and alcoe are
+    allowed. The asset with least cost are allowed to service the demand first, up to
+    the maximum production and above their minimum service.
+    """
+
+    from muse.quantities import (
+        lifetime_levelized_cost_of_energy,
+        annual_levelized_cost_of_energy,
+        maximum_production,
+    )
+    from muse.utilities import broadcast_techs
+    from muse.timeslices import convert_timeslice, QuantityType
+
+    if callable(cost_function):
+        cost_callable = cost_function
+    elif cost_function.lower() == "llcoe":
+        cost_callable = lifetime_levelized_cost_of_energy
+    elif cost_function.lower() == "alcoe":
+        cost_callable = annual_levelized_cost_of_energy
+    else:
+        raise ValueError(f"Unknown cost {cost_function}")
+
+    if year is None:
+        year = market.year.min()
+    technodata = broadcast_techs(technologies, capacity)
+    costs = cost_callable(market.prices.sel(region=technodata.region), technodata).rank(
+        "asset"
+    )
+    maxprod = convert_timeslice(
+        maximum_production(technodata, capacity.sel(year=year)),
+        market.timeslice,
+        QuantityType.EXTENSIVE,
+    )
+    minprod = getattr(technodata, "minimum_service_factor", 0) * maxprod
+    commodity = (maxprod > 0).any([i for i in maxprod.dims if i != "commodity"])
+    demand = market.consumption.sel(year=year, commodity=commodity).copy()
+
+    visited = (maxprod <= 0).sel(commodity=commodity)
+    constraints = (
+        xr.Dataset(dict(maxprod=maxprod, minprod=minprod, costs=costs))
+        .set_coords("costs")
+        .sel(commodity=commodity)
+    )
+    production = xr.zeros_like(constraints.maxprod)
+    for cost in sorted(set(constraints.costs.values.flatten())):
+        condition = (constraints.costs == cost) & (constraints.maxprod > 0)
+        assert ((~visited) & condition).sum() == condition.sum()
+        visited |= condition
+        cost_constraints = constraints.where(condition, 0)
+        fullprod = cost_constraints.groupby("region").sum("asset")
+        if (fullprod.maxprod <= demand + 1e-10).all():
+            demand -= fullprod.maxprod
+            production += cost_constraints.maxprod
+        else:
+            demand_prod = (
+                broadcast_techs(demand, production)
+                * (cost_constraints.maxprod / cost_constraints.maxprod.sum("asset"))
+            ).where(condition, 0)
+            current_prod = np.maximum(
+                np.minimum(demand_prod, cost_constraints.maxprod),
+                cost_constraints.minprod,
+            )
+            demand = np.maximum(
+                (
+                    demand
+                    - xr.Dataset(dict(current_prod=current_prod))
+                    .groupby("region")
+                    .sum("asset")
+                    .current_prod
+                ),
+                0,
+            )
+            production += current_prod
+
+    assert visited.all()
+
+    result = xr.zeros_like(maxprod)
+    result[dict(commodity=commodity)] += production
+    return result

@@ -491,3 +491,92 @@ def test_demand_matched_production(
     production = demand_matched_production(demand, prices, capacity, technologies)
     assert set(production.dims) == set(max_prod.dims).union(prices.dims, capacity.dims)
     assert (production <= max_prod + 1e-8).all()
+
+
+def test_costed_dispatch_exact_match(market, capacity, technologies, cost="llcoe"):
+    from muse.production import costed_dispatch
+    from muse.quantities import maximum_production
+    from muse.timeslices import convert_timeslice, QuantityType
+
+    if set(capacity.region.values) != set(market.region.values):
+        capacity.region.values[: len(set(market.region.values))] = list(
+            set(market.region.values)
+        )
+    maxdemand = convert_timeslice(
+        xr.Dataset(dict(mp=maximum_production(technologies, capacity)))
+        .groupby("region")
+        .sum("asset")
+        .mp,
+        market,
+        QuantityType.EXTENSIVE,
+    )
+    market["consumption"] = maxdemand
+    result = costed_dispatch(market, capacity, technologies, cost_function=cost)
+    assert isinstance(result, xr.DataArray)
+    actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
+    expected = maxdemand.sel(year=market.year.min())
+    assert set(actual.dims) == set(expected.dims)
+    for dim in actual.dims:
+        assert (actual[dim] == expected[dim]).all()
+    assert np.abs(actual - expected).max() < 1e-8
+
+
+def test_costed_dispatch_over_capacity(market, capacity, technologies, cost="llcoe"):
+    from muse.production import costed_dispatch
+    from muse.quantities import maximum_production
+    from muse.timeslices import convert_timeslice, QuantityType
+
+    if set(capacity.region.values) != set(market.region.values):
+        capacity.region.values[: len(set(market.region.values))] = list(
+            set(market.region.values)
+        )
+    maxdemand = convert_timeslice(
+        xr.Dataset(dict(mp=maximum_production(technologies, capacity)))
+        .groupby("region")
+        .sum("asset")
+        .mp,
+        market,
+        QuantityType.EXTENSIVE,
+    )
+    market["consumption"] = maxdemand * 0.9
+    result = costed_dispatch(market, capacity, technologies, cost_function=cost)
+    assert isinstance(result, xr.DataArray)
+    actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
+    expected = maxdemand.sel(year=market.year.min())
+    assert set(actual.dims) == set(expected.dims)
+    for dim in actual.dims:
+        assert (actual[dim] == expected[dim]).all()
+    assert np.abs(actual - 0.9 * expected).max() < 1e-8
+
+
+def test_costed_dispatch_with_minimum_service(
+    market, capacity, technologies, rng, cost="llcoe"
+):
+    from muse.production import costed_dispatch
+    from muse.quantities import maximum_production
+    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.utilities import broadcast_techs
+
+    if set(capacity.region.values) != set(market.region.values):
+        capacity.region.values[: len(set(market.region.values))] = list(
+            set(market.region.values)
+        )
+    technologies["minimum_service_factor"] = (
+        technologies.utilization_factor.dims,
+        rng.uniform(low=0.5, high=0.9, size=technologies.utilization_factor.shape),
+    )
+    maxprod = convert_timeslice(
+        maximum_production(technologies, capacity), market, QuantityType.EXTENSIVE
+    )
+    minprod = maxprod * broadcast_techs(technologies.minimum_service_factor, maxprod)
+    maxdemand = xr.Dataset(dict(mp=minprod)).groupby("region").sum("asset").mp
+    market["consumption"] = maxdemand * 0.9
+    result = costed_dispatch(market, capacity, technologies, cost_function=cost)
+    assert isinstance(result, xr.DataArray)
+    actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
+    expected = maxdemand.sel(year=market.year.min())
+    assert set(actual.dims) == set(expected.dims)
+    for dim in actual.dims:
+        assert (actual[dim] == expected[dim]).all()
+    assert (actual >= 0.9 * expected - 1e-8).all()
+    assert (result >= minprod.sel(year=market.year.min()) - 1e-8).all()
