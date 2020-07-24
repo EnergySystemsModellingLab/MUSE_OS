@@ -493,7 +493,7 @@ def test_demand_matched_production(
     assert (production <= max_prod + 1e-8).all()
 
 
-def test_costed_production_exact_match(market, capacity, technologies, cost="llcoe"):
+def test_costed_production_exact_match(market, capacity, technologies):
     from muse.production import costed_production
     from muse.quantities import maximum_production
     from muse.timeslices import convert_timeslice, QuantityType
@@ -511,17 +511,16 @@ def test_costed_production_exact_match(market, capacity, technologies, cost="llc
         QuantityType.EXTENSIVE,
     )
     market["consumption"] = maxdemand
-    result = costed_production(market, capacity, technologies, cost_function=cost)
+    result = costed_production(market, capacity, technologies)
     assert isinstance(result, xr.DataArray)
     actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
-    expected = maxdemand.sel(year=market.year.min())
-    assert set(actual.dims) == set(expected.dims)
+    assert set(actual.dims) == set(maxdemand.dims)
     for dim in actual.dims:
-        assert (actual[dim] == expected[dim]).all()
-    assert np.abs(actual - expected).max() < 1e-8
+        assert (actual[dim] == maxdemand[dim]).all()
+    assert np.abs(actual - maxdemand).max() < 1e-8
 
 
-def test_costed_production_single_region(market, capacity, technologies, cost="llcoe"):
+def test_costed_production_single_region(market, capacity, technologies):
     from muse.production import costed_production
     from muse.quantities import maximum_production
     from muse.timeslices import convert_timeslice, QuantityType
@@ -534,22 +533,47 @@ def test_costed_production_single_region(market, capacity, technologies, cost="l
         market,
         QuantityType.EXTENSIVE,
     )
-    market["consumption"] = maxdemand
-    result = costed_production(market, capacity, technologies, cost_function=cost)
+    market["consumption"] = 0.9 * maxdemand
+    result = costed_production(market, capacity, technologies)
     assert isinstance(result, xr.DataArray)
     actual = result.sum("asset")
-    expected = maxdemand.sel(year=market.year.min())
-    assert set(actual.dims) == set(expected.dims)
+    assert set(actual.dims) == set(maxdemand.dims)
     for dim in actual.dims:
-        assert (actual[dim] == expected[dim]).all()
-    assert np.abs(actual - expected).max() < 1e-8
+        assert (actual[dim] == maxdemand[dim]).all()
+    assert np.abs(actual - 0.9 * maxdemand).max() < 1e-8
 
 
-def test_costed_production_over_capacity(market, capacity, technologies, cost="llcoe"):
+def test_costed_production_single_year(market, capacity, technologies):
     from muse.production import costed_production
     from muse.quantities import maximum_production
     from muse.timeslices import convert_timeslice, QuantityType
 
+    capacity = capacity.sel(year=2010)
+    market = market.sel(year=2010)
+    maxdemand = convert_timeslice(
+        xr.Dataset(dict(mp=maximum_production(technologies, capacity)))
+        .groupby("region")
+        .sum("asset")
+        .mp,
+        market,
+        QuantityType.EXTENSIVE,
+    )
+    market["consumption"] = 0.9 * maxdemand
+    result = costed_production(market, capacity, technologies)
+    assert isinstance(result, xr.DataArray)
+    actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
+    assert set(actual.dims) == set(maxdemand.dims)
+    for dim in actual.dims:
+        assert (actual[dim] == maxdemand[dim]).all()
+    assert np.abs(actual - 0.9 * maxdemand).max() < 1e-8
+
+
+def test_costed_production_over_capacity(market, capacity, technologies):
+    from muse.production import costed_production
+    from muse.quantities import maximum_production
+    from muse.timeslices import convert_timeslice, QuantityType
+
+    capacity = capacity.isel(asset=[0, 1, 2])
     if set(capacity.region.values) != set(market.region.values):
         capacity.region.values[: len(set(market.region.values))] = list(
             set(market.region.values)
@@ -563,19 +587,16 @@ def test_costed_production_over_capacity(market, capacity, technologies, cost="l
         QuantityType.EXTENSIVE,
     )
     market["consumption"] = maxdemand * 0.9
-    result = costed_production(market, capacity, technologies, cost_function=cost)
+    result = costed_production(market, capacity, technologies)
     assert isinstance(result, xr.DataArray)
     actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
-    expected = maxdemand.sel(year=market.year.min())
-    assert set(actual.dims) == set(expected.dims)
+    assert set(actual.dims) == set(maxdemand.dims)
     for dim in actual.dims:
-        assert (actual[dim] == expected[dim]).all()
-    assert np.abs(actual - 0.9 * expected).max() < 1e-8
+        assert (actual[dim] == maxdemand[dim]).all()
+    assert np.abs(actual - 0.9 * maxdemand).max() < 1e-8
 
 
-def test_costed_production_with_minimum_service(
-    market, capacity, technologies, rng, cost="llcoe"
-):
+def test_costed_production_with_minimum_service(market, capacity, technologies, rng):
     from muse.production import costed_production
     from muse.quantities import maximum_production
     from muse.timeslices import convert_timeslice, QuantityType
@@ -595,12 +616,11 @@ def test_costed_production_with_minimum_service(
     minprod = maxprod * broadcast_techs(technologies.minimum_service_factor, maxprod)
     maxdemand = xr.Dataset(dict(mp=minprod)).groupby("region").sum("asset").mp
     market["consumption"] = maxdemand * 0.9
-    result = costed_production(market, capacity, technologies, cost_function=cost)
+    result = costed_production(market, capacity, technologies)
     assert isinstance(result, xr.DataArray)
     actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
-    expected = maxdemand.sel(year=market.year.min())
-    assert set(actual.dims) == set(expected.dims)
+    assert set(actual.dims) == set(maxdemand.dims)
     for dim in actual.dims:
-        assert (actual[dim] == expected[dim]).all()
-    assert (actual >= 0.9 * expected - 1e-8).all()
-    assert (result >= minprod.sel(year=market.year.min()) - 1e-8).all()
+        assert (actual[dim] == maxdemand[dim]).all()
+    assert (actual >= 0.9 * maxdemand - 1e-8).all()
+    assert (result >= minprod - 1e-8).all()

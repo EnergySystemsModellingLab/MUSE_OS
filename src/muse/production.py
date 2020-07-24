@@ -36,7 +36,7 @@ __all__ = [
     "register_production",
     "PRODUCTION_SIGNATURE",
 ]
-from typing import Any, Callable, Mapping, MutableMapping, Optional, Text, Union, cast
+from typing import Any, Callable, Mapping, MutableMapping, Text, Union, cast
 
 import numpy as np
 import xarray as xr
@@ -163,29 +163,22 @@ def costed_production(
     capacity: xr.DataArray,
     technologies: xr.Dataset,
     costing: Text = "prices",
-    cost_function: Union[Callable, Text] = "llcoe",
-    year: Optional[int] = None,
+    cost_function: Union[Callable, Text] = "alcoe",
     apply_minimum_service_constraint: bool = True,
 ) -> xr.DataArray:
     """Computes production from ranked assets.
 
-    The assets are ranked according to their cost. Currently only llcoe and alcoe are
-    allowed. The asset with least cost are allowed to service the demand first, up to
-    the maximum production and above their minimum service.
+    The assets are ranked according to their cost. Currently only alcoe is allowed. The
+    asset with least cost are allowed to service the demand first, up to the maximum
+    production and above their minimum service.
     """
 
-    from muse.quantities import (
-        lifetime_levelized_cost_of_energy,
-        annual_levelized_cost_of_energy,
-        maximum_production,
-    )
+    from muse.quantities import annual_levelized_cost_of_energy, maximum_production
     from muse.utilities import broadcast_techs
     from muse.timeslices import convert_timeslice, QuantityType
 
     if callable(cost_function):
         cost_callable = cost_function
-    elif cost_function.lower() == "llcoe":
-        cost_callable = lifetime_levelized_cost_of_energy
     elif cost_function.lower() == "alcoe":
         cost_callable = annual_levelized_cost_of_energy
     else:
@@ -201,13 +194,7 @@ def costed_production(
         def group_assets(x: xr.DataArray) -> xr.DataArray:
             return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
 
-    if year is None and "year" in market.dims:
-        year = market.year.min()
-    elif "year" in capacity.dims:
-        raise ValueError("Year dimension missing from market")
     technodata = broadcast_techs(technologies, capacity)
-    if "year" in capacity.dims:
-        capacity = capacity.sel(year=year)
 
     costs = cost_callable(market.prices.sel(region=technodata.region), technodata).rank(
         "asset"
@@ -222,8 +209,6 @@ def costed_production(
         [u for u in commodity.coords if u not in commodity.dims]
     )
     demand = market.consumption.sel(commodity=commodity).copy()
-    if "year" in demand.dims:
-        demand = demand.sel(year=year)
 
     constraints = (
         xr.Dataset(dict(maxprod=maxprod, costs=costs, has_output=maxprod > 0))
@@ -244,16 +229,20 @@ def costed_production(
         current_maxprod = constraints.maxprod.where(condition, 0)
         fullprod = group_assets(current_maxprod)
         if (fullprod <= demand + 1e-10).all():
-            demand -= fullprod
-            production += current_maxprod
+            current_demand = fullprod
+            current_prod = current_maxprod
         else:
+            if "region" in demand.dims:
+                demand_prod = demand.sel(region=production.region)
+            else:
+                demand_prod = demand
             demand_prod = (
-                broadcast_techs(demand, production)
-                * (current_maxprod / current_maxprod.sum("asset"))
+                current_maxprod / current_maxprod.sum("asset") * demand_prod
             ).where(condition, 0)
             current_prod = np.minimum(demand_prod, current_maxprod)
-            demand = np.maximum((demand - group_assets(current_prod)), 0)
-            production += current_prod
+            current_demand = group_assets(current_prod)
+        demand -= np.minimum(current_demand, demand)
+        production += current_prod
 
     result = xr.zeros_like(maxprod)
     result[dict(commodity=commodity)] += production
