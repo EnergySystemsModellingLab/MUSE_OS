@@ -1,6 +1,7 @@
 import numpy as np
 import xarray as xr
 from pytest import approx, fixture
+from typing import cast
 
 
 @fixture
@@ -450,7 +451,7 @@ def test_emission(production: xr.DataArray, technologies: xr.Dataset):
     from muse.commodities import is_pollutant, is_enduse
 
     envs = is_pollutant(technologies.comm_usage)
-    technologies = technologies[["fixed_outputs"]]
+    technologies = cast(xr.Dataset, technologies[["fixed_outputs"]])
     technologies.fixed_outputs[{"commodity": envs}] = fout = 1.5
     technologies.fixed_outputs[{"commodity": ~envs}] = 2
 

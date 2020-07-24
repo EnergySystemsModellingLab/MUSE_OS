@@ -6,16 +6,17 @@ functions are used in different areas of the model.
 """
 from typing import Callable, Optional, Sequence, Text, Tuple, Union, cast
 
-from xarray import DataArray, Dataset
+import numpy as np
+import xarray as xr
 
 
 def supply(
-    capacity: DataArray,
-    demand: DataArray,
-    technologies: Union[Dataset, DataArray],
+    capacity: xr.DataArray,
+    demand: xr.DataArray,
+    technologies: Union[xr.Dataset, xr.DataArray],
     interpolation: Text = "linear",
     production_method: Optional[Callable] = None,
-) -> DataArray:
+) -> xr.DataArray:
     """Production and emission for a given capacity servicing a given demand.
 
     Supply includes two components, end-uses outputs and environmental pollutants. The
@@ -64,7 +65,7 @@ def supply(
     return result
 
 
-def emission(production: DataArray, fixed_outputs: DataArray):
+def emission(production: xr.DataArray, fixed_outputs: xr.DataArray):
     """Computes emission from current products.
 
     Emissions are computed as `sum(product) * fixed_outputs`.
@@ -93,8 +94,8 @@ def emission(production: DataArray, fixed_outputs: DataArray):
 
 
 def gross_margin(
-    technologies: Dataset, capacity: DataArray, prices: Dataset
-) -> DataArray:
+    technologies: xr.Dataset, capacity: xr.DataArray, prices: xr.Dataset
+) -> xr.DataArray:
     """profit of increasing the production by one unit.
 
     - energy commodities INPUTS are related to fuel costs
@@ -108,7 +109,7 @@ def gross_margin(
 
     tech = broadcast_techs(  # type: ignore
         cast(
-            Dataset,
+            xr.Dataset,
             technologies[
                 [
                     "technical_life",
@@ -153,8 +154,10 @@ def gross_margin(
 
 
 def decommissioning_demand(
-    technologies: Dataset, capacity: DataArray, year: Optional[Sequence[int]] = None
-) -> DataArray:
+    technologies: xr.Dataset,
+    capacity: xr.DataArray,
+    year: Optional[Sequence[int]] = None,
+) -> xr.DataArray:
     r"""Computes demand from process decommissioning.
 
     If `year` is not given, it defaults to all years in capacity. If there are more than
@@ -193,11 +196,11 @@ def decommissioning_demand(
 
 
 def consumption(
-    technologies: Dataset,
-    production: DataArray,
-    prices: Optional[DataArray] = None,
+    technologies: xr.Dataset,
+    production: xr.DataArray,
+    prices: Optional[xr.DataArray] = None,
     **kwargs,
-) -> DataArray:
+) -> xr.DataArray:
     """Commodity consumption when fulfilling the whole production.
 
     Currently, the consumption is implemented for commodity_max == +infinity. If prices
@@ -245,12 +248,12 @@ def consumption(
 
 
 def annual_levelized_cost_of_energy(
-    prices: DataArray,
-    technologies: Dataset,
+    prices: xr.DataArray,
+    technologies: xr.Dataset,
     interpolation: Text = "linear",
     fill_value: Union[int, Text] = "extrapolate",
     **filters,
-) -> DataArray:
+) -> xr.DataArray:
     """Levelized cost of energy (LCOE) of technologies on each given year.
 
     It mostly follows the `simplified LCOE`_ given by NREL. However, the
@@ -328,8 +331,8 @@ def annual_levelized_cost_of_energy(
 
 
 def lifetime_levelized_cost_of_energy(
-    prices: DataArray,
-    technologies: Dataset,
+    prices: xr.DataArray,
+    technologies: xr.Dataset,
     installation_year: Optional[int] = None,
     **filters,
 ):
@@ -372,7 +375,7 @@ def lifetime_levelized_cost_of_energy(
     from muse.utilities import filter_input
     from muse.commodities import is_pollutant
 
-    techs: Dataset = technologies[  # type: ignore
+    techs: xr.Dataset = technologies[  # type: ignore
         [
             "technical_life",
             "interest_rate",
@@ -431,7 +434,7 @@ def lifetime_levelized_cost_of_energy(
     return annualized_capital_costs + o_and_m_costs + env_costs + fuel_costs
 
 
-def maximum_production(technologies: Dataset, capacity: DataArray, **filters):
+def maximum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filters):
     r"""Production for a given capacity.
 
     Given a capacity :math:`\mathcal{A}_{t, \iota}^r`, the utilization factor
@@ -450,9 +453,9 @@ def maximum_production(technologies: Dataset, capacity: DataArray, **filters):
     Arguments:
         capacity: Capacity of each technology of interest. In practice, the capacity can
             refer to asset capacity, the max capacity, or the capacity-in-use.
-        technologies: Dataset describing the features of the technologies of interests.
-            It should contain `fixed_outputs` and `utilization_factor`. It's shape is
-            matched to `capacity` using `muse.utilities.broadcast_techs`.
+        technologies: xr.Dataset describing the features of the technologies of
+            interests.  It should contain `fixed_outputs` and `utilization_factor`. It's
+            shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
         filters: keyword arguments are used to filter down the capacity and
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `techologies`, are
@@ -468,7 +471,7 @@ def maximum_production(technologies: Dataset, capacity: DataArray, **filters):
         capacity, **{k: v for k, v in filters.items() if k in capacity.dims}
     )
     btechs = broadcast_techs(  # type: ignore
-        cast(Dataset, technologies[["fixed_outputs", "utilization_factor"]]), capa
+        cast(xr.Dataset, technologies[["fixed_outputs", "utilization_factor"]]), capa
     )
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
@@ -478,12 +481,12 @@ def maximum_production(technologies: Dataset, capacity: DataArray, **filters):
 
 
 def demand_matched_production(
-    demand: DataArray,
-    prices: DataArray,
-    capacity: DataArray,
-    technologies: Dataset,
+    demand: xr.DataArray,
+    prices: xr.DataArray,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
     **filters,
-) -> DataArray:
+) -> xr.DataArray:
     """Production matching the input demand.
 
     Arguments:
@@ -497,9 +500,9 @@ def demand_matched_production(
     from muse.utilities import broadcast_techs
     from muse.timeslices import convert_timeslice, QuantityType
 
-    technologies = broadcast_techs(technologies, capacity)
-    cost = annual_levelized_cost_of_energy(prices, technologies, **filters)
-    max_production = maximum_production(technologies, capacity, **filters)
+    technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
+    cost = annual_levelized_cost_of_energy(prices, technodata, **filters)
+    max_production = maximum_production(technodata, capacity, **filters)
     assert ("timeslice" in demand.dims) == ("timeslice" in cost.dims)
     if "timeslice" in demand.dims and "timeslice" not in max_production.dims:
         max_production = convert_timeslice(
@@ -509,8 +512,8 @@ def demand_matched_production(
 
 
 def capacity_in_use(
-    production: DataArray,
-    technologies: Dataset,
+    production: xr.DataArray,
+    technologies: xr.Dataset,
     max_dim: Optional[Union[Text, Tuple[Text]]] = "commodity",
     **filters,
 ):
@@ -520,9 +523,9 @@ def capacity_in_use(
 
     Arguments:
         production: Production from each technology of interest.
-        technologies: Dataset describing the features of the technologies of interests.
-            It should contain `fixed_outputs` and `utilization_factor`. It's shape is
-            matched to `capacity` using `muse.utilities.broadcast_techs`.
+        technologies: xr.Dataset describing the features of the technologies of
+            interests.  It should contain `fixed_outputs` and `utilization_factor`. It's
+            shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
         max_dim: reduces the given dimensions using `max`. Defaults to "commodity". If
             None, then no reduction is performed.
         filters: keyword arguments are used to filter down the capacity and
@@ -532,7 +535,6 @@ def capacity_in_use(
     Return:
         Capacity-in-use for each technology, whittled down by the filters.
     """
-    from numpy import isinf
     from muse.utilities import filter_input, broadcast_techs
     from muse.commodities import is_enduse
 
@@ -540,13 +542,13 @@ def capacity_in_use(
         production, **{k: v for k, v in filters.items() if k in production.dims}
     )
     techs = technologies[["fixed_outputs", "utilization_factor"]]
-    assert isinstance(techs, Dataset)
+    assert isinstance(techs, xr.Dataset)
     btechs = broadcast_techs(techs, prod)
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in technologies.dims}
     )
     factor = 1 / (ftechs.fixed_outputs * ftechs.utilization_factor)
-    capa_in_use = (prod * factor).where(~isinf(factor), 0)
+    capa_in_use = (prod * factor).where(~np.isinf(factor), 0)
     capa_in_use = capa_in_use.where(
         is_enduse(technologies.comm_usage.sel(commodity=capa_in_use.commodity)), 0
     )
@@ -556,8 +558,8 @@ def capacity_in_use(
 
 
 def supply_cost(
-    production: DataArray, lcoe: DataArray, asset_dim: Text = "asset"
-) -> DataArray:
+    production: xr.DataArray, lcoe: xr.DataArray, asset_dim: Text = "asset"
+) -> xr.DataArray:
     """Supply cost given production and the levelized cost of energy.
 
     In practice, the supply cost is the weighted average LCOE over assets (`asset_dim`),
@@ -573,8 +575,8 @@ def supply_cost(
             `muse.quantities.lifetime_levelized_cost_of_energy`.
         asset_dim: Name of the dimension(s) holding assets, processes or technologies.
     """
-    from numpy import isinf
-
     inv_total = 1 / production.sum(asset_dim)
-    result = (production * lcoe).sum(asset_dim) * inv_total.where(~isinf(inv_total), 0)
+    result = (production * lcoe).sum(asset_dim) * inv_total.where(
+        ~np.isinf(inv_total), 0
+    )
     return result
