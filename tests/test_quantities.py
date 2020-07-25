@@ -1,7 +1,8 @@
+from typing import cast
+
 import numpy as np
 import xarray as xr
 from pytest import approx, fixture
-from typing import cast
 
 
 @fixture
@@ -495,14 +496,22 @@ def test_demand_matched_production(
 
 
 def test_costed_production_exact_match(market, capacity, technologies):
-    from muse.production import costed_production
-    from muse.quantities import maximum_production
+    from muse.quantities import (
+        maximum_production,
+        annual_levelized_cost_of_energy,
+        costed_production,
+    )
+    from muse.utilities import broadcast_techs
     from muse.timeslices import convert_timeslice, QuantityType
 
     if set(capacity.region.values) != set(market.region.values):
         capacity.region.values[: len(set(market.region.values))] = list(
             set(market.region.values)
         )
+    technodata = broadcast_techs(technologies, capacity)
+    costs = annual_levelized_cost_of_energy(
+        market.prices.sel(region=technodata.region), technodata
+    )
     maxdemand = convert_timeslice(
         xr.Dataset(dict(mp=maximum_production(technologies, capacity)))
         .groupby("region")
@@ -512,7 +521,7 @@ def test_costed_production_exact_match(market, capacity, technologies):
         QuantityType.EXTENSIVE,
     )
     market["consumption"] = maxdemand
-    result = costed_production(market, capacity, technologies)
+    result = costed_production(market.consumption, costs, capacity, technologies)
     assert isinstance(result, xr.DataArray)
     actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
     assert set(actual.dims) == set(maxdemand.dims)
@@ -522,8 +531,12 @@ def test_costed_production_exact_match(market, capacity, technologies):
 
 
 def test_costed_production_single_region(market, capacity, technologies):
-    from muse.production import costed_production
-    from muse.quantities import maximum_production
+    from muse.quantities import (
+        maximum_production,
+        annual_levelized_cost_of_energy,
+        costed_production,
+    )
+    from muse.utilities import broadcast_techs
     from muse.timeslices import convert_timeslice, QuantityType
 
     capacity = capacity.drop_vars("region")
@@ -535,7 +548,11 @@ def test_costed_production_single_region(market, capacity, technologies):
         QuantityType.EXTENSIVE,
     )
     market["consumption"] = 0.9 * maxdemand
-    result = costed_production(market, capacity, technologies)
+    technodata = broadcast_techs(technologies, capacity)
+    costs = annual_levelized_cost_of_energy(
+        market.prices.sel(region=technodata.region), technodata
+    )
+    result = costed_production(market.consumption, costs, capacity, technologies)
     assert isinstance(result, xr.DataArray)
     actual = result.sum("asset")
     assert set(actual.dims) == set(maxdemand.dims)
@@ -545,8 +562,12 @@ def test_costed_production_single_region(market, capacity, technologies):
 
 
 def test_costed_production_single_year(market, capacity, technologies):
-    from muse.production import costed_production
-    from muse.quantities import maximum_production
+    from muse.quantities import (
+        maximum_production,
+        annual_levelized_cost_of_energy,
+        costed_production,
+    )
+    from muse.utilities import broadcast_techs
     from muse.timeslices import convert_timeslice, QuantityType
 
     capacity = capacity.sel(year=2010)
@@ -560,7 +581,11 @@ def test_costed_production_single_year(market, capacity, technologies):
         QuantityType.EXTENSIVE,
     )
     market["consumption"] = 0.9 * maxdemand
-    result = costed_production(market, capacity, technologies)
+    technodata = broadcast_techs(technologies, capacity)
+    costs = annual_levelized_cost_of_energy(
+        market.prices.sel(region=technodata.region), technodata
+    )
+    result = costed_production(market.consumption, costs, capacity, technologies)
     assert isinstance(result, xr.DataArray)
     actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
     assert set(actual.dims) == set(maxdemand.dims)
@@ -570,8 +595,12 @@ def test_costed_production_single_year(market, capacity, technologies):
 
 
 def test_costed_production_over_capacity(market, capacity, technologies):
-    from muse.production import costed_production
-    from muse.quantities import maximum_production
+    from muse.quantities import (
+        maximum_production,
+        annual_levelized_cost_of_energy,
+        costed_production,
+    )
+    from muse.utilities import broadcast_techs
     from muse.timeslices import convert_timeslice, QuantityType
 
     capacity = capacity.isel(asset=[0, 1, 2])
@@ -588,7 +617,11 @@ def test_costed_production_over_capacity(market, capacity, technologies):
         QuantityType.EXTENSIVE,
     )
     market["consumption"] = maxdemand * 0.9
-    result = costed_production(market, capacity, technologies)
+    technodata = broadcast_techs(technologies, capacity)
+    costs = annual_levelized_cost_of_energy(
+        market.prices.sel(region=technodata.region), technodata
+    )
+    result = costed_production(market.consumption, costs, capacity, technologies)
     assert isinstance(result, xr.DataArray)
     actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
     assert set(actual.dims) == set(maxdemand.dims)
@@ -598,10 +631,13 @@ def test_costed_production_over_capacity(market, capacity, technologies):
 
 
 def test_costed_production_with_minimum_service(market, capacity, technologies, rng):
-    from muse.production import costed_production
-    from muse.quantities import maximum_production
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.quantities import (
+        maximum_production,
+        annual_levelized_cost_of_energy,
+        costed_production,
+    )
     from muse.utilities import broadcast_techs
+    from muse.timeslices import convert_timeslice, QuantityType
 
     if set(capacity.region.values) != set(market.region.values):
         capacity.region.values[: len(set(market.region.values))] = list(
@@ -617,7 +653,11 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
     minprod = maxprod * broadcast_techs(technologies.minimum_service_factor, maxprod)
     maxdemand = xr.Dataset(dict(mp=minprod)).groupby("region").sum("asset").mp
     market["consumption"] = maxdemand * 0.9
-    result = costed_production(market, capacity, technologies)
+    technodata = broadcast_techs(technologies, capacity)
+    costs = annual_levelized_cost_of_energy(
+        market.prices.sel(region=technodata.region), technodata
+    )
+    result = costed_production(market.consumption, costs, capacity, technologies)
     assert isinstance(result, xr.DataArray)
     actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
     assert set(actual.dims) == set(maxdemand.dims)

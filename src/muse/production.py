@@ -38,7 +38,6 @@ __all__ = [
 ]
 from typing import Any, Callable, Mapping, MutableMapping, Text, Union, cast
 
-import numpy as np
 import xarray as xr
 
 from muse.registration import registrator
@@ -163,87 +162,53 @@ def costed_production(
     capacity: xr.DataArray,
     technologies: xr.Dataset,
     costing: Text = "prices",
-    cost_function: Union[Callable, Text] = "alcoe",
-    apply_minimum_service_constraint: bool = True,
+    costs: Union[xr.DataArray, Callable, Text] = "alcoe",
+    with_minimum_service: bool = True,
+    with_emission: bool = True,
 ) -> xr.DataArray:
     """Computes production from ranked assets.
 
-    The assets are ranked according to their cost. Currently only alcoe is allowed. The
-    asset with least cost are allowed to service the demand first, up to the maximum
-    production and above their minimum service.
+    The assets are ranked according to their cost. The cost can be provided as an
+    xarray, a callable creating an xarray, or as "alcoe". The asset with least cost are
+    allowed to service the demand first, up to the maximum production. By default, the
+    mininum service is applied first.
     """
 
-    from muse.quantities import annual_levelized_cost_of_energy, maximum_production
+    from muse.quantities import (
+        annual_levelized_cost_of_energy,
+        costed_production,
+        emission,
+    )
     from muse.utilities import broadcast_techs
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.commodities import is_pollutant, check_usage, CommodityUsage
 
-    if callable(cost_function):
-        cost_callable = cost_function
-    elif cost_function.lower() == "alcoe":
-        cost_callable = annual_levelized_cost_of_energy
+    if isinstance(costs, Text) and costs.lower() == "alcoe":
+        costs = annual_levelized_cost_of_energy
+    elif isinstance(costs, Text):
+        raise ValueError(f"Unknown cost {costs}")
+    if callable(costs):
+        technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
+        costs = costs(market.prices.sel(region=technodata.region), technodata)
     else:
-        raise ValueError(f"Unknown cost {cost_function}")
+        costs = costs
+    assert isinstance(costs, xr.DataArray)
 
-    if len(capacity.region.dims) == 0:
-
-        def group_assets(x: xr.DataArray) -> xr.DataArray:
-            return x.sum("asset")
-
-    else:
-
-        def group_assets(x: xr.DataArray) -> xr.DataArray:
-            return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
-
-    technodata = broadcast_techs(technologies, capacity)
-
-    costs = cost_callable(market.prices.sel(region=technodata.region), technodata).rank(
-        "asset"
+    production = costed_production(
+        market.consumption,
+        costs,
+        capacity,
+        technologies,
+        with_minimum_service=with_minimum_service,
     )
-    maxprod = convert_timeslice(
-        maximum_production(technodata, capacity),
-        market.timeslice,
-        QuantityType.EXTENSIVE,
-    )
-    commodity = (maxprod > 0).any([i for i in maxprod.dims if i != "commodity"])
-    commodity = commodity.drop_vars(
-        [u for u in commodity.coords if u not in commodity.dims]
-    )
-    demand = market.consumption.sel(commodity=commodity).copy()
-
-    constraints = (
-        xr.Dataset(dict(maxprod=maxprod, costs=costs, has_output=maxprod > 0))
-        .set_coords("costs")
-        .set_coords("has_output")
-        .sel(commodity=commodity)
-    )
-    if not apply_minimum_service_constraint:
-        production = xr.zeros_like(constraints.maxprod)
-    else:
-        production = (
-            getattr(technodata, "minimum_service_factor", 0) * constraints.maxprod
-        )
-        demand = np.maximum(demand - group_assets(production), 0)
-
-    for cost in sorted(set(constraints.costs.values.flatten())):
-        condition = (constraints.costs == cost) & constraints.has_output
-        current_maxprod = constraints.maxprod.where(condition, 0)
-        fullprod = group_assets(current_maxprod)
-        if (fullprod <= demand + 1e-10).all():
-            current_demand = fullprod
-            current_prod = current_maxprod
-        else:
-            if "region" in demand.dims:
-                demand_prod = demand.sel(region=production.region)
-            else:
-                demand_prod = demand
-            demand_prod = (
-                current_maxprod / current_maxprod.sum("asset") * demand_prod
-            ).where(condition, 0)
-            current_prod = np.minimum(demand_prod, current_maxprod)
-            current_demand = group_assets(current_prod)
-        demand -= np.minimum(current_demand, demand)
-        production += current_prod
-
-    result = xr.zeros_like(maxprod)
-    result[dict(commodity=commodity)] += production
-    return result
+    # add production of environmental pollutants
+    if with_emission:
+        env = is_pollutant(technologies.comm_usage)
+        production[dict(commodity=env)] = emission(
+            production, technologies.fixed_outputs
+        ).transpose(*production.dims)
+        production[
+            dict(
+                commodity=~check_usage(technologies.comm_usage, CommodityUsage.PRODUCT)
+            )
+        ] = 0
+    return production

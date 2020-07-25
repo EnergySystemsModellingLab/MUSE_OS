@@ -43,6 +43,8 @@ def supply(
         production_method = maximum_production
 
     maxprod = production_method(technologies, capacity)
+    if "region" in demand.dims and "region" in maxprod.coords:
+        demand = demand.sel(region=maxprod.region)
     expanded_maxprod = (
         maxprod * demand / demand.sum(set(demand.dims).difference(maxprod.dims))
     ).fillna(0)
@@ -579,4 +581,85 @@ def supply_cost(
     result = (production * lcoe).sum(asset_dim) * inv_total.where(
         ~np.isinf(inv_total), 0
     )
+    return result
+
+
+def costed_production(
+    demand: xr.Dataset,
+    costs: xr.DataArray,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
+    with_minimum_service: bool = True,
+) -> xr.DataArray:
+    """Computes production from ranked assets.
+
+    The assets are ranked according to their cost. The asset with least cost are allowed
+    to service the demand first, up to the maximum production. By default, the mininum
+    service is applied first.
+    """
+
+    from muse.quantities import maximum_production
+    from muse.utilities import broadcast_techs
+    from muse.timeslices import convert_timeslice, QuantityType
+
+    technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
+
+    if len(capacity.region.dims) == 0:
+
+        def group_assets(x: xr.DataArray) -> xr.DataArray:
+            return x.sum("asset")
+
+    else:
+
+        def group_assets(x: xr.DataArray) -> xr.DataArray:
+            return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
+
+    ranking = costs.rank("asset")
+    maxprod = convert_timeslice(
+        maximum_production(technodata, capacity),
+        demand.timeslice,
+        QuantityType.EXTENSIVE,
+    )
+    commodity = (maxprod > 0).any([i for i in maxprod.dims if i != "commodity"])
+    commodity = commodity.drop_vars(
+        [u for u in commodity.coords if u not in commodity.dims]
+    )
+    demand = demand.sel(commodity=commodity).copy()
+
+    constraints = (
+        xr.Dataset(dict(maxprod=maxprod, ranking=ranking, has_output=maxprod > 0))
+        .set_coords("ranking")
+        .set_coords("has_output")
+        .sel(commodity=commodity)
+    )
+    if not with_minimum_service:
+        production = xr.zeros_like(constraints.maxprod)
+    else:
+        production = (
+            getattr(technodata, "minimum_service_factor", 0) * constraints.maxprod
+        )
+        demand = np.maximum(demand - group_assets(production), 0)
+
+    for rank in sorted(set(constraints.ranking.values.flatten())):
+        condition = (constraints.ranking == rank) & constraints.has_output
+        current_maxprod = constraints.maxprod.where(condition, 0)
+        fullprod = group_assets(current_maxprod)
+        if (fullprod <= demand + 1e-10).all():
+            current_demand = fullprod
+            current_prod = current_maxprod
+        else:
+            if "region" in demand.dims:
+                demand_prod = demand.sel(region=production.region)
+            else:
+                demand_prod = demand
+            demand_prod = (
+                current_maxprod / current_maxprod.sum("asset") * demand_prod
+            ).where(condition, 0)
+            current_prod = np.minimum(demand_prod, current_maxprod)
+            current_demand = group_assets(current_prod)
+        demand -= np.minimum(current_demand, demand)
+        production += current_prod
+
+    result = xr.zeros_like(maxprod)
+    result[dict(commodity=commodity)] += production
     return result
