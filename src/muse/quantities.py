@@ -560,7 +560,7 @@ def capacity_in_use(
 
 
 def supply_cost(
-    production: xr.DataArray, lcoe: xr.DataArray, asset_dim: Text = "asset"
+    production: xr.DataArray, lcoe: xr.DataArray, asset_dim: Optional[Text] = "asset"
 ) -> xr.DataArray:
     """Supply cost given production and the levelized cost of energy.
 
@@ -577,11 +577,15 @@ def supply_cost(
             `muse.quantities.lifetime_levelized_cost_of_energy`.
         asset_dim: Name of the dimension(s) holding assets, processes or technologies.
     """
-    inv_total = 1 / production.sum(asset_dim)
-    result = (production * lcoe).sum(asset_dim) * inv_total.where(
-        ~np.isinf(inv_total), 0
-    )
-    return result
+    data = xr.Dataset(dict(production=production, prices=production * lcoe))
+    if asset_dim is not None:
+        if "region" not in data.coords or len(data.region.dims) == 0:
+            data = data.sum(asset_dim)
+        else:
+            data = data.groupby("region").sum(asset_dim)
+
+    total = data.production.where(np.abs(data.production) > 1e-15, np.infty)
+    return data.prices / total
 
 
 def costed_production(
