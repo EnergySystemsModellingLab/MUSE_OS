@@ -1,0 +1,17 @@
+Commodity,RegionName,Cost,Time,R1,R2,R3
+Unit,-,-,Year,MUSD/GWh,MUSD/GWh,MUSD/GWh
+electricity,R1,cap_par,2010,0,9.801333,9.061224
+electricity,R2,cap_par,2010,7.840587,0,1.743443
+electricity,R3,cap_par,2010,9.061224,2.179437,0
+electricity,R1,fix_par,2010,0,0.100228,0.09266
+electricity,R2,fix_par,2010,0.080177,0,0.017828
+electricity,R3,fix_par,2010,0.09266,0.022287,0
+electricity,R1,max_growth,2010,0,0.002,0.002
+electricity,R2,max_growth,2010,0.002,0,0.002
+electricity,R3,max_growth,2010,0.002,0.002,0
+electricity,R1,max_addition,2010,0,1,1
+electricity,R2,max_addition,2010,1,0,1
+electricity,R3,max_addition,2010,1,1,0
+electricity,R1,max_capacity,2010,0,60000,60000
+electricity,R2,max_capacity,2010,60000,0,60000
+electricity,R3,max_capacity,2010,60000,60000,0

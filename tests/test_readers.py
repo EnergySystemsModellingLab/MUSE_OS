@@ -1,7 +1,8 @@
 from pathlib import Path
 
 import toml
-from pytest import fixture, mark, raises
+import xarray as xr
+from pytest import approx, fixture, mark, raises
 
 
 @fixture
@@ -24,7 +25,7 @@ def sectors_files(settings: dict):
     """Creates the files related to the sector."""
     from typing import Text
 
-    for sector, data in settings["sectors"].items():
+    for data in settings["sectors"].values():
         for path in data.values():
             if not isinstance(path, (Path, Text)):
                 continue
@@ -345,7 +346,7 @@ def test_split_toml_incorrect_inner_name(tmpdir):
         read_split_toml(tmpdir / "outer.toml")
 
 
-def test_format_path(tmpdir):
+def test_format_path():
     from muse.readers.toml import format_path
 
     path = "this_path"
@@ -384,3 +385,36 @@ def test_suffix_path_formatting(suffix, tmpdir):
     assert result["plugins"][0] == str(
         (Path() / "other" / f"thisfile{suffix}").absolute()
     )
+
+
+def test_read_existing_trade(tmp_path):
+    from muse.examples import copy_model
+    from muse.readers.csv import read_trade
+
+    copy_model("trade", tmp_path)
+    path = tmp_path / "model" / "technodata" / "gas" / "ExistingTrade.csv"
+    data = read_trade(path, skiprows=[1])
+
+    assert isinstance(data, xr.DataArray)
+    assert set(data.dims) == {"year", "commodity", "dst_region", "region"}
+    assert data.isel(commodity=0, year=0).values.trace() == approx(0)
+    assert data.isel(commodity=0, year=1).values.trace() == approx(0)
+
+
+def test_read_trade_technodata(tmp_path):
+    from muse.examples import copy_model
+    from muse.readers.csv import read_trade
+
+    copy_model("trade", tmp_path)
+    path = tmp_path / "model" / "technodata" / "gas" / "TradeTechnodata.csv"
+    data = read_trade(path, split="Cost", skiprows=[1])
+
+    assert isinstance(data, xr.Dataset)
+    assert set(data.dims) == {"year", "commodity", "dst_region", "region"}
+    assert set(data.data_vars) == {
+        "cap_par",
+        "fix_par",
+        "max_addition",
+        "max_capacity",
+        "max_growth",
+    }

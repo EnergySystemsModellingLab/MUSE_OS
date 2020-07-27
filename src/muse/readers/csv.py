@@ -720,14 +720,15 @@ def read_csv_outputs(
 def read_trade(
     data: Union[pd.DataFrame, Text, Path],
     columns_are_source: bool = True,
+    split: Optional[Text] = None,
     skiprows: Optional[Sequence[int]] = None,
     name: Optional[Text] = None,
-) -> xr.DataArray:
+) -> Union[xr.DataArray, xr.Dataset]:
     """Read CSV table with source and destination regions."""
     from functools import partial
 
     if not isinstance(data, pd.DataFrame):
-        data = pd.read_data(data, skiprows=skiprows)
+        data = pd.read_csv(data, skiprows=skiprows)
 
     if columns_are_source:
         col_region = "src_region"
@@ -737,14 +738,28 @@ def read_trade(
         col_region = "dst_region"
     data = data.apply(partial(pd.to_numeric, errors="ignore"), axis=0)
     data = data.rename(
-        columns=dict(Time="year", Commodity="commodity", RegionName=row_region)
+        columns=dict(
+            Time="year",
+            Commodity="commodity",
+            ProcessName="technology",
+            RegionName=row_region,
+        )
     )
-    indices = {"year", "commodity", row_region}.intersection(data.columns)
-    data.index = pd.MultiIndex.from_arrays([data[u] for u in indices])
-    data = data.drop(columns=indices)
-    data = data.stack()
-    data.index.names = data.index.names[:-1] + [col_region]
-
-    result = xr.DataArray.from_series(data).rename(src_region="region")
-    result.name = name
-    return result
+    data = data.melt(
+        id_vars={"year", "commodity", row_region, split}.intersection(data.columns),
+        var_name=col_region,
+    )
+    indices = list(
+        {"commodity", "year", "src_region", "dst_region", "technology"}.intersection(
+            data.columns
+        )
+    )
+    if split is None:
+        result: Union[xr.DataArray, xr.Dataset] = (
+            xr.DataArray.from_series(data.set_index(indices)["value"]).rename(name)
+        )
+    else:
+        result = xr.Dataset.from_dataframe(
+            data.pivot_table(values="value", columns=split, index=indices)
+        )
+    return result.rename(src_region="region")

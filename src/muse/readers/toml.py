@@ -921,9 +921,9 @@ def read_trade(settings: Any) -> xr.Dataset:
         raise ValueError("Existing trade file not given")
     result["existing"] = read_csv_trade(settings.existing, skiprows=[1])
     if getattr(settings, "possible", None) is not None:
-        result["possible"] = read_trade(settings.possible) != 0
+        result["possible"] = read_csv_trade(settings.possible) != 0
     else:
         result["possible"] = xr.ones_like(result.region, dtype=bool) * xr.ones_like(
             result.dst_region, dtype=bool
         )
-    return
+    return result

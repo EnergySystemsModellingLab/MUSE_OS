@@ -1,0 +1,17 @@
+Commodity,RegionName,Cost,Time,R1,R2,R3
+Unit,-,-,Year,MUSD/GWh,MUSD/GWh,MUSD/GWh
+gas,R1,cap_par,2010,0,9.801333,9.061224
+gas,R2,cap_par,2010,7.840587,0,1.743443
+gas,R3,cap_par,2010,9.061224,2.179437,0
+gas,R1,fix_par,2010,0,0.100227857,0.092659546
+gas,R2,fix_par,2010,0.080177384,0,0.017828346
+gas,R3,fix_par,2010,0.092659546,0.022286795,0
+gas,R1,max_growth,2010,0,0.02,0.02
+gas,R2,max_growth,2010,0.02,0,0.02
+gas,R3,max_growth,2010,0.02,0.02,0
+gas,R1,max_addition,2010,0,0.1,0.1
+gas,R2,max_addition,2010,0.1,0,0.1
+gas,R3,max_addition,2010,0.1,0.1,0
+gas,R1,max_capacity,2010,0,3000,3000
+gas,R2,max_capacity,2010,3000,0,3000
+gas,R3,max_capacity,2010,3000,3000,0
