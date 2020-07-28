@@ -396,7 +396,7 @@ def test_read_existing_trade(tmp_path):
     data = read_trade(path, skiprows=[1])
 
     assert isinstance(data, xr.DataArray)
-    assert set(data.dims) == {"year", "commodity", "dst_region", "region"}
+    assert set(data.dims) == {"year", "asset", "dst_region", "region"}
     assert data.isel(commodity=0, year=0).values.trace() == approx(0)
     assert data.isel(commodity=0, year=1).values.trace() == approx(0)
 
@@ -407,10 +407,10 @@ def test_read_trade_technodata(tmp_path):
 
     copy_model("trade", tmp_path)
     path = tmp_path / "model" / "technodata" / "gas" / "TradeTechnodata.csv"
-    data = read_trade(path, split="Cost", skiprows=[1])
+    data = read_trade(path, skiprows=[1])
 
     assert isinstance(data, xr.Dataset)
-    assert set(data.dims) == {"year", "commodity", "dst_region", "region"}
+    assert set(data.dims) == {"year", "asset", "dst_region", "region"}
     assert set(data.data_vars) == {
         "cap_par",
         "fix_par",

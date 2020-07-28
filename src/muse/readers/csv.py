@@ -164,42 +164,28 @@ def read_initial_assets(filename: Union[Text, Path]) -> xr.DataArray:
 
     data = pd.read_csv(filename, float_precision="high", low_memory=False)
     if "Time" in data.columns:
-        return read_trade(data, skiprows=[1], columns_are_source=True)
-    return read_initial_capacity(data)
+        result = read_trade(filename, skiprows=[1], columns_are_source=True)
+    else:
+        result = read_initial_capacity(data)
+    technology = result.technology
+    result = result.drop_vars("technology").rename(technology="asset")
+    result["technology"] = "asset", technology.values
+    result["installed"] = ("asset", [int(result.year.min())] * len(result.technology))
+    result["year"] = result.year.astype("int")
+    return result
 
 
 def read_initial_capacity(data: Union[Text, Path, pd.DataFrame]) -> xr.DataArray:
-    from re import match
-
     if not isinstance(data, pd.DataFrame):
         data = pd.read_csv(data, float_precision="high", low_memory=False)
     if "Unit" in data.columns:
         data = data.drop(columns="Unit")
-
-    data.index = pd.MultiIndex.from_arrays(
-        [data.ProcessName, data.RegionName], names=("asset", "region")
+    data = (
+        data.rename(columns=dict(ProcessName="technology", RegionName="region"))
+        .melt(id_vars=["technology", "region"], var_name="year")
+        .set_index(["region", "technology", "year"])
     )
-    data.index.name = "asset"
-    years = list([u for u in data.columns if match("^[0-9]{4}$", u) is not None])
-    data = data[years]
-    xrdata = xr.Dataset.from_dataframe(data)
-
-    ydim = xr.DataArray(list((int(u) for u in years)), dims="year", name="year")
-    result = xr.concat([xrdata.get(u) for u in years], dim=ydim)
-    result = result.rename("initial capacity")
-
-    baseyear = int(result.year.min())
-    result["asset"] = (
-        "asset",
-        pd.MultiIndex.from_arrays(
-            (result.asset.values, [baseyear] * len(result.asset)),
-            names=("tech", "base"),
-        ),
-    )
-    result = result.sel(asset=result.any(("region", "year")))
-    result["technology"] = result.tech
-    result["installed"] = result.base
-    return result.drop_vars("asset")
+    return xr.DataArray.from_series(data["value"])
 
 
 def read_technologies(
@@ -720,16 +706,19 @@ def read_csv_outputs(
 def read_trade(
     data: Union[pd.DataFrame, Text, Path],
     columns_are_source: bool = True,
-    split: Optional[Text] = None,
+    parameters: Optional[Text] = None,
     skiprows: Optional[Sequence[int]] = None,
     name: Optional[Text] = None,
 ) -> Union[xr.DataArray, xr.Dataset]:
     """Read CSV table with source and destination regions."""
     from functools import partial
+    from muse.readers import camel_to_snake
 
     if not isinstance(data, pd.DataFrame):
         data = pd.read_csv(data, skiprows=skiprows)
 
+    if parameters is None and "Parameter" in data.columns:
+        parameters = "Parameter"
     if columns_are_source:
         col_region = "src_region"
         row_region = "dst_region"
@@ -740,26 +729,30 @@ def read_trade(
     data = data.rename(
         columns=dict(
             Time="year",
-            Commodity="commodity",
             ProcessName="technology",
             RegionName=row_region,
+            Commodity="commodity",
         )
-    )
-    data = data.melt(
-        id_vars={"year", "commodity", row_region, split}.intersection(data.columns),
-        var_name=col_region,
     )
     indices = list(
         {"commodity", "year", "src_region", "dst_region", "technology"}.intersection(
             data.columns
         )
     )
-    if split is None:
+    data = data.melt(
+        id_vars={parameters}.union(indices).intersection(data.columns),
+        var_name=col_region,
+    )
+    if parameters is None:
         result: Union[xr.DataArray, xr.Dataset] = (
-            xr.DataArray.from_series(data.set_index(indices)["value"]).rename(name)
+            xr.DataArray.from_series(
+                data.set_index(indices + [col_region])["value"]
+            ).rename(name)
         )
     else:
         result = xr.Dataset.from_dataframe(
-            data.pivot_table(values="value", columns=split, index=indices)
+            data.pivot_table(
+                values="value", columns=parameters, index=indices + [col_region]
+            ).rename(columns=camel_to_snake)
         )
     return result.rename(src_region="region")

@@ -108,7 +108,7 @@ def copy_model(
 def technodata(sector: Text, model: Text = "default") -> xr.Dataset:
     """Technology for a sector of a given example model."""
     from tempfile import TemporaryDirectory
-    from muse.readers.csv import read_technologies
+    from muse.readers.toml import read_technodata, read_settings
 
     sector = sector.lower()
     allowed = {"residential", "power", "gas", "preset"}
@@ -118,12 +118,8 @@ def technodata(sector: Text, model: Text = "default") -> xr.Dataset:
         raise RuntimeError(f"This model only knows about sectors {allowed}.")
     with TemporaryDirectory() as tmpdir:
         path = copy_model(model, tmpdir)
-        return read_technologies(
-            path / "technodata" / sector.lower() / "Technodata.csv",
-            path / "technodata" / sector.lower() / "CommOut.csv",
-            path / "technodata" / sector.lower() / "CommIn.csv",
-            path / "input" / "GlobalCommodities.csv",
-        )
+        settings = read_settings(path / "settings.toml")
+        return read_technodata(settings, sector)
 
 
 def search_space(sector: Text, model: Text = "default") -> xr.DataArray:

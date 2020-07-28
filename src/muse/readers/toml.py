@@ -826,25 +826,10 @@ def check_sectors_files(settings: Dict) -> None:
         "last": 100,
     }
 
-    path_options = {"technodata", "commodities_in", "commodities_out"}
-
     if "list" in sectors:
         sectors = {k: sectors[k] for k in sectors["list"]}
 
     for name, sector in sectors.items():
-        if sector["type"].lower().strip() == "default":
-            for path in path_options:
-                if path not in sector:
-                    raise AssertionError(
-                        f"Settings for sector '{name}' "
-                        f"are missing an input for '{path}'"
-                    )
-                if not Path(sector[path]).exists():
-                    raise AssertionError(
-                        f"Input '{path}' of sector '{name}' "
-                        "does not refer to a is not a valid file"
-                    )
-
         # Finally the priority of the sectors is used to set the order of execution
         sector["priority"] = sector.get("priority", priorities["last"])
         sector["priority"] = int(
@@ -866,7 +851,7 @@ def read_technodata(
     **kwargs,
 ) -> xr.Dataset:
     """Helper function to create technodata for a given sector."""
-    from muse.readers.csv import read_technologies
+    from muse.readers.csv import read_technologies, read_trade
 
     if time_framework is None:
         time_framework = getattr(settings, "time_framework", [2010, 2050])
@@ -880,16 +865,41 @@ def read_technodata(
     if sector_name is not None:
         settings = getattr(settings.sectors, sector_name)
 
+    # normalizes case where technodata is not in own subsection
+    technosettings = undo_damage(settings.technodata)
+    if isinstance(technosettings, Text):
+        technosettings = dict(
+            technosettings=technosettings,
+            commodities_in=settings.commodities_in,
+            commodities_out=settings.commodities_out,
+        )
+    else:
+        for comm in ("in", "out"):
+            name = f"commodities_{comm}"
+            if hasattr(settings, comm) and comm in technosettings:
+                raise ValueError(f"{name} specified twice")
+            elif hasattr(settings, comm):
+                technosettings[name] = getattr(settings, name)
+
     technologies = read_technologies(
-        settings.technodata,
-        settings.commodities_out,
-        settings.commodities_in,
+        technosettings.pop("technodata"),
+        technosettings.pop("commodities_out"),
+        technosettings.pop("commodities_in"),
         commodities=commodities,
     )
     ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
     outs = (technologies.fixed_outputs > 0).any(("year", "region", "technology"))
     techcomms = technologies.commodity[ins | outs]
     technologies = technologies.sel(commodity=techcomms, region=regions)
+    for name, value in technosettings.items():
+        if isinstance(name, (Text, Path)):
+            data = read_trade(value, skiprows=[1])
+        else:
+            data = value
+        if isinstance(data, xr.Dataset):
+            technologies = technologies.merge(data)
+        else:
+            technologies[name] = data
 
     # make sure technologies includes the requisite years
     maxyear = getattr(settings, "forecast", 5) + max(time_framework)
@@ -910,20 +920,3 @@ def read_technodata(
     year = sorted(set(time_framework).union(technologies.year.data.tolist()))
     technologies = technologies.interp(year=year, **kwargs)
     return technologies
-
-
-def read_trade(settings: Any) -> xr.Dataset:
-    from muse.readers.csv import read_trade as read_csv_trade
-
-    result = xr.Dataset()
-    settings = getattr(settings, "trade", settings)
-    if not hasattr(settings, "existing"):
-        raise ValueError("Existing trade file not given")
-    result["existing"] = read_csv_trade(settings.existing, skiprows=[1])
-    if getattr(settings, "possible", None) is not None:
-        result["possible"] = read_csv_trade(settings.possible) != 0
-    else:
-        result["possible"] = xr.ones_like(result.region, dtype=bool) * xr.ones_like(
-            result.dst_region, dtype=bool
-        )
-    return result

@@ -41,9 +41,10 @@ tolerance_unmet_demand = -0.1
     priority = 1
     dispatch_production = 'share'
 
-    technodata = '{path}/technodata/residential/Technodata.csv'
-    commodities_in = '{path}/technodata/residential/CommIn.csv'
-    commodities_out = '{path}/technodata/residential/CommOut.csv'
+    [sectors.residential.technodata]
+        technodata = '{path}/technodata/residential/Technodata.csv'
+        commodities_in = '{path}/technodata/residential/CommIn.csv'
+        commodities_out = '{path}/technodata/residential/CommOut.csv'
 
     [sectors.residential.subsectors.retro_and_new]
         agents = '{path}/technodata/residential/Agents.csv'
@@ -81,9 +82,11 @@ tolerance_unmet_demand = -0.1
     priority = 2
     dispatch_production = 'share'
 
-    technodata = '{path}/technodata/power/Technodata.csv'
-    commodities_in = '{path}/technodata/power/CommIn.csv'
-    commodities_out = '{path}/technodata/power/CommOut.csv'
+    [sectors.power.technodata]
+        technodata = '{path}/technodata/power/Technodata.csv'
+        trade = '{path}/technodata/power/TradeTechnodata.csv'
+        commodities_in = '{path}/technodata/power/CommIn.csv'
+        commodities_out = '{path}/technodata/power/CommOut.csv'
 
     [sectors.power.subsectors.trade]
         agents = '{path}/technodata/Agents.csv'
