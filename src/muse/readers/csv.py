@@ -62,6 +62,7 @@ def read_technodictionary(filename: Union[Text, Path]) -> Dataset:
         return sub(r"agent(\d)", r"agent_share_\1", name)
 
     csv = read_csv(filename, float_precision="high", low_memory=False)
+    csv.drop(csv.filter(regex="Unname"), axis=1, inplace=True)
     csv = csv.rename(columns=camel_to_snake)
     csv = csv.rename(columns=to_agent_share)
     csv = csv.rename(columns={"end_use": "enduse", "availabiliy year": "availability"})
