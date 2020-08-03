@@ -430,7 +430,7 @@ def test_scipy_adapter_standard_constraints(
     assert adapter.b_ub.size == demand.b.size + maxprod.b.size + maxcapa.b.size
 
 
-def test_scipy_solver(technologies, costs, constraints, timeslices):
+def test_scipy_solver(technologies, costs, constraints):
     from muse.investments import scipy_match_demand
 
     solution = scipy_match_demand(
@@ -442,3 +442,50 @@ def test_scipy_solver(technologies, costs, constraints, timeslices):
     )
     assert isinstance(solution, xr.DataArray)
     assert set(solution.dims) == {"asset", "replacement"}
+
+
+def test_minimum_service(
+    market_demand, assets, search_space, market, technologies, costs, constraints
+):
+    from muse.constraints import minimum_service
+    from muse.investments import scipy_match_demand
+
+    minimum_service_constraint = minimum_service(
+        market_demand, assets, search_space, market, technologies
+    )
+
+    # test it is none (when appropriate)
+    assert minimum_service_constraint is None
+
+    # use this constraint (and others) to find a solution
+    solution = scipy_match_demand(
+        costs=costs,
+        search_space=search_space,
+        technologies=technologies,
+        constraints=constraints,
+        year=2025,
+    )
+
+    # add the column to technologies
+    minimum_service_factor = 0.4 * xr.ones_like(technologies.technology, dtype=float)
+    technologies["minimum_service_factor"] = minimum_service_factor
+
+    # append minimum_service_constraint to constraints
+    minimum_service_constraint = minimum_service(
+        market_demand, assets, search_space, market, technologies
+    )
+    constraints.append(minimum_service_constraint)
+
+    # test that it is no longer none
+    assert isinstance(minimum_service_constraint, xr.Dataset)
+
+    # test solution using new constraint is different from first solution
+    minserv_solution = scipy_match_demand(
+        costs=costs,
+        search_space=search_space,
+        technologies=technologies,
+        constraints=constraints,
+        year=2025,
+    )
+
+    assert np.allclose(minserv_solution, solution) is False

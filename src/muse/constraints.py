@@ -140,7 +140,7 @@ A constraint should contain a data-array `b` corresponding to right-hand-side ve
 of the contraint. It should also contain a data-array `capacity` corresponding to the
 left-hand-side matrix operator which will be applied to the capacity-related decision
 variables.  It should contain a similar matrix `production` corresponding to
-the left-hand-side matrix operator which will be applied to teh production-related
+the left-hand-side matrix operator which will be applied to the production-related
 decision variables. Should any of these three objects be missing, they default to the
 scalar 0. Finally, the constraint should contain an attribute `kind` of type
 :py:class:`ConstraintKind` defining the operation. If it is missing, it defaults to an
@@ -229,6 +229,7 @@ def factory(
             "max_capacity_expansion",
             "demand",
             "search_space",
+            "minimum_service",
         )
 
     def normalize(x) -> MutableMapping:
@@ -404,7 +405,7 @@ def max_production(
     forecast: int = 5,
     interpolation: Text = "linear",
 ) -> Constraint:
-    """Constructs contraint between capacity and maximum production.
+    """Constructs constraint between capacity and maximum production.
 
     Constrains the production decision variable by the maximum production for a given
     capacity.
@@ -443,6 +444,50 @@ def max_production(
     return xr.Dataset(
         dict(capacity=cast(xr.DataArray, -capacity), production=production, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
+    )
+
+
+@register_constraints
+def minimum_service(
+    demand: xr.DataArray,
+    assets: xr.Dataset,
+    search_space: xr.DataArray,
+    market: xr.Dataset,
+    technologies: xr.Dataset,
+    year: Optional[int] = None,
+    forecast: int = 5,
+    interpolation: Text = "linear",
+) -> Optional[Constraint]:
+    """ Constructs constraint between capacity and minimum service. """
+    from xarray import zeros_like, ones_like
+    from muse.commodities import is_enduse
+    from muse.timeslices import convert_timeslice, QuantityType
+
+    if "minimum_service_factor" not in technologies.data_vars:
+        return None
+    if np.all(technologies["minimum_service_factor"] == 0):
+        return None
+    if year is None:
+        year = market.year.min()
+    commodities = technologies.commodity.sel(
+        commodity=is_enduse(technologies.comm_usage)
+    )
+    kwargs = dict(technology=search_space.replacement, year=year, commodity=commodities)
+    if getattr(assets, "region", None) is not None and "region" in technologies.dims:
+        kwargs["region"] = assets.region
+    techs = technologies[
+        ["fixed_outputs", "utilization_factor", "minimum_service_factor"]
+    ].sel(**kwargs)
+    capacity = convert_timeslice(
+        techs.fixed_outputs * techs.utilization_factor * techs.minimum_service_factor,
+        market.timeslice,
+        QuantityType.EXTENSIVE,
+    ).expand_dims(asset=search_space.asset)
+    production = ones_like(capacity)
+    b = zeros_like(production)
+    return xr.Dataset(
+        dict(capacity=cast(xr.DataArray, -capacity), production=production, b=b),
+        attrs=dict(kind=ConstraintKind.LOWER_BOUND),
     )
 
 
@@ -654,7 +699,7 @@ def lp_constraint_matrix(
         >>> assert set(result.dims) == {f"d({x})" for x in lpcosts.production.dims}
         >>> assert result.values == approx(1)
 
-        As expected, the cpacicity vector is 1, whereas the production vector is -1.
+        As expected, the capacity vector is 1, whereas the production vector is -1.
         These are the values the :py:func:`~muse.constraints.max_production` is set up
         to create.
 

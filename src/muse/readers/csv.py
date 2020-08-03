@@ -62,6 +62,7 @@ def read_technodictionary(filename: Union[Text, Path]) -> Dataset:
         return sub(r"agent(\d)", r"agent_share_\1", name)
 
     csv = read_csv(filename, float_precision="high", low_memory=False)
+    csv.drop(csv.filter(regex="Unname"), axis=1, inplace=True)
     csv = csv.rename(columns=camel_to_snake)
     csv = csv.rename(columns=to_agent_share)
     csv = csv.rename(columns={"end_use": "enduse", "availabiliy year": "availability"})
@@ -263,12 +264,19 @@ def read_technologies(
     logger.info(msg)
 
     result = read_technodictionary(tpath)
+    if any(result[u].isnull().any() for u in result.data_vars):
+        raise ValueError(f"Inconsistent data in {tpath} (e.g. inconsistent years)")
     outs = read_io_technodata(opath).rename(
         flexible="flexible_outputs", fixed="fixed_outputs"
     )
     ins = read_io_technodata(ipath).rename(
         flexible="flexible_inputs", fixed="fixed_inputs"
     )
+    if "year" in result.dims and len(result.year) > 1:
+        if all(len(outs[d]) > 1 for d in outs.dims if outs[d].dtype.kind in "uifc"):
+            outs = outs.interp(year=result.year)
+        if all(len(ins[d]) > 1 for d in ins.dims if ins[d].dtype.kind in "uifc"):
+            ins = ins.interp(year=result.year)
 
     result = result.merge(outs).merge(ins)
 
