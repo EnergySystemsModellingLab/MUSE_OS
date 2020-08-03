@@ -97,7 +97,8 @@ def factory(
 @register_production(name=("max", "maximum"))
 def maximum_production(
     market: xr.Dataset, capacity: xr.DataArray, technologies: xr.Dataset
-) -> xr.DataArray:
+) -> DataArray:
+>>>>>>> cb31653f... Can now load trade example
     """Production when running at full capacity.
 
     *Full capacity* is limited by the utilitization factor. For more details, see
