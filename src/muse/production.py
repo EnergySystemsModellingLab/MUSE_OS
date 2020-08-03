@@ -96,7 +96,7 @@ def factory(
 
 @register_production(name=("max", "maximum"))
 def maximum_production(
-    _: Dataset, capacity: DataArray, technologies: Dataset
+    market: Dataset, capacity: DataArray, technologies: Dataset
 ) -> DataArray:
     """Production when running at full capacity.
 

@@ -1,4 +1,4 @@
-from pytest import approx
+from pytest import approx, mark
 from xarray import DataArray
 
 
@@ -9,6 +9,7 @@ def add_var(coordinates, *dims, factor=100.0):
     return dims, (rand(*shape) * factor).astype(type(factor))
 
 
+@mark.usefixtures("save_registries")
 def test_objective_registration():
     from muse.objectives import OBJECTIVES, register_objective
 
@@ -27,6 +28,7 @@ def test_objective_registration():
     assert OBJECTIVES["something"] is b_objective
 
 
+@mark.usefixtures("save_registries")
 def test_computing_objectives(demand_share, search_space):
     from muse.objectives import factory, register_objective
 

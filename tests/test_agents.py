@@ -28,7 +28,8 @@ def assets():
 
 
 def test_create_retrofit(agent_args, technologies, stock):
-    from muse import create_agent, Agent
+    from muse.agents.factories import create_agent
+    from muse.agents.agent import Agent
 
     agent_args["share"] = "agent_share_zero"
     agent = create_agent(

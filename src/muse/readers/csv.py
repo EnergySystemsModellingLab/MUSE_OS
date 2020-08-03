@@ -2,7 +2,7 @@
 __all__ = [
     "read_technodictionary",
     "read_io_technodata",
-    "read_initial_capacity",
+    "read_initial_assets",
     "read_technologies",
     "read_csv_timeslices",
     "read_global_commodities",
@@ -171,7 +171,7 @@ def read_initial_assets(filename: Union[Text, Path]) -> xr.DataArray:
     result = result.drop_vars("technology").rename(technology="asset")
     result["technology"] = "asset", technology.values
     result["installed"] = ("asset", [int(result.year.min())] * len(result.technology))
-    result["year"] = result.year.astype("int")
+    result["year"] = result.year.astype(int)
     return result
 
 
@@ -185,7 +185,11 @@ def read_initial_capacity(data: Union[Text, Path, pd.DataFrame]) -> xr.DataArray
         .melt(id_vars=["technology", "region"], var_name="year")
         .set_index(["region", "technology", "year"])
     )
-    return xr.DataArray.from_series(data["value"])
+    result = xr.DataArray.from_series(data["value"])
+    # inconsistent legacy data files.
+    result = result.sel(year=result.year != "2100.1")
+    result["year"] = result.year.astype(int)
+    return result
 
 
 def read_technologies(
@@ -221,7 +225,6 @@ def read_technologies(
     Returns:
         A dataset with all the characteristics of the technologies.
     """
-    from pathlib import Path
     from logging import getLogger
     from muse.commodities import CommodityUsage
 
@@ -456,7 +459,7 @@ def read_csv_agent_parameters(filename) -> List:
             data["quantity"] = row.Quantity
         if hasattr(row, "MaturityThreshold"):
             data["maturity_threshhold"] = row.MaturityThreshold
-        if agent_type == "retrofit":
+        if agent_type != "newcapa":
             data["share"] = sub(r"Agent(\d)", r"agent_share_\1", row.AgentShare)
         if agent_type == "retrofit" and data["decision"] == "lexo":
             data["decision"] = "retro_lexo"

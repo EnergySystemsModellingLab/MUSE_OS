@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from pathlib import Path
-from typing import Callable, Mapping, Optional, Sequence, Text, Union
+from typing import Callable, Mapping, Optional, Sequence, Text, Tuple, Union
 
 from xarray import DataArray, Dataset
 
@@ -47,7 +47,7 @@ class Regression(Callable):
     `xarray.Dataset` as input. In any case, it is given the gpd and
     population. These can be read from standard MUSE csv files:
 
-        >>> from muse import read_macro_drivers
+        >>> from muse.readers import read_macro_drivers
         >>> from muse.defaults import DATA_DIRECTORY
         >>> path_to_macrodrivers = DATA_DIRECTORY / "Macrodrivers.csv"
         >>> if path_to_macrodrivers.exists():
@@ -98,8 +98,9 @@ class Regression(Callable):
             **(self.coeffs.sel(filters).data_vars),
         )
 
+    @staticmethod
     def _to_dataset(
-        self, first: Union[DataArray, Dataset], population: Optional[DataArray]
+        first: Union[DataArray, Dataset], population: Optional[DataArray]
     ) -> Dataset:
 
         data = first if isinstance(first, Dataset) else Dataset({"gdp": first})
@@ -108,14 +109,14 @@ class Regression(Callable):
         return data
 
     @staticmethod
-    def _split_kwargs(data: Dataset, **kwargs) -> (Mapping, Mapping):
+    def _split_kwargs(data: Dataset, **kwargs) -> Tuple[Mapping, Mapping]:
         filters = {k: v for k, v in kwargs.items() if k in data.dims}
         attrs = {k: v for k, v in kwargs.items() if k not in data.dims}
         return filters, attrs
 
     @classmethod
     def factory(
-        Self,
+        cls,
         regression_data: Union[Text, Path, Dataset],
         interpolation: Text = "linear",
         base_year: int = 2010,
@@ -124,16 +125,16 @@ class Regression(Callable):
         """Creates a regression function from standard muse input."""
         from muse.readers import read_regression_parameters
 
-        assert Self.__mappings__
-        assert Self.__regression__ != ""
+        assert cls.__mappings__
+        assert cls.__regression__ != ""
 
         if isinstance(regression_data, (Text, Path)):
             regression_data = read_regression_parameters(regression_data)
 
         # Get the parameters of interest with a 'simple' name
-        coeffs = Dataset({k: regression_data[v] for k, v in Self.__mappings__.items()})
+        coeffs = Dataset({k: regression_data[v] for k, v in cls.__mappings__.items()})
         filters.update(coeffs.data_vars)
-        return Self(interpolation=interpolation, base_year=base_year, **filters)
+        return cls(interpolation=interpolation, base_year=base_year, **filters)
 
 
 def factory(
@@ -441,6 +442,8 @@ def LogisticSigmoid(
         )
         # fmt: enable
         scale = self.coeffs.b0.where(years < 2015, self.coeffs.b1)
+    else:
+        scale = 1
 
     p = power(1 + power(gdp * scale / population, 2), 0.5)
     return 1e6 * (population * self.coeffs.a + gdp * self.coeffs.c / p)

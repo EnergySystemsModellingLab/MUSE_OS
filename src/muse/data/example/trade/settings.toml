@@ -90,7 +90,7 @@ tolerance_unmet_demand = -0.1
 
     [sectors.power.subsectors.trade]
         agents = '{path}/technodata/Agents.csv'
-        existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
+        existing_capacity = '{path}/technodata/power/ExistingTrade.csv'
         lpsolver = "scipy"
         constraints = [  # Optional, defaults to the constraints below
             "max_production",
@@ -118,7 +118,7 @@ tolerance_unmet_demand = -0.1
 
     [sectors.gas.subsectors.trade]
         agents = '{path}/technodata/Agents.csv'
-        existing_capacity = '{path}/technodata/gas/ExistingCapacity.csv'
+        existing_capacity = '{path}/technodata/gas/ExistingTrade.csv'
         existing_trade = '{path}/technodata/gas/ExistingTrade.csv'
         possible_trade = '{path}/technodata/gas/PossibleTrade.csv'
         lpsolver = "scipy"
