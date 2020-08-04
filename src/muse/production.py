@@ -127,7 +127,7 @@ def demand_matched_production(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    costing: Text = "prices",
+    costs: Text = "prices",
 ) -> xr.DataArray:
     """Production from matching demand via annual lcoe."""
     from muse.quantities import (
@@ -137,16 +137,16 @@ def demand_matched_production(
     )
     from muse.utilities import broadcast_techs
 
-    if costing == "prices":
+    if costs == "prices":
         prices = market.prices
-    elif costing == "gross_margin":
+    elif costs == "gross_margin":
         prices = gross_margin(technologies, capacity, market.prices)
-    elif costing == "lcoe":
+    elif costs == "lcoe":
         prices = lcoe(
             market.prices, cast(xr.Dataset, broadcast_techs(technologies, capacity))
         )
     else:
-        raise ValueError(f"Unknown costing option {costing}")
+        raise ValueError(f"Unknown costs option {costs}")
 
     return demand_matched_production(
         demand=market.consumption,
@@ -161,7 +161,6 @@ def costed_production(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    costing: Text = "prices",
     costs: Union[xr.DataArray, Callable, Text] = "alcoe",
     with_minimum_service: bool = True,
     with_emission: bool = True,

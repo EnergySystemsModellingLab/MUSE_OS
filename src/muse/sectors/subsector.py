@@ -19,6 +19,8 @@ from muse.agents import Agent
 
 
 class Subsector:
+    """Agent group servicing a subset of the sectorial commodities."""
+
     def __init__(
         self,
         agents: Sequence[Agent],

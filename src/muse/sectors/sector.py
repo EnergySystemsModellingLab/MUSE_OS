@@ -63,7 +63,7 @@ class Sector(AbstractSector):  # type: ignore
             .items()
         ]
         are_disjoint_commodities = sum((len(s.commodities) for s in subsectors)) == len(
-            set().union(*(set(s.commodities) for s in subsectors))
+            set().union(*(set(s.commodities) for s in subsectors))  # type: ignore
         )
         if not are_disjoint_commodities:
             raise RuntimeError("Subsector commodities are not disjoint")
