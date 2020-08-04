@@ -46,7 +46,17 @@ __all__ = [
     "register_investment",
     "INVESTMENT_SIGNATURE",
 ]
-from typing import Callable, List, Mapping, MutableMapping, Optional, Text, Union, cast
+from typing import (
+    Any,
+    Callable,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Text,
+    Union,
+    cast,
+)
 
 import numpy as np
 from mypy_extensions import KwArg
@@ -56,7 +66,7 @@ from muse.constraints import Constraint
 from muse.registration import registrator
 
 INVESTMENT_SIGNATURE = Callable[
-    [DataArray, DataArray, Dataset, List[Constraint], KwArg()], DataArray
+    [DataArray, DataArray, Dataset, List[Constraint], KwArg(Any)], DataArray
 ]
 """Investment signature. """
 

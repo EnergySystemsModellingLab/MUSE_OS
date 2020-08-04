@@ -64,7 +64,7 @@ from muse.registration import registrator
 from mypy_extensions import KwArg
 
 DEMAND_SHARE_SIGNATURE = Callable[
-    [Sequence[AbstractAgent], xr.Dataset, xr.Dataset, KwArg()], xr.DataArray
+    [Sequence[AbstractAgent], xr.Dataset, xr.Dataset, KwArg(Any)], xr.DataArray
 ]
 """Demand share signature."""
 
@@ -366,7 +366,6 @@ def new_consumption(
     capacity: xr.DataArray,
     market: xr.Dataset,
     technologies: xr.Dataset,
-    production: Union[Text, Mapping, Callable] = "maximum_production",
     current_year: Optional[int] = None,
     forecast: int = 5,
 ) -> xr.DataArray:
