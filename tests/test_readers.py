@@ -405,7 +405,7 @@ def test_read_trade_technodata(tmp_path):
 
     copy_model("trade", tmp_path)
     path = tmp_path / "model" / "technodata" / "gas" / "TradeTechnodata.csv"
-    data = read_trade(path, skiprows=[1])
+    data = read_trade(path, drop="Unit")
 
     assert isinstance(data, xr.Dataset)
     assert set(data.dims) == {"technology", "dst_region", "region"}

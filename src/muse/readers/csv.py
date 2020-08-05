@@ -712,6 +712,7 @@ def read_trade(
     parameters: Optional[Text] = None,
     skiprows: Optional[Sequence[int]] = None,
     name: Optional[Text] = None,
+    drop: Optional[Union[Text, Sequence[Text]]] = None,
 ) -> Union[xr.DataArray, xr.Dataset]:
     """Read CSV table with source and destination regions."""
     from functools import partial
@@ -729,6 +730,12 @@ def read_trade(
         row_region = "src_region"
         col_region = "dst_region"
     data = data.apply(partial(pd.to_numeric, errors="ignore"), axis=0)
+    if isinstance(drop, Text):
+        drop = [drop]
+    if drop:
+        drop = list(set(drop).intersection(data.columns))
+    if drop:
+        data = data.drop(columns=drop)
     data = data.rename(
         columns=dict(
             Time="year",

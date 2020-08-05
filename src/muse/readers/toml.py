@@ -910,7 +910,7 @@ def read_technodata(
     technologies = technologies.sel(commodity=techcomms, region=regions)
     for name, value in technosettings.items():
         if isinstance(name, (Text, Path)):
-            data = read_trade(value, skiprows=[1])
+            data = read_trade(value, drop="Unit")
         else:
             data = value
         if isinstance(data, xr.Dataset):
