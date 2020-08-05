@@ -30,10 +30,11 @@ Returns:
     A `xr.DataArray` with the amount produced for each good from each asset.
 """
 __all__ = [
+    "demand_matched_production",
     "factory",
     "maximum_production",
-    "demand_matched_production",
     "register_production",
+    "supply",
     "PRODUCTION_SIGNATURE",
 ]
 from typing import Any, Callable, Mapping, MutableMapping, Text, Union, cast
