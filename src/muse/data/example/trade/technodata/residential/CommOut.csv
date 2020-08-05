@@ -1,5 +1,5 @@
 ProcessName,RegionName,Time,Level,electricity,gas,heat,CO2f,wind
-Unit,-,Year,-,GWh/PJ,PJ/PJ,PJ/PJ,kt/PJ,PJ/PJ
+Unit,-,Year,-,PJ/PJ,PJ/PJ,PJ/PJ,kt/PJ,PJ/PJ
 gasboiler,R1,2010,fixed,0,0,1,64.70588235,0
 heatpump,R1,2010,fixed,0,0,1,0,0
 gasboiler,R2,2010,fixed,0,0,1,77.64705882,0
