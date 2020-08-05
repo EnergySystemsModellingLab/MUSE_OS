@@ -49,15 +49,16 @@ tolerance_unmet_demand = -0.1
     [sectors.residential.subsectors.retro_and_new]
         agents = '{path}/technodata/residential/Agents.csv'
         existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
-        lpsolver = "scipy"  # Optional, defaults to "adhoc" 
-        constraints = [  # Optional, defaults to the constraints below
+        lpsolver = "scipy"
+        constraints = [
             "max_production",
             "max_capacity_expansion",
+            "minimum_service",
             "demand",
             "search_space",
         ]
-        demand_share = "new_and_retro"  # Optional, default to new_and_retro
-        forecast = 5  # Optional, defaults to 5 
+        demand_share = "new_and_retro"
+        forecast = 5
 
     [[sectors.residential.outputs]]
         filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
@@ -92,14 +93,15 @@ tolerance_unmet_demand = -0.1
         agents = '{path}/technodata/Agents.csv'
         existing_capacity = '{path}/technodata/power/ExistingTrade.csv'
         lpsolver = "scipy"
-        constraints = [  # Optional, defaults to the constraints below
+        constraints = [
             "max_production",
             "max_capacity_expansion",
+            "minimum_service",
             "demand",
             "search_space",
         ]
-        demand_share = "new_and_retro"  # Optional, default to new_and_retro
-        forecast = 5  # Optional, defaults to 5 
+        demand_share = "new_and_retro"
+        forecast = 5
 
     [[sectors.power.outputs]]
         filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
@@ -122,14 +124,15 @@ tolerance_unmet_demand = -0.1
         existing_trade = '{path}/technodata/gas/ExistingTrade.csv'
         possible_trade = '{path}/technodata/gas/PossibleTrade.csv'
         lpsolver = "scipy"
-        constraints = [  # Optional, defaults to the constraints below
+        constraints = [
             "max_production",
             "max_capacity_expansion",
+            "minimum_service",
             "demand",
             "search_space",
         ]
-        demand_share = "new_and_retro"  # Optional, default to new_and_retro
-        forecast = 5  # Optional, defaults to 5 
+        demand_share = "new_and_retro"
+        forecast = 5
 
     [[sectors.gas.outputs]]
         filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
