@@ -370,6 +370,9 @@ def demand(
 
     enduse = technologies.commodity.sel(commodity=is_enduse(technologies.comm_usage))
     b = demand.sel(commodity=demand.commodity.isin(enduse))
+    if "region" in b.dims and "dst_region" in assets.dims:
+        b = b.rename(region="dst_region")
+
     assert "year" not in b.dims
     return xr.Dataset(
         dict(b=b, production=1), attrs=dict(kind=ConstraintKind.LOWER_BOUND)
