@@ -47,7 +47,7 @@ def search_space(model, assets):
 
 
 @fixture
-def costs(technologies, search_space, market):
+def costs(search_space):
     shape = search_space.shape
     return search_space * np.arange(np.prod(shape)).reshape(shape)
 
