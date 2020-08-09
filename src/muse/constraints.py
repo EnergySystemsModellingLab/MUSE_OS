@@ -310,30 +310,41 @@ def max_capacity_expansion(
 
             \Gamma_t^{r, i} \geq 0
     """
-    from muse.utilities import filter_input
+    from muse.utilities import filter_input, reduce_assets
 
     if year is None:
         year = int(market.year.min())
     forecast_year = forecast + year
 
-    kwargs = dict(technology=search_space.replacement, year=year)
-    if "region" in assets and "region" in technologies.dims:
-        kwargs["region"] = assets.region
+    capacity = reduce_assets(
+        assets.capacity,
+        coords={"technology", "region"}.intersection(assets.capacity.coords),
+    ).interp(year=[year, forecast_year], method=interpolation)
+    # case with technology and region in asset dimension
+    if capacity.region.dims != ():
+        coords = list(capacity.asset.coords.values())
+        capacity = capacity.drop_vars(capacity.asset.coords.keys())
+        capacity["asset"] = pd.MultiIndex.from_arrays(coords)
+        capacity = capacity.unstack("asset", fill_value=0).rename(
+            technology=search_space.replacement.name
+        )
+    # case with only technology in asset dimension
+    else:
+        capacity = capacity.set_index(asset="technology").rename(
+            asset=search_space.replacement.name
+        )
+    capacity = capacity.reindex_like(search_space.replacement, fill_value=0)
+
     techs = filter_input(
         technologies[
             ["max_capacity_addition", "max_capacity_growth", "total_capacity_limit"]
         ],
-        **kwargs,
+        technology=search_space.replacement,
+        year=year,
     )
-    assert isinstance(techs, xr.Dataset)
-
-    capacity = (
-        assets.capacity.groupby("technology")
-        .sum("asset")
-        .interp(year=[year, forecast_year], method=interpolation)
-        .rename(technology=search_space.replacement.name)
-        .reindex_like(search_space.replacement, fill_value=0)
-    )
+    regions = getattr(capacity, "region", None)
+    if regions is not None and "region" in technologies.dims:
+        techs = techs.sel(region=regions)
 
     add_cap = techs.max_capacity_addition * forecast
 
