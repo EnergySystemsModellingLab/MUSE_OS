@@ -489,3 +489,15 @@ def test_minimum_service(
     )
 
     assert np.allclose(minserv_solution, solution) is False
+
+
+def test_max_capacity_expansion_regression(max_capacity_expansion):
+    assert max_capacity_expansion.capacity == 1
+    assert max_capacity_expansion.production == 0
+    assert max_capacity_expansion.b.dims == ("replacement",)
+    assert max_capacity_expansion.b.shape == (4,)
+    assert max_capacity_expansion.b.values == approx([500, 55, 55, 500])
+    assert (
+        max_capacity_expansion.replacement
+        == ["estove", "gasboiler", "gasstove", "heatpump"]
+    ).all()
