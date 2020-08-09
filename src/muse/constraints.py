@@ -552,13 +552,15 @@ def lp_costs(
 
     assert "year" not in technologies.dims
 
-    production = zeros_like(
-        convert_timeslice(costs, timeslices)
-        * technologies.fixed_outputs.sel(
-            commodity=is_enduse(technologies.comm_usage),
-            technology=technologies.technology.isin(costs.replacement),
-        ).rename(technology="replacement")
+    ts_costs = convert_timeslice(costs, timeslices)
+    selection = dict(
+        commodity=is_enduse(technologies.comm_usage),
+        technology=technologies.technology.isin(costs.replacement),
     )
+    if "region" in technologies.fixed_outputs.dims and "region" in ts_costs.coords:
+        selection["region"] = ts_costs.region
+    fouts = technologies.fixed_outputs.sel(selection).rename(technology="replacement")
+    production = zeros_like(ts_costs * fouts)
     for dim in production.dims:
         if isinstance(production.get_index(dim), pd.MultiIndex):
             production[dim] = pd.Index(production.get_index(dim), tupleize_cols=False)

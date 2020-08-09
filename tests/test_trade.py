@@ -1,27 +1,5 @@
+import numpy as np
 import xarray as xr
-
-
-def _matching_market(technologies, assets, timeslice):
-    """A market which matches stocks exactly."""
-    from muse.timeslices import convert_timeslice, QuantityType
-    from muse.quantities import maximum_production, consumption
-    from numpy.random import random
-
-    market = xr.Dataset()
-    production = convert_timeslice(
-        maximum_production(technologies, assets.capacity),
-        timeslice,
-        QuantityType.EXTENSIVE,
-    )
-    market["supply"] = production.sum("asset").rename(dst_region="region")
-    market["consumption"] = (
-        consumption(technologies, production)
-        .groupby("region")
-        .sum(("asset", "dst_region"))
-        + market.supply
-    )
-    market["prices"] = market.supply.dims, random(market.supply.shape)
-    return market
 
 
 def test_demand_constraint():
@@ -29,8 +7,8 @@ def test_demand_constraint():
     from muse.utilities import agent_concatenation
 
     power = examples.sector("power", "trade")
+    market = examples.matching_market("power", "trade")
     assets = agent_concatenation({u.uuid: u.assets for u in list(power.agents)})
-    market = _matching_market(power.technologies, assets, power.timeslices)
 
     constraint = cs.demand(
         demand=market.consumption.sel(year=2020, drop=True),
@@ -41,3 +19,32 @@ def test_demand_constraint():
     )
 
     assert set(constraint.b.dims) == {"timeslice", "dst_region", "commodity"}
+
+
+def test_lp_costs():
+    from muse import examples
+    from muse.constraints import lp_costs
+
+    technologies = examples.technodata("power", model="trade")
+    search_space = examples.search_space("power", model="trade")
+    timeslices = examples.sector("power", model="trade").timeslices
+    costs = (
+        search_space
+        * np.arange(np.prod(search_space.shape)).reshape(search_space.shape)
+        * xr.ones_like(technologies.dst_region)
+    )
+
+    lpcosts = lp_costs(technologies.sel(year=2020), costs, timeslices)
+    assert "capacity" in lpcosts.data_vars
+    assert "production" in lpcosts.data_vars
+    assert set(lpcosts.capacity.dims) == {"asset", "replacement", "dst_region"}
+    assert set(lpcosts.production.dims) == {
+        "asset",
+        "replacement",
+        "dst_region",
+        "timeslice",
+        "commodity",
+    }
+    assert "region" in lpcosts.asset.coords
+    assert "agent" in lpcosts.asset.coords
+    assert "installed" not in lpcosts.asset.coords
