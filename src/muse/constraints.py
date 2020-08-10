@@ -418,7 +418,6 @@ def max_production(
     technologies: xr.Dataset,
     year: Optional[int] = None,
     forecast: int = 5,
-    interpolation: Text = "linear",
 ) -> Constraint:
     """Constructs constraint between capacity and maximum production.
 
@@ -446,14 +445,21 @@ def max_production(
         commodity=is_enduse(technologies.comm_usage)
     )
     kwargs = dict(technology=search_space.replacement, year=year, commodity=commodities)
-    if getattr(assets, "region", None) is not None and "region" in technologies.dims:
-        kwargs["region"] = assets.region
     techs = technologies[["fixed_outputs", "utilization_factor"]].sel(**kwargs)
+    if getattr(assets, "region", None) is not None and "region" in technologies.dims:
+        if (
+            "technology" in techs.replacement.coords
+            and "technology" in assets.asset.coords
+        ):
+            techs = techs.drop_vars("technology")
+        techs = techs.sel(region=assets.region)
     capacity = convert_timeslice(
         techs.fixed_outputs * techs.utilization_factor,
         market.timeslice,
         QuantityType.EXTENSIVE,
-    ).expand_dims(asset=search_space.asset)
+    )
+    if "asset" not in capacity.dims:
+        capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
     b = zeros_like(production)
     return xr.Dataset(

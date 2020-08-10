@@ -491,7 +491,7 @@ def test_minimum_service(
     assert np.allclose(minserv_solution, solution) is False
 
 
-def test_max_capacity_expansion_regression(max_capacity_expansion):
+def test_max_capacity_expansion(max_capacity_expansion):
     assert max_capacity_expansion.capacity == 1
     assert max_capacity_expansion.production == 0
     assert max_capacity_expansion.b.dims == ("replacement",)
@@ -501,3 +501,11 @@ def test_max_capacity_expansion_regression(max_capacity_expansion):
         max_capacity_expansion.replacement
         == ["estove", "gasboiler", "gasstove", "heatpump"]
     ).all()
+
+
+def test_max_production(max_production):
+    dims = {"replacement", "asset", "commodity", "timeslice"}
+    assert set(max_production.capacity.dims) == dims
+    assert set(max_production.production.dims) == dims
+    assert set(max_production.b.dims) == dims
+    assert (max_production.capacity <= 0).all()
