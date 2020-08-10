@@ -272,7 +272,7 @@ def max_capacity_expansion(
     market: xr.Dataset,
     technologies: xr.Dataset,
     year: Optional[int] = None,
-    forecast: int = 5,
+    forecast: Optional[int] = None,
     interpolation: Text = "linear",
 ) -> Constraint:
     r"""Max-capacity addition, max-capacity growth, and capacity limits constraints.
@@ -314,7 +314,11 @@ def max_capacity_expansion(
 
     if year is None:
         year = int(market.year.min())
-    forecast_year = forecast + year
+    if forecast is None and len(getattr(market, "year", [])) <= 1:
+        forecast = 5
+    elif forecast is None:
+        forecast = next((int(u) for u in sorted(market.year - year) if u > 0))
+    forecast_year = year + forecast
 
     capacity = reduce_assets(
         assets.capacity,
@@ -411,7 +415,7 @@ def search_space(
     """Removes disabled technologies."""
     if search_space.all():
         return None
-    capacity = 1 - 2 * search_space
+    capacity = cast(xr.DataArray, 1 - 2 * cast(np.ndarray, search_space))
     b = xr.zeros_like(capacity)
     return xr.Dataset(
         dict(b=b, capacity=capacity), attrs=dict(kind=ConstraintKind.UPPER_BOUND)
@@ -426,7 +430,6 @@ def max_production(
     market: xr.Dataset,
     technologies: xr.Dataset,
     year: Optional[int] = None,
-    forecast: int = 5,
 ) -> Constraint:
     """Constructs constraint between capacity and maximum production.
 
@@ -447,9 +450,10 @@ def max_production(
     from xarray import zeros_like, ones_like
     from muse.commodities import is_enduse
     from muse.timeslices import convert_timeslice, QuantityType
+    from muse.utilities import reduce_assets
 
     if year is None:
-        year = market.year.min()
+        year = int(market.year.min())
     commodities = technologies.commodity.sel(
         commodity=is_enduse(technologies.comm_usage)
     )
@@ -461,7 +465,9 @@ def max_production(
             and "technology" in assets.asset.coords
         ):
             techs = techs.drop_vars("technology")
-        techs = techs.sel(region=assets.region)
+        techs = techs.sel(
+            region=reduce_assets(assets.asset, coords=["region", "agent"]).region
+        )
     capacity = convert_timeslice(
         techs.fixed_outputs * techs.utilization_factor,
         market.timeslice,
@@ -485,34 +491,42 @@ def minimum_service(
     market: xr.Dataset,
     technologies: xr.Dataset,
     year: Optional[int] = None,
-    forecast: int = 5,
-    interpolation: Text = "linear",
 ) -> Optional[Constraint]:
     """Constructs constraint between capacity and minimum service."""
     from xarray import zeros_like, ones_like
     from muse.commodities import is_enduse
     from muse.timeslices import convert_timeslice, QuantityType
+    from muse.utilities import reduce_assets
 
     if "minimum_service_factor" not in technologies.data_vars:
         return None
     if np.all(technologies["minimum_service_factor"] == 0):
         return None
     if year is None:
-        year = market.year.min()
+        year = int(market.year.min())
     commodities = technologies.commodity.sel(
         commodity=is_enduse(technologies.comm_usage)
     )
     kwargs = dict(technology=search_space.replacement, year=year, commodity=commodities)
-    if getattr(assets, "region", None) is not None and "region" in technologies.dims:
-        kwargs["region"] = assets.region
     techs = technologies[
         ["fixed_outputs", "utilization_factor", "minimum_service_factor"]
     ].sel(**kwargs)
+    if getattr(assets, "region", None) is not None and "region" in technologies.dims:
+        if (
+            "technology" in techs.replacement.coords
+            and "technology" in assets.asset.coords
+        ):
+            techs = techs.drop_vars("technology")
+        techs = techs.sel(
+            region=reduce_assets(assets.asset, coords=["region", "agent"]).region
+        )
     capacity = convert_timeslice(
         techs.fixed_outputs * techs.utilization_factor * techs.minimum_service_factor,
         market.timeslice,
         QuantityType.EXTENSIVE,
-    ).expand_dims(asset=search_space.asset)
+    )
+    if "asset" not in capacity.dims:
+        capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
     b = zeros_like(production)
     return xr.Dataset(

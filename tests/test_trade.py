@@ -2,7 +2,7 @@ from typing import Any, Mapping, Text
 
 import numpy as np
 import xarray as xr
-from pytest import fixture, approx
+from pytest import approx, fixture
 
 
 @fixture
@@ -54,7 +54,24 @@ def test_max_production(constraints_args):
     assert set(constraint.production.dims) == dims
     assert set(constraint.b.dims) == dims
     assert (constraint.capacity <= 0).all()
-    assert set(constraint.asset.coords) == {"region", "agent"}
+    assert constraint.year.dims == ()
+    assert set(constraint.asset.coords) == {"region", "agent", "year"}
+
+
+def test_minimum_service(constraints_args):
+    from muse import constraints as cs
+
+    assert cs.minimum_service(**constraints_args) is None
+
+    constraints_args["technologies"]["minimum_service_factor"] = 0.5
+    constraint = cs.minimum_service(**constraints_args)
+    dims = {"replacement", "asset", "commodity", "timeslice"}
+    assert set(constraint.capacity.dims) == dims
+    assert set(constraint.production.dims) == dims
+    assert set(constraint.b.dims) == dims
+    assert (constraint.capacity <= 0).all()
+    assert constraint.year.dims == ()
+    assert set(constraint.asset.coords) == {"region", "agent", "year"}
 
 
 def test_search_space(constraints_args):
@@ -86,7 +103,7 @@ def test_lp_costs():
         * xr.ones_like(technologies.dst_region)
     )
 
-    lpcosts = lp_costs(technologies.sel(year=2020), costs, timeslices)
+    lpcosts = lp_costs(technologies.sel(year=2020, drop=True), costs, timeslices)
     assert "capacity" in lpcosts.data_vars
     assert "production" in lpcosts.data_vars
     assert set(lpcosts.capacity.dims) == {"asset", "replacement", "dst_region"}
