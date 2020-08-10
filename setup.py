@@ -27,6 +27,7 @@ tests_require = [
     "nbconvert",
     "nbformat",
     "mypy",
+    "numpy>=1.17",
 ]
 docs_require = ["sphinx", "recommonmark", "nbsphinx", "sphinxcontrib-bibtex", "ipython"]
 

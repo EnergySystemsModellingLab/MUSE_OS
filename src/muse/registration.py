@@ -1,7 +1,7 @@
 """Registrators that allow pluggable data to logic transforms."""
 __all__ = ["registrator"]
 
-from typing import Callable, Mapping, Optional, Sequence, Text, Union
+from typing import Callable, MutableMapping, Optional, Sequence, Text, Union
 
 
 def name_variations(*args):
@@ -36,8 +36,8 @@ def name_variations(*args):
 
 
 def registrator(
-    decorator: Callable[[Callable], Callable] = None,
-    registry: Mapping = None,
+    decorator: Callable = None,
+    registry: MutableMapping = None,
     logname: Optional[Text] = None,
     loglevel: Optional[Text] = "Debug",
 ) -> Callable:
@@ -157,6 +157,7 @@ def registrator(
         logger = getLogger(function.__module__)
         msg = "Computing {}: {}".format(logname, names[0])
 
+        assert decorator is not None
         if "name" in signature(decorator).parameters:
             inner_decorated = decorator(function, names[0])
         else:
@@ -175,6 +176,7 @@ def registrator(
             decorated = function
 
         # There's just one name for the decorator
+        assert registry is not None
         if not vary_name:
             if function.__name__ in registry and not overwrite:
                 msg = f"A {logname} with the name {function.__name__} already exists"

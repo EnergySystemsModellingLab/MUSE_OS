@@ -2,11 +2,13 @@
 
 There are three main kinds of sectors classes, encompassing three use cases:
 
-- :class:`Sector`: The main workhorse sector of the model. It contains only on kind of
-  data, namely the agents responsible for holding assets and investing in new assets.
-- :class:`PresetSector`: A sector that is meant to generate demand for the sectors above
-  using a fixed formula or schedule.
-- :class:`LegacySector`: A wrapper around the original MUSE sectors.
+- :class:`~muse.sectors.sector.Sector`: The main workhorse sector of the model. It
+  contains only on kind of data, namely the agents responsible for holding assets and
+  investing in new assets.
+- :class:`~muse.sectors.preset_sector.PresetSector`: A sector that is meant to generate
+  demand for the sectors above using a fixed formula or schedule.
+- :class:`~muse.sectors.legacy_sector.LegacySector`: A wrapper around the original MUSE
+  sectors.
 
 All the sectors derive from :class:`AbstractSector`. The :class:`AbstractSector` defines
 two `abstract`__ functions which should be declared by derived sectors. `Abstract`__
@@ -23,7 +25,8 @@ __ : https://www.python-course.eu/python3_abstract_classes.php
   prices) and returns a market.  What happens within could be anything, though it will
   likely constists of dispatch and investment.
 
-New sectors can be registered with the MUSE input files using :func:`register_sector`.
+New sectors can be registered with the MUSE input files using
+:func:`muse.sectors.register.register_sector`.
 """
 __all__ = [
     "AbstractSector",
