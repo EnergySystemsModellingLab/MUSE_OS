@@ -38,9 +38,11 @@ def test_max_capacity_constraints(constraints_args):
     from muse import constraints as cs
 
     constraint = cs.max_capacity_expansion(**constraints_args)
-    assert constraint.capacity == 1
     assert constraint.production == 0
-    assert set(constraint.b.dims) == {"replacement", "dst_region", "region"}
+    assert set(constraint.capacity.dims) == {"asset", "src_region"}
+    assert ((constraint.region == constraint.src_region) == constraint.capacity).all()
+    assert set(constraint.b.dims) == {"replacement", "dst_region", "src_region"}
+    assert set(constraint.asset.coords) == {"region", "agent"}
 
 
 def test_max_production(constraints_args):
@@ -52,6 +54,7 @@ def test_max_production(constraints_args):
     assert set(constraint.production.dims) == dims
     assert set(constraint.b.dims) == dims
     assert (constraint.capacity <= 0).all()
+    assert set(constraint.asset.coords) == {"region", "agent"}
 
 
 def test_lp_costs():
@@ -78,7 +81,4 @@ def test_lp_costs():
         "timeslice",
         "commodity",
     }
-    assert "region" in lpcosts.asset.coords
-    assert "agent" in lpcosts.asset.coords
-    assert "installed" not in lpcosts.asset.coords
-    assert "technology" not in lpcosts.asset.coords
+    assert set(lpcosts.asset.coords) == {"region", "agent"}

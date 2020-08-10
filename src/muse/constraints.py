@@ -330,7 +330,7 @@ def max_capacity_expansion(
         )
     # case with only technology in asset dimension
     else:
-        capacity = capacity.set_index(asset="technology").rename(
+        capacity = cast(xr.DataArray, capacity.set_index(asset="technology")).rename(
             asset=search_space.replacement.name
         )
     capacity = capacity.reindex_like(search_space.replacement, fill_value=0)
@@ -358,9 +358,17 @@ def max_capacity_expansion(
 
     zero_cap = add_cap.where(add_cap < total_cap, total_cap)
     with_growth = zero_cap.where(zero_cap < growth_cap, growth_cap)
-    constraint = with_growth.where(initial > 0, zero_cap)
+    b = with_growth.where(initial > 0, zero_cap)
+    if b.region.dims == ():
+        capa = 1
+    else:
+        b = b.rename(region="src_region")
+        capa = (
+            reduce_assets(assets.asset, coords=["region", "agent"]).region
+            == b.src_region
+        )
     return xr.Dataset(
-        dict(b=constraint, capacity=1),
+        dict(b=b, capacity=capa),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND, name="max capacity expansion"),
     )
 
@@ -463,7 +471,7 @@ def max_production(
     production = ones_like(capacity)
     b = zeros_like(production)
     return xr.Dataset(
-        dict(capacity=-capacity, production=production, b=b),  # type: ignore
+        dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
     )
 
@@ -507,7 +515,7 @@ def minimum_service(
     production = ones_like(capacity)
     b = zeros_like(production)
     return xr.Dataset(
-        dict(capacity=cast(xr.DataArray, -capacity), production=production, b=b),
+        dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
         attrs=dict(kind=ConstraintKind.LOWER_BOUND),
     )
 
