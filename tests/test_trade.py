@@ -2,7 +2,7 @@ from typing import Any, Mapping, Text
 
 import numpy as np
 import xarray as xr
-from pytest import fixture
+from pytest import fixture, approx
 
 
 @fixture
@@ -54,6 +54,22 @@ def test_max_production(constraints_args):
     assert set(constraint.production.dims) == dims
     assert set(constraint.b.dims) == dims
     assert (constraint.capacity <= 0).all()
+    assert set(constraint.asset.coords) == {"region", "agent"}
+
+
+def test_search_space(constraints_args):
+    from muse import constraints as cs
+
+    search_space = constraints_args["search_space"]
+    search_space[:] = 1
+    assert cs.search_space(**constraints_args) is None
+
+    search_space[:] = search_space * (search_space.region == "R1")
+    constraint = cs.search_space(**constraints_args)
+    assert constraint.b.values == approx(0)
+    assert constraint.production == 0
+    assert set(constraint.b.dims) == {"replacement", "asset"}
+    assert set(constraint.capacity.dims) == {"replacement", "asset"}
     assert set(constraint.asset.coords) == {"region", "agent"}
 
 

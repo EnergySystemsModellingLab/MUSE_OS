@@ -407,14 +407,15 @@ def search_space(
     technologies: xr.Dataset,
     year: Optional[int] = None,
     forecast: int = 5,
-    interpolation: Text = "linear",
 ) -> Optional[Constraint]:
     """Removes disabled technologies."""
-    b = ~search_space.astype(bool)
-    b = b.sel(asset=b.any("replacement"))
-    if b.size == 0:
+    if search_space.all():
         return None
-    return xr.Dataset(dict(b=b, capacity=1), attrs=dict(kind=ConstraintKind.EQUALITY))
+    capacity = 1 - 2 * search_space
+    b = xr.zeros_like(capacity)
+    return xr.Dataset(
+        dict(b=b, capacity=capacity), attrs=dict(kind=ConstraintKind.UPPER_BOUND)
+    )
 
 
 @register_constraints
