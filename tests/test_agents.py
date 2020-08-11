@@ -28,7 +28,8 @@ def assets():
 
 
 def test_create_retrofit(agent_args, technologies, stock):
-    from muse import create_agent, Agent
+    from muse.agents.factories import create_agent
+    from muse.agents.agent import Agent
 
     agent_args["share"] = "agent_share_zero"
     agent = create_agent(
@@ -36,7 +37,7 @@ def test_create_retrofit(agent_args, technologies, stock):
         technologies=technologies,
         capacity=stock.capacity,
         year=2010,
-        **agent_args
+        **agent_args,
     )
     assert isinstance(agent, Agent)
     assert len(agent.assets.capacity) == 0
@@ -51,7 +52,7 @@ def test_create_retrofit(agent_args, technologies, stock):
         technologies=technologies,
         capacity=stock.capacity,
         year=2010,
-        **agent_args
+        **agent_args,
     )
     assert isinstance(agent, Agent)
     assert "asset" in agent.assets.dims
@@ -112,3 +113,22 @@ def test_clean_assets(assets):
     originals = set(zip(assets.technology.values, assets.installed.values))
     assert empties.isdisjoint(cleanies)
     assert empties.union(cleanies) == originals
+
+
+def test_initial_assets(tmp_path):
+    from muse.examples import copy_model
+    from muse.readers.csv import read_initial_assets
+
+    copy_model("default", tmp_path / "default")
+    copy_model("trade", tmp_path / "trade")
+
+    def path(x, y):
+        return (
+            tmp_path / x / "model" / "technodata" / "gas" / f"Existing{y.title()}.csv"
+        )
+
+    assets = read_initial_assets(path("default", "capacity"))
+    assert set(assets.dims) == {"year", "region", "asset"}
+
+    assets = read_initial_assets(path("trade", "trade"))
+    assert set(assets.dims) == {"year", "region", "asset", "dst_region"}

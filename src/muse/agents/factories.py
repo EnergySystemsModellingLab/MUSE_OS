@@ -26,7 +26,7 @@ def create_standard_agent(
         )
     else:
         existing = capacity.interp(year=year, method=interpolation) > 0
-        assert set(existing.dims) == {"asset"}
+        existing = existing.any([u for u in existing.dims if u != "asset"])
         years = [capacity.year.min().values, capacity.year.max().values]
         capacity = xr.zeros_like(capacity.sel(asset=existing.values, year=years))
     assets = xr.Dataset(dict(capacity=capacity))
@@ -156,7 +156,7 @@ def factory(
     from copy import deepcopy
     from muse.readers import (
         read_technodictionary,
-        read_initial_capacity,
+        read_initial_assets,
         read_csv_agent_parameters,
     )
     from muse.readers.csv import find_sectors_file
@@ -181,7 +181,7 @@ def factory(
 
     params = read_csv_agent_parameters(agent_parameters_path)
     techno = read_technodictionary(technodata_path)
-    capa = read_initial_capacity(existing_capacity_path)
+    capa = read_initial_assets(existing_capacity_path)
 
     result = []
     for param in params:
@@ -231,14 +231,14 @@ def agents_factory(
     """Creates a list of agents for the chosen sector."""
     from logging import getLogger
     from copy import deepcopy
-    from muse.readers import read_initial_capacity, read_csv_agent_parameters
+    from muse.readers import read_initial_assets, read_csv_agent_parameters
 
     if isinstance(params_or_path, (Text, Path)):
         params = read_csv_agent_parameters(params_or_path)
     else:
         params = params_or_path
     if isinstance(capacity, (Text, Path)):
-        capacity = read_initial_capacity(capacity)
+        capacity = read_initial_assets(capacity)
     assert isinstance(capacity, xr.DataArray)
     if year is None:
         year = int(capacity.year.min())
@@ -247,8 +247,7 @@ def agents_factory(
     for param in params:
         if regions is not None and param["region"] not in regions:
             continue
-        if param["agent_type"] == "retrofit":
-            param["technologies"] = technologies.sel(region=param["region"])
+        param["technologies"] = technologies.sel(region=param["region"])
         param["category"] = param["agent_type"]
 
         # We deepcopy the capacity  as it changes every iteration and needs to be
@@ -291,8 +290,9 @@ def _shared_capacity(
 
     existing = capacity.interp({"year": year}, method=interpolation)
 
-    techs = ((existing > 0) & (shares > 0)).values
-    return (capacity * shares).sel(asset=techs).copy()
+    techs = (existing > 0) & (shares > 0)
+    techs = techs.any([u for u in techs.dims if u != "asset"])
+    return (capacity * shares).sel(asset=techs.values).copy()
 
 
 def _standardize_inputs(

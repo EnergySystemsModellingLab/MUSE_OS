@@ -1,0 +1,8 @@
+ProcessName,RegionName,Time,Level,cap_exp,fix_exp,var_par,var_exp,TechnicalLife,UtilizationFactor,ScalingSize,efficiency,Availabiliyyear,InterestRate,Type,Fuel,EndUse,AgentShare
+Unit,-,Year,-,-,-,MUS$2010/PJ,-,Years,-,PJ,%,-,-,-,-,-
+gasCCGT,R1,2010,fixed,1,1,0,1,35,0.9,0.00000189,86,1,0.1,energy,gas,electricity,0.5
+windturbine,R1,2010,fixed,1,1,0,1,25,0.4,0.00000189,86,1,0.1,energy,wind,electricity,0.5
+gasCCGT,R2,2010,fixed,1,1,0,1,35,0.9,0.00000189,86,1,0.1,energy,gas,electricity,0.5
+windturbine,R2,2010,fixed,1,1,0,1,25,0.4,0.00000189,86,1,0.1,energy,wind,electricity,0.5
+gasCCGT,R3,2010,fixed,1,1,0,1,35,0.9,0.00000189,86,1,0.1,energy,gas,electricity,0.5
+windturbine,R3,2010,fixed,1,1,0,1,25,0.4,0.00000189,86,1,0.1,energy,wind,electricity,0.5

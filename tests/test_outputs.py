@@ -5,25 +5,30 @@ from typing import Text
 import numpy as np
 import pandas as pd
 import xarray as xr
-from pytest import approx, importorskip, mark
+from pytest import approx, fixture, importorskip, mark
 
-from muse.outputs.sector import factory, register_output_quantity
-
-
-@register_output_quantity
-def streetcred(*args, **kwargs):
-
-    return xr.DataArray(
-        np.random.randint(0, 5, (3, 2)),
-        coords={
-            "year": [2010, 2015],
-            "technology": ("asset", ["a", "b", "c"]),
-            "installed": ("asset", [2010, 2011, 2011]),
-        },
-        dims=("asset", "year"),
-    )
+from muse.outputs.sector import factory
 
 
+@fixture
+def streetcred(save_registries):
+    from muse.outputs.sector import register_output_quantity
+
+    @register_output_quantity
+    def streetcred(*args, **kwargs):
+
+        return xr.DataArray(
+            np.random.randint(0, 5, (3, 2)),
+            coords={
+                "year": [2010, 2015],
+                "technology": ("asset", ["a", "b", "c"]),
+                "installed": ("asset", [2010, 2011, 2011]),
+            },
+            dims=("asset", "year"),
+        )
+
+
+@mark.usefixtures("streetcred")
 def test_save_with_dir(tmpdir):
     from pandas import read_csv
 
@@ -42,6 +47,7 @@ def test_save_with_dir(tmpdir):
     read_csv(result[0])
 
 
+@mark.usefixtures("streetcred")
 def test_overwrite(tmpdir):
     from pytest import raises
 
@@ -65,6 +71,7 @@ def test_overwrite(tmpdir):
     factory(config, sector_name="Yoyo")(market, None, None)
 
 
+@mark.usefixtures("streetcred")
 def test_save_with_path_to_nc_with_suffix(tmpdir):
     path = Path(tmpdir) / "results" / "stuff"
     config = {
@@ -80,6 +87,7 @@ def test_save_with_path_to_nc_with_suffix(tmpdir):
     xr.open_dataset(result[0])
 
 
+@mark.usefixtures("streetcred")
 def test_save_with_path_to_nc_with_sink(tmpdir):
     path = Path(tmpdir) / "results" / "stuff"
     # can use None because we **know** none of the arguments are used here
@@ -95,6 +103,7 @@ def test_save_with_path_to_nc_with_sink(tmpdir):
     xr.open_dataset(result[0])
 
 
+@mark.usefixtures("streetcred")
 def test_save_with_fullpath_to_excel_with_sink(tmpdir):
     from pandas import read_excel
     from warnings import simplefilter
@@ -114,6 +123,7 @@ def test_save_with_fullpath_to_excel_with_sink(tmpdir):
 
 @mark.sgidata
 @mark.legacy
+@mark.usefixtures("streetcred")
 def test_from_sector_with_single_string(buildings, market, tmpdir):
     from muse.defaults import DEFAULT_OUTPUT_DIRECTORY
     from muse.outputs.sector import factory
@@ -131,6 +141,7 @@ def test_from_sector_with_single_string(buildings, market, tmpdir):
 
 @mark.sgidata
 @mark.legacy
+@mark.usefixtures("streetcred")
 def test_from_sector_with_directory(buildings, market, tmpdir):
     from muse.outputs.sector import factory
 
@@ -143,6 +154,7 @@ def test_from_sector_with_directory(buildings, market, tmpdir):
     assert (Path(tmpdir) / "abc.csv").is_file()
 
 
+@mark.usefixtures("streetcred")
 def test_no_sink_or_suffix(tmpdir):
     from muse.outputs.sector import factory
 
@@ -158,6 +170,7 @@ def test_no_sink_or_suffix(tmpdir):
     assert result[0].suffix == ".csv"
 
 
+@mark.usefixtures("save_registries")
 def test_can_register_class():
     from muse.outputs.sinks import register_output_sink, factory
 
@@ -183,6 +196,7 @@ def test_can_register_class():
     assert sink.some_args == 5
 
 
+@mark.usefixtures("save_registries")
 def test_can_register_function():
     from muse.outputs.sinks import register_output_sink, factory
 
@@ -195,6 +209,7 @@ def test_can_register_function():
     assert sink.func is a_function
 
 
+@mark.usefixtures("save_registries")
 def test_yearly_aggregate():
     from muse.outputs.sinks import register_output_sink, factory
 
@@ -206,8 +221,8 @@ def test_yearly_aggregate():
     class MySpecialReturn:
         pass
 
-    @register_output_sink
-    def dummy_ya(data, year: int, sector: Text, overwrite: bool) -> MySpecialReturn:
+    @register_output_sink(overwrite=True)
+    def dummy(data, year: int, sector: Text, overwrite: bool) -> MySpecialReturn:
         nonlocal received_data, gyear, gsector, goverwrite
         received_data = data
         gyear = year
@@ -216,7 +231,7 @@ def test_yearly_aggregate():
         return MySpecialReturn()
 
     sink = factory(
-        dict(overwrite=True, sink=dict(aggregate="dummy_ya")), sector_name="yoyo"
+        dict(overwrite=True, sink=dict(aggregate="dummy")), sector_name="yoyo"
     )
 
     data = xr.DataArray([1, 0], coords=dict(a=[2, 4]), dims="a", name="nada")
@@ -286,6 +301,7 @@ def test_mca_aggregate_outputs(tmpdir):
     assert set(data.year) == set(settings["time_framework"])
 
 
+@mark.usefixtures("save_registries")
 def test_path_formatting(tmpdir):
     from muse.mca import MCA
     from muse.examples import copy_model
@@ -299,11 +315,7 @@ def test_path_formatting(tmpdir):
     settings_file = tmpdir / "model" / "settings.toml"
     settings = load(settings_file)
     settings["outputs"] = [
-        {
-            "quantity": "dummy",
-            "sink": "dummy_sink",
-            "filename": "{path}/{Quantity}{suffix}",
-        }
+        dict(quantity="dummy", sink="to_dummy", filename="{path}/{Quantity}{suffix}")
     ]
     dump(settings, (settings_file))
 

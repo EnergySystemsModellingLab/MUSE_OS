@@ -2,7 +2,7 @@
 __all__ = [
     "read_technodictionary",
     "read_io_technodata",
-    "read_initial_capacity",
+    "read_initial_assets",
     "read_technologies",
     "read_csv_timeslices",
     "read_global_commodities",
@@ -18,7 +18,9 @@ __all__ = [
 from pathlib import Path
 from typing import List, Optional, Sequence, Text, Union, cast
 
-from xarray import DataArray, Dataset
+import numpy as np
+import pandas as pd
+import xarray as xr
 
 from muse.defaults import DEFAULT_SECTORS_DIRECTORY
 
@@ -49,25 +51,26 @@ def find_sectors_file(
     raise IOError(msg)
 
 
-def read_technodictionary(filename: Union[Text, Path]) -> Dataset:
+def read_technodictionary(filename: Union[Text, Path]) -> xr.Dataset:
     """Reads and formats technodata into a dataset.
 
     There are three axes: technologies, regions, and year.
     """
     from re import sub
-    from pandas import MultiIndex, read_csv, to_numeric
     from muse.readers import camel_to_snake
 
     def to_agent_share(name):
         return sub(r"agent(\d)", r"agent_share_\1", name)
 
-    csv = read_csv(filename, float_precision="high", low_memory=False)
+    csv = pd.read_csv(filename, float_precision="high", low_memory=False)
     csv.drop(csv.filter(regex="Unname"), axis=1, inplace=True)
-    csv = csv.rename(columns=camel_to_snake)
-    csv = csv.rename(columns=to_agent_share)
-    csv = csv.rename(columns={"end_use": "enduse", "availabiliy year": "availability"})
+    csv = (
+        csv.rename(columns=camel_to_snake)
+        .rename(columns=to_agent_share)
+        .rename(columns={"end_use": "enduse", "availabiliy year": "availability"})
+    )
     data = csv[csv.process_name != "Unit"]
-    ts = MultiIndex.from_arrays(
+    ts = pd.MultiIndex.from_arrays(
         [data.process_name, data.region_name, [int(u) for u in data.time]],
         names=("technology", "region", "year"),
     )
@@ -76,9 +79,9 @@ def read_technodictionary(filename: Union[Text, Path]) -> Dataset:
     data.index.name = "technology"
     data = data.drop(["process_name", "region_name", "time"], axis=1)
 
-    data = data.apply(lambda x: to_numeric(x, errors="ignore"), axis=0)
+    data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"), axis=0)
 
-    result = Dataset.from_dataframe(data.sort_index())
+    result = xr.Dataset.from_dataframe(data.sort_index())
     if "fuel" in result.variables:
         result["fuel"] = result.fuel.isel(region=0, year=0)
     if "type" in result.variables:
@@ -103,26 +106,24 @@ def read_technodictionary(filename: Union[Text, Path]) -> Dataset:
     return result
 
 
-def read_io_technodata(filename: Union[Text, Path]) -> Dataset:
+def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
     """Reads process inputs or ouputs.
 
     There are four axes: (technology, region, year, commodity)
     """
-    from pandas import read_csv, MultiIndex, to_numeric
-    from xarray import concat
-    from numpy import array
     from muse.readers import camel_to_snake
+    from functools import partial
 
-    csv = read_csv(filename, float_precision="high", low_memory=False)
+    csv = pd.read_csv(filename, float_precision="high", low_memory=False)
     data = csv[csv.ProcessName != "Unit"]
 
-    region = array(data.RegionName, dtype=str)
+    region = np.array(data.RegionName, dtype=str)
     process = data.ProcessName
     year = [int(u) for u in data.Time]
 
     data = data.drop(["ProcessName", "RegionName", "Time"], axis=1)
 
-    ts = MultiIndex.from_arrays(
+    ts = pd.MultiIndex.from_arrays(
         [process, region, year], names=("technology", "region", "year")
     )
     data.index = ts
@@ -130,19 +131,21 @@ def read_io_technodata(filename: Union[Text, Path]) -> Dataset:
     data.index.name = "technology"
 
     data = data.rename(columns=camel_to_snake)
-    data = data.apply(lambda x: to_numeric(x, errors="ignore"), axis=0)
+    data = data.apply(partial(pd.to_numeric, errors="ignore"), axis=0)
 
-    fixed_set = Dataset.from_dataframe(data[data.level == "fixed"]).drop_vars("level")
-    flexible_set = Dataset.from_dataframe(data[data.level == "flexible"]).drop_vars(
+    fixed_set = xr.Dataset.from_dataframe(data[data.level == "fixed"]).drop_vars(
         "level"
     )
-    commodity = DataArray(
+    flexible_set = xr.Dataset.from_dataframe(data[data.level == "flexible"]).drop_vars(
+        "level"
+    )
+    commodity = xr.DataArray(
         list(fixed_set.data_vars.keys()), dims="commodity", name="commodity"
     )
-    fixed = concat(fixed_set.data_vars.values(), dim=commodity)
-    flexible = concat(flexible_set.data_vars.values(), dim=commodity)
+    fixed = xr.concat(fixed_set.data_vars.values(), dim=commodity)
+    flexible = xr.concat(flexible_set.data_vars.values(), dim=commodity)
 
-    result = Dataset(data_vars={"fixed": fixed, "flexible": flexible})
+    result = xr.Dataset(data_vars={"fixed": fixed, "flexible": flexible})
     result["flexible"] = result.flexible.fillna(0)
 
     # add units for flexible and fixed
@@ -151,54 +154,51 @@ def read_io_technodata(filename: Union[Text, Path]) -> Dataset:
     )
     units.index.name = "units"
     units.columns.name = "commodity"
-    units = DataArray(units).isel(units=0, drop=True)
+    units = xr.DataArray(units).isel(units=0, drop=True)
     result["commodity_units"] = units
     return result
 
 
-def read_initial_capacity(filename: Union[Text, Path]) -> DataArray:
+def read_initial_assets(filename: Union[Text, Path]) -> xr.DataArray:
     """Reads and formats data about initial capacity into a dataframe."""
-    from re import match
-    from pandas import read_csv, MultiIndex
-    from xarray import concat
 
-    data = read_csv(filename, float_precision="high", low_memory=False).drop(
-        "Unit", axis=1
+    data = pd.read_csv(filename, float_precision="high", low_memory=False)
+    if "Time" in data.columns:
+        result = read_trade(filename, skiprows=[1], columns_are_source=True)
+    else:
+        result = read_initial_capacity(data)
+    technology = result.technology
+    result = result.drop_vars("technology").rename(technology="asset")
+    result["technology"] = "asset", technology.values
+    result["installed"] = ("asset", [int(result.year.min())] * len(result.technology))
+    result["year"] = result.year.astype(int)
+    return result
+
+
+def read_initial_capacity(data: Union[Text, Path, pd.DataFrame]) -> xr.DataArray:
+    if not isinstance(data, pd.DataFrame):
+        data = pd.read_csv(data, float_precision="high", low_memory=False)
+    if "Unit" in data.columns:
+        data = data.drop(columns="Unit")
+    data = (
+        data.rename(columns=dict(ProcessName="technology", RegionName="region"))
+        .melt(id_vars=["technology", "region"], var_name="year")
+        .set_index(["region", "technology", "year"])
     )
-
-    data.index = MultiIndex.from_arrays(
-        [data.ProcessName, data.RegionName], names=("asset", "region")
-    )
-    data.index.name = "asset"
-    years = list([u for u in data.columns if match("^[0-9]{4}$", u) is not None])
-    data = data[years]
-    xrdata = Dataset.from_dataframe(data)
-
-    ydim = DataArray(list((int(u) for u in years)), dims="year", name="year")
-    result = concat([xrdata.get(u) for u in years], dim=ydim)
-    result = result.rename("initial capacity")
-
-    baseyear = int(result.year.min())
-    result["asset"] = (
-        "asset",
-        MultiIndex.from_arrays(
-            (result.asset.values, [baseyear] * len(result.asset)),
-            names=("tech", "base"),
-        ),
-    )
-    result = result.sel(asset=result.any(("region", "year")))
-    result["technology"] = result.tech
-    result["installed"] = result.base
-    return result.drop_vars("asset")
+    result = xr.DataArray.from_series(data["value"])
+    # inconsistent legacy data files.
+    result = result.sel(year=result.year != "2100.1")
+    result["year"] = result.year.astype(int)
+    return result
 
 
 def read_technologies(
     technodata_path_or_sector: Optional[Union[Text, Path]] = None,
     comm_out_path: Optional[Union[Text, Path]] = None,
     comm_in_path: Optional[Union[Text, Path]] = None,
-    commodities: Optional[Union[Text, Path, Dataset]] = None,
+    commodities: Optional[Union[Text, Path, xr.Dataset]] = None,
     sectors_directory: Union[Text, Path] = DEFAULT_SECTORS_DIRECTORY,
-) -> Dataset:
+) -> xr.Dataset:
     """Reads data characterising technologies from files.
 
     Arguments:
@@ -225,7 +225,6 @@ def read_technologies(
     Returns:
         A dataset with all the characteristics of the technologies.
     """
-    from pathlib import Path
     from logging import getLogger
     from muse.commodities import CommodityUsage
 
@@ -288,7 +287,7 @@ def read_technologies(
             logger.warning("Could not load global commodities file.")
             commodities = None
 
-    if isinstance(commodities, Dataset):
+    if isinstance(commodities, xr.Dataset):
         if result.commodity.isin(commodities.commodity).all():
             result = result.merge(commodities.sel(commodity=result.commodity))
         else:
@@ -302,13 +301,12 @@ def read_technologies(
     return result
 
 
-def read_csv_timeslices(path: Union[Text, Path], **kwargs) -> DataArray:
+def read_csv_timeslices(path: Union[Text, Path], **kwargs) -> xr.DataArray:
     """Reads timeslice information from input."""
-    from pandas import read_csv, MultiIndex
     from logging import getLogger
 
     getLogger(__name__).info("Reading timeslices from %s" % path)
-    data = read_csv(path, float_precision="high", **kwargs)
+    data = pd.read_csv(path, float_precision="high", **kwargs)
 
     def snake_case(string):
         from re import sub
@@ -319,10 +317,10 @@ def read_csv_timeslices(path: Union[Text, Path], **kwargs) -> DataArray:
     months = [snake_case(u) for u in data.Month.dropna()]
     days = [snake_case(u) for u in data.Day.dropna()]
     hours = [snake_case(u) for u in data.Hour.dropna()]
-    ts_index = MultiIndex.from_arrays(
+    ts_index = pd.MultiIndex.from_arrays(
         (months, days, hours), names=("month", "day", "hour")
     )
-    result = DataArray(
+    result = xr.DataArray(
         data.RepresentHours.dropna().astype(int),
         coords={"timeslice": ts_index},
         dims="timeslice",
@@ -332,9 +330,8 @@ def read_csv_timeslices(path: Union[Text, Path], **kwargs) -> DataArray:
     return result.timeslice
 
 
-def read_global_commodities(path: Union[Text, Path]) -> Dataset:
+def read_global_commodities(path: Union[Text, Path]) -> xr.Dataset:
     """Reads commodities information from input."""
-    from pandas import read_csv
     from logging import getLogger
     from muse.readers import camel_to_snake
 
@@ -346,7 +343,7 @@ def read_global_commodities(path: Union[Text, Path]) -> Dataset:
 
     getLogger(__name__).info(f"Reading global commodities from {path}.")
 
-    data = read_csv(path, float_precision="high", low_memory=False)
+    data = pd.read_csv(path, float_precision="high", low_memory=False)
     data.index = [camel_to_snake(u) for u in data.CommodityName]
     data.CommodityType = [camel_to_snake(u) for u in data.CommodityType]
     data = data.drop("CommodityName", axis=1)
@@ -360,23 +357,21 @@ def read_global_commodities(path: Union[Text, Path]) -> Dataset:
         }
     )
     data.index.name = "commodity"
-    return Dataset(data)
+    return xr.Dataset(data)
 
 
 def read_timeslice_shares(
     path: Union[Text, Path] = DEFAULT_SECTORS_DIRECTORY,
     sector: Optional[Text] = None,
-    timeslice: Union[Text, Path, DataArray] = "Timeslices{sector}.csv",
-) -> Dataset:
-    """Reads sliceshare information into a Dataset.
+    timeslice: Union[Text, Path, xr.DataArray] = "Timeslices{sector}.csv",
+) -> xr.Dataset:
+    """Reads sliceshare information into a xr.Dataset.
 
     Additionaly, this function will try and recover the timeslice multi- index from a
     import file "Timeslices{sector}.csv" in the same directory as the timeslice shares.
     Pass `None` if this behaviour is not required.
     """
     from re import match
-    from pandas import read_csv, MultiIndex
-    from xarray import DataArray
     from logging import getLogger
 
     path = Path(path)
@@ -396,19 +391,19 @@ def read_timeslice_shares(
 
     share_path = find_sectors_file("TimesliceShare%s.csv" % sector, sector, path)
     getLogger(__name__).info("Reading timeslice shares from %s" % share_path)
-    data = read_csv(share_path, float_precision="high", low_memory=False)
-    data.index = MultiIndex.from_arrays(
+    data = pd.read_csv(share_path, float_precision="high", low_memory=False)
+    data.index = pd.MultiIndex.from_arrays(
         (data.RegionName, data.SN), names=("region", "timeslice")
     )
     data.index.name = "rt"
     data = data.drop(["RegionName", "SN"], axis=1)
     data.columns.name = "commodity"
 
-    result = DataArray(data).unstack("rt").to_dataset(name="shares")
+    result = xr.DataArray(data).unstack("rt").to_dataset(name="shares")
 
     if timeslice is None:
         result = result.drop_vars("timeslice")
-    elif isinstance(timeslice, DataArray) and hasattr(timeslice, "timeslice"):
+    elif isinstance(timeslice, xr.DataArray) and hasattr(timeslice, "timeslice"):
         result["timeslice"] = timeslice.timeslice
         result[timeslice.name] = timeslice
     else:
@@ -422,7 +417,6 @@ def read_csv_agent_parameters(filename) -> List:
     Returns a list of dictionaries, where each dictionary can be used to instantiate an
     agent in :py:func:`muse.agents.factories.factory`.
     """
-    from pandas import read_csv
     from re import sub
 
     if (
@@ -432,7 +426,7 @@ def read_csv_agent_parameters(filename) -> List:
     ):
         filename = find_sectors_file(f"BuildingAgent{filename}.csv", filename)
 
-    data = read_csv(filename, float_precision="high", low_memory=False)
+    data = pd.read_csv(filename, float_precision="high", low_memory=False)
     if "AgentNumber" in data.columns:
         data = data.drop(["AgentNumber"], axis=1)
     result = []
@@ -451,6 +445,7 @@ def read_csv_agent_parameters(filename) -> List:
             "retrofit": "retrofit",
             "retro": "retrofit",
             "agent": "agent",
+            "default": "agent",
         }[getattr(row, "Type", "agent").lower()]
         data = {
             "name": row.Name,
@@ -464,7 +459,7 @@ def read_csv_agent_parameters(filename) -> List:
             data["quantity"] = row.Quantity
         if hasattr(row, "MaturityThreshold"):
             data["maturity_threshhold"] = row.MaturityThreshold
-        if agent_type == "retrofit":
+        if agent_type != "newcapa":
             data["share"] = sub(r"Agent(\d)", r"agent_share_\1", row.AgentShare)
         if agent_type == "retrofit" and data["decision"] == "lexo":
             data["decision"] = "retro_lexo"
@@ -472,16 +467,15 @@ def read_csv_agent_parameters(filename) -> List:
     return result
 
 
-def read_macro_drivers(path: Union[Text, Path]) -> Dataset:
+def read_macro_drivers(path: Union[Text, Path]) -> xr.Dataset:
     """Reads a standard MUSE csv file for macro drivers."""
-    from pandas import read_csv
     from logging import getLogger
 
     path = Path(path)
 
     getLogger(__name__).info(f"Reading macro drivers from {path}")
 
-    table = read_csv(path, float_precision="high", low_memory=False)
+    table = pd.read_csv(path, float_precision="high", low_memory=False)
     table.index = table.RegionName
     table.index.name = "region"
     table.columns.name = "year"
@@ -491,20 +485,19 @@ def read_macro_drivers(path: Union[Text, Path]) -> Dataset:
     population = population.drop("Variable", axis=1)
     gdp = table[table.Variable == "GDP|PPP"].drop("Variable", axis=1)
 
-    result = Dataset({"gdp": gdp, "population": population})
+    result = xr.Dataset({"gdp": gdp, "population": population})
     result["year"] = "year", result.year.astype(int)
     result["region"] = "region", result.region.astype(str)
     return result
 
 
 def read_initial_market(
-    projections: Union[DataArray, Path, Text],
-    base_year_import: Optional[Union[Text, Path, DataArray]] = None,
-    base_year_export: Optional[Union[Text, Path, DataArray]] = None,
-    timeslices: Optional[DataArray] = None,
-) -> Dataset:
+    projections: Union[xr.DataArray, Path, Text],
+    base_year_import: Optional[Union[Text, Path, xr.DataArray]] = None,
+    base_year_export: Optional[Union[Text, Path, xr.DataArray]] = None,
+    timeslices: Optional[xr.DataArray] = None,
+) -> xr.Dataset:
     """Read projections, import and export csv files."""
-    from xarray import zeros_like
     from logging import getLogger
     from muse.timeslices import convert_timeslice, QuantityType
 
@@ -521,7 +514,7 @@ def read_initial_market(
         base_year_export = read_attribute_table(base_year_export)
     elif base_year_export is None:
         getLogger(__name__).info("Base year export not provided. Set to zero.")
-        base_year_export = zeros_like(projections)
+        base_year_export = xr.zeros_like(projections)
 
     # Base year import is optional. If it is not there, it's set to zero
     if isinstance(base_year_import, (Text, Path)):
@@ -529,7 +522,7 @@ def read_initial_market(
         base_year_import = read_attribute_table(base_year_import)
     elif base_year_import is None:
         getLogger(__name__).info("Base year import not provided. Set to zero.")
-        base_year_import = zeros_like(projections)
+        base_year_import = xr.zeros_like(projections)
 
     if timeslices is not None:
         base_year_export = convert_timeslice(
@@ -544,7 +537,7 @@ def read_initial_market(
     static_trade = base_year_import - base_year_export
     static_trade.name = "static_trade"
 
-    result = Dataset(
+    result = xr.Dataset(
         {
             projections.name: projections,
             base_year_export.name: base_year_export,
@@ -561,9 +554,8 @@ def read_initial_market(
     return result
 
 
-def read_attribute_table(path: Union[Text, Path]) -> DataArray:
+def read_attribute_table(path: Union[Text, Path]) -> xr.DataArray:
     """Read a standard MUSE csv file for price projections."""
-    from pandas import read_csv, MultiIndex
     from logging import getLogger
     from muse.readers import camel_to_snake
 
@@ -573,7 +565,7 @@ def read_attribute_table(path: Union[Text, Path]) -> DataArray:
 
     getLogger(__name__).info(f"Reading prices from {path}")
 
-    table = read_csv(path, float_precision="high", low_memory=False)
+    table = pd.read_csv(path, float_precision="high", low_memory=False)
     units = table.loc[0].drop(["RegionName", "Attribute", "Time"])
     table = table.drop(0)
 
@@ -584,13 +576,13 @@ def read_attribute_table(path: Union[Text, Path]) -> DataArray:
 
     region, year = table.region, table.year.astype(int)
     table = table.drop(["region", "year"], axis=1)
-    table.index = MultiIndex.from_arrays([region, year], names=["region", "year"])
+    table.index = pd.MultiIndex.from_arrays([region, year], names=["region", "year"])
 
     attribute = camel_to_snake(table.attribute.unique()[0])
     table = table.drop(["attribute"], axis=1)
     table = table.rename(columns={c: camel_to_snake(c) for c in table.columns})
 
-    result = DataArray(table, name=attribute).astype(float)
+    result = xr.DataArray(table, name=attribute).astype(float)
     result = result.unstack("dim_0").fillna(0)
 
     result.coords["units_" + attribute] = ("commodity", units)
@@ -598,9 +590,8 @@ def read_attribute_table(path: Union[Text, Path]) -> DataArray:
     return result
 
 
-def read_regression_parameters(path: Union[Text, Path]) -> Dataset:
+def read_regression_parameters(path: Union[Text, Path]) -> xr.Dataset:
     """Reads the regression parameters from a standard MUSE csv file."""
-    from pandas import read_csv, MultiIndex
     from logging import getLogger
     from muse.readers import camel_to_snake
 
@@ -608,7 +599,7 @@ def read_regression_parameters(path: Union[Text, Path]) -> Dataset:
     if not path.is_file():
         raise IOError(f"{path} does not exist or is not a file.")
     getLogger(__name__).info(f"Reading regression parameters from {path}.")
-    table = read_csv(path, float_precision="high", low_memory=False)
+    table = pd.read_csv(path, float_precision="high", low_memory=False)
 
     # Normalize clumn names
     table.columns.name = "commodity"
@@ -627,13 +618,15 @@ def read_regression_parameters(path: Union[Text, Path]) -> Dataset:
         table.function_type,
     )
     table = table.drop(["sector", "region", "function_type"], axis=1)
-    table.index = MultiIndex.from_arrays([sector, region], names=["sector", "region"])
+    table.index = pd.MultiIndex.from_arrays(
+        [sector, region], names=["sector", "region"]
+    )
     table = table.rename(columns={c: camel_to_snake(c) for c in table.columns})
 
-    # Create a dataset, separating each type of coeeficient as a separate DataArray
-    coeffs = Dataset(
+    # Create a dataset, separating each type of coeeficient as a separate xr.DataArray
+    coeffs = xr.Dataset(
         {
-            k: DataArray(table[table.coeff == k].drop("coeff", axis=1))
+            k: xr.DataArray(table[table.coeff == k].drop("coeff", axis=1))
             for k in table.coeff.unique()
         }
     )
@@ -643,7 +636,7 @@ def read_regression_parameters(path: Union[Text, Path]) -> Dataset:
 
     # We pair each sector with its function type
     function_type = list(zip(*set(zip(sector, function_type))))
-    function_type = DataArray(
+    function_type = xr.DataArray(
         list(function_type[1]),
         dims=["sector"],
         coords={"sector": list(function_type[0])},
@@ -658,10 +651,9 @@ def read_csv_outputs(
     columns: Text = "commodity",
     indices: Sequence[Text] = ("RegionName", "ProcessName", "Timeslice"),
     drop: Sequence[Text] = ("Unnamed: 0",),
-) -> Dataset:
+) -> xr.Dataset:
     """Read standard MUSE output files for consumption or supply."""
     from re import match
-    from pandas import MultiIndex, read_csv
     from muse.readers import camel_to_snake
 
     def expand_paths(path):
@@ -680,9 +672,9 @@ def read_csv_outputs(
 
     datas = {}
     for path in allfiles:
-        data = read_csv(path, low_memory=False)
+        data = pd.read_csv(path, low_memory=False)
         data = data.drop(columns=[k for k in drop if k in data.columns])
-        data.index = MultiIndex.from_arrays(
+        data.index = pd.MultiIndex.from_arrays(
             [data[u] for u in indices if u in data.columns]
         )
         data.index.name = "asset"
@@ -696,10 +688,10 @@ def read_csv_outputs(
         if year in datas:
             raise IOError(f"Year f{year} was found twice")
         data.year = year
-        datas[year] = DataArray(data)
+        datas[year] = xr.DataArray(data)
 
     result = (
-        Dataset(datas)
+        xr.Dataset(datas)
         .to_array(dim="year")
         .sortby("year")
         .fillna(0)
@@ -712,3 +704,65 @@ def read_csv_outputs(
             camel_to_snake(u) for u in result.commodity.values
         ]
     return result
+
+
+def read_trade(
+    data: Union[pd.DataFrame, Text, Path],
+    columns_are_source: bool = True,
+    parameters: Optional[Text] = None,
+    skiprows: Optional[Sequence[int]] = None,
+    name: Optional[Text] = None,
+    drop: Optional[Union[Text, Sequence[Text]]] = None,
+) -> Union[xr.DataArray, xr.Dataset]:
+    """Read CSV table with source and destination regions."""
+    from functools import partial
+    from muse.readers import camel_to_snake
+
+    if not isinstance(data, pd.DataFrame):
+        data = pd.read_csv(data, skiprows=skiprows)
+
+    if parameters is None and "Parameter" in data.columns:
+        parameters = "Parameter"
+    if columns_are_source:
+        col_region = "src_region"
+        row_region = "dst_region"
+    else:
+        row_region = "src_region"
+        col_region = "dst_region"
+    data = data.apply(partial(pd.to_numeric, errors="ignore"), axis=0)
+    if isinstance(drop, Text):
+        drop = [drop]
+    if drop:
+        drop = list(set(drop).intersection(data.columns))
+    if drop:
+        data = data.drop(columns=drop)
+    data = data.rename(
+        columns=dict(
+            Time="year",
+            ProcessName="technology",
+            RegionName=row_region,
+            Commodity="commodity",
+        )
+    )
+    indices = list(
+        {"commodity", "year", "src_region", "dst_region", "technology"}.intersection(
+            data.columns
+        )
+    )
+    data = data.melt(
+        id_vars={parameters}.union(indices).intersection(data.columns),
+        var_name=col_region,
+    )
+    if parameters is None:
+        result: Union[xr.DataArray, xr.Dataset] = (
+            xr.DataArray.from_series(
+                data.set_index(indices + [col_region])["value"]
+            ).rename(name)
+        )
+    else:
+        result = xr.Dataset.from_dataframe(
+            data.pivot_table(
+                values="value", columns=parameters, index=indices + [col_region]
+            ).rename(columns=camel_to_snake)
+        )
+    return result.rename(src_region="region")

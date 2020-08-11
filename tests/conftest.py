@@ -375,7 +375,7 @@ def market(coords, technologies, timeslice) -> Dataset:
 
 def create_agent(agent_args, technologies, stock, agent_type="retrofit") -> Agent:
     from numpy.random import choice
-    from muse import create_agent
+    from muse.agents.factories import create_agent
 
     agent = create_agent(
         agent_type=agent_type,
@@ -612,6 +612,50 @@ def warnings_as_errors():
 
     simplefilter("error", FutureWarning)
     simplefilter("error", PendingDeprecationWarning)
+
+
+@fixture
+def save_registries():
+    from contextlib import contextmanager
+
+    @contextmanager
+    def saveme(module_name: Text, registry_name: Text):
+        from importlib import import_module
+        from copy import deepcopy
+
+        module = import_module(module_name)
+        old = getattr(module, registry_name)
+        setattr(module, registry_name, deepcopy(old))
+        yield
+        setattr(module, registry_name, deepcopy(old))
+
+    iterators = [
+        saveme("muse.sectors", "SECTORS_REGISTERED"),
+        saveme("muse.objectives", "OBJECTIVES"),
+        saveme("muse.carbon_budget", "CARBON_BUDGET_FITTERS"),
+        saveme("muse.carbon_budget", "CARBON_BUDGET_METHODS"),
+        saveme("muse.constraints", "CONSTRAINTS"),
+        saveme("muse.decisions", "DECISIONS"),
+        saveme("muse.decorators", "SETTINGS_CHECKS"),
+        saveme("muse.demand_share", "DEMAND_SHARE"),
+        saveme("muse.filters", "FILTERS"),
+        saveme("muse.hooks", "INITIAL_ASSET_TRANSFORM"),
+        saveme("muse.hooks", "FINAL_ASSET_TRANSFORM"),
+        saveme("muse.investments", "INVESTMENTS"),
+        saveme("muse.production", "PRODUCTION_METHODS"),
+        saveme("muse.outputs.mca", "OUTPUT_QUANTITIES"),
+        saveme("muse.outputs.sectors", "OUTPUT_QUANTITIES"),
+        saveme("muse.outputs.sinks", "OUTPUT_SINKS"),
+        saveme("muse.interactions", "INTERACTION_NET"),
+        saveme("muse.interactions", "AGENT_INTERACTIONS"),
+        saveme("muse.regressions", "REGRESSION_FUNCTOR_CREATOR"),
+        saveme("muse.regressions", "REGRESSION_FUNCTOR_NAMES"),
+        saveme("muse.readers.toml", "SETTINGS_CHECKS"),
+    ]
+
+    map(next, iterators)
+    yield
+    map(next, iterators)
 
 
 @fixture

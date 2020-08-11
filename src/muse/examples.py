@@ -70,7 +70,13 @@ def copy_model(
     """
     from shutil import rmtree
 
-    if name.lower() not in {"default", "multiple-agents", "medium", "minimum-service"}:
+    if name.lower() not in {
+        "default",
+        "multiple-agents",
+        "medium",
+        "minimum-service",
+        "trade",
+    }:
         raise ValueError(f"Unknown model {name}")
 
     path = Path() if path is None else Path(path)
@@ -94,13 +100,15 @@ def copy_model(
         _copy_multiple_agents(path)
     elif name.lower() == "minimum-service":
         _copy_minimum_service(path)
+    elif name.lower() == "trade":
+        _copy_trade(path)
     return path
 
 
 def technodata(sector: Text, model: Text = "default") -> xr.Dataset:
     """Technology for a sector of a given example model."""
     from tempfile import TemporaryDirectory
-    from muse.readers.csv import read_technologies
+    from muse.readers.toml import read_technodata, read_settings
 
     sector = sector.lower()
     allowed = {"residential", "power", "gas", "preset"}
@@ -110,12 +118,8 @@ def technodata(sector: Text, model: Text = "default") -> xr.Dataset:
         raise RuntimeError(f"This model only knows about sectors {allowed}.")
     with TemporaryDirectory() as tmpdir:
         path = copy_model(model, tmpdir)
-        return read_technologies(
-            path / "technodata" / sector.lower() / "Technodata.csv",
-            path / "technodata" / sector.lower() / "CommOut.csv",
-            path / "technodata" / sector.lower() / "CommIn.csv",
-            path / "input" / "GlobalCommodities.csv",
-        )
+        settings = read_settings(path / "settings.toml")
+        return read_technodata(settings, sector)
 
 
 def search_space(sector: Text, model: Text = "default") -> xr.DataArray:
@@ -258,6 +262,14 @@ def _copy_minimum_service(path: Path):
     copyfile(
         example_data_dir() / "minimum_service" / "settings.toml", path / "settings.toml"
     )
+
+
+def _copy_trade(path: Path):
+    from shutil import copytree, copyfile
+
+    copytree(example_data_dir() / "trade" / "input", path / "input")
+    copytree(example_data_dir() / "trade" / "technodata", path / "technodata")
+    copyfile(example_data_dir() / "trade" / "settings.toml", path / "settings.toml")
 
 
 def random_agent_assets(rng: np.random.Generator):

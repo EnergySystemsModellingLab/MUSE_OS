@@ -377,7 +377,7 @@ def capacity_in_use(
         hours = market.represent_hours
     elif "represent_hours" in search_space.coords:
         hours = search_space.represent_hours
-    elif hours is None:
+    else:
         hours = represent_hours(market.timeslice)
 
     ufac = agent.filter_input(
