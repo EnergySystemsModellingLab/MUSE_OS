@@ -339,11 +339,15 @@ def max_capacity_expansion(
         )
     capacity = capacity.reindex_like(search_space.replacement, fill_value=0)
 
+    replacement = search_space.replacement
+    replacement = replacement.drop_vars(
+        [u for u in replacement.coords if u not in replacement.dims]
+    )
     techs = filter_input(
         technologies[
             ["max_capacity_addition", "max_capacity_growth", "total_capacity_limit"]
         ],
-        technology=search_space.replacement,
+        technology=replacement,
         year=year,
     )
     regions = getattr(capacity, "region", None)
@@ -435,17 +439,6 @@ def max_production(
 
     Constrains the production decision variable by the maximum production for a given
     capacity.
-
-    Example:
-
-        >>> from muse import examples
-        >>> from muse.constraints import max_production
-        >>> technologies = examples.technodata("residential", model="medium")
-        >>> market = examples.residential_market("medium")
-        >>> search_space = examples.search_space("residential", "medium")
-        >>> assets = None  # not used in max_production
-        >>> demand = None
-        >>> maxprod = max_production(demand, assets, search_space, market, technologies)
     """
     from xarray import zeros_like, ones_like
     from muse.commodities import is_enduse
@@ -457,15 +450,20 @@ def max_production(
     commodities = technologies.commodity.sel(
         commodity=is_enduse(technologies.comm_usage)
     )
-    kwargs = dict(technology=search_space.replacement, year=year, commodity=commodities)
+    replacement = search_space.replacement
+    replacement = replacement.drop_vars(
+        [u for u in replacement.coords if u not in replacement.dims]
+    )
+    kwargs = dict(technology=replacement, year=year, commodity=commodities)
+    if (
+        "region" in assets.coords
+        and "region" in technologies.dims
+        and assets.region.dims == ()
+    ):
+        kwargs["region"] = assets.region
     techs = technologies[["fixed_outputs", "utilization_factor"]].sel(**kwargs)
-    if getattr(assets, "region", None) is not None and "region" in technologies.dims:
-        if (
-            "technology" in techs.replacement.coords
-            and "technology" in assets.asset.coords
-        ):
-            techs = techs.drop_vars("technology")
-        techs = techs.sel(
+    if "region" in assets.asset.coords and "region" in techs.dims:
+        techs = techs.drop_vars("technology").sel(
             region=reduce_assets(assets.asset, coords=["region", "agent"]).region
         )
     capacity = convert_timeslice(
@@ -507,17 +505,22 @@ def minimum_service(
     commodities = technologies.commodity.sel(
         commodity=is_enduse(technologies.comm_usage)
     )
-    kwargs = dict(technology=search_space.replacement, year=year, commodity=commodities)
+    replacement = search_space.replacement
+    replacement = replacement.drop_vars(
+        [u for u in replacement.coords if u not in replacement.dims]
+    )
+    kwargs = dict(technology=replacement, year=year, commodity=commodities)
+    if (
+        "region" in assets.coords
+        and "region" in technologies.dims
+        and assets.region.dims == ()
+    ):
+        kwargs["region"] = assets.region
     techs = technologies[
         ["fixed_outputs", "utilization_factor", "minimum_service_factor"]
     ].sel(**kwargs)
-    if getattr(assets, "region", None) is not None and "region" in technologies.dims:
-        if (
-            "technology" in techs.replacement.coords
-            and "technology" in assets.asset.coords
-        ):
-            techs = techs.drop_vars("technology")
-        techs = techs.sel(
+    if "region" in assets.asset.coords and "region" in techs.dims:
+        techs = techs.drop_vars("technology").sel(
             region=reduce_assets(assets.asset, coords=["region", "agent"]).region
         )
     capacity = convert_timeslice(
