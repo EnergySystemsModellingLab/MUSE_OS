@@ -15,8 +15,8 @@ following signatures:
 
     @register_production
     def production(
-        market: Dataset, capacity: DataArray, technologies: Dataset, **kwargs
-    ) -> DataArray:
+        market: xr.Dataset, capacity: xr.DataArray, technologies: xr.Dataset, **kwargs
+    ) -> xr.DataArray:
         pass
 
 
@@ -27,7 +27,7 @@ Arguments:
     **kwargs: Any number of keyword arguments
 
 Returns:
-    A `DataArray` with the amount produced for each good from each asset.
+    A `xr.DataArray` with the amount produced for each good from each asset.
 """
 __all__ = [
     "factory",
@@ -36,13 +36,13 @@ __all__ = [
     "register_production",
     "PRODUCTION_SIGNATURE",
 ]
-from typing import Any, Callable, Mapping, MutableMapping, Text, Union
+from typing import Any, Callable, Mapping, MutableMapping, Text, Union, cast
 
-from xarray import DataArray, Dataset
+import xarray as xr
 
 from muse.registration import registrator
 
-PRODUCTION_SIGNATURE = Callable[[DataArray, DataArray, Dataset], DataArray]
+PRODUCTION_SIGNATURE = Callable[[xr.DataArray, xr.DataArray, xr.Dataset], xr.DataArray]
 """Production signature."""
 
 PRODUCTION_METHODS: MutableMapping[Text, PRODUCTION_SIGNATURE] = {}
@@ -84,7 +84,7 @@ def factory(
     keywords.update(**kwargs)
     name = keywords.pop("name", name)
 
-    def production_method(market, capacity, technologies) -> DataArray:
+    def production_method(market, capacity, technologies) -> xr.DataArray:
         from muse.production import PRODUCTION_METHODS
 
         return PRODUCTION_METHODS[name](  # type: ignore
@@ -96,8 +96,8 @@ def factory(
 
 @register_production(name=("max", "maximum"))
 def maximum_production(
-    market: Dataset, capacity: DataArray, technologies: Dataset
-) -> DataArray:
+    market: xr.Dataset, capacity: xr.DataArray, technologies: xr.Dataset
+) -> xr.DataArray:
     """Production when running at full capacity.
 
     *Full capacity* is limited by the utilitization factor. For more details, see
@@ -109,7 +109,9 @@ def maximum_production(
 
 
 @register_production(name=("share", "shares"))
-def supply(market: Dataset, capacity: DataArray, technologies: Dataset) -> DataArray:
+def supply(
+    market: xr.Dataset, capacity: xr.DataArray, technologies: xr.Dataset
+) -> xr.DataArray:
     """Service current demand equally from all assets.
 
     "Equally" means that equivalent technologies are used to the same percentage of
@@ -122,11 +124,11 @@ def supply(market: Dataset, capacity: DataArray, technologies: Dataset) -> DataA
 
 @register_production(name="match")
 def demand_matched_production(
-    market: Dataset,
-    capacity: DataArray,
-    technologies: Dataset,
-    costing: Text = "prices",
-) -> DataArray:
+    market: xr.Dataset,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
+    costs: Text = "prices",
+) -> xr.DataArray:
     """Production from matching demand via annual lcoe."""
     from muse.quantities import (
         demand_matched_production,
@@ -135,14 +137,16 @@ def demand_matched_production(
     )
     from muse.utilities import broadcast_techs
 
-    if costing == "prices":
+    if costs == "prices":
         prices = market.prices
-    elif costing == "gross_margin":
+    elif costs == "gross_margin":
         prices = gross_margin(technologies, capacity, market.prices)
-    elif costing == "lcoe":
-        prices = lcoe(market.prices, broadcast_techs(technologies, capacity))
+    elif costs == "lcoe":
+        prices = lcoe(
+            market.prices, cast(xr.Dataset, broadcast_techs(technologies, capacity))
+        )
     else:
-        raise ValueError(f"Unknown costing option {costing}")
+        raise ValueError(f"Unknown costs option {costs}")
 
     return demand_matched_production(
         demand=market.consumption,
@@ -150,3 +154,60 @@ def demand_matched_production(
         capacity=capacity,
         technologies=technologies,
     )
+
+
+@register_production(name="costed")
+def costed_production(
+    market: xr.Dataset,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
+    costs: Union[xr.DataArray, Callable, Text] = "alcoe",
+    with_minimum_service: bool = True,
+    with_emission: bool = True,
+) -> xr.DataArray:
+    """Computes production from ranked assets.
+
+    The assets are ranked according to their cost. The cost can be provided as an
+    xarray, a callable creating an xarray, or as "alcoe". The asset with least cost are
+    allowed to service the demand first, up to the maximum production. By default, the
+    mininum service is applied first.
+    """
+
+    from muse.quantities import (
+        annual_levelized_cost_of_energy,
+        costed_production,
+        emission,
+    )
+    from muse.utilities import broadcast_techs
+    from muse.commodities import is_pollutant, check_usage, CommodityUsage
+
+    if isinstance(costs, Text) and costs.lower() == "alcoe":
+        costs = annual_levelized_cost_of_energy
+    elif isinstance(costs, Text):
+        raise ValueError(f"Unknown cost {costs}")
+    if callable(costs):
+        technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
+        costs = costs(market.prices.sel(region=technodata.region), technodata)
+    else:
+        costs = costs
+    assert isinstance(costs, xr.DataArray)
+
+    production = costed_production(
+        market.consumption,
+        costs,
+        capacity,
+        technologies,
+        with_minimum_service=with_minimum_service,
+    )
+    # add production of environmental pollutants
+    if with_emission:
+        env = is_pollutant(technologies.comm_usage)
+        production[dict(commodity=env)] = emission(
+            production, technologies.fixed_outputs
+        ).transpose(*production.dims)
+        production[
+            dict(
+                commodity=~check_usage(technologies.comm_usage, CommodityUsage.PRODUCT)
+            )
+        ] = 0
+    return production

@@ -29,10 +29,10 @@ Sectors and associated functionality
 
 .. automodule:: muse.sectors
 
+.. autodecorator:: muse.sectors.register.register_sector
+
 AbstractSector
 ~~~~~~~~~~~~~~
-
-.. autodecorator:: muse.sectors.register_sector
 
 .. autoclass:: muse.sectors.AbstractSector
    :members:
@@ -41,19 +41,24 @@ AbstractSector
 Sector
 ~~~~~~
 
-.. autoclass:: muse.sectors.Sector
+.. autoclass:: muse.sectors.sector.Sector
    :members:
+
+Subsector
+~~~~~~~~~
+
+.. autoclass:: muse.sectors.subsector.Subsector
 
 PresetSector
 ~~~~~~~~~~~~
 
-.. autoclass:: muse.sectors.PresetSector
+.. autoclass:: muse.sectors.preset_sector.PresetSector
    :members:
 
 LegacySector
 ~~~~~~~~~~~~
 
-.. autoclass:: muse.sectors.LegacySector
+.. autoclass:: muse.sectors.legacy_sector.LegacySector
    :members:
 
 Production

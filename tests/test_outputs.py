@@ -221,7 +221,7 @@ def test_yearly_aggregate():
     class MySpecialReturn:
         pass
 
-    @register_output_sink(name="dummy", overwrite=True)
+    @register_output_sink(overwrite=True)
     def dummy(data, year: int, sector: Text, overwrite: bool) -> MySpecialReturn:
         nonlocal received_data, gyear, gsector, goverwrite
         received_data = data

@@ -70,7 +70,7 @@ __all__ = [
     "factory",
 ]
 
-from typing import Callable, Mapping, Sequence, Text, Union
+from typing import Callable, Mapping, MutableMapping, Sequence, Text, Union
 
 import numpy as np
 import xarray as xr
@@ -84,8 +84,20 @@ OBJECTIVE_SIGNATURE = Callable[
 ]
 """Objectives signature."""
 
-OBJECTIVES: Mapping[Text, OBJECTIVE_SIGNATURE] = {}
+OBJECTIVES: MutableMapping[Text, OBJECTIVE_SIGNATURE] = {}
 """Dictionary of objectives when selecting replacement technology."""
+
+
+def objective_factory(settings=Union[Text, Mapping]):
+    from functools import partial
+
+    if isinstance(settings, Text):
+        params = dict(name=settings)
+    else:
+        params = dict(**settings)
+    name = params.pop("name")
+    function = OBJECTIVES[name]
+    return partial(function, **params)
 
 
 def factory(
@@ -99,7 +111,6 @@ def factory(
     objectives defined by name or by dictionary.
     """
     from typing import List, Dict
-    from functools import partial
     from logging import getLogger
 
     if isinstance(settings, Text):
@@ -119,16 +130,7 @@ def factory(
         )
         getLogger(__name__).critical(msg)
 
-    functions = [
-        (
-            param["name"],
-            partial(
-                OBJECTIVES[param["name"]],
-                **{k: v for k, v in param.items() if k != "name"},
-            ),
-        )
-        for param in params
-    ]
+    functions = [(param["name"], objective_factory(param)) for param in params]
 
     def objectives(
         agent: Agent, demand: xr.DataArray, search_space: xr.DataArray, *args, **kwargs

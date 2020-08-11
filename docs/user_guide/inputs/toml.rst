@@ -417,7 +417,18 @@ dispatch_production
    to the muse market clearing algorithm. In other words, this is computation of the
    production method which will affect other sectors.
 
-   It has the same format and options as the *production* attribute above.
+   Currently, it can be set to:
+
+    - ``share``: all assets service the demand equally, as a share of the total capacity
+    - ``maximum_production``: the production is set to the maximum that can be produced
+      for the current capacity
+    - ``costed_production``: assets are ranked according to a given cost (defaults to
+        annualized levelized cost of energy) and service the demand accordingly.
+        Currently, ALCOE is the only implemented costs option.
+
+    Other production functions can be added via
+    :py:func:`muse.production.register_production`.
+
 
 interactions
    Defines interactions between agents. These interactions take place right before new

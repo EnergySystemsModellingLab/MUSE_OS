@@ -1,5 +1,7 @@
 from pytest import fixture, mark
 
+pytestmark = mark.usefixtures("default_timeslice_globals")
+
 
 @fixture
 def real_market(buildings):
