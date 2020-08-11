@@ -129,12 +129,15 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
     return decorated
 
 
-def factory(settings: Union[Text, Mapping] = "match_demand") -> Callable:
+def factory(settings: Optional[Union[Text, Mapping]] = None) -> Callable:
     from typing import Dict
 
-    if isinstance(settings, Text):
-        name = settings
+    if settings is None:
+        name = "match_demand"
         params: Dict = {}
+    elif isinstance(settings, Text):
+        name = settings
+        params = {}
     else:
         name = settings["name"]
         params = {k: v for k, v in settings.items() if k != "name"}
