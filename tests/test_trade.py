@@ -129,3 +129,18 @@ def test_power_sector_no_investment():
     final = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
 
     assert (initial == final).all()
+
+
+def test_power_sector_some_investment():
+    from muse import examples
+    from muse.utilities import agent_concatenation
+
+    power = examples.sector("power", "trade")
+    market = examples.matching_market("power", "trade")
+    market.consumption[:] *= 1.5
+
+    initial = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
+    power.next(market)
+    final = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
+
+    assert (initial == final).all()

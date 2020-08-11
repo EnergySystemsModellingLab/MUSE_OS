@@ -943,9 +943,9 @@ class ScipyAdapter:
 
         lpcosts = lp_costs(technologies, costs, timeslices)
         data = cls._unified_dataset(technologies, lpcosts, *constraints)
-        capacities = cls._stacked_quantity(data, "capacity")
-        productions = cls._stacked_quantity(data, "production")
-        bs = cls._stacked_quantity(data, "b")
+        capacities = cls._selected_quantity(data, "capacity")
+        productions = cls._selected_quantity(data, "production")
+        bs = cls._selected_quantity(data, "b")
         kwargs = cls._to_scipy_adapter(capacities, productions, bs, *constraints)
 
         def to_muse(x: np.ndarray) -> xr.Dataset:
@@ -986,44 +986,35 @@ class ScipyAdapter:
                 data[f"b{i}"] = -data[f"b{i}"]  # type: ignore
                 data[f"capacity{i}"] = -data[f"capacity{i}"]  # type: ignore
                 data[f"production{i}"] = -data[f"production{i}"]  # type: ignore
-        return data
+        return data.transpose(*data.dims)
 
     @staticmethod
-    def _stacked_quantity(data: xr.Dataset, name: Text) -> xr.Dataset:
+    def _selected_quantity(data: xr.Dataset, name: Text) -> xr.Dataset:
         result = cast(
             xr.Dataset, data[[u for u in data.data_vars if str(u).startswith(name)]]
         )
-        result = result.rename(
+        return result.rename(
             {
                 k: ("costs" if k == name else int(str(k).replace(name, "")))
                 for k in result.data_vars
             }
         )
-        if len(result) and "costs" in result.data_vars:
-            result = result.stack(decision=sorted(result["costs"].dims))
-        return result
 
     @staticmethod
     def _to_scipy_adapter(
         capacities: xr.Dataset, productions: xr.Dataset, bs: xr.Dataset, *constraints
     ):
+        def reshape(matrix: xr.DataArray) -> np.ndarray:
+            assert list(matrix.dims) == sorted(matrix.dims)
+            size = np.prod(
+                [matrix[u].shape[0] for u in matrix.dims if str(u).startswith("c")]
+            )
+            return matrix.values.reshape((size, -1))
+
         def extract_bA(constraints, *kinds):
             indices = [i for i in range(len(bs)) if constraints[i].kind in kinds]
-            capa_constraints = [
-                capacities[i]
-                .stack(constraint=sorted(bs[i].dims))
-                .transpose("constraint", "decision")
-                .values
-                for i in indices
-            ]
-
-            prod_constraints = [
-                productions[i]
-                .stack(constraint=sorted(bs[i].dims))
-                .transpose("constraint", "decision")
-                .values
-                for i in indices
-            ]
+            capa_constraints = [reshape(capacities[i]) for i in indices]
+            prod_constraints = [reshape(productions[i]) for i in indices]
             if capa_constraints:
                 A: Optional[np.ndarray] = np.concatenate(
                     (
@@ -1042,7 +1033,11 @@ class ScipyAdapter:
             return A, b
 
         c = np.concatenate(
-            (capacities["costs"].values, productions["costs"].values), axis=0
+            (
+                cast(np.ndarray, capacities["costs"].values).flatten(),
+                cast(np.ndarray, productions["costs"].values).flatten(),
+            ),
+            axis=0,
         )
         A_ub, b_ub = extract_bA(
             constraints, ConstraintKind.UPPER_BOUND, ConstraintKind.LOWER_BOUND
@@ -1062,8 +1057,8 @@ class ScipyAdapter:
     def _back_to_muse_quantity(
         x: np.ndarray, template: Union[xr.DataArray, xr.Dataset]
     ) -> xr.DataArray:
-        result = xr.DataArray(x, coords=template.coords, dims=template.dims).unstack(
-            "decision"
+        result = xr.DataArray(
+            x.reshape(template.shape), coords=template.coords, dims=template.dims
         )
         return result.rename({k: str(k)[2:-1] for k in result.dims})
 

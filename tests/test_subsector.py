@@ -91,7 +91,8 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
     assert len(result) == 2
 
     lpcosts, lpconstraints = result
-    assert isinstance(lpcosts, xr.DataArray)
+    assert isinstance(lpcosts, xr.Dataset)
+    assert {"search_space", "decision"} == set(lpcosts.data_vars)
     assert "agent" in lpcosts.coords
     assert isinstance(lpconstraints, Sequence)
     assert len(lpconstraints) == 1

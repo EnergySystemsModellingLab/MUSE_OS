@@ -96,7 +96,6 @@ tolerance_unmet_demand = -0.1
         constraints = [
             "max_production",
             "max_capacity_expansion",
-            "minimum_service",
             "demand",
             "search_space",
         ]

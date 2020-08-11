@@ -164,6 +164,8 @@ def factory(settings: Optional[Union[Text, Mapping]] = None) -> Callable:
     if "log_mismatch_params" not in params:
         params["log_mismatch_params"] = 1e-3
 
+    investment = INVESTMENTS[name]
+
     def compute_investment(
         search: Dataset, technologies: Dataset, constraints: List[Constraint], **kwargs
     ) -> DataArray:
@@ -180,8 +182,7 @@ def factory(settings: Optional[Union[Text, Mapping]] = None) -> Callable:
                 dims=("asset", "replacement"),
             )
 
-        function = INVESTMENTS[name]
-        return function(
+        return investment(
             search.decision,
             search.search_space,
             technologies,
@@ -311,7 +312,7 @@ def scipy_match_demand(
     search_space: DataArray,
     technologies: Dataset,
     constraints: List[Constraint],
-    year: int,
+    year: Optional[int] = None,
     timeslice_op: Optional[Callable[[DataArray], DataArray]] = None,
     **options,
 ) -> DataArray:
@@ -321,9 +322,15 @@ def scipy_match_demand(
 
     if "timeslice" in costs.dims and timeslice_op is not None:
         costs = timeslice_op(costs)
+    if "year" in technologies.dims and year is None:
+        raise ValueError("Missing year argument")
+    elif "year" in technologies.dims:
+        techs = technologies.interp(year=year).drop_vars("year")
+    else:
+        techs = technologies
     timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
     adapter = ScipyAdapter.factory(
-        technologies.interp(year=year), -costs, timeslice, *constraints  # type: ignore
+        techs, -cast(np.ndarray, costs), timeslice, *constraints
     )
     res = linprog(**adapter.kwargs, options=dict(disp=True))
     if not res.success:
@@ -340,21 +347,23 @@ def cvxopt_match_demand(
     search_space: DataArray,
     technologies: Dataset,
     constraints: List[Constraint],
-    year: int,
+    year: Optional[int] = None,
     timeslice_op: Optional[Callable[[DataArray], DataArray]] = None,
     **options,
 ) -> DataArray:
     from muse.constraints import ScipyAdapter
     from logging import getLogger
 
+    if "year" in technologies.dims and year is None:
+        raise ValueError("Missing year argument")
+    elif "year" in technologies.dims:
+        techs = technologies.interp(year=year).drop_vars("year")
+    else:
+        techs = technologies
+
     def default_to_scipy():
         return scipy_match_demand(
-            costs,
-            search_space,
-            technologies,
-            constraints,
-            year=year,
-            timeslice_op=timeslice_op,
+            costs, search_space, techs, constraints, timeslice_op=timeslice_op
         )
 
     try:
@@ -372,7 +381,7 @@ def cvxopt_match_demand(
         costs = timeslice_op(costs)
     timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
     adapter = ScipyAdapter.factory(
-        technologies.interp(year=year), -costs, timeslice, *constraints  # type: ignore
+        techs, -cast(np.ndarray, costs), timeslice, *constraints
     )
     G = np.zeros((0, adapter.c.size)) if adapter.A_ub is None else adapter.A_ub
     h = np.zeros((0,)) if adapter.b_ub is None else adapter.b_ub
