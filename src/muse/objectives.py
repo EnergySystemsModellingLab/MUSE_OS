@@ -179,13 +179,6 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
             )
             getLogger(function.__module__).warning(msg)
 
-        if not {"replacement", "asset"}.issuperset(result.dims):
-            raise RuntimeError(
-                "Objective {func} returned an array with dimensions {dims}; "
-                "it is not a subset of {{'replacemment', 'asset'}}.".format(
-                    dims=result.dims, func=function.__name__
-                )
-            )
         if "technology" in result.dims:
             raise RuntimeError("Objective should not return a dimension 'technology'")
         if "technology" in result.coords:

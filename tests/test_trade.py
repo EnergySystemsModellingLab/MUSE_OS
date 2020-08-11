@@ -115,3 +115,17 @@ def test_lp_costs():
         "commodity",
     }
     assert set(lpcosts.asset.coords) == {"region", "agent"}
+
+
+def test_power_sector_no_investment():
+    from muse import examples
+    from muse.utilities import agent_concatenation
+
+    power = examples.sector("power", "trade")
+    market = examples.matching_market("power", "trade")
+
+    initial = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
+    power.next(market)
+    final = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
+
+    assert (initial == final).all()

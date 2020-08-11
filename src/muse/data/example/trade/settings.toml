@@ -100,7 +100,7 @@ tolerance_unmet_demand = -0.1
             "demand",
             "search_space",
         ]
-        demand_share = "new_and_retro"
+        demand_share = "unmet_forecasted_demand"
         forecast = 5
 
     [[sectors.power.outputs]]
@@ -131,7 +131,7 @@ tolerance_unmet_demand = -0.1
             "demand",
             "search_space",
         ]
-        demand_share = "new_and_retro"
+        demand_share = "unmet_forecasted_demand"
         forecast = 5
 
     [[sectors.gas.outputs]]
