@@ -81,6 +81,13 @@ class Subsector:
             current_year=current_year,
             forecast=self.forecast,
         )
+        if "dst_region" in demands.dims:
+            msg = """
+                dst_region found in demand dimensions. This is unexpected. Demands
+                should only have a region dimension rather both a source and destination
+                dimension.
+            """
+            raise ValueError(msg)
         agent_market = market.copy()
         assets = agent_concatenation(
             {agent.uuid: agent.assets for agent in self.agents}

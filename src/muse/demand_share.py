@@ -363,14 +363,14 @@ def unmet_demand(
     prod_method = production if callable(production) else prod_factory(production)
     assert callable(prod_method)
 
-    production = prod_method(
-        market=market, capacity=capacity, technologies=technologies
-    )
-    if "region" in production.coords and production.region.dims:
-        production = production.groupby("region").sum("asset")
+    produced = prod_method(market=market, capacity=capacity, technologies=technologies)
+    if "dst_region" in produced.dims:
+        produced = produced.sum("asset").rename(dst_region="region")
+    elif "region" in produced.coords and produced.region.dims:
+        produced = produced.groupby("region").sum("asset")
     else:
-        production = production.sum("asset")
-    return (market.consumption - production).clip(min=0)
+        produced = produced.sum("asset")
+    return (market.consumption - produced).clip(min=0)
 
 
 def new_consumption(
