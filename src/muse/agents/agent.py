@@ -110,6 +110,7 @@ class Agent(AbstractAgent):
         merge_transform: Optional[Callable] = None,
         demand_threshhold: Optional[float] = None,
         category: Optional[Text] = None,
+        asset_threshhold: float = 1e-4,
         **kwargs,
     ):
         """Creates a standard buildings agent.
@@ -201,6 +202,8 @@ class Agent(AbstractAgent):
         This criteria avoids fulfilling demand for very small values. If None,
         then the criteria is not applied.
         """
+        self.asset_threshhold = asset_threshhold
+        """Threshhold below which assets are not added."""
 
     @property
     def forecast_year(self):
@@ -275,6 +278,8 @@ class Agent(AbstractAgent):
         new_capacity = self.retirement_profile(
             technologies, investments, current_year, time_period
         )
+        if new_capacity is None:
+            return
         new_capacity = new_capacity.drop_vars(
             set(new_capacity.coords) - set(self.assets.coords)
         )
@@ -287,11 +292,17 @@ class Agent(AbstractAgent):
         investments: xr.DataArray,
         current_year: int,
         time_period: int,
-    ) -> xr.DataArray:
+    ) -> Optional[xr.DataArray]:
         from muse.investments import cliff_retirement_profile
 
         investments = investments.sum("asset")
-        investments = investments.where(investments > self.tolerance, 0)
+        investments = investments.sel(
+            replacement=(investments > self.asset_threshhold).any(
+                [d for d in investments.dims if d != "replacement"]
+            )
+        )
+        if investments.size == 0:
+            return None
 
         # figures out the retirement profile for the new investments
         lifetime = self.filter_input(
