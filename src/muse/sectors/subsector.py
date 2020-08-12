@@ -63,7 +63,9 @@ class Subsector:
         self.assign_back_to_agents(solution)
 
     def assign_back_to_agents(self, solution: xr.Dataset):
-        raise NotImplementedError()
+        agents = {u.uuid: u for u in self.agents}
+        for uuid, assets in solution.groupby("agent"):
+            agents[uuid].add_assets(xr.Dataset(dict(capacity=assets)))
 
     def aggregate_lp(
         self,
