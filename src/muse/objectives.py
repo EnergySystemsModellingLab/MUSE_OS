@@ -70,7 +70,7 @@ __all__ = [
     "factory",
 ]
 
-from typing import Callable, Mapping, MutableMapping, Sequence, Text, Union
+from typing import Any, Callable, Mapping, MutableMapping, Sequence, Text, Union
 
 import numpy as np
 import xarray as xr
@@ -80,7 +80,8 @@ from muse.agents import Agent
 from muse.registration import registrator
 
 OBJECTIVE_SIGNATURE = Callable[
-    [Agent, xr.DataArray, xr.DataArray, xr.Dataset, xr.Dataset, KwArg()], xr.DataArray
+    [Agent, xr.DataArray, xr.DataArray, xr.Dataset, xr.Dataset, KwArg(Any)],
+    xr.DataArray,
 ]
 """Objectives signature."""
 

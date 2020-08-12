@@ -16,6 +16,7 @@ release = "0.8"
 master_doc = "index"
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
     "recommonmark",
@@ -36,6 +37,13 @@ autodoc_typehints = "none"
 add_module_names = False
 
 autosectionlabel_prefix_document = True
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("http://docs.scipy.org/doc/numpy/", None),
+    "pandas": ("http://pandas.pydata.org/pandas-docs/dev", None),
+    "xarray": ("http://xarray.pydata.org/en/stable/", None),
+}
 
 # -- Options for HTML output -------------------------------------------------
 

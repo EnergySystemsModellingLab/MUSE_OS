@@ -41,30 +41,30 @@ __all__ = [
     "factory",
     "register_demand_share",
     "unmet_demand",
-    "market_demand",
+    "unmet_forecasted_demand",
     "DEMAND_SHARE_SIGNATURE",
 ]
 from typing import (
     Any,
     Callable,
     Hashable,
-    Sequence,
     Mapping,
     MutableMapping,
     Optional,
+    Sequence,
     Text,
     Union,
     cast,
 )
 
 import xarray as xr
+from mypy_extensions import KwArg
 
 from muse.agents import AbstractAgent
 from muse.registration import registrator
-from mypy_extensions import KwArg
 
 DEMAND_SHARE_SIGNATURE = Callable[
-    [Sequence[AbstractAgent], xr.Dataset, xr.Dataset, KwArg()], xr.DataArray
+    [Sequence[AbstractAgent], xr.Dataset, xr.Dataset, KwArg(Any)], xr.DataArray
 ]
 """Demand share signature."""
 
@@ -280,31 +280,40 @@ def new_and_retro(
     return result
 
 
-@register_demand_share(name="market_demand")
-def market_demand(
+@register_demand_share(name="unmet_demand")
+def unmet_forecasted_demand(
     agents: Sequence[AbstractAgent],
     market: xr.Dataset,
     technologies: xr.Dataset,
     current_year: Optional[int] = None,
+    production: Union[Text, Mapping, Callable] = "maximum_production",
     forecast: int = 5,
 ) -> xr.DataArray:
-    """The consumption for the forecast year is returned as is."""
+    """Forecast demand that cannot be serviced by non-decommissioned current assets."""
     from muse.commodities import is_enduse
+    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.utilities import reduce_assets
 
     if current_year is None:
         current_year = market.year.min()
 
-    forecasted = market.consumption.interp(year=current_year + forecast)
-    return forecasted.where(
-        is_enduse(technologies.comm_usage.sel(commodity=forecasted.commodity)), 0
+    year = current_year + forecast
+    comm_usage = technologies.comm_usage.sel(commodity=market.commodity)
+    smarket: xr.Dataset = market.where(is_enduse(comm_usage), 0).interp(year=year)
+    capacity = reduce_assets([u.assets.capacity.interp(year=year) for u in agents])
+    ts_capacity = cast(
+        xr.DataArray,
+        convert_timeslice(capacity, market.timeslice, QuantityType.EXTENSIVE),
     )
+
+    result = unmet_demand(smarket, ts_capacity, technologies, production)
+    if "year" in result.dims:
+        result = result.squeeze("year")
+    return result
 
 
 def _inner_split(
-    assets: Mapping[Hashable, xr.DataArray],
-    demand: xr.DataArray,
-    method: Callable,
-    **filters
+    assets: Mapping[Hashable, xr.DataArray], demand: xr.DataArray, method: Callable
 ) -> MutableMapping[Hashable, xr.DataArray]:
     r"""compute share of the demand for a set of agents.
 
@@ -354,19 +363,20 @@ def unmet_demand(
     prod_method = production if callable(production) else prod_factory(production)
     assert callable(prod_method)
 
-    prod = (
-        prod_method(market=market, capacity=capacity, technologies=technologies)
-        .groupby("region")
-        .sum("asset")
+    production = prod_method(
+        market=market, capacity=capacity, technologies=technologies
     )
-    return (market.consumption - prod).clip(min=0)
+    if "region" in production.coords and production.region.dims:
+        production = production.groupby("region").sum("asset")
+    else:
+        production = production.sum("asset")
+    return (market.consumption - production).clip(min=0)
 
 
 def new_consumption(
     capacity: xr.DataArray,
     market: xr.Dataset,
     technologies: xr.Dataset,
-    production: Union[Text, Mapping, Callable] = "maximum_production",
     current_year: Optional[int] = None,
     forecast: int = 5,
 ) -> xr.DataArray:
@@ -440,12 +450,7 @@ def new_and_retro_demands(
         ts_capa["region"] = "asset", [str(ts_capa.region.values)] * len(ts_capa.asset)
 
     new_demand = new_consumption(
-        ts_capa,
-        smarket,
-        technologies,
-        current_year=current_year,
-        forecast=forecast,
-        production=production_method,
+        ts_capa, smarket, technologies, current_year=current_year, forecast=forecast
     )
     if "year" in new_demand.dims:
         new_demand = new_demand.squeeze("year")

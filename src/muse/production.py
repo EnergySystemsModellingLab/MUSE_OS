@@ -30,10 +30,11 @@ Returns:
     A `xr.DataArray` with the amount produced for each good from each asset.
 """
 __all__ = [
+    "demand_matched_production",
     "factory",
     "maximum_production",
-    "demand_matched_production",
     "register_production",
+    "supply",
     "PRODUCTION_SIGNATURE",
 ]
 from typing import Any, Callable, Mapping, MutableMapping, Text, Union, cast
@@ -74,6 +75,9 @@ def factory(
             function yet to be registered when this factory method is called.
         **kwargs: any keyword argument the production method accepts.
     """
+    from functools import partial
+    from muse.production import PRODUCTION_METHODS
+
     if isinstance(settings, Text):
         name = settings
         keywords: MutableMapping[Text, Any] = dict()
@@ -84,14 +88,10 @@ def factory(
     keywords.update(**kwargs)
     name = keywords.pop("name", name)
 
-    def production_method(market, capacity, technologies) -> xr.DataArray:
-        from muse.production import PRODUCTION_METHODS
-
-        return PRODUCTION_METHODS[name](  # type: ignore
-            market=market, capacity=capacity, technologies=technologies, **keywords
-        )
-
-    return production_method
+    method = PRODUCTION_METHODS[name]
+    return cast(
+        PRODUCTION_SIGNATURE, method if not keywords else partial(method, **keywords)
+    )
 
 
 @register_production(name=("max", "maximum"))

@@ -78,7 +78,7 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
     subsector = Subsector(
         agents,
         commodities,
-        demand_share=ds.factory("market_demand"),
+        demand_share=ds.factory("unmet_forecasted_demand"),
         constraints=cs.factory("demand"),
     )
 

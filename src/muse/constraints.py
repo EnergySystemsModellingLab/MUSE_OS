@@ -100,6 +100,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import (
+    Any,
     Callable,
     List,
     Mapping,
@@ -149,7 +150,7 @@ upper bound constraint.
 
 
 CONSTRAINT_SIGNATURE = Callable[
-    [xr.DataArray, xr.Dataset, xr.DataArray, xr.Dataset, xr.Dataset, KwArg()],
+    [xr.DataArray, xr.Dataset, xr.DataArray, xr.Dataset, xr.Dataset, KwArg(Any)],
     Optional[Constraint],
 ]
 """Basic signature for functions producing constraints.

@@ -28,7 +28,8 @@ from mypy_extensions import KwArg
 from muse.registration import registrator
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
-    [xr.Dataset, xr.DataArray, xr.Dataset, KwArg()], Union[pd.DataFrame, xr.DataArray]
+    [xr.Dataset, xr.DataArray, xr.Dataset, KwArg(Any)],
+    Union[pd.DataFrame, xr.DataArray],
 ]
 """Signature of functions computing quantities for later analysis."""
 
