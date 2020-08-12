@@ -264,6 +264,57 @@ class Agent(AbstractAgent):
         decision = xr.broadcast(decision, search_space, exclude=nobroadcast_dims)[0]
         return decision.sel({k: search_space[k] for k in search_space.dims})
 
+    def add_investments(
+        self,
+        technologies: xr.Dataset,
+        investments: xr.DataArray,
+        current_year: int,
+        time_period: int,
+    ):
+        """Add new assets to the agent."""
+        new_capacity = self.retirement_profile(
+            technologies, investments, current_year, time_period
+        )
+        new_capacity = new_capacity.drop_vars(
+            set(new_capacity.coords) - set(self.assets.coords)
+        )
+        new_assets = xr.Dataset(dict(capacity=new_capacity))
+        self.assets = self.merge_transform(self.assets, new_assets)
+
+    def retirement_profile(
+        self,
+        technologies: xr.Dataset,
+        investments: xr.DataArray,
+        current_year: int,
+        time_period: int,
+    ) -> xr.DataArray:
+        from muse.investments import cliff_retirement_profile
+
+        investments = investments.sum("asset")
+        investments = investments.where(investments > self.tolerance, 0)
+
+        # figures out the retirement profile for the new investments
+        lifetime = self.filter_input(
+            technologies.technical_life,
+            year=current_year,
+            technology=investments.replacement,
+        )
+        profile = cliff_retirement_profile(
+            lifetime.clip(min=time_period),
+            current_year=current_year + time_period,
+            protected=max(self.forecast - time_period - 1, 0),
+        )
+
+        new_assets = (investments * profile).rename(replacement="asset")
+        new_assets["installed"] = "asset", [current_year] * len(new_assets.asset)
+
+        # The new assets have picked up quite a few coordinates along the way.
+        # we try and keep only those that were there originally.
+        if set(new_assets.dims) != set(self.assets.dims):
+            new, old = new_assets.dims, self.assets.dims
+            raise RuntimeError(f"Asset dimensions do not match: {new} vs {old}")
+        return new_assets
+
 
 class InvestingAgent(Agent):
     """Agent that performs investment for itself."""
@@ -312,30 +363,10 @@ class InvestingAgent(Agent):
         Other attributes are left unchanged. Arguments to the function are
         never modified.
         """
+        current_year = self.year
         search = super().next(technologies, market, demand, time_period=time_period)
         if search is None:
             return None
-
-        new_assets = self._compute_new_assets(
-            demand, search, technologies, market, time_period, self.year - time_period
-        )
-        self.add_assets(xr.Dataset(dict(capacity=new_assets)))
-
-    def add_assets(self, newassets: xr.Dataset):
-        """Add new assets to the agent."""
-        self.assets = self.merge_transform(self.assets, newassets)
-
-    def _compute_new_assets(
-        self,
-        demand: xr.DataArray,
-        search: xr.Dataset,
-        technologies: xr.Dataset,
-        market: xr.Dataset,
-        time_period: int,
-        current_year: int,
-    ) -> xr.DataArray:
-        """Computes investment and retirement profile."""
-        from muse.investments import cliff_retirement_profile
 
         constraints = self.constraints(
             demand,
@@ -343,31 +374,14 @@ class InvestingAgent(Agent):
             search.search_space,
             market,
             technologies,
-            year=int(market.year.min()),
+            year=current_year,
         )
 
         investments = self.invest(search, technologies, constraints, year=current_year)
-        investments = investments.sum("asset")
-        investments = investments.where(investments > self.tolerance, 0)
 
-        # figures out the retirement profile for the new investments
-        lifetime = self.filter_input(
-            technologies.technical_life,
-            year=current_year,
-            technology=investments.replacement,
+        self.add_investments(
+            technologies,
+            investments,
+            current_year=self.year - time_period,
+            time_period=time_period,
         )
-        profile = cliff_retirement_profile(
-            lifetime.clip(min=time_period),
-            current_year=current_year + time_period,
-            protected=max(self.forecast - time_period - 1, 0),
-        )
-
-        new_assets = (investments * profile).rename(replacement="asset")
-        new_assets["installed"] = "asset", [current_year] * len(new_assets.asset)
-
-        # The new assets have picked up quite a few coordinates along the way.
-        # we try and keep only those that were there originally.
-        if set(new_assets.dims) != set(self.assets.dims):
-            new, old = new_assets.dims, self.assets.dims
-            raise RuntimeError(f"Asset dimensions do not match: {new} vs {old}")
-        return new_assets.drop_vars(set(new_assets.coords) - set(self.assets.coords))

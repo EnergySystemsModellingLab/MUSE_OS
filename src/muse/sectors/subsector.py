@@ -60,12 +60,20 @@ class Subsector:
         solution = self.investment(
             search=lp_problem[0], technologies=techs, constraints=lp_problem[1]
         )
-        self.assign_back_to_agents(solution)
+        self.assign_back_to_agents(technologies, solution, current_year, time_period)
 
-    def assign_back_to_agents(self, solution: xr.Dataset):
+    def assign_back_to_agents(
+        self,
+        technologies: xr.Dataset,
+        solution: xr.DataArray,
+        current_year: int,
+        time_period: int,
+    ):
         agents = {u.uuid: u for u in self.agents}
         for uuid, assets in solution.groupby("agent"):
-            agents[uuid].add_assets(xr.Dataset(dict(capacity=assets)))
+            agents[uuid].add_investments(
+                technologies, assets, current_year, time_period
+            )
 
     def aggregate_lp(
         self,

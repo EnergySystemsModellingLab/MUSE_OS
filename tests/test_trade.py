@@ -143,4 +143,6 @@ def test_power_sector_some_investment():
     power.next(market)
     final = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
 
-    assert (initial == final).all()
+    assert "windturbine" not in initial.technology
+    assert "windturbine" in final.technology
+    assert final.sel(asset=final.technology == "windturbine").sum() > 1
