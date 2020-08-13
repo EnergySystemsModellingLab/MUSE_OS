@@ -14,6 +14,7 @@ from typing import (
     cast,
 )
 
+import numpy as np
 import xarray as xr
 
 from muse.agents import Agent
@@ -31,6 +32,7 @@ class Subsector:
         investment: Optional[Callable] = None,
         name: Text = "subsector",
         forecast: int = 5,
+        expand_market_prices: bool = False,
     ):
         from muse import demand_share as ds, constraints as cs, investments as iv
 
@@ -41,6 +43,13 @@ class Subsector:
         self.investment = investment or iv.factory()
         self.forecast = forecast
         self.name = name
+        self.expand_market_prices = expand_market_prices
+        """Wether to expand prices to include destination region.
+
+        If ``True``, the input market prices are expanded of the missing "dst_region"
+        dimension by setting them to the maximum between the source and destination
+        region.
+        """
 
     def invest(
         self,
@@ -51,6 +60,11 @@ class Subsector:
     ) -> None:
         if current_year is None:
             current_year = market.year.min()
+        if self.expand_market_prices:
+            market = market.copy()
+            market["prices"] = np.maximum(
+                market.prices, market.prices.rename(region="dst_region")
+            )
         lp_problem = self.aggregate_lp(
             technologies, market, time_period, current_year=current_year
         )
@@ -147,7 +161,7 @@ class Subsector:
         current_year: Optional[int] = None,
         name: Text = "subsector",
     ) -> Subsector:
-        from muse.agents import agents_factory
+        from muse.agents import agents_factory, InvestingAgent
         from muse.readers.toml import undo_damage
         from muse import demand_share as ds, investments as iv, constraints as cs
 
@@ -177,6 +191,12 @@ class Subsector:
         investment = iv.factory(getattr(settings, "lpsolver", "scipy"))
         forecast = getattr(settings, "forecast", 5)
 
+        expand_market_prices = getattr(settings, "expand_market_prices", None)
+        if expand_market_prices is None:
+            expand_market_prices = "dst_region" in technologies.dims and not any(
+                (isinstance(u, InvestingAgent) for u in agents)
+            )
+
         return cls(
             agents=agents,
             commodities=commodities,
@@ -185,6 +205,7 @@ class Subsector:
             investment=investment,
             forecast=forecast,
             name=name,
+            expand_market_prices=expand_market_prices,
         )
 
 

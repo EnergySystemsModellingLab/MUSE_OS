@@ -140,9 +140,10 @@ def test_power_sector_some_investment():
     market.consumption[:] *= 1.5
 
     initial = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
-    power.next(market)
+    result = power.next(market)
     final = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
 
     assert "windturbine" not in initial.technology
     assert "windturbine" in final.technology
     assert final.sel(asset=final.technology == "windturbine").sum() > 1
+    assert "dst_region" not in result.dims
