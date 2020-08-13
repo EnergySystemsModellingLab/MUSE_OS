@@ -241,6 +241,13 @@ class Sector(AbstractSector):  # type: ignore
             result = result.expand_dims(region=[result.region.values])
         else:
             result = output_data.groupby("region").sum("asset")
+        if "dst_region" in result:
+            supply = result.supply.sum("region").rename(dst_region="region")
+            consumption = result.consumption.sum("dst_region")
+            costs = result.costs.sum("dst_region")
+            result = xr.Dataset(
+                dict(supply=supply, consumption=consumption, costs=costs)
+            )
         result = self.convert_market_timeslice(result, mca_market.timeslice)
         result["comm_usage"] = technologies.comm_usage.sel(commodity=result.commodity)
         result.set_coords("comm_usage")
