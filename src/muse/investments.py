@@ -85,46 +85,10 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
         search_space: DataArray,
         technologies: Dataset,
         constraints: List[Constraint],
-        log_mismatch_params: float = 1e-3,
         **kwargs,
     ) -> DataArray:
-        from logging import getLogger
-        from muse.commodities import is_enduse
-
-        result = function(  # type: ignore
-            costs, search_space, technologies, constraints, **kwargs
-        )
-        result = result.rename("investment")
-
-        # log mismatch if requested
-        if log_mismatch_params <= 0:
-            return result
-
-        demand = next((c for c in constraints if c.name == "demand")).b
-        mismatch = demand - (
-            result
-            * technologies.fixed_outputs.sel(
-                commodity=is_enduse(technologies.comm_usage)
-            )
-        ).sum("replacement")
-        mismatch = mismatch.rename("mismatch")
-
-        logger = getLogger(function.__module__)
-        if mismatch.max() < log_mismatch_params:
-            m = "Minimized normalized capacity constraints successfully. "
-            logger.info(m)
-            m = "Investment matches demand up to {}".format(mismatch)
-            logger.debug(m)
-        else:
-            m = (
-                "Could not find investment to match demand, "
-                "with maximum mismatch: {}".format(mismatch.max())
-            )
-            logger.error(m)
-            m = "Total mismatch {}".format(mismatch)
-            logger.debug(m)
-
-        return result
+        result = function(costs, search_space, technologies, constraints, **kwargs)
+        return result.rename("investment")
 
     return decorated
 
@@ -160,9 +124,6 @@ def factory(settings: Optional[Union[Text, Mapping]] = None) -> Callable:
             raise ValueError(f"Unknown timeslice transform {top}")
 
         params["timeslice_op"] = timeslice_op
-
-    if "log_mismatch_params" not in params:
-        params["log_mismatch_params"] = 1e-3
 
     investment = INVESTMENTS[name]
 
