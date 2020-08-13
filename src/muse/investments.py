@@ -312,8 +312,9 @@ def cvxopt_match_demand(
     timeslice_op: Optional[Callable[[DataArray], DataArray]] = None,
     **options,
 ) -> DataArray:
-    from muse.constraints import ScipyAdapter
     from logging import getLogger
+    from importlib import import_module
+    from muse.constraints import ScipyAdapter
 
     if "year" in technologies.dims and year is None:
         raise ValueError("Missing year argument")
@@ -328,8 +329,8 @@ def cvxopt_match_demand(
         )
 
     try:
-        from cvxopt import matrix, solvers
-    except ImportError:
+        cvxopt = import_module("cvxopt")
+    except ModuleNotFoundError:
         msg = (
             "cvxopt is not installed\n"
             "It can be installed with `pip install cvxopt`\n"
@@ -356,7 +357,7 @@ def cvxopt_match_demand(
     args = [adapter.c, G, h]
     if adapter.A_eq is not None:
         args += [adapter.A_eq, adapter.b_eq]
-    res = solvers.lp(*map(matrix, args), **options)
+    res = cvxopt.solvers.lp(*map(cvxopt.matrix, args), **options)  # type: ignore
     if res["status"] != "optimal":
         getLogger(__name__).info(res["status"])
     if res["x"] is None:
