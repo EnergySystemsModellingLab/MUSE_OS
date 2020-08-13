@@ -287,7 +287,30 @@ class Sector(AbstractSector):  # type: ignore
         """
         from muse.utilities import reduce_assets
 
-        return reduce_assets([u.assets.capacity for u in self.agents])
+        traded = [
+            u.assets.capacity
+            for u in self.agents
+            if "dst_region" in u.assets.capacity.dims
+        ]
+        nontraded = [
+            u.assets.capacity
+            for u in self.agents
+            if "dst_region" not in u.assets.capacity.dims
+        ]
+        if not traded:
+            return reduce_assets(nontraded)
+        if not nontraded:
+            return reduce_assets(traded)
+        traded_results = reduce_assets(traded)
+        nontraded_results = reduce_assets(nontraded)
+
+        return reduce_assets(
+            [
+                traded_results,
+                nontraded_results
+                * (nontraded_results.region == traded_results.dst_region),
+            ]
+        )
 
     @property
     def agents(self) -> Iterator[AbstractAgent]:
