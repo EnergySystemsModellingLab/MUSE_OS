@@ -61,6 +61,7 @@ def _quantity_factory(
     parameters: Mapping, registry: Mapping[Text, Callable]
 ) -> Callable:
     from functools import partial
+    from inspect import isclass
 
     config = dict(**parameters)
     params = config.pop("quantity")
@@ -72,7 +73,11 @@ def _quantity_factory(
         params = {}
     if registry is None:
         registry = OUTPUT_QUANTITIES
-    return partial(registry[quantity], **params)
+    quantity_function = registry[quantity]
+    if isclass(quantity_function):
+        return quantity_function(**params)  # type: ignore
+    else:
+        return partial(quantity_function, **params)
 
 
 def _factory(
