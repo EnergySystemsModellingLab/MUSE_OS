@@ -19,7 +19,7 @@ technologies in the market. It returns a single xr.DataArray object.
 
 The function should never modify it's arguments.
 """
-from typing import Any, Callable, List, Mapping, Optional, Text, Union
+from typing import Any, Callable, List, Mapping, MutableMapping, Optional, Text, Union
 
 import pandas as pd
 import xarray as xr
@@ -33,7 +33,7 @@ OUTPUT_QUANTITY_SIGNATURE = Callable[
 ]
 """Signature of functions computing quantities for later analysis."""
 
-OUTPUT_QUANTITIES: Mapping[Text, OUTPUT_QUANTITY_SIGNATURE] = {}
+OUTPUT_QUANTITIES: MutableMapping[Text, OUTPUT_QUANTITY_SIGNATURE] = {}
 """Quantity for post-simulation analysis."""
 
 OUTPUTS_PARAMETERS = Union[Text, Mapping]

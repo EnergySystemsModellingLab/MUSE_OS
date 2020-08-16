@@ -30,7 +30,7 @@ OUTPUT_SINK_SIGNATURE = Callable[
 ]
 """Signature of functions used to save quantities."""
 
-OUTPUT_SINKS: Mapping[Text, Union[OUTPUT_SINK_SIGNATURE, Callable]] = {}
+OUTPUT_SINKS: MutableMapping[Text, Union[OUTPUT_SINK_SIGNATURE, Callable]] = {}
 """Stores a quantity somewhere."""
 
 
@@ -235,7 +235,7 @@ class YearlyAggregate:
         ):
             final_sink["overwrite"] = True
         self.sink = factory(final_sink, sector_name=sector)
-        self.aggregate: Optional[xr.DataArray] = None
+        self.aggregate: Optional[pd.Dataframe] = None
         self.axis = axis
 
     def __call__(self, data: Union[pd.DataFrame, xr.DataArray], year: int):
