@@ -8,29 +8,41 @@ same signature:
     @register_output_quantity
     def quantity(
         sectors: List[AbstractSector],
-        market: Dataset, **kwargs
-    ) -> Union[pd.DataFrame, DataArray]:
+        market: xr.Dataset, **kwargs
+    ) -> Union[pd.DataFrame, xr.DataArray]:
         pass
 
 The function should never modify it's arguments. It can return either a pandas dataframe
-or an xarray DataArray.
+or an xarray xr.DataArray.
 """
 from pathlib import Path
-from typing import Any, Callable, List, Mapping, Optional, Sequence, Text, Union
+from typing import (
+    Any,
+    Callable,
+    Hashable,
+    Iterable,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Text,
+    Union,
+)
 
 import pandas as pd
+import xarray as xr
 from mypy_extensions import KwArg
-from xarray import DataArray, Dataset
 
 from muse.registration import registrator
 from muse.sectors import AbstractSector
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
-    [Dataset, List[AbstractSector], KwArg(Any)], Union[DataArray, pd.DataFrame]
+    [xr.Dataset, List[AbstractSector], KwArg(Any)], Union[xr.DataArray, pd.DataFrame]
 ]
 """Signature of functions computing quantities for later analysis."""
 
-OUTPUT_QUANTITIES: Mapping[Text, OUTPUT_QUANTITY_SIGNATURE] = {}
+OUTPUT_QUANTITIES: MutableMapping[Text, OUTPUT_QUANTITY_SIGNATURE] = {}
 """Quantity for post-simulation analysis."""
 
 OUTPUTS_PARAMETERS = Union[Text, Mapping]
@@ -49,7 +61,7 @@ def register_output_quantity(
     @wraps(function)
     def decorated(*args, **kwargs):
         result = function(*args, **kwargs)
-        if isinstance(result, (pd.DataFrame, DataArray)):
+        if isinstance(result, (pd.DataFrame, xr.DataArray)):
             result.name = function.__name__
         return result
 
@@ -62,8 +74,8 @@ def round_values(function: Callable) -> OUTPUT_QUANTITY_SIGNATURE:
 
     @wraps(function)
     def rounded(
-        market: Dataset, sectors: List[AbstractSector], rounding: int = 4, **kwargs
-    ) -> DataArray:
+        market: xr.Dataset, sectors: List[AbstractSector], rounding: int = 4, **kwargs
+    ) -> xr.DataArray:
         result = function(market, sectors, **kwargs)
         if hasattr(result, "to_dataframe"):
             result = result.to_dataframe()
@@ -76,7 +88,7 @@ def round_values(function: Callable) -> OUTPUT_QUANTITY_SIGNATURE:
 
 def factory(
     *parameters: OUTPUTS_PARAMETERS,
-) -> Callable[[Dataset, List[AbstractSector]], List[Path]]:
+) -> Callable[[xr.Dataset, List[AbstractSector]], List[Path]]:
     """Creates outputs functions for post-mortem analysis.
 
     Each parameter is a dictionary containing the following:
@@ -103,7 +115,9 @@ def factory(
 
 @register_output_quantity
 @round_values
-def consumption(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
+def consumption(
+    market: xr.Dataset, sectors: List[AbstractSector], **kwargs
+) -> xr.DataArray:
     """Current consumption."""
     from muse.outputs.sector import market_quantity
 
@@ -112,7 +126,7 @@ def consumption(market: Dataset, sectors: List[AbstractSector], **kwargs) -> Dat
 
 @register_output_quantity
 @round_values
-def supply(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
+def supply(market: xr.Dataset, sectors: List[AbstractSector], **kwargs) -> xr.DataArray:
     """Current supply."""
     from muse.outputs.sector import market_quantity
 
@@ -122,7 +136,7 @@ def supply(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArra
 @register_output_quantity
 @round_values
 def prices(
-    market: Dataset,
+    market: xr.Dataset,
     sectors: List[AbstractSector],
     drop_empty: bool = True,
     keep_columns: Optional[Union[Sequence[Text], Text]] = "prices",
@@ -143,34 +157,36 @@ def prices(
 
 @register_output_quantity
 @round_values
-def capacity(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
+def capacity(
+    market: xr.Dataset, sectors: List[AbstractSector], **kwargs
+) -> pd.DataFrame:
     """Current capacity across all sectors."""
-    return sectors_capacity(sectors)
+    return _aggregate_sectors(sectors, op=sector_capacity)
 
 
 @register_output_quantity(
     name=["ALCOE", "alcoe", "Annualized Levelized Cost of Energy"]
 )
 @round_values
-def alcoe(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
+def alcoe(market: xr.Dataset, sectors: List[AbstractSector], **kwargs) -> pd.DataFrame:
     """Current annual levelised cost across all sectors."""
-    return sectors_alcoe(market, sectors)
+    return _aggregate_sectors(sectors, market, op=sector_alcoe)
 
 
 @register_output_quantity
 @round_values
-def llcoe(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
+def llcoe(market: xr.Dataset, sectors: List[AbstractSector], **kwargs) -> pd.DataFrame:
     """Current lifetime levelised cost across all sectors."""
-    return sectors_llcoe(market, sectors)
+    return _aggregate_sectors(sectors, market, op=sector_llcoe)
 
 
-def sector_alcoe(market: Dataset, sector: AbstractSector, **kwargs) -> DataArray:
+def sector_alcoe(market: xr.Dataset, sector: AbstractSector, **kwargs) -> pd.DataFrame:
     """Sector annual levelised cost (ALCOE) with agent annotations."""
     from pandas import DataFrame, concat
     from muse.quantities import annual_levelized_cost_of_energy
     from operator import attrgetter
 
-    data_sector: List[DataArray] = []
+    data_sector: List[xr.DataArray] = []
 
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
@@ -198,14 +214,14 @@ def sector_alcoe(market: Dataset, sector: AbstractSector, **kwargs) -> DataArray
     return alcoe
 
 
-def sector_llcoe(market: Dataset, sector: AbstractSector, **kwargs) -> DataArray:
+def sector_llcoe(market: xr.Dataset, sector: AbstractSector, **kwargs) -> pd.DataFrame:
     """Sector lifetime levelised cost with agent annotations."""
 
     from pandas import DataFrame, concat
     from operator import attrgetter
     from muse.quantities import lifetime_levelized_cost_of_energy
 
-    data_sector: List[DataArray] = []
+    data_sector: List[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
     if len(technologies) > 0:
@@ -232,12 +248,12 @@ def sector_llcoe(market: Dataset, sector: AbstractSector, **kwargs) -> DataArray
     return lcoe
 
 
-def sector_capacity(sector: AbstractSector) -> DataArray:
+def sector_capacity(sector: AbstractSector) -> pd.DataFrame:
     """Sector capacity with agent annotations."""
     from operator import attrgetter
     from pandas import DataFrame, concat
 
-    capa_sector: List[DataArray] = []
+    capa_sector: List[xr.DataArray] = []
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
     for agent in agents:
         capa_agent = agent.assets.capacity
@@ -257,31 +273,46 @@ def sector_capacity(sector: AbstractSector) -> DataArray:
     return capacity
 
 
-def sectors_capacity(sectors: List[AbstractSector]) -> DataArray:
+def _aggregate_sectors(
+    sectors: List[AbstractSector], *args, op: Callable
+) -> pd.DataFrame:
     """Aggregate outputs from all sectors."""
-    from pandas import concat, DataFrame
-
-    alldata = [sector_capacity(sector) for sector in sectors]
+    alldata = [op(sector, *args) for sector in sectors]
     if len(alldata) == 0:
-        return DataFrame()
-    return concat(alldata)
+        return pd.DataFrame()
+    return pd.concat(alldata)
 
 
-def sectors_alcoe(market: Dataset, sectors: List[AbstractSector]) -> pd.DataFrame:
-    """Aggregate annual levelised cost (ALCOE) from all sectors."""
-    from pandas import concat, DataFrame
+@register_output_quantity
+class AggregateResources:
+    """Aggregates a set of commodities."""
 
-    alldata = [sector_alcoe(market, sector) for sector in sectors]
-    if len(alldata) == 0:
-        return DataFrame()
-    return concat(alldata)
+    def __init__(
+        self,
+        commodities: Union[Text, Iterable[Hashable]] = (),
+        metric: Text = "consumption",
+    ):
+        if not isinstance(commodities, Text):
+            commodities = list(commodities)
+        self.commodities: Sequence[Hashable] = commodities
+        self.metric = metric
+        self.aggregate: Optional[xr.DataArray] = None
 
-
-def sectors_llcoe(market: Dataset, sectors: List[AbstractSector]) -> pd.DataFrame:
-    """Aggregate life levelised cost from all sectors."""
-    from pandas import concat, DataFrame
-
-    alldata = [sector_llcoe(market, sector) for sector in sectors]
-    if len(alldata) == 0:
-        return DataFrame()
-    return concat(alldata)
+    def __call__(
+        self,
+        market: xr.Dataset,
+        sectors: List[AbstractSector],
+        year: Optional[int] = None,
+    ) -> Optional[xr.DataArray]:
+        if len(self.commodities) == 0:
+            return
+        if year is None:
+            year = int(market.year.min())
+        quantity = market[self.metric].sel(
+            year=year, commodity=self.commodities, drop=True
+        )
+        if self.aggregate is None:
+            self.aggregate = quantity
+        else:
+            self.aggregate += quantity
+        return self.aggregate

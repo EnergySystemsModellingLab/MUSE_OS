@@ -334,3 +334,16 @@ def test_path_formatting(tmpdir):
             path=tmpdir / "model", Quantity="Dummy", suffix=".dummy"
         )
     )
+
+
+def test_aggregate_resources(market):
+    from muse.outputs.mca import AggregateResources
+
+    commodity = str(market.commodity.isel(commodity=0).values)
+    output = AggregateResources(commodity)
+    a = output(market, []).copy()
+    assert (
+        a == market.consumption.sel(year=2010, commodity=commodity, drop=True)
+    ).all()
+    b = output(market, []).copy()
+    assert (b == 2 * a).all()
