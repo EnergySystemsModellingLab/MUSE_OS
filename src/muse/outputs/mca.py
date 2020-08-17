@@ -28,6 +28,7 @@ from typing import (
     Sequence,
     Text,
     Union,
+    cast,
 )
 
 import pandas as pd
@@ -305,10 +306,10 @@ class AggregateResources:
         year: Optional[int] = None,
     ) -> Optional[xr.DataArray]:
         if len(self.commodities) == 0:
-            return
+            return None
         if year is None:
             year = int(market.year.min())
-        quantity = market[self.metric].sel(
+        quantity = cast(xr.DataArray, market[self.metric]).sel(
             year=year, commodity=self.commodities, drop=True
         )
         if self.aggregate is None:
@@ -316,3 +317,47 @@ class AggregateResources:
         else:
             self.aggregate += quantity
         return self.aggregate
+
+
+@register_output_quantity
+class FiniteResources(AggregateResources):
+    """Aggregates a set of commodities."""
+
+    def __init__(
+        self,
+        limits: Union[Text, Path, xr.DataArray],
+        commodities: Union[Text, Iterable[Hashable]] = (),
+        metric: Text = "consumption",
+    ):
+        from muse.readers.csv import read_finite_resources
+
+        super().__init__(commodities=commodities, metric=metric)
+        if isinstance(limits, Text):
+            limits = Path(limits)
+        if isinstance(limits, Path):
+            limits = read_finite_resources(limits)
+
+        self.limits = limits
+
+    def __call__(
+        self,
+        market: xr.Dataset,
+        sectors: List[AbstractSector],
+        year: Optional[int] = None,
+    ) -> Optional[xr.DataArray]:
+        if len(self.commodities) == 0:
+            return None
+        if year is None:
+            year = int(market.year.min())
+
+        limits = self.limits
+        if "year" in self.limits.dims:
+            limits = limits.interp(year=year)
+
+        aggregate = super().__call__(market, sectors, year=year)
+        if aggregate is None:
+            return None
+        aggregate = aggregate.sum([u for u in aggregate.dims if u not in limits.dims])
+        assert aggregate is not None
+        limits = limits.sum([u for u in limits.dims if u not in aggregate.dims])
+        return aggregate <= limits

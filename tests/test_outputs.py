@@ -28,6 +28,33 @@ def streetcred(save_registries):
         )
 
 
+@fixture
+def limits_path(tmp_path):
+    from textwrap import dedent
+
+    path = tmp_path / "limits.csv"
+    path.write_text(
+        dedent(
+            """
+            Year,Month,Day,Hour,Region,Gas
+            2020,all-year,all-week,night,R1,100
+            2020,all-year,all-week,morning,R1,100
+            2020,all-year,all-week,afternoon,R1,100
+            2020,all-year,all-week,early-peak,R1,100
+            2020,all-year,all-week,late-peak,R1,100
+            2020,all-year,all-week,evening,R1,100
+            2050,all-year,all-week,night,R1,5
+            2050,all-year,all-week,morning,R1,5
+            2050,all-year,all-week,afternoon,R1,5
+            2050,all-year,all-week,early-peak,R1,5
+            2050,all-year,all-week,late-peak,R1,5
+            2050,all-year,all-week,evening,R1,5
+            """
+        )
+    )
+    return path
+
+
 @mark.usefixtures("streetcred")
 def test_save_with_dir(tmpdir):
     from pandas import read_csv
@@ -347,3 +374,22 @@ def test_aggregate_resources(market):
     ).all()
     b = output(market, []).copy()
     assert (b == 2 * a).all()
+
+
+def test_finite_resources(limits_path):
+    from muse import examples
+    from muse.outputs.mca import FiniteResources
+
+    market = examples.mca_market()[["consumption"]]
+
+    output = FiniteResources(limits=limits_path, commodities="gas")
+    result = output(market, [])
+    assert set(result.dims) == {"region", "timeslice"}
+    assert result.all()
+
+    market.consumption.loc[dict(commodity="gas")] = 50
+    result = output(market, [])
+    assert result.all()
+
+    result = output(market, [])
+    assert not result.all()
