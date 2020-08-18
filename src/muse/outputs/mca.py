@@ -111,6 +111,36 @@ def factory(
     """
     from muse.outputs.sector import _factory
 
+    def reformat_finite_resources(params):
+        from muse.readers.toml import MissingSettings
+
+        name = params["quantity"]
+        if not isinstance(name, Text):
+            name = name["name"]
+        if name.lower() not in {"finite_resources", "finiteresources"}:
+            return params
+
+        quantity = params["quantity"]
+        if isinstance(quantity, Text):
+            quantity = dict(name=quantity)
+        else:
+            quantity = dict(**quantity)
+
+        if "limits_path" in params:
+            quantity["limits_path"] = params.pop("limits_path")
+        if "commodities" in params:
+            quantity["commodities"] = params.pop("commodities")
+        if "limits_path" not in quantity:
+            msg = "Missing limits_path tag indicating file with finite resource limits"
+            raise MissingSettings(msg)
+        params["sink"] = params.get("sink", "finite_resource_logger")
+        params["quantity"] = quantity
+        return params
+
+    parameters = cast(
+        OUTPUTS_PARAMETERS, [reformat_finite_resources(p) for p in parameters]
+    )
+
     return _factory(OUTPUT_QUANTITIES, *parameters, sector_name="MCA")
 
 
@@ -293,7 +323,9 @@ class AggregateResources:
         commodities: Union[Text, Iterable[Hashable]] = (),
         metric: Text = "consumption",
     ):
-        if not isinstance(commodities, Text):
+        if isinstance(commodities, Text):
+            commodities = [commodities]
+        else:
             commodities = list(commodities)
         self.commodities: Sequence[Hashable] = commodities
         self.metric = metric
@@ -319,25 +351,25 @@ class AggregateResources:
         return self.aggregate
 
 
-@register_output_quantity
+@register_output_quantity(name=["finite_resources"])
 class FiniteResources(AggregateResources):
     """Aggregates a set of commodities."""
 
     def __init__(
         self,
-        limits: Union[Text, Path, xr.DataArray],
+        limits_path: Union[Text, Path, xr.DataArray],
         commodities: Union[Text, Iterable[Hashable]] = (),
         metric: Text = "consumption",
     ):
         from muse.readers.csv import read_finite_resources
 
         super().__init__(commodities=commodities, metric=metric)
-        if isinstance(limits, Text):
-            limits = Path(limits)
-        if isinstance(limits, Path):
-            limits = read_finite_resources(limits)
+        if isinstance(limits_path, Text):
+            limits_path = Path(limits_path)
+        if isinstance(limits_path, Path):
+            limits_path = read_finite_resources(limits_path)
 
-        self.limits = limits
+        self.limits = limits_path
 
     def __call__(
         self,

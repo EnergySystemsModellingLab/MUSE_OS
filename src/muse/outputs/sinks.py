@@ -255,3 +255,27 @@ class YearlyAggregate:
         if getattr(data, "name", None) is not None:
             self.aggregate.name = data.name
         return self.sink(self.aggregate, year=year)
+
+
+class FiniteResourceException(Exception):
+    """Raised when a finite resource is exceeded."""
+
+
+@register_output_sink
+def finite_resource_logger(
+    data: Union[pd.DataFrame, xr.DataArray], year: int, early_exit=False, **kwargs
+):
+    from logging import getLogger
+
+    if data is None:
+        return
+
+    over_limit = (~data).any([u for u in data.dims if u != "commodity"])
+    over_limit = over_limit.sel(commodity=over_limit)
+    if over_limit.size != 0:
+        msg = "The following commodities have exceeded their limits: " + ", ".join(
+            [str(u) for u in over_limit.commodity.values]
+        )
+        getLogger(__name__).critical(msg)
+        if early_exit:
+            raise FiniteResourceException(msg)
