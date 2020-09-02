@@ -139,7 +139,7 @@ class Subsector:
 
         if len(agent_lps) == 0:
             return None
-          
+
         lps = cast(xr.Dataset, agent_concatenation(agent_lps))
         coords = {"agent", "technology", "region"}.intersection(assets.asset.coords)
         constraints = self.constraints(
