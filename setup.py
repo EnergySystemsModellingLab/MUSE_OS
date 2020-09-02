@@ -76,7 +76,7 @@ setup(
     install_requires=[
         "numpy",
         "scipy",
-        "pandas>=0.21,<1.1.0",
+        "pandas>=0.21",
         "click",
         "xarray>0.14",
         "bottleneck",

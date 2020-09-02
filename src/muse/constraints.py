@@ -326,9 +326,12 @@ def max_capacity_expansion(
     ).interp(year=[year, forecast_year], method=interpolation)
     # case with technology and region in asset dimension
     if capacity.region.dims != ():
-        coords = list(capacity.asset.coords.values())
-        capacity = capacity.drop_vars(capacity.asset.coords.keys())
-        capacity["asset"] = pd.MultiIndex.from_arrays(coords)
+        names = [u for u in capacity.asset.coords if capacity[u].dims == ("asset",)]
+        index = pd.MultiIndex.from_arrays(
+            [capacity[u].values for u in names], names=names
+        )
+        capacity = capacity.drop_vars(names)
+        capacity["asset"] = index
         capacity = capacity.unstack("asset", fill_value=0).rename(
             technology=search_space.replacement.name
         )
