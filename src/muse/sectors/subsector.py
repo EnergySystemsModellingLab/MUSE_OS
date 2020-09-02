@@ -107,9 +107,10 @@ class Subsector:
             return None
 
         lps = agent_concatenation(agent_lps)
+        coords = {"agent", "technology", "region"}.intersection(assets.asset.coords)
         constraints = self.constraints(
             demand=demands,
-            assets=assets,
+            assets=reduce_assets(assets, coords=coords).set_coords(coords),
             search_space=lps.search_space,
             market=market,
             technologies=technologies,

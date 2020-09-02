@@ -47,7 +47,7 @@ def search_space(model, assets):
 
 
 @fixture
-def costs(technologies, search_space, market):
+def costs(search_space):
     shape = search_space.shape
     return search_space * np.arange(np.prod(shape)).reshape(shape)
 
@@ -489,3 +489,23 @@ def test_minimum_service(
     )
 
     assert np.allclose(minserv_solution, solution) is False
+
+
+def test_max_capacity_expansion(max_capacity_expansion):
+    assert max_capacity_expansion.capacity == 1
+    assert max_capacity_expansion.production == 0
+    assert max_capacity_expansion.b.dims == ("replacement",)
+    assert max_capacity_expansion.b.shape == (4,)
+    assert max_capacity_expansion.b.values == approx([500, 55, 55, 500])
+    assert (
+        max_capacity_expansion.replacement
+        == ["estove", "gasboiler", "gasstove", "heatpump"]
+    ).all()
+
+
+def test_max_production(max_production):
+    dims = {"replacement", "asset", "commodity", "timeslice"}
+    assert set(max_production.capacity.dims) == dims
+    assert set(max_production.production.dims) == dims
+    assert set(max_production.b.dims) == dims
+    assert (max_production.capacity <= 0).all()

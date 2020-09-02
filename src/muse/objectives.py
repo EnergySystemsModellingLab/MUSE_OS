@@ -70,7 +70,7 @@ __all__ = [
     "factory",
 ]
 
-from typing import Any, Callable, Mapping, MutableMapping, Sequence, Text, Union
+from typing import Any, Callable, Mapping, MutableMapping, Sequence, Text, Union, cast
 
 import numpy as np
 import xarray as xr
@@ -452,7 +452,7 @@ def fuel_consumption_cost(
     )
 
 
-@register_objective(name="LCOE")
+@register_objective(name=["LCOE", "LLCOE"])
 def lifetime_levelized_cost_of_energy(
     agent: Agent,
     demand: xr.DataArray,
@@ -479,7 +479,7 @@ def lifetime_levelized_cost_of_energy(
 
     techs = agent.filter_input(technologies, technology=search_space.replacement.values)
     assert isinstance(techs, xr.Dataset)
-    prices = agent.filter_input(market.prices)
+    prices = cast(xr.DataArray, agent.filter_input(market.prices))
     return (
         lifetimeLCOE(prices, techs, agent.year, **kwargs)
         .rename(technology="replacement")

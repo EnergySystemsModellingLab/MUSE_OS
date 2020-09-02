@@ -43,7 +43,7 @@ def example_data_dir() -> Path:
 
 
 def model(name: Text = "default") -> MCA:
-    """Simple model with Residential, Power, and Gas sectors."""
+    """Fully constructs a given example model."""
     from tempfile import TemporaryDirectory
     from muse.readers.toml import read_settings
 
@@ -127,17 +127,14 @@ def search_space(sector: Text, model: Text = "default") -> xr.DataArray:
 
     Used in constraints or during investment.
     """
-    from numpy import ones
 
-    technology = technodata(sector, model).technology
-    return xr.DataArray(
-        ones((len(technology), len(technology)), dtype=bool),
-        coords=dict(asset=technology.values, replacement=technology.values),
-        dims=("asset", "replacement"),
-    )
+    if model == "trade" and sector != "residential":
+        return _trade_search_space(sector, model)
+    return _nontrade_search_space(sector, model)
 
 
 def sector(sector: Text, model: Text = "default") -> AbstractSector:
+    """Loads a given sector from a given example model."""
     from tempfile import TemporaryDirectory
     from muse.readers.toml import read_settings
     from muse.sectors import SECTORS_REGISTERED
@@ -149,7 +146,8 @@ def sector(sector: Text, model: Text = "default") -> AbstractSector:
         return SECTORS_REGISTERED[kind](sector, settings)
 
 
-def available_sectors(*sectors: Text, model: Text = "default") -> List[Text]:
+def available_sectors(model: Text = "default") -> List[Text]:
+    """Sectors in this particular model."""
     from tempfile import TemporaryDirectory
     from muse.readers.toml import read_settings, undo_damage
 
@@ -202,6 +200,70 @@ def residential_market(model: Text = "default") -> xr.Dataset:
             ["prices", "supply", "consumption"]
         ].drop_vars("units_prices"),
     )
+
+
+def random_agent_assets(rng: np.random.Generator):
+    """Creates random set of assets for testing and debugging."""
+    nassets = rng.integers(low=1, high=6)
+    nyears = rng.integers(low=2, high=5)
+    years = rng.choice(list(range(2030, 2051)), size=nyears, replace=False)
+    installed = rng.choice([2030, 2030, 2025, 2010], size=nassets)
+    technologies = rng.choice(["stove", "thermomix", "oven"], size=nassets)
+    capacity = rng.integers(101, size=(nassets, nyears))
+    result = xr.Dataset()
+    result["capacity"] = xr.DataArray(
+        capacity.astype("int64"),
+        coords=dict(
+            installed=("asset", installed.astype("int64")),
+            technology=("asset", technologies),
+            region=rng.choice(["USA", "EU18", "Brexitham"]),
+            year=sorted(years.astype("int64")),
+        ),
+        dims=("asset", "year"),
+    )
+    return result
+
+
+def matching_market(sector: Text, model: Text = "default") -> xr.Dataset:
+    """Market with a demand matching the maximum production from a sector."""
+    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.quantities import maximum_production, consumption
+    from muse.utilities import agent_concatenation
+    from muse.examples import sector as load_sector
+    from muse.sectors import Sector
+
+    loaded_sector = cast(Sector, load_sector(sector, model))
+    assets = agent_concatenation({u.uuid: u.assets for u in list(loaded_sector.agents)})
+
+    market = xr.Dataset()
+    production = cast(
+        xr.DataArray,
+        convert_timeslice(
+            maximum_production(loaded_sector.technologies, assets.capacity),
+            loaded_sector.timeslices,
+            QuantityType.EXTENSIVE,
+        ),
+    )
+    market["supply"] = production.sum("asset")
+    if "dst_region" in market.dims:
+        market = market.rename(dst_region="region")
+    if market.region.dims:
+        consump = consumption(loaded_sector.technologies, production)
+        market["consumption"] = (
+            consump.groupby("region").sum(
+                {"asset", "dst_region"}.intersection(consump.dims)
+            )
+            + market.supply
+        )
+    else:
+        market["consumption"] = (
+            consumption(loaded_sector.technologies, production).sum(
+                {"asset", "dst_region"}.intersection(market.dims)
+            )
+            + market.supply
+        )
+    market["prices"] = market.supply.dims, np.random.random(market.supply.shape)
+    return market
 
 
 def _copy_default(path: Path):
@@ -272,23 +334,37 @@ def _copy_trade(path: Path):
     copyfile(example_data_dir() / "trade" / "settings.toml", path / "settings.toml")
 
 
-def random_agent_assets(rng: np.random.Generator):
-    """Creates random set of assets for testing and debugging."""
-    nassets = rng.integers(low=1, high=6)
-    nyears = rng.integers(low=2, high=5)
-    years = rng.choice(list(range(2030, 2051)), size=nyears, replace=False)
-    installed = rng.choice([2030, 2030, 2025, 2010], size=nassets)
-    technologies = rng.choice(["stove", "thermomix", "oven"], size=nassets)
-    capacity = rng.integers(101, size=(nassets, nyears))
-    result = xr.Dataset()
-    result["capacity"] = xr.DataArray(
-        capacity.astype("int64"),
-        coords=dict(
-            installed=("asset", installed.astype("int64")),
-            technology=("asset", technologies),
-            region=rng.choice(["USA", "EU18", "Brexitham"]),
-            year=sorted(years.astype("int64")),
+def _trade_search_space(sector: Text, model: Text = "default") -> xr.DataArray:
+    from muse.utilities import agent_concatenation
+    from muse.examples import sector as load_sector
+    from muse.sectors import Sector
+    from muse.agents import Agent
+
+    loaded_sector = cast(Sector, load_sector(sector, model))
+
+    market = matching_market(sector, model)
+    return cast(
+        xr.DataArray,
+        agent_concatenation(
+            {
+                a.uuid: cast(Agent, a).search_rules(
+                    agent=a,
+                    demand=market.consumption.isel(year=0, drop=True),
+                    technologies=loaded_sector.technologies,
+                    market=market,
+                )
+                for a in loaded_sector.agents
+            }
         ),
-        dims=("asset", "year"),
     )
-    return result
+
+
+def _nontrade_search_space(sector: Text, model: Text = "default") -> xr.DataArray:
+    from numpy import ones
+
+    technology = technodata(sector, model).technology
+    return xr.DataArray(
+        ones((len(technology), len(technology)), dtype=bool),
+        coords=dict(asset=technology.values, replacement=technology.values),
+        dims=("asset", "replacement"),
+    )

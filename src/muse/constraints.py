@@ -272,7 +272,7 @@ def max_capacity_expansion(
     market: xr.Dataset,
     technologies: xr.Dataset,
     year: Optional[int] = None,
-    forecast: int = 5,
+    forecast: Optional[int] = None,
     interpolation: Text = "linear",
 ) -> Constraint:
     r"""Max-capacity addition, max-capacity growth, and capacity limits constraints.
@@ -310,30 +310,49 @@ def max_capacity_expansion(
 
             \Gamma_t^{r, i} \geq 0
     """
-    from muse.utilities import filter_input
+    from muse.utilities import filter_input, reduce_assets
 
     if year is None:
         year = int(market.year.min())
-    forecast_year = forecast + year
+    if forecast is None and len(getattr(market, "year", [])) <= 1:
+        forecast = 5
+    elif forecast is None:
+        forecast = next((int(u) for u in sorted(market.year - year) if u > 0))
+    forecast_year = year + forecast
 
-    kwargs = dict(technology=search_space.replacement, year=year)
-    if "region" in assets and "region" in technologies.dims:
-        kwargs["region"] = assets.region
+    capacity = reduce_assets(
+        assets.capacity,
+        coords={"technology", "region"}.intersection(assets.capacity.coords),
+    ).interp(year=[year, forecast_year], method=interpolation)
+    # case with technology and region in asset dimension
+    if capacity.region.dims != ():
+        coords = list(capacity.asset.coords.values())
+        capacity = capacity.drop_vars(capacity.asset.coords.keys())
+        capacity["asset"] = pd.MultiIndex.from_arrays(coords)
+        capacity = capacity.unstack("asset", fill_value=0).rename(
+            technology=search_space.replacement.name
+        )
+    # case with only technology in asset dimension
+    else:
+        capacity = cast(xr.DataArray, capacity.set_index(asset="technology")).rename(
+            asset=search_space.replacement.name
+        )
+    capacity = capacity.reindex_like(search_space.replacement, fill_value=0)
+
+    replacement = search_space.replacement
+    replacement = replacement.drop_vars(
+        [u for u in replacement.coords if u not in replacement.dims]
+    )
     techs = filter_input(
         technologies[
             ["max_capacity_addition", "max_capacity_growth", "total_capacity_limit"]
         ],
-        **kwargs,
+        technology=replacement,
+        year=year,
     )
-    assert isinstance(techs, xr.Dataset)
-
-    capacity = (
-        assets.capacity.groupby("technology")
-        .sum("asset")
-        .interp(year=[year, forecast_year], method=interpolation)
-        .rename(technology=search_space.replacement.name)
-        .reindex_like(search_space.replacement, fill_value=0)
-    )
+    regions = getattr(capacity, "region", None)
+    if regions is not None and "region" in technologies.dims:
+        techs = techs.sel(region=regions)
 
     add_cap = techs.max_capacity_addition * forecast
 
@@ -347,9 +366,17 @@ def max_capacity_expansion(
 
     zero_cap = add_cap.where(add_cap < total_cap, total_cap)
     with_growth = zero_cap.where(zero_cap < growth_cap, growth_cap)
-    constraint = with_growth.where(initial > 0, zero_cap)
+    b = with_growth.where(initial > 0, zero_cap)
+    if b.region.dims == ():
+        capa = 1
+    else:
+        b = b.rename(region="src_region")
+        capa = (
+            reduce_assets(assets.asset, coords=["region", "agent"]).region
+            == b.src_region
+        )
     return xr.Dataset(
-        dict(b=constraint, capacity=1),
+        dict(b=b, capacity=capa),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND, name="max capacity expansion"),
     )
 
@@ -370,6 +397,9 @@ def demand(
 
     enduse = technologies.commodity.sel(commodity=is_enduse(technologies.comm_usage))
     b = demand.sel(commodity=demand.commodity.isin(enduse))
+    if "region" in b.dims and "dst_region" in assets.dims:
+        b = b.rename(region="dst_region")
+
     assert "year" not in b.dims
     return xr.Dataset(
         dict(b=b, production=1), attrs=dict(kind=ConstraintKind.LOWER_BOUND)
@@ -385,14 +415,15 @@ def search_space(
     technologies: xr.Dataset,
     year: Optional[int] = None,
     forecast: int = 5,
-    interpolation: Text = "linear",
 ) -> Optional[Constraint]:
     """Removes disabled technologies."""
-    b = ~search_space.astype(bool)
-    b = b.sel(asset=b.any("replacement"))
-    if b.size == 0:
+    if search_space.all():
         return None
-    return xr.Dataset(dict(b=b, capacity=1), attrs=dict(kind=ConstraintKind.EQUALITY))
+    capacity = cast(xr.DataArray, 1 - 2 * cast(np.ndarray, search_space))
+    b = xr.zeros_like(capacity)
+    return xr.Dataset(
+        dict(b=b, capacity=capacity), attrs=dict(kind=ConstraintKind.UPPER_BOUND)
+    )
 
 
 @register_constraints
@@ -403,47 +434,49 @@ def max_production(
     market: xr.Dataset,
     technologies: xr.Dataset,
     year: Optional[int] = None,
-    forecast: int = 5,
-    interpolation: Text = "linear",
 ) -> Constraint:
     """Constructs constraint between capacity and maximum production.
 
     Constrains the production decision variable by the maximum production for a given
     capacity.
-
-    Example:
-
-        >>> from muse import examples
-        >>> from muse.constraints import max_production
-        >>> technologies = examples.technodata("residential", model="medium")
-        >>> market = examples.residential_market("medium")
-        >>> search_space = examples.search_space("residential", "medium")
-        >>> assets = None  # not used in max_production
-        >>> demand = None
-        >>> maxprod = max_production(demand, assets, search_space, market, technologies)
     """
     from xarray import zeros_like, ones_like
     from muse.commodities import is_enduse
     from muse.timeslices import convert_timeslice, QuantityType
+    from muse.utilities import reduce_assets
 
     if year is None:
-        year = market.year.min()
+        year = int(market.year.min())
     commodities = technologies.commodity.sel(
         commodity=is_enduse(technologies.comm_usage)
     )
-    kwargs = dict(technology=search_space.replacement, year=year, commodity=commodities)
-    if getattr(assets, "region", None) is not None and "region" in technologies.dims:
+    replacement = search_space.replacement
+    replacement = replacement.drop_vars(
+        [u for u in replacement.coords if u not in replacement.dims]
+    )
+    kwargs = dict(technology=replacement, year=year, commodity=commodities)
+    if (
+        "region" in assets.coords
+        and "region" in technologies.dims
+        and assets.region.dims == ()
+    ):
         kwargs["region"] = assets.region
     techs = technologies[["fixed_outputs", "utilization_factor"]].sel(**kwargs)
+    if "region" in assets.asset.coords and "region" in techs.dims:
+        techs = techs.drop_vars("technology").sel(
+            region=reduce_assets(assets.asset, coords=["region", "agent"]).region
+        )
     capacity = convert_timeslice(
         techs.fixed_outputs * techs.utilization_factor,
         market.timeslice,
         QuantityType.EXTENSIVE,
-    ).expand_dims(asset=search_space.asset)
+    )
+    if "asset" not in capacity.dims:
+        capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
     b = zeros_like(production)
     return xr.Dataset(
-        dict(capacity=-capacity, production=production, b=b),  # type: ignore
+        dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
     )
 
@@ -456,38 +489,51 @@ def minimum_service(
     market: xr.Dataset,
     technologies: xr.Dataset,
     year: Optional[int] = None,
-    forecast: int = 5,
-    interpolation: Text = "linear",
 ) -> Optional[Constraint]:
     """Constructs constraint between capacity and minimum service."""
     from xarray import zeros_like, ones_like
     from muse.commodities import is_enduse
     from muse.timeslices import convert_timeslice, QuantityType
+    from muse.utilities import reduce_assets
 
     if "minimum_service_factor" not in technologies.data_vars:
         return None
     if np.all(technologies["minimum_service_factor"] == 0):
         return None
     if year is None:
-        year = market.year.min()
+        year = int(market.year.min())
     commodities = technologies.commodity.sel(
         commodity=is_enduse(technologies.comm_usage)
     )
-    kwargs = dict(technology=search_space.replacement, year=year, commodity=commodities)
-    if getattr(assets, "region", None) is not None and "region" in technologies.dims:
+    replacement = search_space.replacement
+    replacement = replacement.drop_vars(
+        [u for u in replacement.coords if u not in replacement.dims]
+    )
+    kwargs = dict(technology=replacement, year=year, commodity=commodities)
+    if (
+        "region" in assets.coords
+        and "region" in technologies.dims
+        and assets.region.dims == ()
+    ):
         kwargs["region"] = assets.region
     techs = technologies[
         ["fixed_outputs", "utilization_factor", "minimum_service_factor"]
     ].sel(**kwargs)
+    if "region" in assets.asset.coords and "region" in techs.dims:
+        techs = techs.drop_vars("technology").sel(
+            region=reduce_assets(assets.asset, coords=["region", "agent"]).region
+        )
     capacity = convert_timeslice(
         techs.fixed_outputs * techs.utilization_factor * techs.minimum_service_factor,
         market.timeslice,
         QuantityType.EXTENSIVE,
-    ).expand_dims(asset=search_space.asset)
+    )
+    if "asset" not in capacity.dims:
+        capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
     b = zeros_like(production)
     return xr.Dataset(
-        dict(capacity=cast(xr.DataArray, -capacity), production=production, b=b),
+        dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
         attrs=dict(kind=ConstraintKind.LOWER_BOUND),
     )
 
@@ -549,13 +595,15 @@ def lp_costs(
 
     assert "year" not in technologies.dims
 
-    production = zeros_like(
-        convert_timeslice(costs, timeslices)
-        * technologies.fixed_outputs.sel(
-            commodity=is_enduse(technologies.comm_usage),
-            technology=technologies.technology.isin(costs.replacement),
-        ).rename(technology="replacement")
+    ts_costs = convert_timeslice(costs, timeslices)
+    selection = dict(
+        commodity=is_enduse(technologies.comm_usage),
+        technology=technologies.technology.isin(costs.replacement),
     )
+    if "region" in technologies.fixed_outputs.dims and "region" in ts_costs.coords:
+        selection["region"] = ts_costs.region
+    fouts = technologies.fixed_outputs.sel(selection).rename(technology="replacement")
+    production = zeros_like(ts_costs * fouts)
     for dim in production.dims:
         if isinstance(production.get_index(dim), pd.MultiIndex):
             production[dim] = pd.Index(production.get_index(dim), tupleize_cols=False)
