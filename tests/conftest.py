@@ -607,10 +607,18 @@ def residential_input_file() -> Path:
 
 
 @fixture(autouse=True)
-def warnings_as_errors():
+def warnings_as_errors(request):
     from warnings import simplefilter
 
+    # disable fixture for some tests using legacy sectors.
+    if (
+        request.module.__name__ == "test_legacy_sector"
+        and request.node.name.startswith("test_legacy_sector_regression[")
+    ):
+        return
+
     simplefilter("error", FutureWarning)
+    simplefilter("error", DeprecationWarning)
     simplefilter("error", PendingDeprecationWarning)
 
 
