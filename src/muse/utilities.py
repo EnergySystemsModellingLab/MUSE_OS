@@ -45,7 +45,7 @@ def coords_to_multiindex(
     assert dimension in data.dims
     assert dimension not in data.indexes
     names = [u for u in data.coords if data[u].dims == (dimension,)]
-    index = MultiIndex.from_arrays([data[u] for u in names], names=names)
+    index = MultiIndex.from_arrays([data[u].values for u in names], names=names)
     result = data.drop_vars(names)
     result[dimension] = index
     return result
