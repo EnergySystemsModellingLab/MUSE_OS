@@ -320,10 +320,14 @@ def max_capacity_expansion(
         forecast = next((int(u) for u in sorted(market.year - year) if u > 0))
     forecast_year = year + forecast
 
-    capacity = reduce_assets(
-        assets.capacity,
-        coords={"technology", "region"}.intersection(assets.capacity.coords),
-    ).interp(year=[year, forecast_year], method=interpolation)
+    capacity = (
+        reduce_assets(
+            assets.capacity,
+            coords={"technology", "region"}.intersection(assets.capacity.coords),
+        )
+        .interp(year=[year, forecast_year], method=interpolation)
+        .ffill("year")
+    )
     # case with technology and region in asset dimension
     if capacity.region.dims != ():
         names = [u for u in capacity.asset.coords if capacity[u].dims == ("asset",)]
