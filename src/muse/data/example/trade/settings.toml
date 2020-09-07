@@ -22,7 +22,6 @@ tolerance_unmet_demand = -0.1
     sink = "aggregate"
     filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
-# Carbon budget control
 [carbon_budget_control]
     budget = []
 
@@ -115,9 +114,11 @@ tolerance_unmet_demand = -0.1
     priority = 2
     dispatch_production = 'share'
 
-    technodata = '{path}/technodata/gas/Technodata.csv'
-    commodities_in = '{path}/technodata/gas/CommIn.csv'
-    commodities_out = '{path}/technodata/gas/CommOut.csv'
+    [sectors.gas.technodata]
+        technodata = '{path}/technodata/gas/Technodata.csv'
+        trade = '{path}/technodata/gas/TradeTechnodata.csv'
+        commodities_in = '{path}/technodata/gas/CommIn.csv'
+        commodities_out = '{path}/technodata/gas/CommOut.csv'
 
     [sectors.gas.subsectors.trade]
         agents = '{path}/technodata/Agents.csv'
