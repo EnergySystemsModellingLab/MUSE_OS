@@ -97,8 +97,11 @@ def factory(
         technologies: xr.Dataset,
         **kwargs
     ) -> xr.DataArray:
-        keywords.update(**kwargs)
-        return function(agents, market, technologies, **keywords)
+        from copy import copy
+
+        keyword_args = copy(keywords)
+        keyword_args.update(**kwargs)
+        return function(agents, market, technologies, **keyword_args)
 
     return cast(DEMAND_SHARE_SIGNATURE, demand_share)
 
