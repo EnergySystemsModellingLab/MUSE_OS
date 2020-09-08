@@ -19,6 +19,6 @@ def test_notebooks(tmpdir, filename):
     with (directory / (filename + ".ipynb")).open("r") as notebook_file:
         notebook = read(notebook_file, as_version=4)
     preprocessor = ExecutePreprocessor(
-        timeout=200, kernel_name="python%i" % version_info.major
+        timeout=300, kernel_name="python%i" % version_info.major
     )
     preprocessor.preprocess(notebook, {"metadata": {"path": str(directory)}})
