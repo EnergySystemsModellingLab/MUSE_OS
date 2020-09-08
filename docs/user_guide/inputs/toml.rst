@@ -731,7 +731,7 @@ All three sets are optional. However, if the timeslices are given then they must
 given in full. Then, each further column is a limit for a given commodity. For instance:
 
 .. csv-table:: Finite resource limits
-   :header: Year, Region, Month, Day, Hour, Gas
+   :header: Year, Month, Day, Hour, Region, Gas
 
    2020,all-year,all-week,night,R1,5
    2020,all-year,all-week,morning,R1,5
