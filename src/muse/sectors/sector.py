@@ -13,8 +13,8 @@ from typing import (
     cast,
 )
 
-from pandas import MultiIndex
-from xarray import DataArray, Dataset
+import pandas as pd
+import xarray as xr
 
 from muse.agents import AbstractAgent
 from muse.production import PRODUCTION_SIGNATURE
@@ -63,7 +63,7 @@ class Sector(AbstractSector):  # type: ignore
             .items()
         ]
         are_disjoint_commodities = sum((len(s.commodities) for s in subsectors)) == len(
-            set().union(*(set(s.commodities) for s in subsectors))
+            set().union(*(set(s.commodities) for s in subsectors))  # type: ignore
         )
         if not are_disjoint_commodities:
             raise RuntimeError("Subsector commodities are not disjoint")
@@ -82,7 +82,7 @@ class Sector(AbstractSector):  # type: ignore
         interactions = interaction_factory(sector_settings.pop("interactions", None))
 
         for attr in ("technodata", "commodities_out", "commodities_in"):
-            sector_settings.pop(attr)
+            sector_settings.pop(attr, None)
         return cls(
             name,
             technologies,
@@ -97,9 +97,9 @@ class Sector(AbstractSector):  # type: ignore
     def __init__(
         self,
         name: Text,
-        technologies: Dataset,
+        technologies: xr.Dataset,
         subsectors: Sequence[Subsector] = [],
-        timeslices: Optional[MultiIndex] = None,
+        timeslices: Optional[pd.MultiIndex] = None,
         interactions: Optional[Callable[[Sequence[AbstractAgent]], None]] = None,
         interpolation: Text = "linear",
         outputs: Optional[Callable] = None,
@@ -113,9 +113,9 @@ class Sector(AbstractSector):  # type: ignore
         """Name of the sector."""
         self.subsectors: Sequence[Subsector] = list(subsectors)
         """Subsectors controlled by this object."""
-        self.technologies: Dataset = technologies
+        self.technologies: xr.Dataset = technologies
         """Parameters describing the sector's technologies."""
-        self.timeslices: Optional[MultiIndex] = timeslices
+        self.timeslices: Optional[pd.MultiIndex] = timeslices
         """Timeslice at which this sector operates.
 
         If None, it will operate using the timeslice of the input market.
@@ -175,10 +175,10 @@ class Sector(AbstractSector):  # type: ignore
 
     def next(
         self,
-        mca_market: Dataset,
+        mca_market: xr.Dataset,
         time_period: Optional[int] = None,
         current_year: Optional[int] = None,
-    ) -> Dataset:
+    ) -> xr.Dataset:
         """Advance sector by one time period.
 
         Args:
@@ -232,19 +232,24 @@ class Sector(AbstractSector):  # type: ignore
                 technologies, market, time_period=time_period, current_year=current_year
             )
         # > output to mca
-        result = self.market_variables(market, technologies)
+        output_data = self.market_variables(market, technologies)
         # < output to mca
-        self.outputs(result, self.capacity, technologies)
+        self.outputs(output_data, self.capacity, technologies)
         # > to mca timeslices
-        result = self.convert_market_timeslice(
-            result.groupby("region").sum("asset"), mca_market.timeslice
-        )
+        if len(output_data.region.dims) == 0:
+            result = output_data.sum("asset")
+            result = result.expand_dims(region=[result.region.values])
+        else:
+            result = output_data.groupby("region").sum("asset")
+        result = self.convert_market_timeslice(result, mca_market.timeslice)
         result["comm_usage"] = technologies.comm_usage.sel(commodity=result.commodity)
         result.set_coords("comm_usage")
         # < to mca timeslices
         return result
 
-    def market_variables(self, market: Dataset, technologies: Dataset) -> Dataset:
+    def market_variables(
+        self, market: xr.Dataset, technologies: xr.Dataset
+    ) -> xr.Dataset:
         """Computes resulting market: production, consumption, and costs."""
         from muse.quantities import (
             consumption,
@@ -252,23 +257,28 @@ class Sector(AbstractSector):  # type: ignore
             annual_levelized_cost_of_energy,
         )
         from muse.commodities import is_pollutant
+        from muse.utilities import broadcast_techs
 
         years = market.year.values
         capacity = self.capacity.interp(year=years, **self.interpolation)
 
-        result = Dataset()
+        result = xr.Dataset()
         result["supply"] = self.supply_prod(
             market=market, capacity=capacity, technologies=technologies
         )
         result["consumption"] = consumption(technologies, result.supply, market.prices)
+        technodata = cast(xr.Dataset, broadcast_techs(technologies, result.supply))
         result["costs"] = supply_cost(
             result.supply.where(~is_pollutant(result.comm_usage), 0),
-            annual_levelized_cost_of_energy(market.prices, technologies),
-        ).sum("technology")
+            annual_levelized_cost_of_energy(
+                market.prices.sel(region=result.region), technodata
+            ),
+            asset_dim=None,
+        )
         return result
 
     @property
-    def capacity(self) -> DataArray:
+    def capacity(self) -> xr.DataArray:
         """Aggregates capacity across agents.
 
         The capacities are aggregated leaving only two
@@ -287,12 +297,11 @@ class Sector(AbstractSector):  # type: ignore
 
     @staticmethod
     def convert_market_timeslice(
-        market: Dataset,
-        timeslice: MultiIndex,
+        market: xr.Dataset,
+        timeslice: pd.MultiIndex,
         intensive: Union[Text, Tuple[Text]] = "prices",
-    ) -> Dataset:
+    ) -> xr.Dataset:
         """Converts market from one to another timeslice."""
-        from xarray import merge
         from muse.timeslices import convert_timeslice, QuantityType
 
         if isinstance(intensive, Text):
@@ -310,4 +319,4 @@ class Sector(AbstractSector):  # type: ignore
             QuantityType.EXTENSIVE,
         )
         others = market[list(set(market.data_vars).difference(timesliced))]
-        return merge([intensives, extensives, others])
+        return xr.merge([intensives, extensives, others])

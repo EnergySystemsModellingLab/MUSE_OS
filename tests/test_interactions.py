@@ -1,6 +1,6 @@
 """Test agent interactions."""
 
-from pytest import fixture
+from pytest import fixture, mark
 
 
 @fixture
@@ -51,6 +51,7 @@ def test_new_to_retro_net(agents):
         assert "yup" not in categories[:i]
 
 
+@mark.usefixtures("save_registries")
 def test_compute_interactions(agents):
     from muse.interactions import factory, register_agent_interaction, new_to_retro_net
 

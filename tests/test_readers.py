@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import toml
+import xarray as xr
 from pytest import fixture, mark, raises
 
 
@@ -24,7 +25,7 @@ def sectors_files(settings: dict):
     """Creates the files related to the sector."""
     from typing import Text
 
-    for sector, data in settings["sectors"].items():
+    for data in settings["sectors"].values():
         for path in data.values():
             if not isinstance(path, (Path, Text)):
                 continue
@@ -164,14 +165,14 @@ def test_check_global_data_dir(settings: dict, user_data_files):
 
 
 def test_check_plugins(settings: dict, plugins: Path):
-    from muse.readers.toml import check_plugins
+    from muse.readers.toml import check_plugins, IncorrectSettings
 
     # Now we run check_plugins, which should succeed in finding the files
     check_plugins(settings)
 
     # Now we change the name of the module and check if there's an exception
     settings["plugins"] = plugins.parent / f"{plugins.stem}_2{plugins.suffix}"
-    with raises(IOError):
+    with raises(IncorrectSettings):
         check_plugins(settings)
 
 
@@ -281,7 +282,7 @@ def test_split_toml_nested(tmpdir):
 def test_split_toml_too_manyops_in_outer(tmpdir):
     from pytest import raises
     from toml import dumps
-    from muse.readers.toml import read_split_toml
+    from muse.readers.toml import read_split_toml, IncorrectSettings
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -297,14 +298,14 @@ def test_split_toml_too_manyops_in_outer(tmpdir):
 
     (tmpdir / "inner.toml").write(dumps({"nested": {"my_option": "found it!"}}))
 
-    with raises(IOError):
+    with raises(IncorrectSettings):
         read_split_toml(tmpdir / "outer.toml")
 
 
 def test_split_toml_too_manyops_in_inner(tmpdir):
     from pytest import raises
     from toml import dumps
-    from muse.readers.toml import read_split_toml
+    from muse.readers.toml import read_split_toml, IncorrectSettings
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -320,14 +321,14 @@ def test_split_toml_too_manyops_in_inner(tmpdir):
         dumps({"extra": "error", "nested": {"my_option": "found it!"}})
     )
 
-    with raises(IOError):
+    with raises(IncorrectSettings):
         read_split_toml(tmpdir / "outer.toml")
 
 
 def test_split_toml_incorrect_inner_name(tmpdir):
     from pytest import raises
     from toml import dumps
-    from muse.readers.toml import read_split_toml
+    from muse.readers.toml import read_split_toml, MissingSettings
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -341,11 +342,11 @@ def test_split_toml_incorrect_inner_name(tmpdir):
 
     (tmpdir / "inner.toml").write(dumps({"incorrect_name": {"my_option": "found it!"}}))
 
-    with raises(IOError):
+    with raises(MissingSettings):
         read_split_toml(tmpdir / "outer.toml")
 
 
-def test_format_path(tmpdir):
+def test_format_path():
     from muse.readers.toml import format_path
 
     path = "this_path"
@@ -384,3 +385,34 @@ def test_suffix_path_formatting(suffix, tmpdir):
     assert result["plugins"][0] == str(
         (Path() / "other" / f"thisfile{suffix}").absolute()
     )
+
+
+def test_read_existing_trade(tmp_path):
+    from muse.examples import copy_model
+    from muse.readers.csv import read_trade
+
+    copy_model("trade", tmp_path)
+    path = tmp_path / "model" / "technodata" / "gas" / "ExistingTrade.csv"
+    data = read_trade(path, skiprows=[1])
+
+    assert isinstance(data, xr.DataArray)
+    assert set(data.dims) == {"year", "technology", "dst_region", "region"}
+
+
+def test_read_trade_technodata(tmp_path):
+    from muse.examples import copy_model
+    from muse.readers.csv import read_trade
+
+    copy_model("trade", tmp_path)
+    path = tmp_path / "model" / "technodata" / "gas" / "TradeTechnodata.csv"
+    data = read_trade(path, drop="Unit")
+
+    assert isinstance(data, xr.Dataset)
+    assert set(data.dims) == {"technology", "dst_region", "region"}
+    assert set(data.data_vars) == {
+        "cap_par",
+        "fix_par",
+        "max_capacity_addition",
+        "max_capacity_growth",
+        "total_capacity_limit",
+    }

@@ -19,6 +19,8 @@ from muse.agents import Agent
 
 
 class Subsector:
+    """Agent group servicing a subset of the sectorial commodities."""
+
     def __init__(
         self,
         agents: Sequence[Agent],
@@ -105,9 +107,10 @@ class Subsector:
             return None
 
         lps = agent_concatenation(agent_lps)
+        coords = {"agent", "technology", "region"}.intersection(assets.asset.coords)
         constraints = self.constraints(
             demand=demands,
-            assets=assets,
+            assets=reduce_assets(assets, coords=coords).set_coords(coords),
             search_space=lps.search_space,
             market=market,
             technologies=technologies,
@@ -125,6 +128,7 @@ class Subsector:
         name: Text = "subsector",
     ) -> Subsector:
         from muse.agents import agents_factory
+        from muse.readers.toml import undo_damage
         from muse.demand_share import factory as share_factory
         from muse.constraints import factory as constraints_factory
 
@@ -146,7 +150,9 @@ class Subsector:
         if len(commodities) == 0:
             raise RuntimeError("Subsector commodities cannot be empty")
 
-        demand_share = share_factory(getattr(settings, "demand_share", None))
+        demand_share = share_factory(
+            undo_damage(getattr(settings, "demand_share", None))
+        )
         constraints = constraints_factory(getattr(settings, "constraints", None))
         forecast = getattr(settings, "forecast", 5)
 

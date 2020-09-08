@@ -31,12 +31,16 @@ DEFAULT_SETTINGS_PATH = DATA_DIRECTORY / "default_settings.toml"
 """Default settings path."""
 
 
-class MissingSettings(Exception):
-    pass
+class InputError(Exception):
+    """Root for TOML input errors."""
 
 
-class IncorrectSettings(Exception):
-    pass
+class MissingSettings(InputError):
+    """Error when an input is missing."""
+
+
+class IncorrectSettings(InputError):
+    """Error when an input exists but is incorrect."""
 
 
 def convert(dictionary):
@@ -319,18 +323,18 @@ def read_split_toml(
                 continue
 
             if "include_path" in section and len(section) > 1:
-                raise IOError(
+                raise IncorrectSettings(
                     "Sections with an `include_path` option "
                     "should contain only that option."
                 )
             elif "include_path" in section:
                 inner = read_split_toml(section["include_path"], path=path)
                 if key not in inner:
-                    raise IOError(
+                    raise MissingSettings(
                         f"Could not find section {key} in {section['include_path']}"
                     )
                 if len(inner) != 1:
-                    raise IOError(
+                    raise IncorrectSettings(
                         "More than one section found in included"
                         f"file {section['include_path']}"
                     )
@@ -446,11 +450,11 @@ def read_ts_multiindex(
         >>> read_ts_multiindex(dict(days=["dusk", "allday"]), ref, transforms)
         Traceback (most recent call last):
         ...
-        ValueError: Unexpected level name(s): ...
+        muse.readers.toml.IncorrectSettings: Unexpected level name(s): ...
         >>> read_ts_multiindex(dict(day=["usk", "allday"]), ref, transforms)
         Traceback (most recent call last):
         ...
-        ValueError: Unexpected slice(s): ...
+        muse.readers.toml.IncorrectSettings: Unexpected slice(s): ...
     """
     from toml import loads
     from itertools import product
@@ -471,7 +475,7 @@ def read_ts_multiindex(
         msg = "Unexpected level name(s): " + ", ".join(
             set(settings).difference(indices.names)
         )
-        raise ValueError(msg)
+        raise IncorrectSettings(msg)
     levels = [
         settings.get(name, level) for name, level in zip(indices.names, indices.levels)
     ]
@@ -480,7 +484,7 @@ def read_ts_multiindex(
         known = [index[i] for index in transforms if len(index) > i]
         unexpected = set(level).difference(known)
         if unexpected:
-            raise ValueError("Unexpected slice(s): " + ", ".join(unexpected))
+            raise IncorrectSettings("Unexpected slice(s): " + ", ".join(unexpected))
     return pd.MultiIndex.from_tuples(
         [index for index in product(*levels) if index in transforms],
         names=indices.names,
@@ -658,7 +662,7 @@ def check_plugins(settings: Dict) -> None:
         if not path.exists():
             msg = f"ERROR plugin does not exist: {path}"
             getLogger(__name__).critical(msg)
-            raise IOError(msg)
+            raise IncorrectSettings(msg)
 
         # The module is loaded, registering anything inside that is decorated
         spec = implib.spec_from_file_location(path.stem, path)
@@ -826,25 +830,10 @@ def check_sectors_files(settings: Dict) -> None:
         "last": 100,
     }
 
-    path_options = {"technodata", "commodities_in", "commodities_out"}
-
     if "list" in sectors:
         sectors = {k: sectors[k] for k in sectors["list"]}
 
     for name, sector in sectors.items():
-        if sector["type"].lower().strip() == "default":
-            for path in path_options:
-                if path not in sector:
-                    raise AssertionError(
-                        f"Settings for sector '{name}' "
-                        f"are missing an input for '{path}'"
-                    )
-                if not Path(sector[path]).exists():
-                    raise AssertionError(
-                        f"Input '{path}' of sector '{name}' "
-                        "does not refer to a is not a valid file"
-                    )
-
         # Finally the priority of the sectors is used to set the order of execution
         sector["priority"] = sector.get("priority", priorities["last"])
         sector["priority"] = int(
@@ -863,9 +852,10 @@ def read_technodata(
     time_framework: Optional[Sequence[int]] = None,
     commodities: Optional[Union[Text, Path]] = None,
     regions: Optional[Sequence[Text]] = None,
+    **kwargs,
 ) -> xr.Dataset:
     """Helper function to create technodata for a given sector."""
-    from muse.readers import read_technologies
+    from muse.readers.csv import read_technologies, read_trade
 
     if time_framework is None:
         time_framework = getattr(settings, "time_framework", [2010, 2050])
@@ -879,16 +869,54 @@ def read_technodata(
     if sector_name is not None:
         settings = getattr(settings.sectors, sector_name)
 
+    # normalizes case where technodata is not in own subsection
+    if not hasattr(settings, "technodata") and sector_name is not None:
+        raise MissingSettings(f"Missing technodata section in {sector_name}")
+    elif not hasattr(settings, "technodata"):
+        raise MissingSettings("Missing technodata section")
+    technosettings = undo_damage(settings.technodata)
+    if isinstance(technosettings, Text):
+        technosettings = dict(
+            technodata=technosettings,
+            commodities_in=settings.commodities_in,
+            commodities_out=settings.commodities_out,
+        )
+    else:
+        for comm in ("in", "out"):
+            name = f"commodities_{comm}"
+            if hasattr(settings, comm) and comm in technosettings:
+                raise IncorrectSettings(f"{name} specified twice")
+            elif hasattr(settings, comm):
+                technosettings[name] = getattr(settings, name)
+
+    for name in ("technodata", "commodities_in", "commodities_out"):
+        if name not in technosettings:
+            raise MissingSettings(f"Missing required technodata input {name}")
+        filename = technosettings[name]
+        if not Path(filename).exists():
+            raise IncorrectSettings(f"File {filename} does not exist.")
+        if not Path(filename).is_file():
+            raise IncorrectSettings(f"File {filename} is not a file.")
+
     technologies = read_technologies(
-        settings.technodata,
-        settings.commodities_out,
-        settings.commodities_in,
+        technosettings.pop("technodata"),
+        technosettings.pop("commodities_out"),
+        technosettings.pop("commodities_in"),
         commodities=commodities,
     )
     ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
     outs = (technologies.fixed_outputs > 0).any(("year", "region", "technology"))
     techcomms = technologies.commodity[ins | outs]
     technologies = technologies.sel(commodity=techcomms, region=regions)
+    for name, value in technosettings.items():
+        if isinstance(name, (Text, Path)):
+            data = read_trade(value, drop="Unit")
+        else:
+            data = value
+        if isinstance(data, xr.Dataset):
+            technologies = technologies.merge(data)
+        else:
+            technologies[name] = data
 
     # make sure technologies includes the requisite years
     maxyear = getattr(settings, "forecast", 5) + max(time_framework)
@@ -905,4 +933,7 @@ def read_technodata(
         years = [minyear] + technologies.year.data.tolist()
         technologies = technologies.sel(year=years, method="bfill")
         technologies["year"] = "year", years
+
+    year = sorted(set(time_framework).union(technologies.year.data.tolist()))
+    technologies = technologies.interp(year=year, **kwargs)
     return technologies

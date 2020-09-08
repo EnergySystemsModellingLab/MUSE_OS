@@ -1,0 +1,16 @@
+technology,region,agent,type,sector,capacity,year
+procammonia_1,R1,A1,retrofit,industry,26.00000000000,2010
+procammonia_2,R1,A1,retrofit,industry,26.00000000000,2010
+procammonia_1,R1,A1,retrofit,industry,29.90000000000,2015
+procammonia_2,R1,A1,retrofit,industry,24.35470000000,2015
+procammonia_1,R1,A1,retrofit,industry,34.23330000000,2020
+procammonia_2,R1,A1,retrofit,industry,20.02140000000,2020
+procammonia_1,R1,A1,retrofit,industry,38.60630000000,2025
+procammonia_2,R1,A1,retrofit,industry,15.68800000000,2025
+procammonia_1,R1,A1,retrofit,industry,42.97920000000,2030
+procammonia_2,R1,A1,retrofit,industry,11.35470000000,2030
+procammonia_1,R1,A1,retrofit,industry,49.20840000000,2035
+procammonia_2,R1,A1,retrofit,industry,4.33330000000,2035
+procammonia_1,R1,A1,retrofit,industry,52.74960000000,2040
+procammonia_1,R1,A1,retrofit,industry,51.26300000000,2045
+procammonia_1,R1,A1,retrofit,industry,49.77650000000,2050

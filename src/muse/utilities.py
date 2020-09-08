@@ -53,7 +53,7 @@ def coords_to_multiindex(
 
 def reduce_assets(
     assets: Union[xr.DataArray, xr.Dataset, Sequence[Union[xr.Dataset, xr.DataArray]]],
-    coords: Optional[Union[Text, Sequence[Text]]] = None,
+    coords: Optional[Union[Text, Sequence[Text], Iterable[Text]]] = None,
     dim: Text = "asset",
     operation: Optional[Callable] = None,
 ) -> xr.DataArray:

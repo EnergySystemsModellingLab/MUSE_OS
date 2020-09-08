@@ -32,6 +32,16 @@
             "args": [
                 "model/settings.toml",
             ]
+        },
+        {
+            "name": "Model: minimum-service",
+            "type": "python",
+            "request": "launch",
+            "module": "muse",
+            "args": [
+                "--model",
+                "minimum-service"
+            ]
         }
     ]
 }

@@ -378,19 +378,27 @@ subsectors
           Users can install it with ``pip install cvxopt`` or ``conda install cvxopt``.
 
     demand_share
-        A method used to split the MCA demand into seperate parts to be serviced by
-        specific agents. A basic distinction is between *new* and *retrofit* agents: the
-        former asked to respond to an increase of commodity demand investing in new
-        assets; the latter asked to invest in new asset to balance the decommissined
-        assets.
+        A method used to compute the forecasted demand to be serviced by the agents.
 
         There are currently two options:
 
         - :py:func:`~muse.demand_share.new_and_retro`: the demand is split into a
           retrofit demand corresponding to demand that used to be serviced by
           decommisioned assets, and the *new* demand.
-        - :py:func:`~muse.demand_share.market_demand`: simply the consumption for the
-          forecast year.
+        - :py:func:`~muse.demand_share.unmet_forecasted_demand`: simply the consumption
+          for the forecast year unmet by the current assets which will still be
+          operating then.
+
+        Optionally, these two methods can take as argument a method used to compute the
+        production for a given set of assets:
+
+        .. code-block:: TOML
+
+            demand_share.name = "unmet_forecasted_demand"
+            demand_share.production = "costed_production"
+
+        The production method can be any method compatible with the
+        *dispatch_production* attribute described in this document.
 
     constraints
         The list of constraints to apply to the LP problem solved by the sector. By
@@ -415,9 +423,21 @@ interpolation
 dispatch_production
    The name of the production method used to compute the sector's output, as returned
    to the muse market clearing algorithm. In other words, this is computation of the
-   production method which will affect other sectors.
+   production method which will affect other sectors. Available methods include any
+   function registered with :py:func:`~muse.production.register_production`, as well as
+   the following:
 
-   It has the same format and options as the *production* attribute above.
+   Currently, it can be set to:
+
+    - ``share``: all assets service the demand equally, as a share of the total capacity
+    - ``maximum_production``: the production is set to the maximum that can be produced
+      for the current capacity
+    - ``costed_production``: assets are ranked according to a given cost (defaults to
+        annualized levelized cost of energy) and service the demand accordingly.
+        Currently, ALCOE is the only implemented costs option.
+
+    Other production functions can be added via
+    :py:func:`muse.production.register_production`.
 
 interactions
    Defines interactions between agents. These interactions take place right before new

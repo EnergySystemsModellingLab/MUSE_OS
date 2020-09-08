@@ -26,7 +26,7 @@ from mypy_extensions import KwArg
 from muse.registration import registrator
 
 OUTPUT_SINK_SIGNATURE = Callable[
-    [Union[xr.DataArray, pd.DataFrame], int, KwArg()], Optional[Text]
+    [Union[xr.DataArray, pd.DataFrame], int, KwArg(Any)], Optional[Text]
 ]
 """Signature of functions used to save quantities."""
 

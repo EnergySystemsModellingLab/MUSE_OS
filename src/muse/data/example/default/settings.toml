@@ -42,7 +42,7 @@ commodities_out = '{path}/technodata/residential/CommOut.csv'
 
 [sectors.residential.subsectors.retro_and_new]
 agents = '{path}/technodata/Agents.csv'
-existing_capacity = '{path}/technodata/residential/Existing.csv'
+existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
 lpsolver = "scipy"  # Optional, defaults to "adhoc" 
 constraints = [  # Optional, defaults to the constraints below
     "max_production",
@@ -84,7 +84,7 @@ commodities_out = '{path}/technodata/power/CommOut.csv'
 
 [sectors.power.subsectors.retro_and_new]
 agents = '{path}/technodata/Agents.csv'
-existing_capacity = '{path}/technodata/power/Existing.csv'
+existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
 lpsolver = "scipy"
 
 [[sectors.power.outputs]]
@@ -109,7 +109,7 @@ commodities_out = '{path}/technodata/gas/CommOut.csv'
 
 [sectors.gas.subsectors.retro_and_new]
 agents = '{path}/technodata/Agents.csv'
-existing_capacity = '{path}/technodata/gas/Existing.csv'
+existing_capacity = '{path}/technodata/gas/ExistingCapacity.csv'
 lpsolver = "scipy"
 
 

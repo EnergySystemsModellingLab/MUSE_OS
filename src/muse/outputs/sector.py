@@ -28,7 +28,8 @@ from mypy_extensions import KwArg
 from muse.registration import registrator
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
-    [xr.Dataset, xr.DataArray, xr.Dataset, KwArg()], Union[pd.DataFrame, xr.DataArray]
+    [xr.Dataset, xr.DataArray, xr.Dataset, KwArg(Any)],
+    Union[pd.DataFrame, xr.DataArray],
 ]
 """Signature of functions computing quantities for later analysis."""
 
@@ -150,12 +151,16 @@ def market_quantity(
     from muse.utilities import multiindex_to_coords
     from pandas import MultiIndex
 
+    if isinstance(sum_over, Text):
+        sum_over = [sum_over]
+    if sum_over:
+        sum_over = [s for s in sum_over if s in quantity.coords]
     if sum_over:
         quantity = quantity.sum(sum_over)
     if "timeslice" in quantity.dims and isinstance(quantity.timeslice, MultiIndex):
         quantity = multiindex_to_coords(quantity, "timeslice")
     if drop:
-        quantity = quantity.drop_vars(drop)
+        quantity = quantity.drop_vars([d for d in drop if d in quantity.coords])
     return quantity
 
 

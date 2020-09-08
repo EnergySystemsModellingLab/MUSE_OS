@@ -58,7 +58,9 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
     examples.copy_model(model, tmp_path)
     path = tmp_path / "model" / "technodata" / "Agents.csv"
     params = readers.read_csv_agent_parameters(path)
-    capa = readers.read_initial_capacity(path.with_name("residential") / "Existing.csv")
+    capa = readers.read_initial_assets(
+        path.with_name("residential") / "ExistingCapacity.csv"
+    )
     for param in params:
         if param["agent_type"] == "retrofit":
             param["capacity"] = deepcopy(capa.sel(region=param["region"]))
@@ -76,7 +78,7 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
     subsector = Subsector(
         agents,
         commodities,
-        demand_share=ds.factory("market_demand"),
+        demand_share=ds.factory("unmet_forecasted_demand"),
         constraints=cs.factory("demand"),
     )
 
@@ -100,7 +102,7 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
 
 def test_factory_smoke_test(model, technologies, tmp_path):
     from muse import examples
-    from muse.readers import read_settings
+    from muse.readers.toml import read_settings
     from muse.sectors.subsector import Subsector
 
     examples.copy_model(model, tmp_path)

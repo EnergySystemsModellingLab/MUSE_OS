@@ -18,6 +18,7 @@ def search_space(retro_agent, technologies):
     )
 
 
+@mark.usefixtures("save_registries")
 def test_filter_registering():
     from muse.filters import SEARCH_SPACE_FILTERS
 
@@ -36,6 +37,7 @@ def test_filter_registering():
     assert SEARCH_SPACE_FILTERS["something"] is b_filter
 
 
+@mark.usefixtures("save_registries")
 def test_filtering():
     @register_initializer
     def start(*args, **kwargs):

@@ -16,7 +16,7 @@ The function should never modify it's arguments. It can return either a pandas d
 or an xarray DataArray.
 """
 from pathlib import Path
-from typing import Callable, List, Mapping, Optional, Sequence, Text, Union
+from typing import Any, Callable, List, Mapping, Optional, Sequence, Text, Union
 
 import pandas as pd
 from mypy_extensions import KwArg
@@ -26,7 +26,7 @@ from muse.registration import registrator
 from muse.sectors import AbstractSector
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
-    [Dataset, List[AbstractSector], KwArg()], Union[DataArray, pd.DataFrame]
+    [Dataset, List[AbstractSector], KwArg(Any)], Union[DataArray, pd.DataFrame]
 ]
 """Signature of functions computing quantities for later analysis."""
 

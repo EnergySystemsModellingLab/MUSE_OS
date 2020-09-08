@@ -70,7 +70,7 @@ __all__ = [
     "factory",
 ]
 
-from typing import Callable, Mapping, Sequence, Text, Union
+from typing import Any, Callable, Mapping, MutableMapping, Sequence, Text, Union, cast
 
 import numpy as np
 import xarray as xr
@@ -80,12 +80,25 @@ from muse.agents import Agent
 from muse.registration import registrator
 
 OBJECTIVE_SIGNATURE = Callable[
-    [Agent, xr.DataArray, xr.DataArray, xr.Dataset, xr.Dataset, KwArg()], xr.DataArray
+    [Agent, xr.DataArray, xr.DataArray, xr.Dataset, xr.Dataset, KwArg(Any)],
+    xr.DataArray,
 ]
 """Objectives signature."""
 
-OBJECTIVES: Mapping[Text, OBJECTIVE_SIGNATURE] = {}
+OBJECTIVES: MutableMapping[Text, OBJECTIVE_SIGNATURE] = {}
 """Dictionary of objectives when selecting replacement technology."""
+
+
+def objective_factory(settings=Union[Text, Mapping]):
+    from functools import partial
+
+    if isinstance(settings, Text):
+        params = dict(name=settings)
+    else:
+        params = dict(**settings)
+    name = params.pop("name")
+    function = OBJECTIVES[name]
+    return partial(function, **params)
 
 
 def factory(
@@ -99,7 +112,6 @@ def factory(
     objectives defined by name or by dictionary.
     """
     from typing import List, Dict
-    from functools import partial
     from logging import getLogger
 
     if isinstance(settings, Text):
@@ -119,16 +131,7 @@ def factory(
         )
         getLogger(__name__).critical(msg)
 
-    functions = [
-        (
-            param["name"],
-            partial(
-                OBJECTIVES[param["name"]],
-                **{k: v for k, v in param.items() if k != "name"},
-            ),
-        )
-        for param in params
-    ]
+    functions = [(param["name"], objective_factory(param)) for param in params]
 
     def objectives(
         agent: Agent, demand: xr.DataArray, search_space: xr.DataArray, *args, **kwargs
@@ -375,7 +378,7 @@ def capacity_in_use(
         hours = market.represent_hours
     elif "represent_hours" in search_space.coords:
         hours = search_space.represent_hours
-    elif hours is None:
+    else:
         hours = represent_hours(market.timeslice)
 
     ufac = agent.filter_input(
@@ -449,7 +452,7 @@ def fuel_consumption_cost(
     )
 
 
-@register_objective(name="LCOE")
+@register_objective(name=["LCOE", "LLCOE"])
 def lifetime_levelized_cost_of_energy(
     agent: Agent,
     demand: xr.DataArray,
@@ -476,7 +479,7 @@ def lifetime_levelized_cost_of_energy(
 
     techs = agent.filter_input(technologies, technology=search_space.replacement.values)
     assert isinstance(techs, xr.Dataset)
-    prices = agent.filter_input(market.prices)
+    prices = cast(xr.DataArray, agent.filter_input(market.prices))
     return (
         lifetimeLCOE(prices, techs, agent.year, **kwargs)
         .rename(technology="replacement")

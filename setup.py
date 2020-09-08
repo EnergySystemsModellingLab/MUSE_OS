@@ -27,6 +27,7 @@ tests_require = [
     "nbconvert",
     "nbformat",
     "mypy",
+    "numpy>=1.17",
 ]
 docs_require = ["sphinx", "recommonmark", "nbsphinx", "sphinxcontrib-bibtex", "ipython"]
 
@@ -75,7 +76,7 @@ setup(
     install_requires=[
         "numpy",
         "scipy",
-        "pandas>=0.21",
+        "pandas>=0.21,<1.1.0",
         "click",
         "xarray>0.14",
         "bottleneck",
