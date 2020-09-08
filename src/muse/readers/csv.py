@@ -435,9 +435,11 @@ def read_csv_agent_parameters(filename) -> List:
 
     # We remove rows with missing information, and next over the rest
     for _, row in data.iterrows():
-        objectives = [row.Objective1, row.Objective2, row.Objective3]
-        floats = [row.ObjData1, row.ObjData2, row.ObjData3]
-        sorting = [row.Objsort1, row.Objsort2, row.Objsort3]
+        objectives = row[[i.startswith("Objective") for i in row.index]]
+        floats = row[[i.startswith("ObjData") for i in row.index]]
+        sorting = row[[i.startswith("Objsort") for i in row.index]]
+        if len(objectives) != len(floats) or len(objectives) != len(sorting):
+            raise ValueError("Objective, ObjData, and Objsort columns are inconsistent")
         decision_params = [
             u for u in zip(objectives, sorting, floats) if isinstance(u[0], Text)
         ]

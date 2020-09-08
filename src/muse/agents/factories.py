@@ -201,7 +201,7 @@ def factory(
             - technologies data file {tech}
             - initial capacity file {ini}
 
-        Found {n} agents across {nregs} regions, with:
+        Found {n} agents across {nregs} regions{end}
         """.format(
             n=len(result),
             name=sector,
@@ -209,6 +209,7 @@ def factory(
             tech=technodata_path,
             ini=existing_capacity_path,
             nregs=nregs,
+            end="." if len(result) == 0 else ", with:\n",
         )
     )
     for t in set(types):
@@ -259,7 +260,9 @@ def agents_factory(
 
     nregs = len({u.region for u in result})
     types = [u.name for u in result]
-    msg = f"Found {len(result)} agents across {nregs} regions, with:"
+    msg = f"Found {len(result)} agents across {nregs} regions" + (
+        "," if len(result) == 0 else ", with:\n"
+    )
     for t in set(types):
         n = types.count(t)
         msg += "    - {n} {t} agent{plural}\n".format(
