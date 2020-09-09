@@ -562,6 +562,9 @@ output:
    Note that the aggregate sink always overwrites the final file, since it will
    overwrite itself.
 
+   A warning or an error can be generated via a special output function when the
+   aggregate usage of a commodity exceeds a given value as described :ref:`below
+   <finite-resources>`
 
 technodata
    Path to a csv file containing the characterization of the technologies involved in
@@ -697,6 +700,54 @@ filters:
 
       filters.region = ["USA", "ASEAN"]
       filters.commodity = ["algae", "fluorescent light"]
+
+.. _finite-resources:
+
+----------------
+Finite Resources
+----------------
+
+
+A warning or an error can be generated when the aggregate usage of a commodity exceeds a
+given value. The error or warning is generated via an output function of the MCA, and
+hence can be toggled in the input file as:
+
+.. code-block:: TOML
+
+    [[outputs]]
+    quantity = "finite_resources"
+    limits_path = "{cwd}/FiniteResources.csv"
+    early_exit = False
+    commodities = ["gas"]
+
+The attribute ``limits_path`` points to a CSV file with the following three special sets
+of columns:
+
+- year
+- region
+- month, day, hour: indicates the relevant timeslice.
+
+All three sets are optional. However, if the timeslices are given then they must be
+given in full. Then, each further column is a limit for a given commodity. For instance:
+
+.. csv-table:: Finite resource limits
+   :header: Year, Month, Day, Hour, Region, Gas
+
+   2020,all-year,all-week,night,R1,5
+   2020,all-year,all-week,morning,R1,5
+   2020,all-year,all-week,afternoon,R1,5
+   2020,all-year,all-week,early-peak,R1,5
+   2020,all-year,all-week,late-peak,R1,5
+   2020,all-year,all-week,evening,R1,5
+   2050,all-year,all-week,night,R1,8
+   2050,all-year,all-week,morning,R1,8
+   2050,all-year,all-week,afternoon,R1,8
+   2050,all-year,all-week,early-peak,R1,8
+   2050,all-year,all-week,late-peak,R1,8
+   2050,all-year,all-week,evening,R1,8
+
+The attribute ``early_exit`` is optional and defaults to ``False``. If ``True``, then an
+exception is raised. If ``False``, then a critical warning is printed to screen.
 
 .. _`scipy solver`:
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html

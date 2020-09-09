@@ -1,5 +1,5 @@
 from muse import examples
-from muse.outputs.mca import sector_capacity, sectors_capacity
+from muse.outputs.mca import sector_capacity
 
 
 def test_aggregate_sector():
@@ -39,12 +39,13 @@ def test_aggregate_sector():
 def test_aggregate_sectors():
     """Test for aggregate_sectors function."""
     from pandas import DataFrame, concat
+    from muse.outputs.mca import _aggregate_sectors
 
     mca = examples.model("multiple-agents")
     year = [2020, 2025, 2030]
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
     agent_list = [list(a.agents) for a in sector_list]
-    alldata = sectors_capacity(mca.sectors)
+    alldata = _aggregate_sectors(mca.sectors, op=sector_capacity)
     alldatadict = alldata.to_dict("split")
     columns = ["region", "agent", "type", "sector", "capacity"]
     assert (sorted(columns)) == sorted(alldatadict["columns"])
@@ -76,6 +77,7 @@ def test_aggregate_sector_manyregions():
     """Test for aggregate_sector function with two regions check colum titles, number of
     agents/region/technologies and assets capacities."""
     from pandas import DataFrame, concat
+    from muse.outputs.mca import _aggregate_sectors
 
     mca = examples.model("multiple-agents")
     residential = next(
@@ -89,7 +91,7 @@ def test_aggregate_sector_manyregions():
     year = [2020, 2025, 2030]
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
     agent_list = [list(a.agents) for a in sector_list]
-    alldata = sectors_capacity(mca.sectors)
+    alldata = _aggregate_sectors(mca.sectors, op=sector_capacity)
     alldatadict = alldata.to_dict("split")
     columns = ["region", "agent", "type", "sector", "capacity"]
     assert (sorted(columns)) == sorted(alldatadict["columns"])
