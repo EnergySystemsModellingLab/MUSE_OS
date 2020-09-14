@@ -16,7 +16,7 @@ __all__ = [
 ]
 
 from pathlib import Path
-from typing import List, Optional, Sequence, Text, Union, cast
+from typing import Hashable, List, Optional, Sequence, Text, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -164,7 +164,9 @@ def read_initial_assets(filename: Union[Text, Path]) -> xr.DataArray:
 
     data = pd.read_csv(filename, float_precision="high", low_memory=False)
     if "Time" in data.columns:
-        result = read_trade(filename, skiprows=[1], columns_are_source=True)
+        result = cast(
+            xr.DataArray, read_trade(filename, skiprows=[1], columns_are_source=True)
+        )
     else:
         result = read_initial_capacity(data)
     technology = result.technology
@@ -405,7 +407,7 @@ def read_timeslice_shares(
         result = result.drop_vars("timeslice")
     elif isinstance(timeslice, xr.DataArray) and hasattr(timeslice, "timeslice"):
         result["timeslice"] = timeslice.timeslice
-        result[timeslice.name] = timeslice
+        result[cast(Hashable, timeslice.name)] = timeslice
     else:
         result["timeslice"] = timeslice
     return result.shares
@@ -768,3 +770,26 @@ def read_trade(
             ).rename(columns=camel_to_snake)
         )
     return result.rename(src_region="region")
+
+
+def read_finite_resources(path: Union[Text, Path]) -> xr.DataArray:
+    """Reads finite resources from csv file.
+
+
+    The CSV file is made up of columns "Region", "Year", as well
+    as three timeslice columns ("Month", "Day", "Hour"). All three sets of columns are
+    optional. The timeslice set should contain a full set of timeslices, if present.
+    Other columns correspond to commodities.
+    """
+    from muse.timeslices import TIMESLICE
+
+    data = pd.read_csv(path)
+    data.columns = [c.lower() for c in data.columns]
+    ts_levels = TIMESLICE.get_index("timeslice").names
+    if set(data.columns).issuperset(ts_levels):
+        data["timeslice"] = pd.MultiIndex.from_arrays([data[u] for u in ts_levels])
+        data.drop(columns=ts_levels, inplace=True)
+    indices = list({"year", "region", "timeslice"}.intersection(data.columns))
+    data.set_index(indices, inplace=True)
+
+    return xr.Dataset.from_dataframe(data).to_array(dim="commodity")
