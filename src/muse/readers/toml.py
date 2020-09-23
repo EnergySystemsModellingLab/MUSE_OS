@@ -903,14 +903,18 @@ def read_technodata(
         technosettings.pop("commodities_out"),
         technosettings.pop("commodities_in"),
         commodities=commodities,
-    )
+    ).sel(region=regions)
     ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
     outs = (technologies.fixed_outputs > 0).any(("year", "region", "technology"))
     techcomms = technologies.commodity[ins | outs]
-    technologies = technologies.sel(commodity=techcomms, region=regions)
+    technologies = technologies.sel(commodity=techcomms)
     for name, value in technosettings.items():
         if isinstance(name, (Text, Path)):
             data = read_trade(value, drop="Unit")
+            if "region" in data.dims:
+                data = data.sel(region=regions)
+            if "dst_region" in data.dims:
+                data = data.sel(dst_region=regions).squeeze("dst_region", drop=True)
         else:
             data = value
         if isinstance(data, xr.Dataset):
