@@ -156,6 +156,8 @@ def reduce_assets(
     if not isinstance(assets, (xr.Dataset, xr.DataArray)):
         assets = xr.concat(assets, dim=dim)
     assert isinstance(assets, (xr.Dataset, xr.DataArray))
+    if assets[dim].size == 0:
+        return assets
     if coords is None:
         coords = [cast(Text, k) for k, v in assets.coords.items() if v.dims == (dim,)]
     elif isinstance(coords, Text):
