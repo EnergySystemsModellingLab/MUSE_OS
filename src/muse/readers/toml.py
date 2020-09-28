@@ -914,7 +914,9 @@ def read_technodata(
             if "region" in data.dims:
                 data = data.sel(region=regions)
             if "dst_region" in data.dims:
-                data = data.sel(dst_region=regions).squeeze("dst_region", drop=True)
+                data = data.sel(dst_region=regions)
+                if data.dst_region.size == 1:
+                    data = data.squeeze("dst_region", drop=True)
         else:
             data = value
         if isinstance(data, xr.Dataset):

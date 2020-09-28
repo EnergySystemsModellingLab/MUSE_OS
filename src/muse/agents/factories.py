@@ -247,7 +247,9 @@ def agents_factory(
     if regions and "region" in capacity.dims:
         capacity = capacity.sel(region=regions)
     if regions and "dst_region" in capacity.dims:
-        capacity = capacity.sel(dst_region=regions).squeeze("dst_region", drop=True)
+        capacity = capacity.sel(dst_region=regions)
+        if capacity.dst_region.size == 1:
+            capacity = capacity.squeeze("dst_region", drop=True)
 
     result = []
     for param in params:
