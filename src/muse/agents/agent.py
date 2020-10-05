@@ -389,8 +389,14 @@ class InvestingAgent(Agent):
         if search is None:
             return None
 
+        search["demand"] = demand
+        not_assets = [u for u in search.demand.dims if u != "asset"]
+        condtechs = (
+            search.demand.sum(not_assets) > getattr(self, "tolerance", 1e-8)
+        ).values
+        search = search.sel(asset=condtechs)
         constraints = self.constraints(
-            demand,
+            search.demand,
             self.assets,
             search.search_space,
             market,
@@ -398,7 +404,12 @@ class InvestingAgent(Agent):
             year=current_year,
         )
 
-        investments = self.invest(search, technologies, constraints, year=current_year)
+        investments = self.invest(
+            search[["search_space", "decision"]],
+            technologies,
+            constraints,
+            year=current_year,
+        )
 
         self.add_investments(
             technologies,
