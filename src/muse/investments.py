@@ -16,13 +16,13 @@ have the following signature:
 
     @register_investment
     def investment(
-        costs: DataArray,
-        search_space: DataArray,
-        technologies: Dataset,
+        costs: xr.DataArray,
+        search_space: xr.DataArray,
+        technologies: xr.Dataset,
         constraints: List[Constraint],
         year: int,
         **kwargs
-    ) -> DataArray:
+    ) -> xr.DataArray:
         pass
 
 Arguments:
@@ -59,14 +59,14 @@ from typing import (
 )
 
 import numpy as np
+import xarray as xr
 from mypy_extensions import KwArg
-from xarray import DataArray, Dataset
 
 from muse.constraints import Constraint
 from muse.registration import registrator
 
 INVESTMENT_SIGNATURE = Callable[
-    [DataArray, DataArray, Dataset, List[Constraint], KwArg(Any)], DataArray
+    [xr.DataArray, xr.DataArray, xr.Dataset, List[Constraint], KwArg(Any)], xr.DataArray
 ]
 """Investment signature. """
 
@@ -81,12 +81,12 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
 
     @wraps(function)
     def decorated(
-        costs: DataArray,
-        search_space: DataArray,
-        technologies: Dataset,
+        costs: xr.DataArray,
+        search_space: xr.DataArray,
+        technologies: xr.Dataset,
         constraints: List[Constraint],
         **kwargs,
-    ) -> DataArray:
+    ) -> xr.DataArray:
         result = function(costs, search_space, technologies, constraints, **kwargs)
         return result.rename("investment")
 
@@ -110,14 +110,14 @@ def factory(settings: Optional[Union[Text, Mapping]] = None) -> Callable:
     if isinstance(top, Text):
         if top.lower() == "max":
 
-            def timeslice_op(x: DataArray) -> DataArray:
+            def timeslice_op(x: xr.DataArray) -> xr.DataArray:
                 from muse.timeslices import convert_timeslice
 
-                return (x / convert_timeslice(DataArray(1), x)).max("timeslice")
+                return (x / convert_timeslice(xr.DataArray(1), x)).max("timeslice")
 
         elif top.lower() == "sum":
 
-            def timeslice_op(x: DataArray) -> DataArray:
+            def timeslice_op(x: xr.DataArray) -> xr.DataArray:
                 return x.sum("timeslice")
 
         else:
@@ -128,8 +128,11 @@ def factory(settings: Optional[Union[Text, Mapping]] = None) -> Callable:
     investment = INVESTMENTS[name]
 
     def compute_investment(
-        search: Dataset, technologies: Dataset, constraints: List[Constraint], **kwargs
-    ) -> DataArray:
+        search: xr.Dataset,
+        technologies: xr.Dataset,
+        constraints: List[Constraint],
+        **kwargs,
+    ) -> xr.DataArray:
         """Computes investment needed to fulfill demand.
 
         The return is a data array with two dimensions: (asset, replacement).
@@ -137,7 +140,7 @@ def factory(settings: Optional[Union[Text, Mapping]] = None) -> Callable:
         from numpy import zeros
 
         if any(u == 0 for u in search.decision.shape):
-            return DataArray(
+            return xr.DataArray(
                 zeros((len(search.asset), len(search.replacement))),
                 coords={"asset": search.asset, "replacement": search.replacement},
                 dims=("asset", "replacement"),
@@ -156,12 +159,12 @@ def factory(settings: Optional[Union[Text, Mapping]] = None) -> Callable:
 
 
 def cliff_retirement_profile(
-    technical_life: DataArray,
+    technical_life: xr.DataArray,
     current_year: int = 0,
     protected: int = 0,
     interpolation: Text = "linear",
     **kwargs,
-) -> DataArray:
+) -> xr.DataArray:
     """Cliff-like retirement profile from current year.
 
     Computes the retirement profile of all technologies in ``technical_life``.
@@ -187,7 +190,6 @@ def cliff_retirement_profile(
         A boolean DataArray where each each element along the year dimension is
         true if the technology is still not retired for the given year.
     """
-    from xarray import DataArray
     from muse.utilities import avoid_repetitions
 
     if kwargs:
@@ -200,7 +202,7 @@ def cliff_retirement_profile(
         max_year = int(current_year + technical_life.max())
     else:
         max_year = int(current_year + protected)
-    allyears = DataArray(
+    allyears = xr.DataArray(
         range(current_year, max_year + 1),
         dims="year",
         coords={"year": range(current_year, max_year + 1)},
@@ -224,13 +226,13 @@ class LinearProblemError(RuntimeError):
 
 @register_investment(name=["adhoc"])
 def adhoc_match_demand(
-    costs: DataArray,
-    search_space: DataArray,
-    technologies: Dataset,
+    costs: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
     constraints: List[Constraint],
     year: int,
-    timeslice_op: Optional[Callable[[DataArray], DataArray]] = None,
-) -> DataArray:
+    timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
+) -> xr.DataArray:
     from muse.demand_matching import demand_matching
     from muse.quantities import maximum_production, capacity_in_use
     from muse.timeslices import convert_timeslice, QuantityType
@@ -269,14 +271,14 @@ def adhoc_match_demand(
 
 @register_investment(name=["scipy", "match_demand"])
 def scipy_match_demand(
-    costs: DataArray,
-    search_space: DataArray,
-    technologies: Dataset,
+    costs: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
     constraints: List[Constraint],
     year: Optional[int] = None,
-    timeslice_op: Optional[Callable[[DataArray], DataArray]] = None,
+    timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
     **options,
-) -> DataArray:
+) -> xr.DataArray:
     from muse.constraints import ScipyAdapter
     from scipy.optimize import linprog
     from logging import getLogger
@@ -298,20 +300,20 @@ def scipy_match_demand(
         getLogger(__name__).critical(res.message)
         raise LinearProblemError("LP system could not be solved", res)
 
-    solution = cast(Callable[[np.ndarray], Dataset], adapter.to_muse)(res.x)
+    solution = cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(res.x)
     return solution.capacity
 
 
 @register_investment(name=["cvxopt"])
 def cvxopt_match_demand(
-    costs: DataArray,
-    search_space: DataArray,
-    technologies: Dataset,
+    costs: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
     constraints: List[Constraint],
     year: Optional[int] = None,
-    timeslice_op: Optional[Callable[[DataArray], DataArray]] = None,
+    timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
     **options,
-) -> DataArray:
+) -> xr.DataArray:
     from logging import getLogger
     from importlib import import_module
     from muse.constraints import ScipyAdapter
@@ -364,5 +366,5 @@ def cvxopt_match_demand(
         getLogger(__name__).critical("infeasible system")
         raise LinearProblemError("Infeasible system", res)
 
-    solution = cast(Callable[[np.ndarray], Dataset], adapter.to_muse)(list(res["x"]))
+    solution = cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(list(res["x"]))
     return solution.capacity

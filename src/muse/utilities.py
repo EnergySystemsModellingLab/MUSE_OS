@@ -56,7 +56,7 @@ def reduce_assets(
     coords: Optional[Union[Text, Sequence[Text], Iterable[Text]]] = None,
     dim: Text = "asset",
     operation: Optional[Callable] = None,
-) -> xr.DataArray:
+) -> Union[xr.DataArray, xr.Dataset]:
     r"""Combine assets along given asset dimension.
 
     This method simplifies combining assets accross multiple agents, or combining assets
