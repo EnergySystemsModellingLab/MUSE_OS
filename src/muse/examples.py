@@ -354,7 +354,8 @@ def _trade_search_space(sector: Text, model: Text = "default") -> xr.DataArray:
                     market=market,
                 )
                 for a in loaded_sector.agents
-            }
+            },
+            dim="agent",
         ),
     )
 

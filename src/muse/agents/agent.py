@@ -302,7 +302,10 @@ class Agent(AbstractAgent):
     ) -> Optional[xr.DataArray]:
         from muse.investments import cliff_retirement_profile
 
-        investments = investments.sum("asset")
+        if "asset" in investments.dims:
+            investments = investments.sum("asset")
+        if "agent" in investments.dims:
+            investments = investments.squeeze("agent", drop=True)
         investments = investments.sel(
             replacement=(investments > self.asset_threshhold).any(
                 [d for d in investments.dims if d != "replacement"]
