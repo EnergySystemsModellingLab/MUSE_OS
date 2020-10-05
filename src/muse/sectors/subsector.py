@@ -65,6 +65,10 @@ class Subsector:
             market["prices"] = np.maximum(
                 market.prices, market.prices.rename(region="dst_region")
             )
+
+        for agent in self.agents:
+            agent.asset_housekeeping()
+
         lp_problem = self.aggregate_lp(
             technologies, market, time_period, current_year=current_year
         )

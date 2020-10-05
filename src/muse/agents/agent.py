@@ -179,7 +179,7 @@ class Agent(AbstractAgent):
         """Creates single decision objective from one or more objectives."""
         if housekeeping is None:
             housekeeping = housekeeping_factory()
-        self.housekeeping = housekeeping
+        self._housekeeping = housekeeping
         """Tranforms applied on the assets at the start of each iteration.
 
         It could mean keeping the assets as are, or removing assets with no
@@ -210,6 +210,20 @@ class Agent(AbstractAgent):
         """Year to consider when forecasting."""
         return self.year + self.forecast
 
+    def asset_housekeeping(self):
+        """Reduces memory footprint of assets.
+
+        Performs tasks such as:
+
+        - remove empty assets
+        - remove years prior to current
+        - interpolate current year and forecasted year
+        """
+        # TODO: move this into search and make sure filters, demand_share and
+        #  what not use assets from search. That would remove another bit of
+        #  state.
+        self.assets = self._housekeeping(self, self.assets)
+
     def next(
         self,
         technologies: xr.Dataset,
@@ -228,13 +242,6 @@ class Agent(AbstractAgent):
         """
         from logging import getLogger
 
-        # interpolate current year and forecasted year
-        # remove empty assets
-        # remove years prior to current
-        # TODO: move this into search and make sure filters, demand_share and
-        #  what not use assets from search. That would remove another bit of
-        #  state.
-        self.assets = self.housekeeping(self, self.assets)
         # dataset with intermediate computational results from search
         # makes it easier to pass intermediate results to functions, as well as
         # filter them when inside a function
