@@ -408,10 +408,8 @@ def initialize_from_technologies(
     agent: Agent, demand: xr.DataArray, technologies: xr.Dataset, *args, **kwargs
 ):
     """Initialize a search space from existing technologies."""
-    not_assets = [u for u in demand.dims if u != "asset"]
-    condtechs = demand.sum(not_assets) > getattr(agent, "tolerance", 1e-8)
     coords = (
-        ("asset", demand.asset[condtechs].values),
+        ("asset", demand.asset.values),
         ("replacement", technologies.technology.values),
     )
     return xr.DataArray(
