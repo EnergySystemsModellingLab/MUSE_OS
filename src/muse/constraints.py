@@ -474,6 +474,8 @@ def max_production(
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
     b = zeros_like(production)
+    if "dst_region" in assets.dims:
+        b = b.expand_dims(dst_region=assets.dst_region)
     return xr.Dataset(
         dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),

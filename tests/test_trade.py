@@ -51,7 +51,7 @@ def test_max_production(constraints_args):
     dims = {"replacement", "agent", "commodity", "timeslice"}
     assert set(constraint.capacity.dims) == dims
     assert set(constraint.production.dims) == dims
-    assert set(constraint.b.dims) == dims
+    assert set(constraint.b.dims) == {"dst_region", *dims}
     assert (constraint.capacity <= 0).all()
     assert constraint.year.dims == ()
     assert set(constraint.agent.coords) == {"region", "agent", "year"}
