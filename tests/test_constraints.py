@@ -3,7 +3,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 import xarray as xr
-from pytest import approx, fixture, mark
+from pytest import approx, fixture
 
 
 @fixture
@@ -305,102 +305,98 @@ def test_to_scipy_adapter_no_constraint(technologies, costs, timeslices):
     assert adapter.c.size == capsize + prodsize
 
 
-@mark.parametrize("quantity", ["capacity", "production"])
-def test_back_to_muse_quantity(quantity, technologies, costs, timeslices):
+def test_back_to_muse_capacity(technologies, costs, timeslices):
     from muse.constraints import ScipyAdapter, lp_costs
 
     technologies = technologies.interp(year=2025)
 
     lpcosts = lp_costs(technologies, costs, timeslices)
     data = ScipyAdapter._unified_dataset(technologies, lpcosts)
-    lpquantity = ScipyAdapter._stacked_quantity(data, quantity)
-    assert set(lpquantity.dims) == {"decision"}
-
-    decision = lpquantity.get_index("decision")
-    assert len(set(decision)) == len(decision)
-    lpquantity.costs[:] = range(lpquantity.costs.size)
-    assignment = {k: lpquantity.isel(decision=i) for i, k in enumerate(decision)}
-
+    lpquantity = ScipyAdapter._selected_quantity(data, "capacity")
+    assert set(lpquantity.dims) == {"d(asset)", "d(replacement)"}
     copy = ScipyAdapter._back_to_muse_quantity(
         lpquantity.costs.values, xr.zeros_like(lpquantity.costs)
     )
-    assert copy.size == lpquantity.costs.size
-    assert copy.size == len(assignment)
-
-    for coordinates, expected in assignment.items():
-        location = {k[2:-1]: c for k, c in zip(decision.names, coordinates)}
-        assert copy.sel(location) == expected
+    assert (copy == lpcosts.capacity).all()
 
 
-def test_back_to_muse(technologies, costs, timeslices):
+def test_back_to_muse_production(technologies, costs, timeslices):
     from muse.constraints import ScipyAdapter, lp_costs
 
     technologies = technologies.interp(year=2025)
 
     lpcosts = lp_costs(technologies, costs, timeslices)
     data = ScipyAdapter._unified_dataset(technologies, lpcosts)
+    lpquantity = ScipyAdapter._selected_quantity(data, "production")
+    assert set(lpquantity.dims) == {
+        "d(asset)",
+        "d(replacement)",
+        "d(timeslice)",
+        "d(commodity)",
+    }
+    copy = ScipyAdapter._back_to_muse_quantity(
+        lpquantity.costs.values, xr.zeros_like(lpquantity.costs)
+    )
+    assert (copy == lpcosts.production).all()
 
-    lpcapacity = ScipyAdapter._stacked_quantity(data, "capacity")
-    assert set(lpcapacity.dims) == {"decision"}
-    decision = lpcapacity.get_index("decision")
-    assert len(set(decision)) == len(decision)
-    lpcapacity.costs[:] = range(lpcapacity.costs.size)
 
-    lpproduction = ScipyAdapter._stacked_quantity(data, "production")
-    assert set(lpproduction.dims) == {"decision"}
-    decision = lpproduction.get_index("decision")
-    assert len(set(decision)) == len(decision)
-    lpproduction.costs[:] = range(lpproduction.costs.size)
+def test_back_to_muse_all(technologies, costs, timeslices, rng: np.random.Generator):
+    from muse.constraints import ScipyAdapter, lp_costs
 
-    x = np.concatenate((lpcapacity.costs.values, lpproduction.costs.values))
+    technologies = technologies.interp(year=2025)
+    lpcosts = lp_costs(technologies, costs, timeslices)
+
+    data = ScipyAdapter._unified_dataset(technologies, lpcosts)
+    lpcapacity = ScipyAdapter._selected_quantity(data, "capacity")
+    lpproduction = ScipyAdapter._selected_quantity(data, "production")
+
+    lpcosts.capacity.values[:] = rng.integers(0, 10, lpcosts.capacity.shape)
+    lpcosts.production.values[:] = rng.integers(0, 10, lpcosts.production.shape)
+    x = np.concatenate(
+        (
+            lpcosts.capacity.transpose(
+                *[u[2:-1] for u in lpcapacity.dims]
+            ).values.flatten(),
+            lpcosts.production.transpose(
+                *[u[2:-1] for u in lpproduction.dims]
+            ).values.flatten(),
+        )
+    )
 
     copy = ScipyAdapter._back_to_muse(
         x, xr.zeros_like(lpcapacity.costs), xr.zeros_like(lpproduction.costs)
     )
     assert copy.capacity.size + copy.production.size == x.size
-
-    decision = lpcapacity.get_index("decision")
-    assignment = {k: lpcapacity.isel(decision=i) for i, k in enumerate(decision)}
-    for coordinates, expected in assignment.items():
-        location = {k[2:-1]: c for k, c in zip(decision.names, coordinates)}
-        assert copy.capacity.sel(location) == expected
-
-    decision = lpproduction.get_index("decision")
-    assignment = {k: lpproduction.isel(decision=i) for i, k in enumerate(decision)}
-    for coordinates, expected in assignment.items():
-        location = {k[2:-1]: c for k, c in zip(decision.names, coordinates)}
-        assert copy.production.sel(location) == expected
+    assert (copy.capacity == lpcosts.capacity).all()
+    assert (copy.production == lpcosts.production).all()
 
 
-def test_scipy_adapter_back_to_muse(technologies, costs, timeslices):
+def test_scipy_adapter_back_to_muse(technologies, costs, timeslices, rng):
     from muse.constraints import ScipyAdapter, lp_costs
 
     technologies = technologies.interp(year=2025)
-
     lpcosts = lp_costs(technologies, costs, timeslices)
+
     data = ScipyAdapter._unified_dataset(technologies, lpcosts)
+    lpcapacity = ScipyAdapter._selected_quantity(data, "capacity")
+    lpproduction = ScipyAdapter._selected_quantity(data, "production")
 
-    lpcapacity = ScipyAdapter._stacked_quantity(data, "capacity")
-    assert set(lpcapacity.dims) == {"decision"}
-    decision = lpcapacity.get_index("decision")
-    assert len(set(decision)) == len(decision)
-    lpcapacity.costs[:] = range(lpcapacity.costs.size)
-
-    lpproduction = ScipyAdapter._stacked_quantity(data, "production")
-    assert set(lpproduction.dims) == {"decision"}
-    decision = lpproduction.get_index("decision")
-    assert len(set(decision)) == len(decision)
-    lpproduction.costs[:] = range(lpproduction.costs.size)
-
-    x = np.concatenate((lpcapacity.costs.values, lpproduction.costs.values))
-
-    copy = ScipyAdapter._back_to_muse(
-        x, xr.zeros_like(lpcapacity.costs), xr.zeros_like(lpproduction.costs)
+    lpcosts.capacity.values[:] = rng.integers(0, 10, lpcosts.capacity.shape)
+    lpcosts.production.values[:] = rng.integers(0, 10, lpcosts.production.shape)
+    x = np.concatenate(
+        (
+            lpcosts.capacity.transpose(
+                *[u[2:-1] for u in lpcapacity.dims]
+            ).values.flatten(),
+            lpcosts.production.transpose(
+                *[u[2:-1] for u in lpproduction.dims]
+            ).values.flatten(),
+        )
     )
 
     adapter = ScipyAdapter.factory(technologies, costs, timeslices)
-    assert (adapter.to_muse(x).capacity == copy.capacity).all()
-    assert (adapter.to_muse(x).production == copy.production).all()
+    assert (adapter.to_muse(x).capacity == lpcosts.capacity).all()
+    assert (adapter.to_muse(x).production == lpcosts.production).all()
 
 
 def _as_list(data: Union[xr.DataArray, xr.Dataset]) -> Union[xr.DataArray, xr.Dataset]:

@@ -241,6 +241,13 @@ class Sector(AbstractSector):  # type: ignore
             result = result.expand_dims(region=[result.region.values])
         else:
             result = output_data.groupby("region").sum("asset")
+        if "dst_region" in result:
+            supply = result.supply.sum("region").rename(dst_region="region")
+            consumption = result.consumption.sum("dst_region")
+            costs = result.costs.sum("dst_region")
+            result = xr.Dataset(
+                dict(supply=supply, consumption=consumption, costs=costs)
+            )
         result = self.convert_market_timeslice(result, mca_market.timeslice)
         result["comm_usage"] = technologies.comm_usage.sel(commodity=result.commodity)
         result.set_coords("comm_usage")
@@ -287,7 +294,30 @@ class Sector(AbstractSector):  # type: ignore
         """
         from muse.utilities import reduce_assets
 
-        return reduce_assets([u.assets.capacity for u in self.agents])
+        traded = [
+            u.assets.capacity
+            for u in self.agents
+            if "dst_region" in u.assets.capacity.dims
+        ]
+        nontraded = [
+            u.assets.capacity
+            for u in self.agents
+            if "dst_region" not in u.assets.capacity.dims
+        ]
+        if not traded:
+            return reduce_assets(nontraded)
+        if not nontraded:
+            return reduce_assets(traded)
+        traded_results = reduce_assets(traded)
+        nontraded_results = reduce_assets(nontraded)
+
+        return reduce_assets(
+            [
+                traded_results,
+                nontraded_results
+                * (nontraded_results.region == traded_results.dst_region),
+            ]
+        )
 
     @property
     def agents(self) -> Iterator[AbstractAgent]:

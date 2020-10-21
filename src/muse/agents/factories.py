@@ -244,6 +244,13 @@ def agents_factory(
     if year is None:
         year = int(capacity.year.min())
 
+    if regions and "region" in capacity.dims:
+        capacity = capacity.sel(region=regions)
+    if regions and "dst_region" in capacity.dims:
+        capacity = capacity.sel(dst_region=regions)
+        if capacity.dst_region.size == 1:
+            capacity = capacity.squeeze("dst_region", drop=True)
+
     result = []
     for param in params:
         if regions is not None and param["region"] not in regions:

@@ -413,6 +413,11 @@ subsectors
         - :py:func:`~muse.constraints.search_space`: a binary (on-off) constraint
           specifying which technologies are considered for investment.
 
+    asset_threshhold
+        The minimum capacity below which new assets are disregarded. This parameter is
+        not a constraint in a LP solver. Rather, it is used to cleanup the result from
+        an LP solver.
+
 
 interpolation
    Interpolation method user when filling in missing values. Available interpolation

@@ -11,8 +11,10 @@ from typing import (
     Text,
     Tuple,
     Union,
+    cast,
 )
 
+import numpy as np
 import xarray as xr
 
 from muse.agents import Agent
@@ -27,17 +29,27 @@ class Subsector:
         commodities: Sequence[Text],
         demand_share: Optional[Callable] = None,
         constraints: Optional[Callable] = None,
+        investment: Optional[Callable] = None,
         name: Text = "subsector",
         forecast: int = 5,
+        expand_market_prices: bool = False,
     ):
-        from muse import demand_share as ds, constraints as cs
+        from muse import demand_share as ds, constraints as cs, investments as iv
 
         self.agents: Sequence[Agent] = list(agents)
         self.commodities: List[Text] = list(commodities)
         self.demand_share = demand_share or ds.factory()
         self.constraints = constraints or cs.factory()
+        self.investment = investment or iv.factory()
         self.forecast = forecast
         self.name = name
+        self.expand_market_prices = expand_market_prices
+        """Wether to expand prices to include destination region.
+
+        If ``True``, the input market prices are expanded of the missing "dst_region"
+        dimension by setting them to the maximum between the source and destination
+        region.
+        """
 
     def invest(
         self,
@@ -48,19 +60,38 @@ class Subsector:
     ) -> None:
         if current_year is None:
             current_year = market.year.min()
+        if self.expand_market_prices:
+            market = market.copy()
+            market["prices"] = np.maximum(
+                market.prices, market.prices.rename(region="dst_region")
+            )
+
+        for agent in self.agents:
+            agent.asset_housekeeping()
+
         lp_problem = self.aggregate_lp(
             technologies, market, time_period, current_year=current_year
         )
         if lp_problem is None:
             return
-        solution = self.solve(*lp_problem)
-        self.assign_back_to_agents(solution)
+        techs = technologies.interp(year=current_year + time_period).drop_vars("year")
+        solution = self.investment(
+            search=lp_problem[0], technologies=techs, constraints=lp_problem[1]
+        )
+        self.assign_back_to_agents(technologies, solution, current_year, time_period)
 
-    def solve(self, cost: xr.Dataset, constraints: Sequence[xr.Dataset]) -> xr.Dataset:
-        raise NotImplementedError()
-
-    def assign_back_to_agents(self, solution: xr.Dataset):
-        raise NotImplementedError()
+    def assign_back_to_agents(
+        self,
+        technologies: xr.Dataset,
+        solution: xr.DataArray,
+        current_year: int,
+        time_period: int,
+    ):
+        agents = {u.uuid: u for u in self.agents}
+        for uuid, assets in solution.groupby("agent"):
+            agents[uuid].add_investments(
+                technologies, assets, current_year, time_period
+            )
 
     def aggregate_lp(
         self,
@@ -81,6 +112,13 @@ class Subsector:
             current_year=current_year,
             forecast=self.forecast,
         )
+        if "dst_region" in demands.dims:
+            msg = """
+                dst_region found in demand dimensions. This is unexpected. Demands
+                should only have a region dimension rather both a source and destination
+                dimension.
+            """
+            raise ValueError(msg)
         agent_market = market.copy()
         assets = agent_concatenation(
             {agent.uuid: agent.assets for agent in self.agents}
@@ -106,7 +144,7 @@ class Subsector:
         if len(agent_lps) == 0:
             return None
 
-        lps = agent_concatenation(agent_lps)
+        lps = cast(xr.Dataset, agent_concatenation(agent_lps, dim="agent"))
         coords = {"agent", "technology", "region"}.intersection(assets.asset.coords)
         constraints = self.constraints(
             demand=demands,
@@ -116,7 +154,7 @@ class Subsector:
             technologies=technologies,
             year=current_year,
         )
-        return lps.decision, constraints
+        return lps, constraints
 
     @classmethod
     def factory(
@@ -127,10 +165,9 @@ class Subsector:
         current_year: Optional[int] = None,
         name: Text = "subsector",
     ) -> Subsector:
-        from muse.agents import agents_factory
+        from muse.agents import agents_factory, InvestingAgent
         from muse.readers.toml import undo_damage
-        from muse.demand_share import factory as share_factory
-        from muse.constraints import factory as constraints_factory
+        from muse import demand_share as ds, investments as iv, constraints as cs
 
         agents = agents_factory(
             settings.agents,
@@ -138,6 +175,8 @@ class Subsector:
             technologies=technologies,
             regions=regions,
             year=current_year or int(technologies.year.min()),
+            asset_threshhold=getattr(settings, "asset_threshhold", 1e-12),
+            # only used by self-investing agents
             investment=getattr(settings, "lpsolver", "adhoc"),
         )
 
@@ -150,19 +189,27 @@ class Subsector:
         if len(commodities) == 0:
             raise RuntimeError("Subsector commodities cannot be empty")
 
-        demand_share = share_factory(
-            undo_damage(getattr(settings, "demand_share", None))
-        )
-        constraints = constraints_factory(getattr(settings, "constraints", None))
+        demand_share = ds.factory(undo_damage(getattr(settings, "demand_share", None)))
+        constraints = cs.factory(getattr(settings, "constraints", None))
+        # only used by non-self-investing agents
+        investment = iv.factory(getattr(settings, "lpsolver", "scipy"))
         forecast = getattr(settings, "forecast", 5)
+
+        expand_market_prices = getattr(settings, "expand_market_prices", None)
+        if expand_market_prices is None:
+            expand_market_prices = "dst_region" in technologies.dims and not any(
+                (isinstance(u, InvestingAgent) for u in agents)
+            )
 
         return cls(
             agents=agents,
             commodities=commodities,
             demand_share=demand_share,
             constraints=constraints,
+            investment=investment,
             forecast=forecast,
             name=name,
+            expand_market_prices=expand_market_prices,
         )
 
 

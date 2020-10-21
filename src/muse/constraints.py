@@ -320,15 +320,22 @@ def max_capacity_expansion(
         forecast = next((int(u) for u in sorted(market.year - year) if u > 0))
     forecast_year = year + forecast
 
-    capacity = reduce_assets(
-        assets.capacity,
-        coords={"technology", "region"}.intersection(assets.capacity.coords),
-    ).interp(year=[year, forecast_year], method=interpolation)
+    capacity = (
+        reduce_assets(
+            assets.capacity,
+            coords={"technology", "region"}.intersection(assets.capacity.coords),
+        )
+        .interp(year=[year, forecast_year], method=interpolation)
+        .ffill("year")
+    )
     # case with technology and region in asset dimension
     if capacity.region.dims != ():
-        coords = list(capacity.asset.coords.values())
-        capacity = capacity.drop_vars(capacity.asset.coords.keys())
-        capacity["asset"] = pd.MultiIndex.from_arrays(coords)
+        names = [u for u in capacity.asset.coords if capacity[u].dims == ("asset",)]
+        index = pd.MultiIndex.from_arrays(
+            [capacity[u].values for u in names], names=names
+        )
+        capacity = capacity.drop_vars(names)
+        capacity["asset"] = index
         capacity = capacity.unstack("asset", fill_value=0).rename(
             technology=search_space.replacement.name
         )
@@ -349,7 +356,7 @@ def max_capacity_expansion(
         ],
         technology=replacement,
         year=year,
-    )
+    ).drop_vars("technology")
     regions = getattr(capacity, "region", None)
     if regions is not None and "region" in technologies.dims:
         techs = techs.sel(region=regions)
@@ -369,12 +376,9 @@ def max_capacity_expansion(
     b = with_growth.where(initial > 0, zero_cap)
     if b.region.dims == ():
         capa = 1
-    else:
+    elif "dst_region" in b.dims:
         b = b.rename(region="src_region")
-        capa = (
-            reduce_assets(assets.asset, coords=["region", "agent"]).region
-            == b.src_region
-        )
+        capa = search_space.agent.region == b.src_region
     return xr.Dataset(
         dict(b=b, capacity=capa),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND, name="max capacity expansion"),
@@ -443,7 +447,6 @@ def max_production(
     from xarray import zeros_like, ones_like
     from muse.commodities import is_enduse
     from muse.timeslices import convert_timeslice, QuantityType
-    from muse.utilities import reduce_assets
 
     if year is None:
         year = int(market.year.min())
@@ -455,26 +458,24 @@ def max_production(
         [u for u in replacement.coords if u not in replacement.dims]
     )
     kwargs = dict(technology=replacement, year=year, commodity=commodities)
-    if (
-        "region" in assets.coords
-        and "region" in technologies.dims
-        and assets.region.dims == ()
-    ):
-        kwargs["region"] = assets.region
-    techs = technologies[["fixed_outputs", "utilization_factor"]].sel(**kwargs)
-    if "region" in assets.asset.coords and "region" in techs.dims:
-        techs = techs.drop_vars("technology").sel(
-            region=reduce_assets(assets.asset, coords=["region", "agent"]).region
-        )
+    if "region" in search_space.coords and "region" in technologies.dims:
+        kwargs["region"] = search_space.region
+    techs = (
+        technologies[["fixed_outputs", "utilization_factor"]]
+        .sel(**kwargs)
+        .drop_vars("technology")
+    )
     capacity = convert_timeslice(
         techs.fixed_outputs * techs.utilization_factor,
         market.timeslice,
         QuantityType.EXTENSIVE,
     )
-    if "asset" not in capacity.dims:
+    if "asset" not in capacity.dims and "asset" in search_space.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
     b = zeros_like(production)
+    if "dst_region" in assets.dims:
+        b = b.expand_dims(dst_region=assets.dst_region)
     return xr.Dataset(
         dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
@@ -494,7 +495,6 @@ def minimum_service(
     from xarray import zeros_like, ones_like
     from muse.commodities import is_enduse
     from muse.timeslices import convert_timeslice, QuantityType
-    from muse.utilities import reduce_assets
 
     if "minimum_service_factor" not in technologies.data_vars:
         return None
@@ -510,19 +510,13 @@ def minimum_service(
         [u for u in replacement.coords if u not in replacement.dims]
     )
     kwargs = dict(technology=replacement, year=year, commodity=commodities)
-    if (
-        "region" in assets.coords
-        and "region" in technologies.dims
-        and assets.region.dims == ()
-    ):
+    if "region" in search_space.coords and "region" in technologies.dims:
         kwargs["region"] = assets.region
-    techs = technologies[
-        ["fixed_outputs", "utilization_factor", "minimum_service_factor"]
-    ].sel(**kwargs)
-    if "region" in assets.asset.coords and "region" in techs.dims:
-        techs = techs.drop_vars("technology").sel(
-            region=reduce_assets(assets.asset, coords=["region", "agent"]).region
-        )
+    techs = (
+        technologies[["fixed_outputs", "utilization_factor", "minimum_service_factor"]]
+        .sel(**kwargs)
+        .drop_vars("technology")
+    )
     capacity = convert_timeslice(
         techs.fixed_outputs * techs.utilization_factor * techs.minimum_service_factor,
         market.timeslice,
@@ -943,9 +937,9 @@ class ScipyAdapter:
 
         lpcosts = lp_costs(technologies, costs, timeslices)
         data = cls._unified_dataset(technologies, lpcosts, *constraints)
-        capacities = cls._stacked_quantity(data, "capacity")
-        productions = cls._stacked_quantity(data, "production")
-        bs = cls._stacked_quantity(data, "b")
+        capacities = cls._selected_quantity(data, "capacity")
+        productions = cls._selected_quantity(data, "production")
+        bs = cls._selected_quantity(data, "b")
         kwargs = cls._to_scipy_adapter(capacities, productions, bs, *constraints)
 
         def to_muse(x: np.ndarray) -> xr.Dataset:
@@ -986,44 +980,35 @@ class ScipyAdapter:
                 data[f"b{i}"] = -data[f"b{i}"]  # type: ignore
                 data[f"capacity{i}"] = -data[f"capacity{i}"]  # type: ignore
                 data[f"production{i}"] = -data[f"production{i}"]  # type: ignore
-        return data
+        return data.transpose(*data.dims)
 
     @staticmethod
-    def _stacked_quantity(data: xr.Dataset, name: Text) -> xr.Dataset:
+    def _selected_quantity(data: xr.Dataset, name: Text) -> xr.Dataset:
         result = cast(
             xr.Dataset, data[[u for u in data.data_vars if str(u).startswith(name)]]
         )
-        result = result.rename(
+        return result.rename(
             {
                 k: ("costs" if k == name else int(str(k).replace(name, "")))
                 for k in result.data_vars
             }
         )
-        if len(result) and "costs" in result.data_vars:
-            result = result.stack(decision=sorted(result["costs"].dims))
-        return result
 
     @staticmethod
     def _to_scipy_adapter(
         capacities: xr.Dataset, productions: xr.Dataset, bs: xr.Dataset, *constraints
     ):
+        def reshape(matrix: xr.DataArray) -> np.ndarray:
+            assert list(matrix.dims) == sorted(matrix.dims)
+            size = np.prod(
+                [matrix[u].shape[0] for u in matrix.dims if str(u).startswith("c")]
+            )
+            return matrix.values.reshape((size, -1))
+
         def extract_bA(constraints, *kinds):
             indices = [i for i in range(len(bs)) if constraints[i].kind in kinds]
-            capa_constraints = [
-                capacities[i]
-                .stack(constraint=sorted(bs[i].dims))
-                .transpose("constraint", "decision")
-                .values
-                for i in indices
-            ]
-
-            prod_constraints = [
-                productions[i]
-                .stack(constraint=sorted(bs[i].dims))
-                .transpose("constraint", "decision")
-                .values
-                for i in indices
-            ]
+            capa_constraints = [reshape(capacities[i]) for i in indices]
+            prod_constraints = [reshape(productions[i]) for i in indices]
             if capa_constraints:
                 A: Optional[np.ndarray] = np.concatenate(
                     (
@@ -1042,7 +1027,11 @@ class ScipyAdapter:
             return A, b
 
         c = np.concatenate(
-            (capacities["costs"].values, productions["costs"].values), axis=0
+            (
+                cast(np.ndarray, capacities["costs"].values).flatten(),
+                cast(np.ndarray, productions["costs"].values).flatten(),
+            ),
+            axis=0,
         )
         A_ub, b_ub = extract_bA(
             constraints, ConstraintKind.UPPER_BOUND, ConstraintKind.LOWER_BOUND
@@ -1062,8 +1051,8 @@ class ScipyAdapter:
     def _back_to_muse_quantity(
         x: np.ndarray, template: Union[xr.DataArray, xr.Dataset]
     ) -> xr.DataArray:
-        result = xr.DataArray(x, coords=template.coords, dims=template.dims).unstack(
-            "decision"
+        result = xr.DataArray(
+            x.reshape(template.shape), coords=template.coords, dims=template.dims
         )
         return result.rename({k: str(k)[2:-1] for k in result.dims})
 

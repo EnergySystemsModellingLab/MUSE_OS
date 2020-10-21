@@ -614,6 +614,9 @@ def warnings_as_errors(request):
     if (
         request.module.__name__ == "test_legacy_sector"
         and request.node.name.startswith("test_legacy_sector_regression[")
+    ) or (
+        request.module.__name__ == "test_outputs"
+        and request.node.name == "test_save_with_fullpath_to_excel_with_sink"
     ):
         return
 
