@@ -1,0 +1,16 @@
+ProcessName,RegionName,Parameter,Unit,R1,R2,R3
+gassupply1,R1,cap_par,MUSD/PJ,0.0000,9.8013,9.0612
+gassupply1,R2,cap_par,MUSD/PJ,7.8406,0.0000,1.7434
+gassupply1,R3,cap_par,MUSD/PJ,9.0612,2.1794,0.0000
+gassupply1,R1,fix_par,MUSD/PJ,0.0000,0.1002,0.0927
+gassupply1,R2,fix_par,MUSD/PJ,0.0802,0.0000,0.0178
+gassupply1,R3,fix_par,MUSD/PJ,0.0927,0.0223,0.0000
+gassupply1,R1,MaxCapacityAddition,PJ/y,100.0000,0.1000,0.1000
+gassupply1,R2,MaxCapacityAddition,PJ/y,0.1000,100.0000,0.1000
+gassupply1,R3,MaxCapacityAddition,PJ/y,0.1000,0.1000,100.0000
+gassupply1,R1,MaxCapacityGrowth,PJ/y,0.0200,0.0200,0.0200
+gassupply1,R2,MaxCapacityGrowth,PJ/y,0.0200,0.0200,0.0200
+gassupply1,R3,MaxCapacityGrowth,PJ/y,0.0200,0.0200,0.0200
+gassupply1,R1,TotalCapacityLimit,PJ/y,3937.2188,3000.0000,3000.0000
+gassupply1,R2,TotalCapacityLimit,PJ/y,3000.0000,3937.2188,3000.0000
+gassupply1,R3,TotalCapacityLimit,PJ/y,3000.0000,3000.0000,3937.2188

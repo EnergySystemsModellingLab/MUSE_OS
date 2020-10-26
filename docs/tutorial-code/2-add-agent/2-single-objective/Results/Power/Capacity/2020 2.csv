@@ -1,0 +1,5 @@
+asset,year,region,technology,installed,capacity
+0,2020,R1,gasCCGT,2020,2.00000000000
+0,2025,R1,gasCCGT,2020,2.00000000000
+2,2025,R1,windturbine,2020,9.50000000000
+2,2049,R1,windturbine,2020,9.50000000000

@@ -1,0 +1,700 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adding an agent &#8212; muse-documentation 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Adding a region" href="add-region.html" />
+    <link rel="prev" title="Adding a new technology" href="add-solar.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="add-region.html" title="Adding a region"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="add-solar.html" title="Adding a new technology"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">muse-documentation 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Customising MUSE</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Adding an agent</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container,
+div.nbinput.container div.prompt,
+div.nbinput.container div.input_area,
+div.nbinput.container div[class*=highlight],
+div.nbinput.container div[class*=highlight] pre,
+div.nboutput.container,
+div.nboutput.container div.prompt,
+div.nboutput.container div.output_area,
+div.nboutput.container div[class*=highlight],
+div.nboutput.container div[class*=highlight] pre {
+    background: none;
+    border: none;
+    padding: 0 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    background: #f5f5f5;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+</style>
+<div class="section" id="Adding-an-agent">
+<h1>Adding an agent<a class="headerlink" href="#Adding-an-agent" title="Permalink to this headline">¶</a></h1>
+<p>In this section, we will add a new agent called “A2”. This agent will be slightly different to the other agents in the <code class="docutils literal notranslate"><span class="pre">default</span></code> example, in that it will make investments based upon a mixture of levelised cost of electricity (LCOE) and net present value (NPV). These two objectives will be combined by calculating the mean of the two when comparing potential investment options.</p>
+<p>To achieve this, we must modify the <code class="docutils literal notranslate"><span class="pre">Agents.csv</span></code> file in the directory:</p>
+<p><code class="docutils literal notranslate"><span class="pre">{muse_install_location}/src/muse/data/example/default/technodata/Agents.csv</span></code></p>
+<p>To do this, we will add two new rows to the file. To simplify the process, we copy the data from the first two rows of agent “A1”, changing only the rows: <code class="docutils literal notranslate"><span class="pre">Name</span></code>, <code class="docutils literal notranslate"><span class="pre">Objective1</span></code>, <code class="docutils literal notranslate"><span class="pre">Objective2</span></code>, <code class="docutils literal notranslate"><span class="pre">ObjData1</span></code>, <code class="docutils literal notranslate"><span class="pre">ObjData2</span></code> and <code class="docutils literal notranslate"><span class="pre">DecisionMethod</span></code>. The values we changed can be seen below:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>AgentShare</p></th>
+<th class="head"><p>Name</p></th>
+<th class="head"><p>AgentNumber</p></th>
+<th class="head"><p>RegionName</p></th>
+<th class="head"><p>Objective1</p></th>
+<th class="head"><p>Objective2</p></th>
+<th class="head"><p>Objective3</p></th>
+<th class="head"><p>ObjData1</p></th>
+<th class="head"><p>ObjData2</p></th>
+<th class="head"><p>…</p></th>
+<th class="head"><p>DecisionMethod</p></th>
+<th class="head"><p>…</p></th>
+<th class="head"><p>Type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Agent1</p></td>
+<td><p>A1</p></td>
+<td><p>1</p></td>
+<td><p>R1</p></td>
+<td><p>LCOE</p></td>
+<td></td>
+<td></td>
+<td><p>1</p></td>
+<td></td>
+<td><p>…</p></td>
+<td><p>singleObj</p></td>
+<td><p>…</p></td>
+<td><p>New</p></td>
+</tr>
+<tr class="row-odd"><td><p>Agent2</p></td>
+<td><p>A1</p></td>
+<td><p>2</p></td>
+<td><p>R1</p></td>
+<td><p>LCOE</p></td>
+<td></td>
+<td></td>
+<td><p>1</p></td>
+<td></td>
+<td><p>…</p></td>
+<td><p>singleObj</p></td>
+<td><p>…</p></td>
+<td><p>Retrofit</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Agent1</strong></p></td>
+<td><p><strong>A2</strong></p></td>
+<td><p><strong>1</strong></p></td>
+<td><p><strong>R1</strong></p></td>
+<td><p><strong>LCOE</strong></p></td>
+<td><p><strong>NPV</strong></p></td>
+<td></td>
+<td><p><strong>1</strong></p></td>
+<td><p><strong>1</strong></p></td>
+<td><p><strong>…</strong></p></td>
+<td><p><strong>mean</strong></p></td>
+<td><p><strong>…</strong></p></td>
+<td><p><strong>New</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Agent2</strong></p></td>
+<td><p><strong>A2</strong></p></td>
+<td><p><strong>2</strong></p></td>
+<td><p><strong>R1</strong></p></td>
+<td><p><strong>LCOE</strong></p></td>
+<td><p><strong>NPV</strong></p></td>
+<td></td>
+<td><p><strong>1</strong></p></td>
+<td><p><strong>1</strong></p></td>
+<td><p><strong>…</strong></p></td>
+<td><p><strong>mean</strong></p></td>
+<td><p><strong>…</strong></p></td>
+<td><p><strong>Retrofit</strong></p></td>
+</tr>
+</tbody>
+</table>
+<p>We will now save this file and run the new simulation model using the following command:</p>
+<p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">muse</span> <span class="pre">settings.toml</span></code></p>
+<p>Again, we use seaborn and pandas to analyse the data in the <code class="docutils literal notranslate"><span class="pre">Results</span></code> folder.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">mca_capacity</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;../Results/MCACapacity.csv&quot;</span><span class="p">)</span>
+<span class="n">power_sector</span> <span class="o">=</span> <span class="n">mca_capacity</span><span class="p">[</span><span class="n">mca_capacity</span><span class="o">.</span><span class="n">sector</span><span class="o">==</span><span class="s2">&quot;power&quot;</span><span class="p">]</span>
+<span class="n">power_sector</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>technology</th>
+      <th>region</th>
+      <th>agent</th>
+      <th>type</th>
+      <th>sector</th>
+      <th>capacity</th>
+      <th>year</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2</th>
+      <td>gasCCGT</td>
+      <td>R1</td>
+      <td>A1</td>
+      <td>retrofit</td>
+      <td>power</td>
+      <td>1.000</td>
+      <td>2020</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>gasCCGT</td>
+      <td>R1</td>
+      <td>A2</td>
+      <td>retrofit</td>
+      <td>power</td>
+      <td>1.000</td>
+      <td>2020</td>
+    </tr>
+    <tr>
+      <th>10</th>
+      <td>gasCCGT</td>
+      <td>R1</td>
+      <td>A1</td>
+      <td>retrofit</td>
+      <td>power</td>
+      <td>1.000</td>
+      <td>2025</td>
+    </tr>
+    <tr>
+      <th>11</th>
+      <td>windturbine</td>
+      <td>R1</td>
+      <td>A1</td>
+      <td>retrofit</td>
+      <td>power</td>
+      <td>5.172</td>
+      <td>2025</td>
+    </tr>
+    <tr>
+      <th>12</th>
+      <td>gasCCGT</td>
+      <td>R1</td>
+      <td>A2</td>
+      <td>retrofit</td>
+      <td>power</td>
+      <td>11.000</td>
+      <td>2025</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>This time we can see that there is data for the new agent, “A2”. Next, we will visualise the investments made by each of the agents using seaborn’s facetgrid command.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">g</span><span class="o">=</span><span class="n">sns</span><span class="o">.</span><span class="n">FacetGrid</span><span class="p">(</span><span class="n">power_sector</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="s1">&#39;agent&#39;</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">,</span> <span class="s2">&quot;capacity&quot;</span><span class="p">,</span> <span class="s2">&quot;technology&quot;</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">add_legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;seaborn.axisgrid.FacetGrid at 0x7f95819b4730&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_add-agent_7_1.png" src="../_images/examples_add-agent_7_1.png" />
+</div>
+</div>
+<p>In this scenario, agent “A1” is investing using LCOE, whereas agent “A2” is investing based on the mean of the objectives: LCOE and NPV in the same region. A different strategy is employed by these agents with “A2” investing in gasCCGT and windturbines, whereas A1 invests in solarPV.</p>
+<p>Next, we will see what occurs if the agents invest based upon the same investment strategy, with both investing using NPV. This requires to edit the <code class="docutils literal notranslate"><span class="pre">Agents.csv</span></code> file once more, to look like the following:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>AgentShare</p></th>
+<th class="head"><p>Name</p></th>
+<th class="head"><p>AgentNumber</p></th>
+<th class="head"><p>RegionName</p></th>
+<th class="head"><p>Objective1</p></th>
+<th class="head"><p>Objective2</p></th>
+<th class="head"><p>Objective3</p></th>
+<th class="head"><p>ObjData1</p></th>
+<th class="head"><p>ObjData2</p></th>
+<th class="head"><p>…</p></th>
+<th class="head"><p>DecisionMethod</p></th>
+<th class="head"><p>…</p></th>
+<th class="head"><p>Type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Agent1</p></td>
+<td><p>A1</p></td>
+<td><p>1</p></td>
+<td><p>R1</p></td>
+<td><p>LCOE</p></td>
+<td></td>
+<td></td>
+<td><p>1</p></td>
+<td></td>
+<td><p>…</p></td>
+<td><p>singleObj</p></td>
+<td><p>…</p></td>
+<td><p>New</p></td>
+</tr>
+<tr class="row-odd"><td><p>Agent2</p></td>
+<td><p>A1</p></td>
+<td><p>2</p></td>
+<td><p>R1</p></td>
+<td><p>LCOE</p></td>
+<td></td>
+<td></td>
+<td><p>1</p></td>
+<td></td>
+<td><p>…</p></td>
+<td><p>singleObj</p></td>
+<td><p>…</p></td>
+<td><p>Retrofit</p></td>
+</tr>
+<tr class="row-even"><td><p>Agent1</p></td>
+<td><p>A2</p></td>
+<td><p>1</p></td>
+<td><p>R1</p></td>
+<td><p><strong>LCOE</strong></p></td>
+<td></td>
+<td></td>
+<td><p><strong>1</strong></p></td>
+<td></td>
+<td><p>…</p></td>
+<td><p><strong>singleObj</strong></p></td>
+<td><p>…</p></td>
+<td><p>New</p></td>
+</tr>
+<tr class="row-odd"><td><p>Agent2</p></td>
+<td><p>A2</p></td>
+<td><p>2</p></td>
+<td><p>R1</p></td>
+<td><p><strong>LCOE</strong></p></td>
+<td></td>
+<td></td>
+<td><p><strong>1</strong></p></td>
+<td></td>
+<td><p>…</p></td>
+<td><p><strong>singleObj</strong></p></td>
+<td><p>…</p></td>
+<td><p>Retrofit</p></td>
+</tr>
+</tbody>
+</table>
+<p>Again, this requires rerunning of the simulation, and visualisation like before:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">mca_capacity</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;../Results/MCACapacity.csv&quot;</span><span class="p">)</span>
+<span class="n">power_sector</span> <span class="o">=</span> <span class="n">mca_capacity</span><span class="p">[</span><span class="n">mca_capacity</span><span class="o">.</span><span class="n">sector</span><span class="o">==</span><span class="s2">&quot;power&quot;</span><span class="p">]</span>
+<span class="n">g</span><span class="o">=</span><span class="n">sns</span><span class="o">.</span><span class="n">FacetGrid</span><span class="p">(</span><span class="n">power_sector</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="s1">&#39;agent&#39;</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">,</span> <span class="s2">&quot;capacity&quot;</span><span class="p">,</span> <span class="s2">&quot;technology&quot;</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">add_legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;seaborn.axisgrid.FacetGrid at 0x7f957e5f0970&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_add-agent_11_1.png" src="../_images/examples_add-agent_11_1.png" />
+</div>
+</div>
+<p>In this new scenario, with both agents running the same objective, very similar results can be seen, with a high investmwent in <code class="docutils literal notranslate"><span class="pre">windturbine</span></code>, none in <code class="docutils literal notranslate"><span class="pre">solarPV</span></code> and low <code class="docutils literal notranslate"><span class="pre">gasCCGT</span></code>.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="add-solar.html"
+                        title="previous chapter">Adding a new technology</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="add-region.html"
+                        title="next chapter">Adding a region</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/examples/add-agent.ipynb.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="add-region.html" title="Adding a region"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="add-solar.html" title="Adding a new technology"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">muse-documentation 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Customising MUSE</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Adding an agent</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

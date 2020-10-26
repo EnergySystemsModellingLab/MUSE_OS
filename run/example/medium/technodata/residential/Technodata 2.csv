@@ -1,0 +1,6 @@
+ProcessName,RegionName,Time,Level,cap_par,cap_exp,fix_par,fix_exp,var_par,var_exp,MaxCapacityAddition,MaxCapacityGrowth,TotalCapacityLimit,TechnicalLife,UtilizationFactor,ScalingSize,efficiency,Availabiliyyear,InterestRate,Type,Fuel,EndUse,Agent2
+Unit,-,Year,-,MUS$2010/PJ_a,-,MUS$2010/PJ,-,MUS$2010/PJ,-,PJ,-,PJ,Years,-,PJ,%,-,-,-,-,-,Retrofit
+gasboiler,R1,2020,fixed,3.8,1,0,1,0,1,100,1,3937.2188,10,1,0.00000189,86,1,0.1,energy,gas,heat,1
+heatpump,R1,2020,fixed,8.866666667,1,0,1,0,1,100,1,3937.2188,10,1,0.00000189,86,1,0.1,energy,electricity,heat,1
+estove,R1,2020,fixed,3.8,1,0,1,0,1,100,1,3937.2188,10,1,0.00000189,86,1,0.1,energy,gas,cook,1
+gasstove,R1,2020,fixed,8.866666667,1,0,1,0,1,100,1,3937.2188,10,1,0.00000189,86,1,0.1,energy,electricity,cook,1

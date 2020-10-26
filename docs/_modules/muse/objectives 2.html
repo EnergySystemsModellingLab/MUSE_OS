@@ -1,0 +1,812 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse.objectives &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.objectives</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for muse.objectives</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Valuation functions for replacement technologies.</span>
+
+<span class="sd">.. currentmodule:: muse.objectives</span>
+
+<span class="sd">Objectives are used to compare replacement technologies. They should correspond to</span>
+<span class="sd">a single well defined economic concept. Multiple objectives can later be combined</span>
+<span class="sd">via decision functions.</span>
+
+<span class="sd">Objectives should be registered via the</span>
+<span class="sd">:py:func:`@register_objective&lt;register_objective&gt;` decorator. This makes it possible to</span>
+<span class="sd">refer to them by name in agent input files, and nominally to set extra input parameters.</span>
+
+<span class="sd">The :py:func:`factory` function creates a function that calls all objectives defined in</span>
+<span class="sd">its input argument and returns a dataset with each objective as a separate data array.</span>
+
+<span class="sd">Objectives are not expected to modify their arguments. Furthermore they should</span>
+<span class="sd">conform the following signatures:</span>
+
+<span class="sd">.. code-block:: Python</span>
+
+<span class="sd">    @register_objective</span>
+<span class="sd">    def comfort(</span>
+<span class="sd">        agent: Agent,</span>
+<span class="sd">        demand: xr.DataArray,</span>
+<span class="sd">        search_space: xr.DataArray,</span>
+<span class="sd">        technologies: xr.Dataset,</span>
+<span class="sd">        market: xr.Dataset,</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">    ) -&gt; xr.DataArray:</span>
+<span class="sd">        pass</span>
+
+<span class="sd">Arguments:</span>
+<span class="sd">    agent: the agent relevant to the search space. The filters may need to query</span>
+<span class="sd">        the agent for parameters, e.g. the current year, the interpolation</span>
+<span class="sd">        method, the tolerance, etc.</span>
+<span class="sd">    demand: Demand to fulfill.</span>
+<span class="sd">    search_space: A boolean matrix represented as a ``xr.DataArray``, listing</span>
+<span class="sd">        replacement technologies for each asset.</span>
+<span class="sd">    technologies: A data set characterising the technologies from which the</span>
+<span class="sd">        agent can draw assets.</span>
+<span class="sd">    market: Market variables, such as prices or current capacity and retirement</span>
+<span class="sd">        profile.</span>
+<span class="sd">    kwargs: Extra input parameters. These parameters are expected to be set from the</span>
+<span class="sd">        input file.</span>
+
+<span class="sd">        .. warning::</span>
+
+<span class="sd">            The standard :ref:`agent csv file&lt;inputs-agents&gt;` does not allow to set</span>
+<span class="sd">            these parameters.</span>
+
+<span class="sd">Returns:</span>
+<span class="sd">    A dataArray with at least one dimension corresponding to ``replacement``.  Only the</span>
+<span class="sd">    technologies in ``search_space.replacement`` should be present.  Furthermore, if an</span>
+<span class="sd">    ``asset`` dimension is present, then it should correspond to ``search_space.asset``.</span>
+<span class="sd">    Other dimensions can be present, as long as the subsequent decision function nows</span>
+<span class="sd">    how to reduce them.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;register_objective&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;comfort&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficiency&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;fixed_costs&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;capital_costs&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;emission_cost&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;fuel_consumption_cost&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;lifetime_levelized_cost_of_energy&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;net_present_value&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;equivalent_annual_cost&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;capacity_to_service_demand&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;factory&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+<span class="kn">from</span> <span class="nn">mypy_extensions</span> <span class="kn">import</span> <span class="n">KwArg</span>
+
+<span class="kn">from</span> <span class="nn">muse.agents</span> <span class="kn">import</span> <span class="n">Agent</span>
+<span class="kn">from</span> <span class="nn">muse.registration</span> <span class="kn">import</span> <span class="n">registrator</span>
+
+<span class="n">OBJECTIVE_SIGNATURE</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[</span>
+    <span class="p">[</span><span class="n">Agent</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">KwArg</span><span class="p">(</span><span class="n">Any</span><span class="p">)],</span>
+    <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+<span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;Objectives signature.&quot;&quot;&quot;</span>
+
+<span class="n">OBJECTIVES</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">OBJECTIVE_SIGNATURE</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&quot;&quot;&quot;Dictionary of objectives when selecting replacement technology.&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">objective_factory</span><span class="p">(</span><span class="n">settings</span><span class="o">=</span><span class="n">Union</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">]):</span>
+    <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">Text</span><span class="p">):</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">settings</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="o">**</span><span class="n">settings</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+    <span class="n">function</span> <span class="o">=</span> <span class="n">OBJECTIVES</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">partial</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="factory"><a class="viewcode-back" href="../../source/muse.html#muse.objectives.factory">[docs]</a><span class="k">def</span> <span class="nf">factory</span><span class="p">(</span>
+    <span class="n">settings</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">]]]</span> <span class="o">=</span> <span class="s2">&quot;LCOE&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Creates a function computing multiple objectives.</span>
+
+<span class="sd">    The input can be a single objective defined by its name alone. Or it can be a single</span>
+<span class="sd">    objective defined by a dictionary which must include at least a &quot;name&quot; item, as well</span>
+<span class="sd">    as any extra parameters to pass to the objective. Or it can be a sequence of</span>
+<span class="sd">    objectives defined by name or by dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span>
+    <span class="kn">from</span> <span class="nn">logging</span> <span class="kn">import</span> <span class="n">getLogger</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">Text</span><span class="p">):</span>
+        <span class="n">params</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">settings</span><span class="p">}]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="o">**</span><span class="n">settings</span><span class="p">)]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">param</span><span class="p">}</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">Text</span><span class="p">)</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">(</span><span class="o">**</span><span class="n">param</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">settings</span>
+        <span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">param</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;The same objective is named twice.&quot;</span>
+            <span class="s2">&quot; The result may be undefined if parameters differ.&quot;</span>
+        <span class="p">)</span>
+        <span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="n">functions</span> <span class="o">=</span> <span class="p">[(</span><span class="n">param</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span> <span class="n">objective_factory</span><span class="p">(</span><span class="n">param</span><span class="p">))</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">objectives</span><span class="p">(</span>
+        <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span> <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">search_space</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">coords</span><span class="o">=</span><span class="n">search_space</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">objective</span> <span class="ow">in</span> <span class="n">functions</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">objective</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="n">demand</span><span class="p">,</span> <span class="n">search_space</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">return</span> <span class="n">objectives</span></div>
+
+
+<div class="viewcode-block" id="register_objective"><a class="viewcode-back" href="../../source/muse.html#muse.objectives.register_objective">[docs]</a><span class="nd">@registrator</span><span class="p">(</span><span class="n">registry</span><span class="o">=</span><span class="n">OBJECTIVES</span><span class="p">,</span> <span class="n">loglevel</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">register_objective</span><span class="p">(</span><span class="n">function</span><span class="p">:</span> <span class="n">OBJECTIVE_SIGNATURE</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Decorator to register a function as a objective.</span>
+
+<span class="sd">    Registers a function as a objective so that it can be applied easily</span>
+<span class="sd">    when sorting technologies one against the other.</span>
+
+<span class="sd">    The input name is expected to be in lower_snake_case, since it ought to be a</span>
+<span class="sd">    python function. CamelCase, lowerCamelCase, and kebab-case names are also</span>
+<span class="sd">    registered.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">function</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">decorated_objective</span><span class="p">(</span>
+        <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span> <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">search_space</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">logging</span> <span class="kn">import</span> <span class="n">getLogger</span>
+
+        <span class="n">reduced_demand</span> <span class="o">=</span> <span class="n">demand</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="n">k</span><span class="p">:</span> <span class="n">search_space</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">demand</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">search_space</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="n">reduced_demand</span><span class="p">,</span> <span class="n">search_space</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">dtype</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;dtype of objective </span><span class="si">%s</span><span class="s2"> is not a number (</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">function</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">getLogger</span><span class="p">(</span><span class="n">function</span><span class="o">.</span><span class="vm">__module__</span><span class="p">)</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;technology&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Objective should not return a dimension &#39;technology&#39;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;technology&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">coords</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Objective should not return a coordinate &#39;technology&#39;&quot;</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">function</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">return</span> <span class="n">decorated_objective</span></div>
+
+
+<div class="viewcode-block" id="comfort"><a class="viewcode-back" href="../../source/muse.html#muse.objectives.comfort">[docs]</a><span class="nd">@register_objective</span>
+<span class="k">def</span> <span class="nf">comfort</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+    <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Comfort value provided by technologies.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">technologies</span><span class="o">.</span><span class="n">comfort</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">technology</span><span class="o">=</span><span class="n">search_space</span><span class="o">.</span><span class="n">replacement</span><span class="p">)</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span>
+        <span class="s2">&quot;technology&quot;</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="efficiency"><a class="viewcode-back" href="../../source/muse.html#muse.objectives.efficiency">[docs]</a><span class="nd">@register_objective</span>
+<span class="k">def</span> <span class="nf">efficiency</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+    <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Efficiency of the technologies.&quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">technologies</span><span class="o">.</span><span class="n">efficiency</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">technology</span><span class="o">=</span><span class="n">search_space</span><span class="o">.</span><span class="n">replacement</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;technology&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="capacity_to_service_demand"><a class="viewcode-back" href="../../source/muse.html#muse.objectives.capacity_to_service_demand">[docs]</a><span class="nd">@register_objective</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;capacity&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">capacity_to_service_demand</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+    <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Minimum capacity required to fulfill the demand.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.timeslices</span> <span class="kn">import</span> <span class="n">represent_hours</span>
+
+    <span class="n">params</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">technologies</span><span class="p">[[</span><span class="s2">&quot;utilization_factor&quot;</span><span class="p">,</span> <span class="s2">&quot;fixed_outputs&quot;</span><span class="p">]],</span>
+        <span class="n">year</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">year</span><span class="p">,</span>
+        <span class="n">region</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">region</span><span class="p">,</span>
+        <span class="n">technology</span><span class="o">=</span><span class="n">search_space</span><span class="o">.</span><span class="n">replacement</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;technology&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;represent_hours&quot;</span> <span class="ow">in</span> <span class="n">market</span><span class="p">:</span>
+        <span class="n">hours</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">represent_hours</span>
+    <span class="k">elif</span> <span class="s2">&quot;represent_hours&quot;</span> <span class="ow">in</span> <span class="n">search_space</span><span class="o">.</span><span class="n">coords</span><span class="p">:</span>
+        <span class="n">hours</span> <span class="o">=</span> <span class="n">search_space</span><span class="o">.</span><span class="n">represent_hours</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">hours</span> <span class="o">=</span> <span class="n">represent_hours</span><span class="p">(</span><span class="n">market</span><span class="o">.</span><span class="n">timeslice</span><span class="p">)</span>
+
+    <span class="n">max_hours</span> <span class="o">=</span> <span class="n">hours</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="n">hours</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="n">commodity_output</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">fixed_outputs</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">demand</span><span class="o">.</span><span class="n">commodity</span><span class="p">)</span>
+
+    <span class="n">max_demand</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">demand</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">commodity_output</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="o">/</span> <span class="n">commodity_output</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">commodity_output</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">((</span><span class="s2">&quot;commodity&quot;</span><span class="p">,</span> <span class="s2">&quot;timeslice&quot;</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">max_demand</span> <span class="o">/</span> <span class="n">params</span><span class="o">.</span><span class="n">utilization_factor</span> <span class="o">/</span> <span class="n">max_hours</span></div>
+
+
+<div class="viewcode-block" id="fixed_costs"><a class="viewcode-back" href="../../source/muse.html#muse.objectives.fixed_costs">[docs]</a><span class="nd">@register_objective</span>
+<span class="k">def</span> <span class="nf">fixed_costs</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+    <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Fixed costs associated with a technology.</span>
+
+<span class="sd">    Given a factor :math:`\alpha` and an  exponent :math:`\beta`, the fixed costs</span>
+<span class="sd">    :math:`F` are computed from the :py:func:`capacity fulfilling the current demand</span>
+<span class="sd">    &lt;capacity_to_service_demand&gt;` :math:`C` as:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        F = \alpha * C^\beta</span>
+
+<span class="sd">    :math:`\alpha` and :math:`\beta` are &quot;fix_par&quot; and &quot;fix_exp&quot; in</span>
+<span class="sd">    :ref:`inputs-technodata`, respectively.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cfd</span> <span class="o">=</span> <span class="n">capacity_to_service_demand</span><span class="p">(</span>
+        <span class="n">agent</span><span class="p">,</span> <span class="n">demand</span><span class="p">,</span> <span class="n">search_space</span><span class="p">,</span> <span class="n">technologies</span><span class="p">,</span> <span class="n">market</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">technologies</span><span class="p">[[</span><span class="s2">&quot;fix_par&quot;</span><span class="p">,</span> <span class="s2">&quot;fix_exp&quot;</span><span class="p">]],</span>
+        <span class="n">technology</span><span class="o">=</span><span class="n">search_space</span><span class="o">.</span><span class="n">replacement</span><span class="p">,</span>
+        <span class="n">year</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">year</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;technology&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">fix_par</span> <span class="o">*</span> <span class="p">(</span><span class="n">cfd</span> <span class="o">**</span> <span class="n">data</span><span class="o">.</span><span class="n">fix_exp</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="capital_costs"><a class="viewcode-back" href="../../source/muse.html#muse.objectives.capital_costs">[docs]</a><span class="nd">@register_objective</span>
+<span class="k">def</span> <span class="nf">capital_costs</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+    <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Capital costs for input technologies.</span>
+
+<span class="sd">    The capital costs are computed as :math:`a * b^\alpha`, where :math:`a` is</span>
+<span class="sd">    &quot;cap_par&quot; from the :ref:`inputs-technodata`, :math:`b` is the &quot;scaling_size&quot;, and</span>
+<span class="sd">    :math:`\alpha` is &quot;cap_exp&quot;. In other words, capital costs are constant across the</span>
+<span class="sd">    simulation for each technology.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">technologies</span><span class="p">[[</span><span class="s2">&quot;cap_par&quot;</span><span class="p">,</span> <span class="s2">&quot;scaling_size&quot;</span><span class="p">,</span> <span class="s2">&quot;cap_exp&quot;</span><span class="p">]],</span>
+        <span class="n">technology</span><span class="o">=</span><span class="n">search_space</span><span class="o">.</span><span class="n">replacement</span><span class="p">,</span>
+        <span class="n">year</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">year</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;technology&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">cap_par</span> <span class="o">*</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">scaling_size</span> <span class="o">**</span> <span class="n">data</span><span class="o">.</span><span class="n">cap_exp</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="emission_cost"><a class="viewcode-back" href="../../source/muse.html#muse.objectives.emission_cost">[docs]</a><span class="nd">@register_objective</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;emissions&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">emission_cost</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+    <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Emission cost for each technology when fultfilling whole demand.</span>
+
+<span class="sd">    Given the demand share :math:`D`, the emissions per amount produced :math:`E`, and</span>
+<span class="sd">    the prices per emittant :math:`P`, then emissions costs :math:`C` are computed</span>
+<span class="sd">    as:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        C = \sum_s \left(\sum_cD\right)\left(\sum_cEP\right),</span>
+
+<span class="sd">    with :math:`s` the timeslices and :math:`c` the commodity.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.commodities</span> <span class="kn">import</span> <span class="n">is_enduse</span><span class="p">,</span> <span class="n">is_pollutant</span>
+
+    <span class="n">enduses</span> <span class="o">=</span> <span class="n">is_enduse</span><span class="p">(</span><span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">demand</span><span class="o">.</span><span class="n">commodity</span><span class="p">))</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="n">demand</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">enduses</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;commodity&quot;</span><span class="p">)</span>
+    <span class="n">allemissions</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">technologies</span><span class="o">.</span><span class="n">fixed_outputs</span><span class="p">,</span>
+        <span class="n">commodity</span><span class="o">=</span><span class="n">is_pollutant</span><span class="p">(</span><span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="p">),</span>
+        <span class="n">technology</span><span class="o">=</span><span class="n">search_space</span><span class="o">.</span><span class="n">replacement</span><span class="p">,</span>
+        <span class="n">year</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">year</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;technology&quot;</span><span class="p">)</span>
+    <span class="n">envs</span> <span class="o">=</span> <span class="n">is_pollutant</span><span class="p">(</span><span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="p">)</span>
+    <span class="n">prices</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span><span class="n">market</span><span class="o">.</span><span class="n">prices</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">forecast_year</span><span class="p">,</span> <span class="n">commodity</span><span class="o">=</span><span class="n">envs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">total</span> <span class="o">*</span> <span class="p">(</span><span class="n">allemissions</span> <span class="o">*</span> <span class="n">prices</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;commodity&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;timeslice&quot;</span><span class="p">)</span></div>
+
+
+<span class="nd">@register_objective</span>
+<span class="k">def</span> <span class="nf">capacity_in_use</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+    <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">muse.commodities</span> <span class="kn">import</span> <span class="n">is_enduse</span>
+    <span class="kn">from</span> <span class="nn">muse.timeslices</span> <span class="kn">import</span> <span class="n">represent_hours</span>
+
+    <span class="k">if</span> <span class="s2">&quot;represent_hours&quot;</span> <span class="ow">in</span> <span class="n">market</span><span class="p">:</span>
+        <span class="n">hours</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">represent_hours</span>
+    <span class="k">elif</span> <span class="s2">&quot;represent_hours&quot;</span> <span class="ow">in</span> <span class="n">search_space</span><span class="o">.</span><span class="n">coords</span><span class="p">:</span>
+        <span class="n">hours</span> <span class="o">=</span> <span class="n">search_space</span><span class="o">.</span><span class="n">represent_hours</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">hours</span> <span class="o">=</span> <span class="n">represent_hours</span><span class="p">(</span><span class="n">market</span><span class="o">.</span><span class="n">timeslice</span><span class="p">)</span>
+
+    <span class="n">ufac</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">technologies</span><span class="o">.</span><span class="n">utilization_factor</span><span class="p">,</span>
+        <span class="n">technology</span><span class="o">=</span><span class="n">search_space</span><span class="o">.</span><span class="n">replacement</span><span class="p">,</span>
+        <span class="n">year</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">year</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;technology&quot;</span><span class="p">)</span>
+    <span class="n">enduses</span> <span class="o">=</span> <span class="n">is_enduse</span><span class="p">(</span><span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">demand</span><span class="o">.</span><span class="n">commodity</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">demand</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">enduses</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;commodity&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="n">hours</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;timeslice&quot;</span><span class="p">)</span>
+        <span class="o">*</span> <span class="n">hours</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="o">/</span> <span class="n">ufac</span>
+    <span class="p">)</span>
+
+
+<span class="nd">@register_objective</span>
+<span class="k">def</span> <span class="nf">consumption</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+    <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Commodity consumption when fulfilling the whole demand.</span>
+
+<span class="sd">    Currently, the consumption is implemented for commodity_max == +infinity.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.quantities</span> <span class="kn">import</span> <span class="n">consumption</span>
+
+    <span class="n">params</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">technologies</span><span class="p">[[</span><span class="s2">&quot;fixed_inputs&quot;</span><span class="p">,</span> <span class="s2">&quot;flexible_inputs&quot;</span><span class="p">]],</span>
+        <span class="n">year</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">year</span><span class="p">,</span>
+        <span class="n">technology</span><span class="o">=</span><span class="n">search_space</span><span class="o">.</span><span class="n">replacement</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">prices</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span><span class="n">market</span><span class="o">.</span><span class="n">prices</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">forecast_year</span><span class="p">)</span>
+    <span class="n">demand</span> <span class="o">=</span> <span class="n">demand</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">search_space</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">replacement</span><span class="o">=</span><span class="s2">&quot;technology&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">consumption</span><span class="p">(</span><span class="n">technologies</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">prices</span><span class="o">=</span><span class="n">prices</span><span class="p">,</span> <span class="n">production</span><span class="o">=</span><span class="n">demand</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="s2">&quot;commodity&quot;</span><span class="p">,</span> <span class="s2">&quot;timeslice&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">technology</span><span class="o">=</span><span class="s2">&quot;replacement&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="fuel_consumption_cost"><a class="viewcode-back" href="../../source/muse.html#muse.objectives.fuel_consumption_cost">[docs]</a><span class="nd">@register_objective</span>
+<span class="k">def</span> <span class="nf">fuel_consumption_cost</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+    <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Cost of fuels when fulfilling whole demand.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.quantities</span> <span class="kn">import</span> <span class="n">consumption</span>
+    <span class="kn">from</span> <span class="nn">muse.commodities</span> <span class="kn">import</span> <span class="n">is_fuel</span>
+
+    <span class="n">commodity</span> <span class="o">=</span> <span class="n">is_fuel</span><span class="p">(</span><span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">market</span><span class="o">.</span><span class="n">commodity</span><span class="p">))</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">technologies</span><span class="p">[[</span><span class="s2">&quot;fixed_inputs&quot;</span><span class="p">,</span> <span class="s2">&quot;flexible_inputs&quot;</span><span class="p">]],</span>
+        <span class="n">year</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">year</span><span class="p">,</span>
+        <span class="n">technology</span><span class="o">=</span><span class="n">search_space</span><span class="o">.</span><span class="n">replacement</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">prices</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span><span class="n">market</span><span class="o">.</span><span class="n">prices</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">forecast_year</span><span class="p">)</span>
+    <span class="n">demand</span> <span class="o">=</span> <span class="n">demand</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">search_space</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">replacement</span><span class="o">=</span><span class="s2">&quot;technology&quot;</span><span class="p">)</span>
+    <span class="n">fcons</span> <span class="o">=</span> <span class="n">consumption</span><span class="p">(</span><span class="n">technologies</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">prices</span><span class="o">=</span><span class="n">prices</span><span class="p">,</span> <span class="n">production</span><span class="o">=</span><span class="n">demand</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">fcons</span> <span class="o">*</span> <span class="n">prices</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">commodity</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="s2">&quot;commodity&quot;</span><span class="p">,</span> <span class="s2">&quot;timeslice&quot;</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">technology</span><span class="o">=</span><span class="s2">&quot;replacement&quot;</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="lifetime_levelized_cost_of_energy"><a class="viewcode-back" href="../../source/muse.html#muse.objectives.lifetime_levelized_cost_of_energy">[docs]</a><span class="nd">@register_objective</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;LCOE&quot;</span><span class="p">,</span> <span class="s2">&quot;LLCOE&quot;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">lifetime_levelized_cost_of_energy</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+    <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Levelized cost of energy (LCOE) of technologies over their lifetime.</span>
+
+<span class="sd">    It follows the `simpified LCOE` given by NREL.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        agent: The agent of interest</span>
+<span class="sd">        search_space: The search space space for replacement technologies</span>
+<span class="sd">        technologies: All the technologies</span>
+<span class="sd">        market: The market parameters</span>
+
+<span class="sd">    Return:</span>
+<span class="sd">        xr.DataArray with the LCOE calculated for the relevant technologies</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.quantities</span> <span class="kn">import</span> <span class="n">lifetime_levelized_cost_of_energy</span> <span class="k">as</span> <span class="n">lifetimeLCOE</span>
+
+    <span class="n">techs</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span><span class="n">technologies</span><span class="p">,</span> <span class="n">technology</span><span class="o">=</span><span class="n">search_space</span><span class="o">.</span><span class="n">replacement</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">techs</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span>
+    <span class="n">prices</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span><span class="n">market</span><span class="o">.</span><span class="n">prices</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">lifetimeLCOE</span><span class="p">(</span><span class="n">prices</span><span class="p">,</span> <span class="n">techs</span><span class="p">,</span> <span class="n">agent</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">technology</span><span class="o">=</span><span class="s2">&quot;replacement&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="s2">&quot;timeslice&quot;</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">capital_recovery_factor</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span> <span class="n">search_space</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Capital recovery factor using interest rate and expected lifetime.</span>
+
+<span class="sd">    The `capital recovery factor`_ is computed using the expression given by HOMER</span>
+<span class="sd">    Energy.</span>
+
+<span class="sd">    .. _capital recovery factor:</span>
+<span class="sd">        https://www.homerenergy.com/products/pro/docs/3.11/capital_recovery_factor.html</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        agent: The agent of interest</span>
+<span class="sd">        search_space: The search space space for replacement technologies</span>
+<span class="sd">        technologies: All the technologies</span>
+
+<span class="sd">    Return:</span>
+<span class="sd">        xr.DataArray with the CRF calculated for the relevant technologies</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">tech</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">technologies</span><span class="p">[[</span><span class="s2">&quot;technical_life&quot;</span><span class="p">,</span> <span class="s2">&quot;interest_rate&quot;</span><span class="p">]],</span>
+        <span class="n">technology</span><span class="o">=</span><span class="n">search_space</span><span class="o">.</span><span class="n">replacement</span><span class="p">,</span>
+        <span class="n">year</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">year</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;technology&quot;</span><span class="p">)</span>
+    <span class="n">nyears</span> <span class="o">=</span> <span class="n">tech</span><span class="o">.</span><span class="n">technical_life</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">tech</span><span class="o">.</span><span class="n">interest_rate</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">tech</span><span class="o">.</span><span class="n">interest_rate</span><span class="p">)</span> <span class="o">**</span> <span class="n">nyears</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="net_present_value"><a class="viewcode-back" href="../../source/muse.html#muse.objectives.net_present_value">[docs]</a><span class="nd">@register_objective</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;NPV&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">net_present_value</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+    <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Net present value (NPV) of the relevant technologies.</span>
+
+<span class="sd">    The net present value of a Component is the present value  of all the revenues that</span>
+<span class="sd">    a Component earns over its lifetime minus all the costs of installing and operating</span>
+<span class="sd">    it. Follows the definition of the `net present cost`_ given by HOMER Energy.</span>
+
+<span class="sd">    .. _net present cost:</span>
+<span class="sd">        https://www.homerenergy.com/products/pro/docs/3.11/net_present_cost.html</span>
+
+<span class="sd">    - energy commodities INPUTS are related to fuel costs</span>
+<span class="sd">    - environmental commodities OUTPUTS are related to environmental costs</span>
+<span class="sd">    - material and service commodities INPUTS are related to consumable costs</span>
+<span class="sd">    - fixed and variable costs are given as technodata inputs and depend on the</span>
+<span class="sd">      installed capacity and production (non-environmental), respectively</span>
+<span class="sd">    - capacity costs are given as technodata inputs and depend on the installed capacity</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Here, the installation year is always agent.year, since objectives compute the</span>
+<span class="sd">        NPV for technologies to be installed in the current year. A more general NPV</span>
+<span class="sd">        computation (which would then live in quantities.py) would have to refer to</span>
+<span class="sd">        installation year of the technology.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        agent: The agent of interest</span>
+<span class="sd">        search_space: The search space space for replacement technologies</span>
+<span class="sd">        technologies: All the technologies</span>
+<span class="sd">        market: The market parameters</span>
+
+<span class="sd">    Return:</span>
+<span class="sd">        xr.DataArray with the NPV calculated for the relevant technologies</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.commodities</span> <span class="kn">import</span> <span class="n">is_pollutant</span><span class="p">,</span> <span class="n">is_material</span><span class="p">,</span> <span class="n">is_enduse</span>
+
+    <span class="c1"># Filtering of the inputs</span>
+    <span class="n">tech</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">technologies</span><span class="p">[</span>
+            <span class="p">[</span>
+                <span class="s2">&quot;technical_life&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;interest_rate&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;cap_par&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;cap_exp&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;var_par&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;var_exp&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;fix_par&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;fix_exp&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;fixed_outputs&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;utilization_factor&quot;</span><span class="p">,</span>
+            <span class="p">]</span>
+        <span class="p">],</span>
+        <span class="n">technology</span><span class="o">=</span><span class="n">search_space</span><span class="o">.</span><span class="n">replacement</span><span class="p">,</span>
+        <span class="n">year</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">year</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;technology&quot;</span><span class="p">)</span>
+    <span class="n">nyears</span> <span class="o">=</span> <span class="n">tech</span><span class="o">.</span><span class="n">technical_life</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">interest_rate</span> <span class="o">=</span> <span class="n">tech</span><span class="o">.</span><span class="n">interest_rate</span>
+    <span class="n">cap_par</span> <span class="o">=</span> <span class="n">tech</span><span class="o">.</span><span class="n">cap_par</span>
+    <span class="n">cap_exp</span> <span class="o">=</span> <span class="n">tech</span><span class="o">.</span><span class="n">cap_exp</span>
+    <span class="n">var_par</span> <span class="o">=</span> <span class="n">tech</span><span class="o">.</span><span class="n">var_par</span>
+    <span class="n">var_exp</span> <span class="o">=</span> <span class="n">tech</span><span class="o">.</span><span class="n">var_exp</span>
+    <span class="n">fix_par</span> <span class="o">=</span> <span class="n">tech</span><span class="o">.</span><span class="n">fix_par</span>
+    <span class="n">fix_exp</span> <span class="o">=</span> <span class="n">tech</span><span class="o">.</span><span class="n">fix_exp</span>
+    <span class="n">fixed_outputs</span> <span class="o">=</span> <span class="n">tech</span><span class="o">.</span><span class="n">fixed_outputs</span>
+    <span class="n">utilization_factor</span> <span class="o">=</span> <span class="n">tech</span><span class="o">.</span><span class="n">utilization_factor</span>
+
+    <span class="c1"># All years the simulation is running</span>
+    <span class="c1"># NOTE: see docstring about installation year</span>
+    <span class="n">iyears</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">agent</span><span class="o">.</span><span class="n">year</span> <span class="o">+</span> <span class="n">nyears</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="n">years</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">iyears</span><span class="p">,</span> <span class="n">coords</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;year&quot;</span><span class="p">:</span> <span class="n">iyears</span><span class="p">},</span> <span class="n">dims</span><span class="o">=</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Filters</span>
+    <span class="n">environmentals</span> <span class="o">=</span> <span class="n">is_pollutant</span><span class="p">(</span><span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="p">)</span>
+    <span class="n">material</span> <span class="o">=</span> <span class="n">is_material</span><span class="p">(</span><span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="p">)</span>
+    <span class="n">products</span> <span class="o">=</span> <span class="n">is_enduse</span><span class="p">(</span><span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="p">)</span>
+
+    <span class="c1"># Capacity</span>
+    <span class="n">capacity</span> <span class="o">=</span> <span class="n">capacity_to_service_demand</span><span class="p">(</span>
+        <span class="n">agent</span><span class="p">,</span> <span class="n">demand</span><span class="p">,</span> <span class="n">search_space</span><span class="p">,</span> <span class="n">technologies</span><span class="p">,</span> <span class="n">market</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Evolution of rates with time</span>
+    <span class="n">rates</span> <span class="o">=</span> <span class="n">discount_factor</span><span class="p">(</span>
+        <span class="n">years</span> <span class="o">-</span> <span class="n">agent</span><span class="o">.</span><span class="n">year</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">interest_rate</span><span class="p">,</span> <span class="n">years</span> <span class="o">&lt;=</span> <span class="n">agent</span><span class="o">.</span><span class="n">year</span> <span class="o">+</span> <span class="n">nyears</span>
+    <span class="p">)</span>
+
+    <span class="c1"># raw revenues --&gt; Make the NPV more positive</span>
+    <span class="c1"># This production is the absolute maximum production, given the capacity</span>
+    <span class="n">prices_non_env</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">market</span><span class="o">.</span><span class="n">prices</span><span class="p">,</span> <span class="n">commodity</span><span class="o">=</span><span class="n">products</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">years</span><span class="o">.</span><span class="n">values</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">ffill</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+    <span class="n">production</span> <span class="o">=</span> <span class="n">capacity</span> <span class="o">*</span> <span class="n">fixed_outputs</span> <span class="o">*</span> <span class="n">utilization_factor</span>
+    <span class="n">raw_revenues</span> <span class="o">=</span> <span class="p">(</span><span class="n">production</span> <span class="o">*</span> <span class="n">prices_non_env</span> <span class="o">*</span> <span class="n">rates</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+        <span class="p">(</span><span class="s2">&quot;commodity&quot;</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">,</span> <span class="s2">&quot;timeslice&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># raw costs --&gt; make the NPV more negative</span>
+    <span class="c1"># Cost of installed capacity</span>
+    <span class="n">installed_capacity_costs</span> <span class="o">=</span> <span class="n">cap_par</span> <span class="o">*</span> <span class="n">capacity</span> <span class="o">**</span> <span class="n">cap_exp</span>
+
+    <span class="c1"># Cost related to environmental products</span>
+    <span class="n">prices_environmental</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">market</span><span class="o">.</span><span class="n">prices</span><span class="p">,</span> <span class="n">commodity</span><span class="o">=</span><span class="n">environmentals</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">years</span><span class="o">.</span><span class="n">values</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">ffill</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+    <span class="n">environmental_costs</span> <span class="o">=</span> <span class="p">(</span><span class="n">production</span> <span class="o">*</span> <span class="n">prices_environmental</span> <span class="o">*</span> <span class="n">rates</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+        <span class="p">(</span><span class="s2">&quot;commodity&quot;</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">,</span> <span class="s2">&quot;timeslice&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Fuel/energy costs</span>
+    <span class="n">fuel_costs</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">fuel_consumption_cost</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="n">demand</span><span class="p">,</span> <span class="n">search_space</span><span class="p">,</span> <span class="n">technologies</span><span class="p">,</span> <span class="n">market</span><span class="p">)</span> <span class="o">*</span> <span class="n">rates</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Cost related to material other than fuel/energy and environmentals</span>
+    <span class="n">prices_material</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">market</span><span class="o">.</span><span class="n">prices</span><span class="p">,</span> <span class="n">commodity</span><span class="o">=</span><span class="n">material</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">years</span><span class="o">.</span><span class="n">values</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">ffill</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+    <span class="n">material_costs</span> <span class="o">=</span> <span class="p">(</span><span class="n">production</span> <span class="o">*</span> <span class="n">prices_material</span> <span class="o">*</span> <span class="n">rates</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+        <span class="p">(</span><span class="s2">&quot;commodity&quot;</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">,</span> <span class="s2">&quot;timeslice&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Fixed and Variable costs</span>
+    <span class="n">fixed_costs</span> <span class="o">=</span> <span class="n">fix_par</span> <span class="o">*</span> <span class="n">capacity</span> <span class="o">**</span> <span class="n">fix_exp</span>
+    <span class="n">variable_costs</span> <span class="o">=</span> <span class="p">(</span><span class="n">var_par</span> <span class="o">*</span> <span class="n">production</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">products</span><span class="p">)</span> <span class="o">**</span> <span class="n">var_exp</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+        <span class="s2">&quot;commodity&quot;</span>
+    <span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">fixed_costs</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">variable_costs</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+    <span class="n">fixed_and_variable_costs</span> <span class="o">=</span> <span class="p">((</span><span class="n">fixed_costs</span> <span class="o">+</span> <span class="n">variable_costs</span><span class="p">)</span> <span class="o">*</span> <span class="n">rates</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">raw_revenues</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">installed_capacity_costs</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">raw_revenues</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">environmental_costs</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">raw_revenues</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">fuel_costs</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">raw_revenues</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">material_costs</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">raw_revenues</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">fixed_and_variable_costs</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">raw_revenues</span>
+        <span class="o">-</span> <span class="n">installed_capacity_costs</span>
+        <span class="o">-</span> <span class="n">fuel_costs</span>
+        <span class="o">-</span> <span class="n">environmental_costs</span>
+        <span class="o">-</span> <span class="n">material_costs</span>
+        <span class="o">-</span> <span class="n">fixed_and_variable_costs</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">results</span></div>
+
+
+<span class="nd">@register_objective</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;NPC&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">net_present_cost</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+    <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Net present cost (NPC) of the relevant technologies.</span>
+
+<span class="sd">    The net present cost of a Component is the present value of all the costs of</span>
+<span class="sd">    installing and operating the Component over the project lifetime, minus the present</span>
+<span class="sd">    value of all the revenues that it earns over the project lifetime.</span>
+
+<span class="sd">    .. seealso::</span>
+<span class="sd">        :py:func:`net_present_value`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">net_present_value</span><span class="p">(</span>
+        <span class="n">agent</span><span class="p">,</span> <span class="n">demand</span><span class="p">,</span> <span class="n">search_space</span><span class="p">,</span> <span class="n">technologies</span><span class="p">,</span> <span class="n">market</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">discount_factor</span><span class="p">(</span><span class="n">years</span><span class="p">,</span> <span class="n">interest_rate</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculate an array with the rate (aka discount factor) values over the years.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">mask</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">interest_rate</span><span class="p">)</span> <span class="o">**</span> <span class="n">years</span>
+
+
+<div class="viewcode-block" id="equivalent_annual_cost"><a class="viewcode-back" href="../../source/muse.html#muse.objectives.equivalent_annual_cost">[docs]</a><span class="nd">@register_objective</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;EAC&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">equivalent_annual_cost</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+    <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Equivalent annual costs (or annualized cost) of a technology.</span>
+
+<span class="sd">    This is the cost that, if it were to occur equally in every year of the</span>
+<span class="sd">    project lifetime, would give the same net present cost as the actual cash</span>
+<span class="sd">    flow sequence associated with that component. The cost is computed using the</span>
+<span class="sd">    `annualized cost`_ expression given by HOMER Energy.</span>
+
+<span class="sd">    .. _annualized cost:</span>
+<span class="sd">        https://www.homerenergy.com/products/pro/docs/3.11/annualized_cost.html</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        agent: The agent of interest</span>
+<span class="sd">        search_space: The search space space for replacement technologies</span>
+<span class="sd">        technologies: All the technologies</span>
+<span class="sd">        market: The market parameters</span>
+
+<span class="sd">    Return:</span>
+<span class="sd">        xr.DataArray with the EAC calculated for the relevant technologies</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">npv</span> <span class="o">=</span> <span class="n">net_present_cost</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="n">demand</span><span class="p">,</span> <span class="n">search_space</span><span class="p">,</span> <span class="n">technologies</span><span class="p">,</span> <span class="n">market</span><span class="p">)</span>
+    <span class="n">crf</span> <span class="o">=</span> <span class="n">capital_recovery_factor</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="n">search_space</span><span class="p">,</span> <span class="n">technologies</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">npv</span> <span class="o">*</span> <span class="n">crf</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.objectives</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+Commodity,CommodityType,CommodityName,CommodityEmissionFactor_CO2,HeatRate,Unit
+Electricity,Energy,electricity,0,1,GWh
+Gas,Energy,gas,56.1,1,PJ
+Heat,Product,heat,0,1,PJ
+Cook,Product,cook,0,1,PJ
+Wind,Energy,wind,0,1,PJ
+CO2fuelcomsbustion,Environmental,CO2f,0,1,kt

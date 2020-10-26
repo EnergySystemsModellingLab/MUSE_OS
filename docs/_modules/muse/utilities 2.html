@@ -1,0 +1,728 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse.utilities &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.utilities</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for muse.utilities</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Collection of functions and stand-alone algorithms.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">Hashable</span><span class="p">,</span>
+    <span class="n">Iterable</span><span class="p">,</span>
+    <span class="n">Iterator</span><span class="p">,</span>
+    <span class="n">Mapping</span><span class="p">,</span>
+    <span class="n">NamedTuple</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">Text</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+    <span class="n">cast</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+
+
+<div class="viewcode-block" id="multiindex_to_coords"><a class="viewcode-back" href="../../source/muse.html#muse.utilities.multiindex_to_coords">[docs]</a><span class="k">def</span> <span class="nf">multiindex_to_coords</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">],</span> <span class="n">dimension</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;asset&quot;</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Flattens multi-index dimension into multi-coord dimension.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">pandas</span> <span class="kn">import</span> <span class="n">MultiIndex</span>
+
+    <span class="k">assert</span> <span class="n">dimension</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">dims</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">indexes</span><span class="p">[</span><span class="n">dimension</span><span class="p">],</span> <span class="n">MultiIndex</span><span class="p">)</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">indexes</span><span class="p">[</span><span class="n">dimension</span><span class="p">]</span><span class="o">.</span><span class="n">names</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">}</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="n">dimension</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">coord</span> <span class="ow">in</span> <span class="n">coords</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">dimension</span><span class="p">,</span> <span class="n">coord</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">set_coords</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="coords_to_multiindex"><a class="viewcode-back" href="../../source/muse.html#muse.utilities.coords_to_multiindex">[docs]</a><span class="k">def</span> <span class="nf">coords_to_multiindex</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">],</span> <span class="n">dimension</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;asset&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Creates a multi-index from flattened multiple coords.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">pandas</span> <span class="kn">import</span> <span class="n">MultiIndex</span>
+
+    <span class="k">assert</span> <span class="n">dimension</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">dims</span>
+    <span class="k">assert</span> <span class="n">dimension</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">indexes</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">coords</span> <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span> <span class="o">==</span> <span class="p">(</span><span class="n">dimension</span><span class="p">,)]</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_arrays</span><span class="p">([</span><span class="n">data</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">names</span><span class="p">],</span> <span class="n">names</span><span class="o">=</span><span class="n">names</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+    <span class="n">result</span><span class="p">[</span><span class="n">dimension</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="reduce_assets"><a class="viewcode-back" href="../../source/muse.html#muse.utilities.reduce_assets">[docs]</a><span class="k">def</span> <span class="nf">reduce_assets</span><span class="p">(</span>
+    <span class="n">assets</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]]],</span>
+    <span class="n">coords</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Text</span><span class="p">],</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Text</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dim</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;asset&quot;</span><span class="p">,</span>
+    <span class="n">operation</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">]:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Combine assets along given asset dimension.</span>
+
+<span class="sd">    This method simplifies combining assets accross multiple agents, or combining assets</span>
+<span class="sd">    across a given dimension. By default, it will sum together assets from the same</span>
+<span class="sd">    region which have the same technology and the same installation date. In other</span>
+<span class="sd">    words, assets are identified by the technology, installation year and region. The</span>
+<span class="sd">    reduction happens over other possible coordinates, e.g. the owning agent.</span>
+
+<span class="sd">    More specifically, assets are often indexed using what xarray calls a **dimension</span>
+<span class="sd">    without coordinates**. In practice, there are still coordinates associated with</span>
+<span class="sd">    assets, e.g. *technology* and *installed* (installation year or version), but the</span>
+<span class="sd">    value associated with these coordinates are not unique.  There may be more than one</span>
+<span class="sd">    asset with the same technology or installation year.</span>
+
+<span class="sd">    For instance, with assets per agent defined as :math:`A^{i, r}_o`, with :math:`i` an</span>
+<span class="sd">    agent index, :math:`r` a region, :math:`o` is the coordinates identified in</span>
+<span class="sd">    ``coords``, and :math:`T` the transformation identified by ``operation``, then this</span>
+<span class="sd">    function computes:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        R_{r, o} = T[\{A^{i, r}_o; \forall i\}]</span>
+
+<span class="sd">    If :math:`T` is the sum operation, then:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        R_{r, o} = \sum_i  A^{i, r}_o</span>
+
+
+<span class="sd">    Example:</span>
+<span class="sd">        Lets construct assets that do have duplicates assets. First we construct the</span>
+<span class="sd">        dimensions, using fake data:</span>
+
+<span class="sd">        &gt;&gt;&gt; data = xr.Dataset()</span>
+<span class="sd">        &gt;&gt;&gt; data[&#39;year&#39;] = &#39;year&#39;, [2010, 2015, 2017]</span>
+<span class="sd">        &gt;&gt;&gt; data[&#39;installed&#39;] = &#39;asset&#39;, [1990, 1991, 1991, 1990]</span>
+<span class="sd">        &gt;&gt;&gt; data[&#39;technology&#39;] = &#39;asset&#39;, [&#39;a&#39;, &#39;b&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; data[&#39;region&#39;] = &#39;asset&#39;, [&#39;x&#39;, &#39;x&#39;, &#39;x&#39;, &#39;y&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; data = data.set_coords((&#39;installed&#39;, &#39;technology&#39;, &#39;region&#39;))</span>
+
+<span class="sd">        We can check there are duplicate assets in this coordinate system:</span>
+
+<span class="sd">        &gt;&gt;&gt; processes = set(</span>
+<span class="sd">        ...     zip(data.installed.values, data.technology.values, data.region.values)</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; len(processes) &lt; len(data.asset)</span>
+<span class="sd">        True</span>
+
+<span class="sd">        Now we can easily create a fake two dimensional quantity per process and</span>
+<span class="sd">        per year:</span>
+
+<span class="sd">        &gt;&gt;&gt; data[&#39;capacity&#39;] = (&#39;year&#39;, &#39;asset&#39;), np.arange(3 * 4).reshape(3, 4)</span>
+
+<span class="sd">        The point of `reduce_assets` is to aggregate assets that refer to the</span>
+<span class="sd">        same process:</span>
+
+<span class="sd">        &gt;&gt;&gt; reduce_assets(data.capacity)</span>
+<span class="sd">        &lt;xarray.DataArray &#39;capacity&#39; (year: 3, asset: 3)&gt;</span>
+<span class="sd">        array([[ 0,  3,  3],</span>
+<span class="sd">               [ 4,  7, 11],</span>
+<span class="sd">               [ 8, 11, 19]])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * year        (year) ... 2010 2015 2017</span>
+<span class="sd">            installed   (asset) ... 1990 1990 1991</span>
+<span class="sd">            technology  (asset) &lt;U1 &#39;a&#39; &#39;c&#39; &#39;b&#39;</span>
+<span class="sd">            region      (asset) &lt;U1 &#39;x&#39; &#39;y&#39; &#39;x&#39;</span>
+<span class="sd">        Dimensions without coordinates: asset</span>
+
+<span class="sd">        We can also specify explicitly which coordinates in the &#39;asset&#39;</span>
+<span class="sd">        dimension should be reduced, and how:</span>
+
+<span class="sd">        &gt;&gt;&gt; reduce_assets(</span>
+<span class="sd">        ...     data.capacity,</span>
+<span class="sd">        ...     coords=(&#39;technology&#39;, &#39;installed&#39;),</span>
+<span class="sd">        ...     operation = lambda x: x.mean(dim=&#39;asset&#39;)</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &lt;xarray.DataArray &#39;capacity&#39; (year: 3, asset: 3)&gt;</span>
+<span class="sd">        array([[ 0. ,  1.5,  3. ],</span>
+<span class="sd">               [ 4. ,  5.5,  7. ],</span>
+<span class="sd">               [ 8. ,  9.5, 11. ]])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * year        (year) ... 2010 2015 2017</span>
+<span class="sd">            technology  (asset) &lt;U1 &#39;a&#39; &#39;b&#39; &#39;c&#39;</span>
+<span class="sd">            installed   (asset) ... 1990 1991 1990</span>
+<span class="sd">        Dimensions without coordinates: asset</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+
+    <span class="k">if</span> <span class="n">operation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="nf">operation</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">operation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assets</span><span class="p">,</span> <span class="p">(</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)):</span>
+        <span class="n">assets</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">assets</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assets</span><span class="p">,</span> <span class="p">(</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">assets</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">assets</span>
+    <span class="k">if</span> <span class="n">coords</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="p">[</span><span class="n">cast</span><span class="p">(</span><span class="n">Text</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">assets</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">dims</span> <span class="o">==</span> <span class="p">(</span><span class="n">dim</span><span class="p">,)]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">Text</span><span class="p">):</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="p">(</span><span class="n">coords</span><span class="p">,)</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">coords</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">assets</span><span class="o">.</span><span class="n">coords</span> <span class="ow">and</span> <span class="n">assets</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span> <span class="o">==</span> <span class="p">(</span><span class="n">dim</span><span class="p">,)]</span>
+    <span class="n">assets</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">assets</span><span class="p">)</span>
+    <span class="n">dtypes</span> <span class="o">=</span> <span class="p">[(</span><span class="n">d</span><span class="p">,</span> <span class="n">assets</span><span class="p">[</span><span class="n">d</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">coords</span><span class="p">]</span>
+    <span class="n">grouper</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="n">Iterator</span><span class="p">,</span> <span class="n">assets</span><span class="p">[</span><span class="n">d</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">coords</span><span class="p">))),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtypes</span>
+    <span class="p">)</span>
+    <span class="k">assert</span> <span class="s2">&quot;grouper&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">assets</span><span class="o">.</span><span class="n">coords</span>
+    <span class="n">assets</span><span class="p">[</span><span class="s2">&quot;grouper&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;asset&quot;</span><span class="p">,</span> <span class="n">grouper</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">operation</span><span class="p">(</span><span class="n">assets</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;grouper&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">grouper</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">coords</span><span class="p">):</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="n">dim</span><span class="p">,</span> <span class="p">[</span><span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;asset&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="broadcast_techs"><a class="viewcode-back" href="../../source/muse.html#muse.utilities.broadcast_techs">[docs]</a><span class="k">def</span> <span class="nf">broadcast_techs</span><span class="p">(</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">],</span>
+    <span class="n">template</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span>
+    <span class="n">dimension</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;asset&quot;</span><span class="p">,</span>
+    <span class="n">interpolation</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+    <span class="n">installed_as_year</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Broadcasts technologies to the shape of template in given dimension.</span>
+
+<span class="sd">    The dimensions of the technologies are fully explicit, in that each concept</span>
+<span class="sd">    &#39;technology&#39;, &#39;region&#39;, &#39;year&#39; (for year of issue) is a separate dimension.</span>
+<span class="sd">    However, the dataset or data arrays representing other quantities, such as</span>
+<span class="sd">    capacity, are often flattened out with coordinates &#39;region&#39;, &#39;installed&#39;,</span>
+<span class="sd">    and &#39;technology&#39; represented in a single &#39;asset&#39; dimension. This latter</span>
+<span class="sd">    representation is sparse if not all combinations of &#39;region&#39;, &#39;installed&#39;,</span>
+<span class="sd">    and &#39;technology&#39; are present, whereas the former represention makes it</span>
+<span class="sd">    easier to select a subset of the same.</span>
+
+<span class="sd">    This function broadcast the first represention to the shape and coordinates</span>
+<span class="sd">    of the second.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        technologies: The dataset to broadcast</span>
+<span class="sd">        template: the dataset or data-array to use as a template</span>
+<span class="sd">        dimension: the name of the dimensiom from `template` over which to</span>
+<span class="sd">            broadcast</span>
+<span class="sd">        interpolation: interpolation method used across `year`</span>
+<span class="sd">        installed_as_year: if the coordinate `installed` exists, then it is</span>
+<span class="sd">            applied to the `year` dimension of the technologies dataset</span>
+<span class="sd">        kwargs: further arguments are used initial filters over the</span>
+<span class="sd">            `technologies` dataset.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># this assert will trigger if &#39;year&#39; is changed to &#39;installed&#39; in</span>
+    <span class="c1"># technologies, because then this function should be modified.</span>
+    <span class="k">assert</span> <span class="s2">&quot;installed&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">technologies</span><span class="o">.</span><span class="n">dims</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">coords</span> <span class="k">if</span> <span class="n">template</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span> <span class="o">==</span> <span class="p">(</span><span class="n">dimension</span><span class="p">,)]</span>
+    <span class="c1"># the first selection reduces the size of technologies without affecting the</span>
+    <span class="c1"># dimensions.</span>
+    <span class="n">first_sel</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">n</span><span class="p">:</span> <span class="n">technologies</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">template</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">technologies</span><span class="o">.</span><span class="n">dims</span> <span class="ow">and</span> <span class="n">n</span> <span class="o">!=</span> <span class="s2">&quot;year&quot;</span>
+    <span class="p">}</span>
+    <span class="n">first_sel</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;year&quot;</span><span class="p">})</span>
+    <span class="n">techs</span> <span class="o">=</span> <span class="n">technologies</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">first_sel</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;year&quot;</span> <span class="ow">in</span> <span class="n">technologies</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+        <span class="n">year</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">installed_as_year</span> <span class="ow">and</span> <span class="s2">&quot;installed&quot;</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+            <span class="n">year</span> <span class="o">=</span> <span class="n">template</span><span class="p">[</span><span class="s2">&quot;installed&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="ow">not</span> <span class="n">installed_as_year</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;year&quot;</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+            <span class="n">year</span> <span class="o">=</span> <span class="n">template</span><span class="p">[</span><span class="s2">&quot;year&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">year</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">year</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">techs</span> <span class="o">=</span> <span class="n">techs</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span>
+                <span class="n">year</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="n">Iterable</span><span class="p">,</span> <span class="n">year</span><span class="o">.</span><span class="n">values</span><span class="p">))),</span> <span class="n">method</span><span class="o">=</span><span class="n">interpolation</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">installed_as_year</span> <span class="ow">and</span> <span class="s2">&quot;installed&quot;</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+            <span class="n">techs</span> <span class="o">=</span> <span class="n">techs</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="s2">&quot;installed&quot;</span><span class="p">)</span>
+
+    <span class="n">second_sel</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="n">template</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">coords</span> <span class="k">if</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">techs</span><span class="o">.</span><span class="n">dims</span><span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">techs</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">second_sel</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="clean_assets"><a class="viewcode-back" href="../../source/muse.html#muse.utilities.clean_assets">[docs]</a><span class="k">def</span> <span class="nf">clean_assets</span><span class="p">(</span><span class="n">assets</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">years</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]]):</span>
+    <span class="sd">&quot;&quot;&quot;Cleans up and prepares asset for current iteration.</span>
+
+<span class="sd">    - adds current and forecast year by backfilling missing entries</span>
+<span class="sd">    - removes assets for which there is no capacity now or in the future</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">years</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="o">*</span><span class="n">years</span><span class="p">)</span>
+        <span class="n">years</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">assets</span><span class="o">.</span><span class="n">year</span><span class="p">[</span><span class="n">assets</span><span class="o">.</span><span class="n">year</span> <span class="o">&gt;=</span> <span class="n">current</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">years</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">assets</span><span class="o">.</span><span class="n">year</span><span class="p">[</span><span class="n">assets</span><span class="o">.</span><span class="n">year</span> <span class="o">&gt;=</span> <span class="n">years</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">years</span><span class="p">)</span>
+        <span class="n">years</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">assets</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">years</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;backfill&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">not_asset</span> <span class="o">=</span> <span class="p">[</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">dims</span> <span class="k">if</span> <span class="n">u</span> <span class="o">!=</span> <span class="s2">&quot;asset&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">asset</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">capacity</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">not_asset</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="filter_input"><a class="viewcode-back" href="../../source/muse.html#muse.utilities.filter_input">[docs]</a><span class="k">def</span> <span class="nf">filter_input</span><span class="p">(</span>
+    <span class="n">dataset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">],</span>
+    <span class="n">year</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">interpolation</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Filter inputs, taking care to interpolate years.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Set</span>
+
+    <span class="k">if</span> <span class="n">year</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">setyear</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">setyear</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">)}</span>  <span class="c1"># type: ignore</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">setyear</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">year</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+    <span class="n">withyear</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;year&quot;</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">dims</span>
+        <span class="ow">and</span> <span class="n">year</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="ow">and</span> <span class="n">setyear</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">withyear</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;year&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">year</span>
+        <span class="n">year</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">withyear</span> <span class="ow">and</span> <span class="s2">&quot;year&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">dims</span> <span class="ow">and</span> <span class="s2">&quot;year&quot;</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">coords</span><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;year&quot;</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">dims</span> <span class="ow">and</span> <span class="n">year</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">interpolation</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;year&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">dims</span> <span class="ow">and</span> <span class="s2">&quot;year&quot;</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">coords</span><span class="p">:</span>
+            <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s2">&quot;year&quot;</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+            <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">ffill</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dataset</span></div>
+
+
+<div class="viewcode-block" id="filter_with_template"><a class="viewcode-back" href="../../source/muse.html#muse.utilities.filter_with_template">[docs]</a><span class="k">def</span> <span class="nf">filter_with_template</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">],</span>
+    <span class="n">template</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span>
+    <span class="n">asset_dimension</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;asset&quot;</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Filters data to match template.</span>
+
+<span class="sd">    If the `asset_dimension` is present in `template.dims`, then the call is</span>
+<span class="sd">    forwarded to `broadcast_techs`. Otherwise, the set of dimensions and indices</span>
+<span class="sd">    in common between `template` and `data` are determined, and the resulting</span>
+<span class="sd">    call is forwarded to `filter_input`.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        data: Data to transform</span>
+<span class="sd">        template: Data from which to figure coordinates and dimensions</span>
+<span class="sd">        asset_dimension: Name of the dimension which if present indicates the</span>
+<span class="sd">            format is that of an *asset* (see `broadcast_techs`)</span>
+<span class="sd">        kwargs: passed on to `broadcast_techs` or `filter_input`</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">        `data` transformed to match the form of `template`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">asset_dimension</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">broadcast_techs</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">template</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="n">asset_dimension</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="n">match_indices</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="p">{</span><span class="n">d</span><span class="p">:</span> <span class="n">template</span><span class="p">[</span><span class="n">d</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">d</span><span class="p">])</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">match_indices</span> <span class="k">if</span> <span class="n">d</span> <span class="o">!=</span> <span class="s2">&quot;year&quot;</span><span class="p">}</span>
+    <span class="k">if</span> <span class="s2">&quot;year&quot;</span> <span class="ow">in</span> <span class="n">match_indices</span><span class="p">:</span>
+        <span class="n">match</span><span class="p">[</span><span class="s2">&quot;year&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">values</span>
+    <span class="k">return</span> <span class="n">filter_input</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">match</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>  <span class="c1"># type: ignore</span></div>
+
+
+<div class="viewcode-block" id="tupled_dimension"><a class="viewcode-back" href="../../source/muse.html#muse.utilities.tupled_dimension">[docs]</a><span class="k">def</span> <span class="nf">tupled_dimension</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Transforms one axis into a tuples.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">j</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">array</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="n">rolled</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">rolled</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">flattened</span> <span class="o">=</span> <span class="n">rolled</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">flattened</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">flattened</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">flattened</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:])</span>
+    <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="lexical_comparison"><a class="viewcode-back" href="../../source/muse.html#muse.utilities.lexical_comparison">[docs]</a><span class="k">def</span> <span class="nf">lexical_comparison</span><span class="p">(</span>
+    <span class="n">objectives</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">binsize</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">order</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">bin_last</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Lexical comparison over the objectives.</span>
+
+<span class="sd">    Lexical comparison operates by binning the objectives into bins of width</span>
+<span class="sd">    `binsize`. Once binned, dimensions other than `asset` and `technology` are</span>
+<span class="sd">    reduced by taking the max, e.g. the largest constraint. Finally, the</span>
+<span class="sd">    objectives are ranked lexographically, in the order given by the parameters.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        objectives: xr.Dataset containing the objectives to rank</span>
+<span class="sd">        binsize: bin size, minimization direction</span>
+<span class="sd">            (+ -&gt; minimize, - -&gt; maximize), and (optionally) order of</span>
+<span class="sd">            lexicographical comparison. The order is the one given</span>
+<span class="sd">            `binsize.data_vars` if the argument `order` is None.</span>
+<span class="sd">        order: Optional array indicating the order in which to rank the tuples.</span>
+<span class="sd">        bin_last: Whether the last metric should be binned, or whether it</span>
+<span class="sd">            should be left as a the type it already is (e.g. no flooring and</span>
+<span class="sd">            no turning to integer.)</span>
+
+<span class="sd">    Result:</span>
+<span class="sd">        An array of tuples which can subsquently be compared lexicographically.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">order</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="p">[</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">binsize</span><span class="o">.</span><span class="n">data_vars</span><span class="p">]</span>
+
+    <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">order</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">binsize</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">order</span><span class="p">)</span><span class="o">.</span><span class="n">issuperset</span><span class="p">(</span><span class="n">objectives</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">objectives</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">order</span> <span class="k">if</span> <span class="n">bin_last</span> <span class="k">else</span> <span class="n">order</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">/</span> <span class="n">binsize</span><span class="p">[</span><span class="n">name</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">bin_last</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">order</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="n">order</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">/</span> <span class="n">binsize</span><span class="p">[</span><span class="n">order</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+    <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">to_array</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="s2">&quot;variable&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">tupled_dimension</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="s2">&quot;variable&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="merge_assets"><a class="viewcode-back" href="../../source/muse.html#muse.utilities.merge_assets">[docs]</a><span class="k">def</span> <span class="nf">merge_assets</span><span class="p">(</span>
+    <span class="n">capa_a</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">capa_b</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">interpolation</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+    <span class="n">dimension</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;asset&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Merge two capacity arrays.&quot;&quot;&quot;</span>
+    <span class="n">years</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">capa_a</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">capa_b</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
+
+    <span class="n">levels</span> <span class="o">=</span> <span class="p">(</span><span class="n">coord</span> <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="n">capa_a</span><span class="o">.</span><span class="n">coords</span> <span class="k">if</span> <span class="n">capa_a</span><span class="p">[</span><span class="n">coord</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span> <span class="o">==</span> <span class="p">(</span><span class="n">dimension</span><span class="p">,))</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+        <span class="p">(</span>
+            <span class="n">capa_a</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">years</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">interpolation</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+            <span class="n">capa_b</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">years</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">interpolation</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">dim</span><span class="o">=</span><span class="n">dimension</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">forgroup</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">pipe</span><span class="p">(</span><span class="n">coords_to_multiindex</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="n">dimension</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">forgroup</span><span class="p">[</span><span class="n">dimension</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">forgroup</span><span class="p">[</span><span class="n">dimension</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">forgroup</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">dimension</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dimension</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">pipe</span><span class="p">(</span><span class="n">multiindex_to_coords</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="n">dimension</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="s2">&quot;asset_level_</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">i</span><span class="p">:</span> <span class="n">coord</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">coord</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">levels</span><span class="p">)})</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="avoid_repetitions"><a class="viewcode-back" href="../../source/muse.html#muse.utilities.avoid_repetitions">[docs]</a><span class="k">def</span> <span class="nf">avoid_repetitions</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;year&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;list of years such that there is no repetition in the data.</span>
+
+<span class="sd">    It removes the central year of any three consecutive years where all data is</span>
+<span class="sd">    the same. This means the original data can be reobtained via a linear</span>
+<span class="sd">    interpolation or a forward fill.</span>
+
+<span class="sd">    The first and last year are always preserved.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">roll</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rolling</span><span class="p">({</span><span class="n">dim</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span> <span class="n">center</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">construct</span><span class="p">(</span><span class="s2">&quot;window&quot;</span><span class="p">)</span>
+    <span class="n">years</span> <span class="o">=</span> <span class="o">~</span><span class="p">(</span><span class="n">roll</span> <span class="o">==</span> <span class="n">roll</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">roll</span><span class="o">.</span><span class="n">dims</span> <span class="k">if</span> <span class="n">u</span> <span class="o">!=</span> <span class="n">dim</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">year</span><span class="p">[</span><span class="n">years</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="nametuple_to_dict"><a class="viewcode-back" href="../../source/muse.html#muse.utilities.nametuple_to_dict">[docs]</a><span class="k">def</span> <span class="nf">nametuple_to_dict</span><span class="p">(</span><span class="n">nametup</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Mapping</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Transforms a nametuple of type GenericDict into an OrderDict.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">is_dataclass</span><span class="p">,</span> <span class="n">asdict</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+
+    <span class="k">if</span> <span class="n">is_dataclass</span><span class="p">(</span><span class="n">nametup</span><span class="p">):</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">asdict</span><span class="p">(</span><span class="n">nametup</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">nametup</span><span class="p">,</span> <span class="s2">&quot;_asdict&quot;</span><span class="p">):</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">nametup</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span>  <span class="c1"># type: ignore</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">nametup</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># type: ignore</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">is_dataclass</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;_asdict&quot;</span><span class="p">):</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">nametuple_to_dict</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+<div class="viewcode-block" id="future_propagation"><a class="viewcode-back" href="../../source/muse.html#muse.utilities.future_propagation">[docs]</a><span class="k">def</span> <span class="nf">future_propagation</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">future</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">threshhold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-12</span><span class="p">,</span>
+    <span class="n">dim</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;year&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Propagates values into the future.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">        ``Data`` should be an array with at least one dimension, &quot;year&quot;:</span>
+
+<span class="sd">        &gt;&gt;&gt; coords = dict(year=list(range(2020, 2040, 5)), fuel=[&quot;gas&quot;, &quot;coal&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; data = xr.DataArray(</span>
+<span class="sd">        ...     [list(range(4)), list(range(-5, -1))],</span>
+<span class="sd">        ...     coords=coords,</span>
+<span class="sd">        ...     dims=(&quot;fuel&quot;, &quot;year&quot;)</span>
+<span class="sd">        ... )</span>
+
+<span class="sd">        ``future`` is an array with  exactly one year in its ``year`` coordinate, or</span>
+<span class="sd">        that coordinate must correspond to a scalar. That one year should also be</span>
+<span class="sd">        present in ``data``.</span>
+
+<span class="sd">        &gt;&gt;&gt; future = xr.DataArray(</span>
+<span class="sd">        ...     [1.2, -3.95], coords=dict(fuel=coords[&#39;fuel&#39;], year=2025), dims=&quot;fuel&quot;,</span>
+<span class="sd">        ... )</span>
+
+<span class="sd">        This function propagates into ``data`` values from ``future``, but only if those</span>
+<span class="sd">        values differed for the current year beyond a given threshhold:</span>
+
+<span class="sd">        &gt;&gt;&gt; from muse.utilities import future_propagation</span>
+<span class="sd">        &gt;&gt;&gt; future_propagation(data, future, threshhold=0.1)</span>
+<span class="sd">        &lt;xarray.DataArray (fuel: 2, year: 4)&gt;</span>
+<span class="sd">        array([[ 0. ,  1.2,  1.2,  1.2],</span>
+<span class="sd">               [-5. , -4. , -3. , -2. ]])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * year     (year) ... 2020 2025 2030 2035</span>
+<span class="sd">          * fuel     (fuel) &lt;U4 &#39;gas&#39; &#39;coal&#39;</span>
+
+<span class="sd">        Above, the data for coal is not sufficiently different given the threshhold.</span>
+<span class="sd">        hence, the future values for coal remain as they where.</span>
+
+<span class="sd">        The dimensions of ``future`` do not have to match exactly those of ``data``.</span>
+<span class="sd">        Standard broadcasting is used if they do not match:</span>
+
+<span class="sd">        &gt;&gt;&gt; future_propagation(data, future.sel(fuel=&quot;gas&quot;, drop=True), threshhold=0.1)</span>
+<span class="sd">        &lt;xarray.DataArray (fuel: 2, year: 4)&gt;</span>
+<span class="sd">        array([[ 0. ,  1.2,  1.2,  1.2],</span>
+<span class="sd">               [-5. ,  1.2,  1.2,  1.2]])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * year     (year) ... 2020 2025 2030 2035</span>
+<span class="sd">          * fuel     (fuel) &lt;U4 &#39;gas&#39; &#39;coal&#39;</span>
+<span class="sd">        &gt;&gt;&gt; future_propagation(data, future.sel(fuel=&quot;coal&quot;, drop=True), threshhold=0.1)</span>
+<span class="sd">        &lt;xarray.DataArray (fuel: 2, year: 4)&gt;</span>
+<span class="sd">        array([[ 0.  , -3.95, -3.95, -3.95],</span>
+<span class="sd">               [-5.  , -4.  , -3.  , -2.  ]])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * year     (year) ... 2020 2025 2030 2035</span>
+<span class="sd">          * fuel     (fuel) &lt;U4 &#39;gas&#39; &#39;coal&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">dim</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">dims</span> <span class="ow">or</span> <span class="n">dim</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">future</span><span class="o">.</span><span class="n">coords</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Expected dimension &#39;year&#39; in `data` and `future`.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">future</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">future</span><span class="p">[</span><span class="n">dim</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;``future[&quot;</span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s1">&quot;] should be of length 1 or a scalar.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">future</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">dim</span><span class="p">])</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">future</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="si">}</span><span class="s1"> not found in data[&quot;</span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s1">&quot;].&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">future</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">future</span> <span class="o">=</span> <span class="n">future</span><span class="o">.</span><span class="n">loc</span><span class="p">[{</span><span class="n">dim</span><span class="p">:</span> <span class="mi">0</span><span class="p">}]</span>
+    <span class="n">year</span> <span class="o">=</span> <span class="n">future</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">year</span> <span class="o">&lt;</span> <span class="n">year</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[{</span><span class="n">dim</span><span class="p">:</span> <span class="n">year</span><span class="p">}]</span> <span class="o">-</span> <span class="n">future</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">threshhold</span>
+        <span class="p">),</span>
+        <span class="n">future</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="agent_concatenation"><a class="viewcode-back" href="../../source/muse.html#muse.utilities.agent_concatenation">[docs]</a><span class="k">def</span> <span class="nf">agent_concatenation</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">]],</span>
+    <span class="n">dim</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;asset&quot;</span><span class="p">,</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;agent&quot;</span><span class="p">,</span>
+    <span class="n">fill_value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Concatenates input map along given dimension.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">        Lets create sets of random assets to work with. We set the seed so that this</span>
+<span class="sd">        test can be reproduced exactly.</span>
+
+<span class="sd">        &gt;&gt;&gt; from muse.examples import random_agent_assets</span>
+<span class="sd">        &gt;&gt;&gt; rng = np.random.default_rng(1234)</span>
+<span class="sd">        &gt;&gt;&gt; assets = {i: random_agent_assets(rng) for i in range(5)}</span>
+
+<span class="sd">        The concatenation will create a new dataset (or datarray) combining all the</span>
+<span class="sd">        inputs along the dimension &quot;asset&quot;. The origin of each datum is retained in a</span>
+<span class="sd">        new coordinate &quot;agent&quot; with dimension &quot;asset&quot;.</span>
+
+<span class="sd">        &gt;&gt;&gt; from muse.utilities import agent_concatenation</span>
+<span class="sd">        &gt;&gt;&gt; aggregate = agent_concatenation(assets)</span>
+<span class="sd">        &gt;&gt;&gt; aggregate</span>
+<span class="sd">        &lt;xarray.Dataset&gt;</span>
+<span class="sd">        Dimensions:     (asset: 19, year: 12)</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * year        (year) int64 2033 2035 2036 2037 2039 ... 2046 2047 2048 2049</span>
+<span class="sd">            technology  (asset) &lt;U9 &#39;oven&#39; &#39;stove&#39; &#39;oven&#39; ... &#39;stove&#39; &#39;oven&#39; &#39;thermomix&#39;</span>
+<span class="sd">            region      (asset) &lt;U9 &#39;Brexitham&#39; &#39;Brexitham&#39; ... &#39;Brexitham&#39; &#39;Brexitham&#39;</span>
+<span class="sd">            agent       (asset) ... 0 0 0 0 0 1 1 1 2 2 2 2 3 3 3 4 4 4 4</span>
+<span class="sd">            installed   (asset) int64 2030 2025 2030 2010 2030 ... 2025 2030 2010 2025</span>
+<span class="sd">        Dimensions without coordinates: asset</span>
+<span class="sd">        Data variables:</span>
+<span class="sd">            capacity    (asset, year) float64 26.0 26.0 26.0 56.0 ... 62.0 62.0 62.0</span>
+
+<span class="sd">        Note that the `dtype` of the capacity has changed from integers to floating</span>
+<span class="sd">        points. This is due to how ``xarray`` performs the operation.</span>
+
+<span class="sd">        We can check that all the data from each agent is indeed present in the</span>
+<span class="sd">        aggregate.</span>
+
+<span class="sd">        &gt;&gt;&gt; for agent, inventory in assets.items():</span>
+<span class="sd">        ...    assert (aggregate.sel(asset=aggregate.agent == agent) == inventory).all()</span>
+
+<span class="sd">        However, it should be noted that the data is not always strictly equivalent:</span>
+<span class="sd">        dimensions outside of &quot;assets&quot; (most notably &quot;year&quot;) will include all points</span>
+<span class="sd">        from all agents. Missing values for the &quot;year&quot; dimension are forward filled (and</span>
+<span class="sd">        backfilled with zeros). Others are left with &quot;NaN&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">datum</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">datum</span><span class="o">.</span><span class="n">coords</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Coordinate </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> already exists&quot;</span><span class="p">)</span>
+        <span class="n">datum</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">set_coords</span><span class="p">(</span><span class="s2">&quot;agent&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;year&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">ffill</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">fill_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">fill_value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="aggregate_technology_model"><a class="viewcode-back" href="../../source/muse.html#muse.utilities.aggregate_technology_model">[docs]</a><span class="k">def</span> <span class="nf">aggregate_technology_model</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span>
+    <span class="n">dim</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;asset&quot;</span><span class="p">,</span>
+    <span class="n">drop</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Text</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;installed&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Aggregate together assets with the same installation year.</span>
+
+<span class="sd">    The assets of a given agent, region, and technology but different installation year</span>
+<span class="sd">    are grouped together and summed over.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">        We first create a random set of agent assets and aggregate them.</span>
+<span class="sd">        Some of these agents own assets from the same technology but potentially with</span>
+<span class="sd">        different installation year. This function will aggregate together all assets</span>
+<span class="sd">        of a given agent with same technology.</span>
+
+<span class="sd">        &gt;&gt;&gt; from muse.examples import random_agent_assets</span>
+<span class="sd">        &gt;&gt;&gt; from muse.utilities import agent_concatenation, aggregate_technology_model</span>
+<span class="sd">        &gt;&gt;&gt; rng = np.random.default_rng(1234)</span>
+<span class="sd">        &gt;&gt;&gt; agent_assets = {i: random_agent_assets(rng) for i in range(5)}</span>
+<span class="sd">        &gt;&gt;&gt; assets = agent_concatenation(agent_assets)</span>
+<span class="sd">        &gt;&gt;&gt; reduced = aggregate_technology_model(assets)</span>
+
+<span class="sd">        We can check that the tuples (agent, technology) are unique (each agent works in</span>
+<span class="sd">        a single region):</span>
+
+<span class="sd">        &gt;&gt;&gt; ids = list(zip(reduced.agent.values, reduced.technology.values))</span>
+<span class="sd">        &gt;&gt;&gt; assert len(set(ids)) == len(ids)</span>
+
+<span class="sd">        And we can check they correspond to the right summation:</span>
+
+<span class="sd">        &gt;&gt;&gt; for agent, technology in set(ids):</span>
+<span class="sd">        ...     techsel = assets.technology == technology</span>
+<span class="sd">        ...     agsel = assets.agent == agent</span>
+<span class="sd">        ...     expected = assets.sel(asset=techsel &amp; agsel).sum(&quot;asset&quot;)</span>
+<span class="sd">        ...     techsel = reduced.technology == technology</span>
+<span class="sd">        ...     agsel = reduced.agent == agent</span>
+<span class="sd">        ...     actual = reduced.sel(asset=techsel &amp; agsel)</span>
+<span class="sd">        ...     assert len(actual.asset) == 1</span>
+<span class="sd">        ...     assert (actual == expected).all()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">drop</span><span class="p">,</span> <span class="n">Text</span><span class="p">):</span>
+        <span class="n">drop</span> <span class="o">=</span> <span class="p">(</span><span class="n">drop</span><span class="p">,)</span>
+    <span class="k">return</span> <span class="n">reduce_assets</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="p">[</span>
+            <span class="n">cast</span><span class="p">(</span><span class="n">Text</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">coords</span>
+            <span class="k">if</span> <span class="n">u</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">drop</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span> <span class="o">==</span> <span class="p">(</span><span class="n">dim</span><span class="p">,)</span>
+        <span class="p">],</span>
+    <span class="p">)</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.utilities</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

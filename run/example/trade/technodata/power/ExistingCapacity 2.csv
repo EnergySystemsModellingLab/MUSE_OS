@@ -1,0 +1,7 @@
+ProcessName,RegionName,Unit,2020,2025,2030,2035,2040,2045,2050
+gasCCGT,R1,PJ/y,70,60,0,0,0,0,0
+windturbine,R1,PJ/y,0,0,0,0,0,0,0
+gasCCGT,R2,PJ/y,60,60,0,0,0,0,0
+windturbine,R2,PJ/y,0,0,0,0,0,0,0
+gasCCGT,R3,PJ/y,1000,900,0,0,0,0,0
+windturbine,R3,PJ/y,0,0,0,0,0,0,0

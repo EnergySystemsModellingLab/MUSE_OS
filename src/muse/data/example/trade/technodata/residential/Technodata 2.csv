@@ -1,0 +1,8 @@
+ProcessName,RegionName,Time,Level,cap_par,cap_exp,fix_par,fix_exp,var_par,var_exp,MaxCapacityAddition,MaxCapacityGrowth,TotalCapacityLimit,TechnicalLife,UtilizationFactor,ScalingSize,efficiency,Availabiliy year,InterestRate,Type,Fuel,EndUse,Agent2
+Unit,-,Year,-,MUS$2010/PJ_a,-,MUS$2010/PJ,-,MUS$2010/PJ,-,PJ,-,PJ,Years,-,PJ,%,-,-,-,-,-,Retrofit
+gasboiler,R1,2010,fixed,4.52,1,0,1,0,1,600,0.2,2000,10,0.9,0.00000189,86,1,0.1,energy,gas,heat,1
+heatpump,R1,2010,fixed,10.55,1,0,1,0,1,600,0.2,2000,10,0.9,0.00000189,86,1,0.1,energy,electricity,heat,1
+gasboiler,R2,2010,fixed,4.94,1,0,1,0,1,600,0.2,2000,10,0.9,0.00000189,86,1,0.1,energy,gas,heat,1
+heatpump,R2,2010,fixed,11.53,1,0,1,0,1,600,0.2,2000,10,0.9,0.00000189,86,1,0.1,energy,electricity,heat,1
+gasboiler,R3,2010,fixed,3.8,1,0,1,0,1,6000,0.2,20000,10,0.9,0.00000189,86,1,0.1,energy,gas,heat,1
+heatpump,R3,2010,fixed,8.87,1,0,1,0,1,6000,0.2,20000,10,0.9,0.00000189,86,1,0.1,energy,electricity,heat,1

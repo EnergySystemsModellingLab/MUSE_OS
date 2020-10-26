@@ -1,0 +1,153 @@
+# Global settings - most REQUIRED
+time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
+foresight = 5   # Has to be a multiple of the minimum separation between the years in time framework
+regions = ["R1", "R2", "R3"]
+interest_rate = 0.1
+interpolation_mode = 'Active'
+log_level = 'info'
+
+# Convergence parameters
+equilibrium_variable = 'demand'
+maximum_iterations = 100
+tolerance = 0.1
+tolerance_unmet_demand = -0.1
+
+[[outputs]]
+    quantity = "prices"
+    sink = "aggregate"
+    filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+
+[[outputs]]
+    quantity = "capacity"
+    sink = "aggregate"
+    filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+
+[carbon_budget_control]
+    budget = []
+
+[global_input_files]
+    projections = '{path}/input/Projections.csv'
+    global_commodities = '{path}/input/GlobalCommodities.csv'
+
+[sectors.presets]
+    type = 'presets'
+    priority = 0
+    consumption_path= "{path}/technodata/preset/*Consumption.csv"
+
+
+[sectors.residential]
+    type = 'default'
+    priority = 1
+    dispatch_production = 'share'
+
+    [sectors.residential.technodata]
+        technodata = '{path}/technodata/residential/Technodata.csv'
+        commodities_in = '{path}/technodata/residential/CommIn.csv'
+        commodities_out = '{path}/technodata/residential/CommOut.csv'
+
+    [sectors.residential.subsectors.retro_and_new]
+        agents = '{path}/technodata/residential/Agents.csv'
+        existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
+        lpsolver = "scipy"
+        constraints = [
+            "max_production",
+            "max_capacity_expansion",
+            "minimum_service",
+            "demand",
+            "search_space",
+        ]
+        demand_share = "new_and_retro"
+        forecast = 5
+        asset_threshhold = 1e-4
+
+    [[sectors.residential.outputs]]
+        filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+        quantity = "capacity"
+        sink = 'csv'
+        overwrite = true
+
+    [[sectors.residential.outputs]]
+        filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+        quantity.name = "supply"
+        quantity.sum_over = "timeslice"
+        quantity.drop = ["comm_usage", "units_prices"]
+        sink = 'csv'
+        overwrite = true
+
+    [[sectors.residential.interactions]] 
+        net = 'new_to_retro'
+        interaction = 'transfer'
+
+[sectors.power]
+    type = 'default'
+    priority = 2
+    dispatch_production = 'share'
+
+    [sectors.power.technodata]
+        technodata = '{path}/technodata/power/Technodata.csv'
+        trade = '{path}/technodata/power/TradeTechnodata.csv'
+        commodities_in = '{path}/technodata/power/CommIn.csv'
+        commodities_out = '{path}/technodata/power/CommOut.csv'
+
+    [sectors.power.subsectors.trade]
+        agents = '{path}/technodata/Agents.csv'
+        existing_capacity = '{path}/technodata/power/ExistingTrade.csv'
+        lpsolver = "scipy"
+        constraints = [
+            "max_production",
+            "max_capacity_expansion",
+            "demand",
+            "search_space",
+        ]
+        demand_share = "unmet_forecasted_demand"
+        forecast = 5
+        asset_threshhold = 1e-4
+
+    [[sectors.power.outputs]]
+        filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+        quantity = "capacity"
+        sink = 'csv'
+        overwrite = true
+
+[sectors.gas]
+    type = 'default'
+    priority = 2
+    dispatch_production = 'share'
+
+    [sectors.gas.technodata]
+        technodata = '{path}/technodata/gas/Technodata.csv'
+        trade = '{path}/technodata/gas/TradeTechnodata.csv'
+        commodities_in = '{path}/technodata/gas/CommIn.csv'
+        commodities_out = '{path}/technodata/gas/CommOut.csv'
+
+    [sectors.gas.subsectors.trade]
+        agents = '{path}/technodata/Agents.csv'
+        existing_capacity = '{path}/technodata/gas/ExistingTrade.csv'
+        existing_trade = '{path}/technodata/gas/ExistingTrade.csv'
+        possible_trade = '{path}/technodata/gas/PossibleTrade.csv'
+        lpsolver = "scipy"
+        constraints = [
+            "max_production",
+            "max_capacity_expansion",
+            "minimum_service",
+            "demand",
+            "search_space",
+        ]
+        demand_share = "unmet_forecasted_demand"
+        forecast = 5
+        asset_threshhold = 1e-4
+
+    [[sectors.gas.outputs]]
+        filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+        quantity = "capacity"
+        sink = 'csv'
+        overwrite = true
+
+[timeslices]
+    all-year.all-week.night = 1460
+    all-year.all-week.morning = 1460
+    all-year.all-week.afternoon = 1460
+    all-year.all-week.early-peak = 1460
+    all-year.all-week.late-peak = 1460
+    all-year.all-week.evening = 1460
+    level_names = ["month", "day", "hour"]

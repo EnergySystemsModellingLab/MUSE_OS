@@ -1,0 +1,586 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse.agents package &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.agents package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="muse-agents-package">
+<h1>muse.agents package<a class="headerlink" href="#muse-agents-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-muse.agents.agent">
+<span id="muse-agents-agent-module"></span><h2>muse.agents.agent module<a class="headerlink" href="#module-muse.agents.agent" title="Permalink to this headline">¶</a></h2>
+<p>Holds all building agents.</p>
+<dl class="py class">
+<dt id="muse.agents.agent.AbstractAgent">
+<em class="property">class </em><code class="sig-prename descclassname">muse.agents.agent.</code><code class="sig-name descname">AbstractAgent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'Agent'</span></em>, <em class="sig-param"><span class="n">region</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">''</span></em>, <em class="sig-param"><span class="n">assets</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>xarray.core.dataset.Dataset<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">interpolation</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'linear'</span></em>, <em class="sig-param"><span class="n">category</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/agent.html#AbstractAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.agent.AbstractAgent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<p>Base class for all agents.</p>
+<dl class="py attribute">
+<dt id="muse.agents.agent.AbstractAgent.assets">
+<code class="sig-name descname">assets</code><a class="headerlink" href="#muse.agents.agent.AbstractAgent.assets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current stock of technologies.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.agent.AbstractAgent.category">
+<code class="sig-name descname">category</code><a class="headerlink" href="#muse.agents.agent.AbstractAgent.category" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attribute to classify different sets of agents.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="muse.agents.agent.AbstractAgent.filter_input">
+<code class="sig-name descname">filter_input</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>xarray.core.dataset.Dataset<span class="p">, </span>xarray.core.dataarray.DataArray<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">year</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>Sequence<span class="p">[</span>int<span class="p">]</span><span class="p">, </span>int<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; Union<span class="p">[</span>xarray.core.dataset.Dataset<span class="p">, </span>xarray.core.dataarray.DataArray<span class="p">]</span><a class="reference internal" href="../_modules/muse/agents/agent.html#AbstractAgent.filter_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.agent.AbstractAgent.filter_input" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter inputs for usage in agent.</p>
+<p>For instance, filters down to agent’s region, etc.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.agent.AbstractAgent.interpolation">
+<code class="sig-name descname">interpolation</code><a class="headerlink" href="#muse.agents.agent.AbstractAgent.interpolation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpolation method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.agent.AbstractAgent.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#muse.agents.agent.AbstractAgent.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name associated with the agent</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="muse.agents.agent.AbstractAgent.next">
+<em class="property">abstract </em><code class="sig-name descname">next</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">demand</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">time_period</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/agent.html#AbstractAgent.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.agent.AbstractAgent.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterates agent one turn.</p>
+<p>The goal is to figure out from market variables which technologies to invest in
+and by how much.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.agent.AbstractAgent.region">
+<code class="sig-name descname">region</code><a class="headerlink" href="#muse.agents.agent.AbstractAgent.region" title="Permalink to this definition">¶</a></dt>
+<dd><p>Region the agent operates in</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.agent.AbstractAgent.tolerance">
+<code class="sig-name descname">tolerance</code><em class="property"> = 1e-12</em><a class="headerlink" href="#muse.agents.agent.AbstractAgent.tolerance" title="Permalink to this definition">¶</a></dt>
+<dd><p>tolerance criteria for floating point comparisons.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.agent.AbstractAgent.uuid">
+<code class="sig-name descname">uuid</code><a class="headerlink" href="#muse.agents.agent.AbstractAgent.uuid" title="Permalink to this definition">¶</a></dt>
+<dd><p>A unique identifier for the agent.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="muse.agents.agent.Agent">
+<em class="property">class </em><code class="sig-prename descclassname">muse.agents.agent.</code><code class="sig-name descname">Agent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'Agent'</span></em>, <em class="sig-param"><span class="n">region</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'USA'</span></em>, <em class="sig-param"><span class="n">assets</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>xarray.core.dataset.Dataset<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">interpolation</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'linear'</span></em>, <em class="sig-param"><span class="n">search_rules</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">objectives</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">decision</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">year</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">2010</span></em>, <em class="sig-param"><span class="n">maturity_threshhold</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">forecast</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em>, <em class="sig-param"><span class="n">housekeeping</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">merge_transform</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">demand_threshhold</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>float<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">category</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">asset_threshhold</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.0001</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/agent.html#Agent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.agent.Agent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#muse.agents.agent.AbstractAgent" title="muse.agents.agent.AbstractAgent"><code class="xref py py-class docutils literal notranslate"><span class="pre">muse.agents.agent.AbstractAgent</span></code></a></p>
+<p>Agent that is capable of computing a search-space and a cost metric.</p>
+<p>This agent will not perform any investment itself.</p>
+<dl class="py method">
+<dt id="muse.agents.agent.Agent.add_investments">
+<code class="sig-name descname">add_investments</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">investments</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">current_year</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">time_period</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/agent.html#Agent.add_investments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.agent.Agent.add_investments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add new assets to the agent.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="muse.agents.agent.Agent.asset_housekeeping">
+<code class="sig-name descname">asset_housekeeping</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/agent.html#Agent.asset_housekeeping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.agent.Agent.asset_housekeeping" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reduces memory footprint of assets.</p>
+<p>Performs tasks such as:</p>
+<ul class="simple">
+<li><p>remove empty assets</p></li>
+<li><p>remove years prior to current</p></li>
+<li><p>interpolate current year and forecasted year</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.agent.Agent.asset_threshhold">
+<code class="sig-name descname">asset_threshhold</code><a class="headerlink" href="#muse.agents.agent.Agent.asset_threshhold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Threshhold below which assets are not added.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.agent.Agent.decision">
+<code class="sig-name descname">decision</code><a class="headerlink" href="#muse.agents.agent.Agent.decision" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates single decision objective from one or more objectives.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.agent.Agent.demand_threshhold">
+<code class="sig-name descname">demand_threshhold</code><a class="headerlink" href="#muse.agents.agent.Agent.demand_threshhold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Threshhold below which the demand share is zero.</p>
+<p>This criteria avoids fulfilling demand for very small values. If None,
+then the criteria is not applied.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.agent.Agent.forecast">
+<code class="sig-name descname">forecast</code><a class="headerlink" href="#muse.agents.agent.Agent.forecast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of years to look into the future for forecating purposed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="muse.agents.agent.Agent.forecast_year">
+<em class="property">property </em><code class="sig-name descname">forecast_year</code><a class="headerlink" href="#muse.agents.agent.Agent.forecast_year" title="Permalink to this definition">¶</a></dt>
+<dd><p>Year to consider when forecasting.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.agent.Agent.maturity_threshhold">
+<code class="sig-name descname">maturity_threshhold</code><a class="headerlink" href="#muse.agents.agent.Agent.maturity_threshhold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Market share threshhold.</p>
+<p>Threshhold when and if filtering replacement technologies with respect
+to market share.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.agent.Agent.merge_transform">
+<code class="sig-name descname">merge_transform</code><a class="headerlink" href="#muse.agents.agent.Agent.merge_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tranforms applied on the old and new assets.</p>
+<p>It could mean using only the new assets, or merging old and new, etc…
+It can be any function registered with
+<a class="reference internal" href="muse.html#muse.hooks.register_final_asset_transform" title="muse.hooks.register_final_asset_transform"><code class="xref py py-func docutils literal notranslate"><span class="pre">register_final_asset_transform()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="muse.agents.agent.Agent.next">
+<code class="sig-name descname">next</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">demand</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">time_period</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em><span class="sig-paren">)</span> &#x2192; Optional<span class="p">[</span>xarray.core.dataset.Dataset<span class="p">]</span><a class="reference internal" href="../_modules/muse/agents/agent.html#Agent.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.agent.Agent.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterates agent one turn.</p>
+<p>The goal is to figure out from market variables which technologies to
+invest in and by how much.</p>
+<p>This function will modify <cite>self.assets</cite> and increment <cite>self.year</cite>.
+Other attributes are left unchanged. Arguments to the function are
+never modified.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.agent.Agent.objectives">
+<code class="sig-name descname">objectives</code><a class="headerlink" href="#muse.agents.agent.Agent.objectives" title="Permalink to this definition">¶</a></dt>
+<dd><p>One or more objectives by which to decide next investments.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="muse.agents.agent.Agent.retirement_profile">
+<code class="sig-name descname">retirement_profile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">investments</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">current_year</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">time_period</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; Optional<span class="p">[</span>xarray.core.dataarray.DataArray<span class="p">]</span><a class="reference internal" href="../_modules/muse/agents/agent.html#Agent.retirement_profile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.agent.Agent.retirement_profile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.agent.Agent.search_rules">
+<code class="sig-name descname">search_rules</code><em class="property">: Callable</em><a class="headerlink" href="#muse.agents.agent.Agent.search_rules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search rule(s) determining potential replacement technologies.</p>
+<p>This is a string referring to a filter, or a sequence of strings
+referring to multiple filters, applied one after the other.  Any
+function registered via <cite>muse.filters.register_filter</cite> can be
+used to filter the search space.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.agent.Agent.year">
+<code class="sig-name descname">year</code><a class="headerlink" href="#muse.agents.agent.Agent.year" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current year.</p>
+<p>The year is incremented by one everytime next is called.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="muse.agents.agent.InvestingAgent">
+<em class="property">class </em><code class="sig-prename descclassname">muse.agents.agent.</code><code class="sig-name descname">InvestingAgent</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="n">constraints</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">investment</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/agent.html#InvestingAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.agent.InvestingAgent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#muse.agents.agent.Agent" title="muse.agents.agent.Agent"><code class="xref py py-class docutils literal notranslate"><span class="pre">muse.agents.agent.Agent</span></code></a></p>
+<p>Agent that performs investment for itself.</p>
+<dl class="py attribute">
+<dt id="muse.agents.agent.InvestingAgent.constraints">
+<code class="sig-name descname">constraints</code><a class="headerlink" href="#muse.agents.agent.InvestingAgent.constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a set of constraints limiting investment.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.agent.InvestingAgent.invest">
+<code class="sig-name descname">invest</code><a class="headerlink" href="#muse.agents.agent.InvestingAgent.invest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to use when fulfilling demand from rated set of techs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="muse.agents.agent.InvestingAgent.next">
+<code class="sig-name descname">next</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">demand</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">time_period</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/agent.html#InvestingAgent.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.agent.InvestingAgent.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterates agent one turn.</p>
+<p>The goal is to figure out from market variables which technologies to
+invest in and by how much.</p>
+<p>This function will modify <cite>self.assets</cite> and increment <cite>self.year</cite>.
+Other attributes are left unchanged. Arguments to the function are
+never modified.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-muse.agents.factories">
+<span id="muse-agents-factories-module"></span><h2>muse.agents.factories module<a class="headerlink" href="#module-muse.agents.factories" title="Permalink to this headline">¶</a></h2>
+<p>Holds all building agents.</p>
+<dl class="py function">
+<dt id="muse.agents.factories.agents_factory">
+<code class="sig-prename descclassname">muse.agents.factories.</code><code class="sig-name descname">agents_factory</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params_or_path</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">, </span>List<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">capacity</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>xarray.core.dataarray.DataArray<span class="p">, </span>str<span class="p">, </span>pathlib.Path<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">regions</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Sequence<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">year</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="#muse.agents.agent.Agent" title="muse.agents.agent.Agent">muse.agents.agent.Agent</a><span class="p">]</span><a class="reference internal" href="../_modules/muse/agents/factories.html#agents_factory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.factories.agents_factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a list of agents for the chosen sector.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.agents.factories.create_agent">
+<code class="sig-prename descclassname">muse.agents.factories.</code><code class="sig-name descname">create_agent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">agent_type</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#muse.agents.agent.Agent" title="muse.agents.agent.Agent">muse.agents.agent.Agent</a><a class="reference internal" href="../_modules/muse/agents/factories.html#create_agent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.factories.create_agent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="muse.agents.factories.create_newcapa_agent">
+<code class="sig-prename descclassname">muse.agents.factories.</code><code class="sig-name descname">create_newcapa_agent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">capacity</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">year</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">region</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">search_rules</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>Sequence<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'all'</span></em>, <em class="sig-param"><span class="n">interpolation</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'linear'</span></em>, <em class="sig-param"><span class="n">merge_transform</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>Mapping<span class="p">, </span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'new'</span></em>, <em class="sig-param"><span class="n">quantity</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">housekeeping</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>Mapping<span class="p">, </span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'noop'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/factories.html#create_newcapa_agent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.factories.create_newcapa_agent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates newcapa agent from muse primitives.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.agents.factories.create_retrofit_agent">
+<code class="sig-prename descclassname">muse.agents.factories.</code><code class="sig-name descname">create_retrofit_agent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">capacity</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">share</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">year</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">region</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">interpolation</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'linear'</span></em>, <em class="sig-param"><span class="n">decision</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>Callable<span class="p">, </span>str<span class="p">, </span>Mapping<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'mean'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/factories.html#create_retrofit_agent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.factories.create_retrofit_agent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates retrofit agent from muse primitives.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.agents.factories.create_standard_agent">
+<code class="sig-prename descclassname">muse.agents.factories.</code><code class="sig-name descname">create_standard_agent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">capacity</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">year</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">region</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">share</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">interpolation</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'linear'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/factories.html#create_standard_agent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.factories.create_standard_agent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates retrofit agent from muse primitives.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.agents.factories.factory">
+<code class="sig-prename descclassname">muse.agents.factories.</code><code class="sig-name descname">factory</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">existing_capacity_path</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">agent_parameters_path</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">technodata_path</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sector</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sectors_directory</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">PosixPath('/Users/alexkell/Documents/SGI/2-documentation/StarMuse/docs/data')</span></em>, <em class="sig-param"><span class="n">baseyear</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">2010</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="#muse.agents.agent.Agent" title="muse.agents.agent.Agent">muse.agents.agent.Agent</a><span class="p">]</span><a class="reference internal" href="../_modules/muse/agents/factories.html#factory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.factories.factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads list of agents from standard MUSE input files.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-muse.agents">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-muse.agents" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="muse.agents.AbstractAgent">
+<em class="property">class </em><code class="sig-prename descclassname">muse.agents.</code><code class="sig-name descname">AbstractAgent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'Agent'</span></em>, <em class="sig-param"><span class="n">region</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">''</span></em>, <em class="sig-param"><span class="n">assets</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>xarray.core.dataset.Dataset<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">interpolation</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'linear'</span></em>, <em class="sig-param"><span class="n">category</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/agent.html#AbstractAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.AbstractAgent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<p>Base class for all agents.</p>
+<dl class="py attribute">
+<dt id="muse.agents.AbstractAgent.assets">
+<code class="sig-name descname">assets</code><a class="headerlink" href="#muse.agents.AbstractAgent.assets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current stock of technologies.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.AbstractAgent.category">
+<code class="sig-name descname">category</code><a class="headerlink" href="#muse.agents.AbstractAgent.category" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attribute to classify different sets of agents.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="muse.agents.AbstractAgent.filter_input">
+<code class="sig-name descname">filter_input</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>xarray.core.dataset.Dataset<span class="p">, </span>xarray.core.dataarray.DataArray<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">year</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>Sequence<span class="p">[</span>int<span class="p">]</span><span class="p">, </span>int<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; Union<span class="p">[</span>xarray.core.dataset.Dataset<span class="p">, </span>xarray.core.dataarray.DataArray<span class="p">]</span><a class="reference internal" href="../_modules/muse/agents/agent.html#AbstractAgent.filter_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.AbstractAgent.filter_input" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter inputs for usage in agent.</p>
+<p>For instance, filters down to agent’s region, etc.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.AbstractAgent.interpolation">
+<code class="sig-name descname">interpolation</code><a class="headerlink" href="#muse.agents.AbstractAgent.interpolation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpolation method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.AbstractAgent.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#muse.agents.AbstractAgent.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name associated with the agent</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="muse.agents.AbstractAgent.next">
+<em class="property">abstract </em><code class="sig-name descname">next</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">demand</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">time_period</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/agent.html#AbstractAgent.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.AbstractAgent.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterates agent one turn.</p>
+<p>The goal is to figure out from market variables which technologies to invest in
+and by how much.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.AbstractAgent.region">
+<code class="sig-name descname">region</code><a class="headerlink" href="#muse.agents.AbstractAgent.region" title="Permalink to this definition">¶</a></dt>
+<dd><p>Region the agent operates in</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.AbstractAgent.tolerance">
+<code class="sig-name descname">tolerance</code><em class="property"> = 1e-12</em><a class="headerlink" href="#muse.agents.AbstractAgent.tolerance" title="Permalink to this definition">¶</a></dt>
+<dd><p>tolerance criteria for floating point comparisons.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.AbstractAgent.uuid">
+<code class="sig-name descname">uuid</code><a class="headerlink" href="#muse.agents.AbstractAgent.uuid" title="Permalink to this definition">¶</a></dt>
+<dd><p>A unique identifier for the agent.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="muse.agents.Agent">
+<em class="property">class </em><code class="sig-prename descclassname">muse.agents.</code><code class="sig-name descname">Agent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'Agent'</span></em>, <em class="sig-param"><span class="n">region</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'USA'</span></em>, <em class="sig-param"><span class="n">assets</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>xarray.core.dataset.Dataset<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">interpolation</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'linear'</span></em>, <em class="sig-param"><span class="n">search_rules</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">objectives</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">decision</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">year</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">2010</span></em>, <em class="sig-param"><span class="n">maturity_threshhold</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">forecast</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em>, <em class="sig-param"><span class="n">housekeeping</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">merge_transform</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">demand_threshhold</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>float<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">category</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">asset_threshhold</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.0001</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/agent.html#Agent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.Agent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#muse.agents.agent.AbstractAgent" title="muse.agents.agent.AbstractAgent"><code class="xref py py-class docutils literal notranslate"><span class="pre">muse.agents.agent.AbstractAgent</span></code></a></p>
+<p>Agent that is capable of computing a search-space and a cost metric.</p>
+<p>This agent will not perform any investment itself.</p>
+<dl class="py method">
+<dt id="muse.agents.Agent.add_investments">
+<code class="sig-name descname">add_investments</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">investments</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">current_year</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">time_period</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/agent.html#Agent.add_investments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.Agent.add_investments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add new assets to the agent.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="muse.agents.Agent.asset_housekeeping">
+<code class="sig-name descname">asset_housekeeping</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/agent.html#Agent.asset_housekeeping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.Agent.asset_housekeeping" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reduces memory footprint of assets.</p>
+<p>Performs tasks such as:</p>
+<ul class="simple">
+<li><p>remove empty assets</p></li>
+<li><p>remove years prior to current</p></li>
+<li><p>interpolate current year and forecasted year</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.Agent.asset_threshhold">
+<code class="sig-name descname">asset_threshhold</code><a class="headerlink" href="#muse.agents.Agent.asset_threshhold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Threshhold below which assets are not added.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.Agent.decision">
+<code class="sig-name descname">decision</code><a class="headerlink" href="#muse.agents.Agent.decision" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates single decision objective from one or more objectives.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.Agent.demand_threshhold">
+<code class="sig-name descname">demand_threshhold</code><a class="headerlink" href="#muse.agents.Agent.demand_threshhold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Threshhold below which the demand share is zero.</p>
+<p>This criteria avoids fulfilling demand for very small values. If None,
+then the criteria is not applied.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.Agent.forecast">
+<code class="sig-name descname">forecast</code><a class="headerlink" href="#muse.agents.Agent.forecast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of years to look into the future for forecating purposed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="muse.agents.Agent.forecast_year">
+<em class="property">property </em><code class="sig-name descname">forecast_year</code><a class="headerlink" href="#muse.agents.Agent.forecast_year" title="Permalink to this definition">¶</a></dt>
+<dd><p>Year to consider when forecasting.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.Agent.maturity_threshhold">
+<code class="sig-name descname">maturity_threshhold</code><a class="headerlink" href="#muse.agents.Agent.maturity_threshhold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Market share threshhold.</p>
+<p>Threshhold when and if filtering replacement technologies with respect
+to market share.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.Agent.merge_transform">
+<code class="sig-name descname">merge_transform</code><a class="headerlink" href="#muse.agents.Agent.merge_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tranforms applied on the old and new assets.</p>
+<p>It could mean using only the new assets, or merging old and new, etc…
+It can be any function registered with
+<a class="reference internal" href="muse.html#muse.hooks.register_final_asset_transform" title="muse.hooks.register_final_asset_transform"><code class="xref py py-func docutils literal notranslate"><span class="pre">register_final_asset_transform()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="muse.agents.Agent.next">
+<code class="sig-name descname">next</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">demand</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">time_period</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em><span class="sig-paren">)</span> &#x2192; Optional<span class="p">[</span>xarray.core.dataset.Dataset<span class="p">]</span><a class="reference internal" href="../_modules/muse/agents/agent.html#Agent.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.Agent.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterates agent one turn.</p>
+<p>The goal is to figure out from market variables which technologies to
+invest in and by how much.</p>
+<p>This function will modify <cite>self.assets</cite> and increment <cite>self.year</cite>.
+Other attributes are left unchanged. Arguments to the function are
+never modified.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.Agent.objectives">
+<code class="sig-name descname">objectives</code><a class="headerlink" href="#muse.agents.Agent.objectives" title="Permalink to this definition">¶</a></dt>
+<dd><p>One or more objectives by which to decide next investments.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="muse.agents.Agent.retirement_profile">
+<code class="sig-name descname">retirement_profile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">investments</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">current_year</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">time_period</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; Optional<span class="p">[</span>xarray.core.dataarray.DataArray<span class="p">]</span><a class="reference internal" href="../_modules/muse/agents/agent.html#Agent.retirement_profile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.Agent.retirement_profile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.Agent.search_rules">
+<code class="sig-name descname">search_rules</code><em class="property">: Callable</em><a class="headerlink" href="#muse.agents.Agent.search_rules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search rule(s) determining potential replacement technologies.</p>
+<p>This is a string referring to a filter, or a sequence of strings
+referring to multiple filters, applied one after the other.  Any
+function registered via <cite>muse.filters.register_filter</cite> can be
+used to filter the search space.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.Agent.year">
+<code class="sig-name descname">year</code><a class="headerlink" href="#muse.agents.Agent.year" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current year.</p>
+<p>The year is incremented by one everytime next is called.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="muse.agents.InvestingAgent">
+<em class="property">class </em><code class="sig-prename descclassname">muse.agents.</code><code class="sig-name descname">InvestingAgent</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="n">constraints</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">investment</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/agent.html#InvestingAgent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.InvestingAgent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#muse.agents.agent.Agent" title="muse.agents.agent.Agent"><code class="xref py py-class docutils literal notranslate"><span class="pre">muse.agents.agent.Agent</span></code></a></p>
+<p>Agent that performs investment for itself.</p>
+<dl class="py attribute">
+<dt id="muse.agents.InvestingAgent.constraints">
+<code class="sig-name descname">constraints</code><a class="headerlink" href="#muse.agents.InvestingAgent.constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a set of constraints limiting investment.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="muse.agents.InvestingAgent.invest">
+<code class="sig-name descname">invest</code><a class="headerlink" href="#muse.agents.InvestingAgent.invest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to use when fulfilling demand from rated set of techs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="muse.agents.InvestingAgent.next">
+<code class="sig-name descname">next</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">demand</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">time_period</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/agents/agent.html#InvestingAgent.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.InvestingAgent.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterates agent one turn.</p>
+<p>The goal is to figure out from market variables which technologies to
+invest in and by how much.</p>
+<p>This function will modify <cite>self.assets</cite> and increment <cite>self.year</cite>.
+Other attributes are left unchanged. Arguments to the function are
+never modified.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.agents.agents_factory">
+<code class="sig-prename descclassname">muse.agents.</code><code class="sig-name descname">agents_factory</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params_or_path</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">, </span>List<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">capacity</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>xarray.core.dataarray.DataArray<span class="p">, </span>str<span class="p">, </span>pathlib.Path<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">regions</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Sequence<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">year</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="#muse.agents.agent.Agent" title="muse.agents.agent.Agent">muse.agents.agent.Agent</a><span class="p">]</span><a class="reference internal" href="../_modules/muse/agents/factories.html#agents_factory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.agents_factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a list of agents for the chosen sector.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.agents.create_agent">
+<code class="sig-prename descclassname">muse.agents.</code><code class="sig-name descname">create_agent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">agent_type</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#muse.agents.agent.Agent" title="muse.agents.agent.Agent">muse.agents.agent.Agent</a><a class="reference internal" href="../_modules/muse/agents/factories.html#create_agent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.create_agent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="muse.agents.factory">
+<code class="sig-prename descclassname">muse.agents.</code><code class="sig-name descname">factory</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">existing_capacity_path</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">agent_parameters_path</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">technodata_path</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sector</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sectors_directory</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">PosixPath('/Users/alexkell/Documents/SGI/2-documentation/StarMuse/docs/data')</span></em>, <em class="sig-param"><span class="n">baseyear</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">2010</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="#muse.agents.agent.Agent" title="muse.agents.agent.Agent">muse.agents.agent.Agent</a><span class="p">]</span><a class="reference internal" href="../_modules/muse/agents/factories.html#factory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.agents.factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads list of agents from standard MUSE input files.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">muse.agents package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-muse.agents.agent">muse.agents.agent module</a></li>
+<li><a class="reference internal" href="#module-muse.agents.factories">muse.agents.factories module</a></li>
+<li><a class="reference internal" href="#module-muse.agents">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source/muse.agents.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.agents package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

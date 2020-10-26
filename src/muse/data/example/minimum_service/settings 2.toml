@@ -1,0 +1,83 @@
+# Global settings - most REQUIRED
+time_framework = [2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050]
+# Has to be a multiple of the minimum separation between the years in time framework
+foresight = 5 
+regions = ["R1"]
+interest_rate = 0.1
+interpolation_mode = 'Active'
+log_level = 'info'
+
+# Convergence parameters
+equilibrium_variable = 'demand'
+maximum_iterations = 2
+tolerance = 0.1
+tolerance_unmet_demand = -0.1
+
+[carbon_budget_control]
+    budget = []
+
+[global_input_files]
+    projections = '{path}/input/Projections.csv'
+    global_commodities = '{path}/input/GlobalCommodities.csv'
+
+[[outputs]]
+    quantity = "supply"
+    sink = "aggregate"
+    filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+
+[[outputs]]
+    quantity = "capacity"
+    sink = "aggregate"
+    filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+
+[sectors.industry]
+    type = 'default'
+    priority = 1
+    dispatch_production = 'share'
+
+    technodata = '{path}/technodata/industry/Technodata.csv'
+    commodities_in = '{path}/technodata/industry/CommIn.csv'
+    commodities_out = '{path}/technodata/industry/CommOut.csv'
+
+    [sectors.industry.subsectors.retro_and_new]
+        agents = '{path}/technodata/Agents.csv'
+        existing_capacity = '{path}/technodata/industry/Existing.csv'
+        lpsolver = "scipy"
+        constraints = [  # Optional, defaults to the constraints below
+            "max_production",
+            "max_capacity_expansion",
+            "demand",
+            "search_space",
+            "minimum_service"
+        ]
+        demand_share = "new_and_retro"  # Optional, default to new_and_retro
+        forecast = 5  # Optional, defaults to 5 
+
+    [[sectors.industry.outputs]]
+        filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+        quantity = "capacity"
+        sink = 'csv'
+        overwrite = true
+
+    [[sectors.industry.outputs]]
+        filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+        quantity.name = "supply"
+        quantity.sum_over = "timeslice"
+        quantity.drop = ["comm_usage", "units_prices"]
+        sink = 'csv'
+        overwrite = true
+
+    [[sectors.industry.interactions]] 
+        net = 'new_to_retro'
+        interaction = 'transfer'
+
+    [sectors.industry_presets]
+        type = 'presets'
+        priority = 0
+        consumption_path= "{path}/technodata/preset/*Consumption.csv"
+
+[timeslices]
+    winter.all-week.all-day = 2920
+    summer.all-week.all-day = 2920
+    spring-autumn.all-week.all-day = 2920
+    level_names = ["month", "day", "hour"]

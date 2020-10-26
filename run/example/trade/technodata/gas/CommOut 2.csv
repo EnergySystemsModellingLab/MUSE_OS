@@ -1,0 +1,5 @@
+ProcessName,RegionName,Time,Level,electricity,gas,heat,CO2f,wind
+Unit,-,Year,-,PJ/PJ,PJ/PJ,PJ/PJ,kt/PJ,PJ/PJ
+gassupply1,R1,2010,fixed,0,1,0,0,0
+gassupply1,R2,2010,fixed,0,1,0,0,0
+gassupply1,R3,2010,fixed,0,1,0,0,0

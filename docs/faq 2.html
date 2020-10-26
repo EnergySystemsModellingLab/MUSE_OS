@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQs &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="API" href="api.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api.html" title="API"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FAQs</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="faqs">
+<h1>FAQs<a class="headerlink" href="#faqs" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="i-get-a-demand-matching-error">
+<h2>I get a demand matching error<a class="headerlink" href="#i-get-a-demand-matching-error" title="Permalink to this headline">¶</a></h2>
+<p>If you get an error, similar to the following:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">muse</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">muse</span><span class="o">/</span><span class="n">investments</span><span class="o">.</span><span class="n">py</span><span class="s2">&quot;, line 328, in scipy_match_demand</span>
+    <span class="k">raise</span> <span class="n">LinearProblemError</span><span class="p">(</span><span class="s2">&quot;LP system could not be solved&quot;</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>
+<span class="n">muse</span><span class="o">.</span><span class="n">investments</span><span class="o">.</span><span class="n">LinearProblemError</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;LP system could not be solved&#39;</span><span class="p">,</span>      <span class="n">con</span><span class="p">:</span> <span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">fun</span><span class="p">:</span> <span class="mf">15053.021584161033</span>
+<span class="n">message</span><span class="p">:</span> <span class="s1">&#39;The algorithm terminated successfully and determined that the problem is infeasible.&#39;</span>
+    <span class="n">nit</span><span class="p">:</span> <span class="mi">11</span>
+<span class="n">slack</span><span class="p">:</span> <span class="n">array</span><span class="p">([</span> <span class="mf">0.12188998</span><span class="p">,</span>  <span class="mf">2.27624361</span><span class="p">,</span>  <span class="mf">1.72261721</span><span class="p">,</span>  <span class="mf">0.65248747</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.22047042</span><span class="p">,</span>
+        <span class="mf">0.62430284</span><span class="p">,</span>  <span class="mf">5.80377518</span><span class="p">,</span>  <span class="mf">1.96572729</span><span class="p">,</span>  <span class="mf">1.5198397</span> <span class="p">,</span>  <span class="mf">0.61823037</span><span class="p">,</span>
+    <span class="o">-</span><span class="mf">0.21871122</span><span class="p">,</span>  <span class="mf">0.59457721</span><span class="p">,</span>  <span class="mf">2.49343834</span><span class="p">,</span>  <span class="mf">1.10418509</span><span class="p">,</span>  <span class="mf">0.84691291</span><span class="p">,</span>
+        <span class="mf">0.3260397</span> <span class="p">,</span> <span class="o">-</span><span class="mf">0.2204754</span> <span class="p">,</span>  <span class="mf">0.31897793</span><span class="p">,</span>  <span class="mf">4.36788165</span><span class="p">,</span>  <span class="mf">4.9152109</span> <span class="p">,</span>
+        <span class="mf">6.91218128</span><span class="p">,</span> <span class="mf">23.93103992</span><span class="p">,</span>  <span class="mf">8.76641572</span><span class="p">,</span>  <span class="mf">7.35194341</span><span class="p">,</span>  <span class="mf">3.24577114</span><span class="p">,</span>
+    <span class="o">-</span><span class="mf">0.26032861</span><span class="p">,</span>  <span class="mf">2.8121707</span> <span class="p">])</span>
+<span class="n">status</span><span class="p">:</span> <span class="mi">2</span>
+<span class="n">success</span><span class="p">:</span> <span class="kc">False</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">array</span><span class="p">([</span><span class="mf">32.03211835</span><span class="p">,</span> <span class="mf">35.0847891</span> <span class="p">,</span> <span class="mf">43.08781872</span><span class="p">,</span> <span class="mf">11.8901544</span> <span class="p">,</span>  <span class="mf">3.72977858</span><span class="p">,</span>
+        <span class="mf">3.08220055</span><span class="p">,</span>  <span class="mf">1.74992141</span><span class="p">,</span>  <span class="mf">1.42167486</span><span class="p">,</span>  <span class="mf">1.77810604</span><span class="p">,</span>  <span class="mf">7.35302074</span><span class="p">,</span>
+        <span class="mf">4.61267067</span><span class="p">,</span>  <span class="mf">3.74287866</span><span class="p">,</span>  <span class="mf">2.01312881</span><span class="p">,</span>  <span class="mf">1.53439081</span><span class="p">,</span>  <span class="mf">2.03678197</span><span class="p">,</span>
+        <span class="mf">4.68786478</span><span class="p">,</span>  <span class="mf">2.48646647</span><span class="p">,</span>  <span class="mf">2.02560833</span><span class="p">,</span>  <span class="mf">1.11022092</span><span class="p">,</span>  <span class="mf">0.93860572</span><span class="p">,</span>
+        <span class="mf">1.11728269</span><span class="p">]))</span>
+</pre></div>
+</div>
+<p>this is because the optimisation algorithm can not find a solution to match supply with demand. This is often because the constraints placed on the technologies do not allow for high enough growth to meet a growing demand.</p>
+<p>A solution to this is to increase the limits of technologies in the relevant <cite>Technodata.csv</cite>. For example, by increasing the <cite>MaxCapacityAddition</cite>, <cite>MaxCapacityGrowth</cite> and/or <cite>TotalCapacityLimit</cite> variables for the respective technologies.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FAQs</a><ul>
+<li><a class="reference internal" href="#i-get-a-demand-matching-error">I get a demand matching error</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="api.html"
+                        title="previous chapter">API</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/faq.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api.html" title="API"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">FAQs</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

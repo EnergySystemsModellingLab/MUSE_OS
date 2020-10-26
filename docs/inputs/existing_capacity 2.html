@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Existing Sectoral Capacity &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Agents" href="agents.html" />
+    <link rel="prev" title="Input Commodities" href="commodities_io.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="agents.html" title="Agents"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="commodities_io.html" title="Input Commodities"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Input Files</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="inputs_csv.html" accesskey="U">Input Files</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Existing Sectoral Capacity</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="existing-sectoral-capacity">
+<span id="inputs-existing-capacity"></span><h1>Existing Sectoral Capacity<a class="headerlink" href="#existing-sectoral-capacity" title="Permalink to this headline">¶</a></h1>
+<p>For each technology, the decommissioning profile should be given to MUSE.</p>
+<p>The csv file which provides the installed capacity in base year and the decommissioning
+profile in the future periods for each technology in a sector, in each region, should
+follow the structure reported in the table.</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Existing capacity of technologies: the residential boiler example</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>ProcessName</p></th>
+<th class="head"><p>RegionName</p></th>
+<th class="head"><p>Unit</p></th>
+<th class="head"><p>2010</p></th>
+<th class="head"><p>2020</p></th>
+<th class="head"><p>2030</p></th>
+<th class="head"><p>2040</p></th>
+<th class="head"><p>2050</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>resBoilerElectric</p></td>
+<td><p>region1</p></td>
+<td><p>PJ/y</p></td>
+<td><p>5</p></td>
+<td><p>0.5</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>resBoilerElectric</p></td>
+<td><p>region2</p></td>
+<td><p>PJ/y</p></td>
+<td><p>39</p></td>
+<td><p>3.5</p></td>
+<td><p>1</p></td>
+<td><p>0.3</p></td>
+<td><p>0</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="simple">
+<dt>ProcessName</dt><dd><p>represents the technology ID and needs to be consistent across all the data inputs.</p>
+</dd>
+<dt>RegionName</dt><dd><p>represents the region ID and needs to be consistent across all the data inputs.</p>
+</dd>
+<dt>Unit</dt><dd><p>reports the unit of the technology capacity; it is for the user internal reference only.</p>
+</dd>
+<dt>2010,…, 2050</dt><dd><p>represent the simulated periods.</p>
+</dd>
+</dl>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="commodities_io.html"
+                        title="previous chapter">Input Commodities</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="agents.html"
+                        title="next chapter">Agents</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/inputs/existing_capacity.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="agents.html" title="Agents"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="commodities_io.html" title="Input Commodities"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Input Files</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="inputs_csv.html" >Input Files</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Existing Sectoral Capacity</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>
