@@ -10,7 +10,11 @@ MUSE: ModUlar energy system Simulation Environment
    :maxdepth: 2
    :caption: Contents:
 
+   Installing and Running MUSE <installing-running>
    MUSE Overview <overview>
+   Example Results <example-results>
+   Key MUSE Components <muse-components>
+   
 
 
 

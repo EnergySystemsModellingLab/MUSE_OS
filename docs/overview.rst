@@ -85,24 +85,26 @@ The figure above displays the key sectors of MUSE:
 How MUSE works
 --------------
 
-* The energy service demand is calculated. For example, how much demand is there for cooking, building space heating and lighting in the residential sector?
+MUSE works by iterating between sectors to ensure that energy service demands are met by the technologies chosen by the agents. Next, we detail the calculations made by MUSE throughout the simulation.
 
-* A demand sector is solved. That is, agents choose end-use technologies to serve the demands in the sector. For example, electric stoves are compared to gas stoves to meet demand for cooking. These technologies are chosen based upon their:
-    #. Search space (which technologies are they happy to consider).
+#. The energy service demand is calculated. For example, how much electricity, gas and oil demand is there for cooking, building space heating and lighting in the residential sector?
 
-    #. Their objectives (i.e. metrics they consider important).
+#. A demand sector is solved. That is, agents choose which end-use technologies to serve the demands in the sector. For example, electric stoves are compared to gas stoves to meet demand for cooking. These technologies are chosen based upon their:
+    i. Search space (which technologies are they willing to consider?)
 
-    #. Their decision rules (which ways do they choose to combine their metrics if they have multiple?).
+    ii. Their objectives (i.e. metrics they consider important).
 
-* This leads to a certain level of demand for energy commodities by the sector as a whole, which is then passed to the MCA.
+    iii. Their decision rules (how do they choose to combine their metrics if they have multiple?)
 
-* The MCA then sends these demands to the sectors that supply the commodities (supply or conversion sectors).
+#. The decisions made by the agents in the demand sectors then leads to a certain level of demand for energy commodities, such as electricity, gas and oil, as a whole. This demand is then passed to the MCA.
 
-* The supply and conversion sectors are solved: agents in these sectors use the same approach (i.e. search space, objectives, decision rules) to decide which technologies to investment in to serve the energy commodity demand. 
+#. The MCA then sends these demands to the sectors that supply these energy commodities (supply or conversion sectors).
 
-* As a result of these decisions a price for each energy commodity is formed. This is passed to the MCA.
+#. The supply and conversion sectors are solved: agents in these sectors use the same approach (i.e. search space, objectives, decision rules) to decide which technologies to investment in to serve the energy commodity demand. For example, agents in the power sector may decide to invest in solar photovoltaics, wind turbines and gas power plants to service the electricity demand.
 
-* The MCA then sends these prices back to the demand sectors, which are solved again as above.
+#. As a result of these decisions a price for each energy commodity is formed based upon supply and demand. This is passed to the MCA.
 
-* This process repeats itself until commodity supply and demand converges for each energy commodity. Once these converge, the model has found a “partial equilibrium” and it moves forward to the next time period.
+#. The MCA then sends these prices back to the demand sectors, which are solved again as above.
+
+#. This process repeats itself until commodity supply and demand converges for each energy commodity. Once these converge, the model has found a “partial equilibrium” and it moves forward to the next time period.
 
