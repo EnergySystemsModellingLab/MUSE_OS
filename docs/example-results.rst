@@ -1,3 +1,5 @@
+.. _muse_examples:
+
 Example Results
 ===============
 
