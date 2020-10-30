@@ -2,3 +2,7 @@ ProcessName,RegionName,Time,Level,cap_par,cap_exp,fix_par,fix_exp,var_par,var_ex
 Unit,-,Year,-,MUS$2010/PJ_a,-,MUS$2010/PJ,-,MUS$2010/PJ,-,PJ,%,PJ,Years,-,PJ,%,-,-,-,-,-,Retrofit,New
 gasCCGT,R1,2020,fixed,23.78234399,1,0,1,0,1,2,0.02,60,35,0.9,0.00000189,86,1,0.1,energy,gas,electricity,1,0
 windturbine,R1,2020,fixed,36.30771182,1,0,1,0,1,2,0.02,60,25,0.4,0.00000189,86,1,0.1,energy,wind,electricity,1,0
+solarPV,R1,2020,fixed,40,1,0,1,0,1,2,0.02,60,25,0.4,0.00000189,86,1,0.1,energy,solar,electricity,1,0
+gasCCGT,R2,2020,fixed,23.78234399,1,0,1,0,1,2,0.02,60,35,0.9,0.00000189,86,1,0.1,energy,gas,electricity,1,0
+windturbine,R2,2020,fixed,36.30771182,1,0,1,0,1,7,0.07,120,25,0.4,0.00000189,86,1,0.1,energy,wind,electricity,1,0
+solarPV,R2,2020,fixed,40,1,0,1,0,1,2,0.02,60,25,0.4,0.00000189,86,1,0.1,energy,solar,electricity,1,0

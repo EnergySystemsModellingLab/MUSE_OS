@@ -1,4 +1,4 @@
-.. _muse_examples:
+.. _muse-examples:
 
 Example Results
 ===============

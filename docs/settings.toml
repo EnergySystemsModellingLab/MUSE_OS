@@ -1,7 +1,7 @@
 # Global settings - most REQUIRED
 time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
 foresight = 5   # Has to be a multiple of the minimum separation between the years in time framework
-regions = ["R1"]
+regions = ["R1","R2"]
 interest_rate = 0.1
 interpolation_mode = 'Active'
 log_level = 'info'
@@ -131,10 +131,12 @@ consumption_path= "{path}/technodata/preset/*Consumption.csv"
 
 
 [timeslices]
-all-year.all-week.night = 1460
-all-year.all-week.morning = 1460
-all-year.all-week.afternoon = 1460
-all-year.all-week.early-peak = 1460
-all-year.all-week.late-peak = 1460
-all-year.all-week.evening = 1460
+all-year.all-week.night = 1095
+all-year.all-week.morning = 1095
+all-year.all-week.afternoon = 1095
+all-year.all-week.early-peak = 1095
+all-year.all-week.late-peak = 1095
+all-year.all-week.evening = 1095
+all-year.all-week.early-morning = 1095
+all-year.all-week.late-afternoon = 1095
 level_names = ["month", "day", "hour"]
