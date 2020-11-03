@@ -1,7 +1,7 @@
 Installation
 ============
 
-There are two ways to install MUSE, for users who do not wish to modify the source code of MUSE, and developers who do.
+There are two ways to install MUSE: one for users who do not wish to modify the source code of MUSE, and another for developers who do.
 
 .. note::
 
@@ -17,17 +17,17 @@ There are two ways to install MUSE, for users who do not wish to modify the sour
 For users
 ---------
 
-MUSE is developed with python, an open-source programming language. Therefore, there are two steps to the installation process. First, python should be installed. Then, MUSE should be installed.
+MUSE is developed using python, an open-source programming language, which means that there are two steps to the installation process. First, python should be installed. Then so should MUSE.
 
-The simplest alternative is to install python by downloading the `Anaconda distribution`_. Choose the appropriate operating system (e.g. windows), python version 3.7, and the 64 bit installer, then follow the steps for the anaconda installer, as prompted.
+The simplest method to install python is by downloading the `Anaconda distribution`_. Make sure to choose the appropriate operating system (e.g. windows), python version 3.7, and the 64 bit installer. Once this has been done follow the steps for the anaconda installer, as prompted.
 
-Once python is installed, we can now install MUSE. MUSE can be installed via the `Anaconda Prompt`_ (or any terminal on Mac and Linux). This is a command-line interface to python and the python eco-system. In the anaconda prompt, run:
+After python is installed we can install MUSE. MUSE can be installed via the `Anaconda Prompt`_ (or any terminal on Mac and Linux). This is a command-line interface to python and the python eco-system. In the anaconda prompt, run:
 
 .. code-block:: bash
 
    python -m pip install --user git+https://github.com/SGIModel/StarMuse
 
-It should now be possible to run muse, also in the anaconda prompt:
+It should now be possible to run muse. Again, this can be done in the anaconda prompt as follows:
 
 .. code-block:: bash
 
@@ -44,8 +44,8 @@ For developers
 --------------
 
 Although not strictly necessary, creating an `Anaconda virtual environment <https://www.anaconda.com/what-is-anaconda/>`_ is highly
-recommended: it will isolate users and developers from changes occuring on their
-operating system, and from conflicts between python packages. It ensures reproducibility
+recommended. Anaconda will isolate users and developers from changes occuring on their
+operating system, and from conflicts between python packages. It also ensures reproducibility
 from day to day.
 
 Create a virtual env including python with:
@@ -73,7 +73,7 @@ The simplest approach is to first download the muse code with `git`_:
    git clone https://github.com/SGIModel/StarMuse.git muse
 
 For interested users, there are plenty of `good`__ tutorials for `git`_. 
-And then install the working directory into the conda environment:
+Next, it is possible to install the working directory into the conda environment:
 
 .. code-block:: bash
 
