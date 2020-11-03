@@ -5,3 +5,4 @@ Heat,Energy,heat,0,1,PJ
 Wind,Energy,wind,0,1,PJ
 CO2fuelcomsbustion,Environmental,CO2f,0,1,kt
 Solar,Energy,solar,0,1,PJ
+Cook,Energy,cook,0,1,PJ

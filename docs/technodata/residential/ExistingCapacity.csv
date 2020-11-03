@@ -3,3 +3,7 @@ gasboiler,R1,PJ/y,10,5,0,0,0,0,0
 heatpump,R1,PJ/y,0,0,0,0,0,0,0
 gasboiler,R2,PJ/y,10,5,0,0,0,0,0
 heatpump,R2,PJ/y,0,0,0,0,0,0,0
+gas_stove,R1,PJ/y,10,5,0,0,0,0,0
+gas_stove,R2,PJ/y,10,5,0,0,0,0,0
+electric_stove,R1,PJ/y,1,0,0,0,0,0,0
+electric_stove,R2,PJ/y,1,0,0,0,0,0,0
