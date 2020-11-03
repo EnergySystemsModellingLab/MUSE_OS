@@ -1,0 +1,17 @@
+technology,region,agent,type,sector,capacity,year
+gasboiler,R1,A1,retrofit,residential,10.00000000000,2020
+gasboiler,R1,A2,retrofit,residential,10.00000000000,2020
+gasCCGT,R1,A1,retrofit,power,1.00000000000,2020
+gasCCGT,R1,A2,retrofit,power,1.00000000000,2020
+gassupply1,R1,A1,retrofit,gas,15.00000000000,2020
+gassupply1,R1,A2,retrofit,gas,15.00000000000,2020
+gasboiler,R1,A1,retrofit,residential,5.00000000000,2025
+heatpump,R1,A1,retrofit,residential,7.00000000000,2025
+gasboiler,R1,A2,retrofit,residential,5.00000000000,2025
+heatpump,R1,A2,retrofit,residential,7.00000000000,2025
+gasCCGT,R1,A1,retrofit,power,1.00000000000,2025
+windturbine,R1,A1,retrofit,power,4.75000000000,2025
+gasCCGT,R1,A2,retrofit,power,1.00000000000,2025
+windturbine,R1,A2,retrofit,power,4.75000000000,2025
+gassupply1,R1,A1,retrofit,gas,15.00000000000,2025
+gassupply1,R1,A2,retrofit,gas,15.00000000000,2025

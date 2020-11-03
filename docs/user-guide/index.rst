@@ -2,8 +2,8 @@
 Customising MUSE
 ================
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 1
+   :caption: Contents table:
 
    add-solar
    add-agent
