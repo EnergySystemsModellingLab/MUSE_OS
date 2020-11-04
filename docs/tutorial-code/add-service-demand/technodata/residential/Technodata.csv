@@ -4,3 +4,7 @@ gasboiler,R1,2020,fixed,3.8,1,0,1,0,1,60,0.5,120,10,1,0.00000189,86,1,0.1,energy
 heatpump,R1,2020,fixed,8.866667,1,0,1,0,1,60,0.5,120,10,1,0.00000189,86,1,0.1,energy,electricity,heat,1,0
 gasboiler,R2,2020,fixed,3.8,1,0,1,0,1,60,0.5,120,10,1,0.00000189,86,1,0.1,energy,gas,heat,1,0
 heatpump,R2,2020,fixed,8.866667,1,0,1,0,1,60,0.5,120,10,1,0.00000189,86,1,0.1,energy,electricity,heat,1,0
+electric_stove,R1,2020,fixed,3.8,1,0,1,0,1,60,0.5,120,10,1,0.00000189,86,1,0.1,energy,gas,cook,1,0
+electric_stove,R2,2020,fixed,3.8,1,0,1,0,1,60,0.5,120,10,1,0.00000189,86,1,0.1,energy,gas,cook,1,0
+gas_stove,R1,2020,fixed,8.866667,1,0,1,0,1,60,0.5,120,10,1,0.00000189,86,1,0.1,energy,electricity,cook,1,0
+gas_stove,R2,2020,fixed,8.866667,1,0,1,0,1,60,0.5,120,10,1,0.00000189,86,1,0.1,energy,electricity,cook,1,0

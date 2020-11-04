@@ -1,6 +1,6 @@
 
-Customising MUSE
-================
+Customising MUSE Tutorials
+==========================
 
 In this series we show you how to customise MUSE to create your own scenarios. 
 
