@@ -1,4 +1,6 @@
 
+.. _input-files:
+
 Input Files
 ===========
 
