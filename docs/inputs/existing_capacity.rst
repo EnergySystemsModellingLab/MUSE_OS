@@ -19,13 +19,13 @@ follow the structure reported in the table.
 
 
 ProcessName
-   represents the technology ID and needs to be consistent across all the data inputs
+   represents the technology ID and needs to be consistent across all the data inputs.
 
 RegionName
-   represents the region ID and needs to be consistent across all the data inputs
+   represents the region ID and needs to be consistent across all the data inputs.
 
 Unit
-   reports the unit of the technology capacity; it is for the user internal reference only
+   reports the unit of the technology capacity; it is for the user internal reference only.
 
 2010,..., 2050
-   represent the simulated periods
+   represent the simulated periods.

@@ -5,7 +5,7 @@ Agents
 ======
 
 In MUSE, an agent-based formulation was originally introduced for the residential and
-commercial building sectors :cite:`2019:sachs`.  Agents are defined using CSV file, with
+commercial building sectors :cite:`2019:sachs`.  Agents are defined using a CSV file, with
 one agent per row, using a somewhat historical format meant specifically for retrofit
 and new-capacity agent pairs. This CSV file can be read using
 :py:func:`~muse.readers.csv.read_csv_agent_parameters`. The data is also
@@ -48,7 +48,7 @@ AgentShare
    :ref:`inputs-technodata`.
 
 RegionName
-   Region where an agent operates
+   Region where an agent operates.
 
 .. py:currentmodule:: muse.objectives
 
@@ -76,13 +76,13 @@ Objective1
      technology. The capital cost does not change during the simulation. It is obtained
      as a function of parameters found in :ref:`inputs-technodata`.
 
-   - :py:func:`emission_cost <emission_cost>`: The costs associated with emission for a
+   - :py:func:`emission_cost <emission_cost>`: The costs associated for emissions for a
      technology. The costs is a function both of the amount produced (equated to the
      total demand in this case) and of the prices associated with each pollutant.
      Aliased to "emission" for simplicity.
 
    - :py:func:`fuel_consumption_cost <fuel_consumption_cost>`: Costs of the fuels for
-     each technology, where each technology to fulfil the whole demand.
+     each technology, where each technology is used to fulfil the whole demand.
 
    - :py:func:`lifetime_levelized_cost_of_energy <lifetime_levelized_cost_of_energy>`:
      LCOE over the lifetime of a technology. Aliased to "LCOE" for simplicity.
@@ -210,7 +210,7 @@ DecisionMethod
    allows only for three.
 
 Quantity
-   A factor used to determine the demand share of "New" agents
+   A factor used to determine the demand share of "New" agents.
 
 MaturityThreshold
    Parameter for the search rule :py:func:`maturity <muse.filters.maturity>`.

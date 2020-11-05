@@ -129,6 +129,7 @@ global_commodities:
    Path to a csv file describing the comodities in the simulation. See
    :ref:`inputs-commodities`.
 
+.. _timeslices_toml:
 
 ----------
 Timeslices

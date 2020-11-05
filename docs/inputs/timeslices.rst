@@ -6,15 +6,14 @@ Time-slices
 
 .. note::
 
-    This input file is only for legacy sectors. For anything else, please see :ref:`TOML
-    timeslices<user_guide/inputs/toml:Timeslices>`
+    This input file is only for legacy sectors. For anything else, please see :ref:`simulation-settings`.
 
 
 
 Time-slices represent a sub-year disaggregation of commodity demand. They are fully
 flexible in number and names as to serve the specific representation of the commodity
 demand, supply, and supply cost profile in each energy sector.  Each time slice is
-independent in terms of number of represent hour, as long as it is meaningful for the
+independent in terms of the number of represent hours, as long as it is meaningful for the
 users and their data inputs. 1 is the minimum number of time-slice as this would
 correspond to a full year.  The time-slice definition of a sector affects the commodity
 price profile and the supply cost profile.

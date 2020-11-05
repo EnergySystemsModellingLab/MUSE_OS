@@ -57,22 +57,22 @@ heater.
 
 
 ProcessName
-   represents the technology ID and needs to be consistent across all the data inputs
+   represents the technology ID and needs to be consistent across all the data inputs.
 
 RegionName
-   represents the region ID and needs to be consistent across all the data inputs
+   represents the region ID and needs to be consistent across all the data inputs.
 
 Time
    represents the period of the simulation to which the value applies; it needs to
-   contain at least the base year of the simulation
+   contain at least the base year of the simulation.
 
 Level
    characterises either a fixed or a flexible input type the following columns should
-   contain the list of commodities the row
+   contain the list of commodities the row.
 
 Unit
    reports the unit in which the technology consumption is defined; it is for the user
-   internal reference only
+   internal reference only.
 
 The same structure for the csv file would also apply for the output commodity file. The
 input data has to be provided for the base year. Additional years within the time
