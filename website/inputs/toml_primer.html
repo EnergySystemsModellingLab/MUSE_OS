@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOML primer &#8212; muse-documentation 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Simulation settings" href="toml.html" />
+    <link rel="prev" title="Input Files" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="toml.html" title="Simulation settings"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Input Files"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">muse-documentation 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Input Files</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">TOML primer</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="toml-primer">
+<span id="id1"></span><h1>TOML primer<a class="headerlink" href="#toml-primer" title="Permalink to this headline">¶</a></h1>
+<p>The full specification for TOML files can be found
+<a class="reference external" href="https://github.com/toml-lang/toml">here</a>.
+A TOML file is separated into sections, with each section except the topmost
+introduced by a name in square brackets. Sections can hold key-value pairs,
+e.g. a name associated with a value. For instance:</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="n">general_string_attribute</span> <span class="o">=</span> <span class="s">&quot;x&quot;</span>
+
+<span class="k">[some_section]</span>
+<span class="n">section_attribute</span> <span class="o">=</span> <span class="mi">12</span>
+
+<span class="k">[some_section.subsection]</span>
+<span class="n">subsetion_attribute</span> <span class="o">=</span> <span class="kc">true</span>
+</pre></div>
+</div>
+<p>TOML is quite flexible in how one can define sections and attributes. The following
+three examples are equivalent:</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[sectors.residential.production]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="s">&quot;match&quot;</span>
+<span class="n">costing</span> <span class="o">=</span> <span class="s">&quot;prices&quot;</span>
+</pre></div>
+</div>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[sectors.residential]</span>
+<span class="n">production</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;name&quot;</span><span class="p">:</span> <span class="s">&quot;match&quot;</span><span class="p">,</span> <span class="s">&quot;costing&quot;</span><span class="p">:</span> <span class="s">&quot;prices&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[sectors.residential]</span>
+<span class="n">production</span><span class="p">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;match&quot;</span>
+<span class="n">production</span><span class="p">.</span><span class="n">costing</span> <span class="o">=</span> <span class="s">&quot;prices&quot;</span>
+</pre></div>
+</div>
+<p id="toml-array">Additionally, TOML files can contain tabular data, specified row-by-row using double
+square bracket. For instance, below we define a table with two rows and a single
+<em>column</em> called <cite>some_table_of_data</cite> (though column is not quite the right term, TOML tables are made more
+flexible than most tabular formats. Rather, each row can be considered a
+dictionary).</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[[some_table_of_data]]</span>
+<span class="n">a_key</span> <span class="o">=</span> <span class="s">&quot;a value&quot;</span>
+
+<span class="k">[[some_table_of_data]]</span>
+<span class="n">a_key</span> <span class="o">=</span> <span class="s">&quot;another value&quot;</span>
+</pre></div>
+</div>
+<p>As MUSE requires a number of data file, paths to files can be formated in a flexible manner. Paths can be formatted with shorthands for specific directories and are defined with curly-brackets. For example:</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="n">projection</span> <span class="o">=</span> <span class="s">&#39;{path}/inputs/projection.csv&#39;</span>
+<span class="n">timeslices_path</span> <span class="o">=</span> <span class="s">&#39;{cwd}/technodata/timeslices.csv&#39;</span>
+<span class="n">consumption_path</span> <span class="o">=</span> <span class="s">&#39;{muse_sectors}/technodata/timeslices.csv&#39;</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>path</dt><dd><p>refers to the directory where the TOML file is located</p>
+</dd>
+<dt>cwd</dt><dd><p>refers to the directory from which the muse simulation is launched</p>
+</dd>
+<dt>muse_sectors</dt><dd><p>refers to the directory where default sectoral data is located</p>
+</dd>
+</dl>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Input Files</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="toml.html"
+                        title="next chapter">Simulation settings</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/inputs/toml_primer.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="toml.html" title="Simulation settings"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Input Files"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">muse-documentation 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Input Files</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">TOML primer</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

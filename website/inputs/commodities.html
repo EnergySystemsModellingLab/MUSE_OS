@@ -1,0 +1,169 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commodity Description &#8212; muse-documentation 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Techno-data" href="technodata.html" />
+    <link rel="prev" title="Regional data" href="regions.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="technodata.html" title="Techno-data"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="regions.html" title="Regional data"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">muse-documentation 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Input Files</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="inputs_csv.html" accesskey="U">Input Files</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Commodity Description</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="commodity-description">
+<span id="inputs-commodities"></span><h1>Commodity Description<a class="headerlink" href="#commodity-description" title="Permalink to this headline">¶</a></h1>
+<p>MUSE handles a configurable number and type of commodities which are primarily used to
+represent energy, services, pollutants/emissions. The commodities for the simulation as
+a whole are defined in a csv file with the following structure.</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Global commodities</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Commodity</p></th>
+<th class="head"><p>CommodityType</p></th>
+<th class="head"><p>CommodityName</p></th>
+<th class="head"><p>CommodityEmissionFactor_CO2</p></th>
+<th class="head"><p>HeatRate</p></th>
+<th class="head"><p>Unit</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Coal</p></td>
+<td><p>Energy</p></td>
+<td><p>hardcoal</p></td>
+<td><p>94.6</p></td>
+<td><p>29</p></td>
+<td><p>PJ</p></td>
+</tr>
+<tr class="row-odd"><td><p>Agricultural-residues</p></td>
+<td><p>Energy</p></td>
+<td><p>agrires</p></td>
+<td><p>112</p></td>
+<td><p>15.4</p></td>
+<td><p>PJ</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="simple">
+<dt>Commodity</dt><dd><p>represents the extended name of a commodity</p>
+</dd>
+<dt>CommodityType</dt><dd><p>defines the type of a commodity (i.e. energy, material or environmental)</p>
+</dd>
+<dt>CommodityName</dt><dd><p>is the internal name used for a commodity inside the model.</p>
+</dd>
+<dt>CommodityEmissionFactor_CO2</dt><dd><p>is CO2 emission per unit of commodity flow</p>
+</dd>
+<dt>HeatRate</dt><dd><p>represents the lower heating value of an energy commodity</p>
+</dd>
+<dt>Unit</dt><dd><p>is the unit used as a basis for all the input data. More specifically the model allows
+a totally flexible way of defining the commodities. CommodityName is currently the
+only column used internally as it defines the names of commodities and needs to be
+used consistently across all the input data files. The remaining columns of the file
+are only relevant for the user internal reference for the original sets of
+assumptions used.</p>
+</dd>
+</dl>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="regions.html"
+                        title="previous chapter">Regional data</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="technodata.html"
+                        title="next chapter">Techno-data</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/inputs/commodities.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="technodata.html" title="Techno-data"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="regions.html" title="Regional data"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">muse-documentation 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Input Files</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="inputs_csv.html" >Input Files</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Commodity Description</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,241 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Techno-data &#8212; muse-documentation 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Time-slices" href="timeslices.html" />
+    <link rel="prev" title="Commodity Description" href="commodities.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="timeslices.html" title="Time-slices"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="commodities.html" title="Commodity Description"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">muse-documentation 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Input Files</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="inputs_csv.html" accesskey="U">Input Files</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Techno-data</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="techno-data">
+<span id="inputs-technodata"></span><h1>Techno-data<a class="headerlink" href="#techno-data" title="Permalink to this headline">¶</a></h1>
+<p>The techno-data includes the techno-economic characteristics of each technology such
+as capital, fixed and variable cost, lifetime, utilisation factor.
+The techno-data should follow the structure reported in the table. The column order
+is not important and additional input data can alsobe read in this format. In the table,
+the electric boiler used in households is taken as an example for a generic region, region1.</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Techno-data</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>ProcessName</p></th>
+<th class="head"><p>RegionName</p></th>
+<th class="head"><p>Time</p></th>
+<th class="head"><p>Level</p></th>
+<th class="head"><p>cap_par</p></th>
+<th class="head"><p>cap_exp</p></th>
+<th class="head"><p>fix_par</p></th>
+<th class="head"><p>…</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>resBoilerElectric</p></td>
+<td><p>region1</p></td>
+<td><p>2010</p></td>
+<td><p>fixed</p></td>
+<td><p>3.81</p></td>
+<td><p>1.00</p></td>
+<td><p>0.38</p></td>
+<td><p>…</p></td>
+</tr>
+<tr class="row-odd"><td><p>resBoilerElectric</p></td>
+<td><p>region1</p></td>
+<td><p>2030</p></td>
+<td><p>fixed</p></td>
+<td><p>3.81</p></td>
+<td><p>1.00</p></td>
+<td><p>0.38</p></td>
+<td><p>…</p></td>
+</tr>
+</tbody>
+</table>
+<dl>
+<dt>ProcessName</dt><dd><p>represents the technology ID and needs to be consistent across all the data inputs</p>
+</dd>
+<dt>RegionName</dt><dd><p>represents the region ID and needs to be consistent across all the data inputs</p>
+</dd>
+<dt>Time</dt><dd><p>represents the period of the simulation to which the value applies; it needs to
+contain at least the base year of the simulation</p>
+</dd>
+<dt>Level</dt><dd><p>characterises either a fixed or a flexible input type</p>
+</dd>
+<dt>cap_par, cap_exp</dt><dd><p>are used in the capital cost estimation. Capital costs are calculated as:</p>
+<div class="math notranslate nohighlight">
+\[\text{CAPEX} = \text{cap\_par} * \text{(Capacity)}^\text{cap\_exp}\]</div>
+<p>where the parameter cap_par is estimated at a selected reference size (i.e. Capref),
+such as:</p>
+<div class="math notranslate nohighlight">
+\[\text{cap\_par} = \left(
+   \frac{\text{CAPEXref}}{\text{Capref}}
+\right)^{\text{cap\_exp}}\]</div>
+<p>Capref is decided by the modeller before filling the input data files.</p>
+<p>This allows the model to take into account economies of scale. ie. As <cite>Capacity</cite> increases, the price of the technology decreases.</p>
+</dd>
+</dl>
+<p>fix_par, fix_exp</p>
+<blockquote>
+<div><p>are used in the fixed cost estimation. Fixed costs are calculated as:</p>
+<div class="math notranslate nohighlight">
+\[\text{FOM} = \text{fix\_par} * (\text{Capacity})^\text{fix\_exp}\]</div>
+<p>where the parameter fix_par is estimated at a selected reference size (i.e. Capref),
+such as:</p>
+<div class="math notranslate nohighlight">
+\[\text{fix\_par} = \left(
+   \frac{\text{FOMref}}{\text{Capref}}
+\right)^{\text{fix\_exp}}\]</div>
+<p>Capref is decided by the modeller before filling the input data files.</p>
+</div></blockquote>
+<dl>
+<dt>var_par, var_exp</dt><dd><p>are used in the variable costs estimation. These variable costs are capacity
+dependent Variable costs are calculated as:</p>
+<div class="math notranslate nohighlight">
+\[\text{VAREX} = \text{cap\_par} * \text{(Capacity)}^{\text{cap\_exp}}\]</div>
+<p>where the parameter var_par is estimated at a selected reference size (i.e. Capref),
+such as:</p>
+<div class="math notranslate nohighlight">
+\[\text{var\_par} = \left(
+   \frac{\text{VARref}}{\text{Capref}}
+\right)^{\text{var\_exp}}\]</div>
+<p>Capref is decided by the modeller before filling the input data files.</p>
+</dd>
+<dt>MaxCapacityAddition</dt><dd><p>represents the maximum addition of installed capacity per technology, region, year.</p>
+</dd>
+<dt>MaxCapacityGrowth</dt><dd><p>represents the maximum growth in capacity as a fraction of the installed capacity per
+technology, region and year.</p>
+</dd>
+<dt>TotalCapacityLimit</dt><dd><p>represents the total capacity limit per technology, region and year.</p>
+</dd>
+<dt>TechnicalLife</dt><dd><p>represents the number of years that a technology operates before it is decommissioned.</p>
+</dd>
+<dt>UtilizationFactor</dt><dd><p>is the number of operating hours of a process over the maximum number of hours in a year.</p>
+</dd>
+<dt>ScalingSize</dt><dd><p>represents the minimum size of a technology to be installed.</p>
+</dd>
+<dt>efficiency</dt><dd><p>is calculated as the ratio between the total output commodities and the input commodities.</p>
+</dd>
+<dt>AvailabiliyYear</dt><dd><p>defines the starting year of a technology; for example the value equals 1 when a
+technology would be available or 0 when a technology would not be available.</p>
+</dd>
+<dt>Type</dt><dd><p>defines the type of a technology.</p>
+</dd>
+<dt>Fuel</dt><dd><p>defines the fuel used by a technology.</p>
+</dd>
+<dt>EndUse</dt><dd><p>defines the end use of a technology.</p>
+</dd>
+<dt>InterestRate</dt><dd><p>is the technology interest rate.</p>
+</dd>
+<dt>Agent_0, …, Agent_N</dt><dd><p>represent the allocation of the initial capacity to the each agent.</p>
+</dd>
+</dl>
+<p>The input data has to be provided for the base year. Additional years within the time
+framework of the overall simulation can be defined. In this case, MUSE would interpolate
+the values between the provided periods and assume a constant value afterwards.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="commodities.html"
+                        title="previous chapter">Commodity Description</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="timeslices.html"
+                        title="next chapter">Time-slices</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/inputs/technodata.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="timeslices.html" title="Time-slices"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="commodities.html" title="Commodity Description"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">muse-documentation 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Input Files</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="inputs_csv.html" >Input Files</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Techno-data</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

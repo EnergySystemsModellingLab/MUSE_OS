@@ -1,0 +1,171 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Key MUSE Components &#8212; muse-documentation 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Customising MUSE Tutorials" href="user-guide/index.html" />
+    <link rel="prev" title="MUSE Overview" href="overview.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="user-guide/index.html" title="Customising MUSE Tutorials"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="overview.html" title="MUSE Overview"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">muse-documentation 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Key MUSE Components</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="key-muse-components">
+<h1>Key MUSE Components<a class="headerlink" href="#key-muse-components" title="Permalink to this headline">¶</a></h1>
+<p>MUSE is made up of five key components:</p>
+<ul class="simple">
+<li><p>Service Demand</p></li>
+<li><p>Technologies</p></li>
+<li><p>Sectors</p></li>
+<li><p>Agents</p></li>
+<li><p>Market Clearing Algorithm</p></li>
+</ul>
+<p>In this section we will briefly explore what these components do and and how they interact.</p>
+<div class="section" id="service-demand">
+<h2>Service Demand<a class="headerlink" href="#service-demand" title="Permalink to this headline">¶</a></h2>
+<p>The service demand is a user input which defines the demand that an end-use sector has. An example of this is the service demand commodity of heat or cooling that the residential sector requires. End-use in this case, refers to the energy which is utilised at the very final stage, after both extraction and conversion.</p>
+<p>The estimate of the energy service is the first step. This estimate can be an exogenous input derived from the user, or correlations of GDP and population which reflect the socio-economic development of a region or country.</p>
+</div>
+<div class="section" id="technologies">
+<h2>Technologies<a class="headerlink" href="#technologies" title="Permalink to this headline">¶</a></h2>
+<p>Users are able to define any technology they wish for each of the energy sectors. Examples include power generators such as coal power plants, buses in the transport sector or lighting in the residential sector.</p>
+<p>Each of the technologies are placed in their regions of interest, such as the USA or India. They are then defined by the following, but not limited to, variables:</p>
+<ul class="simple">
+<li><p>Capital costs</p></li>
+<li><p>Fixed costs</p></li>
+<li><p>Maximum capacity limit</p></li>
+<li><p>Maximum capaicty growth</p></li>
+<li><p>Lifetime of the technology</p></li>
+<li><p>Utilization factor</p></li>
+<li><p>Interest rate</p></li>
+</ul>
+<p>Technologies, and their parameters are defined in the Technodata.csv file. For a full description of the input files, please refer to the <a class="reference internal" href="inputs/technodata.html#inputs-technodata"><span class="std std-ref">Techno-data</span></a> file.</p>
+</div>
+<div class="section" id="sectors">
+<h2>Sectors<a class="headerlink" href="#sectors" title="Permalink to this headline">¶</a></h2>
+<p>Sectors typically group areas of economic activity together, such as the residential sector, which might include all energy conusming activies of households. Possible examples of sectors are:</p>
+<ul class="simple">
+<li><p>Gas sector</p></li>
+<li><p>Power sector</p></li>
+<li><p>Residential sector</p></li>
+<li><p>Industrial sector</p></li>
+</ul>
+<p>Each of these sectors contain their respective technologies which consume energy commodities. For example, the residential sector may consume electricity, gas or oil for a variety of different energy demands such as lighting, cooking and heating.</p>
+<p>Each of the technologies, which consume a commodity, also output a different commodity or service demands. For example, a gas boiler consumes gas, but outputs heat and hot water.</p>
+</div>
+<div class="section" id="agents">
+<h2>Agents<a class="headerlink" href="#agents" title="Permalink to this headline">¶</a></h2>
+<p>Agents represent the investment decision makers in an energy system, for example consumers or companies. They invest in technologies that meet service demands, like heating, or produce other needed energy commodities, like electricity. These agents can be heterogenous, meaning that their investment priorities have the ability to differ.</p>
+<p>As an example, a generation company could compare potential power generators based on their levelized cost of electricity, their net present value, by minimising the total capital cost, a mixture of these and/or any user-defined approach. This approach more closely matches the behaviour of real-life agents in the energy market, where companies, or people, have different priorities and constraints.</p>
+</div>
+<div class="section" id="market-clearing-algorithm">
+<h2>Market Clearing Algorithm<a class="headerlink" href="#market-clearing-algorithm" title="Permalink to this headline">¶</a></h2>
+<p>The market clearing algorithm (MCA) is the central component between the different supplies and demands of the energy system in question. The MCA iterates between the demand and supply of each of these sectors. Its role is to govern the endogenous price of commodities over the course of a simulation.</p>
+<p>For a hypothetical example, the price of electricity is set to $70/MWh. However, at this price, the majority of residential agents prefer to heat their homes using gas. As a result of this, residential agents consume less electricity and more gas. This reduction in demand reduces the electricity price to $50/MWh. However, at this lower electricity price, some agents decide to invest in electric heating as opposed to gas. Eventually, the price converges on $60/MWh, where supply and demand for both electricity and gas are equal.</p>
+<p>This is the principle of the MCA. It finds an equilibrium by iterating through each of the different sectors until an overall equilibrium is reached for each of the commodities. It is possible to run the MCA in a carbon budget mode, as well as exogenous mode. The carbon budget mode ensures that a carbon price limits the amount of carbon produce by the market. Whereas, the exogenous mode allows the carbon price to be set by the user.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Key MUSE Components</a><ul>
+<li><a class="reference internal" href="#service-demand">Service Demand</a></li>
+<li><a class="reference internal" href="#technologies">Technologies</a></li>
+<li><a class="reference internal" href="#sectors">Sectors</a></li>
+<li><a class="reference internal" href="#agents">Agents</a></li>
+<li><a class="reference internal" href="#market-clearing-algorithm">Market Clearing Algorithm</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="overview.html"
+                        title="previous chapter">MUSE Overview</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="user-guide/index.html"
+                        title="next chapter">Customising MUSE Tutorials</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/muse-components.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="user-guide/index.html" title="Customising MUSE Tutorials"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="overview.html" title="MUSE Overview"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">muse-documentation 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Key MUSE Components</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

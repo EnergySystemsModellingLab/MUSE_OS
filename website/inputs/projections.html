@@ -1,0 +1,235 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initial Market Projection &#8212; muse-documentation 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Regional data" href="regions.html" />
+    <link rel="prev" title="Input Files" href="inputs_csv.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="regions.html" title="Regional data"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="inputs_csv.html" title="Input Files"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">muse-documentation 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Input Files</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="inputs_csv.html" accesskey="U">Input Files</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Initial Market Projection</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="initial-market-projection">
+<span id="inputs-projection"></span><h1>Initial Market Projection<a class="headerlink" href="#initial-market-projection" title="Permalink to this headline">¶</a></h1>
+<p>MUSE needs an initial projection of the market prices for each period of the simulation.</p>
+<ul class="simple">
+<li><p>The price trajectory is needed if the MCA works in <em>equilibrium</em> mode as an initial
+trajectory for the base year of the simulation. The market will override the
+calculated prices obtained from each commodity equilibrium for all the future periods
+following the base year</p></li>
+<li><p>Similarly, if the market works in a <em>carbon budget</em> mode, the prices are used as a
+starting point. The only difference from the previous case is given by the fact that
+the MCA will be calculating an additional global market price for carbon dioxide (and
+additional pollutants if required)</p></li>
+<li><p>If the MCA works in an <em>exogenous</em> mode, it will use the initial market projection as
+the projection for the the base year and all the future periods of the simulation</p></li>
+</ul>
+<p>The forward price trajectory should follow the structure reported in the table below.</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Initial market projections</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>RegionName</p></th>
+<th class="head"><p>Attribute</p></th>
+<th class="head"><p>Time</p></th>
+<th class="head"><p>com1</p></th>
+<th class="head"><p>com2</p></th>
+<th class="head"><p>com3</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Unit</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><p>Year</p></td>
+<td><p>MUS$2010/PJ</p></td>
+<td><p>MUS$2010/PJ</p></td>
+<td><p>MUS$2010/PJ</p></td>
+</tr>
+<tr class="row-odd"><td><p>region1</p></td>
+<td><p>CommodityPrice</p></td>
+<td><p>2010</p></td>
+<td><p>20</p></td>
+<td><p>1.9583</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-even"><td><p>region1</p></td>
+<td><p>CommodityPrice</p></td>
+<td><p>2015</p></td>
+<td><p>20</p></td>
+<td><p>1.9583</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>region1</p></td>
+<td><p>CommodityPrice</p></td>
+<td><p>2020</p></td>
+<td><p>20.38518042</p></td>
+<td><p>1.996014941</p></td>
+<td><p>2.038518042</p></td>
+</tr>
+<tr class="row-even"><td><p>region1</p></td>
+<td><p>CommodityPrice</p></td>
+<td><p>2025</p></td>
+<td><p>20.77777903</p></td>
+<td><p>2.034456234</p></td>
+<td><p>2.077777903</p></td>
+</tr>
+<tr class="row-odd"><td><p>region1</p></td>
+<td><p>CommodityPrice</p></td>
+<td><p>2030</p></td>
+<td><p>21.17793872</p></td>
+<td><p>2.073637869</p></td>
+<td><p>2.117793872</p></td>
+</tr>
+<tr class="row-even"><td><p>region1</p></td>
+<td><p>CommodityPrice</p></td>
+<td><p>2035</p></td>
+<td><p>21.58580508</p></td>
+<td><p>2.113574105</p></td>
+<td><p>2.158580508</p></td>
+</tr>
+<tr class="row-odd"><td><p>region1</p></td>
+<td><p>CommodityPrice</p></td>
+<td><p>2040</p></td>
+<td><p>22.00152655</p></td>
+<td><p>2.154279472</p></td>
+<td><p>2.200152655</p></td>
+</tr>
+<tr class="row-even"><td><p>region1</p></td>
+<td><p>CommodityPrice</p></td>
+<td><p>2045</p></td>
+<td><p>22.42525441</p></td>
+<td><p>2.195768786</p></td>
+<td><p>2.242525441</p></td>
+</tr>
+<tr class="row-odd"><td><p>region1</p></td>
+<td><p>CommodityPrice</p></td>
+<td><p>2050</p></td>
+<td><p>22.85714286</p></td>
+<td><p>2.238057143</p></td>
+<td><p>2.285714286</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="simple">
+<dt>RegionName</dt><dd><p>represents the region ID and needs to be consistent across all the data inputs</p>
+</dd>
+<dt>Attribute</dt><dd><p>defines the attribute type. In this case it refers to the CommodityPrice; it is
+relevant only for internal use</p>
+</dd>
+<dt>Time</dt><dd><p>corresponds to the time periods of the simulation; the simulated time framework in
+the example goes from 2010 through to 2050 with a 5-year time step</p>
+</dd>
+<dt>com1, …, comN</dt><dd><p>Any further columns represent the commodities modelled, as defined in the global
+commodities the row Unit reports the unit in which the technology consumption is
+defined; it is for the user internal reference only. The names <em>comX</em> should be
+replaced with the names of the commodities.</p>
+</dd>
+</dl>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="inputs_csv.html"
+                        title="previous chapter">Input Files</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="regions.html"
+                        title="next chapter">Regional data</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/inputs/projections.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="regions.html" title="Regional data"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="inputs_csv.html" title="Input Files"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">muse-documentation 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Input Files</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="inputs_csv.html" >Input Files</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Initial Market Projection</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>
