@@ -6,7 +6,7 @@ Initial Market Projection
 
 MUSE needs an initial projection of the market prices for each period of the simulation.
 
-* The price trajectory is needed if the MCA works in an *equilibrium* mode as an initial
+* The price trajectory is needed if the MCA works in *equilibrium* mode as an initial
   trajectory for the base year of the simulation. The market will override the
   calculated prices obtained from each commodity equilibrium for all the future periods
   following the base year

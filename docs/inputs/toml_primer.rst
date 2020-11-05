@@ -21,7 +21,7 @@ e.g. a name associated with a value. For instance:
    subsetion_attribute = true
 
 TOML is quite flexible in how one can define sections and attributes. The following
-three examples are mostly equivalent:
+three examples are equivalent:
 
 .. code-block:: TOML
 
@@ -45,8 +45,8 @@ three examples are mostly equivalent:
 .. _toml-array:
 
 Additionally, TOML files can contain tabular data, specified row-by-row using double
-square bracket. For instance, we define below a table with two rows and a single
-*column* (though column is not quite the right term, TOML tables are mode
+square bracket. For instance, below we define a table with two rows and a single
+*column* called `some_table_of_data` (though column is not quite the right term, TOML tables are made more
 flexible than most tabular formats. Rather, each row can be considered a
 dictionary).
 
@@ -58,11 +58,14 @@ dictionary).
    [[some_table_of_data]]
    a_key = "another value"
 
-Since MUSE requires a number of data files, paths to file can be formated quite
-flexibly. A `path` any key-value where the value ends with `.csv` or `.toml`,
-as well any key which ends in `_path`, `_file`, or `_dir`, e.g. `data_path` or
-`sector_dir`.  Paths can be formatted with shorthands for specific directories.
-Shorth-hands are specified by curly-brackets:
+.. Since MUSE requires a number of data files, paths to file can be formated quite
+.. flexibly. A `path` any key-value where the value ends with `.csv` or `.toml`,
+.. as well any key which ends in `_path`, `_file`, or `_dir`, e.g. `data_path` or
+.. `sector_dir`.  Paths can be formatted with shorthands for specific directories.
+.. Shorth-hands are specified by curly-brackets:
+
+As MUSE requires a number of data file, paths to files can be formated in a flexible manner. Paths can be formatted with shorthands for specific directories and are defined with curly-brackets. For example:
+
 
 .. code-block:: TOML
 

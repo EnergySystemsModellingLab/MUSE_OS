@@ -1,15 +1,17 @@
+.. _regional_data:
+
 =============
 Regional data
 =============
 
-MUSE requires the definition of the methodology used for investment and dispatch, alias
+MUSE requires the definition of the methodology used for investment and dispatch and alias
 demand matching. The methodology has to be defined by region and subregion, meant as a
 geographical subdivision in a region. Currently, the methodology definition is
 important for the legacy sectors only.
 
 
-Below it is shown the generic structure of the input commodity file for the electric
-heater.
+Below the generic structure of the input commodity file for the electric
+heater is shown:
 
 .. csv-table:: Methodology used in investment and demand matching
    :header: SectorName, RegionName, Subregion, sMethodologyPlanning, sMethodologyDispatch

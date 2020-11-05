@@ -6,9 +6,9 @@ Simulation settings
 
 .. currentmodule:: muse
 
-The following details the TOML input for MUSE. The general format for TOML files is
-described in a :ref:`previous section <toml-primer>`. Here, we focus on sections and
-attributes that are meaningful to MUSE.
+This section details the TOML input for MUSE. The format for TOML files is
+described in this :ref:`previous section <toml-primer>`. Here, however, we focus on sections and
+attributes that are specific to MUSE.
 
 The TOML file can be read using :py:func:`~readers.toml.read_settings`. The resulting
 data is used to construt the market clearing algorithm directly in the :py:meth:`MCA's
@@ -54,7 +54,7 @@ maximum_iterations
    Maximum number of iterations when searching for equilibrium. Defaults to 3.
 
 tolerance
-   Tolerance criteria when checking for equilibrium. Defaults to 0.1.,
+   Tolerance criteria when checking for equilibrium. Defaults to 0.1.
 
 tolerance_unmet_demand
    Criteria checking whether the demand has been met.  Defaults to -0.1.
@@ -72,8 +72,8 @@ plugins
 Carbon market
 -------------
 
-Holds options related to modelling the carbon market. If omitted, it defaults to not
-including the carbon marker in the simulation.
+This section containts the settings related to the modelling of the carbon market. If omitted, it defaults to not
+including the carbon market in the simulation.
 
 Example
 
@@ -89,7 +89,7 @@ budget
    carbon market feature is disabled. Defaults to an empty list.
 
 method
-   Method used to equilibrate the carbon market. Defaults to a simple iterative scheme.
+   Method used to equilibrate the carbon market. Defaults to a simple iterative scheme. [INSERT OPTIONS HERE]
 
 commodities
    Commodities that make up the carbon market. Defaults to an empty list.
@@ -109,7 +109,7 @@ Global input files
 ------------------
 
 Defines the paths specific simulation data files. The paths can be formatted as
-explained in :ref:`toml-primer`.
+explained in the :ref:`toml-primer`.
 
 .. code-block:: TOML
 
@@ -119,15 +119,15 @@ explained in :ref:`toml-primer`.
    global_commodities = '{path}/inputs/MUSEGlobalCommodities.csv'
 
 projections:
-   Path to a csv file giving initial market projection. See :ref:`inputs-projection`
+   Path to a csv file giving initial market projection. See :ref:`inputs-projection`.
 
 regions:
    Path to a csv file describing the regions. See
-   :ref:`user_guide/inputs/regions:regional data`.
+   :ref:`regional_data`.
 
 global_commodities:
    Path to a csv file describing the comodities in the simulation. See
-   :ref:`user_guide/inputs/commodities:commodity description`.
+   :ref:`inputs-commodities`.
 
 
 ----------
@@ -184,7 +184,7 @@ year.
 
 The input above defines the finest times slice in the code. In order to define rougher
 timeslices we can introduce items in each levels that represent aggregates at that
-level. By default, we have the followin:
+level. By default, we have the following:
 
 .. code-block:: TOML
 
@@ -246,7 +246,7 @@ A sector accepts a number of attributes and subsections.
 type
    Defines the kind of sector this is. *Standard* sectors are those with type
    "default". This value corresponds to the name with which a sector class is registerd
-   with MUSE, via :py:meth:`~muse.sectors.register_sector`.
+   with MUSE, via :py:meth:`~muse.sectors.register_sector`. [INSERT OTHER OPTIONS HERE]
 
 .. _sector-priority:
 
@@ -273,7 +273,7 @@ interpolation
 
 investment_production
    In its simplest form, this is the name of a method to compute the production from a
-   sector, as used when splitting the demand across agents. In other words, this the
+   sector, as used when splitting the demand across agents. In other words, this is the
    computation of the production which affects future investments. In it's more general
    form, *production* can be a subsection of its own, with a "name" attribute. For
    instance:
@@ -362,8 +362,8 @@ interactions
 
 
 output
-   Outputs have several moving components to them. MUSE is designed to allow users to
-   mix-and-match how and what to save.
+   Outputs are made up of several components. MUSE is designed to allow users to
+   mix-and-match both how and what to save.
 
    *output* is specified as a TOML array, e.g. with double brackets. Each sector can
    specify an arbitrary number of outputs, simply by adding an extra output row.
@@ -394,7 +394,7 @@ output
       :py:func:`muse.outputs.register_output_sink`. See
       :py:mod:`muse.outputs` for more details.
    
-   - filename: defines format of the file where to save the data. There several
+   - filename: defines the format of the file where to save the data. There are several
       standard values that are automatically substituted:
 
       - cwd: current working directory, where MUSE was started
@@ -408,9 +408,8 @@ output
 
       Defaults to `{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}`.
 
-   - overwrite: If `False`, then MUSE will issue an error and abort, rather than
-      overwrite an existing file. Defaults to `False`. With MUSE, shooting oneself in
-      the foot is an elective.
+   - overwrite: If `False` MUSE will issue an error and abort, instead of
+      overwriting an existing file. Defaults to `False`. This prevents important output files from being overwritten.
 
 technodata
    Path to a csv file containing the characterization of the technologies involved in
@@ -418,23 +417,23 @@ technodata
 
 timeslice_levels
    Slices to consider in a level. If absent, defaults to the finest timeslices.  See
-   :ref:`user_guide/inputs/toml:timeslices`
+   `Timeslices`_
 
 commodities_in
    Path to a csv file describing the inputs of each technology involved in the sector.
-   See :ref:`user_guide/inputs/commodities_io:input commodities`.
+   See :ref:`inputs-iocomms`.
 
 commodities_out
    Path to a csv file describing the outputs of each technology involved in the sector.
-   See :ref:`user_guide/inputs/commodities_io:output commodities`.
+   See :ref:`inputs-ocomms`.
 
 existing_capacity
    Path to a csv file describing the initial capacity of the sector.
-   See :ref:`user_guide/inputs/existing_capacity:existing sectoral capacity`.
+   See :ref:`inputs-existing-capacity`.
 
 agents
     Path to a csv file describing the agents in the sector.
-    See :ref:`user_guide/inputs/agents:agents`.
+    See :ref:`inputs-agents`.
 
 
 --------------
@@ -476,7 +475,7 @@ priority
    See the attribute in the standard mode, :ref:`priority<sector-priority>`.
 
 timeslices_levels:
-   See the attribute in the standard mode, :ref:`user_guide/inputs/toml:timeslices`.
+   See the attribute in the standard mode, `Timeslices`_.
 
 .. _preset-consumption:
 

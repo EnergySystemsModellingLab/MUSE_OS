@@ -6,7 +6,7 @@ Commodity Description
 
 MUSE handles a configurable number and type of commodities which are primarily used to
 represent energy, services, pollutants/emissions. The commodities for the simulation as
-a whole are defined in a csv file which the following structure.
+a whole are defined in a csv file with the following structure.
 
 .. csv-table:: Global commodities
    :header: Commodity, CommodityType, CommodityName, CommodityEmissionFactor_CO2, HeatRate, Unit
@@ -31,8 +31,8 @@ HeatRate
    represents the lower heating value of an energy commodity 
 
 Unit
-   is the unit used as a basis for all the input data More specifically the model allows
-   a totally flexible way of defining the commodities CommodityName is currently the
+   is the unit used as a basis for all the input data. More specifically the model allows
+   a totally flexible way of defining the commodities. CommodityName is currently the
    only column used internally as it defines the names of commodities and needs to be
    used consistently across all the input data files. The remaining columns of the file
    are only relevant for the user internal reference for the original sets of

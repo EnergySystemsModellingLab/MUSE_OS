@@ -5,8 +5,8 @@ Techno-data
 ===========
 The techno-data includes the techno-economic characteristics of each technology such
 as capital, fixed and variable cost, lifetime, utilisation factor.
-The techno-data should to follow the structure reported in the table although the column order
-is not important and additional input data could be also read through this format. In the table,
+The techno-data should follow the structure reported in the table. The column order
+is not important and additional input data can alsobe read in this format. In the table,
 the electric boiler used in households is taken as an example for a generic region, region1.
 
 
@@ -31,14 +31,14 @@ Level
    characterises either a fixed or a flexible input type
 
 cap_par, cap_exp
-   are used in the capital cost estimation. Capital costs are calculated as
+   are used in the capital cost estimation. Capital costs are calculated as:
    
    .. math::
    
-      \text{CAPEX} = \text{cap\_par} * \text{Capacity}^\text{cap\_exp}
+      \text{CAPEX} = \text{cap\_par} * \text{(Capacity)}^\text{cap\_exp}
 
    where the parameter cap_par is estimated at a selected reference size (i.e. Capref),
-   such as that
+   such as:
    
    .. math::
 
@@ -46,18 +46,20 @@ cap_par, cap_exp
          \frac{\text{CAPEXref}}{\text{Capref}}
       \right)^{\text{cap\_exp}}
 
-   Capref is decided by the modeller before filling the input data files
+   Capref is decided by the modeller before filling the input data files.
+
+   This allows the model to take into account economies of scale. ie. As `Capacity` increases, the price of the technology decreases.
 
 fix_par, fix_exp
 
-   are used in the fixed cost estimation. Fixed costs are calculated as
+   are used in the fixed cost estimation. Fixed costs are calculated as:
    
    .. math::
    
       \text{FOM} = \text{fix\_par} * (\text{Capacity})^\text{fix\_exp}
 
    where the parameter fix_par is estimated at a selected reference size (i.e. Capref),
-   such as that
+   such as:
 
    .. math::
 
@@ -65,18 +67,18 @@ fix_par, fix_exp
          \frac{\text{FOMref}}{\text{Capref}}
       \right)^{\text{fix\_exp}}
 
-   Capref is decided by the modeller before filling the input data files
+   Capref is decided by the modeller before filling the input data files.
 
 var_par, var_exp
    are used in the variable costs estimation. These variable costs are capacity
-   dependent Variable costs are calculated as 
+   dependent Variable costs are calculated as:
 
    .. math::
    
-      \text{VAREX} = \text{cap\_par} * \text{Capacity}^{\text{cap\_exp}}
+      \text{VAREX} = \text{cap\_par} * \text{(Capacity)}^{\text{cap\_exp}}
 
    where the parameter var_par is estimated at a selected reference size (i.e. Capref),
-   such as that
+   such as:
    
    .. math::
 
@@ -84,49 +86,49 @@ var_par, var_exp
          \frac{\text{VARref}}{\text{Capref}}
       \right)^{\text{var\_exp}}
 
-   Capref is decided by the modeller before filling the input data files
+   Capref is decided by the modeller before filling the input data files.
 
 MaxCapacityAddition
-   represents the maximum addition to installed capacity per technology, region, year
+   represents the maximum addition of installed capacity per technology, region, year.
 
 MaxCapacityGrowth
    represents the maximum growth in capacity as a fraction of the installed capacity per
-   technology, region, year
+   technology, region and year.
 
 TotalCapacityLimit
-   represents the total capacity limit per technology, region, year 
+   represents the total capacity limit per technology, region and year.
 
 TechnicalLife
-   represents the number of years when a technology operates before decommissioning
+   represents the number of years that a technology operates before it is decommissioned.
 
 UtilizationFactor
-   is the number of operating hours of a process over maximum number of hours in a year      
+   is the number of operating hours of a process over the maximum number of hours in a year.    
 
 ScalingSize
-   represents the minimum size of a technology to be installed
+   represents the minimum size of a technology to be installed.
 
 efficiency
-   is calculated as the ration between the total output commodities and the input commodities 
+   is calculated as the ratio between the total output commodities and the input commodities.
 
 AvailabiliyYear
-   defines the starting year of a technology; for example the value equals 1/0 when a
-   technology would or would not be available
+   defines the starting year of a technology; for example the value equals 1 when a
+   technology would be available or 0 when a technology would not be available.
 
 Type
-   defines the type of a technology       
+   defines the type of a technology.     
 
 Fuel
-   defines the fuel used by a technology  
+   defines the fuel used by a technology. 
 
 EndUse
-   defines the end use of a technology  
+   defines the end use of a technology. 
 
 InterestRate
-   is the technology interest rate
+   is the technology interest rate.
 
 Agent_0, ..., Agent_N
-   represent the allocation of the initial capacity to the each agent
+   represent the allocation of the initial capacity to the each agent.
    
 The input data has to be provided for the base year. Additional years within the time
 framework of the overall simulation can be defined. In this case, MUSE would interpolate
-ghe values between the provided periods and assume a constant value afterwards.
+the values between the provided periods and assume a constant value afterwards.
