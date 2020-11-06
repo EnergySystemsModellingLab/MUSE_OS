@@ -6,6 +6,7 @@ Advanced developer guide
    :caption: Contents:
 
    hooks
+   api
 
 
 
