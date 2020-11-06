@@ -13,7 +13,7 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../src/muse/"))
+sys.path.insert(0, os.path.abspath("../src/muse"))
 
 
 # -- Project information -----------------------------------------------------
@@ -31,7 +31,20 @@ release = "0.1"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["nbsphinx"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.coverage",
+    "sphinx.ext.napoleon",
+    "recommonmark",
+    "nbsphinx",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.autosectionlabel",
+    "sphinx.ext.viewcode",
+    "sphinxcontrib.bibtex",
+    "IPython.sphinxext.ipython_console_highlighting",
+    "IPython.sphinxext.ipython_directive",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
