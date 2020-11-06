@@ -1,12 +1,12 @@
 
-Advanced developer guide
-========================
+Advanced guide
+==============
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   hooks
-   api
+   extending-muse
+   
 
 
 
