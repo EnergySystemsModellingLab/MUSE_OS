@@ -38,7 +38,7 @@ Each of the technologies are placed in their regions of interest, such as the US
 
 * Maximum capacity limit
 
-* Maximum capaicty growth
+* Maximum capacity growth
 
 * Lifetime of the technology
 
@@ -63,7 +63,7 @@ Sectors typically group areas of economic activity together, such as the residen
 
 Each of these sectors contain their respective technologies which consume energy commodities. For example, the residential sector may consume electricity, gas or oil for a variety of different energy demands such as lighting, cooking and heating.
 
-Each of the technologies, which consume a commodity, also output a different commodity or service demands. For example, a gas boiler consumes gas, but outputs heat and hot water. 
+Each of the technologies, which consume a commodity, also output a different commodity or service. For example, a gas boiler consumes gas, but outputs heat and hot water. 
 
 Agents
 ------
@@ -79,5 +79,7 @@ The market clearing algorithm (MCA) is the central component between the differe
 
 For a hypothetical example, the price of electricity is set to $70/MWh. However, at this price, the majority of residential agents prefer to heat their homes using gas. As a result of this, residential agents consume less electricity and more gas. This reduction in demand reduces the electricity price to $50/MWh. However, at this lower electricity price, some agents decide to invest in electric heating as opposed to gas. Eventually, the price converges on $60/MWh, where supply and demand for both electricity and gas are equal.
 
-This is the principle of the MCA. It finds an equilibrium by iterating through each of the different sectors until an overall equilibrium is reached for each of the commodities. It is possible to run the MCA in a carbon budget mode, as well as exogenous mode. The carbon budget mode ensures that a carbon price limits the amount of carbon produce by the market. Whereas, the exogenous mode allows the carbon price to be set by the user.
+This is the principle of the MCA. It finds an equilibrium by iterating through each of the different sectors until an overall equilibrium is reached for each of the commodities. It is possible to run the MCA in a carbon budget mode, as well as exogenous mode. The carbon budget mode ensures that an endogenous carbon price is calculated to limit the emissions of the energy system to be below than a user-defined value. Whereas, the exogenous mode allows the carbon price to be set by the user.
+
+
 

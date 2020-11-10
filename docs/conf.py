@@ -18,12 +18,12 @@ sys.path.insert(0, os.path.abspath("../src/muse"))
 
 # -- Project information -----------------------------------------------------
 
-project = "muse-documentation"
+project = "MUSE Documentation"
 copyright = "2020, Sustainable Gas Institute"
 author = "Sustainable Gas Institute"
 
 # The full version, including alpha/beta/rc tags
-release = "0.1"
+release = "0.8"
 
 
 # -- General configuration ---------------------------------------------------

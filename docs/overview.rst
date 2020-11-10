@@ -13,7 +13,7 @@ MUSE is an agent-based modelling environment, where the agents are investors and
 
 MUSE is technology rich and can model energy production, conversion and end-use technologies. So, for example, MUSE can enable the user to develop a power sector with solar photovoltaics, wind turbines and gas power plants which produce energy for appliances like electric stoves, heaters and lighting in the residential sector. Agents invest within these sectors, investing in technologies such as electric stoves in the residential sector or gas power plants in the power sectors. The investments made depend on the agent's investment strategies.
 
-Every sector is a user configurable module. This means that a user can configure any number of sectors, cointaining custom, user-defined technologies. In practice, this configuration is carried out using a selection of :ref:`input-files`. In addition, MUSE can model any geographical region around the world and over any time scale, from a single year through to 100 years or more. Within a year, MUSE allows for a user-defined temporal granularity. This allows for the year to be split into different seasons and times, where energy demand may differ.
+Every sector is a user configurable module. This means that a user can configure any number of sectors, cointaining custom, user-defined technologies and commodities. MUSE is fully data-driven, meaning that the configuration of the model is carried out using a selection of :ref:`input-files`. This means that you are able to customise MUSE to your wishes by modifying these input files. In addition, MUSE can model any geographical region around the world and over any time scale, from a single year through to 100 years or more. Within a year, MUSE allows for a user-defined temporal granularity. This allows for the year to be split into different seasons and times, where energy demand may differ. Thus allowing us to model diurnal peaks in the demand, varying weekly and seasonally.
 
 MUSE differs from the vast majority of energy systems models, which are intertemporal optimisation, by allowing agents to have "limited foresight". This enables these agents to invest under uncertainty of the future, as in the real world. In addition, MUSE is a "partial equilibrium" model, in the sense that it balances supply and demand of each energy commodity in the system.
 
@@ -51,7 +51,7 @@ A simulation model of a geographical region or world can be developed and is mad
 
 #. **Service demands** are demands that must be serviced such as lighting, heating or steel production.
 
-#. **Market clearing algorithm** is the algorithm which determines global commodity prices based upon the balancing of supply and demand from each of the sectors. 
+#. **Market clearing algorithm** is the algorithm which determines global commodity prices based upon the balancing of supply and demand from each of the sectors. It must be noted, however, that only the conversion and supply sectors are able to modify prices; the demand sectors are price-takers, and so do not modify prices.
 
 #. **Equilibrium prices** are the prices determined by the market clearing algorithm and can determine the investments made by agents in various sectors. This allows for the model to project how the system may develop over a time period. 
 
@@ -71,20 +71,20 @@ MUSE is completely open source, and ready for development.
 Visualisation of MUSE 
 ---------------------
 
-.. image:: figures/muse_overview.jpg
+.. image:: figures/MUSE-diagram-carbon-budget-colour.png
     :width: 550px
     :align: center
     :alt: MUSE overview figure.
 
 The figure above displays the key sectors of MUSE:
 
-- Primary supply sectors
+- Primary supply sectors; this allows to model diurnal peaks in the demand, varying weekly and seasonally.
 
 - Conversion sectors
 
 - Demand sectors
 
-- Climate model
+- Climate model (in the current model this is simplified by the use of a carbon budget.)
 
 - Market clearing algorithm (MCA)
 
@@ -93,9 +93,10 @@ How MUSE works
 
 MUSE works by iterating between sectors shown above to ensure that energy service demands are met by the technologies chosen by the agents. Next, we detail the calculations made by MUSE throughout the simulation.
 
-#. The energy service demand is calculated. For example, how much electricity, gas and oil demand is there for cooking, building space heating and lighting in the residential sector?
+#. The energy service demand is calculated. For example, how much electricity, gas and oil demand is there for cooking, building space heating and lighting in the residential sector? It must be noted, that this is only known after the energy service demand sector is solved and the technologies invested in are decided.
 
 #. A demand sector is solved. That is, agents choose which end-use technologies to serve the demands in the sector. For example, electric stoves are compared to gas stoves to meet demand for cooking. These technologies are chosen based upon their:
+
     i. Search space (which technologies are they willing to consider?)
 
     ii. Their objectives (which metrics do they consider important?)

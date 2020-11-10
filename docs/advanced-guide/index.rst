@@ -6,6 +6,7 @@ Advanced guide
    :caption: Contents:
 
    extending-muse
+   further-extending-muse
    
 
 
