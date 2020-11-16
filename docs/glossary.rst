@@ -1,10 +1,66 @@
+Glossary
+========
+
+Here we provide a glossary for some of the frequently used terms in this documentation. Feel free to come back to this page when you come across a term you don't understand!
+
 .. glossary::
 
-    Sphinx
-      Sphinx is a tool that makes it easy to create intelligent and beautiful documentation. It was originally created for the Python documentation, and it has excellent facilities for the documentation of software projects in a range of languages.
+    Anaconda
+        Anaconda is an open-source distribution of the Python and R programming languages. It is used for scientific computing. Anaconda comes with over 250 packages automatically installed, and allows for over 7,500 additional open-source packages to be installed via PyPI, the conda package and virrtual environment manager.
 
-    RST
-      |RST| is an easy-to-read, what-you-see-is-what-you-get plain text markup syntax and parser system. It is useful for in-line program documentation (such as Python docstrings), for quickly creating simple web pages, and for standalone documents. |RST| is designed for extensibility for specific application domains. The |RST| parser is a component of Docutils.
+    Anaconda Prompt
+        Anaconda prompt is a command line shell. This is much like terminal for mac or cmd for windows. However, Anaconda Prompt allows you to run anaconda and conda commands from the prompt, without the need to change directories or your path.
 
-    Sublime Text
-      Sublime Text is a sophisticated text editor for code, markup and prose. You'll love the slick user interface, extraordinary features and amazing performance.
+    Benchmark years
+        These are the years which the model solves and presents outputs for. This can be set by the user and represents the evolution of the system in each time step. This, for example, can be set for every year or every five years, depending on the granularity required by the user. 
+
+    Energy system
+        An energy system is a system which is primarily designed to supply energy services to end-users. This can be defined as all components related to the production, conversion, delivery, and use of energy.
+
+    End-use demand 
+        End-use demand is a demand which is the final stage of the energy chain. 
+
+    Energy service
+        Energy services are the products of the energy system. An entire energy system is developed to provide an energy service. Examples of energy service are lighting and heating within the residential sector.
+
+    End-use technology
+        An end-use technology is a technology which service an energy service.  Examples of these include boiler, heaters and stoves which service hot water, heating and cooking.
+
+    Endogenous quantity
+        An endogenous quantity is one which develops within the model, as opposed to an exogenous quantity which is specified by the user and not influenced by the model.
+
+    Equilibrium
+        An equilibrium is a situation in which economic forces, such as supply and demand are balanced. This means that, in the absence of external forces, the value of economic variables will not change. 
+
+    Exogenous quantity
+        An exogenous quantity is a quantity which is set by the user, and does not change based upon the simulation.
+
+    Imperfect information
+        This is where an agent does not know everything needed to make a perfect decision. 
+
+    Levelised cost of electricity
+        The levelised cost of electricty is a measure of the average net present cost of electricity generation for a generating plant over its lifetime.
+
+    Limited foresight
+        Limited foresight is the condition that an agent is unable to predict the entire future perfectly. The agent is only able to predict the future either imperfectly, or a limited time ahead.
+
+    Open-source
+        Open-source is a source code that is made freely available for users to modify and redistribute. 
+      
+    Pandas
+        Pandas is a data manipulation library in python.
+    
+    Petajoules (PJ)
+        A petajoule is equal to 1.0E+15 joules. A joule is a unit of energy and is equal to the energy transferred to an object. An equivalent unit would be megawatt hours (MWh).
+
+    Seaborn
+        Seaborn is a visualisation library in python.
+
+    Scenario analysis
+        Scenario analysis is a process of analysing the future by considering different possibilities of a future. Through this analysis multiple alternative future developments are presented, as opposed to a single prediction.
+
+    Simulation
+        A simulation is computer software which models, or imitates a process or system. They can be used to observe what the effect of changes are over time to the system in question. 
+
+    Timeslice
+        A timeslice is the way in which a benchmark year is split into various different sections. For example, a benchmark year could be split into four seasons, or as far as for each hour within a benchmark year.
