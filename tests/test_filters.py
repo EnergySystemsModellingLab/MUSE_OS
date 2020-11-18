@@ -1,43 +1,72 @@
+<<<<<<< HEAD
 import numpy as np
 import xarray as xr
 from pytest import fixture, mark
+=======
+from pytest import fixture, mark
+from xarray import DataArray
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 from muse.filters import factory, register_filter, register_initializer
 
 
 @fixture
 def search_space(retro_agent, technologies):
+<<<<<<< HEAD
     technology = technologies.technology
     asset = technology[technology.isin(retro_agent.assets.technology)]
     coords = {"asset": asset.values, "replacement": technology.values}
     return xr.DataArray(
         np.ones(tuple(len(u) for u in coords.values()), dtype=bool),
+=======
+    from numpy import ones
+
+    technology = technologies.technology
+    asset = technology[technology.isin(retro_agent.assets.technology)]
+    coords = {"asset": asset.values, "replacement": technology.values}
+    return DataArray(
+        ones(tuple(len(u) for u in coords.values()), dtype=bool),
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         coords=coords,
         dims=coords.keys(),
         name="search_space",
     )
 
 
+<<<<<<< HEAD
 @mark.usefixtures("save_registries")
+=======
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 def test_filter_registering():
     from muse.filters import SEARCH_SPACE_FILTERS
 
     @register_filter
+<<<<<<< HEAD
     def a_filter(retro_agent, search_space: xr.DataArray):
+=======
+    def a_filter(retro_agent, search_space: DataArray):
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         pass
 
     assert "a_filter" in SEARCH_SPACE_FILTERS
     assert SEARCH_SPACE_FILTERS["a_filter"] is a_filter
 
     @register_filter(name="something")
+<<<<<<< HEAD
     def b_filter(retro_agent, search_space: xr.DataArray):
+=======
+    def b_filter(retro_agent, search_space: DataArray):
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         pass
 
     assert "something" in SEARCH_SPACE_FILTERS
     assert SEARCH_SPACE_FILTERS["something"] is b_filter
 
 
+<<<<<<< HEAD
 @mark.usefixtures("save_registries")
+=======
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 def test_filtering():
     @register_initializer
     def start(*args, **kwargs):
@@ -114,7 +143,12 @@ def test_similar_fuels(retro_agent, search_space, technologies):
             assert expected == actual.sel(replacement=tech, asset=asset)
 
 
+<<<<<<< HEAD
 def test_currently_existing(retro_agent, search_space, technologies, agent_market, rng):
+=======
+def test_currently_existing(retro_agent, search_space, technologies, agent_market):
+    from numpy.random import choice
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from muse.filters import currently_existing_tech
 
     agent_market.capacity[:] = 0
@@ -133,9 +167,15 @@ def test_currently_existing(retro_agent, search_space, technologies, agent_marke
     assert not actual.sel(replacement=~in_market).any()
     assert actual.sel(replacement=in_market).all()
 
+<<<<<<< HEAD
     techs = rng.choice(
         list(set(agent_market.technology.values)),
         1 + rng.choice(range(len(set(agent_market.technology.values)))),
+=======
+    techs = choice(
+        list(set(agent_market.technology.values)),
+        1 + choice(range(len(set(agent_market.technology.values)))),
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         replace=False,
     )
     agent_market.capacity[:] = 0
@@ -192,6 +232,7 @@ def test_init_from_tech(demand_share, technologies, agent_market):
     assert (space.asset.values == demand_share.asset.values).all()
     assert (space.replacement.values == technologies.technology.values).all()
     assert space.all()
+<<<<<<< HEAD
 
 
 def test_init_from_asset(technologies, rng):
@@ -232,3 +273,5 @@ def test_init_from_asset_no_assets(technologies, rng):
     assert set(space.dims) == {"replacement"}
     assert space.replacement.isin(technologies.technology).all()
     assert technologies.technology.isin(space.replacement).all()
+=======
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1

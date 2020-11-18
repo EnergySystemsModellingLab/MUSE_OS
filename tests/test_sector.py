@@ -1,7 +1,10 @@
 from pytest import fixture, mark
 
+<<<<<<< HEAD
 pytestmark = mark.usefixtures("default_timeslice_globals")
 
+=======
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 @fixture
 def real_market(buildings):
@@ -46,14 +49,22 @@ def mock_sector(buildings):
         type(result).uuid = PropertyMock(return_value=agent.uuid)
         type(result).category = PropertyMock(return_value=agent.category)
         type(result).name = PropertyMock(return_value=agent.name)
+<<<<<<< HEAD
         type(result).next = Mock(return_value=None)
+=======
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         if hasattr(agent, "quantity"):
             type(result).quantity = PropertyMock(return_value=agent.quantity)
         return result
 
     result = deepcopy(buildings)
+<<<<<<< HEAD
     result.subsectors[0].real_agents = result.subsectors[0].agents
     result.subsectors[0].agents = [mocker(u) for u in result.subsectors[0].agents]
+=======
+    result.real_agents = result.agents
+    result.agents = [mocker(u) for u in result.agents]
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     return result
 
 
@@ -96,13 +107,24 @@ def test_calls_to_agents(mock_sector, real_market):
 @mark.parametrize("agent_id", range(6))
 def test_call_each_agent(mock_sector, real_market, agent_id):
     """Checks logic of calling next on sector using mocked agents."""
+<<<<<<< HEAD
+=======
+
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from copy import deepcopy
     from muse.outputs.sector import factory
 
     mock_sector.outputs.sector = factory()
     mock_sector.next(real_market)
 
+<<<<<<< HEAD
     mock = mock_sector.subsectors[0].agents[agent_id]
     real = deepcopy(mock_sector.subsectors[0].real_agents[agent_id])
     assert mock.next.call_count == 1
+=======
+    mock = mock_sector.agents[agent_id]
+    real = deepcopy(mock_sector.real_agents[agent_id])
+    assert mock.next.call_count == 1
+    real.investments = "normalized"
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     real.next(*mock.next.call_args[0], **mock.next.call_args[1])

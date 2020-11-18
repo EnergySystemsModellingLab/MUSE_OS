@@ -153,7 +153,11 @@ docs/developer_guide/tutorial/mynewfunctions.py
 .envrc
 shell.nix
 
+<<<<<<< HEAD
 .vscode/*
+=======
+.vscode
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 !.vscode/settings.json
 !.vscode/launch.json
 !.vscode/extension.json

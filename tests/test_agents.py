@@ -1,5 +1,9 @@
 """Test buildings agents."""
+<<<<<<< HEAD
 from pytest import fixture
+=======
+from pytest import approx, fixture, mark
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 @fixture
@@ -28,8 +32,12 @@ def assets():
 
 
 def test_create_retrofit(agent_args, technologies, stock):
+<<<<<<< HEAD
     from muse.agents.factories import create_agent
     from muse.agents.agent import Agent
+=======
+    from muse import create_agent, Agent
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     agent_args["share"] = "agent_share_zero"
     agent = create_agent(
@@ -37,7 +45,11 @@ def test_create_retrofit(agent_args, technologies, stock):
         technologies=technologies,
         capacity=stock.capacity,
         year=2010,
+<<<<<<< HEAD
         **agent_args,
+=======
+        **agent_args
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     )
     assert isinstance(agent, Agent)
     assert len(agent.assets.capacity) == 0
@@ -52,18 +64,87 @@ def test_create_retrofit(agent_args, technologies, stock):
         technologies=technologies,
         capacity=stock.capacity,
         year=2010,
+<<<<<<< HEAD
         **agent_args,
+=======
+        **agent_args
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     )
     assert isinstance(agent, Agent)
     assert "asset" in agent.assets.dims
     assert len(agent.assets.capacity) != 0
 
 
+<<<<<<< HEAD
 def test_run_retro_agent(retro_agent, technologies, agent_market, demand_share):
     # make sure capacity limits are no reached
     technologies.total_capacity_limit[:] = retro_agent.assets.capacity.sum() * 100
     technologies.max_capacity_addition[:] = retro_agent.assets.capacity.sum() * 100
     technologies.max_capacity_growth[:] = retro_agent.assets.capacity.sum() * 100
+=======
+@mark.parametrize("time_period", [1, 5, 0.01])
+@mark.parametrize("scale_growth", [1, 0.01])
+@mark.parametrize("scale_add", [1, 0.01])
+@mark.parametrize("scale_limit", [1, 0.01])
+def test_max_capacity_expansion(
+    retro_agent, technologies, time_period, scale_growth, scale_limit, scale_add
+):
+    # disable/enable constraints by adding a factor
+    technologies.max_capacity_growth[:] *= scale_growth
+    technologies.max_capacity_growth[:] *= scale_limit
+    technologies.total_capacity_limit[:] *= scale_add
+
+    max_cap = retro_agent.max_capacity_expansion(technologies, time_period=time_period)
+
+    techs = technologies.sel(year=retro_agent.year, region=retro_agent.region)
+    assets = (
+        retro_agent.assets.groupby("technology")
+        .sum("asset")
+        .reindex_like(techs.technology)
+        .fillna(0)
+    )
+
+    current_cap = assets.capacity.sel(year=retro_agent.year)
+    forecast_cap = assets.capacity.interp(
+        year=retro_agent.forecast_year, method="linear"
+    )
+
+    tot_cap_lim = techs.total_capacity_limit
+    max_cap_gro = techs.max_capacity_growth
+    max_cap_add = techs.max_capacity_addition
+
+    left = tot_cap_lim + 1e-12 >= forecast_cap + max_cap
+    right = tot_cap_lim <= forecast_cap + 1e-12
+    assert (left | right).all()
+    decom = current_cap - forecast_cap
+    left = time_period * max_cap_gro * current_cap + decom + 1e-12
+    assert (left >= max_cap).where(current_cap > 0, True).all()
+    assert (time_period * max_cap_add + 1e-12 >= max_cap).all()
+    is_new_tech = ~technologies.technology.isin(retro_agent.assets.technology)
+    assert max_cap.sel(technology=is_new_tech).values != approx(0)
+
+
+# Some random numbers dont result in viable retro agent
+def test_run_retro_agent(retro_agent, technologies, agent_market, demand_share):
+    from copy import deepcopy
+
+    assets = deepcopy(retro_agent.assets.capacity)
+
+    # make sure capacity limit is not reached
+    capa_year = (
+        assets.interp(year=retro_agent.forecast_year, method="linear")
+        .groupby("technology")
+        .sum("asset")
+    )
+    tot_lim = technologies.total_capacity_limit.sel(
+        technology=list(set(assets.technology.values))
+    )
+    technologies.total_capacity_limit.loc[
+        {"technology": list(set(assets.technology.values))}
+    ] = tot_lim.where(
+        tot_lim > capa_year, (capa_year + 10).sel(technology=tot_lim.technology)
+    )
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     retro_agent.next(technologies, agent_market, demand_share)
 
@@ -113,6 +194,7 @@ def test_clean_assets(assets):
     originals = set(zip(assets.technology.values, assets.installed.values))
     assert empties.isdisjoint(cleanies)
     assert empties.union(cleanies) == originals
+<<<<<<< HEAD
 
 
 def test_initial_assets(tmp_path):
@@ -132,3 +214,5 @@ def test_initial_assets(tmp_path):
 
     assets = read_initial_assets(path("trade", "trade"))
     assert set(assets.dims) == {"year", "region", "asset", "dst_region"}
+=======
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1

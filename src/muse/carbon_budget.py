@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 from typing import Callable, MutableMapping, Text, Sequence
+=======
+from typing import Callable, Mapping, Text, Sequence
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 import numpy as np
 import xarray as xr
@@ -17,10 +21,17 @@ CARBON_BUDGET_FITTERS_SIGNATURE = Callable[[np.ndarray, np.ndarray, int], float]
 """carbon budget fitters signature."""
 
 
+<<<<<<< HEAD
 CARBON_BUDGET_METHODS: MutableMapping[Text, CARBON_BUDGET_METHODS_SIGNATURE] = {}
 """Dictionary of carbon budget methods checks."""
 
 CARBON_BUDGET_FITTERS: MutableMapping[Text, CARBON_BUDGET_FITTERS_SIGNATURE] = {}
+=======
+CARBON_BUDGET_METHODS: Mapping[Text, CARBON_BUDGET_METHODS_SIGNATURE] = {}
+"""Dictionary of carbon budget methods checks."""
+
+CARBON_BUDGET_FITTERS: Mapping[Text, CARBON_BUDGET_FITTERS_SIGNATURE] = {}
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 """Dictionary of carbon budget fitters."""
 
 
@@ -86,7 +97,10 @@ def fitting(
     sample_emissions[0] = emissions
 
     # For each sample price, we calculate the new emissions
+<<<<<<< HEAD
     new_market = None
+=======
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     for i, new_price in enumerate(sample_prices[1:]):
 
         # Reset market and sectors
@@ -106,7 +120,11 @@ def fitting(
         sample_prices, sample_emissions, threshold
     )
 
+<<<<<<< HEAD
     if refine_price and new_market is not None:
+=======
+    if refine_price:
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         new_price = refine_new_price(
             new_market,
             carbon_price,

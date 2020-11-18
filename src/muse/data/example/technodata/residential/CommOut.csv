@@ -1,0 +1,4 @@
+ProcessName,RegionName,Time,Level,electricity,gas,heat,CO2f,wind
+Unit,-,Year,-,GWh/PJ,PJ/PJ,PJ/PJ,kt/PJ,PJ/PJ
+gasboiler,USA,2020,fixed,0,0,1,64.70588235,0
+heatpump,USA,2020,fixed,0,0,1,0,0
