@@ -1,0 +1,7 @@
+AgentShare,Name,RegionName,Objective,ObjData,Objsort,SearchRule,DecisionMethod,MaturityThreshold,Budget,Type
+agent_share,A1,R1,LCOE,1,FALSE,from_assets->compress->reduce_assets,singleObj,-1,inf,default
+agent_share,A2,R1,LCOE,1,FALSE,from_assets->compress->reduce_assets,singleObj,-1,inf,default
+agent_share,A1,R2,LCOE,1,FALSE,from_assets->compress->reduce_assets,singleObj,-1,inf,default
+agent_share,A2,R2,LCOE,1,FALSE,from_assets->compress->reduce_assets,singleObj,-1,inf,default
+agent_share,A1,R3,LCOE,1,FALSE,from_assets->compress->reduce_assets,singleObj,-1,inf,default
+agent_share,A2,R3,LCOE,1,FALSE,from_assets->compress->reduce_assets,singleObj,-1,inf,default

@@ -1,0 +1,5 @@
+ProcessName,RegionName,Time,Level,cap_exp,fix_exp,var_par,var_exp,TechnicalLife,UtilizationFactor,ScalingSize,efficiency,Availabiliyyear,InterestRate,Type,Fuel,EndUse,AgentShare
+Unit,-,Year,-,-,-,MUS$2010/PJ,-,Years,-,PJ,%,-,-,-,-,-,-
+gassupply1,R1,2010,fixed,1,1,3.03,1,35,0.9,0.00000189,86,1,0.1,energy,gas,gas,0.5
+gassupply1,R2,2010,fixed,1,1,8.93,1,35,0.9,0.00000189,86,1,0.1,energy,gas,gas,0.5
+gassupply1,R3,2010,fixed,1,1,2.55,1,35,0.9,0.00000189,86,1,0.1,energy,gas,gas,0.5

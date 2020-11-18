@@ -1,0 +1,4 @@
+,RegionName,ProcessName,Timeslice,fuel1,fuel2,fuel3,ammonia,CO2f,CO2r,CO2c,CO2s,N2O
+0,R1,procammonia_1,1,0,0,0,14.94182491,0,0,0,0,0
+1,R1,procammonia_1,2,0,0,0,15.39460748,0,0,0,0,0
+2,R1,procammonia_1,3,0,0,0,14.94182491,0,0,0,0,0
