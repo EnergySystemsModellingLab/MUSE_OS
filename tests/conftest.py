@@ -5,7 +5,11 @@ from pandas import DataFrame
 from pytest import fixture, mark
 from xarray import DataArray, Dataset
 
+<<<<<<< HEAD
 from muse.agents import Agent
+=======
+from muse.agent import Agent
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 @fixture(autouse=True)
@@ -129,6 +133,7 @@ def pytest_collection_modifyitems(config, items):
 def loaded_residential_settings(residential_input_file):
     """Initialized MCA with the default settings and the residential sector."""
     from muse.readers import read_settings
+<<<<<<< HEAD
     from muse.readers.toml import undo_damage, convert
 
     settings = undo_damage(read_settings(residential_input_file))
@@ -141,6 +146,12 @@ def loaded_residential_settings(residential_input_file):
     )
 
     return convert(settings)
+=======
+
+    settings = read_settings(residential_input_file)
+
+    return settings
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 @fixture(scope="session")
@@ -375,7 +386,11 @@ def market(coords, technologies, timeslice) -> Dataset:
 
 def create_agent(agent_args, technologies, stock, agent_type="retrofit") -> Agent:
     from numpy.random import choice
+<<<<<<< HEAD
     from muse.agents.factories import create_agent
+=======
+    from muse import create_agent
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     agent = create_agent(
         agent_type=agent_type,
@@ -607,6 +622,7 @@ def residential_input_file() -> Path:
 
 
 @fixture(autouse=True)
+<<<<<<< HEAD
 def warnings_as_errors(request):
     from warnings import simplefilter
 
@@ -619,10 +635,17 @@ def warnings_as_errors(request):
 
     simplefilter("error", FutureWarning)
     simplefilter("error", DeprecationWarning)
+=======
+def warnings_as_errors():
+    from warnings import simplefilter
+
+    simplefilter("error", FutureWarning)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     simplefilter("error", PendingDeprecationWarning)
 
 
 @fixture
+<<<<<<< HEAD
 def save_registries():
     from contextlib import contextmanager
 
@@ -671,3 +694,9 @@ def rng(request):
     from numpy.random import default_rng
 
     return default_rng(getattr(request.config.option, "randomly_seed", None))
+=======
+def fullsim_dir() -> Path:
+    import muse
+
+    return Path(muse.__file__).parent / "data" / "example"
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1

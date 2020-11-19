@@ -6,9 +6,13 @@ if "__main__" == __name__:
 
     INPUT_PATH = click.Path(exists=False, file_okay=True, resolve_path=True)
     MODEL_PATH = click.Path(file_okay=False, resolve_path=True)
+<<<<<<< HEAD
     MODELS = click.Choice(
         ["default", "multiple-agents", "medium", "minimum-service", "trade"]
     )
+=======
+    MODELS = click.Choice(["default", "multiple-agents"])
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
     @click.argument("settings", default="settings.toml", type=INPUT_PATH)
@@ -21,9 +25,14 @@ if "__main__" == __name__:
         "--copy",
         type=MODEL_PATH,
         help=(
+<<<<<<< HEAD
             "Folder where to copy the model specified by the '--model' option. "
             "The folder must not exist: this command will refuse to overwrite existing "
             "data. Exits without running the model."
+=======
+            "Folder where to copy a model. Defaults to the default model."
+            ". Exists without running the model."
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         ),
     )
     def muse_main(settings, model, copy):

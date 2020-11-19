@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from typing import cast
 
 import numpy as np
@@ -12,12 +13,25 @@ def demand(
     from typing import Mapping, Hashable, Any
 
     region = xr.DataArray(list(set(capacity.region.values)), dims="region")
+=======
+from pytest import approx, fixture
+from xarray import DataArray, Dataset
+
+
+@fixture
+def demand(technologies: Dataset, capacity: DataArray, market: DataArray) -> DataArray:
+    from typing import Mapping, Hashable, Any
+    from numpy.random import randint
+
+    region = DataArray(list(set(capacity.region.values)), dims="region")
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     coords: Mapping[Hashable, Any] = {
         "commodity": technologies.commodity,
         "year": capacity.year,
         "region": region,
         "timeslice": market.timeslice,
     }
+<<<<<<< HEAD
     data = np.random.randint(0, 5, tuple(len(u) for u in coords.values()))
     return xr.DataArray(data, coords=coords, dims=tuple(coords.keys()))
 
@@ -27,6 +41,17 @@ def production(technologies: xr.Dataset, capacity: xr.DataArray) -> xr.DataArray
     from numpy.random import random
 
     comms = xr.DataArray(
+=======
+    data = randint(0, 5, tuple(len(u) for u in coords.values()))
+    return DataArray(data, coords=coords, dims=tuple(coords.keys()))
+
+
+@fixture
+def production(technologies: Dataset, capacity: DataArray) -> DataArray:
+    from numpy.random import random
+
+    comms = DataArray(
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         random(len(technologies.commodity)),
         coords={"commodity": technologies.commodity},
         dims="commodity",
@@ -35,9 +60,17 @@ def production(technologies: xr.Dataset, capacity: xr.DataArray) -> xr.DataArray
 
 
 def make_array(array):
+<<<<<<< HEAD
 
     data = np.random.randint(1, 5, len(array))
     return xr.DataArray(data, dims=array.dims, coords=array.coords)
+=======
+    from numpy.random import randint
+    from xarray import DataArray
+
+    data = randint(1, 5, len(array))
+    return DataArray(data, dims=array.dims, coords=array.coords)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 def test_supply_enduse(technologies, capacity, timeslice):
@@ -47,7 +80,11 @@ def test_supply_enduse(technologies, capacity, timeslice):
     from numpy.random import random
 
     production = maximum_production(technologies, capacity)
+<<<<<<< HEAD
     share = xr.DataArray(
+=======
+    share = DataArray(
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         random(timeslice.timeslice.shape),
         coords={"timeslice": timeslice.timeslice},
         dims="timeslice",
@@ -71,21 +108,33 @@ def test_supply_enduse(technologies, capacity, timeslice):
 
 def test_supply_emissions(technologies, capacity):
     """Emission part of supply."""
+<<<<<<< HEAD
+=======
+    from xarray import broadcast
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from muse.quantities import supply, maximum_production, emission
     from muse.commodities import is_enduse, is_pollutant
 
     production = maximum_production(technologies, capacity)
     spl = supply(capacity, production.sum("asset") + 1, technologies)
     msn = emission(spl.where(is_enduse(spl.comm_usage), 0), technologies.fixed_outputs)
+<<<<<<< HEAD
     actual, expected = xr.broadcast(
         spl.sel(commodity=is_pollutant(spl.comm_usage)), msn
     )
+=======
+    actual, expected = broadcast(spl.sel(commodity=is_pollutant(spl.comm_usage)), msn)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     assert actual.values == approx(expected.values)
 
 
 def test_gross_margin(technologies, capacity, market):
     from muse.quantities import gross_margin
     from muse.commodities import is_pollutant, is_fuel, is_enduse
+<<<<<<< HEAD
+=======
+    from xarray import broadcast
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     # we modify the variables to have just the values we want for the testing
     technologies = technologies.sel(technology=technologies.technology == "soda_shaker")
@@ -103,7 +152,11 @@ def test_gross_margin(technologies, capacity, market):
 
     market.prices[:] = prices = 3
     market.prices[{"commodity": is_pollutant(usage)}] = env_prices = 6
+<<<<<<< HEAD
     # We expect a xr.DataArray with 1 replacement technology
+=======
+    # We expect a DataArray with 1 replacement technology
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     actual = gross_margin(technologies, capacity, market.prices)
 
     revenues = prices * prod * sum(is_enduse(usage))
@@ -112,7 +165,11 @@ def test_gross_margin(technologies, capacity, market):
     var_costs = vp * (capa ** ve) * market.represent_hours / sum(market.represent_hours)
     expected = revenues - env_costs - cons_costs - var_costs
 
+<<<<<<< HEAD
     expected, actual = xr.broadcast(expected, actual)
+=======
+    expected, actual = broadcast(expected, actual)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     assert actual.values == approx(expected.values)
 
 
@@ -134,6 +191,10 @@ def test_decommissioning_demand(technologies, capacity):
 
 
 def test_consumption_no_flex(technologies, production, market):
+<<<<<<< HEAD
+=======
+    from xarray import broadcast
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from muse.quantities import consumption
     from muse.commodities import is_fuel, is_enduse
 
@@ -156,18 +217,30 @@ def test_consumption_no_flex(technologies, production, market):
     actual = consumption(technologies, production)
     assert set(actual.dims) == set(expected.dims)
     assert "timeslice" not in actual.dims
+<<<<<<< HEAD
     actual, expected = xr.broadcast(actual, expected)
+=======
+    actual, expected = broadcast(actual, expected)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     assert actual.values == approx(expected.values)
 
     technologies.flexible_inputs[:] = 0
     actual = consumption(technologies, production, market.prices)
     expected = expected * market.represent_hours / market.represent_hours.sum()
+<<<<<<< HEAD
     actual, expected = xr.broadcast(actual, expected)
+=======
+    actual, expected = broadcast(actual, expected)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     assert actual.values == approx(expected.values)
 
 
 def test_consumption_with_flex(technologies, production, market):
     from itertools import product
+<<<<<<< HEAD
+=======
+    from numpy.random import randint, choice
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from muse.quantities import consumption
     from muse.commodities import is_fuel, is_enduse
 
@@ -176,9 +249,13 @@ def test_consumption_with_flex(technologies, production, market):
     techs.flexible_inputs[:] = 0
     consumables = is_fuel(techs.comm_usage)
     while (techs.flexible_inputs.sel(commodity=consumables) == 0).all():
+<<<<<<< HEAD
         techs.flexible_inputs[:] = (
             np.random.randint(0, 2, techs.flexible_inputs.shape) != 0
         )
+=======
+        techs.flexible_inputs[:] = randint(0, 2, techs.flexible_inputs.shape) != 0
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         techs.flexible_inputs[{"commodity": ~consumables}] = 0
 
     def one_dim(dimension):
@@ -187,7 +264,11 @@ def test_consumption_with_flex(technologies, production, market):
 
         data = arange(len(dimension), dtype="int")
         shuffle(data)
+<<<<<<< HEAD
         return xr.DataArray(data, coords=dimension.coords, dims=dimension.dims)
+=======
+        return DataArray(data, coords=dimension.coords, dims=dimension.dims)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     year = one_dim(production.year)
     asset = one_dim(production.asset)
@@ -213,9 +294,13 @@ def test_consumption_with_flex(technologies, production, market):
     fuels = techs.commodity.loc[{"commodity": consumables}].values
     dims = ("timeslice", "asset", "year")
     allprods = list(product(*(actual[u] for u in dims)))
+<<<<<<< HEAD
     allprods = [
         allprods[i] for i in np.random.choice(range(len(allprods)), 50, replace=False)
     ]
+=======
+    allprods = [allprods[i] for i in choice(range(len(allprods)), 50, replace=False)]
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     for (ts, asset, year) in allprods:
         flexs = techs.flexible_inputs.sel(
             region=asset.region, technology=asset.technology
@@ -239,8 +324,14 @@ def test_consumption_with_flex(technologies, production, market):
             assert expected.values == approx(actual.sel(coords).values)
 
 
+<<<<<<< HEAD
 def test_lifetime_LCOE_annual_cap_costs(market: xr.Dataset, technologies: xr.Dataset):
     from muse.quantities import lifetime_levelized_cost_of_energy as LCOE
+=======
+def test_lifetime_LCOE_annual_cap_costs(market: Dataset, technologies: Dataset):
+    from muse.quantities import lifetime_levelized_cost_of_energy as LCOE
+    from xarray import broadcast
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     technologies.fix_par[:] = 0
     technologies.var_par[:] = 0
@@ -253,13 +344,21 @@ def test_lifetime_LCOE_annual_cap_costs(market: xr.Dataset, technologies: xr.Dat
 
     lcoe = LCOE(market.prices, technologies)
     hours = market.prices.represent_hours / market.prices.represent_hours.sum()
+<<<<<<< HEAD
     expected, lcoe = xr.broadcast(
+=======
+    expected, lcoe = broadcast(
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         cap * itr * (1 + itr) ** tf / ((1 + itr) ** tf - 1) * hours, lcoe
     )
     assert lcoe.values == approx(expected.values)
 
 
+<<<<<<< HEAD
 def test_lifetime_LCOE_om(market: xr.Dataset, technologies: xr.Dataset):
+=======
+def test_lifetime_LCOE_om(market: Dataset, technologies: Dataset):
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from muse.quantities import lifetime_levelized_cost_of_energy as LCOE
 
     technologies.fixed_inputs[:] = 0
@@ -276,7 +375,11 @@ def test_lifetime_LCOE_om(market: xr.Dataset, technologies: xr.Dataset):
     assert lcoe.values == approx(rates * (fp + vp))
 
 
+<<<<<<< HEAD
 def test_lifetime_LCOE_fuel(market: xr.Dataset, technologies: xr.Dataset):
+=======
+def test_lifetime_LCOE_fuel(market: Dataset, technologies: Dataset):
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from muse.quantities import lifetime_levelized_cost_of_energy as LCOE
 
     technologies.fix_par[:] = 0
@@ -296,7 +399,11 @@ def test_lifetime_LCOE_fuel(market: xr.Dataset, technologies: xr.Dataset):
     assert lcoe.values == approx(rates * p * fuels * isfuel.sum().values)
 
 
+<<<<<<< HEAD
 def test_lifetime_LCOE_envs(market: xr.Dataset, technologies: xr.Dataset):
+=======
+def test_lifetime_LCOE_envs(market: Dataset, technologies: Dataset):
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from muse.quantities import lifetime_levelized_cost_of_energy as LCOE
     from muse.commodities import is_pollutant
 
@@ -316,9 +423,16 @@ def test_lifetime_LCOE_envs(market: xr.Dataset, technologies: xr.Dataset):
     assert lcoe.values == approx(rates * p * envs * isenv.sum().values)
 
 
+<<<<<<< HEAD
 def test_lifetime_vs_annual_LCOE(market: xr.Dataset, technologies: xr.Dataset):
     from muse.quantities import lifetime_levelized_cost_of_energy as lifetime
     from muse.quantities import annual_levelized_cost_of_energy as annual
+=======
+def test_lifetime_vs_annual_LCOE(market: Dataset, technologies: Dataset):
+    from muse.quantities import lifetime_levelized_cost_of_energy as lifetime
+    from muse.quantities import annual_levelized_cost_of_energy as annual
+    from xarray import broadcast
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     technologies.interest_rate[:] = 0
     technologies.technical_life[:] = 1
@@ -327,6 +441,7 @@ def test_lifetime_vs_annual_LCOE(market: xr.Dataset, technologies: xr.Dataset):
     life = lifetime(market.prices, technologies, base_year=base_year)
     annum = annual(market.prices.sel(year=base_year), technologies.sel(year=base_year))
     assert set(life.dims) == set(annum.dims)
+<<<<<<< HEAD
     life, annum = xr.broadcast(life, annum)
     assert life.values == approx(annum.values)
 
@@ -334,14 +449,29 @@ def test_lifetime_vs_annual_LCOE(market: xr.Dataset, technologies: xr.Dataset):
 def test_production_aggregate_asset_view(
     capacity: xr.DataArray, technologies: xr.Dataset
 ):
+=======
+    life, annum = broadcast(life, annum)
+    assert life.values == approx(annum.values)
+
+
+def test_production_aggregate_asset_view(capacity: DataArray, technologies: Dataset):
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Production when capacity has format of agent.sector.
 
     E.g. capacity aggregated across agents.
     """
+<<<<<<< HEAD
     from muse.quantities import maximum_production
     from muse.commodities import is_enduse
 
     technologies: xr.Dataset = technologies[  # type:ignore
+=======
+    from xarray import broadcast
+    from muse.quantities import maximum_production
+    from muse.commodities import is_enduse
+
+    technologies: Dataset = technologies[  # type:ignore
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         ["fixed_outputs", "utilization_factor"]
     ]
 
@@ -353,7 +483,11 @@ def test_production_aggregate_asset_view(
     prod = maximum_production(technologies, capacity)
     assert set(prod.dims) == set(capacity.dims).union({"commodity"})
     assert prod.sel(commodity=~enduses).values == approx(0)
+<<<<<<< HEAD
     prod, expected = xr.broadcast(prod.sel(commodity=enduses), capacity)
+=======
+    prod, expected = broadcast(prod.sel(commodity=enduses), capacity)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     assert prod.values == approx(expected.values)
 
     technologies.fixed_outputs[:] = fouts = 2
@@ -361,7 +495,11 @@ def test_production_aggregate_asset_view(
     prod = maximum_production(technologies, capacity)
     assert prod.sel(commodity=~enduses).values == approx(0)
     assert set(prod.dims) == set(capacity.dims).union({"commodity"})
+<<<<<<< HEAD
     prod, expected = xr.broadcast(prod.sel(commodity=enduses), capacity)
+=======
+    prod, expected = broadcast(prod.sel(commodity=enduses), capacity)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     assert prod.values == approx(fouts * ufact * expected.values)
 
     technologies.fixed_outputs[:] = fouts = 3
@@ -369,11 +507,19 @@ def test_production_aggregate_asset_view(
     prod = maximum_production(technologies, capacity)
     assert prod.sel(commodity=~enduses).values == approx(0)
     assert set(prod.dims) == set(capacity.dims).union({"commodity"})
+<<<<<<< HEAD
     prod, expected = xr.broadcast(prod.sel(commodity=enduses), capacity)
     assert prod.values == approx(fouts * ufact * expected.values)
 
 
 def test_production_agent_asset_view(capacity: xr.DataArray, technologies: xr.Dataset):
+=======
+    prod, expected = broadcast(prod.sel(commodity=enduses), capacity)
+    assert prod.values == approx(fouts * ufact * expected.values)
+
+
+def test_production_agent_asset_view(capacity: DataArray, technologies: Dataset):
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Production when capacity has format of agent.assets.capacity."""
     from muse.utilities import reduce_assets, coords_to_multiindex
 
@@ -381,11 +527,21 @@ def test_production_agent_asset_view(capacity: xr.DataArray, technologies: xr.Da
     test_production_aggregate_asset_view(capacity, technologies)
 
 
+<<<<<<< HEAD
 def test_capacity_in_use(production: xr.DataArray, technologies: xr.Dataset):
     from muse.quantities import capacity_in_use
     from muse.commodities import is_enduse
 
     technologies: xr.Dataset = technologies[  # type: ignore
+=======
+def test_capacity_in_use(production: DataArray, technologies: Dataset):
+    from xarray import broadcast
+    from numpy.random import choice
+    from muse.quantities import capacity_in_use
+    from muse.commodities import is_enduse
+
+    technologies: Dataset = technologies[  # type: ignore
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         ["fixed_outputs", "utilization_factor"]
     ]
     production[:] = prod = 10
@@ -395,21 +551,34 @@ def test_capacity_in_use(production: xr.DataArray, technologies: xr.Dataset):
     enduses = is_enduse(technologies.comm_usage)
     capa = capacity_in_use(production, technologies, max_dim=None)
     assert "commodity" in capa.dims
+<<<<<<< HEAD
     capa, expected = xr.broadcast(capa, enduses * prod / fout / ufac)
+=======
+    capa, expected = broadcast(capa, enduses * prod / fout / ufac)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     assert capa.values == approx(expected.values)
 
     capa = capacity_in_use(production, technologies)
     assert "commodity" not in capa.dims
     assert capa.values == approx(prod / fout / ufac)
 
+<<<<<<< HEAD
     maxcomm = np.random.choice(production.commodity.sel(commodity=enduses).values)
+=======
+    maxcomm = choice(production.commodity.sel(commodity=enduses).values)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     production.loc[{"commodity": maxcomm}] = prod = 11
     capa = capacity_in_use(production, technologies)
     assert "commodity" not in capa.dims
     assert capa.values == approx(prod / fout / ufac)
 
 
+<<<<<<< HEAD
 def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
+=======
+def test_supply_cost(production: DataArray, timeslice: Dataset):
+    from xarray import DataArray, broadcast
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from numpy import average
     from numpy.random import random
     from muse.quantities import supply_cost
@@ -418,11 +587,16 @@ def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
     production = production.sel(year=production.year.min(), drop=True)
     # no zero production, because it does not sit well with np.average
     production[:] = random(production.shape)
+<<<<<<< HEAD
     lcoe = xr.DataArray(
+=======
+    lcoe = DataArray(
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         random((len(production.asset), len(timeslice))),
         coords={"timeslice": timeslice, "asset": production.asset},
         dims=("asset", "timeslice"),
     )
+<<<<<<< HEAD
     production, lcoe = xr.broadcast(production, lcoe)
     actual = supply_cost(production, lcoe, asset_dim="asset")
     for region in set(production.region.values):
@@ -435,28 +609,55 @@ def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
 
 
 def test_supply_cost_zero_prod(production: xr.DataArray, timeslice: xr.Dataset):
+=======
+    production, lcoe = broadcast(production, lcoe)
+    actual = supply_cost(production, lcoe, asset_dim="asset")
+    expected = average(lcoe, weights=production, axis=production.get_axis_num("asset"))
+
+    assert actual.values == approx(expected)
+
+
+def test_supply_cost_zero_prod(production: DataArray, timeslice: Dataset):
+    from xarray import DataArray, broadcast
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from numpy.random import randn
     from muse.quantities import supply_cost
 
     timeslice = timeslice.timeslice
     production = production.sel(year=production.year.min(), drop=True)
     production[:] = 0
+<<<<<<< HEAD
     lcoe = xr.DataArray(
+=======
+    lcoe = DataArray(
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         randn(len(production.asset), len(timeslice)),
         coords={"timeslice": timeslice, "asset": production.asset},
         dims=("asset", "timeslice"),
     )
+<<<<<<< HEAD
     production, lcoe = xr.broadcast(production, lcoe)
+=======
+    production, lcoe = broadcast(production, lcoe)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     actual = supply_cost(production, lcoe, asset_dim="asset")
     assert actual.values == approx(0e0)
 
 
+<<<<<<< HEAD
 def test_emission(production: xr.DataArray, technologies: xr.Dataset):
+=======
+def test_emission(production: DataArray, technologies: Dataset):
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from muse.quantities import emission
     from muse.commodities import is_pollutant, is_enduse
 
     envs = is_pollutant(technologies.comm_usage)
+<<<<<<< HEAD
     technologies = cast(xr.Dataset, technologies[["fixed_outputs"]])
+=======
+    technologies = technologies[["fixed_outputs"]]
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     technologies.fixed_outputs[{"commodity": envs}] = fout = 1.5
     technologies.fixed_outputs[{"commodity": ~envs}] = 2
 
@@ -470,18 +671,33 @@ def test_emission(production: xr.DataArray, technologies: xr.Dataset):
 
 
 def test_demand_matched_production(
+<<<<<<< HEAD
     demand: xr.DataArray, capacity: xr.DataArray, technologies: xr.Dataset
 ):
+=======
+    demand: DataArray, capacity: DataArray, technologies: Dataset
+):
+    from numpy.random import choice, randint, random
+    from xarray import zeros_like
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from muse.quantities import maximum_production, demand_matched_production
     from muse.timeslices import convert_timeslice, QuantityType
     from muse.commodities import is_enduse, CommodityUsage
 
     # try and make sure we have a few more outputs than the default fixture
+<<<<<<< HEAD
     technologies.comm_usage[:] = np.random.choice(
         [CommodityUsage.PRODUCT] * 3 + list(set(technologies.comm_usage.values)),
         technologies.comm_usage.shape,
     )
     technologies.fixed_outputs[:] = np.random.random(technologies.fixed_outputs.shape)
+=======
+    technologies.comm_usage[:] = choice(
+        [CommodityUsage.PRODUCT] * 3 + list(set(technologies.comm_usage.values)),
+        technologies.comm_usage.shape,
+    )
+    technologies.fixed_outputs[:] = random(technologies.fixed_outputs.shape)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     technologies.fixed_outputs[:] *= is_enduse(technologies.comm_usage)
 
     capacity = capacity.sel(year=capacity.year.min(), drop=True)
@@ -491,6 +707,7 @@ def test_demand_matched_production(
         QuantityType.EXTENSIVE,
     )
     demand = max_prod.sum("asset")
+<<<<<<< HEAD
     demand[:] *= np.random.choice([0, 1, 1 / 2, 1 / 3, 1 / 10], demand.shape)
     prices = xr.zeros_like(demand)
     prices[:] = np.random.randint(1, 10, prices.shape)
@@ -669,3 +886,11 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
         assert (actual[dim] == maxdemand[dim]).all()
     assert (actual >= 0.9 * maxdemand - 1e-8).all()
     assert (result >= minprod - 1e-8).all()
+=======
+    demand[:] *= choice([0, 1, 1 / 2, 1 / 3, 1 / 10], demand.shape)
+    prices = zeros_like(demand)
+    prices[:] = randint(1, 10, prices.shape)
+    production = demand_matched_production(demand, prices, capacity, technologies)
+    assert set(production.dims) == set(max_prod.dims).union(prices.dims, capacity.dims)
+    assert (production <= max_prod + 1e-8).all()
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1

@@ -12,6 +12,7 @@ should all have the following signature:
 
     @register_demand_share
     def demand_share(
+<<<<<<< HEAD
         agents: Sequence[AbstractAgent],
         market: xr.Dataset,
         technologies: xr.Dataset,
@@ -22,6 +23,18 @@ should all have the following signature:
 Arguments:
     agents: a sequence of  agent relevant to the demand share procedure. The agent can
         be queried for parameters specific to the demand share procedure. For instance,
+=======
+        agents: List[AgentBase],
+        market: Dataset,
+        technologies: Dataset,
+        **kwargs
+    ) -> MutableMapping[UUID, DataArray]:
+        pass
+
+Arguments:
+    agents: a list of  agent relevant to the demand share procedure. The agent can be
+        queried for parameters specific to the demand share procedure. For instance,
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         :py:func`new_and_retro` will query the agents for the assets they own, the
         region they are contained with, their category (new or retrofit), etc...
     market: Market variables, including prices, consumption and supply.
@@ -31,16 +44,26 @@ Arguments:
         shared. These keyword arguments can be modified from the TOML file.
 
 Returns:
+<<<<<<< HEAD
     The unmet consumption. Unless indicated, all agents will compete for a the full
     demand. However, if there exists a coordinate "agent" of dimension "asset" giving
     the :py:attr:`~muse.agents.agent.AbstractAgent.uuid` of the agent, then agents will
     only service that par of the demand.
+=======
+    A dictionnary mapping the :py:attr:`muse.agent.AgentBase.uuid` (`Universally
+    Unique Identifier`__) of the agent to the demand share. In most cases, it is
+    expected summing over shares should return the *unmet* consumption for the forecast
+    year.
+
+__ :: https://en.wikipedia.org/wiki/Universally_unique_identifier
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 """
 __all__ = [
     "new_and_retro",
     "factory",
     "register_demand_share",
     "unmet_demand",
+<<<<<<< HEAD
     "unmet_forecasted_demand",
     "DEMAND_SHARE_SIGNATURE",
 ]
@@ -65,6 +88,20 @@ from muse.registration import registrator
 
 DEMAND_SHARE_SIGNATURE = Callable[
     [Sequence[AbstractAgent], xr.Dataset, xr.Dataset, KwArg(Any)], xr.DataArray
+=======
+    "DEMAND_SHARE_SIGNATURE",
+]
+from typing import Any, Callable, List, Mapping, MutableMapping, Optional, Text, Union
+from uuid import UUID
+
+from xarray import DataArray, Dataset
+
+from muse.agent import AgentBase
+from muse.registration import registrator
+
+DEMAND_SHARE_SIGNATURE = Callable[
+    [List[AgentBase], Dataset, Dataset], Mapping[UUID, DataArray]
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 ]
 """Demand share signature."""
 
@@ -88,6 +125,7 @@ def factory(
         name = settings.get("name", "new_and_retro")
         params = {k: v for k, v in settings.items() if k != "name"}
 
+<<<<<<< HEAD
     function = DEMAND_SHARE[name]
     keywords = dict(**params)
 
@@ -101,10 +139,22 @@ def factory(
         return function(agents, market, technologies, **keywords)
 
     return cast(DEMAND_SHARE_SIGNATURE, demand_share)
+=======
+    def demand_share(
+        agents: List[AgentBase], market: Dataset, technologies: Dataset, **kwargs
+    ) -> Mapping[UUID, DataArray]:
+        function = DEMAND_SHARE[name]
+        keywords = dict(**params)
+        keywords.update(**kwargs)
+        return function(agents, market, technologies, **keywords)  # type: ignore
+
+    return demand_share
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 @register_demand_share(name="default")
 def new_and_retro(
+<<<<<<< HEAD
     agents: Sequence[AbstractAgent],
     market: xr.Dataset,
     technologies: xr.Dataset,
@@ -112,6 +162,15 @@ def new_and_retro(
     current_year: Optional[int] = None,
     forecast: int = 5,
 ) -> xr.DataArray:
+=======
+    agents: List[AgentBase],
+    market: Dataset,
+    technologies: Dataset,
+    production: Union[Text, Mapping, Callable] = "maximum_production",
+    current_year: Optional[int] = None,
+    forecast: int = 5,
+) -> MutableMapping[UUID, DataArray]:
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     r"""Splits demand across new and retro agents.
 
     The input demand is split amongst both *new* and *retro* agents. *New* agents get a
@@ -218,7 +277,11 @@ def new_and_retro(
     """
     from functools import partial
     from muse.commodities import is_enduse
+<<<<<<< HEAD
     from muse.utilities import reduce_assets, agent_concatenation
+=======
+    from muse.utilities import reduce_assets
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from muse.quantities import maximum_production
 
     if current_year is None:
@@ -245,27 +308,49 @@ def new_and_retro(
             technologies, capacity, year=[current_year, current_year + forecast]
         ).squeeze("year")
 
+<<<<<<< HEAD
     id_to_share: MutableMapping[Hashable, xr.DataArray] = {}
     for region in demands.region.values:
         regional_techs = technologies.sel(region=region)
         retro_capacity: MutableMapping[Hashable, xr.DataArray] = {
+=======
+    results: MutableMapping[UUID, DataArray] = {}
+    for region in demands.region.values:
+        regional_techs = technologies.sel(region=region)
+        retro_capacity = {
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
             agent.uuid: agent.assets.capacity
             for agent in agents
             if agent.category == "retrofit" and agent.region == region
         }
+<<<<<<< HEAD
         retro_demands: MutableMapping[Hashable, xr.DataArray] = _inner_split(
             retro_capacity, demands.retrofit.sel(region=region), decommissioning
         )
         id_to_share.update(retro_demands)
 
         name_to_id = {
+=======
+        retro_demands = _inner_split(
+            retro_capacity, demands.retrofit.sel(region=region), decommissioning
+        )
+        results.update(retro_demands)
+
+        name_to_uuid = {
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
             (agent.name, agent.region): agent.uuid
             for agent in agents
             if agent.category == "retrofit" and agent.region == region
         }
+<<<<<<< HEAD
         assert len(name_to_id) == len(retro_capacity)
         new_capacity: Mapping[Hashable, xr.DataArray] = {
             agent.uuid: retro_capacity[name_to_id[(agent.name, agent.region)]]
+=======
+        assert len(name_to_uuid) == len(retro_capacity)
+        new_capacity = {
+            agent.uuid: retro_capacity[name_to_uuid[(agent.name, agent.region)]]
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
             * getattr(agent, "quantity", 0.3)
             for agent in agents
             if agent.category != "retrofit" and agent.region == region
@@ -275,6 +360,7 @@ def new_and_retro(
             demands.new.sel(region=region),
             partial(maximum_production, technologies=regional_techs, year=current_year),
         )
+<<<<<<< HEAD
         id_to_share.update(new_demands)
     result = cast(xr.DataArray, agent_concatenation(id_to_share))
     return result
@@ -315,6 +401,15 @@ def unmet_forecasted_demand(
 def _inner_split(
     assets: Mapping[Hashable, xr.DataArray], demand: xr.DataArray, method: Callable
 ) -> MutableMapping[Hashable, xr.DataArray]:
+=======
+        results.update(new_demands)
+    return results
+
+
+def _inner_split(
+    assets: Mapping[UUID, DataArray], demand: DataArray, method: Callable, **filters
+) -> Mapping[UUID, DataArray]:
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     r"""compute share of the demand for a set of agents.
 
     The input ``demand`` is split between agents according to their share of the
@@ -323,6 +418,7 @@ def _inner_split(
     from numpy import logical_and
 
     shares = {
+<<<<<<< HEAD
         key: method(capacity=capacity)
         .groupby("technology")
         .sum("asset")
@@ -336,13 +432,34 @@ def _inner_split(
     return {
         key: ((share / total).fillna(0) * demand).fillna(0) + unassigned
         for key, share in shares.items()
+=======
+        uuid: method(capacity=capacity)
+        .groupby("technology")
+        .sum("asset")
+        .rename(technology="asset")
+        for uuid, capacity in assets.items()
+    }
+    total = sum(shares.values()).sum("asset")  # type: ignore
+    unassigned = (demand / (len(shares) * len(sum(shares.values()).asset))).where(
+        logical_and(demand > 1e-12, total <= 1e-12), 0
+    )
+    return {
+        uuid: ((share / total).fillna(0) * demand).fillna(0) + unassigned
+        for uuid, share in shares.items()
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     }
 
 
 def unmet_demand(
+<<<<<<< HEAD
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
+=======
+    market: Dataset,
+    capacity: DataArray,
+    technologies: Dataset,
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     production: Union[Text, Mapping, Callable] = "maximum_production",
 ):
     r"""Share of the demand that cannot be serviced by the existing assets.
@@ -363,6 +480,7 @@ def unmet_demand(
     prod_method = production if callable(production) else prod_factory(production)
     assert callable(prod_method)
 
+<<<<<<< HEAD
     production = prod_method(
         market=market, capacity=capacity, technologies=technologies
     )
@@ -380,6 +498,24 @@ def new_consumption(
     current_year: Optional[int] = None,
     forecast: int = 5,
 ) -> xr.DataArray:
+=======
+    prod = (
+        prod_method(market=market, capacity=capacity, technologies=technologies)
+        .groupby("region")
+        .sum("asset")
+    )
+    return (market.consumption - prod).clip(min=0)
+
+
+def new_consumption(
+    capacity: DataArray,
+    market: Dataset,
+    technologies: Dataset,
+    production: Union[Text, Mapping, Callable] = "maximum_production",
+    current_year: Optional[int] = None,
+    forecast: int = 5,
+) -> DataArray:
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     r""" Computes share of the demand attributed to new agents.
 
     The new agents service the demand that can be attributed specificaly to growth and
@@ -402,7 +538,11 @@ def new_consumption(
     ts_capa = convert_timeslice(
         capacity.interp(year=current_year), market.timeslice, QuantityType.EXTENSIVE
     )
+<<<<<<< HEAD
     assert isinstance(ts_capa, xr.DataArray)
+=======
+    assert isinstance(ts_capa, DataArray)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     market = market.interp(year=[current_year, current_year + forecast])
     current = market.sel(year=current_year, drop=True)
     forecasted = market.sel(year=current_year + forecast, drop=True)
@@ -414,6 +554,7 @@ def new_consumption(
 
 
 def new_and_retro_demands(
+<<<<<<< HEAD
     capacity: xr.DataArray,
     market: xr.Dataset,
     technologies: xr.Dataset,
@@ -421,6 +562,15 @@ def new_and_retro_demands(
     current_year: Optional[int] = None,
     forecast: int = 5,
 ) -> xr.Dataset:
+=======
+    capacity: DataArray,
+    market: Dataset,
+    technologies: Dataset,
+    production: Union[Text, Mapping, Callable] = "maximum_production",
+    current_year: Optional[int] = None,
+    forecast: int = 5,
+) -> Dataset:
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Splits demand into *new* and *retrofit* demand.
 
     The demand (.i.e. `market.consumption`) in the forecast year is split three ways:
@@ -439,18 +589,35 @@ def new_and_retro_demands(
     if current_year is None:
         current_year = market.year.min()
 
+<<<<<<< HEAD
     smarket: xr.Dataset = market.interp(year=[current_year, current_year + forecast])
+=======
+    smarket: Dataset = market.interp(year=[current_year, current_year + forecast])
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     ts_capa = convert_timeslice(
         capacity.interp(year=[current_year, current_year + forecast]),
         market.timeslice,
         QuantityType.EXTENSIVE,
     )
+<<<<<<< HEAD
     assert isinstance(ts_capa, xr.DataArray)
+=======
+    assert isinstance(ts_capa, DataArray)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     if hasattr(ts_capa, "region") and ts_capa.region.dims == ():
         ts_capa["region"] = "asset", [str(ts_capa.region.values)] * len(ts_capa.asset)
 
     new_demand = new_consumption(
+<<<<<<< HEAD
         ts_capa, smarket, technologies, current_year=current_year, forecast=forecast
+=======
+        ts_capa,
+        smarket,
+        technologies,
+        current_year=current_year,
+        forecast=forecast,
+        production=production_method,
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     )
     if "year" in new_demand.dims:
         new_demand = new_demand.squeeze("year")
@@ -472,4 +639,8 @@ def new_and_retro_demands(
     if "year" in retro_demand.dims:
         retro_demand = retro_demand.squeeze("year")
 
+<<<<<<< HEAD
     return xr.Dataset({"new": new_demand, "retrofit": retro_demand})
+=======
+    return Dataset({"new": new_demand, "retrofit": retro_demand})
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1

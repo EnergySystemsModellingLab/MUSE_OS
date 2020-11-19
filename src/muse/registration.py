@@ -1,7 +1,11 @@
 """Registrators that allow pluggable data to logic transforms."""
 __all__ = ["registrator"]
 
+<<<<<<< HEAD
 from typing import Callable, MutableMapping, Optional, Sequence, Text, Union
+=======
+from typing import Callable, Mapping, Optional, Sequence, Text, Union
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 def name_variations(*args):
@@ -36,8 +40,13 @@ def name_variations(*args):
 
 
 def registrator(
+<<<<<<< HEAD
     decorator: Callable = None,
     registry: MutableMapping = None,
+=======
+    decorator: Callable[[Callable], Callable] = None,
+    registry: Mapping = None,
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     logname: Optional[Text] = None,
     loglevel: Optional[Text] = "Debug",
 ) -> Callable:
@@ -157,7 +166,10 @@ def registrator(
         logger = getLogger(function.__module__)
         msg = "Computing {}: {}".format(logname, names[0])
 
+<<<<<<< HEAD
         assert decorator is not None
+=======
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         if "name" in signature(decorator).parameters:
             inner_decorated = decorator(function, names[0])
         else:
@@ -176,7 +188,10 @@ def registrator(
             decorated = function
 
         # There's just one name for the decorator
+<<<<<<< HEAD
         assert registry is not None
+=======
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         if not vary_name:
             if function.__name__ in registry and not overwrite:
                 msg = f"A {logname} with the name {function.__name__} already exists"

@@ -1,7 +1,7 @@
-commodity,year,asset,region,technology,installed,supply
-heat,2035,0,R1,gasboiler,2025,1.72220000000
-heat,2035,3,R1,heatpump,2025,4.38890000000
-heat,2035,4,R1,heatpump,2030,13.88890000000
-heat,2040,4,R1,heatpump,2030,13.88890000000
-heat,2040,5,R1,heatpump,2035,9.44440000000
-CO2f,2035,0,R1,gasboiler,2025,111.44500000000
+commodity,year,asset,region,installed,technology,supply
+heat,2035,2,R1,2030,gasboiler,10.00000000000
+heat,2035,3,R1,2030,heatpump,10.00000000000
+heat,2040,2,R1,2030,gasboiler,11.66670000000
+heat,2040,3,R1,2030,heatpump,11.66670000000
+CO2f,2035,2,R1,2030,gasboiler,647.10000000000
+CO2f,2040,2,R1,2030,gasboiler,754.95000000000

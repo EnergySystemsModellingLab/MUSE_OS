@@ -1,5 +1,6 @@
 from typing import Tuple
 
+<<<<<<< HEAD
 import numpy as np
 import xarray as xr
 from pytest import approx, mark
@@ -11,13 +12,29 @@ def make_array(array):
         np.random.randint(0, 10, len(array)) > 8
     )
     return xr.DataArray(data, dims=array.dims, coords=array.coords)
+=======
+from pytest import approx, mark
+from xarray import DataArray
+
+
+def make_array(array):
+    from numpy.random import randint
+    from xarray import DataArray
+
+    data = randint(1, 5, len(array)) * (randint(0, 10, len(array)) > 8)
+    return DataArray(data, dims=array.dims, coords=array.coords)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 @mark.parametrize(
     "coordinates",
     [("technology", "installed", "region"), ("technology", "installed"), ("region",)],
 )
+<<<<<<< HEAD
 def test_reduce_assets(coordinates: Tuple, capacity: xr.DataArray):
+=======
+def test_reduce_assets(coordinates: Tuple, capacity: DataArray):
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from muse.utilities import reduce_assets
 
     actual = reduce_assets(capacity, coords=coordinates)
@@ -67,15 +84,26 @@ def test_broadcast_tech_idempotent(technologies, capacity):
 
 
 def test_tupled_dimension_no_tupling():
+<<<<<<< HEAD
     from muse.utilities import tupled_dimension
 
     array = (np.random.rand(10, 1) * 20 - 10).astype(int)
+=======
+    from numpy.random import rand
+    from muse.utilities import tupled_dimension
+
+    array = (rand(10, 1) * 20 - 10).astype(int)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     actual = tupled_dimension(array, 1)
     assert actual.ndim == 1
     assert actual.shape == array.shape[:-1]
     assert actual == approx(array.reshape(array.shape[0]))
 
+<<<<<<< HEAD
     array = (np.random.rand(10, 1, 5) * 20 - 10).astype(int)
+=======
+    array = (rand(10, 1, 5) * 20 - 10).astype(int)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     actual = tupled_dimension(array, 1)
     assert actual.ndim == 2
     assert actual.shape == (array.shape[0], array.shape[2])
@@ -83,9 +111,16 @@ def test_tupled_dimension_no_tupling():
 
 
 def test_tupled_dimension_2d():
+<<<<<<< HEAD
     from muse.utilities import tupled_dimension
 
     array = (np.random.rand(10, 3) * 20 - 10).astype(int)
+=======
+    from numpy.random import rand
+    from muse.utilities import tupled_dimension
+
+    array = (rand(10, 3) * 20 - 10).astype(int)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     actual = tupled_dimension(array, 1)
     assert actual.ndim == 1
@@ -105,9 +140,16 @@ def test_tupled_dimension_2d():
 
 
 def test_tupled_dimension_3d():
+<<<<<<< HEAD
     from muse.utilities import tupled_dimension
 
     array = (np.random.rand(10, 3, 5) * 20 - 10).astype(int)
+=======
+    from numpy.random import rand
+    from muse.utilities import tupled_dimension
+
+    array = (rand(10, 3, 5) * 20 - 10).astype(int)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     actual = tupled_dimension(array, 1)
     assert actual.ndim == 2
@@ -140,6 +182,7 @@ def test_tupled_dimension_3d():
 @mark.parametrize("order", [["a", "b", "c"], ["b", "c", "a"], ["c", "a", "b"]])
 def test_lexical_with_bin(order):
     """Test lexical comparison against hand-constructed tuples."""
+<<<<<<< HEAD
     from muse.utilities import lexical_comparison
 
     objectives = xr.Dataset()
@@ -164,6 +207,29 @@ def test_lexical_with_bin(order):
                 int(np.floor(objectives[order[0]][i, j] / binsizes[order[0]])),
                 int(np.floor(objectives[order[1]][i, j] / binsizes[order[1]])),
                 int(np.floor(objectives[order[2]][i, j] / binsizes[order[2]])),
+=======
+    from xarray import Dataset
+    from numpy import floor, zeros
+    from numpy.random import rand, choice
+    from muse.utilities import lexical_comparison
+
+    objectives = Dataset()
+    objectives["a"] = ("asset", "replacement"), rand(5, 10) * 10 - 5
+    objectives["b"] = ("asset", "replacement"), rand(5, 10) * 10 - 5
+    objectives["c"] = ("asset", "replacement"), rand(5, 10) * 10 - 5
+    objectives["asset"] = choice(
+        objectives.replacement, len(objectives.asset), replace=False
+    )
+
+    binsizes = Dataset({"a": rand() * 0.1, "b": -rand() * 0.1, "c": rand()})
+    expected = zeros(shape=objectives.a.shape, dtype=object)
+    for i in range(expected.shape[0]):
+        for j in range(expected.shape[1]):
+            expected[i, j] = (
+                int(floor(objectives[order[0]][i, j] / binsizes[order[0]])),
+                int(floor(objectives[order[1]][i, j] / binsizes[order[1]])),
+                int(floor(objectives[order[2]][i, j] / binsizes[order[2]])),
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
             )
 
     actual = lexical_comparison(objectives, binsizes[order])
@@ -176,6 +242,7 @@ def test_lexical_with_bin(order):
 @mark.parametrize("order", [["a", "b", "c"], ["b", "c", "a"], ["c", "a", "b"]])
 def test_lexical_nobin(order):
     """Test lexical comparison against hand-constructed tuples."""
+<<<<<<< HEAD
     from muse.utilities import lexical_comparison
 
     objectives = xr.Dataset()
@@ -199,6 +266,28 @@ def test_lexical_nobin(order):
             expected[i, j] = (
                 int(np.floor(objectives[order[0]][i, j] / binsizes[order[0]])),
                 int(np.floor(objectives[order[1]][i, j] / binsizes[order[1]])),
+=======
+    from xarray import Dataset
+    from numpy import floor, zeros
+    from numpy.random import rand, choice
+    from muse.utilities import lexical_comparison
+
+    objectives = Dataset()
+    objectives["a"] = ("asset", "replacement"), rand(5, 10) * 10 - 5
+    objectives["b"] = ("asset", "replacement"), rand(5, 10) * 10 - 5
+    objectives["c"] = ("asset", "replacement"), rand(5, 10) * 10 - 5
+    objectives["asset"] = choice(
+        objectives.replacement, len(objectives.asset), replace=False
+    )
+
+    binsizes = Dataset({"a": rand() * 0.1, "b": -rand() * 0.1, "c": rand()})
+    expected = zeros(shape=objectives.a.shape, dtype=object)
+    for i in range(expected.shape[0]):
+        for j in range(expected.shape[1]):
+            expected[i, j] = (
+                int(floor(objectives[order[0]][i, j] / binsizes[order[0]])),
+                int(floor(objectives[order[1]][i, j] / binsizes[order[1]])),
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
                 objectives[order[2]][i, j] / binsizes[order[2]],
             )
 
@@ -210,6 +299,7 @@ def test_lexical_nobin(order):
 
 
 def test_merge_assets():
+<<<<<<< HEAD
     from numpy import arange
     from muse.utilities import merge_assets
 
@@ -221,14 +311,34 @@ def test_merge_assets():
         result["capacity"] = (
             ("year", "asset"),
             np.random.rand(len(result.year), len(result.asset)),
+=======
+    from xarray import Dataset
+    from numpy import arange
+    from numpy.random import rand, choice, shuffle
+    from muse.utilities import merge_assets
+
+    def fake(year, order=("installed", "technology")):
+        result = Dataset()
+        result["year"] = "year", year
+        result["installed"] = "asset", choice(result.year.values, 10)
+        result["technology"] = "asset", choice(list("abc"), 10)
+        result["capacity"] = (
+            ("year", "asset"),
+            rand(len(result.year), len(result.asset)),
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         )
         result = result[["capacity"] + list(order)].set_coords(order)
         return result.capacity
 
     # checks order of coords does not interfere with merging
     order = ["installed", "technology"]
+<<<<<<< HEAD
     capa_a = fake(np.arange(2010, 2020, 3, dtype="int64"), order)
     np.random.shuffle(order)
+=======
+    capa_a = fake(arange(2010, 2020, 3, dtype="int64"), order)
+    shuffle(order)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     capa_b = fake(arange(2014, 2024, 2, dtype="int64"), order)
     actual = merge_assets(capa_a, capa_b)
 
@@ -267,6 +377,7 @@ def test_merge_assets():
 
 
 def test_avoid_repetitions():
+<<<<<<< HEAD
     from muse.utilities import avoid_repetitions
 
     start, end = 2010, 2010 + 3 * 5
@@ -277,6 +388,20 @@ def test_avoid_repetitions():
     assets["capacity"] = (
         ("year", "asset"),
         np.random.randint(0, 10, (len(assets.year), len(assets.asset))),
+=======
+    from xarray import Dataset
+    from numpy.random import randint, choice
+    from muse.utilities import avoid_repetitions
+
+    start, end = 2010, 2010 + 3 * 5
+    assets = Dataset()
+    assets["year"] = "year", list(range(start, end))
+    assets["installed"] = "asset", choice(assets.year.values, 10)
+    assets["technology"] = "asset", choice(list("abc"), 10)
+    assets["capacity"] = (
+        ("year", "asset"),
+        randint(0, 10, (len(assets.year), len(assets.asset))),
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     )
 
     assets.capacity.loc[{"year": list(range(start + 1, end, 3))}] = assets.capacity.sel(

@@ -29,6 +29,54 @@ def add_var(coordinates, *dims, factor=100.0):
     return dims, (rand(*shape) * factor).astype(type(factor))
 
 
+<<<<<<< HEAD
+=======
+def test_match_demand_smoke_test(
+    retro_agent, technologies, demand_share, search_space, timeslice
+):
+    from numpy.random import randint
+    from muse.investments import match_demand
+    from muse.timeslices import convert_timeslice
+    from muse.commodities import is_enduse
+    from xarray import DataArray, Dataset
+    from pytest import approx
+
+    # missing entries in the timeslice result in comple behaviour,
+    # just making sure this fixture does have missing entries.
+    assert convert_timeslice(DataArray(1), timeslice).sum() == approx(1)
+
+    prodparams = retro_agent.filter_input(
+        technologies.fixed_outputs,
+        year=retro_agent.year,
+        technology=search_space.replacement,
+    )
+
+    search = Dataset(coords=search_space.coords)
+    search["ranks"] = ("asset", "replacement"), randint(1, 5, search_space.shape)
+    search["max_capacity"] = ("replacement", randint(0, 100, len(search.replacement)))
+    maxdemand = convert_timeslice(
+        search.max_capacity * search_space * prodparams, timeslice
+    )
+    search["demand"] = (
+        maxdemand
+        * (randint(0, 3, maxdemand.shape) == 0)
+        / randint(1, 4, maxdemand.shape)
+    ).sum("replacement")
+    comm_usage = technologies.comm_usage.sel(commodity=search.commodity)
+    search.demand[{"commodity": ~is_enduse(comm_usage)}] = 0
+
+    capacity = match_demand(
+        search.demand,
+        search.ranks,
+        search.max_capacity,
+        search_space,
+        technologies,
+        year=retro_agent.year,
+    )
+    assert set(capacity.dims) == {"timeslice", "replacement", "asset"}
+
+
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 def test_cliff_retirement_known_profile():
     from muse.investments import cliff_retirement_profile
     from numpy import array

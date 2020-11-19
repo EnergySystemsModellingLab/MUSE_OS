@@ -53,7 +53,10 @@ def test_lexical():
     from xarray import Dataset
     from numpy import floor, zeros
     from numpy.random import rand, choice
+<<<<<<< HEAD
     from scipy.stats import rankdata
+=======
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from muse.decisions import lexical_comparison
 
     a = rand(5, 10) * 10 - 5
@@ -85,7 +88,12 @@ def test_lexical():
     actual = lexical_comparison(objectives, parameters)
     assert actual.shape == expected.shape
     for i in range(expected.shape[0]):
+<<<<<<< HEAD
         assert actual.values[i] == approx(rankdata(expected[i]))
+=======
+        for j in range(expected.shape[1]):
+            assert actual.values[i, j] == expected[i, j]
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 def test_epsilon_constraints(objectives):

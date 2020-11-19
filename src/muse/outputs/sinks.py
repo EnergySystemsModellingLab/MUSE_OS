@@ -26,11 +26,19 @@ from mypy_extensions import KwArg
 from muse.registration import registrator
 
 OUTPUT_SINK_SIGNATURE = Callable[
+<<<<<<< HEAD
     [Union[xr.DataArray, pd.DataFrame], int, KwArg(Any)], Optional[Text]
 ]
 """Signature of functions used to save quantities."""
 
 OUTPUT_SINKS: MutableMapping[Text, Union[OUTPUT_SINK_SIGNATURE, Callable]] = {}
+=======
+    [Union[xr.DataArray, pd.DataFrame], int, KwArg()], Optional[Text]
+]
+"""Signature of functions used to save quantities."""
+
+OUTPUT_SINKS: Mapping[Text, Union[OUTPUT_SINK_SIGNATURE, Callable]] = {}
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 """Stores a quantity somewhere."""
 
 
@@ -235,7 +243,11 @@ class YearlyAggregate:
         ):
             final_sink["overwrite"] = True
         self.sink = factory(final_sink, sector_name=sector)
+<<<<<<< HEAD
         self.aggregate: Optional[pd.Dataframe] = None
+=======
+        self.aggregate: Optional[xr.DataArray] = None
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         self.axis = axis
 
     def __call__(self, data: Union[pd.DataFrame, xr.DataArray], year: int):
@@ -255,6 +267,7 @@ class YearlyAggregate:
         if getattr(data, "name", None) is not None:
             self.aggregate.name = data.name
         return self.sink(self.aggregate, year=year)
+<<<<<<< HEAD
 
 
 class FiniteResourceException(Exception):
@@ -279,3 +292,5 @@ def finite_resource_logger(
         getLogger(__name__).critical(msg)
         if early_exit:
             raise FiniteResourceException(msg)
+=======
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
