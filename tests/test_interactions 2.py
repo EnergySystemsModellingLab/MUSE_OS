@@ -1,6 +1,10 @@
 """Test agent interactions."""
 
+<<<<<<< HEAD
 from pytest import fixture, mark
+=======
+from pytest import fixture
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 @fixture
@@ -51,7 +55,10 @@ def test_new_to_retro_net(agents):
         assert "yup" not in categories[:i]
 
 
+<<<<<<< HEAD
 @mark.usefixtures("save_registries")
+=======
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 def test_compute_interactions(agents):
     from muse.interactions import factory, register_agent_interaction, new_to_retro_net
 

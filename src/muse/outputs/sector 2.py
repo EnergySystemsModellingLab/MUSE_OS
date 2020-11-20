@@ -7,14 +7,22 @@ follow the same signature:
 
     @register_output_quantity
     def quantity(
+<<<<<<< HEAD
         capacity: xr.DataArray,
         market: xr.Dataset,
         technologies: xr.Dataset
     ) -> Union[xr.DataArray, DataFrame]:
+=======
+        capacity: DataArray,
+        market: Dataset,
+        technologies: Dataset
+    ) -> Union[DataArray, DataFrame]:
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         pass
 
 They take as input the current capacity profile, aggregated across a sectoar,
 a dataset containing market-related quantities, and a dataset characterizing the
+<<<<<<< HEAD
 technologies in the market. It returns a single xr.DataArray object.
 
 The function should never modify it's arguments.
@@ -24,16 +32,35 @@ from typing import Any, Callable, List, Mapping, MutableMapping, Optional, Text,
 import pandas as pd
 import xarray as xr
 from mypy_extensions import KwArg
+=======
+technologies in the market. It returns a single DataArray object.
+
+The function should never modify it's arguments.
+"""
+from typing import Any, Callable, List, Mapping, Optional, Text, Union
+
+from mypy_extensions import KwArg
+from xarray import DataArray, Dataset
+import pandas as pd
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 from muse.registration import registrator
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
+<<<<<<< HEAD
     [xr.Dataset, xr.DataArray, xr.Dataset, KwArg(Any)],
     Union[pd.DataFrame, xr.DataArray],
 ]
 """Signature of functions computing quantities for later analysis."""
 
 OUTPUT_QUANTITIES: MutableMapping[Text, OUTPUT_QUANTITY_SIGNATURE] = {}
+=======
+    [Dataset, DataArray, Dataset, KwArg()], Union[pd.DataFrame, DataArray]
+]
+"""Signature of functions computing quantities for later analysis."""
+
+OUTPUT_QUANTITIES: Mapping[Text, OUTPUT_QUANTITY_SIGNATURE] = {}
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 """Quantity for post-simulation analysis."""
 
 OUTPUTS_PARAMETERS = Union[Text, Mapping]
@@ -50,7 +77,11 @@ def register_output_quantity(function: OUTPUT_QUANTITY_SIGNATURE = None) -> Call
     @wraps(function)
     def decorated(*args, **kwargs):
         result = function(*args, **kwargs)
+<<<<<<< HEAD
         if isinstance(result, (pd.DataFrame, xr.DataArray)):
+=======
+        if isinstance(result, (pd.DataFrame, DataArray)):
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
             result.name = function.__name__
         return result
 
@@ -61,7 +92,10 @@ def _quantity_factory(
     parameters: Mapping, registry: Mapping[Text, Callable]
 ) -> Callable:
     from functools import partial
+<<<<<<< HEAD
     from inspect import isclass
+=======
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     config = dict(**parameters)
     params = config.pop("quantity")
@@ -73,11 +107,15 @@ def _quantity_factory(
         params = {}
     if registry is None:
         registry = OUTPUT_QUANTITIES
+<<<<<<< HEAD
     quantity_function = registry[quantity]
     if isclass(quantity_function):
         return quantity_function(**params)  # type: ignore
     else:
         return partial(quantity_function, **params)
+=======
+    return partial(registry[quantity], **params)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 def _factory(
@@ -113,7 +151,11 @@ def _factory(
 
 def factory(
     *parameters: OUTPUTS_PARAMETERS, sector_name: Text = "default"
+<<<<<<< HEAD
 ) -> Callable[[xr.Dataset, xr.DataArray, xr.Dataset], List[Any]]:
+=======
+) -> Callable[[Dataset, DataArray, Dataset], List[Any]]:
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Creates outputs functions for post-mortem analysis.
 
     Each parameter is a dictionary containing the following:
@@ -137,6 +179,7 @@ def factory(
 
 
 @register_output_quantity
+<<<<<<< HEAD
 def capacity(
     market: xr.Dataset,
     capacity: xr.DataArray,
@@ -160,17 +203,37 @@ def market_quantity(
         sum_over = [sum_over]
     if sum_over:
         sum_over = [s for s in sum_over if s in quantity.coords]
+=======
+def capacity(market: Dataset, capacity: DataArray, technologies: Dataset) -> DataArray:
+    """Current capacity."""
+    return capacity
+
+
+def market_quantity(
+    quantity: DataArray,
+    sum_over: Optional[Union[Text, List[Text]]] = None,
+    drop: Optional[Union[Text, List[Text]]] = None,
+) -> DataArray:
+    from muse.utilities import multiindex_to_coords
+    from pandas import MultiIndex
+
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     if sum_over:
         quantity = quantity.sum(sum_over)
     if "timeslice" in quantity.dims and isinstance(quantity.timeslice, MultiIndex):
         quantity = multiindex_to_coords(quantity, "timeslice")
     if drop:
+<<<<<<< HEAD
         quantity = quantity.drop_vars([d for d in drop if d in quantity.coords])
+=======
+        quantity = quantity.drop_vars(drop)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     return quantity
 
 
 @register_output_quantity
 def consumption(
+<<<<<<< HEAD
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
@@ -186,10 +249,21 @@ def consumption(
         .round(rounding)
     )
     return result[result.consumption != 0]
+=======
+    market: Dataset,
+    capacity: DataArray,
+    technologies: Dataset,
+    sum_over: Optional[List[Text]] = None,
+    drop: Optional[List[Text]] = None,
+) -> DataArray:
+    """Current consumption."""
+    return market_quantity(market.consumption, sum_over=sum_over, drop=drop)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 @register_output_quantity
 def supply(
+<<<<<<< HEAD
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
@@ -205,10 +279,21 @@ def supply(
         .round(rounding)
     )
     return result[result.supply != 0]
+=======
+    market: Dataset,
+    capacity: DataArray,
+    technologies: Dataset,
+    sum_over: Optional[List[Text]] = None,
+    drop: Optional[List[Text]] = None,
+) -> DataArray:
+    """Current supply."""
+    return market_quantity(market.supply, sum_over=sum_over, drop=drop)
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 @register_output_quantity
 def costs(
+<<<<<<< HEAD
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
@@ -230,3 +315,19 @@ def costs(
         .round(rounding)
     )
     return result[result.costs != 0]
+=======
+    market: Dataset,
+    capacity: DataArray,
+    technologies: Dataset,
+    sum_over: Optional[List[Text]] = None,
+    drop: Optional[List[Text]] = None,
+) -> DataArray:
+    """Current supply."""
+    from muse.commodities import is_pollutant
+
+    return market_quantity(
+        market.costs.sel(commodity=~is_pollutant(market.comm_usage)),
+        sum_over=sum_over,
+        drop=drop,
+    )
+>>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1

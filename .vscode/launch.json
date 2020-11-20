@@ -32,7 +32,6 @@
             "args": [
                 "model/settings.toml",
             ]
-<<<<<<< HEAD
         },
         {
             "name": "Model: minimum-service",
@@ -43,8 +42,6 @@
                 "--model",
                 "minimum-service"
             ]
-=======
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         }
     ]
 }
