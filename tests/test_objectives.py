@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 from pytest import approx, mark
-=======
-from pytest import approx
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 from xarray import DataArray
 
 
@@ -13,10 +9,7 @@ def add_var(coordinates, *dims, factor=100.0):
     return dims, (rand(*shape) * factor).astype(type(factor))
 
 
-<<<<<<< HEAD
 @mark.usefixtures("save_registries")
-=======
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 def test_objective_registration():
     from muse.objectives import OBJECTIVES, register_objective
 
@@ -35,10 +28,7 @@ def test_objective_registration():
     assert OBJECTIVES["something"] is b_objective
 
 
-<<<<<<< HEAD
 @mark.usefixtures("save_registries")
-=======
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 def test_computing_objectives(demand_share, search_space):
     from muse.objectives import factory, register_objective
 

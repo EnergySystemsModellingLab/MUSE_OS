@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 import xarray as xr
-=======
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 from pytest import approx, fixture
 
 
@@ -20,14 +17,8 @@ def _matching_market(technologies, stock, timeslice):
     from muse.timeslices import convert_timeslice, QuantityType
     from muse.quantities import maximum_production, consumption
     from numpy.random import random
-<<<<<<< HEAD
 
     market = xr.Dataset()
-=======
-    from xarray import Dataset
-
-    market = Dataset()
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     production = convert_timeslice(
         maximum_production(technologies, stock.capacity),
         timeslice,
@@ -165,10 +156,6 @@ def test_new_retro_accounting_identity(technologies, stock, market):
 def test_demand_split(technologies, stock, matching_market):
     from muse.demand_share import _inner_split as inner_split
     from muse.commodities import is_enduse
-<<<<<<< HEAD
-=======
-    from xarray import broadcast
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     def method(capacity):
         from muse.quantities import decommissioning_demand
@@ -190,19 +177,11 @@ def test_demand_split(technologies, stock, matching_market):
 
     total = (share["scully"] + share["mulder"]).sum("asset")
     demand = demand.where(enduse, 0)
-<<<<<<< HEAD
     demand, total = xr.broadcast(demand, total)
     assert demand.values == approx(total.values)
     expected, actual = xr.broadcast(demand, share["scully"].sum("asset"))
     assert actual.values == approx(0.3 * expected.values)
     expected, actual = xr.broadcast(demand, share["mulder"].sum("asset"))
-=======
-    demand, total = broadcast(demand, total)
-    assert demand.values == approx(total.values)
-    expected, actual = broadcast(demand, share["scully"].sum("asset"))
-    assert actual.values == approx(0.3 * expected.values)
-    expected, actual = broadcast(demand, share["mulder"].sum("asset"))
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     assert actual.values == approx(0.7 * expected.values)
 
 
@@ -210,10 +189,6 @@ def test_demand_split_zero_share(technologies, stock, matching_market):
     """See issue SgiModel/StarMuse#688."""
     from muse.demand_share import _inner_split as inner_split
     from muse.commodities import is_enduse
-<<<<<<< HEAD
-=======
-    from xarray import broadcast
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     def method(capacity):
         from muse.quantities import decommissioning_demand
@@ -235,19 +210,11 @@ def test_demand_split_zero_share(technologies, stock, matching_market):
 
     total = (share["scully"] + share["mulder"]).sum("asset")
     demand = demand.where(enduse, 0)
-<<<<<<< HEAD
     demand, total = xr.broadcast(demand, total)
     assert demand.values == approx(total.values, abs=1e-10)
     expected, actual = xr.broadcast(demand, share["scully"].sum("asset"))
     assert actual.values == approx(0.5 * expected.values)
     expected, actual = xr.broadcast(demand, share["mulder"].sum("asset"))
-=======
-    demand, total = broadcast(demand, total)
-    assert demand.values == approx(total.values, abs=1e-10)
-    expected, actual = broadcast(demand, share["scully"].sum("asset"))
-    assert actual.values == approx(0.5 * expected.values)
-    expected, actual = broadcast(demand, share["mulder"].sum("asset"))
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     assert actual.values == approx(0.5 * expected.values)
 
 
@@ -255,10 +222,6 @@ def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_f
     from dataclasses import dataclass
     from uuid import UUID, uuid4
     from typing import Text
-<<<<<<< HEAD
-=======
-    from xarray import Dataset, broadcast, concat
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from muse.demand_share import new_and_retro
     from muse.commodities import is_enduse
 
@@ -267,21 +230,13 @@ def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_f
 
     asia_market = _matching_market(technologies, asia_stock, timeslice)
     usa_market = _matching_market(technologies, usa_stock, timeslice)
-<<<<<<< HEAD
     market = xr.concat((asia_market, usa_market), dim="region")
-=======
-    market = concat((asia_market, usa_market), dim="region")
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     market.consumption.loc[{"year": 2031}] *= 2
 
     # spoof some agents
     @dataclass
     class Agent:
-<<<<<<< HEAD
         assets: xr.Dataset
-=======
-        assets: Dataset
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         category: Text
         uuid: UUID
         name: Text
@@ -298,11 +253,7 @@ def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_f
 
     results = new_and_retro(agents, market, technologies, current_year=2010, forecast=5)
 
-<<<<<<< HEAD
     for _, share in results.groupby("agent"):
-=======
-    for share in results.values():
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         assert share.sel(
             commodity=~is_enduse(technologies.comm_usage)
         ).values == approx(0)
@@ -312,7 +263,6 @@ def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_f
     for category in {"retrofit", "new"}:
         subset = {
             uuid_to_name[uuid]: share.sel(commodity=is_enduse(technologies.comm_usage))
-<<<<<<< HEAD
             for uuid, share in results.groupby("agent")
             if uuid_to_category[uuid] == category and (share.region == "USA").all()
         }
@@ -370,10 +320,3 @@ def test_unmet_forecast_demand(technologies, coords, timeslice, stock_factory):
     assert result.sel(commodity=enduse).values == approx(
         0.5 * market.consumption.sel(commodity=enduse).interp(year=2015).values
     )
-=======
-            for uuid, share in results.items()
-            if uuid_to_category[uuid] == category
-        }
-        expected, actual = broadcast(0.3 * sum(subset.values()), subset["a"])
-        assert actual.values == approx(expected.values)
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1

@@ -1,10 +1,7 @@
 from pathlib import Path
 
 import toml
-<<<<<<< HEAD
 import xarray as xr
-=======
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 from pytest import fixture, mark, raises
 
 
@@ -28,11 +25,7 @@ def sectors_files(settings: dict):
     """Creates the files related to the sector."""
     from typing import Text
 
-<<<<<<< HEAD
     for data in settings["sectors"].values():
-=======
-    for sector, data in settings["sectors"].items():
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         for path in data.values():
             if not isinstance(path, (Path, Text)):
                 continue
@@ -171,65 +164,18 @@ def test_check_global_data_dir(settings: dict, user_data_files):
         check_global_data_files(settings)
 
 
-<<<<<<< HEAD
 def test_check_plugins(settings: dict, plugins: Path):
     from muse.readers.toml import check_plugins, IncorrectSettings
-=======
-def test_check_sectors_files(settings: dict, tmpdir: Path, sectors_files):
-    """Tests the check_sectors_files function."""
-    from muse.readers.toml import check_sectors_files
-
-    # Now we run check_sectors_files, which should succeed in finding the files
-    check_sectors_files(settings)
-
-    # Now we change the name of one of the files and check if there's an exception
-    path = Path(settings["sectors"]["residential"]["technodata"])
-    path.rename(path.parent / "my_file")
-    with raises(AssertionError):
-        check_sectors_files(settings)
-
-
-def test_check_sectors_dir(settings: dict, tmpdir: Path, sectors_files):
-    """Tests the check_sectors_files function."""
-    from muse.readers.toml import check_sectors_files
-
-    # Now we run check_setors_files, which should succeed in finding the files
-    check_sectors_files(settings)
-
-    # Now we change the name of the directory and check if there's an exception
-    path = Path(settings["sectors"]["residential"]["path"])
-    path.rename(path.parent / "my_directory")
-    with raises(AssertionError):
-        check_sectors_files(settings)
-
-
-def test_check_plugins(settings: dict, plugins: Path):
-    from muse.readers.toml import check_plugins
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     # Now we run check_plugins, which should succeed in finding the files
     check_plugins(settings)
 
     # Now we change the name of the module and check if there's an exception
     settings["plugins"] = plugins.parent / f"{plugins.stem}_2{plugins.suffix}"
-<<<<<<< HEAD
     with raises(IncorrectSettings):
         check_plugins(settings)
 
 
-=======
-    with raises(IOError):
-        check_plugins(settings)
-
-
-def test_load_settings(input_file: Path):
-    """Tests the whole loading settings function."""
-    from muse.readers.toml import read_settings
-
-    read_settings(input_file)
-
-
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 @mark.sgidata
 @mark.legacy
 def test_load_residential_settings(residential_input_file: Path):
@@ -336,11 +282,7 @@ def test_split_toml_nested(tmpdir):
 def test_split_toml_too_manyops_in_outer(tmpdir):
     from pytest import raises
     from toml import dumps
-<<<<<<< HEAD
     from muse.readers.toml import read_split_toml, IncorrectSettings
-=======
-    from muse.readers.toml import read_split_toml
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -356,22 +298,14 @@ def test_split_toml_too_manyops_in_outer(tmpdir):
 
     (tmpdir / "inner.toml").write(dumps({"nested": {"my_option": "found it!"}}))
 
-<<<<<<< HEAD
     with raises(IncorrectSettings):
-=======
-    with raises(IOError):
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         read_split_toml(tmpdir / "outer.toml")
 
 
 def test_split_toml_too_manyops_in_inner(tmpdir):
     from pytest import raises
     from toml import dumps
-<<<<<<< HEAD
     from muse.readers.toml import read_split_toml, IncorrectSettings
-=======
-    from muse.readers.toml import read_split_toml
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -387,22 +321,14 @@ def test_split_toml_too_manyops_in_inner(tmpdir):
         dumps({"extra": "error", "nested": {"my_option": "found it!"}})
     )
 
-<<<<<<< HEAD
     with raises(IncorrectSettings):
-=======
-    with raises(IOError):
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         read_split_toml(tmpdir / "outer.toml")
 
 
 def test_split_toml_incorrect_inner_name(tmpdir):
     from pytest import raises
     from toml import dumps
-<<<<<<< HEAD
     from muse.readers.toml import read_split_toml, MissingSettings
-=======
-    from muse.readers.toml import read_split_toml
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -416,7 +342,6 @@ def test_split_toml_incorrect_inner_name(tmpdir):
 
     (tmpdir / "inner.toml").write(dumps({"incorrect_name": {"my_option": "found it!"}}))
 
-<<<<<<< HEAD
     with raises(MissingSettings):
         read_split_toml(tmpdir / "outer.toml")
 
@@ -441,14 +366,6 @@ def test_format_path():
 
 @mark.parametrize("suffix", (".xlsx", ".csv", ".toml", ".py", ".xls", ".nc"))
 def test_suffix_path_formatting(suffix, tmpdir):
-=======
-    with raises(IOError):
-        read_split_toml(tmpdir / "outer.toml")
-
-
-@mark.parametrize("suffix", (".xlsx", ".csv", ".toml", ".py", ".xls", ".nc"))
-def test_path_formatting(suffix, tmpdir):
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from muse.readers.toml import read_split_toml
 
     settings = {"this": 0, "plugins": f"{{path}}/thisfile{suffix}"}
@@ -468,7 +385,6 @@ def test_path_formatting(suffix, tmpdir):
     assert result["plugins"][0] == str(
         (Path() / "other" / f"thisfile{suffix}").absolute()
     )
-<<<<<<< HEAD
 
 
 def test_read_existing_trade(tmp_path):
@@ -500,5 +416,3 @@ def test_read_trade_technodata(tmp_path):
         "max_capacity_growth",
         "total_capacity_limit",
     }
-=======
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
