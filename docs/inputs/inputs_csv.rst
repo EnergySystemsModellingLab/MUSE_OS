@@ -14,6 +14,7 @@ Input Files
    commodities_io
    existing_capacity
    agents
+   correlation_files
 
 
 Indices and tables

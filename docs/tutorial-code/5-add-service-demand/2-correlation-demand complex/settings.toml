@@ -1,7 +1,7 @@
 # Global settings - most REQUIRED
-time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
-foresight = 5   # Has to be a multiple of the minimum separation between the years in time framework
-regions = ["R1"]
+time_framework = [2020, 2022, 2024, 2026, 2028, 2030, 2032, 2034, 2036, 2038, 2040]
+foresight = 2   # Has to be a multiple of the minimum separation between the years in time
+regions = ["R1", "R2"]
 interest_rate = 0.1
 interpolation_mode = 'Active'
 log_level = 'info'
@@ -127,17 +127,22 @@ interaction = 'transfer'
 [sectors.residential_presets]
 type = 'presets'
 priority = 0
-
+# consumption_path= "{path}/technodata/preset/*Consumption.csv"
+# timeslices_path = '{path}/technodata/preset/timeslices.csv'
 timeslice_shares_path = '{path}/technodata/preset/TimesliceSharepreset.csv'
 macrodrivers_path = '{path}/technodata/preset/Macrodrivers.csv'
 regression_path = '{path}/technodata/preset/regressionparameters.csv'
+forecast = 5
+filters = {sector="residential", region=["R1"]}
 
 
 [timeslices]
-all-year.all-week.night = 1460
-all-year.all-week.morning = 1460
-all-year.all-week.afternoon = 1460
-all-year.all-week.early-peak = 1460
-all-year.all-week.late-peak = 1460
-all-year.all-week.evening = 1460
+all-year.all-week.night = 1095
+all-year.all-week.morning = 1095
+all-year.all-week.mid-afternoon = 1095
+all-year.all-week.early-peak = 1095
+all-year.all-week.late-peak = 1095
+all-year.all-week.evening = 1095
+all-year.all-week.early-morning = 1095
+all-year.all-week.late-afternoon = 1095
 level_names = ["month", "day", "hour"]
