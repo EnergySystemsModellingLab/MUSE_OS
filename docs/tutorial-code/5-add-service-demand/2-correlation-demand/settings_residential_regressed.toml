@@ -23,10 +23,10 @@ budget = []
 [global_input_files]
 path = '{path}/input'
 projections = '{path}/Projections.csv'
-global_commodities = '{path}/GlobalCommodities.csv'
+global_commodities = '{path}/MUSEGlobalCommodities.csv'
 base_year_export = "{path}/BaseYearExport.csv"
 base_year_import = "{path}/BaseYearImport.csv"
-# regions = '{path}/Regions.csv'
+regions = '{path}/Regions.csv'
 #regression_parameters = '{muse_sectors}/regressionparameters.csv'
 
 [sectors.presets]
@@ -52,22 +52,10 @@ priority = 'demand'
 
 path = '{path}/technodata/residential'
 agents = '{path}/BuildingAgent.csv'
-technodata = '{path}/Technodata.csv'
-commodities_in = '{path}/CommIn.csv'
-commodities_out = '{path}/CommOut.csv'
-existing_capacity = '{path}/ExistingCapacity.csv'
-
-[sectors.residential.subsectors.retro_and_new]
-path = "{path}"
-agents = '{path}/../Agents.csv'
-existing_capacity = '{path}/ExistingCapacity.csv'
-lpsolver = "scipy"  # Optional, defaults to "adhoc" 
-constraints = [  # Optional, defaults to the constraints below
-    "max_production",
-    "max_capacity_expansion",
-    "demand",
-    "search_space",
-]
+technodata = '{path}/technodataresidential.csv'
+commodities_in = '{path}/commINtechnodataResidential.csv'
+commodities_out = '{path}/commOUTtechnodataResidential.csv'
+existing_capacity = '{path}/existingResidential.csv'
 
 [[sectors.residential.interactions]] 
 net = 'new_to_retro'
