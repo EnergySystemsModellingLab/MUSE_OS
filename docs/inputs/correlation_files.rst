@@ -73,10 +73,20 @@ SectorName
     This is the SectorName in which these parameters apply to.
 
 FunctionType
-    This is the function type you would like to MUSE to use. These can be logistic-sigmoid, ...
+    This is the function type you would like to MUSE to use. MUSE allows these to be:
+
+        - Exponential
+        - ExponentialAdj
+        - Logistic
+        - Loglog
+        - LogisticSigmoid
+        - Linear
+        - endogenous_demand 
+
+    Your own functions can be created using the `@register_regression` function, from the `regressions.py` file.
 
 Coeff
-    This is the coefficient for the respective function type.
+    This is the coefficient for the respective function type. These are explicitly defined within the `regressions.py` file, as they differ between functions.
 
 RegionName
     This is the region in which these parameters apply to.
