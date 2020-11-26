@@ -1,22 +1,22 @@
 Correlation demand files
 ========================
 
-It is possible to use macrodrivers as a way to infer the electricity demand. For example, one can use the expected GDP PPP and population in the future per region to infer the electricity demand using a regressor.
+It is possible to use macrodrivers as a way to infer the service demand. For example, one can use the expected GDP based on purchasing power parity (GDP PPP) and population in the future per region to infer the service demand using a regressor.
 
 To do this, a minimum of three files are required:
 
-#. A Macrodrivers file
+#. A macrodrivers file
 
 #. A file which states the regression parameters
 
-#. The share of the demand across the timeslices
+#. A file which dictates how the demand per benchmark year is split across the timeslices.
 
 We will go into the details of each of these files below.
 
 Macrodrivers
 ------------
 
-An example of a shortened macrodriver file is shown below. This file contains the data for each of the years you are interested in. For example, in the file below, it contains GDP PPP in region "R1", in the unit millionUS$2015 for each year. It also contains the data for Population.
+An example of a shortened macrodriver file is shown below. This file contains the data for each of the years you are interested in. For example, in the file below, it contains GDP PPP in region `R1`, in the unit `millionUS$2015` for each year. It also contains the data for the population.
 
 .. list-table:: Macrodrivers
    :widths: 50 50 50 25 25 25
@@ -42,22 +42,22 @@ An example of a shortened macrodriver file is shown below. This file contains th
      - ...
 
 Variable
-    This is the variable that you would like to use in the regression for electricity demand.
+    This is the variable that you would like to use in the regression for the service demand.
 
 RegionName 
-    This is the region that the data applies to. This must correlate with the regions set in the rest of your input files and toml file.
+    This is the region that the data applies to. This must correlate with the regions set in the rest of your input files, as well as the toml file.
 
 Unit
     This unit can be whatever you like, however they must be consistent across all input files.
 
 2010, 2011, ...
-    This is the actual data per year of the simulation.
+    This is the quantity of the variable per year of the simulation.
 
 
 Regression Parameters
 ---------------------
 
-In the regression parameters file, it is necessary to state the parameters of the regression. This can be obtained from your own dataset, where you regress electricity demand against GDP PPP and populaiton, for example.
+In the regression parameters file, it is necessary to state the parameters of the regression. This can be obtained from your own dataset, where you regress the service demand against GDP PPP and populaiton, for example.
 
 An example file is shown below:
 
@@ -70,7 +70,7 @@ An example file is shown below:
    Residential,logistic-sigmoid,GDPscaleGreater,R1,0,0,672.9316672,0
 
 SectorName
-    This is the SectorName in which these parameters apply to.
+    This is the sector name in which these parameters apply to.
 
 FunctionType
     This is the function type you would like to MUSE to use. MUSE allows these to be:
@@ -83,7 +83,7 @@ FunctionType
         - Linear
         - endogenous_demand 
 
-    Your own functions can be created using the `@register_regression` function, from the `regressions.py` file.
+    Your own functions can be created using the `@register_regression` hook, from the `regressions.py` file.
 
 Coeff
     This is the coefficient for the respective function type. These are explicitly defined within the `regressions.py` file, as they differ between functions.

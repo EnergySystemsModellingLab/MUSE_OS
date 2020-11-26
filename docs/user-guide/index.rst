@@ -74,5 +74,11 @@ In the table below, you will notice a x2 after some of the technology tuples. Th
       - [gasCCGT, windturbine, solarPV] x2
       - [gassuply1] x2
       - [5]
-
+   *  - 6
+      - [A1]
+      - [R1]
+      - [gasboiler, heatpump]
+      - [gasCCGT, windturbine, solarPV]
+      - [gassuply1]
+      - [6]
 
