@@ -1,23 +1,4 @@
-<<<<<<< HEAD
 """MUSE model."""
-=======
-"""MUSE model"""
-
-from muse import sectors  # noqa
-from muse.agent import Agent, create_agent
-from muse.readers import (
-    read_csv_agent_parameters,
-    read_csv_timeslices,
-    read_global_commodities,
-    read_initial_capacity,
-    read_io_technodata,
-    read_macro_drivers,
-    read_settings,
-    read_technodictionary,
-    read_technologies,
-    read_timeslice_shares,
-)
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 def _create_logger():

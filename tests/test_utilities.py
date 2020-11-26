@@ -35,6 +35,14 @@ def test_reduce_assets(coordinates: Tuple, capacity: xr.DataArray):
         assert actual.isel(asset=index).values == approx(expected.values)
 
 
+def test_reduce_assets_with_zero_size(capacity: xr.DataArray):
+    from muse.utilities import reduce_assets
+
+    x = capacity.sel(asset=[])
+    actual = reduce_assets(x)
+    assert actual is x
+
+
 def test_broadcast_tech(technologies, capacity):
     from muse.utilities import broadcast_techs
 

@@ -25,7 +25,6 @@ The same models can be instanciated in a python script as follows:
     model.run()
 """
 from pathlib import Path
-<<<<<<< HEAD
 from typing import List, Optional, Text, Union, cast
 
 import numpy as np
@@ -35,13 +34,6 @@ from muse.mca import MCA
 from muse.sectors import AbstractSector
 
 __all__ = ["model", "technodata"]
-=======
-from typing import Optional, Text, Union
-
-from xarray import Dataset
-
-from muse.mca import MCA
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 def example_data_dir() -> Path:
@@ -51,11 +43,7 @@ def example_data_dir() -> Path:
 
 
 def model(name: Text = "default") -> MCA:
-<<<<<<< HEAD
     """Fully constructs a given example model."""
-=======
-    """Simple model with Residential, Power, and Gas sectors."""
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from tempfile import TemporaryDirectory
     from muse.readers.toml import read_settings
 
@@ -80,7 +68,6 @@ def copy_model(
     permission to ``overwrite`` is given, then all files inside the directory are
     deleted.
     """
-<<<<<<< HEAD
     from shutil import rmtree
 
     if name.lower() not in {
@@ -90,12 +77,6 @@ def copy_model(
         "minimum-service",
         "trade",
     }:
-=======
-    from shutil import copytree, copyfile, rmtree
-    from toml import load, dump
-
-    if name.lower() not in {"default", "multiple-agents"}:
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         raise ValueError(f"Unknown model {name}")
 
     path = Path() if path is None else Path(path)
@@ -111,7 +92,6 @@ def copy_model(
             raise IOError(f"{path} exists and ``overwrite`` is not allowed")
         rmtree(path)
 
-<<<<<<< HEAD
     if name.lower() == "default":
         _copy_default(path)
     elif name.lower() == "medium":
@@ -129,33 +109,6 @@ def technodata(sector: Text, model: Text = "default") -> xr.Dataset:
     """Technology for a sector of a given example model."""
     from tempfile import TemporaryDirectory
     from muse.readers.toml import read_technodata, read_settings
-=======
-    copytree(example_data_dir() / "input", path / "input")
-    copytree(example_data_dir() / "technodata", path / "technodata")
-    if name.lower() == "default":
-        copyfile(example_data_dir() / "settings.toml", path / "settings.toml")
-    if name.lower() == "multiple-agents":
-        toml = load(example_data_dir() / "settings.toml")
-        toml["sectors"]["residential"][
-            "agents"
-        ] = "{path}/technodata/residential/Agents.csv"
-        with (path / "settings.toml").open("w") as fileobj:
-            dump(toml, fileobj)
-        copyfile(
-            example_data_dir() / "multiple_agents" / "Agents.csv",
-            path / "technodata" / "residential" / "Agents.csv",
-        )
-        copyfile(
-            example_data_dir() / "multiple_agents" / "residential" / "technodata.csv",
-            path / "technodata" / "residential" / "Technodata.csv",
-        )
-    return path
-
-
-def technodata(sector: Text) -> Dataset:
-    """Technology for a sector of the default example model."""
-    from muse.readers.csv import read_technologies
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     sector = sector.lower()
     allowed = {"residential", "power", "gas", "preset"}
@@ -163,7 +116,6 @@ def technodata(sector: Text) -> Dataset:
         raise RuntimeError("The preset sector has no technodata.")
     if sector not in allowed:
         raise RuntimeError(f"This model only knows about sectors {allowed}.")
-<<<<<<< HEAD
     with TemporaryDirectory() as tmpdir:
         path = copy_model(model, tmpdir)
         settings = read_settings(path / "settings.toml")
@@ -402,7 +354,8 @@ def _trade_search_space(sector: Text, model: Text = "default") -> xr.DataArray:
                     market=market,
                 )
                 for a in loaded_sector.agents
-            }
+            },
+            dim="agent",
         ),
     )
 
@@ -415,11 +368,4 @@ def _nontrade_search_space(sector: Text, model: Text = "default") -> xr.DataArra
         ones((len(technology), len(technology)), dtype=bool),
         coords=dict(asset=technology.values, replacement=technology.values),
         dims=("asset", "replacement"),
-=======
-    return read_technologies(
-        example_data_dir() / "technodata" / sector.title() / "Technodata.csv",
-        example_data_dir() / "technodata" / sector.title() / "CommOut.csv",
-        example_data_dir() / "technodata" / sector.title() / "CommIn.csv",
-        example_data_dir() / "input" / "GlobalCommodities.csv",
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     )

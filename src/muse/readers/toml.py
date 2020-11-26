@@ -8,10 +8,7 @@ from logging import getLogger
 from pathlib import Path
 from typing import (
     IO,
-<<<<<<< HEAD
     Any,
-=======
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     Dict,
     List,
     Mapping,
@@ -24,13 +21,8 @@ from typing import (
 )
 
 import numpy as np
-<<<<<<< HEAD
 import pandas as pd
 import xarray as xr
-=======
-from pandas import MultiIndex
-from xarray import DataArray, Dataset
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 from muse.decorators import SETTINGS_CHECKS, register_settings_check
 from muse.defaults import DATA_DIRECTORY, DEFAULT_SECTORS_DIRECTORY
@@ -39,7 +31,6 @@ DEFAULT_SETTINGS_PATH = DATA_DIRECTORY / "default_settings.toml"
 """Default settings path."""
 
 
-<<<<<<< HEAD
 class InputError(Exception):
     """Root for TOML input errors."""
 
@@ -50,14 +41,6 @@ class MissingSettings(InputError):
 
 class IncorrectSettings(InputError):
     """Error when an input exists but is incorrect."""
-=======
-class MissingSettings(Exception):
-    pass
-
-
-class IncorrectSettings(Exception):
-    pass
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 def convert(dictionary):
@@ -340,30 +323,18 @@ def read_split_toml(
                 continue
 
             if "include_path" in section and len(section) > 1:
-<<<<<<< HEAD
                 raise IncorrectSettings(
-=======
-                raise IOError(
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
                     "Sections with an `include_path` option "
                     "should contain only that option."
                 )
             elif "include_path" in section:
                 inner = read_split_toml(section["include_path"], path=path)
                 if key not in inner:
-<<<<<<< HEAD
                     raise MissingSettings(
                         f"Could not find section {key} in {section['include_path']}"
                     )
                 if len(inner) != 1:
                     raise IncorrectSettings(
-=======
-                    raise IOError(
-                        f"Could not find section {key} in {section['include_path']}"
-                    )
-                if len(inner) != 1:
-                    raise IOError(
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
                         "More than one section found in included"
                         f"file {section['include_path']}"
                     )
@@ -381,11 +352,7 @@ def read_split_toml(
 def read_settings(
     settings_file: Union[Text, Path, IO[Text], Mapping],
     path: Optional[Union[Text, Path]] = None,
-<<<<<<< HEAD
 ) -> Any:
-=======
-) -> tuple:
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Loads the input settings for any MUSE simulation.
 
     Loads a MUSE settings file. This must be a TOML formatted file. Missing settings are
@@ -419,15 +386,6 @@ def read_settings(
     msg = "ERROR - There must be at least 1 sector."
     assert len(user_settings["sectors"]) >= 1, msg
 
-<<<<<<< HEAD
-=======
-    # Those sectors and agents not in the input settings are removed
-    default_settings["sectors"] = {
-        k: default_settings["sectors"][k]
-        for k in set(user_settings["sectors"]).intersection(default_settings["sectors"])
-    }
-
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     # timeslice information cannot be merged. Accept only information from one.
     if "timeslices" in user_settings:
         default_settings.pop("timeslices", None)
@@ -444,15 +402,9 @@ def read_settings(
 
 def read_ts_multiindex(
     settings: Optional[Union[Mapping, Text]] = None,
-<<<<<<< HEAD
     timeslice: Optional[xr.DataArray] = None,
     transforms: Optional[Dict[Tuple, np.ndarray]] = None,
 ) -> pd.MultiIndex:
-=======
-    timeslice: Optional[DataArray] = None,
-    transforms: Optional[Dict[Tuple, np.ndarray]] = None,
-) -> MultiIndex:
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Read multiindex for a timeslice from TOML.
 
     Example:
@@ -498,7 +450,6 @@ def read_ts_multiindex(
         >>> read_ts_multiindex(dict(days=["dusk", "allday"]), ref, transforms)
         Traceback (most recent call last):
         ...
-<<<<<<< HEAD
         muse.readers.toml.IncorrectSettings: Unexpected level name(s): ...
         >>> read_ts_multiindex(dict(day=["usk", "allday"]), ref, transforms)
         Traceback (most recent call last):
@@ -507,17 +458,6 @@ def read_ts_multiindex(
     """
     from toml import loads
     from itertools import product
-=======
-        ValueError: Unexpected level name(s): ...
-        >>> read_ts_multiindex(dict(day=["usk", "allday"]), ref, transforms)
-        Traceback (most recent call last):
-        ...
-        ValueError: Unexpected slice(s): ...
-    """
-    from toml import loads
-    from itertools import product
-    from pandas import MultiIndex
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     from muse.timeslices import TIMESLICE, TRANSFORMS
 
     indices = (TIMESLICE if timeslice is None else timeslice).get_index("timeslice")
@@ -535,11 +475,7 @@ def read_ts_multiindex(
         msg = "Unexpected level name(s): " + ", ".join(
             set(settings).difference(indices.names)
         )
-<<<<<<< HEAD
         raise IncorrectSettings(msg)
-=======
-        raise ValueError(msg)
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     levels = [
         settings.get(name, level) for name, level in zip(indices.names, indices.levels)
     ]
@@ -548,13 +484,8 @@ def read_ts_multiindex(
         known = [index[i] for index in transforms if len(index) > i]
         unexpected = set(level).difference(known)
         if unexpected:
-<<<<<<< HEAD
             raise IncorrectSettings("Unexpected slice(s): " + ", ".join(unexpected))
     return pd.MultiIndex.from_tuples(
-=======
-            raise ValueError("Unexpected slice(s): " + ", ".join(unexpected))
-    return MultiIndex.from_tuples(
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         [index for index in product(*levels) if index in transforms],
         names=indices.names,
     )
@@ -562,15 +493,9 @@ def read_ts_multiindex(
 
 def read_timeslices(
     settings: Optional[Union[Text, Mapping]] = None,
-<<<<<<< HEAD
     timeslice: Optional[xr.DataArray] = None,
     transforms: Optional[Dict[Tuple, np.ndarray]] = None,
 ) -> xr.Dataset:
-=======
-    timeslice: Optional[DataArray] = None,
-    transforms: Optional[Dict[Tuple, np.ndarray]] = None,
-) -> Dataset:
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Reads timeslice levels and create resulting timeslice coordinate.
 
     Args:
@@ -585,11 +510,7 @@ def read_timeslices(
             then this funtion should be called *after* the timeslice module has been
             setup with a call to :py:func:`~muse.timeslice.setup_module`.
     Returns:
-<<<<<<< HEAD
         A xr.Dataset with the timeslice coordinates.
-=======
-        A Dataset with the timeslice coordinates.
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     Example:
         >>> toml = \"\"\"
@@ -632,7 +553,6 @@ def read_timeslices(
     if timeslice is None:
         timeslice = TIMESLICE
     if settings is None:
-<<<<<<< HEAD
         return xr.Dataset({"represent_hours": timeslice}).set_coords("represent_hours")
     indices = read_ts_multiindex(settings, timeslice=timeslice, transforms=transforms)
     units = xr.DataArray(
@@ -640,25 +560,12 @@ def read_timeslices(
     )
     proj = timeslice_projector(units, finest=timeslice, transforms=transforms)
     proj *= xr.DataArray(
-=======
-        return Dataset({"represent_hours": timeslice}).set_coords("represent_hours")
-    indices = read_ts_multiindex(settings, timeslice=timeslice, transforms=transforms)
-    units = DataArray(
-        np.ones(len(indices)), coords={"timeslice": indices}, dims="timeslice"
-    )
-    proj = timeslice_projector(units, finest=timeslice, transforms=transforms)
-    proj *= DataArray(
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         timeslice.values,
         coords={"finest_timeslice": proj.finest_timeslice},
         dims="finest_timeslice",
     )
 
-<<<<<<< HEAD
     return xr.Dataset({"represent_hours": proj.sum("finest_timeslice")}).set_coords(
-=======
-    return Dataset({"represent_hours": proj.sum("finest_timeslice")}).set_coords(
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         "represent_hours"
     )
 
@@ -755,11 +662,7 @@ def check_plugins(settings: Dict) -> None:
         if not path.exists():
             msg = f"ERROR plugin does not exist: {path}"
             getLogger(__name__).critical(msg)
-<<<<<<< HEAD
             raise IncorrectSettings(msg)
-=======
-            raise IOError(msg)
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
         # The module is loaded, registering anything inside that is decorated
         spec = implib.spec_from_file_location(path.stem, path)
@@ -813,23 +716,14 @@ def check_budget_parameters(settings: Dict) -> None:
             assert length + 1 == len(settings["time_framework"]), msg
             coords = settings["time_framework"][:-1]
 
-<<<<<<< HEAD
         # If Ok, we transform the list into an xr.DataArray
         settings["carbon_budget_control"]["budget"] = xr.DataArray(
-=======
-        # If Ok, we transform the list into an DataArray
-        settings["carbon_budget_control"]["budget"] = DataArray(
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
             np.array(settings["carbon_budget_control"]["budget"]),
             dims="year",
             coords={"year": coords},
         )
     else:
-<<<<<<< HEAD
         settings["carbon_budget_control"]["budget"] = xr.DataArray([])
-=======
-        settings["carbon_budget_control"]["budget"] = DataArray([])
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 @register_settings_check(vary_name=False)
@@ -879,11 +773,7 @@ def check_iteration_control(settings: Dict) -> None:
 def check_time_slices(settings: Dict) -> None:
     """Check the time slices.
 
-<<<<<<< HEAD
     If there is no error, they are transformed into a xr.DataArray
-=======
-    If there is no error, they are transformed into a DataArray
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """
     from muse.timeslices import setup_module
 
@@ -940,37 +830,10 @@ def check_sectors_files(settings: Dict) -> None:
         "last": 100,
     }
 
-<<<<<<< HEAD
-=======
-    path_options = {
-        "agents",
-        "technodata",
-        "commodities_in",
-        "commodities_out",
-        "existing_capacity",
-    }
-
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     if "list" in sectors:
         sectors = {k: sectors[k] for k in sectors["list"]}
 
     for name, sector in sectors.items():
-<<<<<<< HEAD
-=======
-        if sector["type"].lower().strip() == "default":
-            for path in path_options:
-                if path not in sector:
-                    raise AssertionError(
-                        f"Settings for sector '{name}' "
-                        f"are missing an input for '{path}'"
-                    )
-                if not Path(sector[path]).exists():
-                    raise AssertionError(
-                        f"Input '{path}' of sector '{name}' "
-                        "does not refer to a is not a valid file"
-                    )
-
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         # Finally the priority of the sectors is used to set the order of execution
         sector["priority"] = sector.get("priority", priorities["last"])
         sector["priority"] = int(
@@ -981,7 +844,6 @@ def check_sectors_files(settings: Dict) -> None:
         settings["sectors"].keys(), key=lambda x: settings["sectors"][x]["priority"]
     )
     settings["sectors"] = sectors
-<<<<<<< HEAD
 
 
 def read_technodata(
@@ -1041,14 +903,20 @@ def read_technodata(
         technosettings.pop("commodities_out"),
         technosettings.pop("commodities_in"),
         commodities=commodities,
-    )
+    ).sel(region=regions)
     ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
     outs = (technologies.fixed_outputs > 0).any(("year", "region", "technology"))
     techcomms = technologies.commodity[ins | outs]
-    technologies = technologies.sel(commodity=techcomms, region=regions)
+    technologies = technologies.sel(commodity=techcomms)
     for name, value in technosettings.items():
         if isinstance(name, (Text, Path)):
             data = read_trade(value, drop="Unit")
+            if "region" in data.dims:
+                data = data.sel(region=regions)
+            if "dst_region" in data.dims:
+                data = data.sel(dst_region=regions)
+                if data.dst_region.size == 1:
+                    data = data.squeeze("dst_region", drop=True)
         else:
             data = value
         if isinstance(data, xr.Dataset):
@@ -1075,5 +943,3 @@ def read_technodata(
     year = sorted(set(time_framework).union(technologies.year.data.tolist()))
     technologies = technologies.interp(year=year, **kwargs)
     return technologies
-=======
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1

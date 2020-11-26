@@ -27,10 +27,7 @@ tests_require = [
     "nbconvert",
     "nbformat",
     "mypy",
-<<<<<<< HEAD
     "numpy>=1.17",
-=======
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 ]
 docs_require = ["sphinx", "recommonmark", "nbsphinx", "sphinxcontrib-bibtex", "ipython"]
 
@@ -54,11 +51,7 @@ muse_legacy = pattern(package="StarMUSELegacy", repo="StarMuse", sha="archive/le
 
 setup(
     name="StarMUSE",
-<<<<<<< HEAD
     version="0.8",
-=======
-    version="0.7",
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     description="Energy System Model",
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -83,11 +76,7 @@ setup(
     install_requires=[
         "numpy",
         "scipy",
-<<<<<<< HEAD
-        "pandas>=0.21,<1.1.0",
-=======
         "pandas>=0.21",
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         "click",
         "xarray>0.14",
         "bottleneck",

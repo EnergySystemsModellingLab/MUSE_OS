@@ -8,7 +8,6 @@ same signature:
     @register_output_quantity
     def quantity(
         sectors: List[AbstractSector],
-<<<<<<< HEAD
         market: xr.Dataset, **kwargs
     ) -> Union[pd.DataFrame, xr.DataArray]:
         pass
@@ -35,39 +34,16 @@ from typing import (
 import pandas as pd
 import xarray as xr
 from mypy_extensions import KwArg
-=======
-        market: Dataset, **kwargs
-    ) -> Union[pd.DataFrame, DataArray]:
-        pass
-
-The function should never modify it's arguments. It can return either a pandas dataframe
-or an xarray DataArray.
-"""
-from pathlib import Path
-from typing import Callable, List, Mapping, Optional, Sequence, Text, Union
-
-import pandas as pd
-from mypy_extensions import KwArg
-from xarray import DataArray, Dataset
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 from muse.registration import registrator
 from muse.sectors import AbstractSector
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
-<<<<<<< HEAD
     [xr.Dataset, List[AbstractSector], KwArg(Any)], Union[xr.DataArray, pd.DataFrame]
 ]
 """Signature of functions computing quantities for later analysis."""
 
 OUTPUT_QUANTITIES: MutableMapping[Text, OUTPUT_QUANTITY_SIGNATURE] = {}
-=======
-    [Dataset, List[AbstractSector], KwArg()], Union[DataArray, pd.DataFrame]
-]
-"""Signature of functions computing quantities for later analysis."""
-
-OUTPUT_QUANTITIES: Mapping[Text, OUTPUT_QUANTITY_SIGNATURE] = {}
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 """Quantity for post-simulation analysis."""
 
 OUTPUTS_PARAMETERS = Union[Text, Mapping]
@@ -75,13 +51,9 @@ OUTPUTS_PARAMETERS = Union[Text, Mapping]
 
 
 @registrator(registry=OUTPUT_QUANTITIES)
-<<<<<<< HEAD
 def register_output_quantity(
     function: Optional[OUTPUT_QUANTITY_SIGNATURE] = None,
 ) -> Callable:
-=======
-def register_output_quantity(function: OUTPUT_QUANTITY_SIGNATURE = None) -> Callable:
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Registers a function to compute an output quantity."""
     from functools import wraps
 
@@ -90,18 +62,13 @@ def register_output_quantity(function: OUTPUT_QUANTITY_SIGNATURE = None) -> Call
     @wraps(function)
     def decorated(*args, **kwargs):
         result = function(*args, **kwargs)
-<<<<<<< HEAD
         if isinstance(result, (pd.DataFrame, xr.DataArray)):
-=======
-        if isinstance(result, (pd.DataFrame, DataArray)):
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
             result.name = function.__name__
         return result
 
     return decorated
 
 
-<<<<<<< HEAD
 def round_values(function: Callable) -> OUTPUT_QUANTITY_SIGNATURE:
     """Rounds the outputs to given number of decimals and drops columns with zeros."""
     from functools import wraps
@@ -123,11 +90,6 @@ def round_values(function: Callable) -> OUTPUT_QUANTITY_SIGNATURE:
 def factory(
     *parameters: OUTPUTS_PARAMETERS,
 ) -> Callable[[xr.Dataset, List[AbstractSector]], List[Path]]:
-=======
-def factory(
-    *parameters: OUTPUTS_PARAMETERS,
-) -> Callable[[Dataset, List[AbstractSector]], List[Path]]:
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Creates outputs functions for post-mortem analysis.
 
     Each parameter is a dictionary containing the following:
@@ -149,7 +111,6 @@ def factory(
     """
     from muse.outputs.sector import _factory
 
-<<<<<<< HEAD
     def reformat_finite_resources(params):
         from muse.readers.toml import MissingSettings
 
@@ -180,20 +141,14 @@ def factory(
         OUTPUTS_PARAMETERS, [reformat_finite_resources(p) for p in parameters]
     )
 
-=======
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     return _factory(OUTPUT_QUANTITIES, *parameters, sector_name="MCA")
 
 
 @register_output_quantity
-<<<<<<< HEAD
 @round_values
 def consumption(
     market: xr.Dataset, sectors: List[AbstractSector], **kwargs
 ) -> xr.DataArray:
-=======
-def consumption(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Current consumption."""
     from muse.outputs.sector import market_quantity
 
@@ -201,12 +156,8 @@ def consumption(market: Dataset, sectors: List[AbstractSector], **kwargs) -> Dat
 
 
 @register_output_quantity
-<<<<<<< HEAD
 @round_values
 def supply(market: xr.Dataset, sectors: List[AbstractSector], **kwargs) -> xr.DataArray:
-=======
-def supply(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Current supply."""
     from muse.outputs.sector import market_quantity
 
@@ -214,14 +165,9 @@ def supply(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArra
 
 
 @register_output_quantity
-<<<<<<< HEAD
 @round_values
 def prices(
     market: xr.Dataset,
-=======
-def prices(
-    market: Dataset,
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     sectors: List[AbstractSector],
     drop_empty: bool = True,
     keep_columns: Optional[Union[Sequence[Text], Text]] = "prices",
@@ -241,7 +187,6 @@ def prices(
 
 
 @register_output_quantity
-<<<<<<< HEAD
 @round_values
 def capacity(
     market: xr.Dataset, sectors: List[AbstractSector], **kwargs
@@ -340,19 +285,6 @@ def sector_capacity(sector: AbstractSector) -> pd.DataFrame:
     from pandas import DataFrame, concat
 
     capa_sector: List[xr.DataArray] = []
-=======
-def capacity(market: Dataset, sectors: List[AbstractSector], **kwargs) -> DataArray:
-    """Current capacity across all sectors."""
-    return sectors_capacity(sectors)
-
-
-def sector_capacity(sector: AbstractSector) -> DataArray:
-    """Sector capacity with agent annotations."""
-    from operator import attrgetter
-    from pandas import DataFrame
-
-    capa_sector: List[DataArray] = []
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
     for agent in agents:
         capa_agent = agent.assets.capacity
@@ -365,20 +297,13 @@ def sector_capacity(sector: AbstractSector) -> DataArray:
     if len(capa_sector) == 0:
         return DataFrame()
 
-<<<<<<< HEAD
     capacity = concat([u.to_dataframe() for u in capa_sector])
     capacity = capacity[capacity.capacity != 0]
-=======
-    capacity = pd.concat([u.to_dataframe() for u in capa_sector])
-    capacity = capacity[capacity.capacity != 0]
-
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     if "year" in capacity.columns:
         capacity = capacity.ffill("year")
     return capacity
 
 
-<<<<<<< HEAD
 def _aggregate_sectors(
     sectors: List[AbstractSector], *args, op: Callable
 ) -> pd.DataFrame:
@@ -468,13 +393,3 @@ class FiniteResources(AggregateResources):
         assert aggregate is not None
         limits = limits.sum([u for u in limits.dims if u not in aggregate.dims])
         return aggregate <= limits
-=======
-def sectors_capacity(sectors: List[AbstractSector]) -> DataArray:
-    """Aggregate outputs from all sectors."""
-    from pandas import concat, DataFrame
-
-    alldata = [sector_capacity(sector) for sector in sectors]
-    if len(alldata) == 0:
-        return DataFrame()
-    return concat(alldata)
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1

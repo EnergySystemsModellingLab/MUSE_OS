@@ -1,15 +1,10 @@
 """Collection of functions and stand-alone algorithms."""
 from typing import (
-<<<<<<< HEAD
     Any,
     Callable,
     Hashable,
     Iterable,
     Iterator,
-=======
-    Callable,
-    Iterable,
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     Mapping,
     NamedTuple,
     Optional,
@@ -19,7 +14,6 @@ from typing import (
     cast,
 )
 
-<<<<<<< HEAD
 import numpy as np
 import xarray as xr
 
@@ -27,13 +21,6 @@ import xarray as xr
 def multiindex_to_coords(
     data: Union[xr.Dataset, xr.DataArray], dimension: Text = "asset"
 ):
-=======
-from numpy import ndarray
-from xarray import DataArray, Dataset
-
-
-def multiindex_to_coords(data: Union[Dataset, DataArray], dimension: Text = "asset"):
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Flattens multi-index dimension into multi-coord dimension."""
     from pandas import MultiIndex
 
@@ -44,53 +31,32 @@ def multiindex_to_coords(data: Union[Dataset, DataArray], dimension: Text = "ass
     result = data.drop_vars(dimension)
     for name, coord in coords.items():
         result[name] = dimension, coord
-<<<<<<< HEAD
     if isinstance(result, xr.Dataset):
-=======
-    if isinstance(result, Dataset):
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         result = result.set_coords(names)
     return result
 
 
 def coords_to_multiindex(
-<<<<<<< HEAD
     data: Union[xr.Dataset, xr.DataArray], dimension: Text = "asset"
 ) -> Union[xr.Dataset, xr.DataArray]:
-=======
-    data: Union[Dataset, DataArray], dimension: Text = "asset"
-) -> Union[Dataset, DataArray]:
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Creates a multi-index from flattened multiple coords."""
     from pandas import MultiIndex
 
     assert dimension in data.dims
     assert dimension not in data.indexes
     names = [u for u in data.coords if data[u].dims == (dimension,)]
-<<<<<<< HEAD
     index = MultiIndex.from_arrays([data[u].values for u in names], names=names)
-=======
-    index = MultiIndex.from_arrays([data[u] for u in names], names=names)
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     result = data.drop_vars(names)
     result[dimension] = index
     return result
 
 
 def reduce_assets(
-<<<<<<< HEAD
     assets: Union[xr.DataArray, xr.Dataset, Sequence[Union[xr.Dataset, xr.DataArray]]],
     coords: Optional[Union[Text, Sequence[Text], Iterable[Text]]] = None,
     dim: Text = "asset",
     operation: Optional[Callable] = None,
-) -> xr.DataArray:
-=======
-    assets: Union[DataArray, Sequence[DataArray]],
-    coords: Optional[Union[Text, Sequence[Text]]] = None,
-    dim: Text = "asset",
-    operation: Optional[Callable] = None,
-) -> DataArray:
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
+) -> Union[xr.DataArray, xr.Dataset]:
     r"""Combine assets along given asset dimension.
 
     This method simplifies combining assets accross multiple agents, or combining assets
@@ -125,11 +91,7 @@ def reduce_assets(
         Lets construct assets that do have duplicates assets. First we construct the
         dimensions, using fake data:
 
-<<<<<<< HEAD
         >>> data = xr.Dataset()
-=======
-        >>> data = Dataset()
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         >>> data['year'] = 'year', [2010, 2015, 2017]
         >>> data['installed'] = 'asset', [1990, 1991, 1991, 1990]
         >>> data['technology'] = 'asset', ['a', 'b', 'b', 'c']
@@ -147,12 +109,7 @@ def reduce_assets(
         Now we can easily create a fake two dimensional quantity per process and
         per year:
 
-<<<<<<< HEAD
         >>> data['capacity'] = ('year', 'asset'), np.arange(3 * 4).reshape(3, 4)
-=======
-        >>> from numpy import arange
-        >>> data['capacity'] = ('year', 'asset'), arange(3 * 4).reshape(3, 4)
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
         The point of `reduce_assets` is to aggregate assets that refer to the
         same process:
@@ -188,11 +145,6 @@ def reduce_assets(
         Dimensions without coordinates: asset
     """
     from copy import copy
-<<<<<<< HEAD
-=======
-    from numpy import array
-    from xarray import concat
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     if operation is None:
 
@@ -201,15 +153,11 @@ def reduce_assets(
 
     assert operation is not None
 
-<<<<<<< HEAD
     if not isinstance(assets, (xr.Dataset, xr.DataArray)):
         assets = xr.concat(assets, dim=dim)
     assert isinstance(assets, (xr.Dataset, xr.DataArray))
-=======
-    if not isinstance(assets, DataArray):
-        assets = concat(assets, dim=dim)
-    assert isinstance(assets, DataArray)
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
+    if assets[dim].size == 0:
+        return assets
     if coords is None:
         coords = [cast(Text, k) for k, v in assets.coords.items() if v.dims == (dim,)]
     elif isinstance(coords, Text):
@@ -217,13 +165,9 @@ def reduce_assets(
     coords = [k for k in coords if k in assets.coords and assets[k].dims == (dim,)]
     assets = copy(assets)
     dtypes = [(d, assets[d].dtype) for d in coords]
-<<<<<<< HEAD
     grouper = np.array(
         list(zip(*(cast(Iterator, assets[d].values) for d in coords))), dtype=dtypes
     )
-=======
-    grouper = array(list(zip(*(assets[d].values for d in coords))), dtype=dtypes)
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     assert "grouper" not in assets.coords
     assets["grouper"] = "asset", grouper
     result = operation(assets.groupby("grouper")).rename(grouper=dim)
@@ -233,22 +177,13 @@ def reduce_assets(
 
 
 def broadcast_techs(
-<<<<<<< HEAD
     technologies: Union[xr.Dataset, xr.DataArray],
     template: Union[xr.DataArray, xr.Dataset],
-=======
-    technologies: Union[Dataset, DataArray],
-    template: Union[DataArray, Dataset],
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     dimension: Text = "asset",
     interpolation: Text = "linear",
     installed_as_year: bool = True,
     **kwargs,
-<<<<<<< HEAD
 ) -> Union[xr.Dataset, xr.DataArray]:
-=======
-) -> Union[Dataset, DataArray]:
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Broadcasts technologies to the shape of template in given dimension.
 
     The dimensions of the technologies are fully explicit, in that each concept
@@ -306,11 +241,7 @@ def broadcast_techs(
     return techs.sel(second_sel)
 
 
-<<<<<<< HEAD
 def clean_assets(assets: xr.Dataset, years: Union[int, Sequence[int]]):
-=======
-def clean_assets(assets: Dataset, years: Union[int, Sequence[int]]):
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Cleans up and prepares asset for current iteration.
 
     - adds current and forecast year by backfilling missing entries
@@ -329,19 +260,11 @@ def clean_assets(assets: Dataset, years: Union[int, Sequence[int]]):
 
 
 def filter_input(
-<<<<<<< HEAD
     dataset: Union[xr.Dataset, xr.DataArray],
     year: Optional[Union[int, Iterable[int]]] = None,
     interpolation: Text = "linear",
     **kwargs,
 ) -> Union[xr.Dataset, xr.DataArray]:
-=======
-    dataset: Union[Dataset, DataArray],
-    year: Optional[Union[int, Iterable[int]]] = None,
-    interpolation: Text = "linear",
-    **kwargs,
-) -> Union[Dataset, DataArray]:
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Filter inputs, taking care to interpolate years."""
     from typing import Set
 
@@ -374,13 +297,8 @@ def filter_input(
 
 
 def filter_with_template(
-<<<<<<< HEAD
     data: Union[xr.Dataset, xr.DataArray],
     template: Union[xr.DataArray, xr.Dataset],
-=======
-    data: Union[Dataset, DataArray],
-    template: Union[DataArray, Dataset],
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     asset_dimension: Text = "asset",
     **kwargs,
 ):
@@ -408,55 +326,30 @@ def filter_with_template(
     match = {d: template[d].isin(data[d]).values for d in match_indices if d != "year"}
     if "year" in match_indices:
         match["year"] = template.year.values
-<<<<<<< HEAD
     return filter_input(data, **match, **kwargs)  # type: ignore
 
 
 def tupled_dimension(array: np.ndarray, axis: int):
     """Transforms one axis into a tuples."""
-=======
-    return filter_input(data, **match, **kwargs)
-
-
-def tupled_dimension(array: ndarray, axis: int):
-    """Transforms one axis into a tuples."""
-    from numpy import moveaxis, zeros
-
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     if array.shape[axis] == 1:
         shape = tuple(j for i, j in enumerate(array.shape) if i != axis)
         return array.reshape(*shape)
 
-<<<<<<< HEAD
     rolled = np.moveaxis(array, axis, -1)
     shape = rolled.shape
     flattened = rolled.reshape(-1, shape[-1])
     result = np.zeros(shape=flattened.shape[:-1], dtype=object)
-=======
-    rolled = moveaxis(array, axis, -1)
-    shape = rolled.shape
-    flattened = rolled.reshape(-1, shape[-1])
-    result = zeros(shape=flattened.shape[:-1], dtype=object)
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     for i in range(0, flattened.shape[0]):
         result[i] = tuple(flattened[i, :])
     return result.reshape(*shape[:-1])
 
 
 def lexical_comparison(
-<<<<<<< HEAD
     objectives: xr.Dataset,
     binsize: xr.Dataset,
     order: Optional[Sequence[Hashable]] = None,
     bin_last: bool = True,
 ) -> xr.DataArray:
-=======
-    objectives: Dataset,
-    binsize: Dataset,
-    order: Optional[Sequence[Text]] = None,
-    bin_last: bool = True,
-) -> DataArray:
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Lexical comparison over the objectives.
 
     Lexical comparison operates by binning the objectives into bins of width
@@ -465,11 +358,7 @@ def lexical_comparison(
     objectives are ranked lexographically, in the order given by the parameters.
 
     Arguments:
-<<<<<<< HEAD
         objectives: xr.Dataset containing the objectives to rank
-=======
-        objectives: Dataset containing the objectives to rank
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         binsize: bin size, minimization direction
             (+ -> minimize, - -> maximize), and (optionally) order of
             lexicographical comparison. The order is the one given
@@ -482,33 +371,21 @@ def lexical_comparison(
     Result:
         An array of tuples which can subsquently be compared lexicographically.
     """
-<<<<<<< HEAD
     if order is None:
         order = [u for u in binsize.data_vars]
-=======
-    from numpy import floor
-
-    if order is None:
-        order = list(binsize.data_vars)
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
     assert set(order) == set(binsize.data_vars)
     assert set(order).issuperset(objectives)
 
     result = objectives[order]
     for name in order if bin_last else order[:-1]:
-<<<<<<< HEAD
         result[name] = np.floor(result[name] / binsize[name]).astype(int)
-=======
-        result[name] = floor(result[name] / binsize[name]).astype(int)
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     if not bin_last:
         result[order[-1]] = result[order[-1]] / binsize[order[-1]]
     return result.to_array(dim="variable").reduce(tupled_dimension, dim="variable")
 
 
 def merge_assets(
-<<<<<<< HEAD
     capa_a: xr.DataArray,
     capa_b: xr.DataArray,
     interpolation: Text = "linear",
@@ -519,20 +396,6 @@ def merge_assets(
 
     levels = (coord for coord in capa_a.coords if capa_a[coord].dims == (dimension,))
     result = xr.concat(
-=======
-    capa_a: DataArray,
-    capa_b: DataArray,
-    interpolation: Optional[Text] = "linear",
-    dimension: Text = "asset",
-) -> DataArray:
-    """Merge two capacity arrays."""
-    from xarray import concat
-
-    years = sorted(set(capa_a.year.values).union(capa_b.year.values))
-
-    levels = (coord for coord in capa_a.coords if capa_a[coord].dims == (dimension,))
-    result = concat(
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
         (
             capa_a.interp(year=years, method=interpolation).fillna(0),
             capa_b.interp(year=years, method=interpolation).fillna(0),
@@ -544,17 +407,14 @@ def merge_assets(
         result = (
             forgroup.groupby(dimension)
             .sum(dimension)
+            .clip(min=0)
             .pipe(multiindex_to_coords, dimension=dimension)
             .rename({"asset_level_%i" % i: coord for i, coord in enumerate(levels)})
         )
     return result
 
 
-<<<<<<< HEAD
 def avoid_repetitions(data: xr.DataArray, dim: Text = "year") -> xr.DataArray:
-=======
-def avoid_repetitions(data: DataArray, dim: Text = "year") -> DataArray:
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """list of years such that there is no repetition in the data.
 
     It removes the central year of any three consecutive years where all data is
@@ -563,11 +423,7 @@ def avoid_repetitions(data: DataArray, dim: Text = "year") -> DataArray:
 
     The first and last year are always preserved.
     """
-<<<<<<< HEAD
     roll = data.rolling({dim: 3}, center=True).construct("window")
-=======
-    roll = data.rolling(**{dim: 3, "center": True}).construct("window")
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     years = ~(roll == roll.isel(window=0)).all([u for u in roll.dims if u != dim])
     return data.year[years]
 
@@ -590,16 +446,11 @@ def nametuple_to_dict(nametup: Union[Mapping, NamedTuple]) -> Mapping:
 
 
 def future_propagation(
-<<<<<<< HEAD
     data: xr.DataArray,
     future: xr.DataArray,
     threshhold: float = 1e-12,
     dim: Text = "year",
 ) -> xr.DataArray:
-=======
-    data: DataArray, future: DataArray, threshhold: float = 1e-12, dim: Text = "year"
-) -> DataArray:
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """Propagates values into the future.
 
     Example:
@@ -654,11 +505,6 @@ def future_propagation(
           * year     (year) ... 2020 2025 2030 2035
           * fuel     (fuel) <U4 'gas' 'coal'
     """
-<<<<<<< HEAD
-=======
-    from numpy import abs, logical_or
-
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     if dim not in data.dims or dim not in future.coords:
         raise ValueError("Expected dimension 'year' in `data` and `future`.")
     if future[dim].ndim != 0 and len(future[dim]) != 1:
@@ -670,7 +516,6 @@ def future_propagation(
         future = future.loc[{dim: 0}]
     year = future[dim].values
     return data.where(
-<<<<<<< HEAD
         np.logical_or(
             data.year < year, np.abs(data.loc[{dim: year}] - future) < threshhold
         ),
@@ -795,8 +640,3 @@ def aggregate_technology_model(
             if u not in drop and data[u].dims == (dim,)
         ],
     )
-=======
-        logical_or(data.year < year, abs(data.loc[{dim: year}] - future) < threshhold),
-        future,
-    )
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1

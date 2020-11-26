@@ -75,13 +75,8 @@ asset and replacement technology. They are also known as multi-objectives.
 def register_decision(function: DECISION_SIGNATURE, name: Text):
     """Decorator to register a function as a decision.
 
-<<<<<<< HEAD
     Registers a function as a decision so that it can be applied easily when aggregating
     different objectives together.
-=======
-    Registers a function as a decision so that it can be applied easily when
-    aggregating different objectives together.
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """
     from functools import wraps
 
@@ -198,13 +193,9 @@ def lexical_comparison(
     assert set(objectives.data_vars).issuperset([u[0] for u in parameters])
     order = [u[0] for u in parameters]
     binsize = (Dataset(dict(parameters)) * objectives).min("replacement")
-<<<<<<< HEAD
     return lexical_comparison(objectives, binsize, order=order, bin_last=False).rank(
         "replacement"
     )
-=======
-    return lexical_comparison(objectives, binsize, order=order, bin_last=False)
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 @register_decision(name="retro_lexo")
@@ -232,13 +223,9 @@ def retro_lexical_comparison(
 
     order = [u[0] for u in parameters]
     binsize = Dataset(dict(parameters)) * objectives.sel(replacement=objectives.asset)
-<<<<<<< HEAD
     return lexical_comparison(objectives, binsize, order=order, bin_last=False).rank(
         "replacement"
     )
-=======
-    return lexical_comparison(objectives, binsize, order=order, bin_last=False)
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
 
 
 def _epsilon_constraints(
@@ -300,13 +287,8 @@ def retro_epsilon_constraints(
 ) -> DataArray:
     """Epsilon constraints where the current tech is included.
 
-<<<<<<< HEAD
     Modifies the parameters to the function such that the existing technologies are
     always competitive.
-=======
-    Modifies the parameters to the function such that the existing technologies
-    are always competitive.
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
     """
     asset_objectives = objectives.sel(replacement=objectives.asset)
 
