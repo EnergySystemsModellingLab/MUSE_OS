@@ -4,7 +4,7 @@ Customising MUSE Tutorials
 
 Next, we show you how to customise MUSE to create your own scenarios. 
 
-We recommend following the tutorials step by step, as the files build on the previous example. If you prefer to jump straight in, your results may be different to the ones presented. To help you, we have provided the code to generate the various examples, in case you want to compare your code to ours. Links to this code can be found in the table below, in the `Tutorial Information`_ section.
+We recommend following the tutorials step by step, as the files build on the previous example. If you prefer to jump straight in, your results may be different to the ones presented. To help you, we have provided the code to generate the various examples in case you want to compare your code to ours. Links to this code can be found in the table below, in the `Tutorial Information`_ section.
 
 
 .. toctree::
@@ -24,7 +24,7 @@ Tutorial Information
 --------------------
 
 
-Below is a table to help you keep up with the different scenarios. The "Tutorial" header refers to the tutorial number as per the contents table. For example, Tutorial 1 is equal to "1. Adding a new technology". The "Agents", "Regions", "Residential Technologies", "Power Technologies" and "Gas Technologies" headers contains a tuple which contains the respective technologies present in the tutorial. The "Code" header provides a link to the files required to generate the tutorials.
+Below is a table to help you keep up with the different scenarios. The "Tutorial" header refers to the tutorial number as per the contents table. For example, Tutorial 1 is equal to "1. Adding a new technology". The "Agents", "Regions", "Residential Technologies", "Power Technologies" and "Gas Technologies" headers contain a tuple which contains the respective technologies present in the tutorial. The "Code" header provides a link to the files required to generate the tutorials.
 
 In the table below, you will notice a x2 after some of the technology tuples. This refers to the fact that there are two regions, and the technologies within each region are the same for both regions.
 

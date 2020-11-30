@@ -98,11 +98,11 @@ The figure above displays the key sectors of MUSE:
 How MUSE works
 --------------
 
-MUSE works by iterating between sectors shown above to ensure that energy service demands are met by the technologies chosen by the agents. Next, we detail the calculations made by MUSE throughout the simulation.
+MUSE works by iterating between sectors shown above to ensure that energy demands are met by the technologies chosen by the agents. Next, we detail the calculations made by MUSE throughout the simulation.
 
-#. The energy service demand is calculated. For example, how much electricity, gas and oil demand is there for cooking, building space heating and lighting in the residential sector? It must be noted, that this is only known after the energy service demand sector is solved and the technologies invested in are decided.
+#. The end-use demand is calculated. For example, how much electricity, gas and oil demand is there for the energy services of cooking, building space heating and lighting in the residential sector? It must be noted, that this is only known after the energy service demand sector is solved and the technologies invested in are decided.
 
-#. A demand sector is solved. That is, agents choose which end-use technologies to serve the demands in the sector. For example, electric stoves are compared to gas stoves to meet demand for cooking. These technologies are chosen based upon their:
+#. A demand sector is solved. That is, agents choose which end-use technologies to serve the demands in the sector. For example, electric stoves are compared to gas stoves to meet the energy service demand of cooking. These technologies are chosen based upon their:
 
     i. Search space (which technologies are they willing to consider?)
 

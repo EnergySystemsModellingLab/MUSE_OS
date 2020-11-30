@@ -18,10 +18,10 @@ Here we provide a glossary for some of the frequently used terms in this documen
         An energy system is a system which is primarily designed to supply energy services to end-users. This can be defined as all components related to the production, conversion, delivery, and use of energy.
 
     End-use demand 
-        End-use demand is a demand which is the final stage of the energy chain. 
+        The end-use demand is the demand for energy required to produce an energy service. For example, the gas required by a gas boiler to produce hot water, for the energy service of space heating.
 
     Energy service
-        Energy services are the products of the energy system. An entire energy system is developed to provide an energy service. Examples of energy service are lighting and heating within the residential sector.
+        The energy service is the service which a technology is used for. An example of an energy service could be cooking from a cooker. 
 
     End-use technology
         An end-use technology is a technology which service an energy service.  Examples of these include boiler, heaters and stoves which service hot water, heating and cooking.
@@ -48,10 +48,10 @@ Here we provide a glossary for some of the frequently used terms in this documen
         Open-source is a source code that is made freely available for users to modify and redistribute. 
       
     Pandas
-        Pandas is a data manipulation library in python.
+        Pandas is a data manipulation library for python.
     
     Petajoules (PJ)
-        A petajoule is equal to 1.0E+15 joules. A joule is a unit of energy and is equal to the energy transferred to an object. An equivalent unit would be megawatt hours (MWh).
+        A petajoule is equal to 1.0E+15 joules. A joule is a unit of energy and is equal to the energy transferred to an object. 
 
     Seaborn
         Seaborn is a visualisation library in python.
