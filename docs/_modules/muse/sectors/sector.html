@@ -1,0 +1,438 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse.sectors.sector &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.sectors.sector</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for muse.sectors.sector</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">Iterator</span><span class="p">,</span>
+    <span class="n">Mapping</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">Text</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+    <span class="n">cast</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+
+<span class="kn">from</span> <span class="nn">muse.agents</span> <span class="kn">import</span> <span class="n">AbstractAgent</span>
+<span class="kn">from</span> <span class="nn">muse.production</span> <span class="kn">import</span> <span class="n">PRODUCTION_SIGNATURE</span>
+<span class="kn">from</span> <span class="nn">muse.sectors.abstract</span> <span class="kn">import</span> <span class="n">AbstractSector</span>
+<span class="kn">from</span> <span class="nn">muse.sectors.register</span> <span class="kn">import</span> <span class="n">register_sector</span>
+<span class="kn">from</span> <span class="nn">muse.sectors.subsector</span> <span class="kn">import</span> <span class="n">Subsector</span>
+
+
+<div class="viewcode-block" id="Sector"><a class="viewcode-back" href="../../../source/muse.sectors.html#muse.sectors.sector.Sector">[docs]</a><span class="nd">@register_sector</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Sector</span><span class="p">(</span><span class="n">AbstractSector</span><span class="p">):</span>  <span class="c1"># type: ignore</span>
+    <span class="sd">&quot;&quot;&quot;Base class for all sectors.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Sector.factory"><a class="viewcode-back" href="../../../source/muse.sectors.html#muse.sectors.sector.Sector.factory">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">factory</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Text</span><span class="p">,</span> <span class="n">settings</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sector</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">muse.readers</span> <span class="kn">import</span> <span class="n">read_timeslices</span>
+        <span class="kn">from</span> <span class="nn">muse.readers.toml</span> <span class="kn">import</span> <span class="n">read_technodata</span>
+        <span class="kn">from</span> <span class="nn">muse.utilities</span> <span class="kn">import</span> <span class="n">nametuple_to_dict</span>
+        <span class="kn">from</span> <span class="nn">muse.outputs.sector</span> <span class="kn">import</span> <span class="n">factory</span> <span class="k">as</span> <span class="n">ofactory</span>
+        <span class="kn">from</span> <span class="nn">muse.production</span> <span class="kn">import</span> <span class="n">factory</span> <span class="k">as</span> <span class="n">pfactory</span>
+        <span class="kn">from</span> <span class="nn">muse.interactions</span> <span class="kn">import</span> <span class="n">factory</span> <span class="k">as</span> <span class="n">interaction_factory</span>
+
+        <span class="n">sector_settings</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">sectors</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="s2">&quot;priority&quot;</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">):</span>
+            <span class="n">sector_settings</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">attribute</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">timeslices</span> <span class="o">=</span> <span class="n">read_timeslices</span><span class="p">(</span>
+            <span class="n">sector_settings</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;timeslice_levels&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">get_index</span><span class="p">(</span><span class="s2">&quot;timeslice&quot;</span><span class="p">)</span>
+
+        <span class="n">technologies</span> <span class="o">=</span> <span class="n">read_technodata</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">time_framework</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;subsectors&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sector_settings</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing &#39;subsectors&#39; section in sector </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sector_settings</span><span class="p">[</span><span class="s2">&quot;subsectors&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">_asdict</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Empty &#39;subsectors&#39; section in sector </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">subsectors</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Subsector</span><span class="o">.</span><span class="n">factory</span><span class="p">(</span>
+                <span class="n">subsec_settings</span><span class="p">,</span>
+                <span class="n">technologies</span><span class="p">,</span>
+                <span class="n">regions</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">regions</span><span class="p">,</span>
+                <span class="n">current_year</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">time_framework</span><span class="p">)),</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">subsec_name</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">subsec_name</span><span class="p">,</span> <span class="n">subsec_settings</span> <span class="ow">in</span> <span class="n">sector_settings</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;subsectors&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">_asdict</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">]</span>
+        <span class="n">are_disjoint_commodities</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">commodities</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">subsectors</span><span class="p">))</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span>
+            <span class="nb">set</span><span class="p">()</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">commodities</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">subsectors</span><span class="p">))</span>  <span class="c1"># type: ignore</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">are_disjoint_commodities</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Subsector commodities are not disjoint&quot;</span><span class="p">)</span>
+
+        <span class="n">outputs</span> <span class="o">=</span> <span class="n">ofactory</span><span class="p">(</span><span class="o">*</span><span class="n">sector_settings</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;outputs&quot;</span><span class="p">,</span> <span class="p">[]),</span> <span class="n">sector_name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="n">supply_args</span> <span class="o">=</span> <span class="n">sector_settings</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span>
+            <span class="s2">&quot;supply&quot;</span><span class="p">,</span> <span class="n">sector_settings</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;dispatch_production&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">supply_args</span><span class="p">,</span> <span class="n">Text</span><span class="p">):</span>
+            <span class="n">supply_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">supply_args</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">supply_args</span> <span class="o">=</span> <span class="n">nametuple_to_dict</span><span class="p">(</span><span class="n">supply_args</span><span class="p">)</span>
+        <span class="n">supply</span> <span class="o">=</span> <span class="n">pfactory</span><span class="p">(</span><span class="o">**</span><span class="n">supply_args</span><span class="p">)</span>
+
+        <span class="n">interactions</span> <span class="o">=</span> <span class="n">interaction_factory</span><span class="p">(</span><span class="n">sector_settings</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;interactions&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;technodata&quot;</span><span class="p">,</span> <span class="s2">&quot;commodities_out&quot;</span><span class="p">,</span> <span class="s2">&quot;commodities_in&quot;</span><span class="p">):</span>
+            <span class="n">sector_settings</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="n">technologies</span><span class="p">,</span>
+            <span class="n">subsectors</span><span class="o">=</span><span class="n">subsectors</span><span class="p">,</span>
+            <span class="n">timeslices</span><span class="o">=</span><span class="n">timeslices</span><span class="p">,</span>
+            <span class="n">supply_prod</span><span class="o">=</span><span class="n">supply</span><span class="p">,</span>
+            <span class="n">outputs</span><span class="o">=</span><span class="n">outputs</span><span class="p">,</span>
+            <span class="n">interactions</span><span class="o">=</span><span class="n">interactions</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">sector_settings</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Text</span><span class="p">,</span>
+        <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+        <span class="n">subsectors</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Subsector</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">timeslices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">interactions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">AbstractAgent</span><span class="p">]],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">interpolation</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+        <span class="n">outputs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">supply_prod</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PRODUCTION_SIGNATURE</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">muse.production</span> <span class="kn">import</span> <span class="n">maximum_production</span>
+        <span class="kn">from</span> <span class="nn">muse.outputs.sector</span> <span class="kn">import</span> <span class="n">factory</span> <span class="k">as</span> <span class="n">ofactory</span>
+        <span class="kn">from</span> <span class="nn">muse.interactions</span> <span class="kn">import</span> <span class="n">factory</span> <span class="k">as</span> <span class="n">interaction_factory</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="sd">&quot;&quot;&quot;Name of the sector.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subsectors</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Subsector</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">subsectors</span><span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;Subsectors controlled by this object.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span> <span class="o">=</span> <span class="n">technologies</span>
+        <span class="sd">&quot;&quot;&quot;Parameters describing the sector&#39;s technologies.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeslices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="p">]</span> <span class="o">=</span> <span class="n">timeslices</span>
+        <span class="sd">&quot;&quot;&quot;Timeslice at which this sector operates.</span>
+
+<span class="sd">        If None, it will operate using the timeslice of the input market.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="n">interpolation</span><span class="p">,</span>
+            <span class="s2">&quot;kwargs&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;fill_value&quot;</span><span class="p">:</span> <span class="s2">&quot;extrapolate&quot;</span><span class="p">},</span>
+        <span class="p">}</span>
+        <span class="sd">&quot;&quot;&quot;Interpolation method and arguments when computing years.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">interactions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">interactions</span> <span class="o">=</span> <span class="n">interaction_factory</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span> <span class="o">=</span> <span class="n">interactions</span>
+        <span class="sd">&quot;&quot;&quot;Interactions between agents.</span>
+
+<span class="sd">        Called right before computing new investments, this function should manage any</span>
+<span class="sd">        interactions between agents, e.g. passing assets from *new* agents  to *retro*</span>
+<span class="sd">        agents, and maket make-up from *retro* to *new*.</span>
+
+<span class="sd">        Defaults to doing nothing.</span>
+
+<span class="sd">        The function takes the sequence of agents as input, and returns nothing. It is</span>
+<span class="sd">        expected to modify the agents in-place.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        :py:mod:`muse.interactions` contains MUSE&#39;s base interactions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">cast</span><span class="p">(</span><span class="n">Callable</span><span class="p">,</span> <span class="n">ofactory</span><span class="p">())</span> <span class="k">if</span> <span class="n">outputs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">outputs</span>
+        <span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;A function for outputing data for post-mortem analysis.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">supply_prod</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">supply_prod</span> <span class="k">if</span> <span class="n">supply_prod</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">maximum_production</span>
+        <span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot; Computes production as used to return the supply to the MCA.</span>
+
+<span class="sd">        It can be anything registered with</span>
+<span class="sd">        :py:func:`@register_production&lt;muse.production.register_production&gt;`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">forecast</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Maximum forecast horizon across agents.</span>
+
+<span class="sd">        If no agents with a &quot;forecast&quot; attribute are found, defaults to 5. It cannot be</span>
+<span class="sd">        lower than 1 year.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">forecasts</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="s2">&quot;forecast&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">agents</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="s2">&quot;forecast&quot;</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">forecasts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">5</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">forecasts</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Sector.next"><a class="viewcode-back" href="../../../source/muse.sectors.html#muse.sectors.sector.Sector.next">[docs]</a>    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">mca_market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+        <span class="n">time_period</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">current_year</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Advance sector by one time period.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mca_market:</span>
+<span class="sd">                Market with ``demand``, ``supply``, and ``prices``.</span>
+<span class="sd">            time_period:</span>
+<span class="sd">                Length of the time period in the framework. Defaults to the range of</span>
+<span class="sd">                ``mca_market.year``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A market containing the ``supply`` offered by the sector, it&#39;s attendant</span>
+<span class="sd">            ``consumption`` of fuels and materials and the associated ``costs``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">logging</span> <span class="kn">import</span> <span class="n">getLogger</span>
+
+        <span class="k">if</span> <span class="n">time_period</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">time_period</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mca_market</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">mca_market</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">current_year</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">current_year</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mca_market</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        <span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> for year </span><span class="si">{</span><span class="n">current_year</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># &gt; to sector timeslice</span>
+        <span class="n">market</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_market_timeslice</span><span class="p">(</span>
+            <span class="n">mca_market</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span>
+                <span class="n">commodity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">technologies</span><span class="o">.</span><span class="n">commodity</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">technologies</span><span class="o">.</span><span class="n">region</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span>
+                <span class="n">year</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="n">current_year</span><span class="p">,</span>
+                        <span class="n">current_year</span> <span class="o">+</span> <span class="n">time_period</span><span class="p">,</span>
+                        <span class="n">current_year</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">forecast</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="p">),</span>
+                <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">timeslices</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># &gt; agent interactions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">agents</span><span class="p">))</span>
+        <span class="c1"># &gt; investment</span>
+        <span class="n">years</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="nb">set</span><span class="p">(</span>
+                <span class="n">market</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="o">.</span><span class="n">installed</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">technologies</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">technologies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">technologies</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">years</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">subsector</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subsectors</span><span class="p">:</span>
+            <span class="n">subsector</span><span class="o">.</span><span class="n">invest</span><span class="p">(</span>
+                <span class="n">technologies</span><span class="p">,</span> <span class="n">market</span><span class="p">,</span> <span class="n">time_period</span><span class="o">=</span><span class="n">time_period</span><span class="p">,</span> <span class="n">current_year</span><span class="o">=</span><span class="n">current_year</span>
+            <span class="p">)</span>
+        <span class="c1"># &gt; output to mca</span>
+        <span class="n">output_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">market_variables</span><span class="p">(</span><span class="n">market</span><span class="p">,</span> <span class="n">technologies</span><span class="p">)</span>
+        <span class="c1"># &lt; output to mca</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">(</span><span class="n">output_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="p">,</span> <span class="n">technologies</span><span class="p">)</span>
+        <span class="c1"># &gt; to mca timeslices</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_data</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">output_data</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;asset&quot;</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">region</span><span class="o">=</span><span class="p">[</span><span class="n">result</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">values</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">output_data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;asset&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;dst_region&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="n">supply</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">supply</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">dst_region</span><span class="o">=</span><span class="s2">&quot;region&quot;</span><span class="p">)</span>
+            <span class="n">consumption</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">consumption</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;dst_region&quot;</span><span class="p">)</span>
+            <span class="n">costs</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">costs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;dst_region&quot;</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
+                <span class="nb">dict</span><span class="p">(</span><span class="n">supply</span><span class="o">=</span><span class="n">supply</span><span class="p">,</span> <span class="n">consumption</span><span class="o">=</span><span class="n">consumption</span><span class="p">,</span> <span class="n">costs</span><span class="o">=</span><span class="n">costs</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_market_timeslice</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">mca_market</span><span class="o">.</span><span class="n">timeslice</span><span class="p">)</span>
+        <span class="n">result</span><span class="p">[</span><span class="s2">&quot;comm_usage&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">commodity</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">set_coords</span><span class="p">(</span><span class="s2">&quot;comm_usage&quot;</span><span class="p">)</span>
+        <span class="c1"># &lt; to mca timeslices</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="Sector.market_variables"><a class="viewcode-back" href="../../../source/muse.sectors.html#muse.sectors.sector.Sector.market_variables">[docs]</a>    <span class="k">def</span> <span class="nf">market_variables</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Computes resulting market: production, consumption, and costs.&quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">muse.quantities</span> <span class="kn">import</span> <span class="p">(</span>
+            <span class="n">consumption</span><span class="p">,</span>
+            <span class="n">supply_cost</span><span class="p">,</span>
+            <span class="n">annual_levelized_cost_of_energy</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="kn">from</span> <span class="nn">muse.commodities</span> <span class="kn">import</span> <span class="n">is_pollutant</span>
+        <span class="kn">from</span> <span class="nn">muse.utilities</span> <span class="kn">import</span> <span class="n">broadcast_techs</span>
+
+        <span class="n">years</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">capacity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">years</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
+        <span class="n">result</span><span class="p">[</span><span class="s2">&quot;supply&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">supply_prod</span><span class="p">(</span>
+            <span class="n">market</span><span class="o">=</span><span class="n">market</span><span class="p">,</span> <span class="n">capacity</span><span class="o">=</span><span class="n">capacity</span><span class="p">,</span> <span class="n">technologies</span><span class="o">=</span><span class="n">technologies</span>
+        <span class="p">)</span>
+        <span class="n">result</span><span class="p">[</span><span class="s2">&quot;consumption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">consumption</span><span class="p">(</span><span class="n">technologies</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">supply</span><span class="p">,</span> <span class="n">market</span><span class="o">.</span><span class="n">prices</span><span class="p">)</span>
+        <span class="n">technodata</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">broadcast_techs</span><span class="p">(</span><span class="n">technologies</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">supply</span><span class="p">))</span>
+        <span class="n">result</span><span class="p">[</span><span class="s2">&quot;costs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">supply_cost</span><span class="p">(</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">supply</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">is_pollutant</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">comm_usage</span><span class="p">),</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="n">annual_levelized_cost_of_energy</span><span class="p">(</span>
+                <span class="n">market</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">region</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">region</span><span class="p">),</span> <span class="n">technodata</span>
+            <span class="p">),</span>
+            <span class="n">asset_dim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">capacity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Aggregates capacity across agents.</span>
+
+<span class="sd">        The capacities are aggregated leaving only two</span>
+<span class="sd">        dimensions: asset (technology, installation date,</span>
+<span class="sd">        region), year.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">muse.utilities</span> <span class="kn">import</span> <span class="n">reduce_assets</span>
+
+        <span class="n">traded</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">u</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">capacity</span>
+            <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">agents</span>
+            <span class="k">if</span> <span class="s2">&quot;dst_region&quot;</span> <span class="ow">in</span> <span class="n">u</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">capacity</span><span class="o">.</span><span class="n">dims</span>
+        <span class="p">]</span>
+        <span class="n">nontraded</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">u</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">capacity</span>
+            <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">agents</span>
+            <span class="k">if</span> <span class="s2">&quot;dst_region&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">u</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">capacity</span><span class="o">.</span><span class="n">dims</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">traded</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">reduce_assets</span><span class="p">(</span><span class="n">nontraded</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">nontraded</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">reduce_assets</span><span class="p">(</span><span class="n">traded</span><span class="p">)</span>
+        <span class="n">traded_results</span> <span class="o">=</span> <span class="n">reduce_assets</span><span class="p">(</span><span class="n">traded</span><span class="p">)</span>
+        <span class="n">nontraded_results</span> <span class="o">=</span> <span class="n">reduce_assets</span><span class="p">(</span><span class="n">nontraded</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">reduce_assets</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">traded_results</span><span class="p">,</span>
+                <span class="n">nontraded_results</span>
+                <span class="o">*</span> <span class="p">(</span><span class="n">nontraded_results</span><span class="o">.</span><span class="n">region</span> <span class="o">==</span> <span class="n">traded_results</span><span class="o">.</span><span class="n">dst_region</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">agents</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">AbstractAgent</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Iterator over all agents in the sector.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">subsector</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subsectors</span><span class="p">:</span>
+            <span class="k">yield from</span> <span class="n">subsector</span><span class="o">.</span><span class="n">agents</span>
+
+<div class="viewcode-block" id="Sector.convert_market_timeslice"><a class="viewcode-back" href="../../../source/muse.sectors.html#muse.sectors.sector.Sector.convert_market_timeslice">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">convert_market_timeslice</span><span class="p">(</span>
+        <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+        <span class="n">timeslice</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="p">,</span>
+        <span class="n">intensive</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Text</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;prices&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Converts market from one to another timeslice.&quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">muse.timeslices</span> <span class="kn">import</span> <span class="n">convert_timeslice</span><span class="p">,</span> <span class="n">QuantityType</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">intensive</span><span class="p">,</span> <span class="n">Text</span><span class="p">):</span>
+            <span class="n">intensive</span> <span class="o">=</span> <span class="p">(</span><span class="n">intensive</span><span class="p">,)</span>
+
+        <span class="n">timesliced</span> <span class="o">=</span> <span class="p">{</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">market</span><span class="o">.</span><span class="n">data_vars</span> <span class="k">if</span> <span class="s2">&quot;timeslice&quot;</span> <span class="ow">in</span> <span class="n">market</span><span class="p">[</span><span class="n">d</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span><span class="p">}</span>
+        <span class="n">intensives</span> <span class="o">=</span> <span class="n">convert_timeslice</span><span class="p">(</span>
+            <span class="n">market</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">timesliced</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">intensive</span><span class="p">))],</span>
+            <span class="n">timeslice</span><span class="p">,</span>
+            <span class="n">QuantityType</span><span class="o">.</span><span class="n">INTENSIVE</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">extensives</span> <span class="o">=</span> <span class="n">convert_timeslice</span><span class="p">(</span>
+            <span class="n">market</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">timesliced</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">intensives</span><span class="o">.</span><span class="n">data_vars</span><span class="p">))],</span>
+            <span class="n">timeslice</span><span class="p">,</span>
+            <span class="n">QuantityType</span><span class="o">.</span><span class="n">EXTENSIVE</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">others</span> <span class="o">=</span> <span class="n">market</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">market</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">timesliced</span><span class="p">))]</span>
+        <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">merge</span><span class="p">([</span><span class="n">intensives</span><span class="p">,</span> <span class="n">extensives</span><span class="p">,</span> <span class="n">others</span><span class="p">])</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.sectors.sector</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,409 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse.carbon_budget &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.carbon_budget</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for muse.carbon_budget</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">curve_fit</span>
+
+<span class="kn">from</span> <span class="nn">muse.mca</span> <span class="kn">import</span> <span class="n">FindEquilibriumResults</span>
+<span class="kn">from</span> <span class="nn">muse.sectors</span> <span class="kn">import</span> <span class="n">AbstractSector</span>
+<span class="kn">from</span> <span class="nn">muse.registration</span> <span class="kn">import</span> <span class="n">registrator</span>
+
+<span class="n">CARBON_BUDGET_METHODS_SIGNATURE</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[</span>
+    <span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">],</span> <span class="nb">float</span>
+<span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;carbon budget fitters signature.&quot;&quot;&quot;</span>
+
+<span class="n">CARBON_BUDGET_FITTERS_SIGNATURE</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">float</span><span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;carbon budget fitters signature.&quot;&quot;&quot;</span>
+
+
+<span class="n">CARBON_BUDGET_METHODS</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">CARBON_BUDGET_METHODS_SIGNATURE</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&quot;&quot;&quot;Dictionary of carbon budget methods checks.&quot;&quot;&quot;</span>
+
+<span class="n">CARBON_BUDGET_FITTERS</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">CARBON_BUDGET_FITTERS_SIGNATURE</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&quot;&quot;&quot;Dictionary of carbon budget fitters.&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="register_carbon_budget_fitter"><a class="viewcode-back" href="../../source/muse.html#muse.carbon_budget.register_carbon_budget_fitter">[docs]</a><span class="nd">@registrator</span><span class="p">(</span><span class="n">registry</span><span class="o">=</span><span class="n">CARBON_BUDGET_FITTERS</span><span class="p">,</span> <span class="n">loglevel</span><span class="o">=</span><span class="s2">&quot;debug&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">register_carbon_budget_fitter</span><span class="p">(</span><span class="n">function</span><span class="p">:</span> <span class="n">CARBON_BUDGET_FITTERS_SIGNATURE</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Decorator to register a carbon budget function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">function</span></div>
+
+
+<div class="viewcode-block" id="register_carbon_budget_method"><a class="viewcode-back" href="../../source/muse.html#muse.carbon_budget.register_carbon_budget_method">[docs]</a><span class="nd">@registrator</span><span class="p">(</span><span class="n">registry</span><span class="o">=</span><span class="n">CARBON_BUDGET_METHODS</span><span class="p">,</span> <span class="n">loglevel</span><span class="o">=</span><span class="s2">&quot;debug&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">register_carbon_budget_method</span><span class="p">(</span><span class="n">function</span><span class="p">:</span> <span class="n">CARBON_BUDGET_METHODS_SIGNATURE</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Decorator to register a carbon budget function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">function</span></div>
+
+
+<div class="viewcode-block" id="update_carbon_budget"><a class="viewcode-back" href="../../source/muse.html#muse.carbon_budget.update_carbon_budget">[docs]</a><span class="k">def</span> <span class="nf">update_carbon_budget</span><span class="p">(</span>
+    <span class="n">carbon_budget</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+    <span class="n">emissions</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">year_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">over</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">under</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Adjust the carbon budget in the far future if emissions too high or low.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        An adjusted threshold for the far future year</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="n">emissions</span> <span class="o">-</span> <span class="n">carbon_budget</span><span class="p">[</span><span class="n">year_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">new_future_budget</span> <span class="o">=</span> <span class="n">carbon_budget</span><span class="p">[</span><span class="n">year_idx</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">over</span><span class="p">:</span>
+        <span class="n">new_future_budget</span> <span class="o">-=</span> <span class="nb">max</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">under</span><span class="p">:</span>
+        <span class="n">new_future_budget</span> <span class="o">-=</span> <span class="nb">min</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">new_future_budget</span></div>
+
+
+<div class="viewcode-block" id="fitting"><a class="viewcode-back" href="../../source/muse.html#muse.carbon_budget.fitting">[docs]</a><span class="nd">@register_carbon_budget_method</span>
+<span class="k">def</span> <span class="nf">fitting</span><span class="p">(</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">sectors</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">equilibrium</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span>
+        <span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AbstractSector</span><span class="p">]],</span> <span class="n">FindEquilibriumResults</span>
+    <span class="p">],</span>
+    <span class="n">carbon_budget</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">carbon_price</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">commodities</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">sample_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="n">refine_price</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">price_too_high_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">fitter</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;slinear&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+
+    <span class="n">future</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">year</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">threshold</span> <span class="o">=</span> <span class="n">carbon_budget</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">future</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">emissions</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">supply</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">future</span><span class="p">,</span> <span class="n">commodity</span><span class="o">=</span><span class="n">commodities</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">price</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">future</span><span class="p">,</span> <span class="n">commodity</span><span class="o">=</span><span class="n">commodities</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="c1"># We create a sample of prices at which we want to calculate emissions</span>
+    <span class="n">sample_prices</span> <span class="o">=</span> <span class="n">create_sample</span><span class="p">(</span><span class="n">price</span><span class="p">,</span> <span class="n">emissions</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">sample_size</span><span class="p">)</span>
+    <span class="n">sample_emissions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">sample_prices</span><span class="p">)</span>
+    <span class="n">sample_emissions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">emissions</span>
+
+    <span class="c1"># For each sample price, we calculate the new emissions</span>
+    <span class="n">new_market</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">new_price</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sample_prices</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+
+        <span class="c1"># Reset market and sectors</span>
+        <span class="n">new_market</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Assign new carbon price</span>
+        <span class="n">new_market</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">loc</span><span class="p">[{</span><span class="s2">&quot;year&quot;</span><span class="p">:</span> <span class="n">future</span><span class="p">,</span> <span class="s2">&quot;commodity&quot;</span><span class="p">:</span> <span class="n">commodities</span><span class="p">}]</span> <span class="o">=</span> <span class="n">new_price</span>
+
+        <span class="n">new_market</span> <span class="o">=</span> <span class="n">equilibrium</span><span class="p">(</span><span class="n">new_market</span><span class="p">,</span> <span class="n">sectors</span><span class="p">)</span><span class="o">.</span><span class="n">market</span>
+
+        <span class="n">sample_emissions</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_market</span><span class="o">.</span><span class="n">supply</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span>
+            <span class="n">year</span><span class="o">=</span><span class="n">future</span><span class="p">,</span> <span class="n">commodity</span><span class="o">=</span><span class="n">commodities</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="s2">&quot;region&quot;</span><span class="p">,</span> <span class="s2">&quot;timeslice&quot;</span><span class="p">,</span> <span class="s2">&quot;commodity&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Based on these results, we finally adjust the carbon price</span>
+    <span class="n">new_price</span> <span class="o">=</span> <span class="n">CARBON_BUDGET_FITTERS</span><span class="p">[</span><span class="n">fitter</span><span class="p">](</span>
+        <span class="n">sample_prices</span><span class="p">,</span> <span class="n">sample_emissions</span><span class="p">,</span> <span class="n">threshold</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">refine_price</span> <span class="ow">and</span> <span class="n">new_market</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">new_price</span> <span class="o">=</span> <span class="n">refine_new_price</span><span class="p">(</span>
+            <span class="n">new_market</span><span class="p">,</span>
+            <span class="n">carbon_price</span><span class="p">,</span>
+            <span class="n">carbon_budget</span><span class="p">,</span>
+            <span class="n">sample_prices</span><span class="p">,</span>
+            <span class="n">new_price</span><span class="p">,</span>
+            <span class="n">commodities</span><span class="p">,</span>
+            <span class="n">price_too_high_threshold</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">new_price</span></div>
+
+
+<div class="viewcode-block" id="refine_new_price"><a class="viewcode-back" href="../../source/muse.html#muse.carbon_budget.refine_new_price">[docs]</a><span class="k">def</span> <span class="nf">refine_new_price</span><span class="p">(</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">historic_price</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">carbon_budget</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">sample</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">price</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">commodities</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">price_too_high_threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; Refine the value of the carbon price to ensure it is not too high or low.</span>
+<span class="sd">    Arguments:</span>
+<span class="sd">        market: Market, with the prices, supply, consumption and demand.</span>
+<span class="sd">        historic_price: DataArray with the historic carbon prices.</span>
+<span class="sd">        carbon_budget: DataArray with the carbon budget.</span>
+<span class="sd">        sample: Sample carbon price points.</span>
+<span class="sd">        price: Current carbon price, to be refined.</span>
+<span class="sd">        commodities: List of carbon-related commodities.</span>
+<span class="sd">        price_too_high_threshold: Threshold to decide what is a price too high.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A refined carbon price.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">future</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">year</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">emissions</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">market</span><span class="o">.</span><span class="n">supply</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">future</span><span class="p">,</span> <span class="n">commodity</span><span class="o">=</span><span class="n">commodities</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="s2">&quot;region&quot;</span><span class="p">,</span> <span class="s2">&quot;timeslice&quot;</span><span class="p">,</span> <span class="s2">&quot;commodity&quot;</span><span class="p">])</span>
+        <span class="o">.</span><span class="n">values</span>
+    <span class="p">)</span>
+
+    <span class="n">carbon_price</span> <span class="o">=</span> <span class="n">historic_price</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">historic_price</span><span class="o">.</span><span class="n">year</span> <span class="o">&lt;</span> <span class="n">future</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">carbon_price</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+        <span class="n">relative_price_increase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">carbon_price</span><span class="p">)</span> <span class="o">/</span> <span class="n">carbon_price</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">average</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">relative_price_increase</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">average</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">price</span> <span class="o">&gt;</span> <span class="n">price_too_high_threshold</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">carbon_price</span><span class="p">),</span> <span class="mf">0.1</span><span class="p">):</span>
+        <span class="n">price</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">average</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">price</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="n">carbon_budget</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">future</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">exponent</span> <span class="o">=</span> <span class="p">(</span><span class="n">emissions</span> <span class="o">-</span> <span class="n">threshold</span><span class="p">)</span> <span class="o">/</span> <span class="n">threshold</span>
+        <span class="n">magnitude</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">exponent</span><span class="p">),</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="n">price</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">magnitude</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">price</span></div>
+
+
+<div class="viewcode-block" id="linear_fun"><a class="viewcode-back" href="../../source/muse.html#muse.carbon_budget.linear_fun">[docs]</a><span class="k">def</span> <span class="nf">linear_fun</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span> <span class="o">*</span> <span class="n">x</span></div>
+
+
+<div class="viewcode-block" id="exponential_fun"><a class="viewcode-back" href="../../source/muse.html#muse.carbon_budget.exponential_fun">[docs]</a><span class="k">def</span> <span class="nf">exponential_fun</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">b</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="n">c</span></div>
+
+
+<div class="viewcode-block" id="create_sample"><a class="viewcode-back" href="../../source/muse.html#muse.carbon_budget.create_sample">[docs]</a><span class="k">def</span> <span class="nf">create_sample</span><span class="p">(</span><span class="n">carbon_price</span><span class="p">,</span> <span class="n">current_emissions</span><span class="p">,</span> <span class="n">budget</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">4</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculates a sample of carbon prices to estimate the adjusted carbon</span>
+<span class="sd">    price.</span>
+
+<span class="sd">    For each of these prices, the equilibrium loop will be run, obtaining a new value</span>
+<span class="sd">    for the emissions. Out of those price-emissions pairs, the final carbon price will</span>
+<span class="sd">    be estimated.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        carbon_price: Current carbon price</span>
+<span class="sd">        current_emissions: Current emissions</span>
+<span class="sd">        budget: Carbon budget</span>
+<span class="sd">        size: Number of points in the sample</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        An array with the sample prices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">exponent</span> <span class="o">=</span> <span class="p">(</span><span class="n">current_emissions</span> <span class="o">-</span> <span class="n">budget</span><span class="p">)</span> <span class="o">/</span> <span class="n">budget</span>
+    <span class="n">magnitude</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">exponent</span><span class="p">),</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">)</span>
+
+    <span class="n">sample</span> <span class="o">=</span> <span class="n">carbon_price</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span> <span class="o">*</span> <span class="n">magnitude</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="linear"><a class="viewcode-back" href="../../source/muse.html#muse.carbon_budget.linear">[docs]</a><span class="nd">@register_carbon_budget_fitter</span>
+<span class="k">def</span> <span class="nf">linear</span><span class="p">(</span><span class="n">prices</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">emissions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">budget</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Fits the prices-emissions pairs to a linear function.</span>
+
+<span class="sd">    Once that is done, an optimal carbon price is estimated</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        prices: An array with the sample carbon prices</span>
+<span class="sd">        emissions: An array with the corresponding emissions</span>
+<span class="sd">        budget: The carbon budget for the time period</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The optimal carbon price.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">guess</span><span class="p">,</span> <span class="n">weights</span> <span class="o">=</span> <span class="n">linear_guess_and_weights</span><span class="p">(</span><span class="n">prices</span><span class="p">,</span> <span class="n">emissions</span><span class="p">,</span> <span class="n">budget</span><span class="p">)</span>
+
+    <span class="n">sol</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">curve_fit</span><span class="p">(</span>
+        <span class="n">linear_fun</span><span class="p">,</span> <span class="n">emissions</span><span class="p">,</span> <span class="n">prices</span><span class="p">,</span> <span class="n">guess</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">absolute_sigma</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="n">new_price</span> <span class="o">=</span> <span class="n">linear_fun</span><span class="p">(</span><span class="n">budget</span><span class="p">,</span> <span class="o">*</span><span class="n">sol</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">new_price</span></div>
+
+
+<div class="viewcode-block" id="linear_guess_and_weights"><a class="viewcode-back" href="../../source/muse.html#muse.carbon_budget.linear_guess_and_weights">[docs]</a><span class="k">def</span> <span class="nf">linear_guess_and_weights</span><span class="p">(</span>
+    <span class="n">prices</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">emissions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">budget</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Estimates initial values for the linear fitting algorithm and the</span>
+<span class="sd">    weights.</span>
+
+<span class="sd">    The points closest to the budget are used to estimate the initial guess. They also</span>
+<span class="sd">    have the highest weight.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The initial guess and weights</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">emissions</span> <span class="o">-</span> <span class="n">budget</span><span class="p">)</span>
+
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">prices</span><span class="p">[</span><span class="n">idx</span><span class="p">][:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">emissions</span><span class="p">[</span><span class="n">idx</span><span class="p">][:</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="n">den</span> <span class="o">=</span> <span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">num</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">den</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">num</span> <span class="o">/</span> <span class="n">den</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">b</span> <span class="o">*</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">),</span> <span class="n">weights</span></div>
+
+
+<div class="viewcode-block" id="exponential"><a class="viewcode-back" href="../../source/muse.html#muse.carbon_budget.exponential">[docs]</a><span class="nd">@register_carbon_budget_fitter</span>
+<span class="k">def</span> <span class="nf">exponential</span><span class="p">(</span><span class="n">prices</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">emissions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">budget</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Fits the prices-emissions pairs to an exponential function.</span>
+
+<span class="sd">    Once that is done, an optimal carbon price is estimated</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        prices: An array with the sample carbon prices</span>
+<span class="sd">        emissions: An array with the corresponding emissions</span>
+<span class="sd">        budget: The carbon budget for the time period</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The optimal carbon price.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">guess</span><span class="p">,</span> <span class="n">weights</span> <span class="o">=</span> <span class="n">exp_guess_and_weights</span><span class="p">(</span><span class="n">prices</span><span class="p">,</span> <span class="n">emissions</span><span class="p">,</span> <span class="n">budget</span><span class="p">)</span>
+
+    <span class="n">sol</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">curve_fit</span><span class="p">(</span>
+        <span class="n">exponential_fun</span><span class="p">,</span> <span class="n">emissions</span><span class="p">,</span> <span class="n">prices</span><span class="p">,</span> <span class="n">guess</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">absolute_sigma</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="n">new_price</span> <span class="o">=</span> <span class="n">exponential_fun</span><span class="p">(</span><span class="n">budget</span><span class="p">,</span> <span class="o">*</span><span class="n">sol</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">new_price</span></div>
+
+
+<div class="viewcode-block" id="exp_guess_and_weights"><a class="viewcode-back" href="../../source/muse.html#muse.carbon_budget.exp_guess_and_weights">[docs]</a><span class="k">def</span> <span class="nf">exp_guess_and_weights</span><span class="p">(</span>
+    <span class="n">prices</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">emissions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">budget</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Estimates initial values for the exponential fitting algorithm and the</span>
+<span class="sd">    weights.</span>
+
+<span class="sd">    The points closest to the budget are used to estimate the initial guess. They also</span>
+<span class="sd">    have the highest weight.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        prices: An array with the sample carbon prices</span>
+<span class="sd">        emissions: An array with the corresponding emissions</span>
+<span class="sd">        budget: The carbon budget for the time period</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The initial guess and weights</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">emissions</span> <span class="o">-</span> <span class="n">budget</span><span class="p">)</span>
+
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">prices</span><span class="p">[</span><span class="n">idx</span><span class="p">][:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">emissions</span><span class="p">[</span><span class="n">idx</span><span class="p">][:</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="n">b</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">b</span> <span class="o">*</span> <span class="n">e</span><span class="p">)</span>
+
+    <span class="n">den</span> <span class="o">=</span> <span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">num</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">den</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">num</span> <span class="o">/</span> <span class="n">den</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">a</span> <span class="o">*</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">),</span> <span class="n">weights</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.carbon_budget</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

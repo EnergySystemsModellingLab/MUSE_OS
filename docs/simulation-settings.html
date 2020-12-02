@@ -1,0 +1,641 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation settings &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Simulation settings</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="simulation-settings">
+<span id="id1"></span><h1>Simulation settings<a class="headerlink" href="#simulation-settings" title="Permalink to this headline">¶</a></h1>
+<p>The following details the TOML input for MUSE. The general format for TOML files is
+described in a <a class="reference internal" href="inputs/toml_primer.html#toml-primer"><span class="std std-ref">previous section</span></a>. Here, we focus on sections and
+attributes that are meaningful to MUSE.</p>
+<p>The TOML file can be read using <a class="reference internal" href="source/muse.readers.html#muse.readers.toml.read_settings" title="muse.readers.toml.read_settings"><code class="xref py py-func docutils literal notranslate"><span class="pre">read_settings()</span></code></a>. The resulting
+data is used to construt the market clearing algorithm directly in the <a class="reference internal" href="source/muse.html#muse.mca.MCA.factory" title="muse.mca.MCA.factory"><code class="xref py py-meth docutils literal notranslate"><span class="pre">MCA's</span>
+<span class="pre">factory</span> <span class="pre">function</span></code></a>.</p>
+<div class="section" id="main-section">
+<h2>Main section<a class="headerlink" href="#main-section" title="Permalink to this headline">¶</a></h2>
+<p>This is the topmost section. It contains settings relevant to the simulation as
+a whole.</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="n">time_framework</span> <span class="o">=</span> <span class="k">[2020, 2025, 2030, 2035, 2040, 2045, 2050]</span>
+<span class="n">regions</span> <span class="o">=</span> <span class="k">[&quot;USA&quot;]</span>
+<span class="n">interpolation_mode</span> <span class="o">=</span> <span class="s">&#39;Active&#39;</span>
+<span class="n">log_level</span> <span class="o">=</span> <span class="s">&#39;info&#39;</span>
+
+<span class="n">equilibrium_variable</span> <span class="o">=</span> <span class="s">&#39;demand&#39;</span>
+<span class="n">maximum_iterations</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">tolerance</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">tolerance_unmet_demand</span> <span class="o">=</span> <span class="mi">-0</span><span class="mf">.1</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>time_framework</dt><dd><p>Required. List of years for which the simulation will run.</p>
+</dd>
+<dt>region</dt><dd><p>Subset of regions to consider. If not given, defaults to all regions found in the
+simulation data.</p>
+</dd>
+<dt>interpolation_mode</dt><dd><p>interpolation when reading the initial market. One of
+<cite>linear</cite>, <cite>nearest</cite>, <cite>zero</cite>, <cite>slinear</cite>, <cite>quadratic</cite>, <cite>cubic</cite>. Defaults to <cite>linear</cite>.</p>
+</dd>
+<dt>log_level:</dt><dd><p>verbosity of the output.</p>
+</dd>
+<dt>equilibirum_variable</dt><dd><p>whether equilibrium of <cite>demand</cite> or <cite>prices</cite> should be sought. Defaults to <cite>demand</cite>.</p>
+</dd>
+<dt>maximum_iterations</dt><dd><p>Maximum number of iterations when searching for equilibrium. Defaults to 3.</p>
+</dd>
+<dt>tolerance</dt><dd><p>Tolerance criteria when checking for equilibrium. Defaults to 0.1.,</p>
+</dd>
+<dt>tolerance_unmet_demand</dt><dd><p>Criteria checking whether the demand has been met.  Defaults to -0.1.</p>
+</dd>
+<dt>excluded_commodities</dt><dd><p>List of commodities excluded from the equilibrium considerations. Defaults to the
+list <cite>[“CO2f”, “CO2r”, “CO2c”, “CO2s”, “CH4”, “N2O”, “f-gases”]</cite>.</p>
+</dd>
+<dt>plugins</dt><dd><p>Path or list of paths to extra python plugins, i.e. files with registered functions
+such as <code class="xref py py-meth docutils literal notranslate"><span class="pre">register_output_quantity()</span></code>.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="carbon-market">
+<h2>Carbon market<a class="headerlink" href="#carbon-market" title="Permalink to this headline">¶</a></h2>
+<p>Holds options related to modelling the carbon market. If omitted, it defaults to not
+including the carbon marker in the simulation.</p>
+<p>Example</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[carbon_budget_control]</span>
+<span class="n">budget</span> <span class="o">=</span> <span class="k">[]</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>budget</dt><dd><p>Yearly budget. There should be one item for each year the simulation will run. In
+other words, if given and not empty, this is a list with the same length as
+<cite>time_framework</cite> from the main section. If not given or an empty list, then the
+carbon market feature is disabled. Defaults to an empty list.</p>
+</dd>
+<dt>method</dt><dd><p>Method used to equilibrate the carbon market. Defaults to a simple iterative scheme.</p>
+</dd>
+<dt>commodities</dt><dd><p>Commodities that make up the carbon market. Defaults to an empty list.</p>
+</dd>
+<dt>control_undershoot</dt><dd><p>Whether to control carbon budget undershoots. Defaults to True.</p>
+</dd>
+<dt>control_overshoot</dt><dd><p>Whether to control carbon budget overshoots. Defaults to True.</p>
+</dd>
+<dt>method_options:</dt><dd><p>Additional options for the specific carbon method.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="global-input-files">
+<h2>Global input files<a class="headerlink" href="#global-input-files" title="Permalink to this headline">¶</a></h2>
+<p>Defines the paths specific simulation data files. The paths can be formatted as
+explained in <a class="reference internal" href="inputs/toml_primer.html#toml-primer"><span class="std std-ref">TOML primer</span></a>.</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[global_input_files]</span>
+<span class="n">projections</span> <span class="o">=</span> <span class="s">&#39;{path}/inputs/Projections.csv&#39;</span>
+<span class="n">regions</span> <span class="o">=</span> <span class="s">&#39;{path}/inputs/Regions.csv&#39;</span>
+<span class="n">global_commodities</span> <span class="o">=</span> <span class="s">&#39;{path}/inputs/MUSEGlobalCommodities.csv&#39;</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>projections:</dt><dd><p>Path to a csv file giving initial market projection. See <a class="reference internal" href="inputs/projections.html#inputs-projection"><span class="std std-ref">Initial Market Projection</span></a></p>
+</dd>
+<dt>regions:</dt><dd><p>Path to a csv file describing the regions. See
+<span class="xref std std-ref">user_guide/inputs/regions:regional data</span>.</p>
+</dd>
+<dt>global_commodities:</dt><dd><p>Path to a csv file describing the comodities in the simulation. See
+<span class="xref std std-ref">user_guide/inputs/commodities:commodity description</span>.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="timeslices">
+<h2>Timeslices<a class="headerlink" href="#timeslices" title="Permalink to this headline">¶</a></h2>
+<p>Time-slices represent a sub-year disaggregation of commodity demand. Generally,
+timeslices are expected to introduce several levels, e.g. season, day, or hour. The
+simplest is to show the TOML for the default timeslice:</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[timeslices]</span>
+<span class="n">winter</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">night</span> <span class="o">=</span> <span class="mi">396</span>
+<span class="n">winter</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">morning</span> <span class="o">=</span> <span class="mi">396</span>
+<span class="n">winter</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">afternoon</span> <span class="o">=</span> <span class="mi">264</span>
+<span class="n">winter</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">early-peak</span> <span class="o">=</span> <span class="mi">66</span>
+<span class="n">winter</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">late-peak</span> <span class="o">=</span> <span class="mi">66</span>
+<span class="n">winter</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">evening</span> <span class="o">=</span> <span class="mi">396</span>
+<span class="n">winter</span><span class="p">.</span><span class="n">weekend</span><span class="p">.</span><span class="n">night</span> <span class="o">=</span> <span class="mi">156</span>
+<span class="n">winter</span><span class="p">.</span><span class="n">weekend</span><span class="p">.</span><span class="n">morning</span> <span class="o">=</span> <span class="mi">156</span>
+<span class="n">winter</span><span class="p">.</span><span class="n">weekend</span><span class="p">.</span><span class="n">afternoon</span> <span class="o">=</span> <span class="mi">156</span>
+<span class="n">winter</span><span class="p">.</span><span class="n">weekend</span><span class="p">.</span><span class="n">evening</span> <span class="o">=</span> <span class="mi">156</span>
+<span class="n">spring-autumn</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">night</span> <span class="o">=</span> <span class="mi">792</span>
+<span class="n">spring-autumn</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">morning</span> <span class="o">=</span> <span class="mi">792</span>
+<span class="n">spring-autumn</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">afternoon</span> <span class="o">=</span> <span class="mi">528</span>
+<span class="n">spring-autumn</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">early-peak</span> <span class="o">=</span> <span class="mi">132</span>
+<span class="n">spring-autumn</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">late-peak</span> <span class="o">=</span> <span class="mi">132</span>
+<span class="n">spring-autumn</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">evening</span> <span class="o">=</span> <span class="mi">792</span>
+<span class="n">spring-autumn</span><span class="p">.</span><span class="n">weekend</span><span class="p">.</span><span class="n">night</span> <span class="o">=</span> <span class="mi">300</span>
+<span class="n">spring-autumn</span><span class="p">.</span><span class="n">weekend</span><span class="p">.</span><span class="n">morning</span> <span class="o">=</span> <span class="mi">300</span>
+<span class="n">spring-autumn</span><span class="p">.</span><span class="n">weekend</span><span class="p">.</span><span class="n">afternoon</span> <span class="o">=</span> <span class="mi">300</span>
+<span class="n">spring-autumn</span><span class="p">.</span><span class="n">weekend</span><span class="p">.</span><span class="n">evening</span> <span class="o">=</span> <span class="mi">300</span>
+<span class="n">summer</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">night</span> <span class="o">=</span> <span class="mi">396</span>
+<span class="n">summer</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">morning</span>  <span class="o">=</span> <span class="mi">396</span>
+<span class="n">summer</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">afternoon</span> <span class="o">=</span> <span class="mi">264</span>
+<span class="n">summer</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">early-peak</span> <span class="o">=</span> <span class="mi">66</span>
+<span class="n">summer</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">late-peak</span> <span class="o">=</span> <span class="mi">66</span>
+<span class="n">summer</span><span class="p">.</span><span class="n">weekday</span><span class="p">.</span><span class="n">evening</span> <span class="o">=</span> <span class="mi">396</span>
+<span class="n">summer</span><span class="p">.</span><span class="n">weekend</span><span class="p">.</span><span class="n">night</span> <span class="o">=</span> <span class="mi">150</span>
+<span class="n">summer</span><span class="p">.</span><span class="n">weekend</span><span class="p">.</span><span class="n">morning</span> <span class="o">=</span> <span class="mi">150</span>
+<span class="n">summer</span><span class="p">.</span><span class="n">weekend</span><span class="p">.</span><span class="n">afternoon</span> <span class="o">=</span> <span class="mi">150</span>
+<span class="n">summer</span><span class="p">.</span><span class="n">weekend</span><span class="p">.</span><span class="n">evening</span> <span class="o">=</span> <span class="mi">150</span>
+<span class="n">level_names</span> <span class="o">=</span> <span class="k">[&quot;month&quot;, &quot;day&quot;, &quot;hour&quot;]</span>
+</pre></div>
+</div>
+<p>This input introduces three levels, via <code class="docutils literal notranslate"><span class="pre">level_names</span></code>: <code class="docutils literal notranslate"><span class="pre">month</span></code>, <code class="docutils literal notranslate"><span class="pre">day</span></code>, <code class="docutils literal notranslate"><span class="pre">hours</span></code>.
+Other simulations may want fewer or more levels.  The <code class="docutils literal notranslate"><span class="pre">month</span></code> level is split into
+three points of data, <code class="docutils literal notranslate"><span class="pre">winter</span></code>, <code class="docutils literal notranslate"><span class="pre">spring-autumn</span></code>, <code class="docutils literal notranslate"><span class="pre">summer</span></code>. Then <code class="docutils literal notranslate"><span class="pre">day</span></code> splits out
+weekdays from weekends, and so on. Each line indicates the number of hours for the
+relevant slice. It should be noted that the slices are not a cartesian products of each
+levels. For instance, there no <code class="docutils literal notranslate"><span class="pre">peak</span></code> periods during weekends. All that matters is
+that the relative weights (i.e. the number of hours) are consistent and sum up to a
+year.</p>
+<p>The input above defines the finest times slice in the code. In order to define rougher
+timeslices we can introduce items in each levels that represent aggregates at that
+level. By default, we have the followin:</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[timeslices.aggregates]</span>
+<span class="n">all-day</span> <span class="o">=</span> <span class="k">[&quot;night&quot;, &quot;morning&quot;, &quot;afternoon&quot;, &quot;early-peak&quot;, &quot;late-peak&quot;, &quot;evening&quot;]</span>
+<span class="n">all-week</span> <span class="o">=</span> <span class="k">[&quot;weekday&quot;, &quot;weekend&quot;]</span>
+<span class="n">all-year</span> <span class="o">=</span> <span class="k">[&quot;winter&quot;, &quot;summer&quot;, &quot;spring-autumn&quot;]</span>
+</pre></div>
+</div>
+<p>Here, <code class="docutils literal notranslate"><span class="pre">all-day</span></code> aggregates the full day. However, one could potentially create
+aggregates such as:</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[timeslices.aggregates]</span>
+<span class="n">daylight</span> <span class="o">=</span> <span class="k">[&quot;morning&quot;, &quot;afternoon&quot;, &quot;early-peak&quot;, &quot;late-peak&quot;]</span>
+<span class="n">nightlife</span> <span class="o">=</span> <span class="k">[&quot;evening&quot;, &quot;night&quot;]</span>
+</pre></div>
+</div>
+<p>Once the finest timeslice and its aggregates are given, it is  possible for each sector
+to define the timeslice simply by refering to the slices it will use at each level.</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[sectors.some_sector.timeslice_levels]</span>
+<span class="n">day</span> <span class="o">=</span> <span class="k">[&quot;daylight&quot;, &quot;nightlife&quot;]</span>
+<span class="n">month</span> <span class="o">=</span> <span class="k">[&quot;all-year&quot;]</span>
+</pre></div>
+</div>
+<p>Above, <code class="docutils literal notranslate"><span class="pre">sectors.some_sector.timeslice_levels.week</span></code> defaults its value in the finest
+timeslice. Indeed, if the subsection <code class="docutils literal notranslate"><span class="pre">sectors.some_sector.timeslice_levels</span></code> is not
+given, then the sector will default to using the finest timeslices.</p>
+<p>Similarly, it is possible to specify a timeslice for the mca by adding an
+<cite>mca.timeslice_levels</cite> section. However, be aware that if the MCA uses a rougher
+timeslice framework, the market will be expressed within it. Hence information from
+sectors with a finer timeslice framework will be lost.</p>
+</div>
+<div class="section" id="standard-sectors">
+<h2>Standard sectors<a class="headerlink" href="#standard-sectors" title="Permalink to this headline">¶</a></h2>
+<p>Sectors are declared in the TOML file by adding a subsection to the <cite>sectors</cite> section:</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[sectors.residential]</span>
+<span class="n">type</span> <span class="o">=</span> <span class="s">&#39;default&#39;</span>
+<span class="k">[sectors.power]</span>
+<span class="n">type</span> <span class="o">=</span> <span class="s">&#39;default&#39;</span>
+</pre></div>
+</div>
+<p>Above, we’ve added two sectors, residential and power. The name of the subsection is
+only used for identification. In other words, it should be chosen to be meaningful to
+the user, since it will not affect the model itself.</p>
+<p>Sectors are defined in <a class="reference internal" href="source/muse.sectors.html#muse.sectors.Sector" title="muse.sectors.Sector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sector</span></code></a>.</p>
+<p>A sector accepts a number of attributes and subsections.</p>
+<dl class="simple" id="sector-type">
+<dt>type</dt><dd><p>Defines the kind of sector this is. <em>Standard</em> sectors are those with type
+“default”. This value corresponds to the name with which a sector class is registerd
+with MUSE, via <a class="reference internal" href="source/muse.sectors.html#muse.sectors.register_sector" title="muse.sectors.register_sector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">register_sector()</span></code></a>.</p>
+</dd>
+</dl>
+<dl id="sector-priority">
+<dt>priority</dt><dd><p>An integer denoting which sectors runs when. Lower values imply the sector will run
+earlier. If two sectors share the same priority. Later sectors can depend on earlier
+sectors for the their input. If two sectors share the same priority, then their
+order is not defined. Indeed, it should indicate that they can run in parallel.
+For simplicity, the keyword also accepts standard values:</p>
+<ul class="simple">
+<li><p>“preset”: 0</p></li>
+<li><p>“demand”: 10</p></li>
+<li><p>“conversion”: 20</p></li>
+<li><p>“supply”: 30</p></li>
+<li><p>“last”: 100</p></li>
+</ul>
+<p>Defaults to “last”.</p>
+</dd>
+<dt>interpolation</dt><dd><p>Interpolation method user when filling in missing values. Available interpolation
+methods depend on the underlying <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html">scipy method’s kind attribute</a>.</p>
+</dd>
+<dt>investment_production</dt><dd><p>In its simplest form, this is the name of a method to compute the production from a
+sector, as used when splitting the demand across agents. In other words, this the
+computation of the production which affects future investments. In it’s more general
+form, <em>production</em> can be a subsection of its own, with a “name” attribute. For
+instance:</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[sectors.residential.production]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="s">&quot;match&quot;</span>
+<span class="n">costing</span> <span class="o">=</span> <span class="s">&quot;prices&quot;</span>
+</pre></div>
+</div>
+<p>MUSE provides two methods in <a class="reference internal" href="source/muse.html#module-muse.production" title="muse.production"><code class="xref py py-mod docutils literal notranslate"><span class="pre">muse.production</span></code></a>:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>share: the production is the maximum production for the existing capacity and</dt><dd><p>the technology’s utilization factor.
+See <a class="reference internal" href="source/muse.html#muse.production.maximum_production" title="muse.production.maximum_production"><code class="xref py py-func docutils literal notranslate"><span class="pre">muse.production.maximum_production()</span></code></a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>match: production and demand are matched according to a given cost metric. The</dt><dd><p>cost metric defaults to “prices”. It can be modified by using the general form
+given above, with a “costing” attribute. The latter can be “prices”,
+“gross_margin”, or “lcoe”.
+See <a class="reference internal" href="source/muse.html#muse.production.demand_matched_production" title="muse.production.demand_matched_production"><code class="xref py py-func docutils literal notranslate"><span class="pre">muse.production.demand_matched_production()</span></code></a>.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p><em>production</em> can also refer to any custom production method registered with MUSE via
+<a class="reference internal" href="source/muse.html#muse.production.register_production" title="muse.production.register_production"><code class="xref py py-func docutils literal notranslate"><span class="pre">muse.production.register_production()</span></code></a>.</p>
+<p>Defaults to “share”.</p>
+</dd>
+<dt>dispatch_production</dt><dd><p>The name of the production method used to compute the sector’s output, as returned
+to the muse market clearing algorithm. In other words, this is computation of the
+production method which will affect other sectors.</p>
+<p>It has the same format and options as the <em>production</em> attribute above.</p>
+</dd>
+<dt>demand_share</dt><dd><p>A method used to split the MCA demand into seperate parts to be serviced by specific
+agents. There is currently only one option, “new_and_retro”, corresponding to <em>new</em>
+and <em>retro</em> agents.</p>
+</dd>
+<dt>interactions</dt><dd><p>Defines interactions between agents. These interactions take place right before new
+investments are computed. The interactions can be anything. They are expected to
+modify the agents and their assets. MUSE provides a default set of interactions that
+have <em>new</em> agents pass on their assets to the corresponding <em>retro</em> agent, and the
+<em>retro</em> agents pass on the make-up of their assets to the corresponding <em>new</em>
+agents.</p>
+<p><em>interactions</em> are specified as a <a class="reference internal" href="inputs/toml_primer.html#toml-array"><span class="std std-ref">TOML array</span></a>, e.g. with double
+brackets. Each sector can specify an arbitrary number of interactaction, simply by
+adding an extra interaction row.</p>
+<p>There are two orthogonal concepts to interactions:</p>
+<ul class="simple">
+<li><p>a <em>net</em> defines the set of agents that interact. A set can contain any
+number of agents, whether zero, two, or all agents in a sector. See
+<a class="reference internal" href="source/muse.html#muse.interactions.register_interaction_net" title="muse.interactions.register_interaction_net"><code class="xref py py-func docutils literal notranslate"><span class="pre">muse.interactions.register_interaction_net()</span></code></a>.</p></li>
+<li><p>an <em>interaction</em> defines how the net actually interacts.  See
+<a class="reference internal" href="source/muse.html#muse.interactions.register_agent_interaction" title="muse.interactions.register_agent_interaction"><code class="xref py py-func docutils literal notranslate"><span class="pre">muse.interactions.register_agent_interaction()</span></code></a>.</p></li>
+</ul>
+<p>In practice, we always consider sequences of nets (i.e. more than one net) that
+interact using the same interaction function.</p>
+<p>Hence, the input looks something like the following:</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[[sectors.commercial.interactions]]</span>
+<span class="n">net</span> <span class="o">=</span> <span class="s">&#39;new_to_retro&#39;</span>
+<span class="n">interaction</span> <span class="o">=</span> <span class="s">&#39;transfer&#39;</span>
+</pre></div>
+</div>
+<p>“new_to_retro” is a function that figures out all “new/retro” pairs of agents.
+Whereas “transfer” is a function that performs the transfer of assets and
+information between each pair.</p>
+<p>Furthermore, it is possible to pass parameters to either the net of the interaction
+as follows:</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[[sectors.commercial.interactions]]</span>
+<span class="n">net</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;name&quot;</span><span class="p">:</span> <span class="s">&quot;some_net&quot;</span><span class="p">,</span> <span class="s">&quot;param&quot;</span><span class="p">:</span> <span class="s">&quot;some value&quot;</span><span class="p">}</span>
+<span class="n">interaction</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;name&quot;</span><span class="p">:</span> <span class="s">&quot;some_interaction&quot;</span><span class="p">,</span> <span class="s">&quot;param&quot;</span><span class="p">:</span> <span class="s">&quot;some other value&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>The parameters will depend on the net and interaction functions. Neither
+“new_to_retro” nor “transfer” take any arguments at this point. MUSE interaction
+facilities are defined in <a class="reference internal" href="source/muse.html#module-muse.interactions" title="muse.interactions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">muse.interactions</span></code></a>.</p>
+</dd>
+<dt>output</dt><dd><p>Outputs have several moving components to them. MUSE is designed to allow users to
+mix-and-match how and what to save.</p>
+<p><em>output</em> is specified as a TOML array, e.g. with double brackets. Each sector can
+specify an arbitrary number of outputs, simply by adding an extra output row.</p>
+<p>A single row looks like this:</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[[sectors.commercial.outputs]]</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="s">&#39;{cwd}/Results/{Sector}/{Quantity}/{year}{suffix}&#39;</span>
+<span class="n">quantity</span> <span class="o">=</span> <span class="s">&quot;capacity&quot;</span>
+<span class="n">sink</span> <span class="o">=</span> <span class="s">&#39;csv&#39;</span>
+<span class="n">overwrite</span> <span class="o">=</span> <span class="kc">true</span>
+</pre></div>
+</div>
+<p>The following attributes are available:</p>
+<ul>
+<li><dl class="simple">
+<dt>quantity: Name of the quantity to save. Currently, only <cite>capacity</cite> exists,</dt><dd><p>refering to <code class="xref py py-func docutils literal notranslate"><span class="pre">muse.outputs.capacity()</span></code>. However, users can
+customize and create further output quantities by registering with MUSE via
+<code class="xref py py-func docutils literal notranslate"><span class="pre">muse.outputs.register_output_quantity()</span></code>. See
+<a class="reference internal" href="source/muse.outputs.html#module-muse.outputs" title="muse.outputs"><code class="xref py py-mod docutils literal notranslate"><span class="pre">muse.outputs</span></code></a> for more details.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>sink: the sink is the place (disk, cloud, database, etc…) and format with which</dt><dd><p>the computed quantity is saved. Currently only sinks that save to files are
+implemented. The filename can specified via <cite>filename</cite>, as given below. The
+following sinks are available: “csv”, “netcfd”, “excel”. However, more sinks can
+be added by interested users, and registered with MUSE via
+<a class="reference internal" href="source/muse.outputs.html#muse.outputs.register_output_sink" title="muse.outputs.register_output_sink"><code class="xref py py-func docutils literal notranslate"><span class="pre">muse.outputs.register_output_sink()</span></code></a>. See
+<a class="reference internal" href="source/muse.outputs.html#module-muse.outputs" title="muse.outputs"><code class="xref py py-mod docutils literal notranslate"><span class="pre">muse.outputs</span></code></a> for more details.</p>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt>filename: defines format of the file where to save the data. There several</dt><dd><p>standard values that are automatically substituted:</p>
+<ul class="simple">
+<li><p>cwd: current working directory, where MUSE was started</p></li>
+<li><p>path: directory where the TOML file resides</p></li>
+<li><p>sector: name of the current sector (.e.g. “commercial” above)</p></li>
+<li><p>Sector: capitalized name of the current sector</p></li>
+<li><p>quantity: name of the quantity to save (as given by the quantity attribute)</p></li>
+<li><p>Quantity: capitablized name of the quantity to save</p></li>
+<li><p>year: current year</p></li>
+<li><p>suffix: standard suffix/file extension of the sink</p></li>
+</ul>
+<p>Defaults to <cite>{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}</cite>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>overwrite: If <cite>False</cite>, then MUSE will issue an error and abort, rather than</dt><dd><p>overwrite an existing file. Defaults to <cite>False</cite>. With MUSE, shooting oneself in
+the foot is an elective.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+<dt>technodata</dt><dd><p>Path to a csv file containing the characterization of the technologies involved in
+the sector, e.g. lifetime, capital costs, etc… See <a class="reference internal" href="inputs/technodata.html#inputs-technodata"><span class="std std-ref">Techno-data</span></a>.</p>
+</dd>
+<dt>timeslice_levels</dt><dd><p>Slices to consider in a level. If absent, defaults to the finest timeslices.  See
+<span class="xref std std-ref">user_guide/inputs/toml:timeslices</span></p>
+</dd>
+<dt>commodities_in</dt><dd><p>Path to a csv file describing the inputs of each technology involved in the sector.
+See <span class="xref std std-ref">user_guide/inputs/commodities_io:input commodities</span>.</p>
+</dd>
+<dt>commodities_out</dt><dd><p>Path to a csv file describing the outputs of each technology involved in the sector.
+See <span class="xref std std-ref">user_guide/inputs/commodities_io:output commodities</span>.</p>
+</dd>
+<dt>existing_capacity</dt><dd><p>Path to a csv file describing the initial capacity of the sector.
+See <span class="xref std std-ref">user_guide/inputs/existing_capacity:existing sectoral capacity</span>.</p>
+</dd>
+<dt>agents</dt><dd><p>Path to a csv file describing the agents in the sector.
+See <span class="xref std std-ref">user_guide/inputs/agents:agents</span>.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="preset-sectors">
+<h2>Preset sectors<a class="headerlink" href="#preset-sectors" title="Permalink to this headline">¶</a></h2>
+<p>The commodity production, commodity consumption and product prices of preset sectors are determined
+exogeneously. They are know from the start of the simulation and are not affected by the
+simulation.</p>
+<p>Preset sectors are defined in <a class="reference internal" href="source/muse.sectors.html#muse.sectors.PresetSector" title="muse.sectors.PresetSector"><code class="xref py py-class docutils literal notranslate"><span class="pre">PresetSector</span></code></a>.</p>
+<p>The three components, production, consumption, and prices, can be set independantly and
+not all three need to be set. Production and consumption default to zero, and prices
+default to leaving things unchanged.</p>
+<p>The following defines a standard preset sector where consumption is defined as a
+function of macro-economic data, i.e. population and gdp.</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[sectors.commercial_presets]</span>
+<span class="n">type</span> <span class="o">=</span> <span class="s">&#39;presets&#39;</span>
+<span class="n">priority</span> <span class="o">=</span> <span class="s">&#39;presets&#39;</span>
+<span class="n">timeslice_shares_path</span> <span class="o">=</span> <span class="s">&#39;{path}/technodata/TimesliceShareCommercial.csv&#39;</span>
+<span class="n">macrodrivers_path</span> <span class="o">=</span> <span class="s">&#39;{path}/technodata/Macrodrivers.csv&#39;</span>
+<span class="n">regression_path</span> <span class="o">=</span> <span class="s">&#39;{path}/technodata/regressionparameters.csv&#39;</span>
+<span class="n">timeslices_levels</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;day&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;all-day&#39;</span><span class="p">]}</span>
+<span class="n">forecast</span> <span class="o">=</span> <span class="k">[0, 5]</span>
+</pre></div>
+</div>
+<p>The following attributes are accepted:</p>
+<dl class="simple">
+<dt>type:</dt><dd><p>See the attribute in the standard mode, <a class="reference internal" href="#sector-type"><span class="std std-ref">type</span></a>. <em>Preset</em> sectors
+are those with type “presets”.</p>
+</dd>
+<dt>priority</dt><dd><p>See the attribute in the standard mode, <a class="reference internal" href="#sector-priority"><span class="std std-ref">priority</span></a>.</p>
+</dd>
+<dt>timeslices_levels:</dt><dd><p>See the attribute in the standard mode, <span class="xref std std-ref">user_guide/inputs/toml:timeslices</span>.</p>
+</dd>
+</dl>
+<dl id="preset-consumption">
+<dt>consumption_path:</dt><dd><p>CSV output files, one per year. This attribute can include wild cards, i.e. ‘*’,
+which can match anything. For instance: <cite>consumption_path =
+“{cwd}/Consumtion*.csv”</cite> will match any csv file starting with “Consumption” in the
+current working directory. The file names must include the year for which it defines
+the consumption, e.g. <cite>Consumption2015.csv</cite>.</p>
+<p>The CSV format should follow the following format:</p>
+<table class="docutils align-default" id="id2">
+<caption><span class="caption-text">Consumption</span><a class="headerlink" href="#id2" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head stub"></th>
+<th class="head stub"><p>RegionName</p></th>
+<th class="head stub"><p>ProcessName</p></th>
+<th class="head stub"><p>TimeSlice</p></th>
+<th class="head"><p>electricity</p></th>
+<th class="head"><p>diesel</p></th>
+<th class="head"><p>algae</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><th class="stub"><p>0</p></th>
+<th class="stub"><p>USA</p></th>
+<th class="stub"><p>fluorescent light</p></th>
+<th class="stub"><p>1</p></th>
+<td><p>1.9</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>1</p></th>
+<th class="stub"><p>USA</p></th>
+<th class="stub"><p>fluorescent light</p></th>
+<th class="stub"><p>2</p></th>
+<td><p>1.8</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+</tbody>
+</table>
+<p>The index column as well as “RegionName”, “ProcessName”, and “TimeSlice” must be
+present. Further columns are reserved for commodities. “TimeSlice” refers to the
+index of the timeslice.</p>
+</dd>
+<dt>supply_path:</dt><dd><p>CSV file, one per year, indicating the amount of a commodities produced. It follows
+the same format as <a class="reference internal" href="#preset-consumption"><span class="std std-ref">consumption_path</span></a>.</p>
+</dd>
+<dt>supply_path:</dt><dd><p>CSV file, one per year, indicating the amount of a commodities produced. It follows
+the same format as <a class="reference internal" href="#preset-consumption"><span class="std std-ref">consumption_path</span></a>.</p>
+</dd>
+<dt>prices_path:</dt><dd><p>CSV file indicating the amount of a commodities produced. The format of the CSV files
+follows that of <a class="reference internal" href="inputs/projections.html#inputs-projection"><span class="std std-ref">Initial Market Projection</span></a>.</p>
+</dd>
+</dl>
+<dl class="simple" id="preset-demand">
+<dt>demand_path:</dt><dd><p>Incompatible with <a class="reference internal" href="#preset-consumption"><span class="std std-ref">consumption_path</span></a> or
+<a class="reference internal" href="#preset-macro"><span class="std std-ref">macrodrivers_path</span></a>. A CSV file containing the consumption in the
+same format as <a class="reference internal" href="inputs/projections.html#inputs-projection"><span class="std std-ref">Initial Market Projection</span></a>.</p>
+</dd>
+</dl>
+<dl class="simple" id="preset-macro">
+<dt>macrodrivers_path:</dt><dd><p>Incompatible with <a class="reference internal" href="#preset-consumption"><span class="std std-ref">consumption_path</span></a> or
+<a class="reference internal" href="#preset-demand"><span class="std std-ref">demand_path</span></a>. Path to a CSV file giving the profile of the
+macrodrivers. Also requires <a class="reference internal" href="#preset-regression"><span class="std std-ref">regression_path</span></a>.</p>
+</dd>
+</dl>
+<dl id="preset-regression">
+<dt>regression_path:</dt><dd><p>Incompatible with <a class="reference internal" href="#preset-consumption"><span class="std std-ref">consumption_path</span></a> or
+<a class="reference internal" href="#preset-demand"><span class="std std-ref">demand_path</span></a>. Path to a CSV file giving the regression
+parameters with respect to the macrodrivers.
+Also requires <a class="reference internal" href="#preset-macro"><span class="std std-ref">macrodrivers_path</span></a>.</p>
+</dd>
+<dt>timeslice_shares_path</dt><dd><p>Optional csv file giving shares per timeslice. Requires
+<a class="reference internal" href="#preset-consumption"><span class="std std-ref">macrodrivers_path</span></a>.</p>
+</dd>
+<dt>filters:</dt><dd><p>Optional dictionary of entries by which to filter the consumption.  Requires
+<a class="reference internal" href="#preset-consumption"><span class="std std-ref">macrodrivers_path</span></a>. For instance,</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">filters</span><span class="o">.</span><span class="n">region</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;USA&quot;</span><span class="p">,</span> <span class="s2">&quot;ASEA&quot;</span><span class="p">]</span>
+<span class="n">filters</span><span class="o">.</span><span class="n">commodity</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;algae&quot;</span><span class="p">,</span> <span class="s2">&quot;fluorescent light&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</div>
+<div class="section" id="legacy-sectors">
+<h2>Legacy Sectors<a class="headerlink" href="#legacy-sectors" title="Permalink to this headline">¶</a></h2>
+<p>Legacy sectors wrap sectors developed for a previous version of MUSE to the open-source
+version.</p>
+<p>Preset sectors are defined in <a class="reference internal" href="source/muse.sectors.html#muse.sectors.PresetSector" title="muse.sectors.PresetSector"><code class="xref py py-class docutils literal notranslate"><span class="pre">PresetSector</span></code></a>.</p>
+<p>The can be defined in the TOML file as follows:</p>
+<div class="highlight-TOML notranslate"><div class="highlight"><pre><span></span><span class="k">[global_input_files]</span>
+<span class="n">macrodrivers</span> <span class="o">=</span> <span class="s">&#39;{path}/input/Macrodrivers.csv&#39;</span>
+<span class="n">regions</span> <span class="o">=</span> <span class="s">&#39;{path}/input/Regions.csv&#39;</span>
+<span class="n">global_commodities</span> <span class="o">=</span> <span class="s">&#39;{path}/input/MUSEGlobalCommodities.csv&#39;</span>
+
+<span class="k">[sectors.Industry]</span>
+<span class="n">type</span> <span class="o">=</span> <span class="s">&#39;legacy&#39;</span>
+<span class="n">priority</span> <span class="o">=</span> <span class="s">&#39;demand&#39;</span>
+<span class="n">agregation_level</span> <span class="o">=</span> <span class="s">&#39;month&#39;</span>
+<span class="n">excess</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">userdata_path</span> <span class="o">=</span> <span class="s">&#39;{muse_sectors}/Industry&#39;</span>
+<span class="n">technodata_path</span> <span class="o">=</span> <span class="s">&#39;{muse_sectors}/Industry&#39;</span>
+<span class="n">timeslices_path</span> <span class="o">=</span> <span class="s">&#39;{muse_sectors}/Industry/TimeslicesIndustry.csv&#39;</span>
+<span class="n">output_path</span> <span class="o">=</span> <span class="s">&#39;{path}/output&#39;</span>
+</pre></div>
+</div>
+<p>For historical reasons, the three <cite>global_input_files</cite> above are required. The sector
+itself can use the following attributes.</p>
+<dl class="simple">
+<dt>type:</dt><dd><p>See the attribute in the standard mode, <a class="reference internal" href="#sector-type"><span class="std std-ref">type</span></a>. <em>Legacy</em> sectors
+are those with type “legacy”.</p>
+</dd>
+<dt>priority</dt><dd><p>See the attribute in the standard mode, <a class="reference internal" href="#sector-priority"><span class="std std-ref">priority</span></a>.</p>
+</dd>
+<dt>agregation_level:</dt><dd><p>Information relevant to the sector’s timeslice.</p>
+</dd>
+<dt>excess:</dt><dd><p>Excess factor used to model early obsolescence.</p>
+</dd>
+<dt>timeslices_path:</dt><dd><p>Path to a timeslice  <a class="reference internal" href="inputs/timeslices.html#inputs-legacy-timeslices"><span class="std std-ref">time_slices</span></a>.</p>
+</dd>
+<dt>userdata_path:</dt><dd><p>Path to a directory with sector-specific data files.</p>
+</dd>
+<dt>technodata_path:</dt><dd><p>Path to a technodata CSV file. See. <a class="reference internal" href="inputs/technodata.html#inputs-technodata"><span class="std std-ref">Techno-data</span></a>.</p>
+</dd>
+<dt>output_path:</dt><dd><p>Path to a diretory where the sector will write output files.</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Simulation settings</a><ul>
+<li><a class="reference internal" href="#main-section">Main section</a></li>
+<li><a class="reference internal" href="#carbon-market">Carbon market</a></li>
+<li><a class="reference internal" href="#global-input-files">Global input files</a></li>
+<li><a class="reference internal" href="#timeslices">Timeslices</a></li>
+<li><a class="reference internal" href="#standard-sectors">Standard sectors</a></li>
+<li><a class="reference internal" href="#preset-sectors">Preset sectors</a></li>
+<li><a class="reference internal" href="#legacy-sectors">Legacy Sectors</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/simulation-settings.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Simulation settings</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

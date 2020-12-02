@@ -1,0 +1,361 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correlation demand files &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Advanced guide" href="../advanced-guide/index.html" />
+    <link rel="prev" title="Agents" href="agents.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../advanced-guide/index.html" title="Advanced guide"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="agents.html" title="Agents"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Input Files</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="inputs_csv.html" accesskey="U">Input Files</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Correlation demand files</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="correlation-demand-files">
+<h1>Correlation demand files<a class="headerlink" href="#correlation-demand-files" title="Permalink to this headline">¶</a></h1>
+<p>It is possible to use macrodrivers as a way to infer the service demand. For example, one can use the expected GDP based on purchasing power parity (GDP PPP) and population in the future per region to infer the service demand using a regressor.</p>
+<p>To do this, a minimum of three files are required:</p>
+<ol class="arabic simple">
+<li><p>A macrodrivers file</p></li>
+<li><p>A file which states the regression parameters</p></li>
+<li><p>A file which dictates how the demand per benchmark year is split across the timeslices.</p></li>
+</ol>
+<p>We will go into the details of each of these files below.</p>
+<div class="section" id="macrodrivers">
+<h2>Macrodrivers<a class="headerlink" href="#macrodrivers" title="Permalink to this headline">¶</a></h2>
+<p>An example of a shortened macrodriver file is shown below. This file contains the data for each of the years you are interested in. For example, in the file below, it contains GDP PPP in region <cite>R1</cite>, in the unit <cite>millionUS$2015</cite> for each year. It also contains the data for the population.</p>
+<table class="colwidths-given docutils align-default" id="id1">
+<caption><span class="caption-text">Macrodrivers</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 22%" />
+<col style="width: 22%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>RegionName</p></th>
+<th class="head"><p>Unit</p></th>
+<th class="head"><p>2010</p></th>
+<th class="head"><p>2011</p></th>
+<th class="head"><p>…</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>GDP|PPP</p></td>
+<td><p>R1</p></td>
+<td><p>millionUS$2015</p></td>
+<td><p>1206919</p></td>
+<td><p>1220599</p></td>
+<td><p>…</p></td>
+</tr>
+<tr class="row-odd"><td><p>Population</p></td>
+<td><p>R1</p></td>
+<td><p>million</p></td>
+<td><p>80.0042</p></td>
+<td><p>81.82599</p></td>
+<td><p>…</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="simple">
+<dt>Variable</dt><dd><p>This is the variable that you would like to use in the regression for the service demand.</p>
+</dd>
+<dt>RegionName</dt><dd><p>This is the region that the data applies to. This must correlate with the regions set in the rest of your input files, as well as the toml file.</p>
+</dd>
+<dt>Unit</dt><dd><p>This unit can be whatever you like, however they must be consistent across all input files.</p>
+</dd>
+<dt>2010, 2011, …</dt><dd><p>This is the quantity of the variable per year of the simulation.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="regression-parameters">
+<h2>Regression Parameters<a class="headerlink" href="#regression-parameters" title="Permalink to this headline">¶</a></h2>
+<p>In the regression parameters file, it is necessary to state the parameters of the regression. This can be obtained from your own dataset, where you regress the service demand against GDP PPP and populaiton, for example.</p>
+<p>An example file is shown below:</p>
+<table class="docutils align-default" id="id2">
+<caption><span class="caption-text">Regression Parameters File</span><a class="headerlink" href="#id2" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>SectorName</p></th>
+<th class="head"><p>FunctionType</p></th>
+<th class="head"><p>Coeff</p></th>
+<th class="head"><p>RegionName</p></th>
+<th class="head"><p>electricity</p></th>
+<th class="head"><p>gas</p></th>
+<th class="head"><p>heat</p></th>
+<th class="head"><p>CO2f</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Residential</p></td>
+<td><p>logistic-sigmoid</p></td>
+<td><p>GDPexp</p></td>
+<td><p>R1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>9.94E-02</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>Residential</p></td>
+<td><p>logistic-sigmoid</p></td>
+<td><p>constant</p></td>
+<td><p>R1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0.0000434</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>Residential</p></td>
+<td><p>logistic-sigmoid</p></td>
+<td><p>GDPscaleLess</p></td>
+<td><p>R1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>753.1068725</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>Residential</p></td>
+<td><p>logistic-sigmoid</p></td>
+<td><p>GDPscaleGreater</p></td>
+<td><p>R1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>672.9316672</p></td>
+<td><p>0</p></td>
+</tr>
+</tbody>
+</table>
+<dl>
+<dt>SectorName</dt><dd><p>This is the sector name in which these parameters apply to.</p>
+</dd>
+<dt>FunctionType</dt><dd><p>This is the function type you would like to MUSE to use. MUSE allows these to be:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Exponential</p></li>
+<li><p>ExponentialAdj</p></li>
+<li><p>Logistic</p></li>
+<li><p>Loglog</p></li>
+<li><p>LogisticSigmoid</p></li>
+<li><p>Linear</p></li>
+<li><p>endogenous_demand</p></li>
+</ul>
+</div></blockquote>
+<p>Your own functions can be created using the <cite>&#64;register_regression</cite> hook, from the <cite>regressions.py</cite> file.</p>
+</dd>
+<dt>Coeff</dt><dd><p>This is the coefficient for the respective function type. These are explicitly defined within the <cite>regressions.py</cite> file, as they differ between functions.</p>
+</dd>
+<dt>RegionName</dt><dd><p>This is the region in which these parameters apply to.</p>
+</dd>
+<dt>Energy service (electricity, gas, heat, CO2f)</dt><dd><p>Here you can specify the coefficients for the expected demand for the respective commodity.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="timeslice-share">
+<h2>Timeslice share<a class="headerlink" href="#timeslice-share" title="Permalink to this headline">¶</a></h2>
+<p>In this file, you are able to split the energy service proportionally by timeslice.</p>
+<p>An example file is shown below:</p>
+<table class="docutils align-default" id="id3">
+<caption><span class="caption-text">Timeslice share</span><a class="headerlink" href="#id3" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>SN</p></th>
+<th class="head"><p>RegionName</p></th>
+<th class="head"><p>electricity</p></th>
+<th class="head"><p>gas</p></th>
+<th class="head"><p>heat</p></th>
+<th class="head"><p>CO2f</p></th>
+<th class="head"><p>wind</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>R1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0.034835</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p>R1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0.064546</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>3</p></td>
+<td><p>R1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0.044569</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>4</p></td>
+<td><p>R1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0.011161</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>5</p></td>
+<td><p>R1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0.014145</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>6</p></td>
+<td><p>R1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0.085783</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="simple">
+<dt>SN</dt><dd><p>This is the timeslice index.</p>
+</dd>
+<dt>RegionName</dt><dd><p>This is the region in question for this data.</p>
+</dd>
+<dt>Energy service (electricity, gas, heat, CO2f, wind)</dt><dd><p>Here you specify the proportion of each energy service for each timeslice.</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Correlation demand files</a><ul>
+<li><a class="reference internal" href="#macrodrivers">Macrodrivers</a></li>
+<li><a class="reference internal" href="#regression-parameters">Regression Parameters</a></li>
+<li><a class="reference internal" href="#timeslice-share">Timeslice share</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="agents.html"
+                        title="previous chapter">Agents</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../advanced-guide/index.html"
+                        title="next chapter">Advanced guide</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/inputs/correlation_files.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../advanced-guide/index.html" title="Advanced guide"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="agents.html" title="Agents"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Input Files</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="inputs_csv.html" >Input Files</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Correlation demand files</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

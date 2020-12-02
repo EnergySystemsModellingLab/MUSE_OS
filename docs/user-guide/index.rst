@@ -4,7 +4,7 @@ Customising MUSE Tutorials
 
 Next, we show you how to customise MUSE to create your own scenarios. 
 
-We recommend following the tutorials step by step, as the files build on the previous example. If you prefer to jump straight in, your results may be different to the ones presented. To help you, we have provided the code to generate the various examples in case you want to compare your code to ours. Links to this code can be found in the table below, in the `Tutorial Information`_ section.
+We recommend following the tutorials step by step, as the files build on the previous examples. If you prefer to jump straight in, your results may be different to the ones presented. To help you, we have provided the code to generate the various examples in case you want to compare your code to ours. Links to this code can be found in the table below, in the `Tutorial Information`_ section.
 
 
 .. toctree::

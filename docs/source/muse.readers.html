@@ -1,0 +1,271 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse.readers package &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.readers package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="muse-readers-package">
+<h1>muse.readers package<a class="headerlink" href="#muse-readers-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-muse.readers.csv">
+<span id="muse-readers-csv-module"></span><h2>muse.readers.csv module<a class="headerlink" href="#module-muse.readers.csv" title="Permalink to this headline">¶</a></h2>
+<p>Ensemble of functions to read MUSE data.</p>
+<dl class="py function">
+<dt id="muse.readers.csv.read_attribute_table">
+<code class="sig-prename descclassname">muse.readers.csv.</code><code class="sig-name descname">read_attribute_table</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="reference internal" href="../_modules/muse/readers/csv.html#read_attribute_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.csv.read_attribute_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a standard MUSE csv file for price projections.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.readers.csv.read_csv_agent_parameters">
+<code class="sig-prename descclassname">muse.readers.csv.</code><code class="sig-name descname">read_csv_agent_parameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span> &#x2192; List<a class="reference internal" href="../_modules/muse/readers/csv.html#read_csv_agent_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.csv.read_csv_agent_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads standard MUSE agent-declaration csv-files.</p>
+<p>Returns a list of dictionaries, where each dictionary can be used to instantiate an
+agent in <a class="reference internal" href="muse.agents.html#muse.agents.factories.factory" title="muse.agents.factories.factory"><code class="xref py py-func docutils literal notranslate"><span class="pre">muse.agents.factories.factory()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.readers.csv.read_csv_outputs">
+<code class="sig-prename descclassname">muse.readers.csv.</code><code class="sig-name descname">read_csv_outputs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">paths</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">, </span>Sequence<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span><span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">columns</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'commodity'</span></em>, <em class="sig-param"><span class="n">indices</span><span class="p">:</span> <span class="n">Sequence<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'RegionName', 'ProcessName', 'Timeslice'</span></em>, <em class="sig-param"><span class="n">drop</span><span class="p">:</span> <span class="n">Sequence<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'Unnamed: 0'</span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="reference internal" href="../_modules/muse/readers/csv.html#read_csv_outputs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.csv.read_csv_outputs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read standard MUSE output files for consumption or supply.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.readers.csv.read_csv_timeslices">
+<code class="sig-prename descclassname">muse.readers.csv.</code><code class="sig-name descname">read_csv_timeslices</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="reference internal" href="../_modules/muse/readers/csv.html#read_csv_timeslices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.csv.read_csv_timeslices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads timeslice information from input.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.readers.csv.read_global_commodities">
+<code class="sig-prename descclassname">muse.readers.csv.</code><code class="sig-name descname">read_global_commodities</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="reference internal" href="../_modules/muse/readers/csv.html#read_global_commodities"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.csv.read_global_commodities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads commodities information from input.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.readers.csv.read_initial_assets">
+<code class="sig-prename descclassname">muse.readers.csv.</code><code class="sig-name descname">read_initial_assets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="reference internal" href="../_modules/muse/readers/csv.html#read_initial_assets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.csv.read_initial_assets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads and formats data about initial capacity into a dataframe.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.readers.csv.read_initial_market">
+<code class="sig-prename descclassname">muse.readers.csv.</code><code class="sig-name descname">read_initial_market</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">projections</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>xarray.core.dataarray.DataArray<span class="p">, </span>pathlib.Path<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">base_year_import</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">, </span>xarray.core.dataarray.DataArray<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">base_year_export</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">, </span>xarray.core.dataarray.DataArray<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">timeslices</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>xarray.core.dataarray.DataArray<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="reference internal" href="../_modules/muse/readers/csv.html#read_initial_market"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.csv.read_initial_market" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read projections, import and export csv files.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.readers.csv.read_io_technodata">
+<code class="sig-prename descclassname">muse.readers.csv.</code><code class="sig-name descname">read_io_technodata</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="reference internal" href="../_modules/muse/readers/csv.html#read_io_technodata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.csv.read_io_technodata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads process inputs or ouputs.</p>
+<p>There are four axes: (technology, region, year, commodity)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.readers.csv.read_macro_drivers">
+<code class="sig-prename descclassname">muse.readers.csv.</code><code class="sig-name descname">read_macro_drivers</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="reference internal" href="../_modules/muse/readers/csv.html#read_macro_drivers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.csv.read_macro_drivers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads a standard MUSE csv file for macro drivers.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.readers.csv.read_regression_parameters">
+<code class="sig-prename descclassname">muse.readers.csv.</code><code class="sig-name descname">read_regression_parameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="reference internal" href="../_modules/muse/readers/csv.html#read_regression_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.csv.read_regression_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the regression parameters from a standard MUSE csv file.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.readers.csv.read_technodictionary">
+<code class="sig-prename descclassname">muse.readers.csv.</code><code class="sig-name descname">read_technodictionary</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="reference internal" href="../_modules/muse/readers/csv.html#read_technodictionary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.csv.read_technodictionary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads and formats technodata into a dataset.</p>
+<p>There are three axes: technologies, regions, and year.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.readers.csv.read_technologies">
+<code class="sig-prename descclassname">muse.readers.csv.</code><code class="sig-name descname">read_technologies</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">technodata_path_or_sector</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">comm_out_path</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">comm_in_path</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">commodities</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">, </span>xarray.core.dataset.Dataset<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sectors_directory</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">PosixPath('/Users/alexkell/Documents/SGI/2-documentation/StarMuse/docs/data')</span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="reference internal" href="../_modules/muse/readers/csv.html#read_technologies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.csv.read_technologies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads data characterising technologies from files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>technodata_path_or_sector</strong> – If <cite>comm_out_path</cite> and <cite>comm_in_path</cite> are not given,
+then this argument refers to the name of the sector. The three paths are
+then determined using standard locations and name. Specifically, thechnodata
+looks for a “technodataSECTORNAME.csv” file in the standard location for
+that sector. However, if  <cite>comm_out_path</cite> and <cite>comm_in_path</cite> are given, then
+this should be the path to the the technodata file.</p></li>
+<li><p><strong>comm_out_path</strong> – If given, then refers to the path of the file specifying output
+commmodities. If not given, then defaults to
+“commOUTtechnodataSECTORNAME.csv” in the relevant sector directory.</p></li>
+<li><p><strong>comm_in_path</strong> – If given, then refers to the path of the file specifying input
+commmodities. If not given, then defaults to
+“commINtechnodataSECTORNAME.csv” in the relevant sector directory.</p></li>
+<li><p><strong>commodities</strong> – Optional. If commodities is given, it should point to a global
+commodities file, or a dataset akin to reading such a file with
+<cite>read_global_commodities</cite>. In either case, the information pertaining to
+commodities will be added to the technologies dataset.</p></li>
+<li><p><strong>sectors_directory</strong> – Optional. If <cite>paths_or_sector</cite> is a string indicating the
+name of the sector, then this is a path to a directory where standard input
+files are contained.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataset with all the characteristics of the technologies.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.readers.csv.read_timeslice_shares">
+<code class="sig-prename descclassname">muse.readers.csv.</code><code class="sig-name descname">read_timeslice_shares</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">PosixPath('/Users/alexkell/Documents/SGI/2-documentation/StarMuse/docs/data')</span></em>, <em class="sig-param"><span class="n">sector</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">timeslice</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">, </span>xarray.core.dataarray.DataArray<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'Timeslices{sector}.csv'</span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataset.Dataset<a class="reference internal" href="../_modules/muse/readers/csv.html#read_timeslice_shares"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.csv.read_timeslice_shares" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads sliceshare information into a xr.Dataset.</p>
+<p>Additionaly, this function will try and recover the timeslice multi- index from a
+import file “Timeslices{sector}.csv” in the same directory as the timeslice shares.
+Pass <cite>None</cite> if this behaviour is not required.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-muse.readers.toml">
+<span id="muse-readers-toml-module"></span><h2>muse.readers.toml module<a class="headerlink" href="#module-muse.readers.toml" title="Permalink to this headline">¶</a></h2>
+<p>Ensemble of functions to read MUSE data.</p>
+<dl class="py function">
+<dt id="muse.readers.toml.read_settings">
+<code class="sig-prename descclassname">muse.readers.toml.</code><code class="sig-name descname">read_settings</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">settings_file</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">, </span>IO<span class="p">[</span>str<span class="p">]</span><span class="p">, </span>Mapping<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">path</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; Any<a class="reference internal" href="../_modules/muse/readers/toml.html#read_settings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.toml.read_settings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads the input settings for any MUSE simulation.</p>
+<p>Loads a MUSE settings file. This must be a TOML formatted file. Missing settings are
+loaded from the DEFAULT_SETTINGS. Custom pythom modules, if present, are loaded
+and checks are run to validate the settings and ensure that they are compatible with
+a MUSE simulation.</p>
+<p>Arguments:
+settings_file: A string or a Path to the settings file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A dictionary with the settings</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-muse.readers">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-muse.readers" title="Permalink to this headline">¶</a></h2>
+<p>Aggregates methods to read data from file.</p>
+<dl class="py data">
+<dt id="muse.readers.DEFAULT_SETTINGS_PATH">
+<code class="sig-prename descclassname">muse.readers.</code><code class="sig-name descname">DEFAULT_SETTINGS_PATH</code><em class="property"> = PosixPath('/Users/alexkell/Documents/SGI/2-documentation/StarMuse/src/muse/data/default_settings.toml')</em><a class="headerlink" href="#muse.readers.DEFAULT_SETTINGS_PATH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default settings path.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.readers.camel_to_snake">
+<code class="sig-prename descclassname">muse.readers.</code><code class="sig-name descname">camel_to_snake</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="../_modules/muse/readers.html#camel_to_snake"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.camel_to_snake" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transforms CamelCase to snake_case.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.readers.kebab_to_camel">
+<code class="sig-prename descclassname">muse.readers.</code><code class="sig-name descname">kebab_to_camel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">string</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/readers.html#kebab_to_camel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.kebab_to_camel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="muse.readers.snake_to_kebab">
+<code class="sig-prename descclassname">muse.readers.</code><code class="sig-name descname">snake_to_kebab</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">string</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="../_modules/muse/readers.html#snake_to_kebab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.readers.snake_to_kebab" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">muse.readers package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-muse.readers.csv">muse.readers.csv module</a></li>
+<li><a class="reference internal" href="#module-muse.readers.toml">muse.readers.toml module</a></li>
+<li><a class="reference internal" href="#module-muse.readers">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source/muse.readers.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.readers package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,211 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customising MUSE Tutorials &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="1. Adding a new technology" href="add-solar.html" />
+    <link rel="prev" title="Key MUSE Components" href="../muse-components.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="add-solar.html" title="1. Adding a new technology"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../muse-components.html" title="Key MUSE Components"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Customising MUSE Tutorials</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="customising-muse-tutorials">
+<h1>Customising MUSE Tutorials<a class="headerlink" href="#customising-muse-tutorials" title="Permalink to this headline">¶</a></h1>
+<p>Next, we show you how to customise MUSE to create your own scenarios.</p>
+<p>We recommend following the tutorials step by step, as the files build on the previous example. If you prefer to jump straight in, your results may be different to the ones presented. To help you, we have provided the code to generate the various examples in case you want to compare your code to ours. Links to this code can be found in the table below, in the <a class="reference internal" href="#tutorial-information">Tutorial Information</a> section.</p>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Tutorial contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="add-solar.html">1. Adding a new technology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="add-agent.html">2. Adding an agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="add-region.html">3. Adding a region</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modify-timing-data.html">4. Modification of time</a></li>
+<li class="toctree-l1"><a class="reference internal" href="addition-service-demand.html">5. Adding a service demand</a></li>
+<li class="toctree-l1"><a class="reference internal" href="add-gdp-correlation-demand.html">6. Adding a service demand by correlation</a></li>
+</ul>
+</div>
+<div class="section" id="tutorial-information">
+<h2>Tutorial Information<a class="headerlink" href="#tutorial-information" title="Permalink to this headline">¶</a></h2>
+<p>Below is a table to help you keep up with the different scenarios. The “Tutorial” header refers to the tutorial number as per the contents table. For example, Tutorial 1 is equal to “1. Adding a new technology”. The “Agents”, “Regions”, “Residential Technologies”, “Power Technologies” and “Gas Technologies” headers contain a tuple which contains the respective technologies present in the tutorial. The “Code” header provides a link to the files required to generate the tutorials.</p>
+<p>In the table below, you will notice a x2 after some of the technology tuples. This refers to the fact that there are two regions, and the technologies within each region are the same for both regions.</p>
+<table class="colwidths-given docutils align-default" id="id1">
+<caption><span class="caption-text">Scenarios</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 4%" />
+<col style="width: 19%" />
+<col style="width: 19%" />
+<col style="width: 19%" />
+<col style="width: 19%" />
+<col style="width: 19%" />
+<col style="width: 4%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Tutorial</p></th>
+<th class="head"><p>Agents</p></th>
+<th class="head"><p>Regions</p></th>
+<th class="head"><p>Residential Technologies</p></th>
+<th class="head"><p>Power Technologies</p></th>
+<th class="head"><p>Gas Technologies</p></th>
+<th class="head"><p>Code</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>[A1]</p></td>
+<td><p>[R1]</p></td>
+<td><p>[gasboiler, heatpump]</p></td>
+<td><p>[gasCCGT, windturbine, solarPV]</p></td>
+<td><p>[gassuply1]</p></td>
+<td><p>[1]</p></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p>[A1, A2]</p></td>
+<td><p>[R1]</p></td>
+<td><p>[gasboiler, heatpump]</p></td>
+<td><p>[gasCCGT, windturbine, solarPV]</p></td>
+<td><p>[gassuply1]</p></td>
+<td><p>[2]</p></td>
+</tr>
+<tr class="row-even"><td><p>3</p></td>
+<td><p>[A1, A2] x2</p></td>
+<td><p>[R1, R2]</p></td>
+<td><p>[gasboiler, heatpump] x2</p></td>
+<td><p>[gasCCGT, windturbine, solarPV] x2</p></td>
+<td><p>[gassuply1] x2</p></td>
+<td><p>[3]</p></td>
+</tr>
+<tr class="row-odd"><td><p>4</p></td>
+<td><p>[A1, A2] x2</p></td>
+<td><p>[R1, R2]</p></td>
+<td><p>[gasboiler, heatpump] x2</p></td>
+<td><p>[gasCCGT, windturbine, solarPV] x2</p></td>
+<td><p>[gassuply1] x2</p></td>
+<td><p>[4]</p></td>
+</tr>
+<tr class="row-even"><td><p>5</p></td>
+<td><p>[A1, A2] x2</p></td>
+<td><p>[R1, R2]</p></td>
+<td><p>[gasboiler, heatpump, electric_stove, gas_stove] x2</p></td>
+<td><p>[gasCCGT, windturbine, solarPV] x2</p></td>
+<td><p>[gassuply1] x2</p></td>
+<td><p>[5]</p></td>
+</tr>
+<tr class="row-odd"><td><p>6</p></td>
+<td><p>[A1]</p></td>
+<td><p>[R1]</p></td>
+<td><p>[gasboiler, heatpump]</p></td>
+<td><p>[gasCCGT, windturbine, solarPV]</p></td>
+<td><p>[gassuply1]</p></td>
+<td><p>[6]</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Customising MUSE Tutorials</a><ul>
+<li><a class="reference internal" href="#tutorial-information">Tutorial Information</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../muse-components.html"
+                        title="previous chapter">Key MUSE Components</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="add-solar.html"
+                        title="next chapter"><span class="section-number">1. </span>Adding a new technology</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/user-guide/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="add-solar.html" title="1. Adding a new technology"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../muse-components.html" title="Key MUSE Components"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Customising MUSE Tutorials</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

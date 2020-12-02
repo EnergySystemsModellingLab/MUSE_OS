@@ -1,0 +1,283 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse.registration &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.registration</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for muse.registration</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Registrators that allow pluggable data to logic transforms.&quot;&quot;&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;registrator&quot;</span><span class="p">]</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">Union</span>
+
+
+<span class="k">def</span> <span class="nf">name_variations</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Standard name variations when registering functions with MUSE.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">camelCase</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+        <span class="n">comps</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">comps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">title</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">comps</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+    <span class="k">def</span> <span class="nf">CamelCase</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>  <span class="c1"># noqa</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">title</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">kebab_case</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">nospacecase</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="c1"># keep ordered function name because first one is the most likely variation.</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">names</span> <span class="o">+=</span> <span class="p">(</span>
+        <span class="p">[</span><span class="n">camelCase</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">]</span>
+        <span class="o">+</span> <span class="p">[</span><span class="n">CamelCase</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">]</span>
+        <span class="o">+</span> <span class="p">[</span><span class="n">kebab_case</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">]</span>
+        <span class="o">+</span> <span class="p">[</span><span class="n">nospacecase</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">ordered</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ordered</span><span class="p">:</span>
+            <span class="n">ordered</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ordered</span>
+
+
+<div class="viewcode-block" id="registrator"><a class="viewcode-back" href="../../source/muse.html#muse.registration.registrator">[docs]</a><span class="k">def</span> <span class="nf">registrator</span><span class="p">(</span>
+    <span class="n">decorator</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">registry</span><span class="p">:</span> <span class="n">MutableMapping</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">logname</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Text</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">loglevel</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Text</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Debug&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A decorator to create a decorator that registers functions with MUSE.</span>
+
+<span class="sd">    This is a decorator that takes another decorator as an argument. Hence it</span>
+<span class="sd">    returns a decorator. It simplifies and standardizes creating decorators to</span>
+<span class="sd">    register functions with muse.</span>
+
+<span class="sd">    The registrator expects as non-optional keyword argument a registry where</span>
+<span class="sd">    the resulting decorator will register functions.</span>
+
+<span class="sd">    Furthermore, the final function (the one passed to the decorator passed to</span>
+<span class="sd">    this function) will emit a standardized log-call.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        At it&#39;s simplest, creating a registrator and registrating happens by</span>
+<span class="sd">        first declaring a registry.</span>
+
+<span class="sd">        &gt;&gt;&gt; REGISTRY = {}</span>
+
+<span class="sd">        In general, it will be a variable owned directly by a module, hence the</span>
+<span class="sd">        all-caps. Creating the registrator then follows:</span>
+
+<span class="sd">        &gt;&gt;&gt; from muse.registration import registrator</span>
+<span class="sd">        &gt;&gt;&gt; @registrator(registry=REGISTRY, logname=&#39;my stuff&#39;,</span>
+<span class="sd">        ...              loglevel=&#39;Info&#39;)</span>
+<span class="sd">        ... def register_mystuff(function):</span>
+<span class="sd">        ...     return function</span>
+
+
+<span class="sd">        This registrator does nothing more than register the function. A more</span>
+<span class="sd">        interesting example is given below. Then a function can be registered:</span>
+
+<span class="sd">        &gt;&gt;&gt; @register_mystuff(name=&#39;yoyo&#39;)</span>
+<span class="sd">        ... def my_registered_function(a, b):</span>
+<span class="sd">        ...     return a + b</span>
+
+<span class="sd">        The argument &#39;yoyo&#39; is optional. It adds aliases for the function in the</span>
+<span class="sd">        registry. In any case, functions are registered with default aliases</span>
+<span class="sd">        corresponding to standard name variations, e.g. CamelCase, camelCase,</span>
+<span class="sd">        and kebab-case, as illustrated below:</span>
+
+<span class="sd">        &gt;&gt;&gt; REGISTRY[&#39;my_registered_function&#39;] is my_registered_function</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; REGISTRY[&#39;my-registered-function&#39;] is my_registered_function</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; REGISTRY[&#39;yoyo&#39;] is my_registered_function</span>
+<span class="sd">        True</span>
+
+<span class="sd">        A more interesting case would involve the registrator automatically</span>
+<span class="sd">        adding functionality to the input function. For instance, the inputs</span>
+<span class="sd">        could be manipulated and the result of the function could be</span>
+<span class="sd">        automatically transformed to a string:</span>
+
+<span class="sd">        &gt;&gt;&gt; from muse.registration import registrator</span>
+<span class="sd">        &gt;&gt;&gt; @registrator(registry=REGISTRY)</span>
+<span class="sd">        ... def register_mystuff(function):</span>
+<span class="sd">        ...     from functools import wraps</span>
+<span class="sd">        ...</span>
+<span class="sd">        ...     @wraps(function)</span>
+<span class="sd">        ...     def decorated(a, b) -&gt; str:</span>
+<span class="sd">        ...         result = function(2 * a, 3 * b)</span>
+<span class="sd">        ...         return str(result)</span>
+<span class="sd">        ...</span>
+<span class="sd">        ...     return decorated</span>
+
+<span class="sd">        &gt;&gt;&gt; @register_mystuff</span>
+<span class="sd">        ... def other(a, b):</span>
+<span class="sd">        ...     return a + b</span>
+
+<span class="sd">        &gt;&gt;&gt; isinstance(REGISTRY[&#39;other&#39;](-3, 2), str)</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; REGISTRY[&#39;other&#39;](-3, 2) == &quot;0&quot;</span>
+<span class="sd">        True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+
+    <span class="c1"># allows specifyng the registered name as a keyword argument</span>
+    <span class="k">if</span> <span class="n">decorator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">registrator</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">loglevel</span><span class="o">=</span><span class="n">loglevel</span><span class="p">,</span> <span class="n">logname</span><span class="o">=</span><span class="n">logname</span><span class="p">,</span> <span class="n">registry</span><span class="o">=</span><span class="n">registry</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">registry</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;registry keyword must be given and cannot be None&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">logname</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">logname</span> <span class="o">=</span> <span class="n">decorator</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;register_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">decorator</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">register</span><span class="p">(</span>
+        <span class="n">function</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Text</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">vary_name</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">logging</span> <span class="kn">import</span> <span class="n">getLogger</span>
+        <span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">signature</span><span class="p">,</span> <span class="n">isclass</span>
+        <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
+
+        <span class="c1"># allows specifyng the registered name as a keyword argument</span>
+        <span class="k">if</span> <span class="n">function</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">register</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">vary_name</span><span class="o">=</span><span class="n">vary_name</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">function</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">Text</span><span class="p">):</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span><span class="p">,</span> <span class="n">function</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="n">function</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span>
+
+        <span class="c1"># all registered filters will use the same logger, at least for the</span>
+        <span class="c1"># default logging done in the decorated function</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">getLogger</span><span class="p">(</span><span class="n">function</span><span class="o">.</span><span class="vm">__module__</span><span class="p">)</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Computing </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logname</span><span class="p">,</span> <span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">assert</span> <span class="n">decorator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s2">&quot;name&quot;</span> <span class="ow">in</span> <span class="n">signature</span><span class="p">(</span><span class="n">decorator</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+            <span class="n">inner_decorated</span> <span class="o">=</span> <span class="n">decorator</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">inner_decorated</span> <span class="o">=</span> <span class="n">decorator</span><span class="p">(</span><span class="n">function</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">isclass</span><span class="p">(</span><span class="n">function</span><span class="p">):</span>
+
+            <span class="nd">@wraps</span><span class="p">(</span><span class="n">function</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">decorated</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">loglevel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">logger</span><span class="p">,</span> <span class="n">loglevel</span><span class="p">):</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="n">logger</span><span class="p">,</span> <span class="n">loglevel</span><span class="p">)(</span><span class="n">msg</span><span class="p">)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">inner_decorated</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">result</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">decorated</span> <span class="o">=</span> <span class="n">function</span>
+
+        <span class="c1"># There&#39;s just one name for the decorator</span>
+        <span class="k">assert</span> <span class="n">registry</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">vary_name</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">function</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">in</span> <span class="n">registry</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;A </span><span class="si">{</span><span class="n">logname</span><span class="si">}</span><span class="s2"> with the name </span><span class="si">{</span><span class="n">function</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> already exists&quot;</span>
+                <span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="n">registry</span><span class="p">[</span><span class="n">function</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="n">decorated</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span><span class="n">name_variations</span><span class="p">(</span><span class="n">function</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="o">*</span><span class="n">names</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">registry</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;A </span><span class="si">{</span><span class="n">logname</span><span class="si">}</span><span class="s2"> with the name </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> already exists&quot;</span>
+                    <span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                    <span class="k">return</span>
+                <span class="n">registry</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">decorated</span>
+
+        <span class="k">return</span> <span class="n">decorated</span>
+
+    <span class="k">return</span> <span class="n">register</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.registration</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

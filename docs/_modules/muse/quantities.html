@@ -1,0 +1,755 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse.quantities &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.quantities</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for muse.quantities</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Collection of functions to compute model quantities.</span>
+
+<span class="sd">This module is meant to collect functions computing quantities of interest to the model,</span>
+<span class="sd">e.g. lcoe, maximum production for a given capacity, etc, especially where these</span>
+<span class="sd">functions are used in different areas of the model.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+
+
+<div class="viewcode-block" id="supply"><a class="viewcode-back" href="../../source/muse.html#muse.quantities.supply">[docs]</a><span class="k">def</span> <span class="nf">supply</span><span class="p">(</span>
+    <span class="n">capacity</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">],</span>
+    <span class="n">interpolation</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+    <span class="n">production_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Production and emission for a given capacity servicing a given demand.</span>
+
+<span class="sd">    Supply includes two components, end-uses outputs and environmental pollutants. The</span>
+<span class="sd">    former consists of the demand that the current capacity is capable of servicing.</span>
+<span class="sd">    Where there is excess capacity, then service is assigned to each asset a share of</span>
+<span class="sd">    the maximum production (e.g. utilization across similar assets is the same in</span>
+<span class="sd">    percentage). Then, environmental pollutants are computing as a function of</span>
+<span class="sd">    commodity outputs.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        capacity: number/quantity of assets that can service the demand</span>
+<span class="sd">        demand: amount of each end-use required. The supply of each process will not</span>
+<span class="sd">            exceed it&#39;s share of the demand.</span>
+<span class="sd">        technologies: factors bindings the capacity of an asset with its production of</span>
+<span class="sd">            commodities and environmental pollutants.</span>
+
+<span class="sd">    Return:</span>
+<span class="sd">        A data array where the commodity dimension only contains actual outputs (i.e. no</span>
+<span class="sd">        input commodities).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.commodities</span> <span class="kn">import</span> <span class="n">is_pollutant</span><span class="p">,</span> <span class="n">CommodityUsage</span><span class="p">,</span> <span class="n">check_usage</span>
+
+    <span class="k">if</span> <span class="n">production_method</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">production_method</span> <span class="o">=</span> <span class="n">maximum_production</span>
+
+    <span class="n">maxprod</span> <span class="o">=</span> <span class="n">production_method</span><span class="p">(</span><span class="n">technologies</span><span class="p">,</span> <span class="n">capacity</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;region&quot;</span> <span class="ow">in</span> <span class="n">demand</span><span class="o">.</span><span class="n">dims</span> <span class="ow">and</span> <span class="s2">&quot;region&quot;</span> <span class="ow">in</span> <span class="n">maxprod</span><span class="o">.</span><span class="n">coords</span><span class="p">:</span>
+        <span class="n">demand</span> <span class="o">=</span> <span class="n">demand</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">region</span><span class="o">=</span><span class="n">maxprod</span><span class="o">.</span><span class="n">region</span><span class="p">)</span>
+    <span class="n">expanded_maxprod</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">maxprod</span> <span class="o">*</span> <span class="n">demand</span> <span class="o">/</span> <span class="n">demand</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">demand</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">maxprod</span><span class="o">.</span><span class="n">dims</span><span class="p">))</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">expanded_demand</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">demand</span> <span class="o">*</span> <span class="n">maxprod</span> <span class="o">/</span> <span class="n">maxprod</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">maxprod</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">demand</span><span class="o">.</span><span class="n">dims</span><span class="p">))</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">expanded_demand</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">expanded_demand</span> <span class="o">&lt;=</span> <span class="n">expanded_maxprod</span><span class="p">,</span> <span class="n">expanded_maxprod</span>
+    <span class="p">)</span>
+
+    <span class="c1"># add production of environmental pollutants</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">is_pollutant</span><span class="p">(</span><span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="p">)</span>
+    <span class="n">result</span><span class="p">[{</span><span class="s2">&quot;commodity&quot;</span><span class="p">:</span> <span class="n">env</span><span class="p">}]</span> <span class="o">=</span> <span class="n">emission</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">technologies</span><span class="o">.</span><span class="n">fixed_outputs</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+        <span class="o">*</span><span class="n">result</span><span class="o">.</span><span class="n">dims</span>
+    <span class="p">)</span>
+    <span class="n">result</span><span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;commodity&quot;</span><span class="p">:</span> <span class="o">~</span><span class="n">check_usage</span><span class="p">(</span><span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="p">,</span> <span class="n">CommodityUsage</span><span class="o">.</span><span class="n">PRODUCT</span><span class="p">)}</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="emission"><a class="viewcode-back" href="../../source/muse.html#muse.quantities.emission">[docs]</a><span class="k">def</span> <span class="nf">emission</span><span class="p">(</span><span class="n">production</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">fixed_outputs</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Computes emission from current products.</span>
+
+<span class="sd">    Emissions are computed as `sum(product) * fixed_outputs`.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        production: Produced goods. Only those with non-environmental products are used</span>
+<span class="sd">            when computing emissions.</span>
+<span class="sd">        fixed_outputs: factor relating total production to emissions. For convenience,</span>
+<span class="sd">            this can also be a `technologies` dataset containing `fixed_output`.</span>
+
+<span class="sd">    Return:</span>
+<span class="sd">        A data array containing emissions (and only emissions).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.utilities</span> <span class="kn">import</span> <span class="n">broadcast_techs</span>
+    <span class="kn">from</span> <span class="nn">muse.commodities</span> <span class="kn">import</span> <span class="n">is_enduse</span><span class="p">,</span> <span class="n">is_pollutant</span>
+
+    <span class="c1"># just in case we are passed a technologies dataset, like in other functions</span>
+    <span class="n">fouts</span> <span class="o">=</span> <span class="n">broadcast_techs</span><span class="p">(</span>
+        <span class="nb">getattr</span><span class="p">(</span><span class="n">fixed_outputs</span><span class="p">,</span> <span class="s2">&quot;fixed_outputs&quot;</span><span class="p">,</span> <span class="n">fixed_outputs</span><span class="p">),</span> <span class="n">production</span>
+    <span class="p">)</span>
+    <span class="n">envs</span> <span class="o">=</span> <span class="n">is_pollutant</span><span class="p">(</span><span class="n">fouts</span><span class="o">.</span><span class="n">comm_usage</span><span class="p">)</span>
+    <span class="n">enduses</span> <span class="o">=</span> <span class="n">is_enduse</span><span class="p">(</span><span class="n">fouts</span><span class="o">.</span><span class="n">comm_usage</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">production</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">enduses</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;commodity&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="n">fouts</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span>
+        <span class="n">commodity</span><span class="o">=</span><span class="n">envs</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="gross_margin"><a class="viewcode-back" href="../../source/muse.html#muse.quantities.gross_margin">[docs]</a><span class="k">def</span> <span class="nf">gross_margin</span><span class="p">(</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">capacity</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">prices</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;profit of increasing the production by one unit.</span>
+
+<span class="sd">    - energy commodities INPUTS are related to fuel costs</span>
+<span class="sd">    - environmental commodities OUTPUTS are related to environmental costs</span>
+<span class="sd">    - variable costs is given as technodata inputs</span>
+<span class="sd">    - non-environmental commodities OUTPUTS are related to revenues</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.utilities</span> <span class="kn">import</span> <span class="n">broadcast_techs</span>
+    <span class="kn">from</span> <span class="nn">muse.commodities</span> <span class="kn">import</span> <span class="n">is_pollutant</span><span class="p">,</span> <span class="n">is_enduse</span>
+    <span class="kn">from</span> <span class="nn">muse.timeslices</span> <span class="kn">import</span> <span class="n">convert_timeslice</span><span class="p">,</span> <span class="n">QuantityType</span>
+
+    <span class="n">tech</span> <span class="o">=</span> <span class="n">broadcast_techs</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+        <span class="n">cast</span><span class="p">(</span>
+            <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+            <span class="n">technologies</span><span class="p">[</span>
+                <span class="p">[</span>
+                    <span class="s2">&quot;technical_life&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;interest_rate&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;var_par&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;var_exp&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;fixed_outputs&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;fixed_inputs&quot;</span><span class="p">,</span>
+                <span class="p">]</span>
+            <span class="p">],</span>
+        <span class="p">),</span>
+        <span class="n">capacity</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">var_par</span> <span class="o">=</span> <span class="n">tech</span><span class="o">.</span><span class="n">var_par</span>
+    <span class="n">var_exp</span> <span class="o">=</span> <span class="n">tech</span><span class="o">.</span><span class="n">var_exp</span>
+    <span class="n">fixed_outputs</span> <span class="o">=</span> <span class="n">tech</span><span class="o">.</span><span class="n">fixed_outputs</span>
+    <span class="n">fixed_inputs</span> <span class="o">=</span> <span class="n">tech</span><span class="o">.</span><span class="n">fixed_inputs</span>
+
+    <span class="c1"># Hours ratio</span>
+    <span class="n">variable_costs</span> <span class="o">=</span> <span class="n">convert_timeslice</span><span class="p">(</span>
+        <span class="n">var_par</span> <span class="o">*</span> <span class="n">capacity</span> <span class="o">**</span> <span class="n">var_exp</span><span class="p">,</span> <span class="n">prices</span><span class="o">.</span><span class="n">timeslice</span><span class="p">,</span> <span class="n">QuantityType</span><span class="o">.</span><span class="n">EXTENSIVE</span>
+    <span class="p">)</span>
+
+    <span class="n">prices</span> <span class="o">=</span> <span class="n">prices</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">region</span><span class="o">=</span><span class="n">capacity</span><span class="o">.</span><span class="n">region</span><span class="p">)</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">capacity</span><span class="o">.</span><span class="n">year</span><span class="p">)</span>
+
+    <span class="c1"># Filters</span>
+    <span class="n">environmentals</span> <span class="o">=</span> <span class="n">is_pollutant</span><span class="p">(</span><span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="p">)</span>
+    <span class="n">enduses</span> <span class="o">=</span> <span class="n">is_enduse</span><span class="p">(</span><span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="p">)</span>
+
+    <span class="c1"># The individual prices</span>
+    <span class="n">consumption_costs</span> <span class="o">=</span> <span class="p">(</span><span class="n">prices</span> <span class="o">*</span> <span class="n">fixed_inputs</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;commodity&quot;</span><span class="p">)</span>
+    <span class="n">production_costs</span> <span class="o">=</span> <span class="n">prices</span> <span class="o">*</span> <span class="n">fixed_outputs</span>
+    <span class="n">environmental_costs</span> <span class="o">=</span> <span class="p">(</span><span class="n">production_costs</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">environmentals</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+        <span class="p">(</span><span class="s2">&quot;commodity&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">revenues</span> <span class="o">=</span> <span class="p">(</span><span class="n">production_costs</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">enduses</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;commodity&quot;</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">revenues</span> <span class="o">-</span> <span class="n">environmental_costs</span> <span class="o">-</span> <span class="n">variable_costs</span> <span class="o">-</span> <span class="n">consumption_costs</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="decommissioning_demand"><a class="viewcode-back" href="../../source/muse.html#muse.quantities.decommissioning_demand">[docs]</a><span class="k">def</span> <span class="nf">decommissioning_demand</span><span class="p">(</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">capacity</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">year</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes demand from process decommissioning.</span>
+
+<span class="sd">    If `year` is not given, it defaults to all years in capacity. If there are more than</span>
+<span class="sd">    two years, then decommissioning is with respect to first (or minimum) year.</span>
+
+<span class="sd">    Let :math:`M_t^r(y)` be the retrofit demand, :math:`^{(s)}\mathcal{D}_t^r(y)` be the</span>
+<span class="sd">    decommissioning demand at the level of the sector, and :math:`A^r_{t, \iota}(y)` be</span>
+<span class="sd">    the assets owned by the agent. Then, the decommissioning demand for agent :math:`i`</span>
+<span class="sd">    is :</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \mathcal{D}^{r, i}_{t, c}(y) =</span>
+<span class="sd">            \sum_\iota \alpha_{t, \iota}^r \beta_{t, \iota, c}^r</span>
+<span class="sd">                \left(A^{i, r}_{t, \iota}(y) - A^{i, r}_{t, \iota, c}(y + 1) \right)</span>
+
+<span class="sd">    given the utilization factor :math:`\alpha_{t, \iota}` and the fixed output factor</span>
+<span class="sd">    :math:`\beta_{t, \iota, c}`.</span>
+
+<span class="sd">    Furthermore, decommissioning demand is non-zero only for end-use commodities.</span>
+
+<span class="sd">    ncsearch-nohlsearch).. SeeAlso:</span>
+<span class="sd">        :ref:`indices`, :ref:`quantities`,</span>
+<span class="sd">        :py:func:`~muse.quantities.maximum_production`</span>
+<span class="sd">        :py:func:`~muse.commodities.is_enduse`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">year</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">year</span> <span class="o">=</span> <span class="n">capacity</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">year</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">year</span><span class="p">)</span>
+    <span class="n">capacity</span> <span class="o">=</span> <span class="n">capacity</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fill_value&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">})</span>
+    <span class="n">baseyear</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">year</span><span class="p">)</span>
+    <span class="n">dyears</span> <span class="o">=</span> <span class="p">[</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">year</span> <span class="k">if</span> <span class="n">u</span> <span class="o">!=</span> <span class="n">baseyear</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">maximum_production</span><span class="p">(</span>
+        <span class="n">technologies</span><span class="p">,</span> <span class="n">capacity</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">baseyear</span><span class="p">)</span> <span class="o">-</span> <span class="n">capacity</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">dyears</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="consumption"><a class="viewcode-back" href="../../source/muse.html#muse.quantities.consumption">[docs]</a><span class="k">def</span> <span class="nf">consumption</span><span class="p">(</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">production</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">prices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Commodity consumption when fulfilling the whole production.</span>
+
+<span class="sd">    Currently, the consumption is implemented for commodity_max == +infinity. If prices</span>
+<span class="sd">    are not given, then flexible consumption is *not* considered.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.utilities</span> <span class="kn">import</span> <span class="n">filter_with_template</span>
+    <span class="kn">from</span> <span class="nn">muse.commodities</span> <span class="kn">import</span> <span class="n">is_fuel</span><span class="p">,</span> <span class="n">is_enduse</span>
+    <span class="kn">from</span> <span class="nn">muse.timeslices</span> <span class="kn">import</span> <span class="n">convert_timeslice</span><span class="p">,</span> <span class="n">QuantityType</span>
+
+    <span class="n">params</span> <span class="o">=</span> <span class="n">filter_with_template</span><span class="p">(</span>
+        <span class="n">technologies</span><span class="p">[[</span><span class="s2">&quot;fixed_inputs&quot;</span><span class="p">,</span> <span class="s2">&quot;flexible_inputs&quot;</span><span class="p">]],</span> <span class="n">production</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+
+    <span class="c1"># sum over end-use products, if the dimension exists in the input</span>
+    <span class="n">comm_usage</span> <span class="o">=</span> <span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">production</span><span class="o">.</span><span class="n">commodity</span><span class="p">)</span>
+    <span class="n">production</span> <span class="o">=</span> <span class="n">production</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">is_enduse</span><span class="p">(</span><span class="n">comm_usage</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;commodity&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">prices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s2">&quot;timeslice&quot;</span> <span class="ow">in</span> <span class="n">prices</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+        <span class="n">production</span> <span class="o">=</span> <span class="n">convert_timeslice</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+            <span class="n">production</span><span class="p">,</span> <span class="n">prices</span><span class="p">,</span> <span class="n">QuantityType</span><span class="o">.</span><span class="n">EXTENSIVE</span>
+        <span class="p">)</span>
+
+    <span class="n">params_fuels</span> <span class="o">=</span> <span class="n">is_fuel</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">comm_usage</span><span class="p">)</span>
+    <span class="n">consumption</span> <span class="o">=</span> <span class="n">production</span> <span class="o">*</span> <span class="n">params</span><span class="o">.</span><span class="n">fixed_inputs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">params_fuels</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">prices</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">consumption</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">flexible_inputs</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">params_fuels</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">consumption</span>
+
+    <span class="n">prices</span> <span class="o">=</span> <span class="n">filter_with_template</span><span class="p">(</span><span class="n">prices</span><span class="p">,</span> <span class="n">production</span><span class="p">,</span> <span class="n">installed_as_year</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="c1"># technology with flexible inputs</span>
+    <span class="n">flexs</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">flexible_inputs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">params_fuels</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># cheapest fuel for each flexible technology</span>
+    <span class="k">assert</span> <span class="n">prices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">flexs</span><span class="o">.</span><span class="n">commodity</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">prices</span><span class="o">.</span><span class="n">commodity</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">minprices</span> <span class="o">=</span> <span class="n">flexs</span><span class="o">.</span><span class="n">commodity</span><span class="p">[</span>
+        <span class="n">prices</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">flexs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">prices</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="s2">&quot;commodity&quot;</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="c1"># add consumption from cheapest fuel</span>
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">flexs</span><span class="o">.</span><span class="n">commodity</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">consumption</span><span class="o">.</span><span class="n">commodity</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">flex</span> <span class="o">=</span> <span class="n">flexs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">minprices</span> <span class="o">==</span> <span class="n">flexs</span><span class="o">.</span><span class="n">commodity</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">flex</span> <span class="o">=</span> <span class="n">flex</span> <span class="o">/</span> <span class="p">(</span><span class="n">flex</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;commodity&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">consumption</span> <span class="o">+</span> <span class="n">flex</span> <span class="o">*</span> <span class="n">production</span></div>
+
+
+<div class="viewcode-block" id="annual_levelized_cost_of_energy"><a class="viewcode-back" href="../../source/muse.html#muse.quantities.annual_levelized_cost_of_energy">[docs]</a><span class="k">def</span> <span class="nf">annual_levelized_cost_of_energy</span><span class="p">(</span>
+    <span class="n">prices</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">interpolation</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+    <span class="n">fill_value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Text</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;extrapolate&quot;</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">filters</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Levelized cost of energy (LCOE) of technologies on each given year.</span>
+
+<span class="sd">    It mostly follows the `simplified LCOE`_ given by NREL. However, the</span>
+<span class="sd">    units are sometimes different. In the argument description, we use the following:</span>
+
+<span class="sd">    * [h]: hour</span>
+<span class="sd">    * [y]: year</span>
+<span class="sd">    * [$]: unit of currency</span>
+<span class="sd">    * [E]: unit of energy</span>
+<span class="sd">    * [1]: dimensionless</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        prices: [$/(Eh)] the price of all commodities, including consumables and fuels.</span>
+<span class="sd">            This dataarray contains at least timeslice and commodity dimensions.</span>
+
+<span class="sd">        technologies: Describe the technologies, with at least the following parameters:</span>
+
+<span class="sd">            * cap_par: [$/E] overnight capital cost</span>
+<span class="sd">            * interest_rate: [1]</span>
+<span class="sd">            * fix_par: [$/(Eh)] fixed costs of operation and maintenance costs</span>
+<span class="sd">            * var_par: [$/(Eh)] variable costs of operation and maintenance costs</span>
+<span class="sd">            * fixed_inputs: [1] == [(Eh)/(Eh)] ratio indicating the amount of commodity</span>
+<span class="sd">                consumed per units of energy created.</span>
+<span class="sd">            * fixed_outputs: [1] == [(Eh)/(Eh)] ration indicating the amount of</span>
+<span class="sd">                environmental pollutants produced per units of energy created.</span>
+
+<span class="sd">        interpolation: interpolation method.</span>
+<span class="sd">        fill_value: Fill value for values outside the extrapolation range.</span>
+<span class="sd">        **filters: Anything by which prices can be filtered.</span>
+
+<span class="sd">    Return:</span>
+<span class="sd">        The lifetime LCOE in [$/(Eh)] for each technology at each timeslice.</span>
+
+<span class="sd">    .. _simplified LCOE: https://www.nrel.gov/analysis/tech-lcoe-documentation.html</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.timeslices</span> <span class="kn">import</span> <span class="n">convert_timeslice</span><span class="p">,</span> <span class="n">QuantityType</span>
+    <span class="kn">from</span> <span class="nn">muse.commodities</span> <span class="kn">import</span> <span class="n">is_pollutant</span>
+
+    <span class="n">techs</span> <span class="o">=</span> <span class="n">technologies</span><span class="p">[</span>
+        <span class="p">[</span>
+            <span class="s2">&quot;interest_rate&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;cap_par&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;var_par&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;fix_par&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;fixed_inputs&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;fixed_outputs&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="s2">&quot;year&quot;</span> <span class="ow">in</span> <span class="n">techs</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+        <span class="n">techs</span> <span class="o">=</span> <span class="n">techs</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span>
+            <span class="n">year</span><span class="o">=</span><span class="n">prices</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fill_value&quot;</span><span class="p">:</span> <span class="n">fill_value</span><span class="p">}</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">filters</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">prices</span> <span class="o">=</span> <span class="n">prices</span><span class="o">.</span><span class="n">sel</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">filters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">prices</span><span class="o">.</span><span class="n">dims</span><span class="p">})</span>
+        <span class="n">techs</span> <span class="o">=</span> <span class="n">techs</span><span class="o">.</span><span class="n">sel</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">filters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">techs</span><span class="o">.</span><span class="n">dims</span><span class="p">})</span>
+
+    <span class="k">assert</span> <span class="p">{</span><span class="s2">&quot;timeslice&quot;</span><span class="p">,</span> <span class="s2">&quot;commodity&quot;</span><span class="p">}</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">prices</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+
+    <span class="n">annualized_capital_costs</span> <span class="o">=</span> <span class="n">convert_timeslice</span><span class="p">(</span>
+        <span class="n">techs</span><span class="o">.</span><span class="n">cap_par</span> <span class="o">*</span> <span class="n">techs</span><span class="o">.</span><span class="n">interest_rate</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">techs</span><span class="o">.</span><span class="n">interest_rate</span><span class="p">)),</span>
+        <span class="n">prices</span><span class="o">.</span><span class="n">timeslice</span><span class="p">,</span>
+        <span class="n">QuantityType</span><span class="o">.</span><span class="n">EXTENSIVE</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">o_and_e_costs</span> <span class="o">=</span> <span class="n">techs</span><span class="o">.</span><span class="n">fix_par</span> <span class="o">+</span> <span class="n">techs</span><span class="o">.</span><span class="n">var_par</span>
+
+    <span class="n">fuel_costs</span> <span class="o">=</span> <span class="p">(</span><span class="n">techs</span><span class="o">.</span><span class="n">fixed_inputs</span> <span class="o">*</span> <span class="n">prices</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;commodity&quot;</span><span class="p">)</span>
+
+    <span class="n">env_costs</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">techs</span><span class="o">.</span><span class="n">fixed_outputs</span> <span class="o">*</span> <span class="n">prices</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">is_pollutant</span><span class="p">(</span><span class="n">techs</span><span class="o">.</span><span class="n">comm_usage</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;commodity&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">annualized_capital_costs</span> <span class="o">+</span> <span class="n">o_and_e_costs</span> <span class="o">+</span> <span class="n">env_costs</span> <span class="o">+</span> <span class="n">fuel_costs</span></div>
+
+
+<div class="viewcode-block" id="lifetime_levelized_cost_of_energy"><a class="viewcode-back" href="../../source/muse.html#muse.quantities.lifetime_levelized_cost_of_energy">[docs]</a><span class="k">def</span> <span class="nf">lifetime_levelized_cost_of_energy</span><span class="p">(</span>
+    <span class="n">prices</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">installation_year</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">filters</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Levelized cost of energy (LCOE) of technologies over their lifetime.</span>
+
+<span class="sd">    It mostly follows the `simplified LCOE` given by NREL. However, the units are</span>
+<span class="sd">    sometimes different. In the argument description, we use the following:</span>
+
+<span class="sd">    * [h]: hour</span>
+<span class="sd">    * [y]: year</span>
+<span class="sd">    * [$]: unit of currency</span>
+<span class="sd">    * [E]: unit of energy</span>
+<span class="sd">    * [1]: dimensionless</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        prices: [$/(Eh)] the price of all commodities, including consumables and fuels.</span>
+<span class="sd">            This dataarray contains at least timeslice and commodity dimensions.</span>
+
+<span class="sd">        technologies: Describe the technologies, with at least the following parameters:</span>
+
+<span class="sd">            * technical life: [a] lifetime of each technology</span>
+<span class="sd">            * cap_par: [$/E] overnight capital cost</span>
+<span class="sd">            * interest_rate: [1]</span>
+<span class="sd">            * fix_par: [$/(Eh)] fixed costs of operation and maintenance costs</span>
+<span class="sd">            * var_par: [$/(Eh)] variable costs of operation and maintenance costs</span>
+<span class="sd">            * fixed_inputs: [1] == [(Eh)/(Eh)] ratio indicating the amount of commodity</span>
+<span class="sd">                consumed per units of energy created.</span>
+<span class="sd">            * fixed_outputs: [1] == [(Eh)/(Eh)] ration indicating the amount of</span>
+<span class="sd">                environmental pollutants produced per units of energy created.</span>
+
+<span class="sd">        installation_year: year when the technologies are installed. If not given, it</span>
+<span class="sd">            defaults to the first year in `prices`. This should be a single value, there</span>
+<span class="sd">            is currently no provision for computing LCOE over different installation</span>
+<span class="sd">            years.</span>
+
+<span class="sd">    Return:</span>
+<span class="sd">        The lifetime LCOE in [$/(Eh)] for each technology at each timeslice.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.timeslices</span> <span class="kn">import</span> <span class="n">convert_timeslice</span><span class="p">,</span> <span class="n">QuantityType</span>
+    <span class="kn">from</span> <span class="nn">muse.utilities</span> <span class="kn">import</span> <span class="n">filter_input</span>
+    <span class="kn">from</span> <span class="nn">muse.commodities</span> <span class="kn">import</span> <span class="n">is_pollutant</span>
+
+    <span class="n">techs</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span> <span class="o">=</span> <span class="n">technologies</span><span class="p">[</span>  <span class="c1"># type: ignore</span>
+        <span class="p">[</span>
+            <span class="s2">&quot;technical_life&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;interest_rate&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;cap_par&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;var_par&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;fix_par&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;fixed_inputs&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;fixed_outputs&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="n">installation_year</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">installation_year</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">prices</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+    <span class="k">assert</span> <span class="s2">&quot;year&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filters</span>
+    <span class="n">ftechs</span> <span class="o">=</span> <span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">techs</span><span class="p">,</span>
+        <span class="n">year</span><span class="o">=</span><span class="n">installation_year</span><span class="p">,</span>
+        <span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">filters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">techs</span><span class="o">.</span><span class="n">dims</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">lifetime_years</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+        <span class="nb">range</span><span class="p">(</span>
+            <span class="n">installation_year</span><span class="p">,</span>
+            <span class="n">installation_year</span> <span class="o">+</span> <span class="n">ftechs</span><span class="o">.</span><span class="n">technical_life</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">fprices</span> <span class="o">=</span> <span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">prices</span><span class="p">,</span>
+        <span class="n">year</span><span class="o">=</span><span class="n">lifetime_years</span><span class="p">,</span>
+        <span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">filters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">prices</span><span class="o">.</span><span class="n">dims</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;year&quot;</span> <span class="ow">in</span> <span class="n">fprices</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+        <span class="n">fprices</span> <span class="o">=</span> <span class="n">fprices</span><span class="o">.</span><span class="n">ffill</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fprices</span> <span class="o">=</span> <span class="n">fprices</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">lifetime_years</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="p">{</span><span class="s2">&quot;timeslice&quot;</span><span class="p">,</span> <span class="s2">&quot;commodity&quot;</span><span class="p">}</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">fprices</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+
+    <span class="n">interests</span> <span class="o">=</span> <span class="n">ftechs</span><span class="o">.</span><span class="n">interest_rate</span>
+    <span class="n">life</span> <span class="o">=</span> <span class="n">ftechs</span><span class="o">.</span><span class="n">technical_life</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">annualized_capital_costs</span> <span class="o">=</span> <span class="n">convert_timeslice</span><span class="p">(</span>
+        <span class="n">ftechs</span><span class="o">.</span><span class="n">cap_par</span> <span class="o">*</span> <span class="n">interests</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">interests</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">life</span><span class="p">)),</span>
+        <span class="n">fprices</span><span class="o">.</span><span class="n">timeslice</span><span class="p">,</span>
+        <span class="n">QuantityType</span><span class="o">.</span><span class="n">EXTENSIVE</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">years</span> <span class="o">=</span> <span class="n">fprices</span><span class="o">.</span><span class="n">year</span> <span class="o">-</span> <span class="n">installation_year</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">rates</span> <span class="o">=</span> <span class="p">(</span><span class="n">years</span> <span class="o">&lt;=</span> <span class="n">life</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">interests</span><span class="p">)</span> <span class="o">**</span> <span class="n">years</span>
+    <span class="n">o_and_m_costs</span> <span class="o">=</span> <span class="p">(</span><span class="n">ftechs</span><span class="o">.</span><span class="n">fix_par</span> <span class="o">+</span> <span class="n">ftechs</span><span class="o">.</span><span class="n">var_par</span><span class="p">)</span> <span class="o">*</span> <span class="n">rates</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+
+    <span class="n">fuel_costs</span> <span class="o">=</span> <span class="p">(</span><span class="n">ftechs</span><span class="o">.</span><span class="n">fixed_inputs</span> <span class="o">*</span> <span class="n">fprices</span> <span class="o">*</span> <span class="n">rates</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="s2">&quot;commodity&quot;</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">))</span>
+
+    <span class="n">envs</span> <span class="o">=</span> <span class="n">is_pollutant</span><span class="p">(</span><span class="n">ftechs</span><span class="o">.</span><span class="n">comm_usage</span><span class="p">)</span>
+    <span class="n">envs</span> <span class="o">=</span> <span class="n">envs</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">envs</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">envs</span><span class="o">.</span><span class="n">dims</span><span class="p">))</span>
+    <span class="n">env_costs</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">ftechs</span><span class="o">.</span><span class="n">fixed_outputs</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">envs</span><span class="p">)</span> <span class="o">*</span> <span class="n">fprices</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">envs</span><span class="p">)</span> <span class="o">*</span> <span class="n">rates</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="s2">&quot;commodity&quot;</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">annualized_capital_costs</span> <span class="o">+</span> <span class="n">o_and_m_costs</span> <span class="o">+</span> <span class="n">env_costs</span> <span class="o">+</span> <span class="n">fuel_costs</span></div>
+
+
+<div class="viewcode-block" id="maximum_production"><a class="viewcode-back" href="../../source/muse.html#muse.quantities.maximum_production">[docs]</a><span class="k">def</span> <span class="nf">maximum_production</span><span class="p">(</span><span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">capacity</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="o">**</span><span class="n">filters</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Production for a given capacity.</span>
+
+<span class="sd">    Given a capacity :math:`\mathcal{A}_{t, \iota}^r`, the utilization factor</span>
+<span class="sd">    :math:`\alpha^r_{t, \iota}` and the the fixed outputs of each technology</span>
+<span class="sd">    :math:`\beta^r_{t, \iota, c}`, then the result production is:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        P_{t, \iota}^r =</span>
+<span class="sd">            \alpha^r_{t, \iota}\beta^r_{t, \iota, c}\mathcal{A}_{t, \iota}^r</span>
+
+<span class="sd">    The dimensions above are only indicative. The function should work with many</span>
+<span class="sd">    different input values, e.g. with capacities expanded over time-slices :math:`t` or</span>
+<span class="sd">    agents :math:`i`.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        capacity: Capacity of each technology of interest. In practice, the capacity can</span>
+<span class="sd">            refer to asset capacity, the max capacity, or the capacity-in-use.</span>
+<span class="sd">        technologies: xr.Dataset describing the features of the technologies of</span>
+<span class="sd">            interests.  It should contain `fixed_outputs` and `utilization_factor`. It&#39;s</span>
+<span class="sd">            shape is matched to `capacity` using `muse.utilities.broadcast_techs`.</span>
+<span class="sd">        filters: keyword arguments are used to filter down the capacity and</span>
+<span class="sd">            technologies. Filters not relevant to the quantities of interest, i.e.</span>
+<span class="sd">            filters that are not a dimension of `capacity` or `techologies`, are</span>
+<span class="sd">            silently ignored.</span>
+<span class="sd">    Return:</span>
+<span class="sd">        `capacity * fixed_outputs * utilization_factor`, whittled down according to the</span>
+<span class="sd">        filters and the set of technologies in `capacity`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.utilities</span> <span class="kn">import</span> <span class="n">filter_input</span><span class="p">,</span> <span class="n">broadcast_techs</span>
+    <span class="kn">from</span> <span class="nn">muse.commodities</span> <span class="kn">import</span> <span class="n">is_enduse</span>
+
+    <span class="n">capa</span> <span class="o">=</span> <span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">capacity</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">filters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">capacity</span><span class="o">.</span><span class="n">dims</span><span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">btechs</span> <span class="o">=</span> <span class="n">broadcast_techs</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+        <span class="n">cast</span><span class="p">(</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">technologies</span><span class="p">[[</span><span class="s2">&quot;fixed_outputs&quot;</span><span class="p">,</span> <span class="s2">&quot;utilization_factor&quot;</span><span class="p">]]),</span> <span class="n">capa</span>
+    <span class="p">)</span>
+    <span class="n">ftechs</span> <span class="o">=</span> <span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">btechs</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">filters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">btechs</span><span class="o">.</span><span class="n">dims</span><span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">capa</span> <span class="o">*</span> <span class="n">ftechs</span><span class="o">.</span><span class="n">fixed_outputs</span> <span class="o">*</span> <span class="n">ftechs</span><span class="o">.</span><span class="n">utilization_factor</span>
+    <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">is_enduse</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">comm_usage</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="demand_matched_production"><a class="viewcode-back" href="../../source/muse.html#muse.quantities.demand_matched_production">[docs]</a><span class="k">def</span> <span class="nf">demand_matched_production</span><span class="p">(</span>
+    <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">prices</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">capacity</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">filters</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Production matching the input demand.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        demand: demand to match.</span>
+<span class="sd">        prices: price from which to compute the annual levelized cost of energy.</span>
+<span class="sd">        capacity: capacity from which to obtain the maximum production constraints.</span>
+<span class="sd">        **filters: keyword arguments with which to filter the input datasets and</span>
+<span class="sd">            data arrays., e.g. region, or year.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.demand_matching</span> <span class="kn">import</span> <span class="n">demand_matching</span>
+    <span class="kn">from</span> <span class="nn">muse.utilities</span> <span class="kn">import</span> <span class="n">broadcast_techs</span>
+    <span class="kn">from</span> <span class="nn">muse.timeslices</span> <span class="kn">import</span> <span class="n">convert_timeslice</span><span class="p">,</span> <span class="n">QuantityType</span>
+
+    <span class="n">technodata</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">broadcast_techs</span><span class="p">(</span><span class="n">technologies</span><span class="p">,</span> <span class="n">capacity</span><span class="p">))</span>
+    <span class="n">cost</span> <span class="o">=</span> <span class="n">annual_levelized_cost_of_energy</span><span class="p">(</span><span class="n">prices</span><span class="p">,</span> <span class="n">technodata</span><span class="p">,</span> <span class="o">**</span><span class="n">filters</span><span class="p">)</span>
+    <span class="n">max_production</span> <span class="o">=</span> <span class="n">maximum_production</span><span class="p">(</span><span class="n">technodata</span><span class="p">,</span> <span class="n">capacity</span><span class="p">,</span> <span class="o">**</span><span class="n">filters</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="p">(</span><span class="s2">&quot;timeslice&quot;</span> <span class="ow">in</span> <span class="n">demand</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;timeslice&quot;</span> <span class="ow">in</span> <span class="n">cost</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;timeslice&quot;</span> <span class="ow">in</span> <span class="n">demand</span><span class="o">.</span><span class="n">dims</span> <span class="ow">and</span> <span class="s2">&quot;timeslice&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">max_production</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+        <span class="n">max_production</span> <span class="o">=</span> <span class="n">convert_timeslice</span><span class="p">(</span>
+            <span class="n">max_production</span><span class="p">,</span> <span class="n">demand</span><span class="o">.</span><span class="n">timeslice</span><span class="p">,</span> <span class="n">QuantityType</span><span class="o">.</span><span class="n">EXTENSIVE</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">demand_matching</span><span class="p">(</span><span class="n">demand</span><span class="p">,</span> <span class="n">cost</span><span class="p">,</span> <span class="n">max_production</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="capacity_in_use"><a class="viewcode-back" href="../../source/muse.html#muse.quantities.capacity_in_use">[docs]</a><span class="k">def</span> <span class="nf">capacity_in_use</span><span class="p">(</span>
+    <span class="n">production</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">max_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Text</span><span class="p">]]]</span> <span class="o">=</span> <span class="s2">&quot;commodity&quot;</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">filters</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Capacity-in-use for each asset, given production.</span>
+
+<span class="sd">    Conceptually, this operation is the inverse of `production`.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        production: Production from each technology of interest.</span>
+<span class="sd">        technologies: xr.Dataset describing the features of the technologies of</span>
+<span class="sd">            interests.  It should contain `fixed_outputs` and `utilization_factor`. It&#39;s</span>
+<span class="sd">            shape is matched to `capacity` using `muse.utilities.broadcast_techs`.</span>
+<span class="sd">        max_dim: reduces the given dimensions using `max`. Defaults to &quot;commodity&quot;. If</span>
+<span class="sd">            None, then no reduction is performed.</span>
+<span class="sd">        filters: keyword arguments are used to filter down the capacity and</span>
+<span class="sd">            technologies. Filters not relevant to the quantities of interest, i.e.</span>
+<span class="sd">            filters that are not a dimension of `capacity` or `techologies`, are</span>
+<span class="sd">            silently ignored.</span>
+<span class="sd">    Return:</span>
+<span class="sd">        Capacity-in-use for each technology, whittled down by the filters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.utilities</span> <span class="kn">import</span> <span class="n">filter_input</span><span class="p">,</span> <span class="n">broadcast_techs</span>
+    <span class="kn">from</span> <span class="nn">muse.commodities</span> <span class="kn">import</span> <span class="n">is_enduse</span>
+
+    <span class="n">prod</span> <span class="o">=</span> <span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">production</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">filters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">production</span><span class="o">.</span><span class="n">dims</span><span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">techs</span> <span class="o">=</span> <span class="n">technologies</span><span class="p">[[</span><span class="s2">&quot;fixed_outputs&quot;</span><span class="p">,</span> <span class="s2">&quot;utilization_factor&quot;</span><span class="p">]]</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">techs</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span>
+    <span class="n">btechs</span> <span class="o">=</span> <span class="n">broadcast_techs</span><span class="p">(</span><span class="n">techs</span><span class="p">,</span> <span class="n">prod</span><span class="p">)</span>
+    <span class="n">ftechs</span> <span class="o">=</span> <span class="n">filter_input</span><span class="p">(</span>
+        <span class="n">btechs</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">filters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">technologies</span><span class="o">.</span><span class="n">dims</span><span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">factor</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">ftechs</span><span class="o">.</span><span class="n">fixed_outputs</span> <span class="o">*</span> <span class="n">ftechs</span><span class="o">.</span><span class="n">utilization_factor</span><span class="p">)</span>
+    <span class="n">capa_in_use</span> <span class="o">=</span> <span class="p">(</span><span class="n">prod</span> <span class="o">*</span> <span class="n">factor</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">factor</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">capa_in_use</span> <span class="o">=</span> <span class="n">capa_in_use</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">is_enduse</span><span class="p">(</span><span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">capa_in_use</span><span class="o">.</span><span class="n">commodity</span><span class="p">)),</span> <span class="mi">0</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">max_dim</span><span class="p">:</span>
+        <span class="n">capa_in_use</span> <span class="o">=</span> <span class="n">capa_in_use</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">max_dim</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">capa_in_use</span></div>
+
+
+<div class="viewcode-block" id="supply_cost"><a class="viewcode-back" href="../../source/muse.html#muse.quantities.supply_cost">[docs]</a><span class="k">def</span> <span class="nf">supply_cost</span><span class="p">(</span>
+    <span class="n">production</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">lcoe</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">asset_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Text</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;asset&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Supply cost given production and the levelized cost of energy.</span>
+
+<span class="sd">    In practice, the supply cost is the weighted average LCOE over assets (`asset_dim`),</span>
+<span class="sd">    where the weights are the production.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        production: Amount of goods produced. In practice, production can be obtained</span>
+<span class="sd">            from the capacity for each asset via the method</span>
+<span class="sd">            `muse.quantities.production`.</span>
+<span class="sd">        lcoe: Levelized cost of energy for each good produced. In practice, it can be</span>
+<span class="sd">            obtained from market prices via</span>
+<span class="sd">            `muse.quantities.annual_levelized_cost_of_energy` or</span>
+<span class="sd">            `muse.quantities.lifetime_levelized_cost_of_energy`.</span>
+<span class="sd">        asset_dim: Name of the dimension(s) holding assets, processes or technologies.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">production</span><span class="o">=</span><span class="n">production</span><span class="p">,</span> <span class="n">prices</span><span class="o">=</span><span class="n">production</span> <span class="o">*</span> <span class="n">lcoe</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">asset_dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;region&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">coords</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">asset_dim</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">asset_dim</span><span class="p">)</span>
+
+    <span class="n">total</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">production</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e-15</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">infty</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">prices</span> <span class="o">/</span> <span class="n">total</span></div>
+
+
+<div class="viewcode-block" id="costed_production"><a class="viewcode-back" href="../../source/muse.html#muse.quantities.costed_production">[docs]</a><span class="k">def</span> <span class="nf">costed_production</span><span class="p">(</span>
+    <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">costs</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">capacity</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">with_minimum_service</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Computes production from ranked assets.</span>
+
+<span class="sd">    The assets are ranked according to their cost. The asset with least cost are allowed</span>
+<span class="sd">    to service the demand first, up to the maximum production. By default, the mininum</span>
+<span class="sd">    service is applied first.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="kn">from</span> <span class="nn">muse.quantities</span> <span class="kn">import</span> <span class="n">maximum_production</span>
+    <span class="kn">from</span> <span class="nn">muse.utilities</span> <span class="kn">import</span> <span class="n">broadcast_techs</span>
+    <span class="kn">from</span> <span class="nn">muse.timeslices</span> <span class="kn">import</span> <span class="n">convert_timeslice</span><span class="p">,</span> <span class="n">QuantityType</span>
+
+    <span class="n">technodata</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">broadcast_techs</span><span class="p">(</span><span class="n">technologies</span><span class="p">,</span> <span class="n">capacity</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">capacity</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="nf">group_assets</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;asset&quot;</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="nf">group_assets</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">))</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;asset&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">x</span>
+
+    <span class="n">ranking</span> <span class="o">=</span> <span class="n">costs</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="s2">&quot;asset&quot;</span><span class="p">)</span>
+    <span class="n">maxprod</span> <span class="o">=</span> <span class="n">convert_timeslice</span><span class="p">(</span>
+        <span class="n">maximum_production</span><span class="p">(</span><span class="n">technodata</span><span class="p">,</span> <span class="n">capacity</span><span class="p">),</span>
+        <span class="n">demand</span><span class="o">.</span><span class="n">timeslice</span><span class="p">,</span>
+        <span class="n">QuantityType</span><span class="o">.</span><span class="n">EXTENSIVE</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">commodity</span> <span class="o">=</span> <span class="p">(</span><span class="n">maxprod</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">maxprod</span><span class="o">.</span><span class="n">dims</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="s2">&quot;commodity&quot;</span><span class="p">])</span>
+    <span class="n">commodity</span> <span class="o">=</span> <span class="n">commodity</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">commodity</span><span class="o">.</span><span class="n">coords</span> <span class="k">if</span> <span class="n">u</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">commodity</span><span class="o">.</span><span class="n">dims</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">demand</span> <span class="o">=</span> <span class="n">demand</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">commodity</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">constraints</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxprod</span><span class="o">=</span><span class="n">maxprod</span><span class="p">,</span> <span class="n">ranking</span><span class="o">=</span><span class="n">ranking</span><span class="p">,</span> <span class="n">has_output</span><span class="o">=</span><span class="n">maxprod</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">set_coords</span><span class="p">(</span><span class="s2">&quot;ranking&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">set_coords</span><span class="p">(</span><span class="s2">&quot;has_output&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">commodity</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">with_minimum_service</span><span class="p">:</span>
+        <span class="n">production</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">constraints</span><span class="o">.</span><span class="n">maxprod</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">production</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="n">technodata</span><span class="p">,</span> <span class="s2">&quot;minimum_service_factor&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">constraints</span><span class="o">.</span><span class="n">maxprod</span>
+        <span class="p">)</span>
+        <span class="n">demand</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">demand</span> <span class="o">-</span> <span class="n">group_assets</span><span class="p">(</span><span class="n">production</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">rank</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">constraints</span><span class="o">.</span><span class="n">ranking</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">())):</span>
+        <span class="n">condition</span> <span class="o">=</span> <span class="p">(</span><span class="n">constraints</span><span class="o">.</span><span class="n">ranking</span> <span class="o">==</span> <span class="n">rank</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">constraints</span><span class="o">.</span><span class="n">has_output</span>
+        <span class="n">current_maxprod</span> <span class="o">=</span> <span class="n">constraints</span><span class="o">.</span><span class="n">maxprod</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">fullprod</span> <span class="o">=</span> <span class="n">group_assets</span><span class="p">(</span><span class="n">current_maxprod</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">fullprod</span> <span class="o">&lt;=</span> <span class="n">demand</span> <span class="o">+</span> <span class="mf">1e-10</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="n">current_demand</span> <span class="o">=</span> <span class="n">fullprod</span>
+            <span class="n">current_prod</span> <span class="o">=</span> <span class="n">current_maxprod</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;region&quot;</span> <span class="ow">in</span> <span class="n">demand</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+                <span class="n">demand_prod</span> <span class="o">=</span> <span class="n">demand</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">region</span><span class="o">=</span><span class="n">production</span><span class="o">.</span><span class="n">region</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">demand_prod</span> <span class="o">=</span> <span class="n">demand</span>
+            <span class="n">demand_prod</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">current_maxprod</span> <span class="o">/</span> <span class="n">current_maxprod</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;asset&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="n">demand_prod</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">current_prod</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">demand_prod</span><span class="p">,</span> <span class="n">current_maxprod</span><span class="p">)</span>
+            <span class="n">current_demand</span> <span class="o">=</span> <span class="n">group_assets</span><span class="p">(</span><span class="n">current_prod</span><span class="p">)</span>
+        <span class="n">demand</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">current_demand</span><span class="p">,</span> <span class="n">demand</span><span class="p">)</span>
+        <span class="n">production</span> <span class="o">+=</span> <span class="n">current_prod</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">maxprod</span><span class="p">)</span>
+    <span class="n">result</span><span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">commodity</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">production</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.quantities</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

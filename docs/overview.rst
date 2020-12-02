@@ -3,6 +3,30 @@ MUSE Overview
 
 .. note::  TODO: Potentially find introductory image to place here.
 
+How to use MUSE
+---------------
+
+There are a huge number of ways that MUSE could be used. The energy field is varied and diverse, and many different scenarios can be explored. Users can model the impact of changes in technology prices, demand, policy instruments, sector interactions and much, much more. People are always thinking of new ways that MUSE can be used. So, get creative!
+
+.. A simulation model of a geographical region or world can be developed and is made up of the following features:
+
+.. #. **Sectors** such as the power sector, gas production sector and the residential sector.
+
+.. #. **Agents** such as a high-income subsection of the population in the UK or a risk-averse generation company. These agents are responsible for making investments in energy technologies.
+
+.. #. **Technologies** which the agents choose to adopt. Technologies either produce an energy commodity (e.g. electricity), or a service demand (e.g. building space heating).
+
+.. #. **Service demands** are demands that must be serviced such as lighting, heating or steel production.
+
+.. #. **Market clearing algorithm** is the algorithm which determines global commodity prices based upon the balancing of supply and demand from each of the sectors. It must be noted, however, that only the conversion and supply sectors are able to modify prices; the demand sectors are price-takers, and so do not modify prices.
+
+.. #. **Equilibrium prices** are the prices determined by the market clearing algorithm and can determine the investments made by agents in various sectors. This allows for the model to project how the system may develop over a time period. 
+
+.. These features are described in more detail in the rest of this documentation.
+
+.. What is MUSE?
+.. -------------
+
 MUSE is an open source agent-based modelling environment that can be used to simulate change in an energy system over time. An example of the type of question MUSE can help in answering is: 
 
 - How may a carbon budget affect investments made in the power sector over the next 30 years? 
@@ -43,27 +67,6 @@ Examples of the questions MUSE can answer include:
 .. Of course, these are just three examples and the questions that can be answered in the energy field are diverse and varied. 
 
 
-How to use MUSE
----------------
-
-There are a huge number of ways that MUSE could be used. The energy field is varied and diverse, and many different scenarios can be explored. Users can model the impact of changes in technology prices, demand, policy instruments, sector interactions and much, much more. People are always thinking of new ways that MUSE can be used. So, get creative!
-
-A simulation model of a geographical region or world can be developed and is made up of the following features:
-
-#. **Sectors** such as the power sector, gas production sector and the residential sector.
-
-#. **Agents** such as a high-income subsection of the population in the UK or a risk-averse generation company. These agents are responsible for making investments in energy technologies.
-
-#. **Technologies** which the agents choose to adopt. Technologies either produce an energy commodity (e.g. electricity), or a service demand (e.g. building space heating).
-
-#. **Service demands** are demands that must be serviced such as lighting, heating or steel production.
-
-#. **Market clearing algorithm** is the algorithm which determines global commodity prices based upon the balancing of supply and demand from each of the sectors. It must be noted, however, that only the conversion and supply sectors are able to modify prices; the demand sectors are price-takers, and so do not modify prices.
-
-#. **Equilibrium prices** are the prices determined by the market clearing algorithm and can determine the investments made by agents in various sectors. This allows for the model to project how the system may develop over a time period. 
-
-These features are described in more detail in the rest of this documentation.
-
 What are MUSE's unique features?
 --------------------------------
 
@@ -100,9 +103,9 @@ How MUSE works
 
 MUSE works by iterating between sectors shown above to ensure that energy demands are met by the technologies chosen by the agents. Next, we detail the calculations made by MUSE throughout the simulation.
 
-#. The end-use demand is calculated. For example, how much electricity, gas and oil demand is there for the energy services of cooking, building space heating and lighting in the residential sector? It must be noted, that this is only known after the energy service demand sector is solved and the technologies invested in are decided.
+#. The service demand is calculated. For example, how much electricity, gas and oil demand is there for the energy services of cooking, building space heating and lighting in the residential sector? It must be noted, that this is only known after the energy service demand sector is solved and the technologies invested in are decided.
 
-#. A demand sector is solved. That is, agents choose which end-use technologies to serve the demands in the sector. For example, electric stoves are compared to gas stoves to meet the energy service demand of cooking. These technologies are chosen based upon their:
+#. A demand sector is solved. That is, agents choose end-use technologies to serve the demands in the sector. For example, they compare electric stoves to gas stoves to meet the energy service demand of cooking. TThey then choose between these technologies based upon their:
 
     i. Search space (which technologies are they willing to consider?)
 
@@ -116,9 +119,9 @@ MUSE works by iterating between sectors shown above to ensure that energy demand
 
 #. The supply and conversion sectors are solved: agents in these sectors use the same approach (i.e. search space, objectives, decision rules) to decide which technologies to investment in to serve the energy commodity demand. For example, agents in the power sector may decide to invest in solar photovoltaics, wind turbines and gas power plants to service the electricity demand.
 
-#. As a result of these decisions a price for each energy commodity is formed based upon supply and demand. This is passed to the MCA.
+#. As a result of these decisions in supply and conversion sectors, a price for each energy commodity is formed. This is passed to the MCA.
 
 #. The MCA then sends these prices back to the demand sectors, which are solved again as above.
 
-#. This process repeats itself until commodity supply and demand converges for each energy commodity. Once these converge, the model has found a “partial equilibrium” and it moves forward to the next time period.
+#. This process repeats itself until commodity supply and demand converges for each energy commodity. Once these converge, the model has found a “partial equilibrium” on the energy system and it moves forward to the next time period.
 

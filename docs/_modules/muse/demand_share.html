@@ -1,0 +1,564 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse.demand_share &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.demand_share</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for muse.demand_share</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Demand share computations.</span>
+
+<span class="sd">The demand share splits a demand amongst agents. It is used within a sector to assign</span>
+<span class="sd">part of the input MCA demand to each agent.</span>
+
+<span class="sd">Demand shares functions should be registered via the decorator `register_demand_share`.</span>
+
+<span class="sd">Demand share functions are not expected to modify any of their arguments. They</span>
+<span class="sd">should all have the following signature:</span>
+
+<span class="sd">.. code-block:: Python</span>
+
+<span class="sd">    @register_demand_share</span>
+<span class="sd">    def demand_share(</span>
+<span class="sd">        agents: Sequence[AbstractAgent],</span>
+<span class="sd">        market: xr.Dataset,</span>
+<span class="sd">        technologies: xr.Dataset,</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">    ) -&gt; xr.DataArray:</span>
+<span class="sd">        pass</span>
+
+<span class="sd">Arguments:</span>
+<span class="sd">    agents: a sequence of  agent relevant to the demand share procedure. The agent can</span>
+<span class="sd">        be queried for parameters specific to the demand share procedure. For instance,</span>
+<span class="sd">        :py:func`new_and_retro` will query the agents for the assets they own, the</span>
+<span class="sd">        region they are contained with, their category (new or retrofit), etc...</span>
+<span class="sd">    market: Market variables, including prices, consumption and supply.</span>
+<span class="sd">    technologies: a dataset containing all constant data characterizing the</span>
+<span class="sd">        technologies.</span>
+<span class="sd">    kwargs: Any number of keyword arguments that can parametrize how the demand is</span>
+<span class="sd">        shared. These keyword arguments can be modified from the TOML file.</span>
+
+<span class="sd">Returns:</span>
+<span class="sd">    The unmet consumption. Unless indicated, all agents will compete for a the full</span>
+<span class="sd">    demand. However, if there exists a coordinate &quot;agent&quot; of dimension &quot;asset&quot; giving</span>
+<span class="sd">    the :py:attr:`~muse.agents.agent.AbstractAgent.uuid` of the agent, then agents will</span>
+<span class="sd">    only service that par of the demand.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;new_and_retro&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;factory&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;register_demand_share&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;unmet_demand&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;unmet_forecasted_demand&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;DEMAND_SHARE_SIGNATURE&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">Hashable</span><span class="p">,</span>
+    <span class="n">Mapping</span><span class="p">,</span>
+    <span class="n">MutableMapping</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">Text</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+    <span class="n">cast</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+<span class="kn">from</span> <span class="nn">mypy_extensions</span> <span class="kn">import</span> <span class="n">KwArg</span>
+
+<span class="kn">from</span> <span class="nn">muse.agents</span> <span class="kn">import</span> <span class="n">AbstractAgent</span>
+<span class="kn">from</span> <span class="nn">muse.registration</span> <span class="kn">import</span> <span class="n">registrator</span>
+
+<span class="n">DEMAND_SHARE_SIGNATURE</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[</span>
+    <span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">AbstractAgent</span><span class="p">],</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">KwArg</span><span class="p">(</span><span class="n">Any</span><span class="p">)],</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span>
+<span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;Demand share signature.&quot;&quot;&quot;</span>
+
+<span class="n">DEMAND_SHARE</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">DEMAND_SHARE_SIGNATURE</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&quot;&quot;&quot;Dictionary of demand share functions.&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="register_demand_share"><a class="viewcode-back" href="../../source/muse.html#muse.demand_share.register_demand_share">[docs]</a><span class="nd">@registrator</span><span class="p">(</span><span class="n">registry</span><span class="o">=</span><span class="n">DEMAND_SHARE</span><span class="p">,</span> <span class="n">loglevel</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">register_demand_share</span><span class="p">(</span><span class="n">function</span><span class="p">:</span> <span class="n">DEMAND_SHARE_SIGNATURE</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Decorator to register a function as a demand share calculation.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">function</span></div>
+
+
+<div class="viewcode-block" id="factory"><a class="viewcode-back" href="../../source/muse.html#muse.demand_share.factory">[docs]</a><span class="k">def</span> <span class="nf">factory</span><span class="p">(</span>
+    <span class="n">settings</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DEMAND_SHARE_SIGNATURE</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">settings</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">Text</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">settings</span> <span class="ow">or</span> <span class="s2">&quot;new_and_retro&quot;</span>
+        <span class="n">params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;new_and_retro&quot;</span><span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">settings</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;name&quot;</span><span class="p">}</span>
+
+    <span class="n">function</span> <span class="o">=</span> <span class="n">DEMAND_SHARE</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+    <span class="n">keywords</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">demand_share</span><span class="p">(</span>
+        <span class="n">agents</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AbstractAgent</span><span class="p">],</span>
+        <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+        <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+
+        <span class="n">keyword_args</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">keywords</span><span class="p">)</span>
+        <span class="n">keyword_args</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">function</span><span class="p">(</span><span class="n">agents</span><span class="p">,</span> <span class="n">market</span><span class="p">,</span> <span class="n">technologies</span><span class="p">,</span> <span class="o">**</span><span class="n">keyword_args</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">DEMAND_SHARE_SIGNATURE</span><span class="p">,</span> <span class="n">demand_share</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="new_and_retro"><a class="viewcode-back" href="../../source/muse.html#muse.demand_share.new_and_retro">[docs]</a><span class="nd">@register_demand_share</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">new_and_retro</span><span class="p">(</span>
+    <span class="n">agents</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AbstractAgent</span><span class="p">],</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">production</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;maximum_production&quot;</span><span class="p">,</span>
+    <span class="n">current_year</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">forecast</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Splits demand across new and retro agents.</span>
+
+<span class="sd">    The input demand is split amongst both *new* and *retro* agents. *New* agents get a</span>
+<span class="sd">    share of the increase in demand for the forecast year, whereas *retrofi* agents are</span>
+<span class="sd">    assigned a share of the demand that occurs from decommissioned assets.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        agents: a list of all agents. This list should mainly be used to determine the</span>
+<span class="sd">            type of an agent and the assets it owns. The agents will not be modified in</span>
+<span class="sd">            any way.</span>
+<span class="sd">        market: the market for which to satisfy the demand. It should contain at-least</span>
+<span class="sd">            ``consumption`` and ``supply``. It may contain ``prices`` if that is of use</span>
+<span class="sd">            to the production method. The ``consumption`` reflects the demand for the</span>
+<span class="sd">            commodities produced by the current sector.</span>
+<span class="sd">        technologies: quantities describing the technologies.</span>
+
+<span class="sd">    Pseudo-code:</span>
+
+<span class="sd">    #. the capacity is reduced over agents and  expanded over timeslices (extensive</span>
+<span class="sd">       quantity) and aggregated over agents. Generally:</span>
+
+<span class="sd">       .. math::</span>
+
+<span class="sd">           A_{a, s}^r = w_s\sum_i A_a^{r, i}</span>
+
+<span class="sd">       with :math:`w_s` a weight associated with each timeslice and determined via</span>
+<span class="sd">       :py:func:`muse.timeslices.convert_timeslice`.</span>
+
+<span class="sd">    #. An intermediate quantity, the :py:func:`unmet demand</span>
+<span class="sd">       &lt;muse.demand_share.unmet_demand&gt;` :math:`U` is defined from</span>
+<span class="sd">       :math:`P[\mathcal{M}, \mathcal{A}]`, a function giving the production for a given</span>
+<span class="sd">       market :math:`\mathcal{M}`, the associated consumption :math:`\mathcal{C}`, and</span>
+<span class="sd">       aggregate assets :math:`\mathcal{A}`:</span>
+
+<span class="sd">       .. math::</span>
+<span class="sd">           U[\mathcal{M}, \mathcal{A}] =</span>
+<span class="sd">             \max(\mathcal{C} - P[\mathcal{M}, \mathcal{A}], 0)</span>
+
+<span class="sd">       where :math:`\max` operates element-wise, and indices have been dropped for</span>
+<span class="sd">       simplicity. The resulting expression has the same indices as the consumption</span>
+<span class="sd">       :math:`\mathcal{C}_{c, s}^r`.</span>
+
+<span class="sd">       :math:`P` is any function registered with</span>
+<span class="sd">       :py:func:`@register_production&lt;muse.production.register_production&gt;`.</span>
+
+
+<span class="sd">    #. the *new* demand :math:`N` is defined as:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            N = \min\left(</span>
+<span class="sd">                \mathcal{C}_{c, s}^r(y + \Delta y) - \mathcal{C}_{c, s}^r(y),</span>
+<span class="sd">                U[\mathcal{M}^r(y + \Delta y), \mathcal{A}_{a, s}^r(y)]</span>
+<span class="sd">            \right)</span>
+
+<span class="sd">    #. the *retrofit* demand :math:`R` is defined from the identity</span>
+
+<span class="sd">       .. math::</span>
+
+<span class="sd">           C_{c, s}^r(y + \Delta y) =</span>
+<span class="sd">            P[\mathcal{M}^r(y+\Delta y), \mathcal{A}_{a, s}^r(y + \Delta y)]</span>
+<span class="sd">            + N_{c, s}^r</span>
+<span class="sd">            + R_{c, s}^r</span>
+
+<span class="sd">       In other words, it is the share of the forecasted consumption that is serviced</span>
+<span class="sd">       neither by the current assets still present in the forecast year, nor by the</span>
+<span class="sd">       *new* agent.</span>
+
+<span class="sd">    #. then each *new* agent gets a share of :math:`N` proportional to it&#39;s</span>
+<span class="sd">        share of the :py:func:`production &lt;muse.quantities.maximum_production&gt;`,</span>
+<span class="sd">        :math:`P[\mathcal{A}_{a, s}^{r, i}(y)]`.  Then the share of the demand for new</span>
+<span class="sd">        agent :math:`i` is:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            N_{c, s, t}^{i, r}(y) = N_{c, s}^r</span>
+<span class="sd">                \frac{\sum_\iota P[\mathcal{A}_{s, t, \iota}^{r, i}(y)]}</span>
+<span class="sd">                     {\sum_{i, t, \iota}P[\mathcal{A}_{s, t, \iota}^{r, i}(y)]}</span>
+
+
+<span class="sd">    #. similarly, each *retrofit* agent gets a share of :math:`N` proportional to it&#39;s</span>
+<span class="sd">        share of the :py:func:`decommissioning demand</span>
+<span class="sd">        &lt;muse.quantities.decommissioning_demand&gt;`, :math:`D^{r, i}_{t, c}`.</span>
+<span class="sd">        Then the share of the demand for retrofit agent :math:`i` is:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            R_{c, s, t}^{i, r}(y) = R_{c, s}^r</span>
+<span class="sd">                \frac{\sum_\iota\mathcal{D}_{t, c, \iota}^{i, r}(y)}</span>
+<span class="sd">                    {\sum_{i, t, \iota}\mathcal{D}_{t, c, \iota}^{i, r}(y)}</span>
+
+
+<span class="sd">    Note that tin the last two steps, the assets owned by the agent are aggregated over</span>
+<span class="sd">    the installation year. The effect is that the demand serviced by agents is</span>
+<span class="sd">    disaggregated over each technology, rather than not over each *model* of each</span>
+<span class="sd">    technology.</span>
+
+<span class="sd">    .. SeeAlso::</span>
+
+<span class="sd">        :ref:`indices`, :ref:`quantities`,</span>
+<span class="sd">        :ref:`Agent investments&lt;model, agent investment&gt;`,</span>
+<span class="sd">        :py:func:`~muse.quantities.decommissioning_demand`,</span>
+<span class="sd">        :py:func:`~muse.quantities.maximum_production`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+    <span class="kn">from</span> <span class="nn">muse.commodities</span> <span class="kn">import</span> <span class="n">is_enduse</span>
+    <span class="kn">from</span> <span class="nn">muse.utilities</span> <span class="kn">import</span> <span class="n">reduce_assets</span><span class="p">,</span> <span class="n">agent_concatenation</span>
+    <span class="kn">from</span> <span class="nn">muse.quantities</span> <span class="kn">import</span> <span class="n">maximum_production</span>
+
+    <span class="k">if</span> <span class="n">current_year</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">current_year</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+
+    <span class="n">capacity</span> <span class="o">=</span> <span class="n">reduce_assets</span><span class="p">([</span><span class="n">u</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">capacity</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">agents</span><span class="p">])</span>
+
+    <span class="n">demands</span> <span class="o">=</span> <span class="n">new_and_retro_demands</span><span class="p">(</span>
+        <span class="n">capacity</span><span class="p">,</span>
+        <span class="n">market</span><span class="p">,</span>
+        <span class="n">technologies</span><span class="p">,</span>
+        <span class="n">production</span><span class="o">=</span><span class="n">production</span><span class="p">,</span>
+        <span class="n">current_year</span><span class="o">=</span><span class="n">current_year</span><span class="p">,</span>
+        <span class="n">forecast</span><span class="o">=</span><span class="n">forecast</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">demands</span> <span class="o">=</span> <span class="n">demands</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">is_enduse</span><span class="p">(</span><span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">demands</span><span class="o">.</span><span class="n">commodity</span><span class="p">)),</span> <span class="mi">0</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decommissioning</span><span class="p">(</span><span class="n">capacity</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">muse.quantities</span> <span class="kn">import</span> <span class="n">decommissioning_demand</span>
+
+        <span class="k">return</span> <span class="n">decommissioning_demand</span><span class="p">(</span>
+            <span class="n">technologies</span><span class="p">,</span> <span class="n">capacity</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="p">[</span><span class="n">current_year</span><span class="p">,</span> <span class="n">current_year</span> <span class="o">+</span> <span class="n">forecast</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+
+    <span class="n">id_to_share</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="n">demands</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">values</span><span class="p">:</span>
+        <span class="n">regional_techs</span> <span class="o">=</span> <span class="n">technologies</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">region</span><span class="o">=</span><span class="n">region</span><span class="p">)</span>
+        <span class="n">retro_capacity</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">agent</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="n">agent</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">capacity</span>
+            <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="n">agents</span>
+            <span class="k">if</span> <span class="n">agent</span><span class="o">.</span><span class="n">category</span> <span class="o">==</span> <span class="s2">&quot;retrofit&quot;</span> <span class="ow">and</span> <span class="n">agent</span><span class="o">.</span><span class="n">region</span> <span class="o">==</span> <span class="n">region</span>
+        <span class="p">}</span>
+        <span class="n">retro_demands</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]</span> <span class="o">=</span> <span class="n">_inner_split</span><span class="p">(</span>
+            <span class="n">retro_capacity</span><span class="p">,</span> <span class="n">demands</span><span class="o">.</span><span class="n">retrofit</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">region</span><span class="o">=</span><span class="n">region</span><span class="p">),</span> <span class="n">decommissioning</span>
+        <span class="p">)</span>
+        <span class="n">id_to_share</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">retro_demands</span><span class="p">)</span>
+
+        <span class="n">name_to_id</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">agent</span><span class="o">.</span><span class="n">region</span><span class="p">):</span> <span class="n">agent</span><span class="o">.</span><span class="n">uuid</span>
+            <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="n">agents</span>
+            <span class="k">if</span> <span class="n">agent</span><span class="o">.</span><span class="n">category</span> <span class="o">==</span> <span class="s2">&quot;retrofit&quot;</span> <span class="ow">and</span> <span class="n">agent</span><span class="o">.</span><span class="n">region</span> <span class="o">==</span> <span class="n">region</span>
+        <span class="p">}</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">name_to_id</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">retro_capacity</span><span class="p">)</span>
+        <span class="n">new_capacity</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">agent</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="n">retro_capacity</span><span class="p">[</span><span class="n">name_to_id</span><span class="p">[(</span><span class="n">agent</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">agent</span><span class="o">.</span><span class="n">region</span><span class="p">)]]</span>
+            <span class="o">*</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="s2">&quot;quantity&quot;</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="n">agents</span>
+            <span class="k">if</span> <span class="n">agent</span><span class="o">.</span><span class="n">category</span> <span class="o">!=</span> <span class="s2">&quot;retrofit&quot;</span> <span class="ow">and</span> <span class="n">agent</span><span class="o">.</span><span class="n">region</span> <span class="o">==</span> <span class="n">region</span>
+        <span class="p">}</span>
+        <span class="n">new_demands</span> <span class="o">=</span> <span class="n">_inner_split</span><span class="p">(</span>
+            <span class="n">new_capacity</span><span class="p">,</span>
+            <span class="n">demands</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">region</span><span class="o">=</span><span class="n">region</span><span class="p">),</span>
+            <span class="n">partial</span><span class="p">(</span><span class="n">maximum_production</span><span class="p">,</span> <span class="n">technologies</span><span class="o">=</span><span class="n">regional_techs</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">current_year</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">id_to_share</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">new_demands</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">agent_concatenation</span><span class="p">(</span><span class="n">id_to_share</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="unmet_forecasted_demand"><a class="viewcode-back" href="../../source/muse.html#muse.demand_share.unmet_forecasted_demand">[docs]</a><span class="nd">@register_demand_share</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;unmet_demand&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">unmet_forecasted_demand</span><span class="p">(</span>
+    <span class="n">agents</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AbstractAgent</span><span class="p">],</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">current_year</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">production</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;maximum_production&quot;</span><span class="p">,</span>
+    <span class="n">forecast</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Forecast demand that cannot be serviced by non-decommissioned current assets.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.commodities</span> <span class="kn">import</span> <span class="n">is_enduse</span>
+    <span class="kn">from</span> <span class="nn">muse.timeslices</span> <span class="kn">import</span> <span class="n">convert_timeslice</span><span class="p">,</span> <span class="n">QuantityType</span>
+    <span class="kn">from</span> <span class="nn">muse.utilities</span> <span class="kn">import</span> <span class="n">reduce_assets</span>
+
+    <span class="k">if</span> <span class="n">current_year</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">current_year</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+
+    <span class="n">year</span> <span class="o">=</span> <span class="n">current_year</span> <span class="o">+</span> <span class="n">forecast</span>
+    <span class="n">comm_usage</span> <span class="o">=</span> <span class="n">technologies</span><span class="o">.</span><span class="n">comm_usage</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">commodity</span><span class="o">=</span><span class="n">market</span><span class="o">.</span><span class="n">commodity</span><span class="p">)</span>
+    <span class="n">smarket</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">is_enduse</span><span class="p">(</span><span class="n">comm_usage</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">)</span>
+    <span class="n">capacity</span> <span class="o">=</span> <span class="n">reduce_assets</span><span class="p">([</span><span class="n">u</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">capacity</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">agents</span><span class="p">])</span>
+    <span class="n">ts_capacity</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+        <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+        <span class="n">convert_timeslice</span><span class="p">(</span><span class="n">capacity</span><span class="p">,</span> <span class="n">market</span><span class="o">.</span><span class="n">timeslice</span><span class="p">,</span> <span class="n">QuantityType</span><span class="o">.</span><span class="n">EXTENSIVE</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">unmet_demand</span><span class="p">(</span><span class="n">smarket</span><span class="p">,</span> <span class="n">ts_capacity</span><span class="p">,</span> <span class="n">technologies</span><span class="p">,</span> <span class="n">production</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;year&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<span class="k">def</span> <span class="nf">_inner_split</span><span class="p">(</span>
+    <span class="n">assets</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">],</span> <span class="n">demand</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="n">Callable</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;compute share of the demand for a set of agents.</span>
+
+<span class="sd">    The input ``demand`` is split between agents according to their share of the</span>
+<span class="sd">    demand computed by ``method``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">logical_and</span>
+
+    <span class="n">shares</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">key</span><span class="p">:</span> <span class="n">method</span><span class="p">(</span><span class="n">capacity</span><span class="o">=</span><span class="n">capacity</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;technology&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;asset&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">technology</span><span class="o">=</span><span class="s2">&quot;asset&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">capacity</span> <span class="ow">in</span> <span class="n">assets</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">shares</span><span class="o">.</span><span class="n">values</span><span class="p">())</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;asset&quot;</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+    <span class="n">unassigned</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">demand</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">shares</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="nb">sum</span><span class="p">(</span><span class="n">shares</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">asset</span><span class="p">))</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">logical_and</span><span class="p">(</span><span class="n">demand</span> <span class="o">&gt;</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="n">total</span> <span class="o">&lt;=</span> <span class="mf">1e-12</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="n">key</span><span class="p">:</span> <span class="p">((</span><span class="n">share</span> <span class="o">/</span> <span class="n">total</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">demand</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">unassigned</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">share</span> <span class="ow">in</span> <span class="n">shares</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
+
+
+<div class="viewcode-block" id="unmet_demand"><a class="viewcode-back" href="../../source/muse.html#muse.demand_share.unmet_demand">[docs]</a><span class="k">def</span> <span class="nf">unmet_demand</span><span class="p">(</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">capacity</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">production</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;maximum_production&quot;</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Share of the demand that cannot be serviced by the existing assets.</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        U[\mathcal{M}, \mathcal{A}] =</span>
+<span class="sd">          \max(\mathcal{C} - P[\mathcal{M}, \mathcal{A}], 0)</span>
+
+<span class="sd">    :math:`\max` operates element-wise, and indices have been dropped for simplicity.</span>
+<span class="sd">    The resulting expression has the same indices as the consumption</span>
+<span class="sd">    :math:`\mathcal{C}_{c, s}^r`.</span>
+
+<span class="sd">    :math:`P` is any function registered with</span>
+<span class="sd">    :py:func:`@register_production&lt;muse.production.register_production&gt;`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.production</span> <span class="kn">import</span> <span class="n">factory</span> <span class="k">as</span> <span class="n">prod_factory</span>
+
+    <span class="n">prod_method</span> <span class="o">=</span> <span class="n">production</span> <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">production</span><span class="p">)</span> <span class="k">else</span> <span class="n">prod_factory</span><span class="p">(</span><span class="n">production</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">prod_method</span><span class="p">)</span>
+
+    <span class="n">produced</span> <span class="o">=</span> <span class="n">prod_method</span><span class="p">(</span><span class="n">market</span><span class="o">=</span><span class="n">market</span><span class="p">,</span> <span class="n">capacity</span><span class="o">=</span><span class="n">capacity</span><span class="p">,</span> <span class="n">technologies</span><span class="o">=</span><span class="n">technologies</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;dst_region&quot;</span> <span class="ow">in</span> <span class="n">produced</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+        <span class="n">produced</span> <span class="o">=</span> <span class="n">produced</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;asset&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">dst_region</span><span class="o">=</span><span class="s2">&quot;region&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="s2">&quot;region&quot;</span> <span class="ow">in</span> <span class="n">produced</span><span class="o">.</span><span class="n">coords</span> <span class="ow">and</span> <span class="n">produced</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+        <span class="n">produced</span> <span class="o">=</span> <span class="n">produced</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;asset&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">produced</span> <span class="o">=</span> <span class="n">produced</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;asset&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">market</span><span class="o">.</span><span class="n">consumption</span> <span class="o">-</span> <span class="n">produced</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">new_consumption</span><span class="p">(</span>
+    <span class="n">capacity</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">current_year</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">forecast</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot; Computes share of the demand attributed to new agents.</span>
+
+<span class="sd">    The new agents service the demand that can be attributed specificaly to growth and</span>
+<span class="sd">    that cannot be serviced by existing assets. In other words:</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        N_{c, s}^r = \min\left(</span>
+<span class="sd">            C_{c, s}^(y + \Delta y) - C_{c, s}^(y),</span>
+<span class="sd">            C_{c, s}^(y + \Delta y)</span>
+<span class="sd">                - P[\mathcal{M}(y + \Delta y), \mathcal{A}_{a, s}^r(y)]</span>
+<span class="sd">        \right)</span>
+
+<span class="sd">    Where :math:`P` is a production function taking the market and assets as arguments.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.timeslices</span> <span class="kn">import</span> <span class="n">convert_timeslice</span><span class="p">,</span> <span class="n">QuantityType</span>
+
+    <span class="k">if</span> <span class="n">current_year</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">current_year</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+
+    <span class="n">ts_capa</span> <span class="o">=</span> <span class="n">convert_timeslice</span><span class="p">(</span>
+        <span class="n">capacity</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">current_year</span><span class="p">),</span> <span class="n">market</span><span class="o">.</span><span class="n">timeslice</span><span class="p">,</span> <span class="n">QuantityType</span><span class="o">.</span><span class="n">EXTENSIVE</span>
+    <span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ts_capa</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span>
+    <span class="n">market</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="p">[</span><span class="n">current_year</span><span class="p">,</span> <span class="n">current_year</span> <span class="o">+</span> <span class="n">forecast</span><span class="p">])</span>
+    <span class="n">current</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">current_year</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">forecasted</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">current_year</span> <span class="o">+</span> <span class="n">forecast</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">delta</span> <span class="o">=</span> <span class="p">(</span><span class="n">forecasted</span><span class="o">.</span><span class="n">consumption</span> <span class="o">-</span> <span class="n">current</span><span class="o">.</span><span class="n">consumption</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">missing</span> <span class="o">=</span> <span class="n">unmet_demand</span><span class="p">(</span><span class="n">forecasted</span><span class="p">,</span> <span class="n">ts_capa</span><span class="p">,</span> <span class="n">technologies</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">delta</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">delta</span> <span class="o">&lt;</span> <span class="n">missing</span><span class="p">,</span> <span class="n">missing</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">new_and_retro_demands</span><span class="p">(</span>
+    <span class="n">capacity</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">production</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;maximum_production&quot;</span><span class="p">,</span>
+    <span class="n">current_year</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">forecast</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Splits demand into *new* and *retrofit* demand.</span>
+
+<span class="sd">    The demand (.i.e. `market.consumption`) in the forecast year is split three ways:</span>
+
+<span class="sd">    #. the demand that can be serviced the assets that will still be operational that</span>
+<span class="sd">        year.</span>
+<span class="sd">    #. the *new* demand is defined as the growth in consumption that cannot be serviced</span>
+<span class="sd">        by existing assets in the current year, as computed in :py:func:`new_demand`.</span>
+<span class="sd">    #. the retrofit demand is everything else.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">muse.timeslices</span> <span class="kn">import</span> <span class="n">convert_timeslice</span><span class="p">,</span> <span class="n">QuantityType</span>
+    <span class="kn">from</span> <span class="nn">muse.production</span> <span class="kn">import</span> <span class="n">factory</span> <span class="k">as</span> <span class="n">prod_factory</span>
+
+    <span class="n">production_method</span> <span class="o">=</span> <span class="n">production</span> <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">production</span><span class="p">)</span> <span class="k">else</span> <span class="n">prod_factory</span><span class="p">(</span><span class="n">production</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">production_method</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">current_year</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">current_year</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+
+    <span class="n">smarket</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span> <span class="o">=</span> <span class="n">market</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="p">[</span><span class="n">current_year</span><span class="p">,</span> <span class="n">current_year</span> <span class="o">+</span> <span class="n">forecast</span><span class="p">])</span>
+    <span class="n">ts_capa</span> <span class="o">=</span> <span class="n">convert_timeslice</span><span class="p">(</span>
+        <span class="n">capacity</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="p">[</span><span class="n">current_year</span><span class="p">,</span> <span class="n">current_year</span> <span class="o">+</span> <span class="n">forecast</span><span class="p">]),</span>
+        <span class="n">market</span><span class="o">.</span><span class="n">timeslice</span><span class="p">,</span>
+        <span class="n">QuantityType</span><span class="o">.</span><span class="n">EXTENSIVE</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ts_capa</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ts_capa</span><span class="p">,</span> <span class="s2">&quot;region&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ts_capa</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">dims</span> <span class="o">==</span> <span class="p">():</span>
+        <span class="n">ts_capa</span><span class="p">[</span><span class="s2">&quot;region&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;asset&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">ts_capa</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">values</span><span class="p">)]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">ts_capa</span><span class="o">.</span><span class="n">asset</span><span class="p">)</span>
+
+    <span class="n">new_demand</span> <span class="o">=</span> <span class="n">new_consumption</span><span class="p">(</span>
+        <span class="n">ts_capa</span><span class="p">,</span> <span class="n">smarket</span><span class="p">,</span> <span class="n">technologies</span><span class="p">,</span> <span class="n">current_year</span><span class="o">=</span><span class="n">current_year</span><span class="p">,</span> <span class="n">forecast</span><span class="o">=</span><span class="n">forecast</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;year&quot;</span> <span class="ow">in</span> <span class="n">new_demand</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+        <span class="n">new_demand</span> <span class="o">=</span> <span class="n">new_demand</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+
+    <span class="n">service</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">production_method</span><span class="p">(</span>
+            <span class="n">smarket</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">current_year</span> <span class="o">+</span> <span class="n">forecast</span><span class="p">),</span>
+            <span class="n">ts_capa</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">current_year</span> <span class="o">+</span> <span class="n">forecast</span><span class="p">),</span>
+            <span class="n">technologies</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;asset&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">retro_demand</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">smarket</span><span class="o">.</span><span class="n">consumption</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">current_year</span> <span class="o">+</span> <span class="n">forecast</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="o">-</span> <span class="n">new_demand</span>
+        <span class="o">-</span> <span class="n">service</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;year&quot;</span> <span class="ow">in</span> <span class="n">retro_demand</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+        <span class="n">retro_demand</span> <span class="o">=</span> <span class="n">retro_demand</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">({</span><span class="s2">&quot;new&quot;</span><span class="p">:</span> <span class="n">new_demand</span><span class="p">,</span> <span class="s2">&quot;retrofit&quot;</span><span class="p">:</span> <span class="n">retro_demand</span><span class="p">})</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.demand_share</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

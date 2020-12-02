@@ -1,0 +1,464 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse.outputs package &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.outputs package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="muse-outputs-package">
+<h1>muse.outputs package<a class="headerlink" href="#muse-outputs-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-muse.outputs.mca">
+<span id="muse-outputs-mca-module"></span><h2>muse.outputs.mca module<a class="headerlink" href="#module-muse.outputs.mca" title="Permalink to this headline">¶</a></h2>
+<p>Output quantities.</p>
+<p>Functions that compute MCA quantities for post-simulation analysis should all follow the
+same signature:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@register_output_quantity</span>
+<span class="k">def</span> <span class="nf">quantity</span><span class="p">(</span>
+    <span class="n">sectors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">AbstractSector</span><span class="p">],</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]:</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>The function should never modify it’s arguments. It can return either a pandas dataframe
+or an xarray xr.DataArray.</p>
+<dl class="py class">
+<dt id="muse.outputs.mca.AggregateResources">
+<em class="property">class </em><code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">AggregateResources</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">commodities</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>Iterable<span class="p">[</span>Hashable<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">()</span></em>, <em class="sig-param"><span class="n">metric</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'consumption'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/outputs/mca.html#AggregateResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.mca.AggregateResources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Aggregates a set of commodities.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="muse.outputs.mca.FiniteResources">
+<em class="property">class </em><code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">FiniteResources</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">limits_path</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>pathlib.Path<span class="p">, </span>xarray.core.dataarray.DataArray<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">commodities</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>Iterable<span class="p">[</span>Hashable<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">()</span></em>, <em class="sig-param"><span class="n">metric</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'consumption'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/outputs/mca.html#FiniteResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.mca.FiniteResources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#muse.outputs.mca.AggregateResources" title="muse.outputs.mca.AggregateResources"><code class="xref py py-class docutils literal notranslate"><span class="pre">muse.outputs.mca.AggregateResources</span></code></a></p>
+<p>Aggregates a set of commodities.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="muse.outputs.mca.OUTPUTS_PARAMETERS">
+<code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">OUTPUTS_PARAMETERS</code><a class="headerlink" href="#muse.outputs.mca.OUTPUTS_PARAMETERS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Acceptable Datastructures for outputs parameters</p>
+<p>alias of Union[str, Mapping]</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="muse.outputs.mca.OUTPUT_QUANTITIES">
+<code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">OUTPUT_QUANTITIES</code><a class="headerlink" href="#muse.outputs.mca.OUTPUT_QUANTITIES" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quantity for post-simulation analysis.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="muse.outputs.mca.OUTPUT_QUANTITY_SIGNATURE">
+<code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">OUTPUT_QUANTITY_SIGNATURE</code><a class="headerlink" href="#muse.outputs.mca.OUTPUT_QUANTITY_SIGNATURE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Signature of functions computing quantities for later analysis.</p>
+<p>alias of Callable[[xarray.core.dataset.Dataset, List[muse.sectors.abstract.AbstractSector], Any], Union[xarray.core.dataarray.DataArray, pandas.core.frame.DataFrame]]</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.mca.alcoe">
+<code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">alcoe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">sectors</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="muse.sectors.html#muse.sectors.abstract.AbstractSector" title="muse.sectors.abstract.AbstractSector">muse.sectors.abstract.AbstractSector</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="../_modules/muse/outputs/mca.html#alcoe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.mca.alcoe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current annual levelised cost across all sectors.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.mca.capacity">
+<code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">capacity</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">sectors</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="muse.sectors.html#muse.sectors.abstract.AbstractSector" title="muse.sectors.abstract.AbstractSector">muse.sectors.abstract.AbstractSector</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="../_modules/muse/outputs/mca.html#capacity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.mca.capacity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current capacity across all sectors.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.mca.consumption">
+<code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">consumption</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">sectors</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="muse.sectors.html#muse.sectors.abstract.AbstractSector" title="muse.sectors.abstract.AbstractSector">muse.sectors.abstract.AbstractSector</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="reference internal" href="../_modules/muse/outputs/mca.html#consumption"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.mca.consumption" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current consumption.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.mca.factory">
+<code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">factory</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">parameters</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>Mapping<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Callable<span class="p">[</span><span class="p">[</span>xarray.core.dataset.Dataset<span class="p">, </span>List<span class="p">[</span><a class="reference internal" href="muse.sectors.html#muse.sectors.abstract.AbstractSector" title="muse.sectors.abstract.AbstractSector">muse.sectors.abstract.AbstractSector</a><span class="p">]</span><span class="p">]</span><span class="p">, </span>List<span class="p">[</span>pathlib.Path<span class="p">]</span><span class="p">]</span><a class="reference internal" href="../_modules/muse/outputs/mca.html#factory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.mca.factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates outputs functions for post-mortem analysis.</p>
+<p>Each parameter is a dictionary containing the following:</p>
+<ul class="simple">
+<li><p>quantity (mandatory): name of the quantity to output. Mandatory.</p></li>
+<li><p>sink (optional): name of the storage procedure, e.g. the file format
+or database format. When it cannot be guessed from <cite>filename</cite>, it defaults to
+“csv”.</p></li>
+<li><p>filename (optional): path to a directory or a file where to store the quantity. In
+the latter case, if sink is not given, it will be determined from the file
+extension. The filename can incorporate markers. By default, it is
+“{default_output_dir}/{sector}{year}{quantity}{suffix}”.</p></li>
+<li><p>any other parameter relevant to the sink, e.g. <cite>pandas.to_csv</cite> keyword
+arguments.</p></li>
+</ul>
+<p>For simplicity, it is also possible to given lone strings as input.
+They default to <cite>{‘quantity’: string}</cite> (and the sink will default to
+“csv”).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.mca.llcoe">
+<code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">llcoe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">sectors</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="muse.sectors.html#muse.sectors.abstract.AbstractSector" title="muse.sectors.abstract.AbstractSector">muse.sectors.abstract.AbstractSector</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="../_modules/muse/outputs/mca.html#llcoe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.mca.llcoe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current lifetime levelised cost across all sectors.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.mca.prices">
+<code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">prices</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">sectors</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="muse.sectors.html#muse.sectors.abstract.AbstractSector" title="muse.sectors.abstract.AbstractSector">muse.sectors.abstract.AbstractSector</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">drop_empty</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">keep_columns</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>Sequence<span class="p">[</span>str<span class="p">]</span><span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'prices'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="../_modules/muse/outputs/mca.html#prices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.mca.prices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current MCA market prices.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.mca.register_output_quantity">
+<code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">register_output_quantity</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">function</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">[</span><span class="p">[</span>xarray.core.dataset.Dataset<span class="p">, </span>List<span class="p">[</span><a class="reference internal" href="muse.sectors.html#muse.sectors.abstract.AbstractSector" title="muse.sectors.abstract.AbstractSector">muse.sectors.abstract.AbstractSector</a><span class="p">]</span><span class="p">, </span>Any<span class="p">]</span><span class="p">, </span>Union<span class="p">[</span>xarray.core.dataarray.DataArray<span class="p">, </span>pandas.core.frame.DataFrame<span class="p">]</span><span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; Callable<a class="reference internal" href="../_modules/muse/outputs/mca.html#register_output_quantity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.mca.register_output_quantity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Registers a function to compute an output quantity.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.mca.round_values">
+<code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">round_values</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">function</span><span class="p">:</span> <span class="n">Callable</span></em><span class="sig-paren">)</span> &#x2192; Callable<span class="p">[</span><span class="p">[</span>xarray.core.dataset.Dataset<span class="p">, </span>List<span class="p">[</span><a class="reference internal" href="muse.sectors.html#muse.sectors.abstract.AbstractSector" title="muse.sectors.abstract.AbstractSector">muse.sectors.abstract.AbstractSector</a><span class="p">]</span><span class="p">, </span>Any<span class="p">]</span><span class="p">, </span>Union<span class="p">[</span>xarray.core.dataarray.DataArray<span class="p">, </span>pandas.core.frame.DataFrame<span class="p">]</span><span class="p">]</span><a class="reference internal" href="../_modules/muse/outputs/mca.html#round_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.mca.round_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rounds the outputs to given number of decimals and drops columns with zeros.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.mca.sector_alcoe">
+<code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">sector_alcoe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">sector</span><span class="p">:</span> <span class="n"><a class="reference internal" href="muse.sectors.html#muse.sectors.abstract.AbstractSector" title="muse.sectors.abstract.AbstractSector">muse.sectors.abstract.AbstractSector</a></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="../_modules/muse/outputs/mca.html#sector_alcoe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.mca.sector_alcoe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sector annual levelised cost (ALCOE) with agent annotations.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.mca.sector_capacity">
+<code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">sector_capacity</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sector</span><span class="p">:</span> <span class="n"><a class="reference internal" href="muse.sectors.html#muse.sectors.abstract.AbstractSector" title="muse.sectors.abstract.AbstractSector">muse.sectors.abstract.AbstractSector</a></span></em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="../_modules/muse/outputs/mca.html#sector_capacity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.mca.sector_capacity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sector capacity with agent annotations.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.mca.sector_llcoe">
+<code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">sector_llcoe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">sector</span><span class="p">:</span> <span class="n"><a class="reference internal" href="muse.sectors.html#muse.sectors.abstract.AbstractSector" title="muse.sectors.abstract.AbstractSector">muse.sectors.abstract.AbstractSector</a></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="../_modules/muse/outputs/mca.html#sector_llcoe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.mca.sector_llcoe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sector lifetime levelised cost with agent annotations.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.mca.supply">
+<code class="sig-prename descclassname">muse.outputs.mca.</code><code class="sig-name descname">supply</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">sectors</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="muse.sectors.html#muse.sectors.abstract.AbstractSector" title="muse.sectors.abstract.AbstractSector">muse.sectors.abstract.AbstractSector</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="reference internal" href="../_modules/muse/outputs/mca.html#supply"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.mca.supply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current supply.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-muse.outputs.sector">
+<span id="muse-outputs-sector-module"></span><h2>muse.outputs.sector module<a class="headerlink" href="#module-muse.outputs.sector" title="Permalink to this headline">¶</a></h2>
+<p>Output quantities.</p>
+<p>Functions that compute sectorial quantities for post-simulation analysis should all
+follow the same signature:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@register_output_quantity</span>
+<span class="k">def</span> <span class="nf">quantity</span><span class="p">(</span>
+    <span class="n">capacity</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">DataFrame</span><span class="p">]:</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>They take as input the current capacity profile, aggregated across a sectoar,
+a dataset containing market-related quantities, and a dataset characterizing the
+technologies in the market. It returns a single xr.DataArray object.</p>
+<p>The function should never modify it’s arguments.</p>
+<dl class="py data">
+<dt id="muse.outputs.sector.OUTPUTS_PARAMETERS">
+<code class="sig-prename descclassname">muse.outputs.sector.</code><code class="sig-name descname">OUTPUTS_PARAMETERS</code><a class="headerlink" href="#muse.outputs.sector.OUTPUTS_PARAMETERS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Acceptable Datastructures for outputs parameters</p>
+<p>alias of Union[str, Mapping]</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="muse.outputs.sector.OUTPUT_QUANTITIES">
+<code class="sig-prename descclassname">muse.outputs.sector.</code><code class="sig-name descname">OUTPUT_QUANTITIES</code><a class="headerlink" href="#muse.outputs.sector.OUTPUT_QUANTITIES" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quantity for post-simulation analysis.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="muse.outputs.sector.OUTPUT_QUANTITY_SIGNATURE">
+<code class="sig-prename descclassname">muse.outputs.sector.</code><code class="sig-name descname">OUTPUT_QUANTITY_SIGNATURE</code><a class="headerlink" href="#muse.outputs.sector.OUTPUT_QUANTITY_SIGNATURE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Signature of functions computing quantities for later analysis.</p>
+<p>alias of Callable[[xarray.core.dataset.Dataset, xarray.core.dataarray.DataArray, xarray.core.dataset.Dataset, Any], Union[pandas.core.frame.DataFrame, xarray.core.dataarray.DataArray]]</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.sector.capacity">
+<code class="sig-prename descclassname">muse.outputs.sector.</code><code class="sig-name descname">capacity</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">capacity</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">rounding</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">4</span></em><span class="sig-paren">)</span> &#x2192; pandas.core.frame.DataFrame<a class="reference internal" href="../_modules/muse/outputs/sector.html#capacity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.sector.capacity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current capacity.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.sector.consumption">
+<code class="sig-prename descclassname">muse.outputs.sector.</code><code class="sig-name descname">consumption</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">capacity</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">sum_over</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>List<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">drop</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>List<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">rounding</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">4</span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="reference internal" href="../_modules/muse/outputs/sector.html#consumption"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.sector.consumption" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current consumption.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.sector.costs">
+<code class="sig-prename descclassname">muse.outputs.sector.</code><code class="sig-name descname">costs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">capacity</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">sum_over</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>List<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">drop</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>List<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">rounding</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">4</span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="reference internal" href="../_modules/muse/outputs/sector.html#costs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.sector.costs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current costs.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.sector.factory">
+<code class="sig-prename descclassname">muse.outputs.sector.</code><code class="sig-name descname">factory</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">parameters</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>Mapping<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">sector_name</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'default'</span></em><span class="sig-paren">)</span> &#x2192; Callable<span class="p">[</span><span class="p">[</span>xarray.core.dataset.Dataset<span class="p">, </span>xarray.core.dataarray.DataArray<span class="p">, </span>xarray.core.dataset.Dataset<span class="p">]</span><span class="p">, </span>List<span class="p">[</span>Any<span class="p">]</span><span class="p">]</span><a class="reference internal" href="../_modules/muse/outputs/sector.html#factory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.sector.factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates outputs functions for post-mortem analysis.</p>
+<p>Each parameter is a dictionary containing the following:</p>
+<ul class="simple">
+<li><p>quantity (mandatory): name of the quantity to output. Mandatory.</p></li>
+<li><p>sink (optional): name of the storage procedure, e.g. the file format
+or database format. When it cannot be guessed from <cite>filename</cite>, it defaults to
+“csv”.</p></li>
+<li><p>filename (optional): path to a directory or a file where to store the quantity. In
+the latter case, if sink is not given, it will be determined from the file
+extension. The filename can incorporate markers. By default, it is
+“{default_output_dir}/{sector}{year}{quantity}{suffix}”.</p></li>
+<li><p>any other parameter relevant to the sink, e.g. <cite>pandas.to_csv</cite> keyword
+arguments.</p></li>
+</ul>
+<p>For simplicity, it is also possible to given lone strings as input.
+They default to <cite>{‘quantity’: string}</cite> (and the sink will default to
+“csv”).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.sector.market_quantity">
+<code class="sig-prename descclassname">muse.outputs.sector.</code><code class="sig-name descname">market_quantity</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">quantity</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">sum_over</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>List<span class="p">[</span>str<span class="p">]</span><span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">drop</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>List<span class="p">[</span>str<span class="p">]</span><span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="reference internal" href="../_modules/muse/outputs/sector.html#market_quantity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.sector.market_quantity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.sector.register_output_quantity">
+<code class="sig-prename descclassname">muse.outputs.sector.</code><code class="sig-name descname">register_output_quantity</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">function</span><span class="p">:</span> <span class="n">Callable<span class="p">[</span><span class="p">[</span>xarray.core.dataset.Dataset<span class="p">, </span>xarray.core.dataarray.DataArray<span class="p">, </span>xarray.core.dataset.Dataset<span class="p">, </span>Any<span class="p">]</span><span class="p">, </span>Union<span class="p">[</span>pandas.core.frame.DataFrame<span class="p">, </span>xarray.core.dataarray.DataArray<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; Callable<a class="reference internal" href="../_modules/muse/outputs/sector.html#register_output_quantity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.sector.register_output_quantity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Registers a function to compute an output quantity.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.sector.supply">
+<code class="sig-prename descclassname">muse.outputs.sector.</code><code class="sig-name descname">supply</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">market</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">capacity</span><span class="p">:</span> <span class="n">xarray.core.dataarray.DataArray</span></em>, <em class="sig-param"><span class="n">technologies</span><span class="p">:</span> <span class="n">xarray.core.dataset.Dataset</span></em>, <em class="sig-param"><span class="n">sum_over</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>List<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">drop</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>List<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">rounding</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">4</span></em><span class="sig-paren">)</span> &#x2192; xarray.core.dataarray.DataArray<a class="reference internal" href="../_modules/muse/outputs/sector.html#supply"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.sector.supply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current supply.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-muse.outputs.sinks">
+<span id="muse-outputs-sinks-module"></span><h2>muse.outputs.sinks module<a class="headerlink" href="#module-muse.outputs.sinks" title="Permalink to this headline">¶</a></h2>
+<p>Sinks where output quantities can be stored.</p>
+<p>Sinks take as argument a DataArray and store it somewhere. Additionally they
+take a dictionary as argument. This dictionary will always contains the items
+(‘quantity’, ‘sector’, ‘year’) referring to the name of the quantity, the name
+of the calling sector, the current year. They may contain additional parameters
+which depend on the actual sink, such as ‘filename’.</p>
+<p>Optionally, a description of the storage (filename, etc) can be returned.</p>
+<p>The signature of a sink is:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@register_output_sink</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;netcfd&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">to_netcfd</span><span class="p">(</span><span class="n">quantity</span><span class="p">:</span> <span class="n">DataArray</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Text</span><span class="p">]:</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<dl class="py exception">
+<dt id="muse.outputs.sinks.FiniteResourceException">
+<em class="property">exception </em><code class="sig-prename descclassname">muse.outputs.sinks.</code><code class="sig-name descname">FiniteResourceException</code><a class="reference internal" href="../_modules/muse/outputs/sinks.html#FiniteResourceException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.sinks.FiniteResourceException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Raised when a finite resource is exceeded.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="muse.outputs.sinks.OUTPUT_SINKS">
+<code class="sig-prename descclassname">muse.outputs.sinks.</code><code class="sig-name descname">OUTPUT_SINKS</code><em class="property">: MutableMapping<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>Callable<span class="p">[</span><span class="p">[</span>Union<span class="p">[</span>xarray.core.dataarray.DataArray<span class="p">, </span>pandas.core.frame.DataFrame<span class="p">]</span><span class="p">, </span>int<span class="p">, </span>Any<span class="p">]</span><span class="p">, </span>Optional<span class="p">[</span>str<span class="p">]</span><span class="p">]</span><span class="p">, </span>Callable<span class="p">]</span><span class="p">]</span></em><em class="property"> = {'Aggregate': &lt;class 'muse.outputs.sinks.YearlyAggregate'&gt;, 'Csv': &lt;function to_csv&gt;, 'Excel': &lt;function to_excel&gt;, 'FiniteResourceLogger': &lt;function finite_resource_logger&gt;, 'Nc': &lt;function to_netcdf&gt;, 'Netcdf': &lt;function to_netcdf&gt;, 'ToCsv': &lt;function to_csv&gt;, 'ToExcel': &lt;function to_excel&gt;, 'ToNetcdf': &lt;function to_netcdf&gt;, 'Xlsx': &lt;function to_excel&gt;, 'YearlyAggregate': &lt;class 'muse.outputs.sinks.YearlyAggregate'&gt;, 'Yearlyaggregate': &lt;class 'muse.outputs.sinks.YearlyAggregate'&gt;, 'aggregate': &lt;class 'muse.outputs.sinks.YearlyAggregate'&gt;, 'csv': &lt;function to_csv&gt;, 'excel': &lt;function to_excel&gt;, 'finite-resource-logger': &lt;function finite_resource_logger&gt;, 'finiteResourceLogger': &lt;function finite_resource_logger&gt;, 'finite_resource_logger': &lt;function finite_resource_logger&gt;, 'finiteresourcelogger': &lt;function finite_resource_logger&gt;, 'nc': &lt;function to_netcdf&gt;, 'netcdf': &lt;function to_netcdf&gt;, 'to-csv': &lt;function to_csv&gt;, 'to-excel': &lt;function to_excel&gt;, 'to-netcdf': &lt;function to_netcdf&gt;, 'toCsv': &lt;function to_csv&gt;, 'toExcel': &lt;function to_excel&gt;, 'toNetcdf': &lt;function to_netcdf&gt;, 'to_csv': &lt;function to_csv&gt;, 'to_excel': &lt;function to_excel&gt;, 'to_netcdf': &lt;function to_netcdf&gt;, 'tocsv': &lt;function to_csv&gt;, 'toexcel': &lt;function to_excel&gt;, 'tonetcdf': &lt;function to_netcdf&gt;, 'xlsx': &lt;function to_excel&gt;}</em><a class="headerlink" href="#muse.outputs.sinks.OUTPUT_SINKS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores a quantity somewhere.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="muse.outputs.sinks.OUTPUT_SINK_SIGNATURE">
+<code class="sig-prename descclassname">muse.outputs.sinks.</code><code class="sig-name descname">OUTPUT_SINK_SIGNATURE</code><a class="headerlink" href="#muse.outputs.sinks.OUTPUT_SINK_SIGNATURE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Signature of functions used to save quantities.</p>
+<p>alias of Callable[[Union[xarray.core.dataarray.DataArray, pandas.core.frame.DataFrame], int, Any], Optional[str]]</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="muse.outputs.sinks.YearlyAggregate">
+<em class="property">class </em><code class="sig-prename descclassname">muse.outputs.sinks.</code><code class="sig-name descname">YearlyAggregate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">final_sink</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>MutableMapping<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sector</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">''</span></em>, <em class="sig-param"><span class="n">axis</span><span class="o">=</span><span class="default_value">'year'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/outputs/sinks.html#YearlyAggregate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.sinks.YearlyAggregate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Incrementally aggregates data from year to year.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.sinks.factory">
+<code class="sig-prename descclassname">muse.outputs.sinks.</code><code class="sig-name descname">factory</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">parameters</span><span class="p">:</span> <span class="n">Mapping</span></em>, <em class="sig-param"><span class="n">sector_name</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'default'</span></em><span class="sig-paren">)</span> &#x2192; Callable<a class="reference internal" href="../_modules/muse/outputs/sinks.html#factory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.sinks.factory" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.sinks.finite_resource_logger">
+<code class="sig-prename descclassname">muse.outputs.sinks.</code><code class="sig-name descname">finite_resource_logger</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>pandas.core.frame.DataFrame<span class="p">, </span>xarray.core.dataarray.DataArray<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">year</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">early_exit</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/outputs/sinks.html#finite_resource_logger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.sinks.finite_resource_logger" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.sinks.register_output_sink">
+<code class="sig-prename descclassname">muse.outputs.sinks.</code><code class="sig-name descname">register_output_sink</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">function</span><span class="p">:</span> <span class="n">Callable<span class="p">[</span><span class="p">[</span>Union<span class="p">[</span>xarray.core.dataarray.DataArray<span class="p">, </span>pandas.core.frame.DataFrame<span class="p">]</span><span class="p">, </span>int<span class="p">, </span>Any<span class="p">]</span><span class="p">, </span>Optional<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; Callable<a class="reference internal" href="../_modules/muse/outputs/sinks.html#register_output_sink"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.sinks.register_output_sink" title="Permalink to this definition">¶</a></dt>
+<dd><p>Registers a function to save quantities.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.sinks.sink_to_file">
+<code class="sig-prename descclassname">muse.outputs.sinks.</code><code class="sig-name descname">sink_to_file</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">suffix</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/muse/outputs/sinks.html#sink_to_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.sinks.sink_to_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simplifies sinks to files.</p>
+<p>The decorator takes care of figuring out the path to the file, as well as trims the
+configuration dictionary to include only parameters for the sink itself. The
+decorated function returns the path to the output file.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.sinks.to_csv">
+<code class="sig-prename descclassname">muse.outputs.sinks.</code><code class="sig-name descname">to_csv</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">quantity</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>pandas.core.frame.DataFrame<span class="p">, </span>xarray.core.dataarray.DataArray<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">filename</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">params</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/muse/outputs/sinks.html#to_csv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.sinks.to_csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves data array to csv format, using pandas.to_csv.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>quantity</strong> – The data to be saved</p></li>
+<li><p><strong>filename</strong> – File to which the data should be saved</p></li>
+<li><p><strong>params</strong> – A configuration dictionary accepting any argument to <cite>pandas.to_csv</cite></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.sinks.to_excel">
+<code class="sig-prename descclassname">muse.outputs.sinks.</code><code class="sig-name descname">to_excel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">quantity</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>pandas.core.frame.DataFrame<span class="p">, </span>xarray.core.dataarray.DataArray<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">filename</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">params</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/muse/outputs/sinks.html#to_excel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.sinks.to_excel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves data array to csv format, using pandas.to_excel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>quantity</strong> – The data to be saved</p></li>
+<li><p><strong>filename</strong> – File to which the data should be saved</p></li>
+<li><p><strong>params</strong> – A configuration dictionary accepting any argument to <cite>pandas.to_excel</cite></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="muse.outputs.sinks.to_netcdf">
+<code class="sig-prename descclassname">muse.outputs.sinks.</code><code class="sig-name descname">to_netcdf</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">quantity</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>xarray.core.dataarray.DataArray<span class="p">, </span>pandas.core.frame.DataFrame<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">filename</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">params</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/muse/outputs/sinks.html#to_netcdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.sinks.to_netcdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves data array to csv format, using xarray.to_netcdf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>quantity</strong> – The data to be saved</p></li>
+<li><p><strong>filename</strong> – File to which the data should be saved</p></li>
+<li><p><strong>params</strong> – A configuration dictionary accepting any argument to <cite>xarray.to_netcdf</cite></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-muse.outputs">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-muse.outputs" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="muse.outputs.register_output_sink">
+<code class="sig-prename descclassname">muse.outputs.</code><code class="sig-name descname">register_output_sink</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">function</span><span class="p">:</span> <span class="n">Callable<span class="p">[</span><span class="p">[</span>Union<span class="p">[</span>xarray.core.dataarray.DataArray<span class="p">, </span>pandas.core.frame.DataFrame<span class="p">]</span><span class="p">, </span>int<span class="p">, </span>Any<span class="p">]</span><span class="p">, </span>Optional<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; Callable<a class="reference internal" href="../_modules/muse/outputs/sinks.html#register_output_sink"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#muse.outputs.register_output_sink" title="Permalink to this definition">¶</a></dt>
+<dd><p>Registers a function to save quantities.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">muse.outputs package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-muse.outputs.mca">muse.outputs.mca module</a></li>
+<li><a class="reference internal" href="#module-muse.outputs.sector">muse.outputs.sector module</a></li>
+<li><a class="reference internal" href="#module-muse.outputs.sinks">muse.outputs.sinks module</a></li>
+<li><a class="reference internal" href="#module-muse.outputs">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source/muse.outputs.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.outputs package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>
