@@ -105,7 +105,7 @@ MUSE works by iterating between sectors shown above to ensure that energy demand
 
 #. The service demand is calculated. For example, how much electricity, gas and oil demand is there for the energy services of cooking, building space heating and lighting in the residential sector? It must be noted, that this is only known after the energy service demand sector is solved and the technologies invested in are decided.
 
-#. A demand sector is solved. That is, agents choose end-use technologies to serve the demands in the sector. For example, they compare electric stoves to gas stoves to meet the energy service demand of cooking. TThey then choose between these technologies based upon their:
+#. A demand sector is solved. That is, agents choose end-use technologies to serve the demands in the sector. For example, they compare electric stoves to gas stoves to meet the energy service demand of cooking. They then choose between these technologies based upon their:
 
     i. Search space (which technologies are they willing to consider?)
 
@@ -119,9 +119,9 @@ MUSE works by iterating between sectors shown above to ensure that energy demand
 
 #. The supply and conversion sectors are solved: agents in these sectors use the same approach (i.e. search space, objectives, decision rules) to decide which technologies to investment in to serve the energy commodity demand. For example, agents in the power sector may decide to invest in solar photovoltaics, wind turbines and gas power plants to service the electricity demand.
 
-#. As a result of these decisions in supply and conversion sectors, a price for each energy commodity is formed. This is passed to the MCA.
+#. As a result of these decisions in supply and conversion sectors, a price for each energy commodity is formed. This price is formed based on the levelized cost of energy of the marginal technology. That, the technology which produces the marginal quantity. This price is then passed to the MCA.
 
 #. The MCA then sends these prices back to the demand sectors, which are solved again as above.
 
-#. This process repeats itself until commodity supply and demand converges for each energy commodity. Once these converge, the model has found a “partial equilibrium” on the energy system and it moves forward to the next time period.
+#. This process repeats itself until commodity supply and demand converges for each energy commodity for each region. Once these converge, the model has found a “partial equilibrium” on the energy system and it moves forward to the next time period.
 

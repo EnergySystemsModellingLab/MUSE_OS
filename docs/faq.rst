@@ -32,3 +32,13 @@ If you get an error, similar to the following:
 this is because the optimisation algorithm can not find a solution to match supply with demand. This is often because the constraints placed on the technologies do not allow for high enough growth to meet a growing demand.
 
 A solution to this is to increase the limits of technologies in the relevant `Technodata.csv`. For example, by increasing the `MaxCapacityAddition`, `MaxCapacityGrowth` and/or `TotalCapacityLimit` variables for the respective technologies.
+
+
+
+
+What units should I be using within MUSE?
+-----------------------------------------
+
+The units within MUSE should be consistent. Therefore it is up to you which units you use. You could use, like the examples, petajoules (PJ), however, the units used must be the same across each of the sectors, and each of the input files. MUSE does not make any unit conversion internally.
+
+

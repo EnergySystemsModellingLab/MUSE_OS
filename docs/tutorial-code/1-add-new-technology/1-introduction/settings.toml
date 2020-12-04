@@ -24,7 +24,8 @@ filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 # Carbon budget control
 [carbon_budget_control]
-budget = []
+# budget = []
+method = "fitting"
 
 [global_input_files]
 projections = '{path}/input/Projections.csv'

@@ -44,6 +44,20 @@ interpolation_mode
    interpolation when reading the initial market. One of
    `linear`, `nearest`, `zero`, `slinear`, `quadratic`, `cubic`. Defaults to `linear`.
 
+   * `linear` interpolates using a `linear function <https://en.wikipedia.org/wiki/Linear_interpolation>`_.
+
+   * `nearest` uses `nearest-neighbour interpolation <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>`_. That is, the closest known data point is used as the prediction for the data point to interpolate.
+
+   * `zero` assumes that the data point to interpolate is zero.
+
+   * `slinear` uses a spline of order 1. This is a similar method to `linear` interpolation.
+
+   * `quadratic` uses a quadratic equation for interpolation. This should be used if you expect your data to take a quadratic form.
+
+   * `cubic` interpolation is similar to `quadratic` interpolation, but uses a cubic function for interpolation.
+
+
+
 log_level:
    verbosity of the output.
 
@@ -54,7 +68,7 @@ maximum_iterations
    Maximum number of iterations when searching for equilibrium. Defaults to 3.
 
 tolerance
-   Tolerance criteria when checking for equilibrium. Defaults to 0.1.
+   Tolerance criteria when checking for equilibrium. Defaults to 0.1. 0.1 signifies that 10% of a deviation is allowed among the iterative value of either demand or price over a year per region.
 
 tolerance_unmet_demand
    Criteria checking whether the demand has been met.  Defaults to -0.1.
@@ -89,19 +103,23 @@ budget
    carbon market feature is disabled. Defaults to an empty list.
 
 method
-   Method used to equilibrate the carbon market. Defaults to a simple iterative scheme. [INSERT OPTIONS HERE]
+   Method used to equilibrate the carbon market. The only preset option is `fitting`, however this can be expanded with the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
+
+   The market-clearing algortihm iterates over the sectors until the market reaches an equilibrium in the foresight period (the period next to the one analysed). This is represented by a stable variation of a commodity demand (or price) between iterations below a defined tolerance. The market-clearing algorithm samples a user-defined set of carbon prices and estimates a regression model of the global emissions as a function of the carbon price. The regression model is set by the user. The new carbon price is estimated as a root of the regression model estimated at the value of the emission equal to the user-defined emission cap in the foresight period.
 
 commodities
    Commodities that make up the carbon market. Defaults to an empty list.
 
 control_undershoot
-   Whether to control carbon budget undershoots. Defaults to True.
+   Whether to control carbon budget undershoots. This parameter allows for carbon tax credit from one year to be passed to the next in the case of less carbon being emitted than the budget. Defaults to True.
 
 control_overshoot
-   Whether to control carbon budget overshoots. Defaults to True.
+   Whether to control carbon budget overshoots. If the amount of carbon emitted is above the carbon budget, this parameter specifies whether this deficit is carried over to the next year. Defaults to True.
 
 method_options:
    Additional options for the specific carbon method.
+
+   `fitter` specifies the regression model fit. Predefined options are `linear` and `exponential`. Further options can be defined using the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
 
 
 ------------------

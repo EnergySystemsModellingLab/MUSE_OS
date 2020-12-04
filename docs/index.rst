@@ -18,6 +18,6 @@ MUSE: ModUlar energy system Simulation Environment
    user-guide/index
    inputs/index
    advanced-guide/index
-   api
    faq
+   api
 

@@ -5,7 +5,7 @@ Input Commodities
 =================
 Input commodities are the commodities consumed (also called consumables in MUSE) by each
 technology.  They are defined in a csv file which describes the commodity inputs to each
-technology, calculated per unit of technology activity. See :ref:`below
+technology, calculated per unit of technology activity. Where the unit is defined by the user (e.g. petajoules). See :ref:`below
 <inputs-iocomms>` for a description.
 
 

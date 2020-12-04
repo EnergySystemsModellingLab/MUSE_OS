@@ -48,10 +48,9 @@ cap_par, cap_exp
 
    Capref is decided by the modeller before filling the input data files.
 
-   This allows the model to take into account economies of scale. ie. As `Capacity` increases, the price of the technology decreases.
+   This allows the model to take into account economies of scale. ie. As `Capacity` increases, the price of the technology decreases. This does not include technological learning parameters, where prices may come down due to learning.
 
 fix_par, fix_exp
-
    are used in the fixed cost estimation. Fixed costs are calculated as:
    
    .. math::
@@ -89,11 +88,10 @@ var_par, var_exp
    Capref is decided by the modeller before filling the input data files.
 
 MaxCapacityAddition
-   represents the maximum addition of installed capacity per technology, region, year.
+   represents the maximum addition of installed capacity per technology, per year in a period, per region.
 
 MaxCapacityGrowth
-   represents the maximum growth in capacity as a fraction of the installed capacity per
-   technology, region and year.
+   represents the percentage growth per year based on the available stock in a year, per region and technology.
 
 TotalCapacityLimit
    represents the total capacity limit per technology, region and year.
@@ -102,7 +100,7 @@ TechnicalLife
    represents the number of years that a technology operates before it is decommissioned.
 
 UtilizationFactor
-   is the number of operating hours of a process over the maximum number of hours in a year.    
+   represents the maximum actual output of the technology in a year, divided by the theoretical maximum output if the technology were operating at full capacity for the whole year.
 
 ScalingSize
    represents the minimum size of a technology to be installed.
@@ -112,10 +110,10 @@ efficiency
 
 AvailabiliyYear
    defines the starting year of a technology; for example the value equals 1 when a
-   technology would be available or 0 when a technology would not be available.
+   technology would be available or 0 when a technology would not be available. 
 
 Type
-   defines the type of a technology.     
+   defines the type of a technology. This variable is used for the search space in the agents csv file. It allows for the agents to filter for technologies of a similar type, for example.     
 
 Fuel
    defines the fuel used by a technology. 
@@ -124,7 +122,7 @@ EndUse
    defines the end use of a technology. 
 
 InterestRate
-   is the technology interest rate.
+   is the technology interest rate. This is used for the interest used in the discount rate.
 
 Agent_0, ..., Agent_N
    represent the allocation of the initial capacity to the each agent.

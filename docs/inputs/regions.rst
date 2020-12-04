@@ -7,7 +7,7 @@ Regional data
 MUSE requires the definition of the methodology used for investment and dispatch and alias
 demand matching. The methodology has to be defined by region and subregion, meant as a
 geographical subdivision in a region. Currently, the methodology definition is
-important for the legacy sectors only.
+important for the legacy sectors only, and can therefore be ignored for the open source version of MUSE.
 
 
 Below the generic structure of the input commodity file for the electric

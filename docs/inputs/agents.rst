@@ -6,7 +6,7 @@ Agents
 
 In MUSE, an agent-based formulation was originally introduced for the residential and
 commercial building sectors :cite:`2019:sachs`.  Agents are defined using a CSV file, with
-one agent per row, using a somewhat historical format meant specifically for retrofit
+one agent per row, using a format meant specifically for retrofit
 and new-capacity agent pairs. This CSV file can be read using
 :py:func:`~muse.readers.csv.read_csv_agent_parameters`. The data is also
 interpreted to some degree in the factory functions
@@ -192,13 +192,13 @@ DecisionMethod
    - :py:func:`weighted_sum <weighted_sum>`: Computes a weighted average across several
      objectives.
    - :py:func:`lexical_comparion <lexical_comparison>`: Compares objectives using a
-     binned lexical comparison operator. Aliased to "lexo".
+     binned lexical comparison operator. Aliased to "lexo". This is a `lexicographic method <https://en.wikipedia.org/wiki/Lexicographic_order>`_ where objectives are compared in a specific order, for example first costs, then environmental emissions.
    - :py:func:`retro_lexical_comparion <retro_lexical_comparison>`: A binned lexical
      comparison function where the bin size is adjusted to ensure the current crop of
      technologies are competitive. Aliased to "retro_lexo".
    - :py:func:`epsilon_constraints <epsilon_constraints>`: A comparison method which
      ensures that first selects technologies following constraints on objectives 2 and
-     higher, before actually ranking them using objective 1. Aliased to "epsilon" ad
+     higher, before actually ranking them using objective 1. Aliased to "epsilon" and
      "epsilon_con".
    - :py:func:`retro_epsilon_constraints <retro_epsilon_constraints>`: A variation on
      epsilon constraints which ensures that the current crop of technologies are not

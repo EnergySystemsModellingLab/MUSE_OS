@@ -6,7 +6,7 @@ Time-slices
 
 .. note::
 
-    This input file is only for legacy sectors. For anything else, please see :ref:`simulation-settings`.
+    This input file is only for legacy sectors, which are not part of the open source release. For time-slice settings in the open source release, please see the  :ref:`simulation-settings`.
 
 
 
