@@ -148,6 +148,18 @@ def capacity(
     return result[result.capacity != 0]
 
 
+@register_output_quantity
+def llcoe(
+    market: xr.Dataset,
+    llcoe: xr.DataArray,
+    technologies: xr.Dataset,
+    rounding: int = 4,
+) -> pd.DataFrame:
+    """Current llcoe."""
+    result = llcoe.to_dataframe().round(rounding)
+    return result
+
+
 def market_quantity(
     quantity: xr.DataArray,
     sum_over: Optional[Union[Text, List[Text]]] = None,
