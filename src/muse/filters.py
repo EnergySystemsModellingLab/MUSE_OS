@@ -98,6 +98,7 @@ from typing import (
     Sequence,
     Text,
     Union,
+    cast,
 )
 
 import numpy as np
@@ -207,11 +208,9 @@ def factory(
         ]
 
     if len(parameters) == 0 or parameters[0]["name"] not in SEARCH_SPACE_INITIALIZERS:
-        initial_settings: Union[Text, Mapping] = {
-            "name": "initialize_from_technologies"
-        }
+        initial_settings: Mapping[Text, Text] = {"name": "initialize_from_technologies"}
     else:
-        initial_settings, parameters = parameters[0], parameters[1:]
+        initial_settings, parameters = cast(Mapping, parameters[0]), parameters[1:]
 
     functions = [
         partial(

@@ -349,7 +349,7 @@ def _standardize_investing_inputs(
     if search_rules is None:
         search_rules = list()
     if isinstance(search_rules, Text):
-        search_rules = [search_rules]
+        search_rules = [u.strip() for u in search_rules.split("->")]
     search_rules = list(search_rules)
     if len(search_rules) == 0 or search_rules[-1] != "compress":
         search_rules.append("compress")
