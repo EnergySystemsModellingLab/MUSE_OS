@@ -29,34 +29,31 @@ resources:
       name: SGIModel/SGIModelData
       ref: master
       endpoint: rse-ci-imperial
-    - repository: StarMUSELegacy
+    - repository: SGILegacy
       type: github
       name: SGIModel/StarMuse
       ref: archive/legacy
       endpoint: rse-ci-imperial
 
 steps:
-  - checkout: SGIModelData
-  - checkout: StarMUSELegacy
   - task: UsePythonVersion@0
     inputs:
       versionSpec: $(pythonVersion)
       architecture: x64
 
-  - script: pip install -e SGIModelData
+  - checkout: SGIModelData
+  - script: pip install ./SGIModelData
     name: legacy_data
 
-  - script: |
-      cd StarMuse
-      git checkout archive/legacy
-      cd ..
-      git clone StarMuse StarMUSELegacy -b archive/legacy
-      pip install -e StarMUSELegacy
+
+  - checkout: SGILegacy
+  - script: pip install ./StarMuse
     name: legacy_muse
 
-  - checkout: self
-
-  - script: pip install -e StarMuse[dev,private_sgi_model]
+  - script: |
+      python -c "import SGIModelData; print(SGIModelData.__file__)"
+      pip install -e ./StarMuse[dev,excel]
+      pip freeze
     name: setup
     
 
