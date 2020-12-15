@@ -217,7 +217,7 @@ def test_init_from_asset(technologies, rng):
     assert set(space.dims) == {"asset", "replacement"}
     assert space.replacement.isin(technologies.technology).all()
     assert technologies.technology.isin(space.replacement).all()
-    assert set(space.asset.technology.values) == set(capacity.technology.values)
+    assert set(space.asset.asset.values) == set(capacity.technology.values)
 
 
 def test_init_from_asset_no_assets(technologies, rng):
