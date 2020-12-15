@@ -82,6 +82,7 @@ setup(
         "bottleneck",
         "coloredlogs",
         "toml",
+        "xlrd<2.0",
     ],
     extras_require={
         "dev": tests_require,
