@@ -41,6 +41,9 @@ steps:
       versionSpec: $(pythonVersion)
       architecture: x64
 
+  - script: pip install -U setuptools wheel xlrd<2.0
+    name: Prerequisites
+
   - checkout: SGIModelData
   - script: pip install ./SGIModelData
     name: legacy_data
