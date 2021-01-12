@@ -3,7 +3,7 @@ from pytest import mark
 
 @mark.usefixtures("save_timeslice_globals")
 @mark.regression
-@mark.parametrize("model", ["default", "minimum-service"])
+@mark.parametrize("model", ["default", "minimum-service", "trade"])
 def test_fullsim_regression(model, tmpdir, compare_dirs):
     from warnings import simplefilter
     from pandas.errors import DtypeWarning
