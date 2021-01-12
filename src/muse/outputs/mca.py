@@ -311,7 +311,7 @@ def sector_capacity(sector: AbstractSector) -> pd.DataFrame:
 
     if "year" in capacity.columns:
         capacity = capacity.ffill("year")
-    
+
     capacity = capacity.reset_index()
     return capacity
 
