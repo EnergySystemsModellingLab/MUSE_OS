@@ -1,7 +1,7 @@
 # Global settings - most REQUIRED
-time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
+time_framework = [2020, 2025, 2030, 2035]
 foresight = 5   # Has to be a multiple of the minimum separation between the years in time framework
-regions = ["R1", "R2", "R3"]
+regions = ["R1","R2", "R3"]
 interest_rate = 0.1
 interpolation_mode = 'Active'
 log_level = 'info'
@@ -14,13 +14,20 @@ tolerance_unmet_demand = -0.1
 
 [[outputs]]
     quantity = "prices"
-    sink = "aggregate"
-    filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+    sink.name = "aggregate"
+    sink.sink.name = "csv"
+    sink.sink.set_index = ["region", "commodity", "year", "timeslice"]
+    sink.sink.sort_index = true
+    sink.sink.keep_columns = ["prices"]
+    filename = "{cwd}/Results/Prices.csv"
 
 [[outputs]]
     quantity = "capacity"
-    sink = "aggregate"
-    filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+    sink.name = "aggregate"
+    sink.sink.name = "csv"
+    sink.sink.set_index = ["year", "sector", "region", "technology", "agent", "type" ]
+    sink.sink.sort_index = true
+    filename = "{cwd}/Results/Capacities.csv"
 
 [carbon_budget_control]
     budget = []
@@ -65,14 +72,8 @@ tolerance_unmet_demand = -0.1
         quantity = "capacity"
         sink = 'csv'
         overwrite = true
+        columns = [	"region",	"technology",	"installed", 	"capacity"]
 
-    [[sectors.residential.outputs]]
-        filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-        quantity.name = "supply"
-        quantity.sum_over = "timeslice"
-        quantity.drop = ["comm_usage", "units_prices"]
-        sink = 'csv'
-        overwrite = true
 
     [[sectors.residential.interactions]] 
         net = 'new_to_retro'
@@ -108,10 +109,13 @@ tolerance_unmet_demand = -0.1
         quantity = "capacity"
         sink = 'csv'
         overwrite = true
+        columns = ["region",	"technology",	"installed", 	"capacity"
+        ]
+
 
 [sectors.gas]
     type = 'default'
-    priority = 2
+    priority = 3
     dispatch_production = 'share'
 
     [sectors.gas.technodata]
@@ -123,13 +127,10 @@ tolerance_unmet_demand = -0.1
     [sectors.gas.subsectors.trade]
         agents = '{path}/technodata/Agents.csv'
         existing_capacity = '{path}/technodata/gas/ExistingTrade.csv'
-        existing_trade = '{path}/technodata/gas/ExistingTrade.csv'
-        possible_trade = '{path}/technodata/gas/PossibleTrade.csv'
         lpsolver = "scipy"
         constraints = [
             "max_production",
             "max_capacity_expansion",
-            "minimum_service",
             "demand",
             "search_space",
         ]
@@ -142,6 +143,9 @@ tolerance_unmet_demand = -0.1
         quantity = "capacity"
         sink = 'csv'
         overwrite = true
+        columns = [ "region",	"technology",	"installed", 	"capacity"
+        ]
+
 
 [timeslices]
     all-year.all-week.night = 1460
