@@ -27,6 +27,7 @@ tolerance_unmet_demand = -0.1
     sink.sink.name = "csv"
  #   sink.sink.set_index = ["asset","year", "sector", "region", "technology", "agent", "type" ]
     sink.sink.sort_index = true
+    sink.sink.index = false
     filename = "{cwd}/Results/Capacities.csv"
 
 [carbon_budget_control]
@@ -73,7 +74,7 @@ tolerance_unmet_demand = -0.1
         sink = 'csv'
         overwrite = true
         columns = [	"asset", "year", "region",	"technology",	"installed", 	"capacity"]
-
+        index = false
 
     [[sectors.residential.interactions]] 
         net = 'new_to_retro'
@@ -111,7 +112,7 @@ tolerance_unmet_demand = -0.1
         overwrite = true
         columns = ["dst_region", "year", "asset", "region",	"technology",	"installed", 	"capacity"
         ]
-
+        index = false
 
 [sectors.gas]
     type = 'default'
@@ -145,7 +146,7 @@ tolerance_unmet_demand = -0.1
         overwrite = true
         columns = ["dst_region", "year", "asset", "region",	"technology",	"installed", 	"capacity"
         ]
-
+        index = false
 
 
 [timeslices]
