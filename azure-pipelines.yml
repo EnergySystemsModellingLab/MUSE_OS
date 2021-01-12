@@ -11,13 +11,13 @@ strategy:
   matrix:
     windows:
       imageName: windows-2019
-      pythonVersion: 3.7
+      pythonVersion: 3.8
     linux:
       imageName: ubuntu-16.04
-      pythonVersion: 3.7
+      pythonVersion: 3.8
     umac:
       imageName: macos-10.15
-      pythonVersion: 3.7
+      pythonVersion: 3.
 
 pool:
   vmImage: $(imageName)
