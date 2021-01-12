@@ -293,12 +293,22 @@ def sector_capacity(sector: AbstractSector) -> pd.DataFrame:
         capa_agent["sector"] = getattr(sector, "name", "unnamed")
 
         if len(capa_agent) > 0 and len(capa_agent.technology.values) > 0:
-            capa_sector.append(capa_agent.groupby("technology").sum("asset").fillna(0))
+            if "dst_region" in capa_agent.coords:
+                capa_sector.append(
+                    capa_agent.groupby("technology")
+                    .sum(["asset", "dst_region"])
+                    .fillna(0)
+                )
+            else:
+                capa_sector.append(
+                    capa_agent.groupby("technology").sum("asset").fillna(0)
+                )
     if len(capa_sector) == 0:
         return DataFrame()
 
     capacity = concat([u.to_dataframe() for u in capa_sector])
     capacity = capacity[capacity.capacity != 0]
+
     if "year" in capacity.columns:
         capacity = capacity.ffill("year")
     return capacity
