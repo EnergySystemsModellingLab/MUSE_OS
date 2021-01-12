@@ -46,7 +46,7 @@ def test_aggregate_sectors():
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
     agent_list = [list(a.agents) for a in sector_list]
     alldata = _aggregate_sectors(mca.sectors, op=sector_capacity)
-    alldatadict = alldata.to_dict("split")
+
     columns = ["region", "agent", "type", "sector", "capacity"]
 
     frame = DataFrame()
