@@ -25,7 +25,7 @@ tolerance_unmet_demand = -0.1
     quantity = "capacity"
     sink.name = "aggregate"
     sink.sink.name = "csv"
-    sink.sink.set_index = ["year", "sector", "region", "technology", "agent", "type" ]
+ #   sink.sink.set_index = ["asset","year", "sector", "region", "technology", "agent", "type" ]
     sink.sink.sort_index = true
     filename = "{cwd}/Results/Capacities.csv"
 
@@ -72,7 +72,7 @@ tolerance_unmet_demand = -0.1
         quantity = "capacity"
         sink = 'csv'
         overwrite = true
-        columns = [	"region",	"technology",	"installed", 	"capacity"]
+        columns = [	"asset", "year", "region",	"technology",	"installed", 	"capacity"]
 
 
     [[sectors.residential.interactions]] 
@@ -109,7 +109,7 @@ tolerance_unmet_demand = -0.1
         quantity = "capacity"
         sink = 'csv'
         overwrite = true
-        columns = ["region",	"technology",	"installed", 	"capacity"
+        columns = ["dst_region", "year", "asset", "region",	"technology",	"installed", 	"capacity"
         ]
 
 
@@ -143,8 +143,9 @@ tolerance_unmet_demand = -0.1
         quantity = "capacity"
         sink = 'csv'
         overwrite = true
-        columns = [ "region",	"technology",	"installed", 	"capacity"
+        columns = ["dst_region", "year", "asset", "region",	"technology",	"installed", 	"capacity"
         ]
+
 
 
 [timeslices]

@@ -145,6 +145,7 @@ def capacity(
 ) -> pd.DataFrame:
     """Current capacity."""
     result = capacity.to_dataframe().round(rounding)
+    result = result.reset_index()
     return result[result.capacity != 0]
 
 
