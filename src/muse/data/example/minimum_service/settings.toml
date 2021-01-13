@@ -29,6 +29,7 @@ tolerance_unmet_demand = -0.1
     quantity = "capacity"
     sink = "aggregate"
     filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+    index = false
 
 [sectors.industry]
     type = 'default'
@@ -58,6 +59,7 @@ tolerance_unmet_demand = -0.1
         quantity = "capacity"
         sink = 'csv'
         overwrite = true
+        index = false
 
     [[sectors.industry.outputs]]
         filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'

@@ -295,7 +295,7 @@ def scipy_match_demand(
     adapter = ScipyAdapter.factory(
         techs, -cast(np.ndarray, costs), timeslice, *constraints
     )
-    res = linprog(**adapter.kwargs, options=dict(disp=True))
+    res = linprog(**adapter.kwargs, options=dict(disp=False, sym_pos=False))
     if not res.success:
         getLogger(__name__).critical(res.message)
         raise LinearProblemError("LP system could not be solved", res)
