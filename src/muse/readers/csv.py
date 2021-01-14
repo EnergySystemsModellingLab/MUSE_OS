@@ -225,6 +225,7 @@ def read_initial_capacity(data: Union[Text, Path, pd.DataFrame]) -> xr.DataArray
 
 def read_technologies(
     technodata_path_or_sector: Optional[Union[Text, Path]] = None,
+    technodata_timeslices_path: Optional[Union[Text, Path]] = None,
     comm_out_path: Optional[Union[Text, Path]] = None,
     comm_in_path: Optional[Union[Text, Path]] = None,
     commodities: Optional[Union[Text, Path, xr.Dataset]] = None,
@@ -265,6 +266,9 @@ def read_technologies(
         tpath = find_sectors_file(
             f"technodata{sector.title()}.csv", sector, sectors_directory  # type: ignore
         )
+        ttpath = find_sectors_file(
+            f"TechnodataTimeslices{sector.title()}.csv", sector, sectors_directory  # type: ignore
+        )
         opath = find_sectors_file(
             f"commOUTtechnodata{sector.title()}.csv",  # type: ignore
             sector,
@@ -277,14 +281,17 @@ def read_technologies(
         )
     else:
         assert isinstance(technodata_path_or_sector, (Text, Path))
+        assert isinstance(technodata_timeslices_path, (Text, Path))
         assert comm_out_path is not None
         assert comm_in_path is not None
         tpath = Path(technodata_path_or_sector)
+        ttpath = Path(technodata_timeslices_path)
         opath = Path(comm_out_path)
         ipath = Path(comm_in_path)
 
     msg = f"""Reading technology information from:
     - technodata: {tpath}
+    - technodata_timeslices: {ttpath}
     - outputs: {opath}
     - inputs: {ipath}
     """
@@ -296,6 +303,7 @@ def read_technologies(
     result = read_technodictionary(tpath)
     if any(result[u].isnull().any() for u in result.data_vars):
         raise ValueError(f"Inconsistent data in {tpath} (e.g. inconsistent years)")
+    timeslices = read_technodata_timeslices(ttpath)
     outs = read_io_technodata(opath).rename(
         flexible="flexible_outputs", fixed="fixed_outputs"
     )
@@ -308,7 +316,7 @@ def read_technologies(
         if all(len(ins[d]) > 1 for d in ins.dims if ins[d].dtype.kind in "uifc"):
             ins = ins.interp(year=result.year)
 
-    result = result.merge(outs).merge(ins)
+    result = result.merge(timeslices).merge(outs).merge(ins)
 
     # try and add info about commodities
     if isinstance(commodities, (Text, Path)):
@@ -787,11 +795,9 @@ def read_trade(
         var_name=col_region,
     )
     if parameters is None:
-        result: Union[xr.DataArray, xr.Dataset] = (
-            xr.DataArray.from_series(
-                data.set_index(indices + [col_region])["value"]
-            ).rename(name)
-        )
+        result: Union[xr.DataArray, xr.Dataset] = xr.DataArray.from_series(
+            data.set_index(indices + [col_region])["value"]
+        ).rename(name)
     else:
         result = xr.Dataset.from_dataframe(
             data.pivot_table(
