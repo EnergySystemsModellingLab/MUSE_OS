@@ -903,9 +903,9 @@ def read_technodata(
             raise IncorrectSettings(f"File {filename} is not a file.")
 
     technologies = read_technologies(
-        technosettings.pop("technodata"),
-        technosettings.pop("commodities_out"),
-        technosettings.pop("commodities_in"),
+        technodata_path_or_sector=technosettings.pop("technodata"),
+        comm_out_path=technosettings.pop("commodities_out"),
+        comm_in_path=technosettings.pop("commodities_in"),
         commodities=commodities,
     ).sel(region=regions)
     ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
