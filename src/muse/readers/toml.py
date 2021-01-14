@@ -882,6 +882,7 @@ def read_technodata(
     if isinstance(technosettings, Text):
         technosettings = dict(
             technodata=technosettings,
+            technodata_timeslices=settings.technodata_timeslices,
             commodities_in=settings.commodities_in,
             commodities_out=settings.commodities_out,
         )
@@ -904,6 +905,7 @@ def read_technodata(
 
     technologies = read_technologies(
         technodata_path_or_sector=technosettings.pop("technodata"),
+        technodata_timeslices_path=technosettings.pop("technodata_timeslices"),
         comm_out_path=technosettings.pop("commodities_out"),
         comm_in_path=technosettings.pop("commodities_in"),
         commodities=commodities,
