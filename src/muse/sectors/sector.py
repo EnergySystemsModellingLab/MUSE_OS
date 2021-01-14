@@ -100,7 +100,7 @@ class Sector(AbstractSector):  # type: ignore
         technologies: xr.Dataset,
         subsectors: Sequence[Subsector] = [],
         timeslices: Optional[pd.MultiIndex] = None,
-        technodata_timeslices: xr.Dataset = None,
+        technologies_timeslices: xr.Dataset = None,
         interactions: Optional[Callable[[Sequence[AbstractAgent]], None]] = None,
         interpolation: Text = "linear",
         outputs: Optional[Callable] = None,

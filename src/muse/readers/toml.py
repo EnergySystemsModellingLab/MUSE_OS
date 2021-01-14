@@ -855,7 +855,11 @@ def read_technodata(
     **kwargs,
 ) -> xr.Dataset:
     """Helper function to create technodata for a given sector."""
-    from muse.readers.csv import read_technologies, read_trade
+    from muse.readers.csv import (
+        read_technologies,
+        read_technodata_timeslices,
+        read_trade,
+    )
 
     if time_framework is None:
         time_framework = getattr(settings, "time_framework", [2010, 2050])
