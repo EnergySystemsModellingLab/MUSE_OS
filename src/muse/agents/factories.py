@@ -70,7 +70,9 @@ def create_retrofit_agent(
     )
 
     kwargs = _standardize_investing_inputs(decision=decision, **kwargs)
+
     search_rules = kwargs.pop("search_rules")
+
     if len(search_rules) < 2 or search_rules[-2] != "with_asset_technology":
         search_rules.insert(-1, "with_asset_technology")
 
@@ -108,8 +110,12 @@ def create_newcapa_agent(
     assets["capacity"] = xr.zeros_like(capacity.sel(asset=existing.values, year=years))
 
     kwargs = _standardize_investing_inputs(
-        housekeeping=housekeeping, merge_transform=merge_transform, **kwargs
+        search_rules=search_rules,
+        housekeeping=housekeeping,
+        merge_transform=merge_transform,
+        **kwargs,
     )
+
     # ensure newcapa agents do not use currently_existing_tech filter, since it would
     # turn off all replacement techs
     variations = set(name_variations("existing")).union(
@@ -128,6 +134,7 @@ def create_newcapa_agent(
         **kwargs,
     )
     result.quantity = quantity  # type: ignore
+
     return result
 
 
