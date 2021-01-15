@@ -266,9 +266,6 @@ def read_technologies(
         tpath = find_sectors_file(
             f"technodata{sector.title()}.csv", sector, sectors_directory  # type: ignore
         )
-        ttpath = find_sectors_file(
-            f"TechnodataTimeslices{sector.title()}.csv", sector, sectors_directory  # type: ignore
-        )
         opath = find_sectors_file(
             f"commOUTtechnodata{sector.title()}.csv",  # type: ignore
             sector,
@@ -281,29 +278,36 @@ def read_technologies(
         )
     else:
         assert isinstance(technodata_path_or_sector, (Text, Path))
-        assert isinstance(technodata_timeslices_path, (Text, Path))
         assert comm_out_path is not None
         assert comm_in_path is not None
         tpath = Path(technodata_path_or_sector)
-        ttpath = Path(technodata_timeslices_path)
         opath = Path(comm_out_path)
         ipath = Path(comm_in_path)
 
     msg = f"""Reading technology information from:
     - technodata: {tpath}
-    - technodata_timeslices: {ttpath}
     - outputs: {opath}
     - inputs: {ipath}
     """
+    if technodata_timeslices_path and isinstance(
+        technodata_timeslices_path, (Text, Path)
+    ):
+        ttpath = Path(technodata_timeslices_path)
+        msg += f"""- technodata_timeslices: {ttpath}
+        """
+    else:
+        ttpath = None
+
     if isinstance(commodities, (Text, Path)):
-        msg += f"- global commodities file {commodities}"
+        msg += f"""- global commodities file: {commodities}"""
+
     logger = getLogger(__name__)
     logger.info(msg)
 
     result = read_technodictionary(tpath)
     if any(result[u].isnull().any() for u in result.data_vars):
         raise ValueError(f"Inconsistent data in {tpath} (e.g. inconsistent years)")
-    timeslices = read_technodata_timeslices(ttpath)
+
     outs = read_io_technodata(opath).rename(
         flexible="flexible_outputs", fixed="fixed_outputs"
     )
@@ -316,7 +320,11 @@ def read_technologies(
         if all(len(ins[d]) > 1 for d in ins.dims if ins[d].dtype.kind in "uifc"):
             ins = ins.interp(year=result.year)
 
-    result = result.merge(timeslices).merge(outs).merge(ins)
+    result = result.merge(outs).merge(ins)
+
+    if isinstance(ttpath, (Text, Path)):
+        technodata_timeslice = read_technodata_timeslices(ttpath)
+        result = result.merge(technodata_timeslice)
 
     # try and add info about commodities
     if isinstance(commodities, (Text, Path)):

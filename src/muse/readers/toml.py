@@ -873,6 +873,11 @@ def read_technodata(
     if sector_name is not None:
         settings = getattr(settings.sectors, sector_name)
 
+    if not hasattr(settings, "technodata_timeslices"):
+        technodata_timeslices = None
+    else:
+        technodata_timeslices = settings.technodata_timeslices
+
     # normalizes case where technodata is not in own subsection
     if not hasattr(settings, "technodata") and sector_name is not None:
         raise MissingSettings(f"Missing technodata section in {sector_name}")
@@ -882,7 +887,7 @@ def read_technodata(
     if isinstance(technosettings, Text):
         technosettings = dict(
             technodata=technosettings,
-            technodata_timeslices=settings.technodata_timeslices,
+            technodata_timeslices=technodata_timeslices,
             commodities_in=settings.commodities_in,
             commodities_out=settings.commodities_out,
         )
