@@ -492,7 +492,26 @@ def max_production_by_timeslice(
     year: Optional[int] = None,
     **kwargs,
 ) -> Constraint:
-    pass
+    from muse.commodities import is_enduse
+
+    if year is None:
+        year = int(market.year.min())
+    commodities = technologies.commodity.sel(
+        commodity=is_enduse(technologies.comm_usage)
+    )
+
+    replacement = search_space.replacement
+    replacement = replacement.drop_vars(
+        [u for u in replacement.coords if u not in replacement.dims]
+    )
+    kwargs = dict(technology=replacement, year=year, commodity=commodities)
+    if "region" in search_space.coords and "region" in technologies.dims:
+        kwargs["region"] = search_space.region
+    techs = (
+        technologies[["fixed_outputs", "utilization_factor"]]
+        .sel(**kwargs)
+        .drop_vars("technology")
+    )
 
 
 @register_constraints
