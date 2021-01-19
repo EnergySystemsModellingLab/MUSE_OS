@@ -1,4 +1,4 @@
-ProcessName,RegionName,Time,ObjSort,month,day,hour,Availability
+ProcessName,RegionName,Time,ObjSort,month,day,hour,UtilizationFactor
 Unit,-,Year,-,-,-,-,-
 heatpump,R1,2020,upper,all-year,all-week,night,0.1
 heatpump,R1,2020,upper,all-year,all-week,morning,0.5
