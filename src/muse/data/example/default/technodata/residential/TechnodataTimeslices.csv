@@ -2,7 +2,13 @@ ProcessName,RegionName,Time,ObjSort,month,day,hour,Availability
 Unit,-,Year,-,-,-,-,-
 heatpump,R1,2020,upper,all-year,all-week,night,0.1
 heatpump,R1,2020,upper,all-year,all-week,morning,0.5
-heatpump,R1,2021,upper,all-year,all-week,afternoon,0.6
-heatpump,R1,2022,upper,all-year,all-week,early-peak,0.5
-heatpump,R1,2023,upper,all-year,all-week,late-peak,0.2
-heatpump,R1,2024,upper,all-year,all-week,evening,0.1
+heatpump,R1,2020,upper,all-year,all-week,afternoon,0.6
+heatpump,R1,2020,upper,all-year,all-week,early-peak,0.5
+heatpump,R1,2020,upper,all-year,all-week,late-peak,0.2
+heatpump,R1,2020,upper,all-year,all-week,evening,0.1
+gasboiler,R1,2020,upper,all-year,all-week,night,0.1
+gasboiler,R1,2020,upper,all-year,all-week,morning,0.5
+gasboiler,R1,2020,upper,all-year,all-week,afternoon,0.6
+gasboiler,R1,2020,upper,all-year,all-week,early-peak,0.5
+gasboiler,R1,2020,upper,all-year,all-week,late-peak,0.2
+gasboiler,R1,2020,upper,all-year,all-week,evening,0.1
