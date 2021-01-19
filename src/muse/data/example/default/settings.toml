@@ -37,6 +37,7 @@ priority = 1
 dispatch_production = 'share'
 
 technodata = '{path}/technodata/residential/Technodata.csv'
+technodata_timeslices = '{path}/technodata/residential/TechnodataTimeslices.csv'
 commodities_in = '{path}/technodata/residential/CommIn.csv'
 commodities_out = '{path}/technodata/residential/CommOut.csv'
 
@@ -79,7 +80,6 @@ priority = 2
 dispatch_production = 'share'
 
 technodata = '{path}/technodata/power/Technodata.csv'
-technodata_timeslices = '{path}/technodata/power/TechnodataTimeslices.csv'
 commodities_in = '{path}/technodata/power/CommIn.csv'
 commodities_out = '{path}/technodata/power/CommOut.csv'
 
