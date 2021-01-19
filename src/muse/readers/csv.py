@@ -324,7 +324,7 @@ def read_technologies(
 
     if isinstance(ttpath, (Text, Path)):
         technodata_timeslice = read_technodata_timeslices(ttpath)
-        result = result.drop_vars("availability")
+        result = result.drop_vars("utilization_factor")
         result = result.merge(technodata_timeslice)
 
     # try and add info about commodities
