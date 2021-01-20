@@ -122,6 +122,20 @@ def supply(
     return supply(capacity, market.consumption, technologies)
 
 
+@register_production(name="share_timeslice")
+def supply_timeslice(
+    market: xr.Dataset, capacity: xr.DataArray, technologies: xr.Dataset
+) -> xr.DataArray:
+    """Service current demand equally from all assets.
+
+    "Equally" means that equivalent technologies are used to the same percentage of
+    their respective capacity.
+    """
+    from muse.quantities import supply
+
+    return supply(capacity, market.consumption, technologies)
+
+
 @register_production(name="match")
 def demand_matched_production(
     market: xr.Dataset,
