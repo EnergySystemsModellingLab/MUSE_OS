@@ -492,14 +492,20 @@ def max_production_by_timeslice(
     year: Optional[int] = None,
     **kwargs,
 ) -> Constraint:
+    """Constructs constraint between capacity and maximum production.
+
+    Constrains the production decision variable by the maximum production for a given
+    capacity.
+    """
+    from xarray import zeros_like, ones_like
     from muse.commodities import is_enduse
+    from muse.timeslices import convert_timeslice, QuantityType
 
     if year is None:
         year = int(market.year.min())
     commodities = technologies.commodity.sel(
         commodity=is_enduse(technologies.comm_usage)
     )
-
     replacement = search_space.replacement
     replacement = replacement.drop_vars(
         [u for u in replacement.coords if u not in replacement.dims]
@@ -511,6 +517,21 @@ def max_production_by_timeslice(
         technologies[["fixed_outputs", "utilization_factor"]]
         .sel(**kwargs)
         .drop_vars("technology")
+    )
+    capacity = convert_timeslice(
+        techs.fixed_outputs * techs.utilization_factor,
+        market.timeslice,
+        QuantityType.EXTENSIVE,
+    )
+    if "asset" not in capacity.dims and "asset" in search_space.dims:
+        capacity = capacity.expand_dims(asset=search_space.asset)
+    production = ones_like(capacity)
+    b = zeros_like(production)
+    if "dst_region" in assets.dims:
+        b = b.expand_dims(dst_region=assets.dst_region)
+    return xr.Dataset(
+        dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
+        attrs=dict(kind=ConstraintKind.UPPER_BOUND),
     )
 
 
