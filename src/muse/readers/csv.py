@@ -112,26 +112,35 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
     csv = csv.rename(columns=camel_to_snake)
     data = csv[csv.process_name != "Unit"]
+    months = [u for u in data.month.dropna()]
+    days = [u for u in data.day.dropna()]
+    hours = [u for u in data.hour.dropna()]
+
     ts = pd.MultiIndex.from_arrays(
         [
             data.process_name,
             data.region_name,
             [int(u) for u in data.time],
-            data.month,
-            data.day,
-            data.hour,
+            months,
+            days,
+            hours,
+            data.obj_sort,
         ],
-        names=("technology", "region", "year", "month", "day", "hour"),
+        names=("technology", "region", "year", "month", "day", "hour", "obj_sort"),
     )
+
     data.index = ts
-    data.columns.name = "technodata"
+    data.columns.name = "technodata_timeslice"
     data.index.name = "technology"
     data = data.drop(
-        ["process_name", "region_name", "time", "month", "day", "hour"], axis=1
+        ["process_name", "region_name", "time", "month", "day", "hour", "obj_sort"],
+        axis=1,
     )
 
     data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"), axis=0)
     result = xr.Dataset.from_dataframe(data.sort_index())
+    result = result.stack(timeslice=["month", "day", "hour"])
+
     return result
 
 
