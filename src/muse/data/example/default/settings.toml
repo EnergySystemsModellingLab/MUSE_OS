@@ -34,7 +34,7 @@ global_commodities = '{path}/input/GlobalCommodities.csv'
 [sectors.residential]
 type = 'default'
 priority = 1
-dispatch_production = 'share'
+dispatch_production = 'maximum_by_timeslice'
 
 technodata = '{path}/technodata/residential/Technodata.csv'
 technodata_timeslices = '{path}/technodata/residential/TechnodataTimeslices.csv'

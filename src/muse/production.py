@@ -108,22 +108,22 @@ def maximum_production(
     return maximum_production(technologies, capacity)
 
 
-@register_production(name=("share", "shares"))
-def supply(
+@register_production(name=("max_by_timeslice", "maximum_by_timeslice"))
+def maximum_production_by_timeslice(
     market: xr.Dataset, capacity: xr.DataArray, technologies: xr.Dataset
 ) -> xr.DataArray:
-    """Service current demand equally from all assets.
+    """Production when running at full capacity.
 
-    "Equally" means that equivalent technologies are used to the same percentage of
-    their respective capacity.
+    *Full capacity* is limited by the utilitization factor. For more details, see
+    :py:func:`muse.quantities.maximum_production`.
     """
-    from muse.quantities import supply
+    from muse.quantities import maximum_production
 
-    return supply(capacity, market.consumption, technologies)
+    return maximum_production(technologies, capacity)
 
 
-@register_production(name="share_timeslice")
-def supply_timeslice(
+@register_production(name=("share", "shares"))
+def supply(
     market: xr.Dataset, capacity: xr.DataArray, technologies: xr.Dataset
 ) -> xr.DataArray:
     """Service current demand equally from all assets.
