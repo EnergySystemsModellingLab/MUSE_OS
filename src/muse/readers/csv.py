@@ -124,9 +124,9 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
             months,
             days,
             hours,
-            data.obj_sort,
+            # data.obj_sort,
         ],
-        names=("technology", "region", "year", "month", "day", "hour", "obj_sort"),
+        names=("technology", "region", "year", "month", "day", "hour"),
     )
 
     data.index = ts
