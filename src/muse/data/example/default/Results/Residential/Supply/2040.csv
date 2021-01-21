@@ -1,0 +1,5 @@
+asset,year,commodity,region,technology,installed,supply
+3,2040,heat,R1,heatpump,2030,31.54170000000
+4,2040,heat,R1,heatpump,2035,36.74310000000
+4,2045,heat,R1,heatpump,2035,36.74310000000
+5,2045,heat,R1,heatpump,2040,41.87620000000
