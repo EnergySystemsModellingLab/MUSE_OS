@@ -156,10 +156,10 @@ def refine_new_price(
         relative_price_increase = np.diff(carbon_price) / carbon_price[-1]
         average = np.mean(relative_price_increase)
     else:
-        average = 1
+        average = 0.2
 
-    if price > price_too_high_threshold * max(min(carbon_price), 0.1):
-        price = max(sample) * (1 + average)
+    if price > price_too_high_threshold:  # * max(min(carbon_price), 0.1):
+        price = min(price_too_high_threshold, max(sample) * (1 + average))
     elif price <= 0:
         threshold = carbon_budget.sel(year=future).values
         exponent = (emissions - threshold) / threshold

@@ -280,8 +280,9 @@ class Sector(AbstractSector):  # type: ignore
             annual_levelized_cost_of_energy(
                 market.prices.sel(region=result.region), technodata
             ),
-            asset_dim=None,
+            asset_dim="asset",
         )
+
         return result
 
     @property

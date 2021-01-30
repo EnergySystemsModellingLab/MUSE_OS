@@ -112,6 +112,7 @@ class Subsector:
             current_year=current_year,
             forecast=self.forecast,
         )
+
         if "dst_region" in demands.dims:
             msg = """
                 dst_region found in demand dimensions. This is unexpected. Demands
