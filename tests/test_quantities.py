@@ -239,98 +239,6 @@ def test_consumption_with_flex(technologies, production, market):
             assert expected.values == approx(actual.sel(coords).values)
 
 
-def test_lifetime_LCOE_annual_cap_costs(market: xr.Dataset, technologies: xr.Dataset):
-    from muse.quantities import lifetime_levelized_cost_of_energy as LCOE
-
-    technologies.fix_par[:] = 0
-    technologies.var_par[:] = 0
-    technologies.fixed_inputs[:] = 0
-    technologies.fixed_outputs[:] = 0
-
-    technologies.technical_life[:] = tf = 2
-    technologies.interest_rate[:] = itr = 0.02
-    technologies.cap_par[:] = cap = 3
-
-    lcoe = LCOE(market.prices, technologies)
-    hours = market.prices.represent_hours / market.prices.represent_hours.sum()
-    expected, lcoe = xr.broadcast(
-        cap * itr * (1 + itr) ** tf / ((1 + itr) ** tf - 1) * hours, lcoe
-    )
-    assert lcoe.values == approx(expected.values)
-
-
-def test_lifetime_LCOE_om(market: xr.Dataset, technologies: xr.Dataset):
-    from muse.quantities import lifetime_levelized_cost_of_energy as LCOE
-
-    technologies.fixed_inputs[:] = 0
-    technologies.fixed_outputs[:] = 0
-    technologies.cap_par[:] = 0
-
-    technologies.fix_par[:] = fp = 1
-    technologies.var_par[:] = vp = 2
-    technologies.technical_life[:] = tf = 2
-    technologies.interest_rate[:] = itr = 0.02
-
-    lcoe = LCOE(market.prices, technologies)
-    rates = sum(1 / (1 + itr) ** y for y in range(1, tf + 1))
-    assert lcoe.values == approx(rates * (fp + vp))
-
-
-def test_lifetime_LCOE_fuel(market: xr.Dataset, technologies: xr.Dataset):
-    from muse.quantities import lifetime_levelized_cost_of_energy as LCOE
-
-    technologies.fix_par[:] = 0
-    technologies.var_par[:] = 0
-    technologies.fixed_outputs[:] = 0
-    technologies.cap_par[:] = 0
-
-    finputs = technologies.fixed_inputs
-    isfuel = finputs.any(u for u in finputs.dims if u != "commodity")
-    finputs.loc[{"commodity": isfuel}] = fuels = 0.9
-    technologies.technical_life[:] = tf = 5
-    technologies.interest_rate[:] = itr = 0.02
-    market.prices.loc[{"commodity": isfuel}] = p = 0.6
-
-    lcoe = LCOE(market.prices, technologies)
-    rates = sum(1 / (1 + itr) ** y for y in range(1, tf + 1))
-    assert lcoe.values == approx(rates * p * fuels * isfuel.sum().values)
-
-
-def test_lifetime_LCOE_envs(market: xr.Dataset, technologies: xr.Dataset):
-    from muse.quantities import lifetime_levelized_cost_of_energy as LCOE
-    from muse.commodities import is_pollutant
-
-    technologies.fix_par[:] = 0
-    technologies.var_par[:] = 0
-    technologies.fixed_inputs[:] = 0
-    technologies.cap_par[:] = 0
-
-    isenv = is_pollutant(technologies.comm_usage)
-    technologies.fixed_outputs.loc[{"commodity": isenv}] = envs = 0.9
-    technologies.technical_life[:] = tf = 5
-    technologies.interest_rate[:] = itr = 0.02
-    market.prices.loc[{"commodity": isenv}] = p = 0.6
-
-    lcoe = LCOE(market.prices, technologies)
-    rates = sum(1 / (1 + itr) ** y for y in range(1, tf + 1))
-    assert lcoe.values == approx(rates * p * envs * isenv.sum().values)
-
-
-def test_lifetime_vs_annual_LCOE(market: xr.Dataset, technologies: xr.Dataset):
-    from muse.quantities import lifetime_levelized_cost_of_energy as lifetime
-    from muse.quantities import annual_levelized_cost_of_energy as annual
-
-    technologies.interest_rate[:] = 0
-    technologies.technical_life[:] = 1
-
-    base_year = int(market.year.min().values)
-    life = lifetime(market.prices, technologies, base_year=base_year)
-    annum = annual(market.prices.sel(year=base_year), technologies.sel(year=base_year))
-    assert set(life.dims) == set(annum.dims)
-    life, annum = xr.broadcast(life, annum)
-    assert life.values == approx(annum.values)
-
-
 def test_production_aggregate_asset_view(
     capacity: xr.DataArray, technologies: xr.Dataset
 ):
@@ -423,15 +331,30 @@ def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
         coords={"timeslice": timeslice, "asset": production.asset},
         dims=("asset", "timeslice"),
     )
+
     production, lcoe = xr.broadcast(production, lcoe)
     actual = supply_cost(production, lcoe, asset_dim="asset")
     for region in set(production.region.values):
         expected = average(
             lcoe.sel(asset=production.region == region),
-            weights=production.sel(asset=production.region == region),
+            weights=production.sel(asset=production.region == region)
+            / production.sel(asset=production.region == region).sum("asset"),
             axis=production.get_axis_num("asset"),
         )
-        assert actual.sel(region=region).values == approx(expected)
+
+    for region in set(production.region.values):
+
+        weight = production / production.sel(asset=production.region == region).sum(
+            "asset"
+        ).sum("timeslice")
+
+        expected = lcoe * weight
+
+        assert actual.sel(region=region).values == approx(
+            expected.sel(asset=production.region == region).sum(
+                axis=production.get_axis_num("asset")
+            )
+        )
 
 
 def test_supply_cost_zero_prod(production: xr.DataArray, timeslice: xr.Dataset):

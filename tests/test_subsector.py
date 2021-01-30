@@ -23,24 +23,33 @@ def market(model) -> xr.Dataset:
     return examples.residential_market(model)
 
 
-def test_subsector_investing_aggregation(market, model, technologies):
+def test_subsector_investing_aggregation():
     from copy import deepcopy
     from muse import examples
     from muse.sectors.subsector import Subsector, aggregate_enduses
 
-    agents = list(examples.sector("residential", model).agents)
-    commodities = aggregate_enduses((agent.assets for agent in agents), technologies)
-    market = market.sel(
-        commodity=technologies.commodity, region=technologies.region
-    ).interp(year=[2020, 2025])
+    model_list = ["default", "medium"]
+    sector_list = ["residential", "power", "gas"]
 
-    subsector = Subsector(agents, commodities)
-    initial_agents = deepcopy(agents)
-    assert {agent.year for agent in agents} == {int(market.year.min())}
-    assert subsector.aggregate_lp(technologies, market) is None
-    assert {agent.year for agent in agents} == {int(market.year.min() + 5)}
-    for initial, final in zip(initial_agents, agents):
-        assert initial.assets.sum() != final.assets.sum()
+    for model in model_list:
+        mca = examples.model(model)
+        for sname in sector_list:
+            agents = list(examples.sector(sname, model).agents)
+            sector = next((sector for sector in mca.sectors if sector.name == sname))
+            technologies = sector.technologies
+            commodities = aggregate_enduses(
+                (agent.assets for agent in agents), technologies
+            )
+            market = mca.market.sel(
+                commodity=technologies.commodity, region=technologies.region
+            ).interp(year=[2020, 2025])
+            subsector = Subsector(agents, commodities)
+            initial_agents = deepcopy(agents)
+            assert {agent.year for agent in agents} == {int(market.year.min())}
+            assert subsector.aggregate_lp(technologies, market) is None
+            assert {agent.year for agent in agents} == {int(market.year.min() + 5)}
+            for initial, final in zip(initial_agents, agents):
+                assert initial.assets.sum() != final.assets.sum()
 
 
 def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_path):
@@ -61,6 +70,7 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
     capa = readers.read_initial_assets(
         path.with_name("residential") / "ExistingCapacity.csv"
     )
+
     for param in params:
         if param["agent_type"] == "retrofit":
             param["capacity"] = deepcopy(capa.sel(region=param["region"]))
@@ -70,8 +80,9 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
         param["category"] = "trade"
         param["year"] = 2020
         param["search_rules"] = "from_assets -> compress -> reduce_assets"
+        param["objectives"] = "ALCOE"
+        param["decision"]["parameters"] = ("ALCOE", False, 1)
         param.pop("quantity")
-
     agents = [create_agent(technologies=technologies, **param) for param in params]
     commodities = aggregate_enduses((agent.assets for agent in agents), technologies)
 
@@ -87,6 +98,7 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
     ).interp(year=[2020, 2025])
     assert all(agent.year == 2020 for agent in agents)
     result = subsector.aggregate_lp(technologies, market)
+
     assert result is not None
     assert len(result) == 2
 
