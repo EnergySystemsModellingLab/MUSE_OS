@@ -3,5 +3,3 @@ agent_share_1,A1,R1,LCOE,,,1,,,FALSE,,,all,singleObj,1,-1,inf,New
 agent_share_2,A1,R1,LCOE,,,1,,,FALSE,,,all,singleObj,1,-1,inf,Retrofit
 agent_share_1,A1,R2,LCOE,,,1,,,FALSE,,,all,singleObj,1,-1,inf,New
 agent_share_2,A1,R2,LCOE,,,1,,,FALSE,,,all,singleObj,1,-1,inf,Retrofit
-agent_share_1,A1,R3,LCOE,,,1,,,FALSE,,,all,singleObj,1,-1,inf,New
-agent_share_2,A1,R3,LCOE,,,1,,,FALSE,,,all,singleObj,1,-1,inf,Retrofit
