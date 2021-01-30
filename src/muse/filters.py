@@ -206,7 +206,6 @@ def factory(
         parameters = [
             {"name": item} if isinstance(item, Text) else item for item in settings
         ]
-
     if len(parameters) == 0 or parameters[0]["name"] not in SEARCH_SPACE_INITIALIZERS:
         initial_settings: Mapping[Text, Text] = {"name": "initialize_from_technologies"}
     else:
@@ -377,6 +376,7 @@ def compress(
         condition = search_space
     else:
         condition = search_space.any("asset")
+
     return search_space.sel(replacement=condition)
 
 
