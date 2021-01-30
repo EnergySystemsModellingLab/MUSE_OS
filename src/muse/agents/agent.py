@@ -252,6 +252,7 @@ class Agent(AbstractAgent):
         search_space = (
             self.search_rules(self, demand, technologies, market).fillna(0).astype(int)
         )
+
         if any(u == 0 for u in search_space.shape):
             getLogger(__name__).critical("Search space is empty")
             self.year += time_period
