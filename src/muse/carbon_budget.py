@@ -342,10 +342,6 @@ def bisection(
     future = market.year[-1]
     current = market.year[0]
     threshold = carbon_budget.sel(year=future).values
-    emissions = market.supply.sel(year=future, commodity=commodities).sum().values
-    emissions_current = (
-        market.supply.sel(year=current, commodity=commodities).sum().values
-    )
     price = market.prices.sel(year=future, commodity=commodities).mean().values
     iter = 10
     # We create a sample of prices at which we want to calculate emissions
@@ -354,12 +350,12 @@ def bisection(
 
     low = round(min(sample_prices), 7)
     up = round(max(sample_prices), 7)
-    l = bisect_loop(market, sectors, equilibrium, commodities, low) - threshold
-    u = bisect_loop(market, sectors, equilibrium, commodities, up) - threshold
+    lb = bisect_loop(market, sectors, equilibrium, commodities, low) - threshold
+    ub = bisect_loop(market, sectors, equilibrium, commodities, up) - threshold
     p = 0  # plateau
     for n in range(iter):
 
-        if l * u < 0:
+        if lb * ub < 0:
 
             midpoint = round((low + up) / 2.0, 7)
 
@@ -369,7 +365,7 @@ def bisection(
             )
             # Reset market and sectors
 
-            if l * m < 0:
+            if lb * m < 0:
                 low = midpoint
             else:
                 up = midpoint
@@ -377,25 +373,25 @@ def bisection(
                 new_price = midpoint
                 break
         else:
-            if l == u:
+            if lb == ub:
                 p += 1
                 if p == 1:
                     new_price = up
                     break
 
             if (
-                l > 0.0 and u > 0.0
+                lb > 0.0 and ub > 0.0
             ):  # covers also l==u: we are higher than emission limits
                 up = round(up * (1 + 0.1) ** (int(future - current)), 7)
-                u = (
+                ub = (
                     bisect_loop(market, sectors, equilibrium, commodities, up)
                     - threshold
                 )
                 new_price = up
 
-            elif l < 0.0 and u < 0.0:  # l is closer to the threshold
+            elif lb < 0.0 and ub < 0.0:  # lbis closer to the threshold
                 low = low / 2.0
-                l = (
+                lb = (
                     bisect_loop(market, sectors, equilibrium, commodities, low)
                     - threshold
                 )
