@@ -25,9 +25,9 @@ tolerance_unmet_demand = -0.1
     quantity = "capacity"
     sink.name = "aggregate"
     sink.sink.name = "csv"
- #   sink.sink.set_index = ["asset","year", "sector", "region", "technology", "agent", "type" ]
     sink.sink.sort_index = true
     sink.sink.index = false
+    sink.sink.keep_columns = [ "year", "region", "technology", "capacity"]
     filename = "{cwd}/Results/Capacities.csv"
 
 [carbon_budget_control]
