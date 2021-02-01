@@ -1,7 +1,7 @@
 # Global settings - most REQUIRED
 time_framework = [2020, 2025, 2030, 2035]
 foresight = 5   # Has to be a multiple of the minimum separation between the years in time framework
-regions = ["R1","R2", "R3"]
+regions = ["R1", "R2"]
 interest_rate = 0.1
 interpolation_mode = 'Active'
 log_level = 'info'
@@ -25,9 +25,9 @@ tolerance_unmet_demand = -0.1
     quantity = "capacity"
     sink.name = "aggregate"
     sink.sink.name = "csv"
- #   sink.sink.set_index = ["asset","year", "sector", "region", "technology", "agent", "type" ]
     sink.sink.sort_index = true
     sink.sink.index = false
+    sink.sink.keep_columns = [ "year", "region", "technology", "capacity"]
     filename = "{cwd}/Results/Capacities.csv"
 
 [carbon_budget_control]

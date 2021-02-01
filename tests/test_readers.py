@@ -411,7 +411,9 @@ def test_read_trade_technodata(tmp_path):
     assert set(data.dims) == {"technology", "dst_region", "region"}
     assert set(data.data_vars) == {
         "cap_par",
+        "cap_exp",
         "fix_par",
+        "fix_exp",
         "max_capacity_addition",
         "max_capacity_growth",
         "total_capacity_limit",

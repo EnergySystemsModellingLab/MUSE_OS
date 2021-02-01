@@ -499,10 +499,12 @@ def find_equilibrium(
             prior_market.sel(commodity=included),
             tol,
             equilibrium_variable,
+            market.year[1],
         )
 
         if equilibrium_reached or not expect_equilibrium:
             converged = True
+            market["prices"] = market.updated_prices
             break
 
     else:

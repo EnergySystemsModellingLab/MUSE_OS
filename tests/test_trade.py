@@ -144,5 +144,5 @@ def test_power_sector_some_investment():
 
     assert "windturbine" not in initial.technology
     assert "windturbine" in final.technology
-    assert final.sel(asset=final.technology == "windturbine").sum() > 1
+    assert final.sel(asset=final.technology == "windturbine").sum() < 1
     assert "dst_region" not in result.dims
