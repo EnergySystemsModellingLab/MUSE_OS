@@ -1,0 +1,12 @@
+ProcessName,RegionName,Time,R1,R2
+Unit,-,Year,PJ/y,PJ/y
+gassupply1,R1,2010,3000,0
+gassupply1,R1,2020,3000,0
+gassupply1,R1,2030,2100,0
+gassupply1,R1,2040,1470,0
+gassupply1,R1,2050,1029,0
+gassupply1,R2,2010,0,1200
+gassupply1,R2,2020,0,1200
+gassupply1,R2,2030,0,700
+gassupply1,R2,2040,0,490
+gassupply1,R2,2050,0,343

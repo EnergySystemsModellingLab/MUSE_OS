@@ -29,10 +29,10 @@ Sectors and associated functionality
 
 .. automodule:: muse.sectors
 
+.. autodecorator:: muse.sectors.register.register_sector
+
 AbstractSector
 ~~~~~~~~~~~~~~
-
-.. autodecorator:: muse.sectors.register_sector
 
 .. autoclass:: muse.sectors.AbstractSector
    :members:
@@ -41,19 +41,24 @@ AbstractSector
 Sector
 ~~~~~~
 
-.. autoclass:: muse.sectors.Sector
+.. autoclass:: muse.sectors.sector.Sector
    :members:
+
+Subsector
+~~~~~~~~~
+
+.. autoclass:: muse.sectors.subsector.Subsector
 
 PresetSector
 ~~~~~~~~~~~~
 
-.. autoclass:: muse.sectors.PresetSector
+.. autoclass:: muse.sectors.preset_sector.PresetSector
    :members:
 
 LegacySector
 ~~~~~~~~~~~~
 
-.. autoclass:: muse.sectors.LegacySector
+.. autoclass:: muse.sectors.legacy_sector.LegacySector
    :members:
 
 Production
@@ -74,14 +79,19 @@ Agent Interactions
 Agents and associated functionalities
 -------------------------------------
 
-.. automodule:: muse.agent
-   :members: agents_factory, create_agent, create_retrofit_agent, create_newcapa_agent
+.. automodule:: muse.agents.factories
+   :members: agents_factory, create_agent, create_retrofit_agent, create_newcapa_agent,
+       factory
 
 
-.. autoclass:: muse.agent.AgentBase
+.. autoclass:: muse.agents.agent.AbstractAgent
    :members:
 
-.. autoclass:: muse.agent.Agent
+.. autoclass:: muse.agents.agent.Agent
+   :members:
+   :private-members:
+
+.. autoclass:: muse.agents.agent.InvestingAgent
    :members:
    :private-members:
 
@@ -107,7 +117,6 @@ Decision Methods
    :members:
 
 
-
 Investment Methods
 ~~~~~~~~~~~~~~~~~~
 
@@ -120,6 +129,14 @@ Demand Share
 
 .. automodule:: muse.demand_share
    :members:
+
+Constraints:
+~~~~~~~~~~~~
+
+.. automodule:: muse.constraints
+    :members: demand, factory, max_capacity_expansion, max_production, lp_costs,
+        lp_constraint, lp_constraint_matrix, register_constraints, search_space,
+        ScipyAdapter
 
 Initial and Final Asset Transforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

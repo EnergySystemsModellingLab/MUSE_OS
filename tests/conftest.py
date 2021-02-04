@@ -5,15 +5,15 @@ from pandas import DataFrame
 from pytest import fixture, mark
 from xarray import DataArray, Dataset
 
-from muse.agent import Agent
+from muse.agents import Agent
 
 
 @fixture(autouse=True)
 def logger():
-    from logging import getLogger, DEBUG
+    from logging import getLogger, CRITICAL
 
     logger = getLogger("muse")
-    logger.setLevel(DEBUG)
+    logger.setLevel(CRITICAL)
     return logger
 
 
@@ -73,8 +73,8 @@ def compare_df(
     from pytest import approx
 
     assert set(expected.columns) == set(actual.columns)
-    assert set(expected.index) == set(actual.index)
     assert expected.shape == actual.shape
+    assert set(expected.index) == set(actual.index)
 
     floats = [u for (u, d) in zip(actual.columns, actual.dtypes) if d == "float"]
     nonfloats = [u for (u, d) in zip(actual.columns, actual.dtypes) if d != "float"]
@@ -82,6 +82,8 @@ def compare_df(
     for col in floats:
         actual_col = actual.loc[expected.index, col].values
         expected_col = expected[col].values
+        if actual_col != approx(expected_col, rel=rtol, abs=atol, nan_ok=equal_nan):
+            print(f"file: {msg}, column: {col}")
         assert actual_col == approx(expected_col, rel=rtol, abs=atol, nan_ok=equal_nan)
 
 
@@ -90,19 +92,32 @@ def compare_dirs() -> Callable:
     def compare_dirs(actual_dir, expected_dir, **kwargs):
         """Compares all the csv files in a directory."""
         from pandas import read_csv
-        from os.path import join, relpath, exists, isfile
         from os import walk
+        from pathlib import Path
 
         compared_something = False
         for (dirpath, _, filenames) in walk(expected_dir):
-            subdir = join(actual_dir, relpath(dirpath, expected_dir))
+            subdir = Path(actual_dir) / Path(dirpath).relative_to(expected_dir)
             for filename in filenames:
                 compared_something = True
-                expected = read_csv(join(dirpath, filename))
-                assert exists(join(subdir, filename))
-                assert isfile(join(subdir, filename))
-                actual = read_csv(join(subdir, filename))
-                compare_df(expected, actual, msg=filename, **kwargs)
+                expected_filename = Path(dirpath) / filename
+                expected = read_csv(expected_filename)
+                actual_filename = Path(subdir) / filename
+                assert actual_filename.exists()
+                assert actual_filename.is_file()
+                actual = read_csv(actual_filename)
+                try:
+                    compare_df(expected, actual, msg=filename, **kwargs)
+                except Exception:
+                    msg = (
+                        f"Expected {expected_filename}\n"
+                        + expected_filename.read_text()
+                        + f"\n\nActual {actual_filename}:\n"
+                        + actual_filename.read_text()
+                        + "\n"
+                    )
+                    print(msg)
+                    raise
         assert compared_something, "The test is not setup correctly"
 
     return compare_dirs
@@ -129,10 +144,18 @@ def pytest_collection_modifyitems(config, items):
 def loaded_residential_settings(residential_input_file):
     """Initialized MCA with the default settings and the residential sector."""
     from muse.readers import read_settings
+    from muse.readers.toml import undo_damage, convert
 
-    settings = read_settings(residential_input_file)
+    settings = undo_damage(read_settings(residential_input_file))
+    residential = settings["sectors"]["residential"]
+    residential["subsectors"] = dict(
+        new_and_retro=dict(
+            agents=residential.pop("agents"),
+            existing_capacity=residential.pop("existing_capacity"),
+        )
+    )
 
-    return settings
+    return convert(settings)
 
 
 @fixture(scope="session")
@@ -367,14 +390,14 @@ def market(coords, technologies, timeslice) -> Dataset:
 
 def create_agent(agent_args, technologies, stock, agent_type="retrofit") -> Agent:
     from numpy.random import choice
-    from muse import create_agent
+    from muse.agents.factories import create_agent
 
     agent = create_agent(
         agent_type=agent_type,
         technologies=technologies,
         capacity=stock,
         year=2010,
-        **agent_args
+        **agent_args,
     )
 
     # because most of the input is random numbers, the agent's assets might
@@ -599,15 +622,70 @@ def residential_input_file() -> Path:
 
 
 @fixture(autouse=True)
-def warnings_as_errors():
+def warnings_as_errors(request):
     from warnings import simplefilter
 
+    # disable fixture for some tests using legacy sectors.
+    if (
+        request.module.__name__ == "test_legacy_sector"
+        and request.node.name.startswith("test_legacy_sector_regression[")
+    ) or (
+        request.module.__name__ == "test_outputs"
+        and request.node.name == "test_save_with_fullpath_to_excel_with_sink"
+    ):
+        return
+
     simplefilter("error", FutureWarning)
+    simplefilter("error", DeprecationWarning)
     simplefilter("error", PendingDeprecationWarning)
 
 
 @fixture
-def fullsim_dir() -> Path:
-    import muse
+def save_registries():
+    from contextlib import contextmanager
 
-    return Path(muse.__file__).parent / "data" / "example"
+    @contextmanager
+    def saveme(module_name: Text, registry_name: Text):
+        from importlib import import_module
+        from copy import deepcopy
+
+        module = import_module(module_name)
+        old = getattr(module, registry_name)
+        setattr(module, registry_name, deepcopy(old))
+        yield
+        setattr(module, registry_name, deepcopy(old))
+
+    iterators = [
+        saveme("muse.sectors", "SECTORS_REGISTERED"),
+        saveme("muse.objectives", "OBJECTIVES"),
+        saveme("muse.carbon_budget", "CARBON_BUDGET_FITTERS"),
+        saveme("muse.carbon_budget", "CARBON_BUDGET_METHODS"),
+        saveme("muse.constraints", "CONSTRAINTS"),
+        saveme("muse.decisions", "DECISIONS"),
+        saveme("muse.decorators", "SETTINGS_CHECKS"),
+        saveme("muse.demand_share", "DEMAND_SHARE"),
+        saveme("muse.filters", "FILTERS"),
+        saveme("muse.hooks", "INITIAL_ASSET_TRANSFORM"),
+        saveme("muse.hooks", "FINAL_ASSET_TRANSFORM"),
+        saveme("muse.investments", "INVESTMENTS"),
+        saveme("muse.production", "PRODUCTION_METHODS"),
+        saveme("muse.outputs.mca", "OUTPUT_QUANTITIES"),
+        saveme("muse.outputs.sectors", "OUTPUT_QUANTITIES"),
+        saveme("muse.outputs.sinks", "OUTPUT_SINKS"),
+        saveme("muse.interactions", "INTERACTION_NET"),
+        saveme("muse.interactions", "AGENT_INTERACTIONS"),
+        saveme("muse.regressions", "REGRESSION_FUNCTOR_CREATOR"),
+        saveme("muse.regressions", "REGRESSION_FUNCTOR_NAMES"),
+        saveme("muse.readers.toml", "SETTINGS_CHECKS"),
+    ]
+
+    map(next, iterators)
+    yield
+    map(next, iterators)
+
+
+@fixture
+def rng(request):
+    from numpy.random import default_rng
+
+    return default_rng(getattr(request.config.option, "randomly_seed", None))

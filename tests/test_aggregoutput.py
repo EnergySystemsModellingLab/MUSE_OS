@@ -1,5 +1,5 @@
 from muse import examples
-from muse.outputs.mca import sector_capacity, sectors_capacity
+from muse.outputs.mca import sector_capacity
 
 
 def test_aggregate_sector():
@@ -10,11 +10,11 @@ def test_aggregate_sector():
     mca = examples.model("multiple-agents")
     year = [2020, 2025]
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
-    agent_list = [a.agents for a in sector_list]
+    agent_list = [list(a.agents) for a in sector_list]
     alldata = sector_capacity(sector_list[0])
-    alldatadict = alldata.to_dict("split")
+
     columns = ["region", "agent", "type", "sector", "capacity"]
-    assert (sorted(columns)) == sorted(alldatadict["columns"])
+
     frame = DataFrame()
     for ai in agent_list[0]:
 
@@ -29,7 +29,7 @@ def test_aggregate_sector():
                             "sector": sector_list[0].name,
                             "capacity": ai.assets.capacity.sel(year=y).values[0],
                         },
-                        index=[(y, ai.assets.technology.values[0],)],
+                        index=[(y, ai.assets.technology.values[0])],
                     )
                     frame = concat([frame, data])
 
@@ -39,15 +39,16 @@ def test_aggregate_sector():
 def test_aggregate_sectors():
     """Test for aggregate_sectors function."""
     from pandas import DataFrame, concat
+    from muse.outputs.mca import _aggregate_sectors
 
     mca = examples.model("multiple-agents")
-    year = [2020, 2025]
+    year = [2020, 2025, 2030]
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
-    agent_list = [a.agents for a in sector_list]
-    alldata = sectors_capacity(mca.sectors)
-    alldatadict = alldata.to_dict("split")
+    agent_list = [list(a.agents) for a in sector_list]
+    alldata = _aggregate_sectors(mca.sectors, op=sector_capacity)
+
     columns = ["region", "agent", "type", "sector", "capacity"]
-    assert (sorted(columns)) == sorted(alldatadict["columns"])
+
     frame = DataFrame()
     for a, ai in enumerate(agent_list):
         for ii in range(0, len(ai)):
@@ -64,7 +65,7 @@ def test_aggregate_sectors():
                                 .assets.capacity.sel(year=y)
                                 .values[0],
                             },
-                            index=[(y, ai[ii].assets.technology.values[0],)],
+                            index=[(y, ai[ii].assets.technology.values[0])],
                         )
                         frame = concat([frame, data])
 
@@ -75,22 +76,24 @@ def test_aggregate_sector_manyregions():
     """Test for aggregate_sector function with two regions check colum titles, number of
     agents/region/technologies and assets capacities."""
     from pandas import DataFrame, concat
+    from muse.outputs.mca import _aggregate_sectors
 
     mca = examples.model("multiple-agents")
     residential = next(
         (sector for sector in mca.sectors if sector.name == "residential")
     )
-    residential.agents[0].assets["region"] = "BELARUS"
-    residential.agents[1].assets["region"] = "BELARUS"
-    residential.agents[0].region = "BELARUS"
-    residential.agents[1].region = "BELARUS"
-    year = [2020, 2025]
+    agents = list(residential.agents)
+    agents[0].assets["region"] = "BELARUS"
+    agents[1].assets["region"] = "BELARUS"
+    agents[0].region = "BELARUS"
+    agents[1].region = "BELARUS"
+    year = [2020, 2025, 2030]
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
-    agent_list = [a.agents for a in sector_list]
-    alldata = sectors_capacity(mca.sectors)
-    alldatadict = alldata.to_dict("split")
+    agent_list = [list(a.agents) for a in sector_list]
+    alldata = _aggregate_sectors(mca.sectors, op=sector_capacity)
+
     columns = ["region", "agent", "type", "sector", "capacity"]
-    assert (sorted(columns)) == sorted(alldatadict["columns"])
+
     frame = DataFrame()
     for a, ai in enumerate(agent_list):
         for ii in range(0, len(ai)):
@@ -107,7 +110,7 @@ def test_aggregate_sector_manyregions():
                                 .assets.capacity.sel(year=y)
                                 .values[0],
                             },
-                            index=[(y, ai[ii].assets.technology.values[0],)],
+                            index=[(y, ai[ii].assets.technology.values[0])],
                         )
                         frame = concat([frame, data])
 

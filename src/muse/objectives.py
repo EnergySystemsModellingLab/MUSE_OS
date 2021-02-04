@@ -21,12 +21,12 @@ conform the following signatures:
     @register_objective
     def comfort(
         agent: Agent,
-        demand: DataArray,
-        search_space: DataArray,
-        technologies: Dataset,
-        market: Dataset,
+        demand: xr.DataArray,
+        search_space: xr.DataArray,
+        technologies: xr.Dataset,
+        market: xr.Dataset,
         **kwargs
-    ) -> DataArray:
+    ) -> xr.DataArray:
         pass
 
 Arguments:
@@ -34,8 +34,8 @@ Arguments:
         the agent for parameters, e.g. the current year, the interpolation
         method, the tolerance, etc.
     demand: Demand to fulfill.
-    search_space: A boolean matrix represented as a ``DataArray``, listing replacement
-        technologies for each asset.
+    search_space: A boolean matrix represented as a ``xr.DataArray``, listing
+        replacement technologies for each asset.
     technologies: A data set characterising the technologies from which the
         agent can draw assets.
     market: Market variables, such as prices or current capacity and retirement
@@ -70,24 +70,39 @@ __all__ = [
     "factory",
 ]
 
-from typing import Callable, Mapping, Sequence, Text, Union
+from typing import Any, Callable, Mapping, MutableMapping, Sequence, Text, Union, cast
 
-from xarray import DataArray, Dataset
+import numpy as np
+import xarray as xr
+from mypy_extensions import KwArg
 
-from muse.agent import Agent
+from muse.agents import Agent
 from muse.registration import registrator
 
 OBJECTIVE_SIGNATURE = Callable[
-    [Agent, DataArray, DataArray, Dataset, Dataset], DataArray
+    [Agent, xr.DataArray, xr.DataArray, xr.Dataset, xr.Dataset, KwArg(Any)],
+    xr.DataArray,
 ]
 """Objectives signature."""
 
-OBJECTIVES: Mapping[Text, OBJECTIVE_SIGNATURE] = {}
+OBJECTIVES: MutableMapping[Text, OBJECTIVE_SIGNATURE] = {}
 """Dictionary of objectives when selecting replacement technology."""
 
 
+def objective_factory(settings=Union[Text, Mapping]):
+    from functools import partial
+
+    if isinstance(settings, Text):
+        params = dict(name=settings)
+    else:
+        params = dict(**settings)
+    name = params.pop("name")
+    function = OBJECTIVES[name]
+    return partial(function, **params)
+
+
 def factory(
-    settings: Union[Text, Mapping, Sequence[Union[Text, Mapping]]] = "fixed_costs"
+    settings: Union[Text, Mapping, Sequence[Union[Text, Mapping]]] = "LCOE"
 ) -> Callable:
     """Creates a function computing multiple objectives.
 
@@ -97,7 +112,6 @@ def factory(
     objectives defined by name or by dictionary.
     """
     from typing import List, Dict
-    from functools import partial
     from logging import getLogger
 
     if isinstance(settings, Text):
@@ -117,21 +131,12 @@ def factory(
         )
         getLogger(__name__).critical(msg)
 
-    functions = [
-        (
-            param["name"],
-            partial(
-                OBJECTIVES[param["name"]],
-                **{k: v for k, v in param.items() if k != "name"},
-            ),
-        )
-        for param in params
-    ]
+    functions = [(param["name"], objective_factory(param)) for param in params]
 
     def objectives(
-        agent: Agent, demand: DataArray, search_space: DataArray, *args, **kwargs
-    ) -> Dataset:
-        result = Dataset(coords=search_space.coords)
+        agent: Agent, demand: xr.DataArray, search_space: xr.DataArray, *args, **kwargs
+    ) -> xr.Dataset:
+        result = xr.Dataset(coords=search_space.coords)
         for name, objective in functions:
             result[name] = objective(agent, demand, search_space, *args, **kwargs)
         return result
@@ -153,32 +158,27 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
     from functools import wraps
 
     @wraps(function)
-    def decorated(
-        agent: Agent, demand: DataArray, search_space: DataArray, *args, **kwargs
-    ) -> DataArray:
-        from numpy import issubdtype, number, bool_
+    def decorated_objective(
+        agent: Agent, demand: xr.DataArray, search_space: xr.DataArray, *args, **kwargs
+    ) -> xr.DataArray:
         from logging import getLogger
 
-        reduced_demand = demand.sel(asset=search_space.asset)
-        result = function(  # type:ignore
-            agent, reduced_demand, search_space, *args, **kwargs
+        reduced_demand = demand.sel(
+            {
+                k: search_space[k]
+                for k in set(demand.dims).intersection(search_space.dims)
+            }
         )
+        result = function(agent, reduced_demand, search_space, *args, **kwargs)
 
         dtype = result.values.dtype
-        if not (issubdtype(dtype, number) or issubdtype(dtype, bool_)):
+        if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
             msg = "dtype of objective %s is not a number (%s)" % (
                 function.__name__,
                 dtype,
             )
             getLogger(function.__module__).warning(msg)
 
-        if not {"replacement", "asset"}.issuperset(result.dims):
-            raise RuntimeError(
-                "Objective {func} returned an array with dimensions {dims}; "
-                "it is not a subset of {{'replacemment', 'asset'}}.".format(
-                    dims=result.dims, func=function.__name__
-                )
-            )
         if "technology" in result.dims:
             raise RuntimeError("Objective should not return a dimension 'technology'")
         if "technology" in result.coords:
@@ -186,18 +186,18 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
         result.name = function.__name__
         return result
 
-    return decorated
+    return decorated_objective
 
 
 @register_objective
 def comfort(
     agent: Agent,
-    demand: DataArray,
-    search_space: DataArray,
-    technologies: Dataset,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
     *args,
     **kwargs,
-) -> DataArray:
+) -> xr.DataArray:
     """Comfort value provided by technologies."""
     return technologies.comfort.sel(technology=search_space.replacement).drop_vars(
         "technology"
@@ -207,30 +207,30 @@ def comfort(
 @register_objective
 def efficiency(
     agent: Agent,
-    demand: DataArray,
-    search_space: DataArray,
-    technologies: Dataset,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
     *args,
     **kwargs,
-) -> DataArray:
+) -> xr.DataArray:
     """Efficiency of the technologies."""
     result = agent.filter_input(
         technologies.efficiency, year=agent.year, technology=search_space.replacement
     ).drop_vars("technology")
-    assert isinstance(result, DataArray)
+    assert isinstance(result, xr.DataArray)
     return result
 
 
 @register_objective(name="capacity")
 def capacity_to_service_demand(
     agent: Agent,
-    demand: DataArray,
-    search_space: DataArray,
-    technologies: Dataset,
-    market: Dataset,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
+    market: xr.Dataset,
     *args,
     **kwargs,
-) -> DataArray:
+) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
     from muse.timeslices import represent_hours
 
@@ -262,13 +262,13 @@ def capacity_to_service_demand(
 @register_objective
 def fixed_costs(
     agent: Agent,
-    demand: DataArray,
-    search_space: DataArray,
-    technologies: Dataset,
-    market: Dataset,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
+    market: xr.Dataset,
     *args,
     **kwargs,
-) -> DataArray:
+) -> xr.DataArray:
     r"""Fixed costs associated with a technology.
 
     Given a factor :math:`\alpha` and an  exponent :math:`\beta`, the fixed costs
@@ -296,12 +296,12 @@ def fixed_costs(
 @register_objective
 def capital_costs(
     agent: Agent,
-    demand: DataArray,
-    search_space: DataArray,
-    technologies: Dataset,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
     *args,
     **kwargs,
-) -> DataArray:
+) -> xr.DataArray:
     r"""Capital costs for input technologies.
 
     The capital costs are computed as :math:`a * b^\alpha`, where :math:`a` is
@@ -320,13 +320,13 @@ def capital_costs(
 @register_objective(name="emissions")
 def emission_cost(
     agent: Agent,
-    demand: DataArray,
-    search_space: DataArray,
-    technologies: Dataset,
-    market: Dataset,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
+    market: xr.Dataset,
     *args,
     **kwargs,
-) -> DataArray:
+) -> xr.DataArray:
     r"""Emission cost for each technology when fultfilling whole demand.
 
     Given the demand share :math:`D`, the emissions per amount produced :math:`E`, and
@@ -357,10 +357,10 @@ def emission_cost(
 @register_objective
 def capacity_in_use(
     agent: Agent,
-    demand: DataArray,
-    search_space: DataArray,
-    technologies: Dataset,
-    market: Dataset,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
+    market: xr.Dataset,
     *args,
     **kwargs,
 ):
@@ -371,7 +371,7 @@ def capacity_in_use(
         hours = market.represent_hours
     elif "represent_hours" in search_space.coords:
         hours = search_space.represent_hours
-    elif hours is None:
+    else:
         hours = represent_hours(market.timeslice)
 
     ufac = agent.filter_input(
@@ -390,13 +390,13 @@ def capacity_in_use(
 @register_objective
 def consumption(
     agent: Agent,
-    demand: DataArray,
-    search_space: DataArray,
-    technologies: Dataset,
-    market: Dataset,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
+    market: xr.Dataset,
     *args,
     **kwargs,
-) -> DataArray:
+) -> xr.DataArray:
     """Commodity consumption when fulfilling the whole demand.
 
     Currently, the consumption is implemented for commodity_max == +infinity.
@@ -417,10 +417,10 @@ def consumption(
 @register_objective
 def fuel_consumption_cost(
     agent: Agent,
-    demand: DataArray,
-    search_space: DataArray,
-    technologies: Dataset,
-    market: Dataset,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
+    market: xr.Dataset,
     *args,
     **kwargs,
 ):
@@ -437,6 +437,7 @@ def fuel_consumption_cost(
     prices = agent.filter_input(market.prices, year=agent.forecast_year)
     demand = demand.where(search_space, 0).rename(replacement="technology")
     fcons = consumption(technologies=params, prices=prices, production=demand)
+
     return (
         (fcons * prices)
         .sel(commodity=commodity)
@@ -445,17 +446,18 @@ def fuel_consumption_cost(
     )
 
 
-@register_objective(name="LCOE")
-def lifetime_levelized_cost_of_energy(
+@register_objective(name=["ALCOE"])
+def annual_levelized_cost_of_energy(
     agent: Agent,
-    demand: DataArray,
-    search_space: DataArray,
-    technologies: Dataset,
-    market: Dataset,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
+    market: xr.Dataset,
     *args,
     **kwargs,
 ):
-    """Levelized cost of energy (LCOE) of technologies over their lifetime.
+    """Annual cost of energy (LCOE) of technologies - not dependent on production.
+    It needs to be used for trade agents where the actual service is unknown
 
     It follows the `simpified LCOE` given by NREL.
 
@@ -466,22 +468,19 @@ def lifetime_levelized_cost_of_energy(
         market: The market parameters
 
     Return:
-        DataArray with the LCOE calculated for the relevant technologies
+        xr.DataArray with the LCOE calculated for the relevant technologies
     """
-    from muse.quantities import lifetime_levelized_cost_of_energy as lifetimeLCOE
+    from muse.quantities import annual_levelized_cost_of_energy as aLCOE
 
     techs = agent.filter_input(technologies, technology=search_space.replacement.values)
-    assert isinstance(techs, Dataset)
-    prices = agent.filter_input(market.prices)
-    assert isinstance(techs, DataArray)
-    return lifetimeLCOE(prices, techs, agent.year, **kwargs).rename(
-        replacement="technology"
-    )
+    assert isinstance(techs, xr.Dataset)
+    prices = cast(xr.DataArray, agent.filter_input(market.prices))
+    return aLCOE(prices, techs).rename(technology="replacement").max("timeslice")
 
 
 def capital_recovery_factor(
-    agent: Agent, search_space: DataArray, technologies: Dataset
-) -> DataArray:
+    agent: Agent, search_space: xr.DataArray, technologies: xr.Dataset
+) -> xr.DataArray:
     """Capital recovery factor using interest rate and expected lifetime.
 
     The `capital recovery factor`_ is computed using the expression given by HOMER
@@ -496,7 +495,7 @@ def capital_recovery_factor(
         technologies: All the technologies
 
     Return:
-        DataArray with the CRF calculated for the relevant technologies
+        xr.DataArray with the CRF calculated for the relevant technologies
     """
 
     tech = agent.filter_input(
@@ -509,38 +508,19 @@ def capital_recovery_factor(
     return tech.interest_rate / (1 - (1 / (1 + tech.interest_rate) ** nyears))
 
 
-@register_objective(name="NPV")
-def net_present_value(
+@register_objective(name=["LCOE", "LLCOE"])
+def lifetime_levelized_cost_of_energy(
     agent: Agent,
-    demand: DataArray,
-    search_space: DataArray,
-    technologies: Dataset,
-    market: Dataset,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
+    market: xr.Dataset,
     *args,
     **kwargs,
 ):
-    """Net present value (NPV) of the relevant technologies.
+    """Levelized cost of energy (LCOE) of technologies over their lifetime.
 
-
-    The net present value of a Component is the present value  of all the revenues that
-    a Component earns over its lifetime minus all the costs of installing and operating
-    it. Follows the definition of the `net present cost`_ given by HOMER Energy.
-
-    .. _net present cost:
-        https://www.homerenergy.com/products/pro/docs/3.11/net_present_cost.html
-
-    - energy commodities INPUTS are related to fuel costs
-    - environmental commodities OUTPUTS are related to environmental costs
-    - material and service commodities INPUTS are related to consumable costs
-    - fixed and variable costs are given as technodata inputs and depend on the
-      installed capacity and production (non-environmental), respectively
-    - capacity costs are given as technodata inputs and depend on the installed capacity
-
-    Note:
-        Here, the installation year is always agent.year, since objectives compute the
-        NPV for technologies to be installed in the current year. A more general NPV
-        computation (which would then live in quantities.py) would have to refer to
-        installation year of the technology.
+    It follows the `simpified LCOE` given by NREL.
 
     Arguments:
         agent: The agent of interest
@@ -549,7 +529,7 @@ def net_present_value(
         market: The market parameters
 
     Return:
-        DataArray with the NPV calculated for the relevant technologies
+        xr.DataArray with the LCOE calculated for the relevant technologies
     """
     from muse.commodities import is_pollutant, is_material, is_enduse
 
@@ -586,7 +566,149 @@ def net_present_value(
     # All years the simulation is running
     # NOTE: see docstring about installation year
     iyears = range(agent.year, agent.year + nyears.values.max())
-    years = DataArray(iyears, coords={"year": iyears}, dims="year")
+    years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
+
+    # Filters
+    environmentals = is_pollutant(technologies.comm_usage)
+    material = is_material(technologies.comm_usage)
+    products = is_enduse(technologies.comm_usage)
+
+    # Capacity
+    capacity = capacity_to_service_demand(
+        agent, demand, search_space, technologies, market
+    )
+
+    # Evolution of rates with time
+    rates = discount_factor(
+        years - agent.year + 1, interest_rate, years <= agent.year + nyears
+    )
+
+    production = capacity * fixed_outputs * utilization_factor
+
+    # raw costs --> make the NPV more negative
+    # Cost of installed capacity
+    installed_capacity_costs = cap_par * capacity ** cap_exp
+
+    # Cost related to environmental products
+    prices_environmental = agent.filter_input(
+        market.prices, commodity=environmentals, year=years.values
+    ).ffill("year")
+    environmental_costs = (production * prices_environmental * rates).sum(
+        ("commodity", "year", "timeslice")
+    )
+
+    # Fuel/energy costs
+    fuel_costs = (
+        fuel_consumption_cost(
+            agent, demand, search_space, technologies.sel(region=agent.region), market
+        )
+        * rates
+    ).sum("year")
+
+    # Cost related to material other than fuel/energy and environmentals
+    prices_material = agent.filter_input(
+        market.prices, commodity=material, year=years.values
+    ).ffill("year")
+    material_costs = (production * prices_material * rates).sum(
+        ("commodity", "year", "timeslice")
+    )
+
+    # Fixed and Variable costs
+    fixed_costs = fix_par * capacity ** fix_exp
+    variable_costs = (var_par * production.sel(commodity=products) ** var_exp).sum(
+        "commodity"
+    )
+    #    assert set(fixed_costs.dims) == set(variable_costs.dims)
+    fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
+
+    results = (
+        installed_capacity_costs
+        + fuel_costs
+        + environmental_costs
+        + material_costs
+        + fixed_and_variable_costs
+    ) / (production.sel(commodity=products).sum("commodity") * rates).sum("year")
+
+    return results
+
+
+@register_objective(name="NPV")
+def net_present_value(
+    agent: Agent,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
+    market: xr.Dataset,
+    *args,
+    **kwargs,
+):
+    """Net present value (NPV) of the relevant technologies.
+
+    The net present value of a Component is the present value  of all the revenues that
+    a Component earns over its lifetime minus all the costs of installing and operating
+    it. Follows the definition of the `net present cost`_ given by HOMER Energy.
+
+    .. _net present cost:
+        https://www.homerenergy.com/products/pro/docs/3.11/net_present_cost.html
+
+    - energy commodities INPUTS are related to fuel costs
+    - environmental commodities OUTPUTS are related to environmental costs
+    - material and service commodities INPUTS are related to consumable costs
+    - fixed and variable costs are given as technodata inputs and depend on the
+      installed capacity and production (non-environmental), respectively
+    - capacity costs are given as technodata inputs and depend on the installed capacity
+
+    Note:
+        Here, the installation year is always agent.year, since objectives compute the
+        NPV for technologies to be installed in the current year. A more general NPV
+        computation (which would then live in quantities.py) would have to refer to
+        installation year of the technology.
+
+    Arguments:
+        agent: The agent of interest
+        search_space: The search space space for replacement technologies
+        technologies: All the technologies
+        market: The market parameters
+
+    Return:
+        xr.DataArray with the NPV calculated for the relevant technologies
+    """
+    from muse.commodities import is_pollutant, is_material, is_enduse
+
+    # Filtering of the inputs
+    tech = agent.filter_input(
+        technologies[
+            [
+                "technical_life",
+                "interest_rate",
+                "cap_par",
+                "cap_exp",
+                "var_par",
+                "var_exp",
+                "fix_par",
+                "fix_exp",
+                "fixed_outputs",
+                "utilization_factor",
+            ]
+        ],
+        technology=search_space.replacement,
+        year=agent.year,
+    ).drop_vars("technology")
+    nyears = tech.technical_life.astype(int)
+    interest_rate = tech.interest_rate
+    cap_par = tech.cap_par
+    cap_exp = tech.cap_exp
+    var_par = tech.var_par
+    var_exp = tech.var_exp
+    fix_par = tech.fix_par
+    fix_exp = tech.fix_exp
+    fixed_outputs = tech.fixed_outputs
+    utilization_factor = tech.utilization_factor
+
+    # All years the simulation is running
+    # NOTE: see docstring about installation year
+    iyears = range(agent.year, agent.year + nyears.values.max())
+    years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
 
     # Filters
     environmentals = is_pollutant(technologies.comm_usage)
@@ -666,10 +788,10 @@ def net_present_value(
 @register_objective(name="NPC")
 def net_present_cost(
     agent: Agent,
-    demand: DataArray,
-    search_space: DataArray,
-    technologies: Dataset,
-    market: Dataset,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
+    market: xr.Dataset,
     *args,
     **kwargs,
 ):
@@ -688,18 +810,17 @@ def net_present_cost(
 
 
 def discount_factor(years, interest_rate, mask=1.0):
-    """Calculate an array with the rate (aka discount factor) values over the
-    years."""
+    """Calculate an array with the rate (aka discount factor) values over the years."""
     return mask / (1 + interest_rate) ** years
 
 
 @register_objective(name="EAC")
 def equivalent_annual_cost(
     agent: Agent,
-    demand: DataArray,
-    search_space: DataArray,
-    technologies: Dataset,
-    market: Dataset,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
+    market: xr.Dataset,
     *args,
     **kwargs,
 ):
@@ -720,7 +841,7 @@ def equivalent_annual_cost(
         market: The market parameters
 
     Return:
-        DataArray with the EAC calculated for the relevant technologies
+        xr.DataArray with the EAC calculated for the relevant technologies
     """
     npv = net_present_cost(agent, demand, search_space, technologies, market)
     crf = capital_recovery_factor(agent, search_space, technologies)

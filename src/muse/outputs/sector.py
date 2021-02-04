@@ -7,32 +7,33 @@ follow the same signature:
 
     @register_output_quantity
     def quantity(
-        capacity: DataArray,
-        market: Dataset,
-        technologies: Dataset
-    ) -> Union[DataArray, DataFrame]:
+        capacity: xr.DataArray,
+        market: xr.Dataset,
+        technologies: xr.Dataset
+    ) -> Union[xr.DataArray, DataFrame]:
         pass
 
 They take as input the current capacity profile, aggregated across a sectoar,
 a dataset containing market-related quantities, and a dataset characterizing the
-technologies in the market. It returns a single DataArray object.
+technologies in the market. It returns a single xr.DataArray object.
 
 The function should never modify it's arguments.
 """
-from typing import Any, Callable, List, Mapping, Optional, Text, Union
+from typing import Any, Callable, List, Mapping, MutableMapping, Optional, Text, Union
 
-from mypy_extensions import KwArg
-from xarray import DataArray, Dataset
 import pandas as pd
+import xarray as xr
+from mypy_extensions import KwArg
 
 from muse.registration import registrator
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
-    [Dataset, DataArray, Dataset, KwArg()], Union[pd.DataFrame, DataArray]
+    [xr.Dataset, xr.DataArray, xr.Dataset, KwArg(Any)],
+    Union[pd.DataFrame, xr.DataArray],
 ]
 """Signature of functions computing quantities for later analysis."""
 
-OUTPUT_QUANTITIES: Mapping[Text, OUTPUT_QUANTITY_SIGNATURE] = {}
+OUTPUT_QUANTITIES: MutableMapping[Text, OUTPUT_QUANTITY_SIGNATURE] = {}
 """Quantity for post-simulation analysis."""
 
 OUTPUTS_PARAMETERS = Union[Text, Mapping]
@@ -49,7 +50,7 @@ def register_output_quantity(function: OUTPUT_QUANTITY_SIGNATURE = None) -> Call
     @wraps(function)
     def decorated(*args, **kwargs):
         result = function(*args, **kwargs)
-        if isinstance(result, (pd.DataFrame, DataArray)):
+        if isinstance(result, (pd.DataFrame, xr.DataArray)):
             result.name = function.__name__
         return result
 
@@ -60,6 +61,7 @@ def _quantity_factory(
     parameters: Mapping, registry: Mapping[Text, Callable]
 ) -> Callable:
     from functools import partial
+    from inspect import isclass
 
     config = dict(**parameters)
     params = config.pop("quantity")
@@ -71,7 +73,11 @@ def _quantity_factory(
         params = {}
     if registry is None:
         registry = OUTPUT_QUANTITIES
-    return partial(registry[quantity], **params)
+    quantity_function = registry[quantity]
+    if isclass(quantity_function):
+        return quantity_function(**params)  # type: ignore
+    else:
+        return partial(quantity_function, **params)
 
 
 def _factory(
@@ -107,7 +113,7 @@ def _factory(
 
 def factory(
     *parameters: OUTPUTS_PARAMETERS, sector_name: Text = "default"
-) -> Callable[[Dataset, DataArray, Dataset], List[Any]]:
+) -> Callable[[xr.Dataset, xr.DataArray, xr.Dataset], List[Any]]:
     """Creates outputs functions for post-mortem analysis.
 
     Each parameter is a dictionary containing the following:
@@ -131,65 +137,109 @@ def factory(
 
 
 @register_output_quantity
-def capacity(market: Dataset, capacity: DataArray, technologies: Dataset) -> DataArray:
+def capacity(
+    market: xr.Dataset,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
+    rounding: int = 4,
+) -> pd.DataFrame:
     """Current capacity."""
-    return capacity
+    result = capacity.to_dataframe().round(rounding)
+    result = result.reset_index()
+    return result[result.capacity != 0]
+
+
+@register_output_quantity
+def llcoe(
+    market: xr.Dataset,
+    llcoe: xr.DataArray,
+    technologies: xr.Dataset,
+    rounding: int = 4,
+) -> pd.DataFrame:
+    """Current llcoe."""
+    result = llcoe.to_dataframe().round(rounding)
+    return result
 
 
 def market_quantity(
-    quantity: DataArray,
+    quantity: xr.DataArray,
     sum_over: Optional[Union[Text, List[Text]]] = None,
     drop: Optional[Union[Text, List[Text]]] = None,
-) -> DataArray:
+) -> xr.DataArray:
     from muse.utilities import multiindex_to_coords
     from pandas import MultiIndex
 
+    if isinstance(sum_over, Text):
+        sum_over = [sum_over]
+    if sum_over:
+        sum_over = [s for s in sum_over if s in quantity.coords]
     if sum_over:
         quantity = quantity.sum(sum_over)
     if "timeslice" in quantity.dims and isinstance(quantity.timeslice, MultiIndex):
         quantity = multiindex_to_coords(quantity, "timeslice")
     if drop:
-        quantity = quantity.drop_vars(drop)
+        quantity = quantity.drop_vars([d for d in drop if d in quantity.coords])
     return quantity
 
 
 @register_output_quantity
 def consumption(
-    market: Dataset,
-    capacity: DataArray,
-    technologies: Dataset,
+    market: xr.Dataset,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
     sum_over: Optional[List[Text]] = None,
     drop: Optional[List[Text]] = None,
-) -> DataArray:
+    rounding: int = 4,
+) -> xr.DataArray:
     """Current consumption."""
-    return market_quantity(market.consumption, sum_over=sum_over, drop=drop)
+    result = (
+        market_quantity(market.consumption, sum_over=sum_over, drop=drop)
+        .rename("consumption")
+        .to_dataframe()
+        .round(rounding)
+    )
+    return result[result.consumption != 0]
 
 
 @register_output_quantity
 def supply(
-    market: Dataset,
-    capacity: DataArray,
-    technologies: Dataset,
+    market: xr.Dataset,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
     sum_over: Optional[List[Text]] = None,
     drop: Optional[List[Text]] = None,
-) -> DataArray:
+    rounding: int = 4,
+) -> xr.DataArray:
     """Current supply."""
-    return market_quantity(market.supply, sum_over=sum_over, drop=drop)
+    result = (
+        market_quantity(market.supply, sum_over=sum_over, drop=drop)
+        .rename("supply")
+        .to_dataframe()
+        .round(rounding)
+    )
+    return result[result.supply != 0]
 
 
 @register_output_quantity
 def costs(
-    market: Dataset,
-    capacity: DataArray,
-    technologies: Dataset,
+    market: xr.Dataset,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
     sum_over: Optional[List[Text]] = None,
     drop: Optional[List[Text]] = None,
-) -> DataArray:
-    """Current supply."""
+    rounding: int = 4,
+) -> xr.DataArray:
+    """Current costs."""
     from muse.commodities import is_pollutant
 
-    return market_quantity(
-        market.costs.sel(commodity=~is_pollutant(market.comm_usage)),
-        sum_over=sum_over,
-        drop=drop,
+    result = (
+        market_quantity(
+            market.costs.sel(commodity=~is_pollutant(market.comm_usage)),
+            sum_over=sum_over,
+            drop=drop,
+        )
+        .rename("costs")
+        .to_dataframe()
+        .round(rounding)
     )
+    return result[result.costs != 0]

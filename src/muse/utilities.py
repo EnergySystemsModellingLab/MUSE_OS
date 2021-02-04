@@ -1,7 +1,10 @@
 """Collection of functions and stand-alone algorithms."""
 from typing import (
+    Any,
     Callable,
+    Hashable,
     Iterable,
+    Iterator,
     Mapping,
     NamedTuple,
     Optional,
@@ -11,11 +14,13 @@ from typing import (
     cast,
 )
 
-from numpy import ndarray
-from xarray import DataArray, Dataset
+import numpy as np
+import xarray as xr
 
 
-def multiindex_to_coords(data: Union[Dataset, DataArray], dimension: Text = "asset"):
+def multiindex_to_coords(
+    data: Union[xr.Dataset, xr.DataArray], dimension: Text = "asset"
+):
     """Flattens multi-index dimension into multi-coord dimension."""
     from pandas import MultiIndex
 
@@ -26,32 +31,32 @@ def multiindex_to_coords(data: Union[Dataset, DataArray], dimension: Text = "ass
     result = data.drop_vars(dimension)
     for name, coord in coords.items():
         result[name] = dimension, coord
-    if isinstance(result, Dataset):
+    if isinstance(result, xr.Dataset):
         result = result.set_coords(names)
     return result
 
 
 def coords_to_multiindex(
-    data: Union[Dataset, DataArray], dimension: Text = "asset"
-) -> Union[Dataset, DataArray]:
+    data: Union[xr.Dataset, xr.DataArray], dimension: Text = "asset"
+) -> Union[xr.Dataset, xr.DataArray]:
     """Creates a multi-index from flattened multiple coords."""
     from pandas import MultiIndex
 
     assert dimension in data.dims
     assert dimension not in data.indexes
     names = [u for u in data.coords if data[u].dims == (dimension,)]
-    index = MultiIndex.from_arrays([data[u] for u in names], names=names)
+    index = MultiIndex.from_arrays([data[u].values for u in names], names=names)
     result = data.drop_vars(names)
     result[dimension] = index
     return result
 
 
 def reduce_assets(
-    assets: Union[DataArray, Sequence[DataArray]],
-    coords: Optional[Union[Text, Sequence[Text]]] = None,
+    assets: Union[xr.DataArray, xr.Dataset, Sequence[Union[xr.Dataset, xr.DataArray]]],
+    coords: Optional[Union[Text, Sequence[Text], Iterable[Text]]] = None,
     dim: Text = "asset",
     operation: Optional[Callable] = None,
-) -> DataArray:
+) -> Union[xr.DataArray, xr.Dataset]:
     r"""Combine assets along given asset dimension.
 
     This method simplifies combining assets accross multiple agents, or combining assets
@@ -86,7 +91,7 @@ def reduce_assets(
         Lets construct assets that do have duplicates assets. First we construct the
         dimensions, using fake data:
 
-        >>> data = Dataset()
+        >>> data = xr.Dataset()
         >>> data['year'] = 'year', [2010, 2015, 2017]
         >>> data['installed'] = 'asset', [1990, 1991, 1991, 1990]
         >>> data['technology'] = 'asset', ['a', 'b', 'b', 'c']
@@ -104,8 +109,7 @@ def reduce_assets(
         Now we can easily create a fake two dimensional quantity per process and
         per year:
 
-        >>> from numpy import arange
-        >>> data['capacity'] = ('year', 'asset'), arange(3 * 4).reshape(3, 4)
+        >>> data['capacity'] = ('year', 'asset'), np.arange(3 * 4).reshape(3, 4)
 
         The point of `reduce_assets` is to aggregate assets that refer to the
         same process:
@@ -141,8 +145,6 @@ def reduce_assets(
         Dimensions without coordinates: asset
     """
     from copy import copy
-    from numpy import array
-    from xarray import concat
 
     if operation is None:
 
@@ -151,9 +153,11 @@ def reduce_assets(
 
     assert operation is not None
 
-    if not isinstance(assets, DataArray):
-        assets = concat(assets, dim=dim)
-    assert isinstance(assets, DataArray)
+    if not isinstance(assets, (xr.Dataset, xr.DataArray)):
+        assets = xr.concat(assets, dim=dim)
+    assert isinstance(assets, (xr.Dataset, xr.DataArray))
+    if assets[dim].size == 0:
+        return assets
     if coords is None:
         coords = [cast(Text, k) for k, v in assets.coords.items() if v.dims == (dim,)]
     elif isinstance(coords, Text):
@@ -161,7 +165,9 @@ def reduce_assets(
     coords = [k for k in coords if k in assets.coords and assets[k].dims == (dim,)]
     assets = copy(assets)
     dtypes = [(d, assets[d].dtype) for d in coords]
-    grouper = array(list(zip(*(assets[d].values for d in coords))), dtype=dtypes)
+    grouper = np.array(
+        list(zip(*(cast(Iterator, assets[d].values) for d in coords))), dtype=dtypes
+    )
     assert "grouper" not in assets.coords
     assets["grouper"] = "asset", grouper
     result = operation(assets.groupby("grouper")).rename(grouper=dim)
@@ -171,13 +177,13 @@ def reduce_assets(
 
 
 def broadcast_techs(
-    technologies: Union[Dataset, DataArray],
-    template: Union[DataArray, Dataset],
+    technologies: Union[xr.Dataset, xr.DataArray],
+    template: Union[xr.DataArray, xr.Dataset],
     dimension: Text = "asset",
     interpolation: Text = "linear",
     installed_as_year: bool = True,
     **kwargs,
-) -> Union[Dataset, DataArray]:
+) -> Union[xr.Dataset, xr.DataArray]:
     """Broadcasts technologies to the shape of template in given dimension.
 
     The dimensions of the technologies are fully explicit, in that each concept
@@ -235,7 +241,7 @@ def broadcast_techs(
     return techs.sel(second_sel)
 
 
-def clean_assets(assets: Dataset, years: Union[int, Sequence[int]]):
+def clean_assets(assets: xr.Dataset, years: Union[int, Sequence[int]]):
     """Cleans up and prepares asset for current iteration.
 
     - adds current and forecast year by backfilling missing entries
@@ -254,11 +260,11 @@ def clean_assets(assets: Dataset, years: Union[int, Sequence[int]]):
 
 
 def filter_input(
-    dataset: Union[Dataset, DataArray],
+    dataset: Union[xr.Dataset, xr.DataArray],
     year: Optional[Union[int, Iterable[int]]] = None,
     interpolation: Text = "linear",
     **kwargs,
-) -> Union[Dataset, DataArray]:
+) -> Union[xr.Dataset, xr.DataArray]:
     """Filter inputs, taking care to interpolate years."""
     from typing import Set
 
@@ -291,8 +297,8 @@ def filter_input(
 
 
 def filter_with_template(
-    data: Union[Dataset, DataArray],
-    template: Union[DataArray, Dataset],
+    data: Union[xr.Dataset, xr.DataArray],
+    template: Union[xr.DataArray, xr.Dataset],
     asset_dimension: Text = "asset",
     **kwargs,
 ):
@@ -320,32 +326,30 @@ def filter_with_template(
     match = {d: template[d].isin(data[d]).values for d in match_indices if d != "year"}
     if "year" in match_indices:
         match["year"] = template.year.values
-    return filter_input(data, **match, **kwargs)
+    return filter_input(data, **match, **kwargs)  # type: ignore
 
 
-def tupled_dimension(array: ndarray, axis: int):
+def tupled_dimension(array: np.ndarray, axis: int):
     """Transforms one axis into a tuples."""
-    from numpy import moveaxis, zeros
-
     if array.shape[axis] == 1:
         shape = tuple(j for i, j in enumerate(array.shape) if i != axis)
         return array.reshape(*shape)
 
-    rolled = moveaxis(array, axis, -1)
+    rolled = np.moveaxis(array, axis, -1)
     shape = rolled.shape
     flattened = rolled.reshape(-1, shape[-1])
-    result = zeros(shape=flattened.shape[:-1], dtype=object)
+    result = np.zeros(shape=flattened.shape[:-1], dtype=object)
     for i in range(0, flattened.shape[0]):
         result[i] = tuple(flattened[i, :])
     return result.reshape(*shape[:-1])
 
 
 def lexical_comparison(
-    objectives: Dataset,
-    binsize: Dataset,
-    order: Optional[Sequence[Text]] = None,
+    objectives: xr.Dataset,
+    binsize: xr.Dataset,
+    order: Optional[Sequence[Hashable]] = None,
     bin_last: bool = True,
-) -> DataArray:
+) -> xr.DataArray:
     """Lexical comparison over the objectives.
 
     Lexical comparison operates by binning the objectives into bins of width
@@ -354,7 +358,7 @@ def lexical_comparison(
     objectives are ranked lexographically, in the order given by the parameters.
 
     Arguments:
-        objectives: Dataset containing the objectives to rank
+        objectives: xr.Dataset containing the objectives to rank
         binsize: bin size, minimization direction
             (+ -> minimize, - -> maximize), and (optionally) order of
             lexicographical comparison. The order is the one given
@@ -367,35 +371,35 @@ def lexical_comparison(
     Result:
         An array of tuples which can subsquently be compared lexicographically.
     """
-    from numpy import floor
-
     if order is None:
-        order = list(binsize.data_vars)
+        order = [u for u in binsize.data_vars]
 
     assert set(order) == set(binsize.data_vars)
     assert set(order).issuperset(objectives)
 
     result = objectives[order]
     for name in order if bin_last else order[:-1]:
-        result[name] = floor(result[name] / binsize[name]).astype(int)
+        result[name] = np.floor(result[name] / binsize[name]).astype(int)
     if not bin_last:
         result[order[-1]] = result[order[-1]] / binsize[order[-1]]
     return result.to_array(dim="variable").reduce(tupled_dimension, dim="variable")
 
 
 def merge_assets(
-    capa_a: DataArray,
-    capa_b: DataArray,
-    interpolation: Optional[Text] = "linear",
+    capa_a: xr.DataArray,
+    capa_b: xr.DataArray,
+    interpolation: Text = "linear",
     dimension: Text = "asset",
-) -> DataArray:
+) -> xr.DataArray:
     """Merge two capacity arrays."""
-    from xarray import concat
-
     years = sorted(set(capa_a.year.values).union(capa_b.year.values))
 
     levels = (coord for coord in capa_a.coords if capa_a[coord].dims == (dimension,))
-    result = concat(
+    if len(capa_a.year) == 1 and len(capa_b.year) > 1:
+        capa_a, capa_b = xr.broadcast(capa_a, capa_b)
+    if len(capa_a.year) > 1 and len(capa_b.year) == 1:
+        capa_a, capa_b = xr.broadcast(capa_a, capa_b)
+    result = xr.concat(
         (
             capa_a.interp(year=years, method=interpolation).fillna(0),
             capa_b.interp(year=years, method=interpolation).fillna(0),
@@ -407,13 +411,14 @@ def merge_assets(
         result = (
             forgroup.groupby(dimension)
             .sum(dimension)
+            .clip(min=0)
             .pipe(multiindex_to_coords, dimension=dimension)
             .rename({"asset_level_%i" % i: coord for i, coord in enumerate(levels)})
         )
     return result
 
 
-def avoid_repetitions(data: DataArray, dim: Text = "year") -> DataArray:
+def avoid_repetitions(data: xr.DataArray, dim: Text = "year") -> xr.DataArray:
     """list of years such that there is no repetition in the data.
 
     It removes the central year of any three consecutive years where all data is
@@ -422,7 +427,7 @@ def avoid_repetitions(data: DataArray, dim: Text = "year") -> DataArray:
 
     The first and last year are always preserved.
     """
-    roll = data.rolling(**{dim: 3, "center": True}).construct("window")
+    roll = data.rolling({dim: 3}, center=True).construct("window")
     years = ~(roll == roll.isel(window=0)).all([u for u in roll.dims if u != dim])
     return data.year[years]
 
@@ -445,8 +450,11 @@ def nametuple_to_dict(nametup: Union[Mapping, NamedTuple]) -> Mapping:
 
 
 def future_propagation(
-    data: DataArray, future: DataArray, threshhold: float = 1e-12, dim: Text = "year"
-) -> DataArray:
+    data: xr.DataArray,
+    future: xr.DataArray,
+    threshhold: float = 1e-12,
+    dim: Text = "year",
+) -> xr.DataArray:
     """Propagates values into the future.
 
     Example:
@@ -501,8 +509,6 @@ def future_propagation(
           * year     (year) ... 2020 2025 2030 2035
           * fuel     (fuel) <U4 'gas' 'coal'
     """
-    from numpy import abs, logical_or
-
     if dim not in data.dims or dim not in future.coords:
         raise ValueError("Expected dimension 'year' in `data` and `future`.")
     if future[dim].ndim != 0 and len(future[dim]) != 1:
@@ -514,6 +520,127 @@ def future_propagation(
         future = future.loc[{dim: 0}]
     year = future[dim].values
     return data.where(
-        logical_or(data.year < year, abs(data.loc[{dim: year}] - future) < threshhold),
+        np.logical_or(
+            data.year < year, np.abs(data.loc[{dim: year}] - future) < threshhold
+        ),
         future,
+    )
+
+
+def agent_concatenation(
+    data: Mapping[Hashable, Union[xr.DataArray, xr.Dataset]],
+    dim: Text = "asset",
+    name: Text = "agent",
+    fill_value: Any = 0,
+) -> Union[xr.DataArray, xr.Dataset]:
+    """Concatenates input map along given dimension.
+
+    Example:
+
+        Lets create sets of random assets to work with. We set the seed so that this
+        test can be reproduced exactly.
+
+        >>> from muse.examples import random_agent_assets
+        >>> rng = np.random.default_rng(1234)
+        >>> assets = {i: random_agent_assets(rng) for i in range(5)}
+
+        The concatenation will create a new dataset (or datarray) combining all the
+        inputs along the dimension "asset". The origin of each datum is retained in a
+        new coordinate "agent" with dimension "asset".
+
+        >>> from muse.utilities import agent_concatenation
+        >>> aggregate = agent_concatenation(assets)
+        >>> aggregate
+        <xarray.Dataset>
+        Dimensions:     (asset: 19, year: 12)
+        Coordinates:
+          * year        (year) int64 2033 2035 2036 2037 2039 ... 2046 2047 2048 2049
+            technology  (asset) <U9 'oven' 'stove' 'oven' ... 'stove' 'oven' 'thermomix'
+            region      (asset) <U9 'Brexitham' 'Brexitham' ... 'Brexitham' 'Brexitham'
+            agent       (asset) ... 0 0 0 0 0 1 1 1 2 2 2 2 3 3 3 4 4 4 4
+            installed   (asset) int64 2030 2025 2030 2010 2030 ... 2025 2030 2010 2025
+        Dimensions without coordinates: asset
+        Data variables:
+            capacity    (asset, year) float64 26.0 26.0 26.0 56.0 ... 62.0 62.0 62.0
+
+        Note that the `dtype` of the capacity has changed from integers to floating
+        points. This is due to how ``xarray`` performs the operation.
+
+        We can check that all the data from each agent is indeed present in the
+        aggregate.
+
+        >>> for agent, inventory in assets.items():
+        ...    assert (aggregate.sel(asset=aggregate.agent == agent) == inventory).all()
+
+        However, it should be noted that the data is not always strictly equivalent:
+        dimensions outside of "assets" (most notably "year") will include all points
+        from all agents. Missing values for the "year" dimension are forward filled (and
+        backfilled with zeros). Others are left with "NaN".
+    """
+    data = {k: v.copy() for k, v in data.items()}
+    for key, datum in data.items():
+        if name in datum.coords:
+            raise ValueError(f"Coordinate {name} already exists")
+        datum[name] = key
+    result = xr.concat(data.values(), dim=dim)
+    if isinstance(result, xr.Dataset):
+        result = result.set_coords("agent")
+    if "year" in result.dims:
+        result = result.ffill("year")
+    if fill_value is not np.nan:
+        result = result.fillna(fill_value)
+    return result
+
+
+def aggregate_technology_model(
+    data: Union[xr.DataArray, xr.Dataset],
+    dim: Text = "asset",
+    drop: Union[Text, Sequence[Text]] = "installed",
+) -> Union[xr.DataArray, xr.Dataset]:
+    """Aggregate together assets with the same installation year.
+
+    The assets of a given agent, region, and technology but different installation year
+    are grouped together and summed over.
+
+    Example:
+
+        We first create a random set of agent assets and aggregate them.
+        Some of these agents own assets from the same technology but potentially with
+        different installation year. This function will aggregate together all assets
+        of a given agent with same technology.
+
+        >>> from muse.examples import random_agent_assets
+        >>> from muse.utilities import agent_concatenation, aggregate_technology_model
+        >>> rng = np.random.default_rng(1234)
+        >>> agent_assets = {i: random_agent_assets(rng) for i in range(5)}
+        >>> assets = agent_concatenation(agent_assets)
+        >>> reduced = aggregate_technology_model(assets)
+
+        We can check that the tuples (agent, technology) are unique (each agent works in
+        a single region):
+
+        >>> ids = list(zip(reduced.agent.values, reduced.technology.values))
+        >>> assert len(set(ids)) == len(ids)
+
+        And we can check they correspond to the right summation:
+
+        >>> for agent, technology in set(ids):
+        ...     techsel = assets.technology == technology
+        ...     agsel = assets.agent == agent
+        ...     expected = assets.sel(asset=techsel & agsel).sum("asset")
+        ...     techsel = reduced.technology == technology
+        ...     agsel = reduced.agent == agent
+        ...     actual = reduced.sel(asset=techsel & agsel)
+        ...     assert len(actual.asset) == 1
+        ...     assert (actual == expected).all()
+    """
+    if isinstance(drop, Text):
+        drop = (drop,)
+    return reduce_assets(
+        data,
+        [
+            cast(Text, u)
+            for u in data.coords
+            if u not in drop and data[u].dims == (dim,)
+        ],
     )

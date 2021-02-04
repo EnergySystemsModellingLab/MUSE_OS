@@ -1,3 +1,0 @@
-ProcessName,RegionName,Time,Level,electricity,gas,heat,CO2f,wind
-Unit,-,Year,-,GWh/PJ,PJ/PJ,PJ/PJ,kt/PJ,PJ/PJ
-gassupply1,USA,2020,fixed,0,1,0,0,0

@@ -17,7 +17,17 @@ The signature of a sink is:
         pass
 """
 
-from typing import Any, Callable, Mapping, MutableMapping, Optional, Text, Union
+from typing import (
+    Any,
+    Callable,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Text,
+    Union,
+    cast,
+)
 
 import pandas as pd
 import xarray as xr
@@ -26,11 +36,11 @@ from mypy_extensions import KwArg
 from muse.registration import registrator
 
 OUTPUT_SINK_SIGNATURE = Callable[
-    [Union[xr.DataArray, pd.DataFrame], int, KwArg()], Optional[Text]
+    [Union[xr.DataArray, pd.DataFrame], int, KwArg(Any)], Optional[Text]
 ]
 """Signature of functions used to save quantities."""
 
-OUTPUT_SINKS: Mapping[Text, Union[OUTPUT_SINK_SIGNATURE, Callable]] = {}
+OUTPUT_SINKS: MutableMapping[Text, Union[OUTPUT_SINK_SIGNATURE, Callable]] = {}
 """Stores a quantity somewhere."""
 
 
@@ -151,8 +161,72 @@ def sink_to_file(suffix: Text):
     return decorator
 
 
+def standardize_quantity(
+    function: Callable[[Union[pd.DataFrame, xr.DataArray], Text], None]
+):
+    """Helps standardize how the quantities are specified.
+
+    This decorator adds three keyword arguments to an input function:
+
+    - set_index: A dictionary or any argument accepted by
+      :py:meth:`pandas.DataFrame.set_index`. Ignored if not specified. If specified, a
+      call to :py:meth:`pandas.DataFrame.reset_index` is made first.
+    - sort_index: A dictionary or any argument accepted by
+      :py:meth:`pandas.DataFrame.sort_index`. Ignored if not specified.
+    - keep_columns: a string or a list of strings with the names of the columns to keep.
+      Ignored if not specified.
+
+    The three functions are applied in the order given, assuming an input is specified.
+    """
+    from functools import wraps
+
+    class NotSpecified:
+        pass
+
+    @wraps(function)
+    def decorated(
+        quantity: Union[pd.DataFrame, xr.DataArray],
+        *args,
+        set_index: Union[Any, NotSpecified] = NotSpecified,
+        sort_index: Union[Any, NotSpecified, bool] = NotSpecified,
+        keep_columns: Union[Text, Sequence[Text], NotSpecified] = NotSpecified,
+        group_by: Union[Any, NotSpecified] = NotSpecified,
+        **config,
+    ) -> None:
+        any_calls = (
+            set_index is not NotSpecified
+            or set_index is not NotSpecified
+            or keep_columns is not None
+        )
+        if any_calls and hasattr(quantity, "to_dataframe"):
+            data: pd.DataFrame = quantity.to_dataframe()
+        else:
+            data = cast(pd.DataFrame, quantity)
+        if isinstance(set_index, Mapping):
+            data = data.reset_index().set_index(**set_index)
+        elif set_index is not NotSpecified:
+            data = data.reset_index().set_index(set_index)
+        if isinstance(sort_index, Mapping):
+            data = data.sort_index(**sort_index)
+        elif sort_index is True:
+            data = data.sort_index()
+        elif sort_index is not NotSpecified and sort_index is not False:
+            data = data.sort_index(sort_index)
+        if keep_columns is not NotSpecified:
+            data = data[keep_columns]
+        if isinstance(group_by, Mapping):
+            data = data.groupby(group_by).sum()
+        elif group_by is not NotSpecified:
+            data = data.groupby(group_by).sum()
+
+        return function(data, *args, **config)
+
+    return decorated
+
+
 @register_output_sink(name="csv")
 @sink_to_file(".csv")
+@standardize_quantity
 def to_csv(
     quantity: Union[pd.DataFrame, xr.DataArray], filename: Text, **params
 ) -> None:
@@ -192,6 +266,7 @@ def to_netcdf(
 
 @register_output_sink(name=("excel", "xlsx"))
 @sink_to_file(".xlsx")
+@standardize_quantity
 def to_excel(
     quantity: Union[pd.DataFrame, xr.DataArray], filename: Text, **params
 ) -> None:
@@ -235,7 +310,7 @@ class YearlyAggregate:
         ):
             final_sink["overwrite"] = True
         self.sink = factory(final_sink, sector_name=sector)
-        self.aggregate: Optional[xr.DataArray] = None
+        self.aggregate: Optional[pd.Dataframe] = None
         self.axis = axis
 
     def __call__(self, data: Union[pd.DataFrame, xr.DataArray], year: int):
@@ -255,3 +330,27 @@ class YearlyAggregate:
         if getattr(data, "name", None) is not None:
             self.aggregate.name = data.name
         return self.sink(self.aggregate, year=year)
+
+
+class FiniteResourceException(Exception):
+    """Raised when a finite resource is exceeded."""
+
+
+@register_output_sink
+def finite_resource_logger(
+    data: Union[pd.DataFrame, xr.DataArray], year: int, early_exit=False, **kwargs
+):
+    from logging import getLogger
+
+    if data is None:
+        return
+
+    over_limit = (~data).any([u for u in data.dims if u != "commodity"])
+    over_limit = over_limit.sel(commodity=over_limit)
+    if over_limit.size != 0:
+        msg = "The following commodities have exceeded their limits: " + ", ".join(
+            [str(u) for u in over_limit.commodity.values]
+        )
+        getLogger(__name__).critical(msg)
+        if early_exit:
+            raise FiniteResourceException(msg)
