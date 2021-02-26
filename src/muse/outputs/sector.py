@@ -145,7 +145,20 @@ def capacity(
 ) -> pd.DataFrame:
     """Current capacity."""
     result = capacity.to_dataframe().round(rounding)
+    result = result.reset_index()
     return result[result.capacity != 0]
+
+
+@register_output_quantity
+def llcoe(
+    market: xr.Dataset,
+    llcoe: xr.DataArray,
+    technologies: xr.Dataset,
+    rounding: int = 4,
+) -> pd.DataFrame:
+    """Current llcoe."""
+    result = llcoe.to_dataframe().round(rounding)
+    return result
 
 
 def market_quantity(

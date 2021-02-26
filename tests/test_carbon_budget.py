@@ -160,7 +160,7 @@ def test_refine_new_price(market):
     carbon_price = market.prices.sel(
         year=market.year < future, commodity=commodities
     ).mean(["region", "commodity"])
-    too_high = price_too_high_threshold * max(min(carbon_price.values), 0.1)
+    too_high = price_too_high_threshold
 
     # Checking price too high
     price = 1.1 * too_high

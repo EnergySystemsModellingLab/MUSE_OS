@@ -12,9 +12,9 @@ def test_aggregate_sector():
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
     agent_list = [list(a.agents) for a in sector_list]
     alldata = sector_capacity(sector_list[0])
-    alldatadict = alldata.to_dict("split")
+
     columns = ["region", "agent", "type", "sector", "capacity"]
-    assert (sorted(columns)) == sorted(alldatadict["columns"])
+
     frame = DataFrame()
     for ai in agent_list[0]:
 
@@ -32,7 +32,7 @@ def test_aggregate_sector():
                         index=[(y, ai.assets.technology.values[0])],
                     )
                     frame = concat([frame, data])
-    print()
+
     assert (frame[columns].values == alldata[columns].values).all()
 
 
@@ -46,9 +46,9 @@ def test_aggregate_sectors():
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
     agent_list = [list(a.agents) for a in sector_list]
     alldata = _aggregate_sectors(mca.sectors, op=sector_capacity)
-    alldatadict = alldata.to_dict("split")
+
     columns = ["region", "agent", "type", "sector", "capacity"]
-    assert (sorted(columns)) == sorted(alldatadict["columns"])
+
     frame = DataFrame()
     for a, ai in enumerate(agent_list):
         for ii in range(0, len(ai)):
@@ -68,7 +68,6 @@ def test_aggregate_sectors():
                             index=[(y, ai[ii].assets.technology.values[0])],
                         )
                         frame = concat([frame, data])
-                        print(frame, "frame, year)")
 
     assert (frame[columns].values == alldata[columns].values).all()
 
@@ -92,9 +91,9 @@ def test_aggregate_sector_manyregions():
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
     agent_list = [list(a.agents) for a in sector_list]
     alldata = _aggregate_sectors(mca.sectors, op=sector_capacity)
-    alldatadict = alldata.to_dict("split")
+
     columns = ["region", "agent", "type", "sector", "capacity"]
-    assert (sorted(columns)) == sorted(alldatadict["columns"])
+
     frame = DataFrame()
     for a, ai in enumerate(agent_list):
         for ii in range(0, len(ai)):

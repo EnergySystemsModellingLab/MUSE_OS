@@ -59,6 +59,27 @@ def test_create_retrofit(agent_args, technologies, stock):
     assert len(agent.assets.capacity) != 0
 
 
+def test_issue_835_and_842(agent_args, technologies, stock):
+    from muse.agents.factories import create_agent
+    from muse.agents.agent import Agent
+
+    agent_args["share"] = "agent_share_zero"
+    agent = create_agent(
+        agent_type="Retrofit",
+        technologies=technologies,
+        capacity=stock.capacity,
+        search_rules="from_techs->compress",
+        year=2010,
+        **agent_args,
+    )
+    assert isinstance(agent, Agent)
+    assert len(agent.assets.capacity) == 0
+    assert "asset" in agent.assets.dims and len(agent.assets.asset) == 0
+    assert "year" in agent.assets.dims or len(agent.assets.year) > 1
+    assert "region" not in agent.assets.dims
+    assert "commodity" not in agent.assets.dims
+
+
 def test_run_retro_agent(retro_agent, technologies, agent_market, demand_share):
     # make sure capacity limits are no reached
     technologies.total_capacity_limit[:] = retro_agent.assets.capacity.sum() * 100

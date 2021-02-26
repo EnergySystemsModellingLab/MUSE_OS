@@ -10,10 +10,10 @@ from muse.agents import Agent
 
 @fixture(autouse=True)
 def logger():
-    from logging import getLogger, DEBUG
+    from logging import getLogger, CRITICAL
 
     logger = getLogger("muse")
-    logger.setLevel(DEBUG)
+    logger.setLevel(CRITICAL)
     return logger
 
 
@@ -73,8 +73,8 @@ def compare_df(
     from pytest import approx
 
     assert set(expected.columns) == set(actual.columns)
-    assert set(expected.index) == set(actual.index)
     assert expected.shape == actual.shape
+    assert set(expected.index) == set(actual.index)
 
     floats = [u for (u, d) in zip(actual.columns, actual.dtypes) if d == "float"]
     nonfloats = [u for (u, d) in zip(actual.columns, actual.dtypes) if d != "float"]
@@ -82,6 +82,8 @@ def compare_df(
     for col in floats:
         actual_col = actual.loc[expected.index, col].values
         expected_col = expected[col].values
+        if actual_col != approx(expected_col, rel=rtol, abs=atol, nan_ok=equal_nan):
+            print(f"file: {msg}, column: {col}")
         assert actual_col == approx(expected_col, rel=rtol, abs=atol, nan_ok=equal_nan)
 
 
@@ -90,19 +92,32 @@ def compare_dirs() -> Callable:
     def compare_dirs(actual_dir, expected_dir, **kwargs):
         """Compares all the csv files in a directory."""
         from pandas import read_csv
-        from os.path import join, relpath, exists, isfile
         from os import walk
+        from pathlib import Path
 
         compared_something = False
         for (dirpath, _, filenames) in walk(expected_dir):
-            subdir = join(actual_dir, relpath(dirpath, expected_dir))
+            subdir = Path(actual_dir) / Path(dirpath).relative_to(expected_dir)
             for filename in filenames:
                 compared_something = True
-                expected = read_csv(join(dirpath, filename))
-                assert exists(join(subdir, filename))
-                assert isfile(join(subdir, filename))
-                actual = read_csv(join(subdir, filename))
-                compare_df(expected, actual, msg=filename, **kwargs)
+                expected_filename = Path(dirpath) / filename
+                expected = read_csv(expected_filename)
+                actual_filename = Path(subdir) / filename
+                assert actual_filename.exists()
+                assert actual_filename.is_file()
+                actual = read_csv(actual_filename)
+                try:
+                    compare_df(expected, actual, msg=filename, **kwargs)
+                except Exception:
+                    msg = (
+                        f"Expected {expected_filename}\n"
+                        + expected_filename.read_text()
+                        + f"\n\nActual {actual_filename}:\n"
+                        + actual_filename.read_text()
+                        + "\n"
+                    )
+                    print(msg)
+                    raise
         assert compared_something, "The test is not setup correctly"
 
     return compare_dirs
@@ -382,7 +397,7 @@ def create_agent(agent_args, technologies, stock, agent_type="retrofit") -> Agen
         technologies=technologies,
         capacity=stock,
         year=2010,
-        **agent_args
+        **agent_args,
     )
 
     # because most of the input is random numbers, the agent's assets might

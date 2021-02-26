@@ -51,7 +51,7 @@ muse_legacy = pattern(package="StarMUSELegacy", repo="StarMuse", sha="archive/le
 
 setup(
     name="StarMUSE",
-    version="0.8",
+    version="0.9",
     description="Energy System Model",
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -82,6 +82,7 @@ setup(
         "bottleneck",
         "coloredlogs",
         "toml",
+        "xlrd==1.2.0",
     ],
     extras_require={
         "dev": tests_require,

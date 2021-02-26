@@ -169,9 +169,9 @@ def test_find_equilibrium(market: Dataset):
         actual, expected = broadcast(result.market.consumption, expected)
         assert actual.values == approx(expected.values)
 
-        expected = 0.95 * b_market.costs.where(
+        expected = b_market.costs.where(
             is_enduse(b_market.comm_usage),
-            a_market.costs.where(is_enduse(a_market.comm_usage), market.prices / 0.95),
+            a_market.costs.where(is_enduse(a_market.comm_usage), market.prices),
         )
         actual, expected = broadcast(result.market.prices, expected)
         assert actual.values == approx(expected.values)

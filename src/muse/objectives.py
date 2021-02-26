@@ -437,6 +437,7 @@ def fuel_consumption_cost(
     prices = agent.filter_input(market.prices, year=agent.forecast_year)
     demand = demand.where(search_space, 0).rename(replacement="technology")
     fcons = consumption(technologies=params, prices=prices, production=demand)
+
     return (
         (fcons * prices)
         .sel(commodity=commodity)
@@ -445,8 +446,8 @@ def fuel_consumption_cost(
     )
 
 
-@register_objective(name=["LCOE", "LLCOE"])
-def lifetime_levelized_cost_of_energy(
+@register_objective(name=["ALCOE"])
+def annual_levelized_cost_of_energy(
     agent: Agent,
     demand: xr.DataArray,
     search_space: xr.DataArray,
@@ -455,7 +456,8 @@ def lifetime_levelized_cost_of_energy(
     *args,
     **kwargs,
 ):
-    """Levelized cost of energy (LCOE) of technologies over their lifetime.
+    """Annual cost of energy (LCOE) of technologies - not dependent on production.
+    It needs to be used for trade agents where the actual service is unknown
 
     It follows the `simpified LCOE` given by NREL.
 
@@ -468,16 +470,12 @@ def lifetime_levelized_cost_of_energy(
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
     """
-    from muse.quantities import lifetime_levelized_cost_of_energy as lifetimeLCOE
+    from muse.quantities import annual_levelized_cost_of_energy as aLCOE
 
     techs = agent.filter_input(technologies, technology=search_space.replacement.values)
     assert isinstance(techs, xr.Dataset)
     prices = cast(xr.DataArray, agent.filter_input(market.prices))
-    return (
-        lifetimeLCOE(prices, techs, agent.year, **kwargs)
-        .rename(technology="replacement")
-        .max("timeslice")
-    )
+    return aLCOE(prices, techs).rename(technology="replacement").max("timeslice")
 
 
 def capital_recovery_factor(
@@ -508,6 +506,130 @@ def capital_recovery_factor(
     nyears = tech.technical_life.astype(int)
 
     return tech.interest_rate / (1 - (1 / (1 + tech.interest_rate) ** nyears))
+
+
+@register_objective(name=["LCOE", "LLCOE"])
+def lifetime_levelized_cost_of_energy(
+    agent: Agent,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
+    market: xr.Dataset,
+    *args,
+    **kwargs,
+):
+    """Levelized cost of energy (LCOE) of technologies over their lifetime.
+
+    It follows the `simpified LCOE` given by NREL.
+
+    Arguments:
+        agent: The agent of interest
+        search_space: The search space space for replacement technologies
+        technologies: All the technologies
+        market: The market parameters
+
+    Return:
+        xr.DataArray with the LCOE calculated for the relevant technologies
+    """
+    from muse.commodities import is_pollutant, is_material, is_enduse
+
+    # Filtering of the inputs
+    tech = agent.filter_input(
+        technologies[
+            [
+                "technical_life",
+                "interest_rate",
+                "cap_par",
+                "cap_exp",
+                "var_par",
+                "var_exp",
+                "fix_par",
+                "fix_exp",
+                "fixed_outputs",
+                "utilization_factor",
+            ]
+        ],
+        technology=search_space.replacement,
+        year=agent.year,
+    ).drop_vars("technology")
+    nyears = tech.technical_life.astype(int)
+    interest_rate = tech.interest_rate
+    cap_par = tech.cap_par
+    cap_exp = tech.cap_exp
+    var_par = tech.var_par
+    var_exp = tech.var_exp
+    fix_par = tech.fix_par
+    fix_exp = tech.fix_exp
+    fixed_outputs = tech.fixed_outputs
+    utilization_factor = tech.utilization_factor
+
+    # All years the simulation is running
+    # NOTE: see docstring about installation year
+    iyears = range(agent.year, agent.year + nyears.values.max())
+    years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
+
+    # Filters
+    environmentals = is_pollutant(technologies.comm_usage)
+    material = is_material(technologies.comm_usage)
+    products = is_enduse(technologies.comm_usage)
+
+    # Capacity
+    capacity = capacity_to_service_demand(
+        agent, demand, search_space, technologies, market
+    )
+
+    # Evolution of rates with time
+    rates = discount_factor(
+        years - agent.year + 1, interest_rate, years <= agent.year + nyears
+    )
+
+    production = capacity * fixed_outputs * utilization_factor
+
+    # raw costs --> make the NPV more negative
+    # Cost of installed capacity
+    installed_capacity_costs = cap_par * capacity ** cap_exp
+
+    # Cost related to environmental products
+    prices_environmental = agent.filter_input(
+        market.prices, commodity=environmentals, year=years.values
+    ).ffill("year")
+    environmental_costs = (production * prices_environmental * rates).sum(
+        ("commodity", "year", "timeslice")
+    )
+
+    # Fuel/energy costs
+    fuel_costs = (
+        fuel_consumption_cost(
+            agent, demand, search_space, technologies.sel(region=agent.region), market
+        )
+        * rates
+    ).sum("year")
+
+    # Cost related to material other than fuel/energy and environmentals
+    prices_material = agent.filter_input(
+        market.prices, commodity=material, year=years.values
+    ).ffill("year")
+    material_costs = (production * prices_material * rates).sum(
+        ("commodity", "year", "timeslice")
+    )
+
+    # Fixed and Variable costs
+    fixed_costs = fix_par * capacity ** fix_exp
+    variable_costs = (var_par * production.sel(commodity=products) ** var_exp).sum(
+        "commodity"
+    )
+    #    assert set(fixed_costs.dims) == set(variable_costs.dims)
+    fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
+
+    results = (
+        installed_capacity_costs
+        + fuel_costs
+        + environmental_costs
+        + material_costs
+        + fixed_and_variable_costs
+    ) / (production.sel(commodity=products).sum("commodity") * rates).sum("year")
+
+    return results
 
 
 @register_objective(name="NPV")

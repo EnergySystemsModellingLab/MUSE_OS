@@ -78,11 +78,13 @@ def round_values(function: Callable) -> OUTPUT_QUANTITY_SIGNATURE:
         market: xr.Dataset, sectors: List[AbstractSector], rounding: int = 4, **kwargs
     ) -> xr.DataArray:
         result = function(market, sectors, **kwargs)
+
         if hasattr(result, "to_dataframe"):
             result = result.to_dataframe()
         result = result.round(rounding)
         name = getattr(result, "name", function.__name__)
-        return result[result[name] != 0]
+        if len(result) > 0:
+            return result[result[name] != 0]
 
     return rounded
 
@@ -195,23 +197,21 @@ def capacity(
     return _aggregate_sectors(sectors, op=sector_capacity)
 
 
-@register_output_quantity(
-    name=["ALCOE", "alcoe", "Annualized Levelized Cost of Energy"]
-)
+@register_output_quantity(name=["alcoe"])
 @round_values
 def alcoe(market: xr.Dataset, sectors: List[AbstractSector], **kwargs) -> pd.DataFrame:
     """Current annual levelised cost across all sectors."""
     return _aggregate_sectors(sectors, market, op=sector_alcoe)
 
 
-@register_output_quantity
+@register_output_quantity(name=["llcoe"])
 @round_values
 def llcoe(market: xr.Dataset, sectors: List[AbstractSector], **kwargs) -> pd.DataFrame:
     """Current lifetime levelised cost across all sectors."""
     return _aggregate_sectors(sectors, market, op=sector_llcoe)
 
 
-def sector_alcoe(market: xr.Dataset, sector: AbstractSector, **kwargs) -> pd.DataFrame:
+def sector_alcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Sector annual levelised cost (ALCOE) with agent annotations."""
     from pandas import DataFrame, concat
     from muse.quantities import annual_levelized_cost_of_energy
@@ -235,7 +235,7 @@ def sector_alcoe(market: xr.Dataset, sector: AbstractSector, **kwargs) -> pd.Dat
             if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
                 data_sector.append(data_agent.groupby("technology").fillna(0))
     if len(data_sector) > 0:
-        alcoe = concat([u.to_dataframe("ALCOE") for u in data_sector])
+        alcoe = concat([u.to_dataframe("alcoe") for u in data_sector])
         alcoe = alcoe[alcoe != 0]
         if "year" in alcoe.columns:
             alcoe = alcoe.ffill("year")
@@ -245,7 +245,7 @@ def sector_alcoe(market: xr.Dataset, sector: AbstractSector, **kwargs) -> pd.Dat
     return alcoe
 
 
-def sector_llcoe(market: xr.Dataset, sector: AbstractSector, **kwargs) -> pd.DataFrame:
+def sector_llcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Sector lifetime levelised cost with agent annotations."""
 
     from pandas import DataFrame, concat
@@ -269,7 +269,7 @@ def sector_llcoe(market: xr.Dataset, sector: AbstractSector, **kwargs) -> pd.Dat
             if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
                 data_sector.append(data_agent.groupby("technology").fillna(0))
     if len(data_sector) > 0:
-        lcoe = concat([u.to_dataframe("lcoe") for u in data_sector])
+        lcoe = concat([u.to_dataframe("llcoe") for u in data_sector])
         lcoe = lcoe[lcoe != 0]
     else:
         lcoe = DataFrame()
@@ -293,14 +293,26 @@ def sector_capacity(sector: AbstractSector) -> pd.DataFrame:
         capa_agent["sector"] = getattr(sector, "name", "unnamed")
 
         if len(capa_agent) > 0 and len(capa_agent.technology.values) > 0:
-            capa_sector.append(capa_agent.groupby("technology").sum("asset").fillna(0))
+            if "dst_region" in capa_agent.coords:
+                capa_sector.append(
+                    capa_agent.groupby("technology")
+                    .sum(["asset", "dst_region"])
+                    .fillna(0)
+                )
+            else:
+                capa_sector.append(
+                    capa_agent.groupby("technology").sum("asset").fillna(0)
+                )
     if len(capa_sector) == 0:
         return DataFrame()
 
     capacity = concat([u.to_dataframe() for u in capa_sector])
     capacity = capacity[capacity.capacity != 0]
+
     if "year" in capacity.columns:
         capacity = capacity.ffill("year")
+
+    capacity = capacity.reset_index()
     return capacity
 
 

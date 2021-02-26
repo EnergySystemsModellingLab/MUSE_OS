@@ -98,6 +98,7 @@ from typing import (
     Sequence,
     Text,
     Union,
+    cast,
 )
 
 import numpy as np
@@ -205,11 +206,10 @@ def factory(
         parameters = [
             {"name": item} if isinstance(item, Text) else item for item in settings
         ]
-
     if len(parameters) == 0 or parameters[0]["name"] not in SEARCH_SPACE_INITIALIZERS:
-        initial_settings = {"name": "initialize_from_technologies"}
+        initial_settings: Mapping[Text, Text] = {"name": "initialize_from_technologies"}
     else:
-        initial_settings, parameters = parameters[0], parameters[1:]
+        initial_settings, parameters = cast(Mapping, parameters[0]), parameters[1:]
 
     functions = [
         partial(
@@ -227,8 +227,8 @@ def factory(
 
     def filters(agent: Agent, demand: xr.DataArray, *args, **kwargs) -> xr.DataArray:
         """Applies a series of filter to determine the search space."""
-        result = demand
-        for function in functions:
+        result = functions[0](agent, demand, *args, **kwargs)
+        for function in functions[1:]:
             result = function(agent, result, *args, **kwargs)
         return result
 
@@ -376,6 +376,7 @@ def compress(
         condition = search_space
     else:
         condition = search_space.any("asset")
+
     return search_space.sel(replacement=condition)
 
 
@@ -439,5 +440,7 @@ def initialize_from_assets(
     )
     if "asset" not in agent.assets.dims or len(agent.assets.asset) == 0:
         return replacement
-    assets = xr.ones_like(reduce_assets(agent.assets.asset, coords=coords), dtype=bool)
+    assets = xr.ones_like(
+        reduce_assets(agent.assets.asset, coords=coords), dtype=bool
+    ).rename(technology="asset")
     return (assets * replacement).transpose("asset", "replacement")
