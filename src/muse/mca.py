@@ -428,6 +428,7 @@ def single_year_iteration(
         market.supply.loc[dims] += sector_market.supply
 
         costs = sector_market.costs.sel(commodity=is_enduse(sector_market.comm_usage))
+        costs = costs.where(costs > 1e-15, 0)  # do not write negative costs
         dims = {i: costs[i] for i in costs.dims}
         market.updated_prices.loc[dims] = costs.transpose(*market.updated_prices.dims)
 
@@ -474,6 +475,7 @@ def find_equilibrium(
     """
     from numpy import ones
     from logging import getLogger
+    from muse.utilities import future_propagation
 
     market = market.copy(deep=True)
     if excluded_commodities:
@@ -504,7 +506,12 @@ def find_equilibrium(
 
         if equilibrium_reached or not expect_equilibrium:
             converged = True
-            market["prices"] = market.updated_prices
+            new_price = market.updated_prices.sel(year=market.year[1]).where(
+                market.updated_prices.sel(year=market.year[1]) > 1e-15,
+                prior_market["prices"].sel(year=market.year[1]),
+            )
+            market["prices"] = future_propagation(market["prices"], new_price)
+
             break
 
     else:
