@@ -111,6 +111,7 @@ class Agent(AbstractAgent):
         demand_threshhold: Optional[float] = None,
         category: Optional[Text] = None,
         asset_threshhold: float = 1e-4,
+        quantity: float = 1,
         **kwargs,
     ):
         """Creates a standard buildings agent.
@@ -242,6 +243,7 @@ class Agent(AbstractAgent):
         """
         from logging import getLogger
 
+        print(self.name, self.category)
         # dataset with intermediate computational results from search
         # makes it easier to pass intermediate results to functions, as well as
         # filter them when inside a function
@@ -385,6 +387,7 @@ class InvestingAgent(Agent):
         Other attributes are left unchanged. Arguments to the function are
         never modified.
         """
+        print(self.name, self.category)
         current_year = self.year
         search = super().next(technologies, market, demand, time_period=time_period)
         if search is None:

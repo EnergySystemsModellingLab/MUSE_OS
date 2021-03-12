@@ -333,17 +333,29 @@ def annual_levelized_cost_of_energy(
         / techs.utilization_factor
     )
 
-    o_and_e_costs = (techs.fix_par + techs.var_par) / techs.utilization_factor
+    o_and_e_costs = (
+        convert_timeslice(
+            (techs.fix_par + techs.var_par), prices.timeslice, QuantityType.EXTENSIVE,
+        )
+        / techs.utilization_factor
+    )
 
     fuel_costs = (techs.fixed_inputs * prices).sum("commodity")
 
     fuel_costs += (techs.flexible_inputs * prices).sum("commodity")
-
-    env_costs = (
-        (techs.fixed_outputs * prices)
-        .sel(commodity=is_pollutant(techs.comm_usage))
-        .sum("commodity")
-    )
+    if "region" in techs.dims:
+        env_costs = (
+            (techs.fixed_outputs * prices)
+            .sel(region=techs.region)
+            .sel(commodity=is_pollutant(techs.comm_usage))
+            .sum("commodity")
+        )
+    else:
+        env_costs = (
+            (techs.fixed_outputs * prices)
+            .sel(commodity=is_pollutant(techs.comm_usage))
+            .sum("commodity")
+        )
     return annualized_capital_costs + o_and_e_costs + env_costs + fuel_costs
 
 
@@ -510,7 +522,6 @@ def costed_production(
     with_minimum_service: bool = True,
 ) -> xr.DataArray:
     """Computes production from ranked assets.
-
     The assets are ranked according to their cost. The asset with least cost are allowed
     to service the demand first, up to the maximum production. By default, the mininum
     service is applied first.

@@ -343,16 +343,16 @@ def bisection(
     current = market.year[0]
     threshold = carbon_budget.sel(year=future).values
     price = market.prices.sel(year=future, commodity=commodities).mean().values
-    iter = 10
+    iter = sample_size
     # We create a sample of prices at which we want to calculate emissions
     #    sample_prices = create_sample(price, emissions, threshold, sample_size)
-    sample_prices = price * np.arange(0.5, 10.0, 2)
+    sample_prices = price * np.arange(0.9, iter, 2)
 
     low = round(min(sample_prices), 7)
     up = round(max(sample_prices), 7)
     lb = bisect_loop(market, sectors, equilibrium, commodities, low) - threshold
     ub = bisect_loop(market, sectors, equilibrium, commodities, up) - threshold
-    p = 0  # plateau
+
     for n in range(iter):
 
         if lb * ub < 0:
@@ -369,20 +369,18 @@ def bisection(
                 low = midpoint
             else:
                 up = midpoint
-            if (low - up) < 0.0001:
+            if (low - up) < 1e-6:
                 new_price = midpoint
                 break
         else:
             if lb == ub:
-                p += 1
-                if p == 1:
-                    new_price = up
-                    break
+                new_price = round((low + up) / 2.0, 7)
+                break
 
             if (
                 lb > 0.0 and ub > 0.0
             ):  # covers also l==u: we are higher than emission limits
-                up = round(up * (1 + 0.1) ** (int(future - current)), 7)
+                up = round(up * (1 + 0.01) ** (int(future - current)), 7)
                 ub = (
                     bisect_loop(market, sectors, equilibrium, commodities, up)
                     - threshold
@@ -390,7 +388,7 @@ def bisection(
                 new_price = up
 
             elif lb < 0.0 and ub < 0.0:  # lbis closer to the threshold
-                low = low / 2.0
+                low = low * 0.9
                 lb = (
                     bisect_loop(market, sectors, equilibrium, commodities, low)
                     - threshold
