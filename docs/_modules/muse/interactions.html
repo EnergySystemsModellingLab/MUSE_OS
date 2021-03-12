@@ -1,0 +1,260 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse.interactions &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.interactions</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for muse.interactions</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Modes of interactions between agents.</span>
+
+<span class="sd">Interactions between agents are modelled via two orthogonal concepts:</span>
+
+<span class="sd">- a *net* is a set of agents which interact in some way</span>
+<span class="sd">- an *interaction* proper is a function that takes a net and actually performs the</span>
+<span class="sd">  interaction.</span>
+
+<span class="sd">Hence, there are two registrators in this this module,</span>
+<span class="sd">:py:func:`register_interaction_net`, and :py:func:`register_agent_interaction`. The</span>
+<span class="sd">first registers functions that take the full set of agents as input and returns a</span>
+<span class="sd">sequence of nets. It is expected each net of the sequence will be applied the same</span>
+<span class="sd">interaction. The second registrator registers the interaction proper: it takes agents as</span>
+<span class="sd">arguments and returns nothing. It is expected to modify the agents in-place.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;register_interaction_net&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;register_agent_interaction&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;factory&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;new_to_retro_net&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;transfer_assets&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">muse.agents</span> <span class="kn">import</span> <span class="n">Agent</span><span class="p">,</span> <span class="n">AbstractAgent</span>
+<span class="kn">from</span> <span class="nn">muse.registration</span> <span class="kn">import</span> <span class="n">registrator</span>
+
+<span class="n">AGENT_INTERACTIONS</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&quot;&quot;&quot;All interaction between a single agents and its interactees.&quot;&quot;&quot;</span>
+<span class="n">INTERACTION_NETS</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&quot;&quot;&quot;All functions to computes lists of agents interaction with each other.&quot;&quot;&quot;</span>
+
+<span class="n">INTERACTION_NET</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Agent</span><span class="p">]]</span>
+<span class="sd">&quot;&quot;&quot;Defines interaction sets between agents.</span>
+
+<span class="sd">An interaction set is a mapping an agent to the agents with which it interacts. For</span>
+<span class="sd">instance, it could, for each region, map a new agent with the retro agent with the same</span>
+<span class="sd">name as itself.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">INTERACTION_NET_SIGNATURE</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Agent</span><span class="p">]],</span> <span class="n">INTERACTION_NET</span><span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;Signature of the interaction net function.</span>
+
+<span class="sd">The interaction net functions should create a list of lists of interacting agents, given</span>
+<span class="sd">as input the list of all agents.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">AGENT_INTERACTION_SIGNATURE</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Agent</span><span class="p">,</span> <span class="n">Agent</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;Signature of a single agent to agent(s) interaction.</span>
+
+<span class="sd">An interaction function takes as argument the agents that are to interact. It can modify</span>
+<span class="sd">the parameters and assets of these agents.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="register_interaction_net"><a class="viewcode-back" href="../../source/muse.html#muse.interactions.register_interaction_net">[docs]</a><span class="nd">@registrator</span><span class="p">(</span><span class="n">registry</span><span class="o">=</span><span class="n">INTERACTION_NETS</span><span class="p">,</span> <span class="n">loglevel</span><span class="o">=</span><span class="s2">&quot;debug&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">register_interaction_net</span><span class="p">(</span><span class="n">function</span><span class="p">:</span> <span class="n">INTERACTION_NET_SIGNATURE</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Decorator to register a function computing interaction nets.</span>
+
+<span class="sd">    An interaction net function takes as input the list of all agents and</span>
+<span class="sd">    returns the list of all interactions, where an interaction is a list of at</span>
+<span class="sd">    least two interacting agents.</span>
+
+<span class="sd">    An interactiont-net function also takes as argument a sector object.</span>
+<span class="sd">    This object should not be modified in any way. But it can be queried for</span>
+<span class="sd">    parameters, if the specific interaction-net function requires it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">function</span></div>
+
+
+<div class="viewcode-block" id="register_agent_interaction"><a class="viewcode-back" href="../../source/muse.html#muse.interactions.register_agent_interaction">[docs]</a><span class="nd">@registrator</span><span class="p">(</span><span class="n">registry</span><span class="o">=</span><span class="n">AGENT_INTERACTIONS</span><span class="p">,</span> <span class="n">loglevel</span><span class="o">=</span><span class="s2">&quot;debug&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">register_agent_interaction</span><span class="p">(</span><span class="n">function</span><span class="p">:</span> <span class="n">AGENT_INTERACTION_SIGNATURE</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Decorator to register an agent to agent(s) interaction function.</span>
+
+<span class="sd">    An agent interaction function takes at least two agents and makes them</span>
+<span class="sd">    interact in some way.</span>
+
+<span class="sd">    An agent interaction function also takes as argument a sector object.</span>
+<span class="sd">    This object should not be modified in any way. But it can be queried for</span>
+<span class="sd">    parameters, if the specific agent interaction function requires it. This is</span>
+<span class="sd">    most likely the same configuration object passed on to the interaction net</span>
+<span class="sd">    function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">function</span></div>
+
+
+<div class="viewcode-block" id="factory"><a class="viewcode-back" href="../../source/muse.html#muse.interactions.factory">[docs]</a><span class="k">def</span> <span class="nf">factory</span><span class="p">(</span>
+    <span class="n">inputs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Mapping</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Text</span><span class="p">]]]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">AbstractAgent</span><span class="p">]],</span> <span class="kc">None</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Creates an interaction functor.&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">inputs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">()</span>
+
+    <span class="n">interactions</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">params</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="n">net_params</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;net&quot;</span><span class="p">]</span>
+            <span class="n">action_params</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;interaction&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">net_params</span><span class="p">,</span> <span class="n">action_params</span> <span class="o">=</span> <span class="n">params</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">net_params</span><span class="p">,</span> <span class="n">Text</span><span class="p">):</span>
+            <span class="n">net_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">net_params</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action_params</span><span class="p">,</span> <span class="n">Text</span><span class="p">):</span>
+            <span class="n">action_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">action_params</span><span class="p">}</span>
+
+        <span class="n">net</span> <span class="o">=</span> <span class="n">INTERACTION_NETS</span><span class="p">[</span><span class="n">net_params</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]]</span>
+        <span class="n">interaction</span> <span class="o">=</span> <span class="n">AGENT_INTERACTIONS</span><span class="p">[</span><span class="n">action_params</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]]</span>
+
+        <span class="n">interactions</span><span class="o">.</span><span class="n">append</span><span class="p">(((</span><span class="n">net</span><span class="p">,</span> <span class="n">net_params</span><span class="p">),</span> <span class="p">(</span><span class="n">interaction</span><span class="p">,</span> <span class="n">action_params</span><span class="p">)))</span>
+
+    <span class="k">def</span> <span class="nf">compute_interactions</span><span class="p">(</span><span class="n">agents</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AbstractAgent</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Applies interaction net and agent interaction functions.&quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">logging</span> <span class="kn">import</span> <span class="n">getLogger</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">net_params</span><span class="p">),</span> <span class="p">(</span><span class="n">interaction</span><span class="p">,</span> <span class="n">interaction_params</span><span class="p">)</span> <span class="ow">in</span> <span class="n">interactions</span><span class="p">:</span>
+            <span class="n">nparams</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">net_params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;name&quot;</span><span class="p">}</span>
+            <span class="n">sets</span> <span class="o">=</span> <span class="n">net</span><span class="p">(</span><span class="n">agents</span><span class="p">,</span> <span class="o">**</span><span class="n">nparams</span><span class="p">)</span>
+
+            <span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Net </span><span class="si">{</span><span class="n">net_params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sets</span><span class="p">)</span><span class="si">}</span><span class="s2"> interactions interacting &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;via </span><span class="si">{</span><span class="n">interaction_params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+            <span class="n">iparams</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">interaction_params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;name&quot;</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">agents</span> <span class="ow">in</span> <span class="n">sets</span><span class="p">:</span>
+                <span class="n">interaction</span><span class="p">(</span><span class="o">*</span><span class="n">agents</span><span class="p">,</span> <span class="o">**</span><span class="n">iparams</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">compute_interactions</span></div>
+
+
+<span class="k">def</span> <span class="nf">agents_groupby</span><span class="p">(</span>
+    <span class="n">agents</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Agent</span><span class="p">],</span> <span class="n">attributes</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Text</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Agent</span><span class="p">]]:</span>
+    <span class="n">attr_list</span> <span class="o">=</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attributes</span><span class="p">)</span> <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="n">agents</span><span class="p">]</span>
+    <span class="n">result</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Agent</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">n</span><span class="p">):</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">attr_list</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">attrs</span><span class="p">,</span> <span class="n">agent</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">attr_list</span><span class="p">,</span> <span class="n">agents</span><span class="p">):</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">attrs</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">agent</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<div class="viewcode-block" id="new_to_retro_net"><a class="viewcode-back" href="../../source/muse.html#muse.interactions.new_to_retro_net">[docs]</a><span class="nd">@register_interaction_net</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;new_to_retro&quot;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">new_to_retro_net</span><span class="p">(</span>
+    <span class="n">agents</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Agent</span><span class="p">],</span> <span class="n">first_category</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;newcapa&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">INTERACTION_NET</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Interactions between new and retrofit agents.&quot;&quot;&quot;</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="n">agents_groupby</span><span class="p">(</span><span class="n">agents</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">comparison</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">b</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="n">b</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="s2">&quot;lower&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="s2">&quot;lower&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">a</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">b</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">group</span> <span class="k">if</span> <span class="n">comparison</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">category</span><span class="p">,</span> <span class="n">first_category</span><span class="p">)]</span>
+        <span class="o">+</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">group</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">comparison</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">category</span><span class="p">,</span> <span class="n">first_category</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groups</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+    <span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="transfer_assets"><a class="viewcode-back" href="../../source/muse.html#muse.interactions.transfer_assets">[docs]</a><span class="nd">@register_agent_interaction</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;transfer&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">transfer_assets</span><span class="p">(</span><span class="n">from_</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span> <span class="n">to_</span><span class="p">:</span> <span class="n">Agent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Transfer assets from first agent to second agent.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">xarray</span> <span class="kn">import</span> <span class="n">zeros_like</span>
+    <span class="kn">from</span> <span class="nn">muse.utilities</span> <span class="kn">import</span> <span class="n">merge_assets</span>
+
+    <span class="n">to_</span><span class="o">.</span><span class="n">assets</span> <span class="o">=</span> <span class="n">merge_assets</span><span class="p">(</span><span class="n">to_</span><span class="o">.</span><span class="n">assets</span><span class="p">,</span> <span class="n">from_</span><span class="o">.</span><span class="n">assets</span><span class="p">)</span>
+    <span class="n">from_</span><span class="o">.</span><span class="n">assets</span> <span class="o">=</span> <span class="n">zeros_like</span><span class="p">(</span><span class="n">to_</span><span class="o">.</span><span class="n">assets</span><span class="p">)</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.interactions</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

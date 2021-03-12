@@ -1,0 +1,627 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Further extending MUSE &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API" href="../api.html" />
+    <link rel="prev" title="Extending MUSE" href="extending-muse.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../api.html" title="API"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="extending-muse.html" title="Extending MUSE"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Advanced guide</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Further extending MUSE</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container,
+div.nbinput.container div.prompt,
+div.nbinput.container div.input_area,
+div.nbinput.container div[class*=highlight],
+div.nbinput.container div[class*=highlight] pre,
+div.nboutput.container,
+div.nboutput.container div.prompt,
+div.nboutput.container div.output_area,
+div.nboutput.container div[class*=highlight],
+div.nboutput.container div[class*=highlight] pre {
+    background: none;
+    border: none;
+    padding: 0 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    background: #f5f5f5;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+</style>
+<div class="section" id="Further-extending-MUSE">
+<h1>Further extending MUSE<a class="headerlink" href="#Further-extending-MUSE" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="Adding-a-search-space-filter">
+<h2>Adding a search space filter<a class="headerlink" href="#Adding-a-search-space-filter" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">xarray</span> <span class="kn">import</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">DataArray</span>
+
+<span class="kn">from</span> <span class="nn">muse.agents</span> <span class="kn">import</span> <span class="n">Agent</span>
+<span class="kn">from</span> <span class="nn">muse.filters</span> <span class="kn">import</span> <span class="n">register_filter</span>
+
+<span class="nd">@register_filter</span>
+<span class="k">def</span> <span class="nf">no_ccgt_filter</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="n">DataArray</span><span class="p">,</span>
+    <span class="n">technologies</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">market</span><span class="p">:</span> <span class="n">Dataset</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Excludes gasCCGT.&quot;&quot;&quot;</span>
+    <span class="n">dropped_tech</span> <span class="o">=</span> <span class="n">search_space</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">search_space</span><span class="o">.</span><span class="n">replacement</span> <span class="o">!=</span> <span class="s2">&quot;windturbine&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">search_space</span> <span class="o">&amp;</span> <span class="n">search_space</span><span class="o">.</span><span class="n">replacement</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">dropped_tech</span><span class="o">.</span><span class="n">replacement</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">muse.mca</span> <span class="kn">import</span> <span class="n">MCA</span>
+<span class="kn">from</span> <span class="nn">muse</span> <span class="kn">import</span> <span class="n">examples</span>
+
+<span class="c1"># model_path = examples.copy_model(overwrite=True)</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;muse&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">mca</span> <span class="o">=</span> <span class="n">MCA</span><span class="o">.</span><span class="n">factory</span><span class="p">(</span><span class="s2">&quot;model/settings.toml&quot;</span><span class="p">)</span>
+<span class="n">mca</span><span class="o">.</span><span class="n">run</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+-- 2020-11-26 16:43:53 - muse.sectors.register - INFO
+Sector legacy registered.
+
+-- 2020-11-26 16:43:53 - muse.sectors.register - INFO
+Sector preset registered, with alias presets.
+
+-- 2020-11-26 16:43:53 - muse.sectors.register - INFO
+Sector default registered.
+
+-- 2020-11-26 16:43:58 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:44:03 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:44:08 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:44:12 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:44:17 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:44:21 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:44:25 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:44:30 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:44:34 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:44:38 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:44:43 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:44:47 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:44:51 - muse.mca - WARNING
+Check growth constraints for wind.
+
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;Results/MCACapacity.csv&quot;</span><span class="p">)</span>
+<span class="n">results</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">results</span><span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">sector</span><span class="o">==</span><span class="s2">&quot;power&quot;</span><span class="p">],</span> <span class="n">x</span><span class="o">=</span><span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;capacity&#39;</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="s1">&#39;technology&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;AxesSubplot:xlabel=&#39;year&#39;, ylabel=&#39;capacity&#39;&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/advanced-guide_further-extending-muse_4_1.png" src="../_images/advanced-guide_further-extending-muse_4_1.png" />
+</div>
+</div>
+</div>
+<div class="section" id="Registering-a-custom-decision-function">
+<h2>Registering a custom decision function<a class="headerlink" href="#Registering-a-custom-decision-function" title="Permalink to this headline">¶</a></h2>
+<p>Next, we would like to add an additional decision function. A decision function is a transformation applied to aggregate multiple objectives into a single objective during agent investment. For example, through the use of a weighted sum.</p>
+<p>In this example, we would like to take the median objective. However, the functions predefined in MUSE don’t include this functionality. MUSE contains examples such as the mean, weighted sum and a single objective. Therefore we will have to register and create our own.</p>
+<p>Now, we create our new <code class="docutils literal notranslate"><span class="pre">median_objective</span></code> function:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">muse.decisions</span> <span class="kn">import</span> <span class="n">register_decision</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+<span class="kn">from</span> <span class="nn">xarray</span> <span class="kn">import</span> <span class="n">Dataset</span>
+
+<span class="nd">@register_decision</span>
+<span class="k">def</span> <span class="nf">median_objective</span><span class="p">(</span>
+    <span class="n">objectives</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">parameters</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataArray</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">xarray</span> <span class="kn">import</span> <span class="n">concat</span>
+    <span class="n">allobjectives</span> <span class="o">=</span> <span class="n">concat</span><span class="p">(</span><span class="n">objectives</span><span class="o">.</span><span class="n">data_vars</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">dim</span><span class="o">=</span><span class="s2">&quot;concat_var&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">allobjectives</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">allobjectives</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">-</span> <span class="p">{</span><span class="s2">&quot;asset&quot;</span><span class="p">,</span> <span class="s2">&quot;replacement&quot;</span><span class="p">})</span>
+</pre></div>
+</div>
+</div>
+<p>After importing the decorator function, <code class="docutils literal notranslate"><span class="pre">register_decision</span></code>, and ensuring that we decorate our new function with <code class="docutils literal notranslate"><span class="pre">&#64;register_decision</span></code>, we are able to create our new function as above.</p>
+<p>Our new function <code class="docutils literal notranslate"><span class="pre">median_objective</span></code> modifies the <code class="docutils literal notranslate"><span class="pre">mean</span></code> function already built into MUSE, with one difference. Replacing the return value, from <code class="docutils literal notranslate"><span class="pre">allobjectives.mean</span></code> to <code class="docutils literal notranslate"><span class="pre">allobjectives.mean</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@register_decision</span>
+<span class="k">def</span> <span class="nf">mean</span><span class="p">(</span><span class="n">objectives</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Mean over objectives.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">xarray</span> <span class="kn">import</span> <span class="n">concat</span>
+
+    <span class="n">allobjectives</span> <span class="o">=</span> <span class="n">concat</span><span class="p">(</span><span class="n">objectives</span><span class="o">.</span><span class="n">data_vars</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">dim</span><span class="o">=</span><span class="s2">&quot;concat_var&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">allobjectives</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">allobjectives</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">-</span> <span class="p">{</span><span class="s2">&quot;asset&quot;</span><span class="p">,</span> <span class="s2">&quot;replacement&quot;</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>Of course, you are free to make your functions as complicated as you like, depending on your own requirements.</p>
+<p>Next, we must edit our <code class="docutils literal notranslate"><span class="pre">Agents.csv</span></code> file. We will modify the <code class="docutils literal notranslate"><span class="pre">default</span></code> example for this tutorial. We change the first two entry rows, to be as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Agent1</span><span class="p">,</span><span class="n">A1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">R1</span><span class="p">,</span><span class="n">LCOE</span><span class="p">,</span><span class="n">NPV</span><span class="p">,</span><span class="n">EAC</span><span class="p">,</span><span class="mi">1</span><span class="p">,,,</span><span class="n">FALSE</span><span class="p">,,,</span><span class="nb">all</span><span class="p">,</span><span class="n">median_objective</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">inf</span><span class="p">,</span><span class="n">New</span>
+<span class="n">Agent2</span><span class="p">,</span><span class="n">A1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">R1</span><span class="p">,</span><span class="n">LCOE</span><span class="p">,</span><span class="n">NPV</span><span class="p">,</span><span class="n">EAC</span><span class="p">,</span><span class="mi">1</span><span class="p">,,,</span><span class="n">FALSE</span><span class="p">,,,</span><span class="nb">all</span><span class="p">,</span><span class="n">median_objective</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">inf</span><span class="p">,</span><span class="n">Retrofit</span>
+</pre></div>
+</div>
+<p>Here, we add the NPV and EAC decision metrics, as well as replacing the <code class="docutils literal notranslate"><span class="pre">singleObj</span></code> <code class="docutils literal notranslate"><span class="pre">DecisionMethod</span></code> to <code class="docutils literal notranslate"><span class="pre">median_objective</span></code>.</p>
+<p>Now we are able to run our modified model as before:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;muse&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">mca</span> <span class="o">=</span> <span class="n">MCA</span><span class="o">.</span><span class="n">factory</span><span class="p">(</span><span class="s2">&quot;../tutorial-code/new-decision-metric/settings.toml&quot;</span><span class="p">)</span>
+<span class="n">mca</span><span class="o">.</span><span class="n">run</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+-- 2020-11-26 16:44:59 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:45:02 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:45:04 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:45:09 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:45:13 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:45:17 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:45:20 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:45:25 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:45:28 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:45:32 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:45:35 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:45:39 - muse.mca - WARNING
+Check growth constraints for wind.
+
+-- 2020-11-26 16:45:43 - muse.mca - WARNING
+Check growth constraints for wind.
+
+</pre></div></div>
+</div>
+<p>Again, we visualise the power sector:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;Results/MCACapacity.csv&quot;</span><span class="p">)</span>
+<span class="n">results</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">results</span><span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">sector</span><span class="o">==</span><span class="s2">&quot;power&quot;</span><span class="p">],</span> <span class="n">x</span><span class="o">=</span><span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;capacity&#39;</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="s1">&#39;technology&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;AxesSubplot:xlabel=&#39;year&#39;, ylabel=&#39;capacity&#39;&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/advanced-guide_further-extending-muse_11_1.png" src="../_images/advanced-guide_further-extending-muse_11_1.png" />
+</div>
+</div>
+<p>We see a different scenario emerge through these different decision metrics. This shows the importance of decision metrics when making long-term investment decisions.</p>
+</div>
+<div class="section" id="End-of-tutorials">
+<h2>End of tutorials<a class="headerlink" href="#End-of-tutorials" title="Permalink to this headline">¶</a></h2>
+<p>In these tutorials you have seen the ways in which you can modify MUSE. All of these methods can be combined and extended to make as simple or complex model as you wish. Feel free to experiment and come up with your own ideas for your future work!</p>
+<p>For further information, we refer you to the API in the next section.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Further extending MUSE</a><ul>
+<li><a class="reference internal" href="#Adding-a-search-space-filter">Adding a search space filter</a></li>
+<li><a class="reference internal" href="#Registering-a-custom-decision-function">Registering a custom decision function</a></li>
+<li><a class="reference internal" href="#End-of-tutorials">End of tutorials</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="extending-muse.html"
+                        title="previous chapter">Extending MUSE</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../api.html"
+                        title="next chapter">API</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/advanced-guide/further-extending-muse.ipynb.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../api.html" title="API"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="extending-muse.html" title="Extending MUSE"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Advanced guide</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Further extending MUSE</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

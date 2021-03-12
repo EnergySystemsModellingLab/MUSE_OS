@@ -1,0 +1,367 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time-slices &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Input Commodities" href="commodities_io.html" />
+    <link rel="prev" title="Techno-data" href="technodata.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="commodities_io.html" title="Input Commodities"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="technodata.html" title="Techno-data"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Input Files</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="inputs_csv.html" accesskey="U">Input Files</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Time-slices</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="time-slices">
+<span id="inputs-legacy-timeslices"></span><h1>Time-slices<a class="headerlink" href="#time-slices" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This input file is only for legacy sectors. For anything else, please see <a class="reference internal" href="../simulation-settings.html#simulation-settings"><span class="std std-ref">Simulation settings</span></a>.</p>
+</div>
+<p>Time-slices represent a sub-year disaggregation of commodity demand. They are fully
+flexible in number and names as to serve the specific representation of the commodity
+demand, supply, and supply cost profile in each energy sector.  Each time slice is
+independent in terms of the number of represent hours, as long as it is meaningful for the
+users and their data inputs. 1 is the minimum number of time-slice as this would
+correspond to a full year.  The time-slice definition of a sector affects the commodity
+price profile and the supply cost profile.</p>
+<p>The csv file for the time-slice definition would report the length (in hours) of each
+time slice as characteristic to the selected sector to represent diurnal, weekly and
+seasonal variation of energy commodities, demand and supply, as shown in the table for
+30 time-slices.</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Time-slices</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head stub"><p>AgLevel</p></th>
+<th class="head stub"><p>SN</p></th>
+<th class="head stub"><p>Month</p></th>
+<th class="head stub"><p>Day</p></th>
+<th class="head"><p>Hour</p></th>
+<th class="head"><p>RepresentHours</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>1</p></th>
+<th class="stub"><p>Winter</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>Night</p></td>
+<td><p>396</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>2</p></th>
+<th class="stub"><p>Winter</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>Morning</p></td>
+<td><p>396</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>3</p></th>
+<th class="stub"><p>Winter</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>Afternoon</p></td>
+<td><p>264</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>4</p></th>
+<th class="stub"><p>Winter</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>EarlyPeak</p></td>
+<td><p>66</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>5</p></th>
+<th class="stub"><p>Winter</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>LatePeak</p></td>
+<td><p>66</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>6</p></th>
+<th class="stub"><p>Winter</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>Evening</p></td>
+<td><p>396</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>7</p></th>
+<th class="stub"><p>Winter</p></th>
+<th class="stub"><p>Weekend</p></th>
+<td><p>Night</p></td>
+<td><p>156</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>8</p></th>
+<th class="stub"><p>Winter</p></th>
+<th class="stub"><p>Weekend</p></th>
+<td><p>Morning</p></td>
+<td><p>156</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>9</p></th>
+<th class="stub"><p>Winter</p></th>
+<th class="stub"><p>Weekend</p></th>
+<td><p>Afternoon</p></td>
+<td><p>156</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>10</p></th>
+<th class="stub"><p>Winter</p></th>
+<th class="stub"><p>Weekend</p></th>
+<td><p>Evening</p></td>
+<td><p>156</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>11</p></th>
+<th class="stub"><p>SpringAutumn</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>Night</p></td>
+<td><p>792</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>12</p></th>
+<th class="stub"><p>SpringAutumn</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>Morning</p></td>
+<td><p>792</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>13</p></th>
+<th class="stub"><p>SpringAutumn</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>Afternoon</p></td>
+<td><p>528</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>14</p></th>
+<th class="stub"><p>SpringAutumn</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>EarlyPeak</p></td>
+<td><p>132</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>15</p></th>
+<th class="stub"><p>SpringAutumn</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>LatePeak</p></td>
+<td><p>132</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>16</p></th>
+<th class="stub"><p>SpringAutumn</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>Evening</p></td>
+<td><p>792</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>17</p></th>
+<th class="stub"><p>SpringAutumn</p></th>
+<th class="stub"><p>Weekend</p></th>
+<td><p>Night</p></td>
+<td><p>300</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>18</p></th>
+<th class="stub"><p>SpringAutumn</p></th>
+<th class="stub"><p>Weekend</p></th>
+<td><p>Morning</p></td>
+<td><p>300</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>19</p></th>
+<th class="stub"><p>SpringAutumn</p></th>
+<th class="stub"><p>Weekend</p></th>
+<td><p>Afternoon</p></td>
+<td><p>300</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>20</p></th>
+<th class="stub"><p>SpringAutumn</p></th>
+<th class="stub"><p>Weekend</p></th>
+<td><p>Evening</p></td>
+<td><p>300</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>21</p></th>
+<th class="stub"><p>Summer</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>Night</p></td>
+<td><p>396</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>22</p></th>
+<th class="stub"><p>Summer</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>Morning</p></td>
+<td><p>396</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>23</p></th>
+<th class="stub"><p>Summer</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>Afternoon</p></td>
+<td><p>264</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>24</p></th>
+<th class="stub"><p>Summer</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>EarlyPeak</p></td>
+<td><p>66</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>25</p></th>
+<th class="stub"><p>Summer</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>LatePeak</p></td>
+<td><p>66</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>26</p></th>
+<th class="stub"><p>Summer</p></th>
+<th class="stub"><p>Weekday</p></th>
+<td><p>Evening</p></td>
+<td><p>396</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>27</p></th>
+<th class="stub"><p>Summer</p></th>
+<th class="stub"><p>Weekend</p></th>
+<td><p>Night</p></td>
+<td><p>150</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>28</p></th>
+<th class="stub"><p>Summer</p></th>
+<th class="stub"><p>Weekend</p></th>
+<td><p>Morning</p></td>
+<td><p>150</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>29</p></th>
+<th class="stub"><p>Summer</p></th>
+<th class="stub"><p>Weekend</p></th>
+<td><p>Afternoon</p></td>
+<td><p>150</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>Hour</p></th>
+<th class="stub"><p>30</p></th>
+<th class="stub"><p>Summer</p></th>
+<th class="stub"><p>Weekend</p></th>
+<td><p>Evening</p></td>
+<td><p>150</p></td>
+</tr>
+</tbody>
+</table>
+<p>It reports the aggregation level of the sector time-slices (AgLevel), slice number (SN),
+seasonal time slices (Month), weekly time slices (Day), hourly profile (Hour), the
+amount of hours associated to each time slice (RepresentHours).</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="technodata.html"
+                        title="previous chapter">Techno-data</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="commodities_io.html"
+                        title="next chapter">Input Commodities</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/inputs/timeslices.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="commodities_io.html" title="Input Commodities"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="technodata.html" title="Techno-data"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Input Files</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="inputs_csv.html" >Input Files</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Time-slices</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

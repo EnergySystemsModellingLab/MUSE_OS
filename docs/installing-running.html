@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Installation &#8212; muse-documentation 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="MUSE Overview" href="overview.html" />
+    <link rel="prev" title="MUSE: ModUlar energy system Simulation Environment" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="overview.html" title="MUSE Overview"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="MUSE: ModUlar energy system Simulation Environment"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">muse-documentation 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Installation</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<p>There are two ways to install MUSE, for users who do not wish to modify the source code of MUSE, and developers who do.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Windows users and developers may need to install <a class="reference external" href="https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019">Windows Build Tools</a>. These tools include C/C++ compilers which are needed to build some python dependencies.</p>
+<p>MacOS includes compilers by default, hence no action is needed for Mac users.</p>
+<p>Linux users may need to install a C compiler, whether GNU gcc or Clang, as well python development packages, depending on their distribution.</p>
+</div>
+<div class="section" id="for-users">
+<h2>For users<a class="headerlink" href="#for-users" title="Permalink to this headline">¶</a></h2>
+<p>MUSE is developed with python, an open-source programming language. Therefore, there are two steps to the installation process. First, python should be installed. Then, MUSE should be installed.</p>
+<p>The simplest alternative is to install python by downloading the <a class="reference external" href="https://www.anaconda.com/distribution/#download-section">Anaconda distribution</a>. Choose the appropriate operating system (e.g. windows), python version 3.7, and the 64 bit installer, then follow the steps for the anaconda installer, as prompted.</p>
+<p>Once python is installed, we can now install MUSE. MUSE can be installed via the <a class="reference external" href="https://docs.anaconda.com/anaconda/user-guide/getting-started/#write-a-python-program-using-anaconda-prompt-or-terminal">Anaconda Prompt</a> (or any terminal on Mac and Linux). This is a command-line interface to python and the python eco-system. In the anaconda prompt, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python -m pip install --user git+https://github.com/SGIModel/StarMuse
+</pre></div>
+</div>
+<p>It should now be possible to run muse, also in the anaconda prompt:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python -m muse --help
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although not strictly necessary, users are encouraged to create an <a class="reference external" href="https://www.anaconda.com/what-is-anaconda/">Anaconda virtual environment</a> and install MUSE there, as shown in <a class="reference internal" href="#installation-devs"><span class="std std-ref">For developers</span></a>.</p>
+</div>
+</div>
+<div class="section" id="for-developers">
+<span id="installation-devs"></span><h2>For developers<a class="headerlink" href="#for-developers" title="Permalink to this headline">¶</a></h2>
+<p>Although not strictly necessary, creating an <a class="reference external" href="https://www.anaconda.com/what-is-anaconda/">Anaconda virtual environment</a> is highly
+recommended: it will isolate users and developers from changes occuring on their
+operating system, and from conflicts between python packages. It ensures reproducibility
+from day to day.</p>
+<p>Create a virtual env including python with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda create -n muse <span class="nv">python</span><span class="o">=</span><span class="m">3</span>.7
+</pre></div>
+</div>
+<p>Activate the environment with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda activate muse
+</pre></div>
+</div>
+<p>Later, to recover the system-wide “normal” python, deactivate the environment with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda deactivate
+</pre></div>
+</div>
+<p>The simplest approach is to first download the muse code with <a class="reference external" href="https://git-scm.com/">git</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/SGIModel/StarMuse.git muse
+</pre></div>
+</div>
+<p>For interested users, there are plenty of <a class="reference external" href="http://try.github.io/">good</a> tutorials for <a class="reference external" href="https://git-scm.com/">git</a>.
+And then install the working directory into the conda environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># On Linux and Mac</span>
+<span class="nb">cd</span> muse
+conda activate muse
+python -m pip install -e <span class="s2">&quot;.[dev,docs]&quot;</span>
+
+<span class="c1"># On Windows</span>
+dir muse
+conda activate muse
+python -m pip install -e <span class="s2">&quot;.[dev,docs]&quot;</span>
+</pre></div>
+</div>
+<p>The quotation marks are needed on some systems or shells, and do not hurt on any. The
+downloaded code can then be modified. The changes will be automatically reflected in the
+conda environment.</p>
+<p>Tests can be run with the command <a class="reference external" href="https://docs.pytest.org/en/latest/">pytest</a>, from the testing framework of the same name.</p>
+<p>The documentation can be built with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python setup.py docs
+</pre></div>
+</div>
+<p>The main page for the documentation can then be found at
+<cite>build\sphinx\html\index.html</cite> (or <cite>build/sphinx/html/index.html</cite> on Mac and Linux).
+The file can viewed from any web browser.</p>
+</div>
+</div>
+<div class="section" id="running-muse">
+<h1>Running MUSE<a class="headerlink" href="#running-muse" title="Permalink to this headline">¶</a></h1>
+<p>Now, we will run an example version of MUSE.</p>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Installation</a><ul>
+<li><a class="reference internal" href="#for-users">For users</a></li>
+<li><a class="reference internal" href="#for-developers">For developers</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#running-muse">Running MUSE</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">MUSE: ModUlar energy system Simulation Environment</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="overview.html"
+                        title="next chapter">MUSE Overview</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/installing-running.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="overview.html" title="MUSE Overview"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="MUSE: ModUlar energy system Simulation Environment"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">muse-documentation 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Installation</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,676 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>muse.timeslices &#8212; MUSE Documentation 0.8 documentation</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.timeslices</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for muse.timeslices</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Timeslice utility functions.&quot;&quot;&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;reference_timeslice&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;aggregate_transforms&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;convert_timeslice&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;timeslice_projector&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;setup_module&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;represent_hours&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">ndarray</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="kn">import</span> <span class="n">MultiIndex</span>
+<span class="kn">from</span> <span class="nn">xarray</span> <span class="kn">import</span> <span class="n">DataArray</span><span class="p">,</span> <span class="n">Dataset</span>
+
+<span class="kn">from</span> <span class="nn">muse.readers</span> <span class="kn">import</span> <span class="n">kebab_to_camel</span>
+
+<span class="n">TIMESLICE</span><span class="p">:</span> <span class="n">DataArray</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore</span>
+<span class="sd">&quot;&quot;&quot;Array with the finest timeslice.&quot;&quot;&quot;</span>
+<span class="n">TRANSFORMS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore</span>
+<span class="sd">&quot;&quot;&quot;Transforms from each aggregate to the finest timeslice.&quot;&quot;&quot;</span>
+
+<span class="n">DEFAULT_TIMESLICE_DESCRIPTION</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    [timeslices]</span>
+<span class="s2">    winter.weekday.night = 396</span>
+<span class="s2">    winter.weekday.morning = 396</span>
+<span class="s2">    winter.weekday.afternoon = 264</span>
+<span class="s2">    winter.weekday.early-peak = 66</span>
+<span class="s2">    winter.weekday.late-peak = 66</span>
+<span class="s2">    winter.weekday.evening = 396</span>
+<span class="s2">    winter.weekend.night = 156</span>
+<span class="s2">    winter.weekend.morning = 156</span>
+<span class="s2">    winter.weekend.afternoon = 156</span>
+<span class="s2">    winter.weekend.evening = 156</span>
+<span class="s2">    spring-autumn.weekday.night = 792</span>
+<span class="s2">    spring-autumn.weekday.morning = 792</span>
+<span class="s2">    spring-autumn.weekday.afternoon = 528</span>
+<span class="s2">    spring-autumn.weekday.early-peak = 132</span>
+<span class="s2">    spring-autumn.weekday.late-peak = 132</span>
+<span class="s2">    spring-autumn.weekday.evening = 792</span>
+<span class="s2">    spring-autumn.weekend.night = 300</span>
+<span class="s2">    spring-autumn.weekend.morning = 300</span>
+<span class="s2">    spring-autumn.weekend.afternoon = 300</span>
+<span class="s2">    spring-autumn.weekend.evening = 300</span>
+<span class="s2">    summer.weekday.night = 396</span>
+<span class="s2">    summer.weekday.morning  = 396</span>
+<span class="s2">    summer.weekday.afternoon = 264</span>
+<span class="s2">    summer.weekday.early-peak = 66</span>
+<span class="s2">    summer.weekday.late-peak = 66</span>
+<span class="s2">    summer.weekday.evening = 396</span>
+<span class="s2">    summer.weekend.night = 150</span>
+<span class="s2">    summer.weekend.morning = 150</span>
+<span class="s2">    summer.weekend.afternoon = 150</span>
+<span class="s2">    summer.weekend.evening = 150</span>
+<span class="s2">    level_names = [&quot;month&quot;, &quot;day&quot;, &quot;hour&quot;]</span>
+
+<span class="s2">    [timeslices.aggregates]</span>
+<span class="s2">    all-day = [</span>
+<span class="s2">        &quot;night&quot;, &quot;morning&quot;, &quot;afternoon&quot;, &quot;early-peak&quot;, &quot;late-peak&quot;, &quot;evening&quot;, &quot;night&quot;</span>
+<span class="s2">    ]</span>
+<span class="s2">    all-week = [&quot;weekday&quot;, &quot;weekend&quot;]</span>
+<span class="s2">    all-year = [&quot;winter&quot;, &quot;summer&quot;, &quot;spring-autumn&quot;]</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="reference_timeslice"><a class="viewcode-back" href="../../source/muse.html#muse.timeslices.reference_timeslice">[docs]</a><span class="k">def</span> <span class="nf">reference_timeslice</span><span class="p">(</span>
+    <span class="n">settings</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Mapping</span><span class="p">,</span> <span class="n">Text</span><span class="p">],</span>
+    <span class="n">level_names</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Text</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;month&quot;</span><span class="p">,</span> <span class="s2">&quot;day&quot;</span><span class="p">,</span> <span class="s2">&quot;hour&quot;</span><span class="p">),</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;timeslice&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Reads reference timeslice from toml like input.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        settings: A dictionary of nested dictionaries or a string that toml will</span>
+<span class="sd">            interpret as such. The nesting specifies different levels of the timeslice.</span>
+<span class="sd">            If a dictionary and it contains &quot;timeslices&quot; key, then the associated value</span>
+<span class="sd">            is used as the root dictionary. Ultimately, the most nested values should be</span>
+<span class="sd">            relative weights for each slice in the timeslice, e.g. the corresponding</span>
+<span class="sd">            number of hours.</span>
+<span class="sd">        level_names: Hints indicating the names of each level. Can also be given a</span>
+<span class="sd">            &quot;level_names&quot; key in ``settings``.</span>
+<span class="sd">        name: name of the reference array</span>
+
+<span class="sd">    Return:</span>
+<span class="sd">        A ``DataArray`` with dimension *timeslice* and values representing the relative</span>
+<span class="sd">        weight of each timeslice.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from muse.timeslices import reference_timeslice</span>
+<span class="sd">        &gt;&gt;&gt; reference_timeslice(</span>
+<span class="sd">        ...     \&quot;\&quot;\&quot;</span>
+<span class="sd">        ...     [timeslices]</span>
+<span class="sd">        ...     spring.weekday = 5</span>
+<span class="sd">        ...     spring.weekend = 2</span>
+<span class="sd">        ...     autumn.weekday = 5</span>
+<span class="sd">        ...     autumn.weekend = 2</span>
+<span class="sd">        ...     winter.weekday = 5</span>
+<span class="sd">        ...     winter.weekend = 2</span>
+<span class="sd">        ...     summer.weekday = 5</span>
+<span class="sd">        ...     summer.weekend = 2</span>
+<span class="sd">        ...     level_names = [&quot;season&quot;, &quot;week&quot;]</span>
+<span class="sd">        ...     \&quot;\&quot;\&quot;</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &lt;xarray.DataArray (timeslice: 8)&gt;</span>
+<span class="sd">        array([5, 2, 5, 2, 5, 2, 5, 2])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * timeslice  (timeslice) MultiIndex</span>
+<span class="sd">          - season     (timeslice) object &#39;spring&#39; &#39;spring&#39; ... &#39;summer&#39; &#39;summer&#39;</span>
+<span class="sd">          - week       (timeslice) object &#39;weekday&#39; &#39;weekend&#39; ... &#39;weekday&#39; &#39;weekend&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+    <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
+    <span class="kn">from</span> <span class="nn">toml</span> <span class="kn">import</span> <span class="n">loads</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">Text</span><span class="p">):</span>
+        <span class="n">settings</span> <span class="o">=</span> <span class="n">loads</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+    <span class="n">settings</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="o">**</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timeslices&quot;</span><span class="p">,</span> <span class="n">settings</span><span class="p">))</span>
+    <span class="k">if</span> <span class="s2">&quot;level_names&quot;</span> <span class="ow">in</span> <span class="n">settings</span><span class="p">:</span>
+        <span class="n">level_names</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;level_names&quot;</span><span class="p">)</span>
+    <span class="n">settings</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;aggregates&quot;</span><span class="p">,</span> <span class="p">{})</span>
+
+    <span class="c1"># figures out levels</span>
+    <span class="n">levels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">]</span> <span class="o">=</span> <span class="p">[(</span><span class="n">level</span><span class="p">,)</span> <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">settings</span><span class="p">]</span>
+    <span class="n">ts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">while</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ts</span><span class="p">):</span>
+        <span class="n">levels</span> <span class="o">=</span> <span class="p">[(</span><span class="o">*</span><span class="n">previous</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">previous</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">levels</span><span class="p">,</span> <span class="n">ts</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">a</span><span class="p">]</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="nb">list</span><span class="o">.</span><span class="fm">__add__</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">ts</span><span class="p">),</span> <span class="p">[])</span>
+
+    <span class="n">nln</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">levels</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">len</span><span class="p">(</span><span class="n">level_names</span><span class="p">))</span>
+    <span class="n">level_names</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">list</span><span class="p">(</span><span class="n">level_names</span><span class="p">[:</span><span class="n">nln</span><span class="p">])</span> <span class="o">+</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">levels</span><span class="p">[</span><span class="mi">0</span><span class="p">]))][</span><span class="n">nln</span><span class="p">:]</span>
+    <span class="p">)</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_tuples</span><span class="p">(</span><span class="n">levels</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">level_names</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span>
+        <span class="n">reduce</span><span class="p">(</span><span class="nb">set</span><span class="o">.</span><span class="n">union</span><span class="p">,</span> <span class="n">indices</span><span class="o">.</span><span class="n">levels</span><span class="p">[:</span><span class="n">i</span><span class="p">],</span> <span class="nb">set</span><span class="p">())</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">indices</span><span class="o">.</span><span class="n">levels</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">indices</span><span class="o">.</span><span class="n">nlevels</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Names from different levels should not overlap.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">DataArray</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">coords</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;timeslice&quot;</span><span class="p">:</span> <span class="n">indices</span><span class="p">},</span> <span class="n">dims</span><span class="o">=</span><span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="aggregate_transforms"><a class="viewcode-back" href="../../source/muse.html#muse.timeslices.aggregate_transforms">[docs]</a><span class="k">def</span> <span class="nf">aggregate_transforms</span><span class="p">(</span>
+    <span class="n">settings</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Mapping</span><span class="p">,</span> <span class="n">Text</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">timeslice</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DataArray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Creates dictionay of transforms for aggregate levels.</span>
+
+<span class="sd">    The transforms are used to create the projectors towards the finest timeslice.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        timeslice: a ``DataArray`` with the timeslice dimension.</span>
+<span class="sd">        settings: A dictionary mapping the name of an aggregate with the values it</span>
+<span class="sd">            aggregates, or a string that toml will parse as such. If not given, only the</span>
+<span class="sd">            unit transforms are returned.</span>
+
+<span class="sd">    Return:</span>
+<span class="sd">        A dictionary of transforms for each possible slice to it&#39;s corresponding finest</span>
+<span class="sd">        timeslices.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; toml = \&quot;\&quot;\&quot;</span>
+<span class="sd">        ...     [timeslices]</span>
+<span class="sd">        ...     spring.weekday = 5</span>
+<span class="sd">        ...     spring.weekend = 2</span>
+<span class="sd">        ...     autumn.weekday = 5</span>
+<span class="sd">        ...     autumn.weekend = 2</span>
+<span class="sd">        ...     winter.weekday = 5</span>
+<span class="sd">        ...     winter.weekend = 2</span>
+<span class="sd">        ...     summer.weekday = 5</span>
+<span class="sd">        ...     summer.weekend = 2</span>
+<span class="sd">        ...</span>
+<span class="sd">        ...     [timeslices.aggregates]</span>
+<span class="sd">        ...     spautumn = [&quot;spring&quot;, &quot;autumn&quot;]</span>
+<span class="sd">        ...     week = [&quot;weekday&quot;, &quot;weekend&quot;]</span>
+<span class="sd">        ... \&quot;\&quot;\&quot;</span>
+<span class="sd">        &gt;&gt;&gt; from muse.timeslices import reference_timeslice, aggregate_transforms</span>
+<span class="sd">        &gt;&gt;&gt; ref = reference_timeslice(toml)</span>
+<span class="sd">        &gt;&gt;&gt; transforms = aggregate_transforms(toml, ref)</span>
+<span class="sd">        &gt;&gt;&gt; transforms[(&quot;spring&quot;, &quot;weekend&quot;)]</span>
+<span class="sd">        array([0, 1, 0, 0, 0, 0, 0, 0])</span>
+<span class="sd">        &gt;&gt;&gt; transforms[(&quot;spautumn&quot;, &quot;weekday&quot;)]</span>
+<span class="sd">        array([1, 0, 1, 0, 0, 0, 0, 0])</span>
+<span class="sd">        &gt;&gt;&gt; transforms[(&quot;autumn&quot;, &quot;week&quot;)].T</span>
+<span class="sd">        array([0, 0, 1, 1, 0, 0, 0, 0])</span>
+<span class="sd">        &gt;&gt;&gt; transforms[(&quot;spautumn&quot;, &quot;week&quot;)].T</span>
+<span class="sd">        array([1, 1, 1, 1, 0, 0, 0, 0])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">identity</span><span class="p">,</span> <span class="nb">sum</span>
+    <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span>
+    <span class="kn">from</span> <span class="nn">toml</span> <span class="kn">import</span> <span class="n">loads</span>
+
+    <span class="k">if</span> <span class="n">timeslice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">timeslice</span> <span class="o">=</span> <span class="n">TIMESLICE</span>
+    <span class="k">if</span> <span class="n">settings</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">settings</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">Text</span><span class="p">):</span>
+        <span class="n">settings</span> <span class="o">=</span> <span class="n">loads</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+
+    <span class="c1"># get timeslice dimension</span>
+    <span class="n">Id</span> <span class="o">=</span> <span class="n">identity</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">timeslice</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">timeslice</span><span class="o">.</span><span class="n">get_index</span><span class="p">(</span><span class="s2">&quot;timeslice&quot;</span><span class="p">)</span>
+    <span class="n">unitvecs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">index</span><span class="p">:</span> <span class="n">Id</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">indices</span><span class="p">)}</span>
+    <span class="k">if</span> <span class="s2">&quot;timeslices&quot;</span> <span class="ow">in</span> <span class="n">settings</span> <span class="ow">or</span> <span class="s2">&quot;aggregates&quot;</span> <span class="ow">in</span> <span class="n">settings</span><span class="p">:</span>
+        <span class="n">settings</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timeslices&quot;</span><span class="p">,</span> <span class="n">settings</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;aggregates&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">unitvecs</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">levels</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">level</span><span class="p">)</span> <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">indices</span><span class="o">.</span><span class="n">levels</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">equivalent</span> <span class="ow">in</span> <span class="n">settings</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">matching_levels</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">set</span><span class="p">(</span><span class="n">level</span><span class="p">)</span><span class="o">.</span><span class="n">issuperset</span><span class="p">(</span><span class="n">equivalent</span><span class="p">)</span> <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">indices</span><span class="o">.</span><span class="n">levels</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">matching_levels</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find matching level for </span><span class="si">{</span><span class="n">equivalent</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">sum</span><span class="p">(</span><span class="n">matching_levels</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found more than one matching level for </span><span class="si">{</span><span class="n">equivalent</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="n">matching_levels</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">levels</span><span class="p">[</span><span class="n">level</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="n">result</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="n">levels</span><span class="p">))</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">unitvecs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">level</span> <span class="ow">in</span> <span class="n">settings</span> <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">index</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="n">agglevels</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="p">[</span><span class="n">level</span><span class="p">])</span> <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">index</span><span class="p">)))</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">unitvecs</span><span class="p">[</span><span class="n">agg</span><span class="p">]</span> <span class="k">for</span> <span class="n">agg</span> <span class="ow">in</span> <span class="n">unitvecs</span> <span class="k">if</span> <span class="n">agg</span> <span class="ow">in</span> <span class="n">agglevels</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span>
+    <span class="n">result</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">unitvecs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="setup_module"><a class="viewcode-back" href="../../source/muse.html#muse.timeslices.setup_module">[docs]</a><span class="k">def</span> <span class="nf">setup_module</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;Sets up module singletons.&quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">TIMESLICE</span>
+    <span class="k">global</span> <span class="n">TRANSFORMS</span>
+    <span class="n">TIMESLICE</span> <span class="o">=</span> <span class="n">reference_timeslice</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+    <span class="n">TRANSFORMS</span> <span class="o">=</span> <span class="n">aggregate_transforms</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">TIMESLICE</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="timeslice_projector"><a class="viewcode-back" href="../../source/muse.html#muse.timeslices.timeslice_projector">[docs]</a><span class="k">def</span> <span class="nf">timeslice_projector</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">MultiIndex</span><span class="p">],</span>
+    <span class="n">finest</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DataArray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Project time-slice to standardized finest time-slices.</span>
+
+<span class="sd">    Returns a matrix from the input timeslice ``x`` to the ``finest`` timeslice, using</span>
+<span class="sd">    the input ``transforms``. The latter are a set of transforms that map indices from</span>
+<span class="sd">    one timeslice to indices in another.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">        Lets define the following timeslices and aggregates:</span>
+
+<span class="sd">        &gt;&gt;&gt; toml = \&quot;\&quot;\&quot;</span>
+<span class="sd">        ...     [&quot;timeslices&quot;]</span>
+<span class="sd">        ...     winter.weekday.day = 5</span>
+<span class="sd">        ...     winter.weekday.night = 5</span>
+<span class="sd">        ...     winter.weekend.day = 2</span>
+<span class="sd">        ...     winter.weekend.night = 2</span>
+<span class="sd">        ...     winter.weekend.dusk = 1</span>
+<span class="sd">        ...     summer.weekday.day = 5</span>
+<span class="sd">        ...     summer.weekday.night = 5</span>
+<span class="sd">        ...     summer.weekend.day = 2</span>
+<span class="sd">        ...     summer.weekend.night = 2</span>
+<span class="sd">        ...     summer.weekend.dusk = 1</span>
+<span class="sd">        ...     level_names = [&quot;semester&quot;, &quot;week&quot;, &quot;day&quot;]</span>
+<span class="sd">        ...     aggregates.allday = [&quot;day&quot;, &quot;night&quot;]</span>
+<span class="sd">        ... \&quot;\&quot;\&quot;</span>
+<span class="sd">        &gt;&gt;&gt; from muse.timeslices import (</span>
+<span class="sd">        ...     reference_timeslice,  aggregate_transforms</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; ref = reference_timeslice(toml)</span>
+<span class="sd">        &gt;&gt;&gt; transforms = aggregate_transforms(toml, ref)</span>
+<span class="sd">        &gt;&gt;&gt; from pandas import MultiIndex</span>
+<span class="sd">        &gt;&gt;&gt; input_ts = DataArray(</span>
+<span class="sd">        ...     [1, 2, 3],</span>
+<span class="sd">        ...     coords={</span>
+<span class="sd">        ...         &quot;timeslice&quot;: MultiIndex.from_tuples(</span>
+<span class="sd">        ...             [</span>
+<span class="sd">        ...                 (&quot;winter&quot;, &quot;weekday&quot;, &quot;allday&quot;),</span>
+<span class="sd">        ...                 (&quot;winter&quot;, &quot;weekend&quot;, &quot;dusk&quot;),</span>
+<span class="sd">        ...                 (&quot;summer&quot;, &quot;weekend&quot;, &quot;night&quot;),</span>
+<span class="sd">        ...             ],</span>
+<span class="sd">        ...             names=ref.get_index(&quot;timeslice&quot;).names,</span>
+<span class="sd">        ...         ),</span>
+<span class="sd">        ...     },</span>
+<span class="sd">        ...     dims=&quot;timeslice&quot;</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; input_ts</span>
+<span class="sd">        &lt;xarray.DataArray (timeslice: 3)&gt;</span>
+<span class="sd">        array([1, 2, 3])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * timeslice  (timeslice) MultiIndex</span>
+<span class="sd">          - semester   (timeslice) object &#39;winter&#39; &#39;winter&#39; &#39;summer&#39;</span>
+<span class="sd">          - week       (timeslice) object &#39;weekday&#39; &#39;weekend&#39; &#39;weekend&#39;</span>
+<span class="sd">          - day        (timeslice) object &#39;allday&#39; &#39;dusk&#39; &#39;night&#39;</span>
+
+<span class="sd">        The input timeslice does not have to be complete. In any case, we can now</span>
+<span class="sd">        compute a transform, i.e. a matrix that will take this timeslice and transform</span>
+<span class="sd">        it to the equivalent times in the finest timeslice:</span>
+
+<span class="sd">        &gt;&gt;&gt; from muse.timeslices import timeslice_projector</span>
+<span class="sd">        &gt;&gt;&gt; timeslice_projector(input_ts, ref, transforms)</span>
+<span class="sd">        &lt;xarray.DataArray &#39;projector&#39; (finest_timeslice: 10, timeslice: 3)&gt;</span>
+<span class="sd">        array([[1, 0, 0],</span>
+<span class="sd">               [1, 0, 0],</span>
+<span class="sd">               [0, 0, 0],</span>
+<span class="sd">               [0, 0, 0],</span>
+<span class="sd">               [0, 1, 0],</span>
+<span class="sd">               [0, 0, 0],</span>
+<span class="sd">               [0, 0, 0],</span>
+<span class="sd">               [0, 0, 0],</span>
+<span class="sd">               [0, 0, 1],</span>
+<span class="sd">               [0, 0, 0]])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * finest_timeslice  (finest_timeslice) MultiIndex</span>
+<span class="sd">          - finest_semester   (finest_timeslice) object &#39;winter&#39; &#39;winter&#39; ... &#39;summer&#39;</span>
+<span class="sd">          - finest_week       (finest_timeslice) object &#39;weekday&#39; ... &#39;weekend&#39;</span>
+<span class="sd">          - finest_day        (finest_timeslice) object &#39;day&#39; &#39;night&#39; ... &#39;night&#39; &#39;dusk&#39;</span>
+<span class="sd">          * timeslice         (timeslice) MultiIndex</span>
+<span class="sd">          - semester          (timeslice) object &#39;winter&#39; &#39;winter&#39; &#39;summer&#39;</span>
+<span class="sd">          - week              (timeslice) object &#39;weekday&#39; &#39;weekend&#39; &#39;weekend&#39;</span>
+<span class="sd">          - day               (timeslice) object &#39;allday&#39; &#39;dusk&#39; &#39;night&#39;</span>
+
+<span class="sd">        It is possible to give as input an array which does not have a timeslice of its</span>
+<span class="sd">        own:</span>
+
+<span class="sd">        &gt;&gt;&gt; nots = DataArray([5.0, 1.0, 2.0], dims=&quot;a&quot;, coords={&#39;a&#39;: [1, 2, 3]})</span>
+<span class="sd">        &gt;&gt;&gt; timeslice_projector(nots, ref, transforms).T</span>
+<span class="sd">        &lt;xarray.DataArray (timeslice: 1, finest_timeslice: 10)&gt;</span>
+<span class="sd">        array([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * finest_timeslice  (finest_timeslice) MultiIndex</span>
+<span class="sd">          - finest_semester   (finest_timeslice) object &#39;winter&#39; &#39;winter&#39; ... &#39;summer&#39;</span>
+<span class="sd">          - finest_week       (finest_timeslice) object &#39;weekday&#39; ... &#39;weekend&#39;</span>
+<span class="sd">          - finest_day        (finest_timeslice) object &#39;day&#39; &#39;night&#39; ... &#39;night&#39; &#39;dusk&#39;</span>
+<span class="sd">        Dimensions without coordinates: timeslice</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">xarray</span> <span class="kn">import</span> <span class="n">DataArray</span>
+    <span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">concatenate</span><span class="p">,</span> <span class="n">ones_like</span>
+
+    <span class="k">if</span> <span class="n">finest</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">global</span> <span class="n">TIMESLICE</span>
+        <span class="n">finest</span> <span class="o">=</span> <span class="n">TIMESLICE</span>
+    <span class="k">if</span> <span class="n">transforms</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">global</span> <span class="n">TRANSFORMS</span>
+        <span class="n">transforms</span> <span class="o">=</span> <span class="n">TRANSFORMS</span>
+
+    <span class="n">index</span> <span class="o">=</span> <span class="n">finest</span><span class="o">.</span><span class="n">get_index</span><span class="p">(</span><span class="s2">&quot;timeslice&quot;</span><span class="p">)</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">set_names</span><span class="p">((</span><span class="sa">f</span><span class="s2">&quot;finest_</span><span class="si">{</span><span class="n">u</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">index</span><span class="o">.</span><span class="n">names</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">MultiIndex</span><span class="p">):</span>
+        <span class="n">timeslices</span> <span class="o">=</span> <span class="n">x</span>
+    <span class="k">elif</span> <span class="s2">&quot;timeslice&quot;</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+        <span class="n">timeslices</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">get_index</span><span class="p">(</span><span class="s2">&quot;timeslice&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DataArray</span><span class="p">(</span>
+            <span class="n">ones_like</span><span class="p">(</span><span class="n">finest</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">],</span>
+            <span class="n">coords</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;finest_timeslice&quot;</span><span class="p">:</span> <span class="n">index</span><span class="p">},</span>
+            <span class="n">dims</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;finest_timeslice&quot;</span><span class="p">,</span> <span class="s2">&quot;timeslice&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">DataArray</span><span class="p">(</span>
+        <span class="n">concatenate</span><span class="p">([</span><span class="n">transforms</span><span class="p">[</span><span class="n">index</span><span class="p">][:,</span> <span class="kc">None</span><span class="p">]</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">timeslices</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">coords</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;finest_timeslice&quot;</span><span class="p">:</span> <span class="n">index</span><span class="p">,</span> <span class="s2">&quot;timeslice&quot;</span><span class="p">:</span> <span class="n">timeslices</span><span class="p">},</span>
+        <span class="n">dims</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;finest_timeslice&quot;</span><span class="p">,</span> <span class="s2">&quot;timeslice&quot;</span><span class="p">),</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;projector&quot;</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">QuantityType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Underlying transformation when performing time-slice conversion.</span>
+
+<span class="sd">    The meaning of a quantity vs the time-slice can be different:</span>
+
+<span class="sd">    - intensive: when extending the period of interest, quantities should be</span>
+<span class="sd">      added together. For instance the number of hours should be summed across</span>
+<span class="sd">      months.</span>
+<span class="sd">    - extensive: when extending the period of interest, quantities should be</span>
+<span class="sd">      broadcasted. For instance when extending a price from a one week period to</span>
+<span class="sd">      a two week period, the price should remain the same. Going in the opposite</span>
+<span class="sd">      direction (reducing the length of the time period), quantities should be</span>
+<span class="sd">      averaged.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">INTENSIVE</span> <span class="o">=</span> <span class="s2">&quot;intensive&quot;</span>
+    <span class="n">EXTENSIVE</span> <span class="o">=</span> <span class="s2">&quot;extensive&quot;</span>
+
+
+<div class="viewcode-block" id="convert_timeslice"><a class="viewcode-back" href="../../source/muse.html#muse.timeslices.convert_timeslice">[docs]</a><span class="k">def</span> <span class="nf">convert_timeslice</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">],</span>
+    <span class="n">ts</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">MultiIndex</span><span class="p">],</span>
+    <span class="n">quantity</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">QuantityType</span><span class="p">,</span> <span class="n">Text</span><span class="p">]</span> <span class="o">=</span> <span class="n">QuantityType</span><span class="o">.</span><span class="n">EXTENSIVE</span><span class="p">,</span>
+    <span class="n">finest</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DataArray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Adjusts the timeslice of x to match that of ts.</span>
+
+<span class="sd">    The conversion can be done in on of two ways, depending on whether the</span>
+<span class="sd">    quantity is extensive or intensive. See `QuantityType`.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        Lets define three timeslices from finest, to fine, to rough:</span>
+
+<span class="sd">        &gt;&gt;&gt; toml = \&quot;\&quot;\&quot;</span>
+<span class="sd">        ...     [&quot;timeslices&quot;]</span>
+<span class="sd">        ...     winter.weekday.day = 5</span>
+<span class="sd">        ...     winter.weekday.night = 5</span>
+<span class="sd">        ...     winter.weekend.day = 2</span>
+<span class="sd">        ...     winter.weekend.night = 2</span>
+<span class="sd">        ...     summer.weekday.day = 5</span>
+<span class="sd">        ...     summer.weekday.night = 5</span>
+<span class="sd">        ...     summer.weekend.day = 2</span>
+<span class="sd">        ...     summer.weekend.night = 2</span>
+<span class="sd">        ...     level_names = [&quot;semester&quot;, &quot;week&quot;, &quot;day&quot;]</span>
+<span class="sd">        ...     aggregates.allday = [&quot;day&quot;, &quot;night&quot;]</span>
+<span class="sd">        ...     aggregates.allweek = [&quot;weekend&quot;, &quot;weekday&quot;]</span>
+<span class="sd">        ...     aggregates.allyear = [&quot;winter&quot;, &quot;summer&quot;]</span>
+<span class="sd">        ... \&quot;\&quot;\&quot;</span>
+<span class="sd">        &gt;&gt;&gt; from muse.timeslices import setup_module</span>
+<span class="sd">        &gt;&gt;&gt; from muse.readers import read_timeslices</span>
+<span class="sd">        &gt;&gt;&gt; setup_module(toml)</span>
+<span class="sd">        &gt;&gt;&gt; finest_ts = read_timeslices()</span>
+<span class="sd">        &gt;&gt;&gt; fine_ts = read_timeslices(dict(week=[&quot;allweek&quot;]))</span>
+<span class="sd">        &gt;&gt;&gt; rough_ts = read_timeslices(dict(semester=[&quot;allyear&quot;], day=[&quot;allday&quot;]))</span>
+
+<span class="sd">        Lets also define to other data-arrays to demonstrate how we can play with</span>
+<span class="sd">        dimensions:</span>
+
+<span class="sd">        &gt;&gt;&gt; from numpy import array</span>
+<span class="sd">        &gt;&gt;&gt; x = DataArray(</span>
+<span class="sd">        ...     [5, 2, 3],</span>
+<span class="sd">        ...     coords={&#39;a&#39;: array([1, 2, 3], dtype=&quot;int64&quot;)},</span>
+<span class="sd">        ...     dims=&#39;a&#39;</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; y = DataArray([1, 1, 2], coords={&#39;b&#39;: [&quot;d&quot;, &quot;e&quot;, &quot;f&quot;]}, dims=&#39;b&#39;)</span>
+
+<span class="sd">        We can now easily convert arrays with different dimensions. First, lets check</span>
+<span class="sd">        conversion from an array with no timeslices:</span>
+
+<span class="sd">        &gt;&gt;&gt; from xarray import ones_like</span>
+<span class="sd">        &gt;&gt;&gt; from muse.timeslices import convert_timeslice, QuantityType</span>
+<span class="sd">        &gt;&gt;&gt; z = convert_timeslice(x, finest_ts, QuantityType.EXTENSIVE)</span>
+<span class="sd">        &gt;&gt;&gt; z.round(6)</span>
+<span class="sd">        &lt;xarray.DataArray (timeslice: 8, a: 3)&gt;</span>
+<span class="sd">        array([[0.892857, 0.357143, 0.535714],</span>
+<span class="sd">               [0.892857, 0.357143, 0.535714],</span>
+<span class="sd">               [0.357143, 0.142857, 0.214286],</span>
+<span class="sd">               [0.357143, 0.142857, 0.214286],</span>
+<span class="sd">               [0.892857, 0.357143, 0.535714],</span>
+<span class="sd">               [0.892857, 0.357143, 0.535714],</span>
+<span class="sd">               [0.357143, 0.142857, 0.214286],</span>
+<span class="sd">               [0.357143, 0.142857, 0.214286]])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * timeslice  (timeslice) MultiIndex</span>
+<span class="sd">          - semester   (timeslice) object &#39;winter&#39; &#39;winter&#39; ... &#39;summer&#39; &#39;summer&#39;</span>
+<span class="sd">          - week       (timeslice) object &#39;weekday&#39; &#39;weekday&#39; ... &#39;weekend&#39; &#39;weekend&#39;</span>
+<span class="sd">          - day        (timeslice) object &#39;day&#39; &#39;night&#39; &#39;day&#39; ... &#39;night&#39; &#39;day&#39; &#39;night&#39;</span>
+<span class="sd">          * a          (a) int64 1 2 3</span>
+<span class="sd">        &gt;&gt;&gt; z.sum(&quot;timeslice&quot;)</span>
+<span class="sd">        &lt;xarray.DataArray (a: 3)&gt;</span>
+<span class="sd">        array([5., 2., 3.])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * a        (a) int64 1 2 3</span>
+
+<span class="sd">        As expected, the sum over timeslices recovers the original array.</span>
+
+<span class="sd">        In the case of an intensive quantity without a timeslice dimension, the</span>
+<span class="sd">        operation does not do anything:</span>
+
+<span class="sd">        &gt;&gt;&gt; convert_timeslice([1, 2], rough_ts, QuantityType.INTENSIVE)</span>
+<span class="sd">        [1, 2]</span>
+
+<span class="sd">        More interesting is the conversion between different timeslices:</span>
+
+<span class="sd">        &gt;&gt;&gt; from xarray import zeros_like</span>
+<span class="sd">        &gt;&gt;&gt; zfine = x + y + zeros_like(fine_ts.timeslice, dtype=int)</span>
+<span class="sd">        &gt;&gt;&gt; zrough = convert_timeslice(zfine, rough_ts)</span>
+<span class="sd">        &gt;&gt;&gt; zrough.round(6)</span>
+<span class="sd">        &lt;xarray.DataArray (timeslice: 2, a: 3, b: 3)&gt;</span>
+<span class="sd">        array([[[17.142857, 17.142857, 20.      ],</span>
+<span class="sd">                [ 8.571429,  8.571429, 11.428571],</span>
+<span class="sd">                [11.428571, 11.428571, 14.285714]],</span>
+<span class="sd">        &lt;BLANKLINE&gt;</span>
+<span class="sd">               [[ 6.857143,  6.857143,  8.      ],</span>
+<span class="sd">                [ 3.428571,  3.428571,  4.571429],</span>
+<span class="sd">                [ 4.571429,  4.571429,  5.714286]]])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * timeslice  (timeslice) MultiIndex</span>
+<span class="sd">          - semester   (timeslice) object &#39;allyear&#39; &#39;allyear&#39;</span>
+<span class="sd">          - week       (timeslice) object &#39;weekday&#39; &#39;weekend&#39;</span>
+<span class="sd">          - day        (timeslice) object &#39;allday&#39; &#39;allday&#39;</span>
+<span class="sd">          * a          (a) int64 1 2 3</span>
+<span class="sd">          * b          (b) &lt;U1 &#39;d&#39; &#39;e&#39; &#39;f&#39;</span>
+
+<span class="sd">        We can check that nothing has been added to z (the quantity is ``EXTENSIVE`` by</span>
+<span class="sd">        default):</span>
+
+<span class="sd">        &gt;&gt;&gt; from numpy import all</span>
+<span class="sd">        &gt;&gt;&gt; all(zfine.sum(&quot;timeslice&quot;).round(6) == zrough.sum(&quot;timeslice&quot;).round(6))</span>
+<span class="sd">        &lt;xarray.DataArray ()&gt;</span>
+<span class="sd">        array(True)</span>
+
+<span class="sd">        Or that the ratio of weekdays to weekends makes sense:</span>
+<span class="sd">        &gt;&gt;&gt; weekdays = (</span>
+<span class="sd">        ...    zrough</span>
+<span class="sd">        ...    .unstack(&quot;timeslice&quot;)</span>
+<span class="sd">        ...    .sel(week=&quot;weekday&quot;)</span>
+<span class="sd">        ...    .stack(timeslice=[&quot;semester&quot;, &quot;day&quot;])</span>
+<span class="sd">        ...    .squeeze()</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; weekend = (</span>
+<span class="sd">        ...    zrough</span>
+<span class="sd">        ...    .unstack(&quot;timeslice&quot;)</span>
+<span class="sd">        ...    .sel(week=&quot;weekend&quot;)</span>
+<span class="sd">        ...    .stack(timeslice=[&quot;semester&quot;, &quot;day&quot;])</span>
+<span class="sd">        ...    .squeeze()</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; bool(all((weekend * 5).round(6) == (weekdays * 2).round(6)))</span>
+<span class="sd">        True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">finest</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">global</span> <span class="n">TIMESLICE</span>
+        <span class="n">finest</span> <span class="o">=</span> <span class="n">TIMESLICE</span>
+    <span class="k">if</span> <span class="n">transforms</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">global</span> <span class="n">TRANSFORMS</span>
+        <span class="n">transforms</span> <span class="o">=</span> <span class="n">TRANSFORMS</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="s2">&quot;timeslice&quot;</span><span class="p">):</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">timeslice</span>
+    <span class="n">has_ts</span> <span class="o">=</span> <span class="s2">&quot;timeslice&quot;</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;dims&quot;</span><span class="p">,</span> <span class="p">())</span>
+    <span class="n">same_ts</span> <span class="o">=</span> <span class="n">has_ts</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">timeslice</span><span class="p">)</span> <span class="ow">and</span> <span class="n">x</span><span class="o">.</span><span class="n">timeslice</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">same_ts</span> <span class="ow">or</span> <span class="p">((</span><span class="ow">not</span> <span class="n">has_ts</span><span class="p">)</span> <span class="ow">and</span> <span class="n">quantity</span> <span class="o">==</span> <span class="n">QuantityType</span><span class="o">.</span><span class="n">INTENSIVE</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">x</span>
+    <span class="n">quantity</span> <span class="o">=</span> <span class="n">QuantityType</span><span class="p">(</span><span class="n">quantity</span><span class="p">)</span>
+    <span class="n">proj0</span> <span class="o">=</span> <span class="n">timeslice_projector</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">finest</span><span class="o">=</span><span class="n">finest</span><span class="p">,</span> <span class="n">transforms</span><span class="o">=</span><span class="n">transforms</span><span class="p">)</span>
+    <span class="n">proj1</span> <span class="o">=</span> <span class="n">timeslice_projector</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">finest</span><span class="o">=</span><span class="n">finest</span><span class="p">,</span> <span class="n">transforms</span><span class="o">=</span><span class="n">transforms</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">quantity</span> <span class="ow">is</span> <span class="n">QuantityType</span><span class="o">.</span><span class="n">EXTENSIVE</span><span class="p">:</span>
+        <span class="n">finest</span> <span class="o">=</span> <span class="n">finest</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">timeslice</span><span class="o">=</span><span class="s2">&quot;finest_timeslice&quot;</span><span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">finest</span><span class="o">.</span><span class="n">get_index</span><span class="p">(</span><span class="s2">&quot;finest_timeslice&quot;</span><span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">set_names</span><span class="p">((</span><span class="sa">f</span><span class="s2">&quot;finest_</span><span class="si">{</span><span class="n">u</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">index</span><span class="o">.</span><span class="n">names</span><span class="p">))</span>
+        <span class="n">finest</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;finest_timeslice&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="n">proj0</span> <span class="o">*=</span> <span class="n">finest</span>
+        <span class="n">proj0</span> <span class="o">=</span> <span class="n">proj0</span> <span class="o">/</span> <span class="n">proj0</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;finest_timeslice&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">quantity</span> <span class="ow">is</span> <span class="n">QuantityType</span><span class="o">.</span><span class="n">INTENSIVE</span><span class="p">:</span>
+        <span class="n">proj1</span> <span class="o">=</span> <span class="n">proj1</span> <span class="o">/</span> <span class="n">proj1</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;finest_timeslice&quot;</span><span class="p">)</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="p">(</span><span class="n">proj1</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">timeslice</span><span class="o">=</span><span class="s2">&quot;final_ts&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="n">proj0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;finest_timeslice&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">P</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;timeslice&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">final_ts</span><span class="o">=</span><span class="s2">&quot;timeslice&quot;</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">new_to_old_timeslice</span><span class="p">(</span><span class="n">ts</span><span class="p">:</span> <span class="n">DataArray</span><span class="p">,</span> <span class="n">ag_level</span><span class="o">=</span><span class="s2">&quot;Month&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Transforms timeslices defined as DataArray to a pandas dataframe.</span>
+
+<span class="sd">    This function is used in the LegacySector class to adapt the new MCA timeslices to</span>
+<span class="sd">    the format required by the old sectors.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">month</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">converted_ts</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;Month&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">kebab_to_camel</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">ts</span><span class="o">.</span><span class="n">month</span><span class="o">.</span><span class="n">values</span><span class="p">],</span>
+        <span class="s2">&quot;Day&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">kebab_to_camel</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">ts</span><span class="o">.</span><span class="n">day</span><span class="o">.</span><span class="n">values</span><span class="p">],</span>
+        <span class="s2">&quot;Hour&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">kebab_to_camel</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">ts</span><span class="o">.</span><span class="n">hour</span><span class="o">.</span><span class="n">values</span><span class="p">],</span>
+        <span class="s2">&quot;RepresentHours&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">represent_hours</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)),</span>
+        <span class="s2">&quot;SN&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)),</span>
+        <span class="s2">&quot;AgLevel&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">ag_level</span><span class="p">]</span> <span class="o">*</span> <span class="n">length</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">converted_ts</span>
+
+
+<div class="viewcode-block" id="represent_hours"><a class="viewcode-back" href="../../source/muse.html#muse.timeslices.represent_hours">[docs]</a><span class="k">def</span> <span class="nf">represent_hours</span><span class="p">(</span>
+    <span class="n">timeslices</span><span class="p">:</span> <span class="n">DataArray</span><span class="p">,</span> <span class="n">nhours</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">8765.82</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataArray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Number of hours per timeslice.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        timeslices: The timeslice for which to compute the number of hours</span>
+<span class="sd">        nhours: The total number of hours represented in the timeslice. Defaults to the</span>
+<span class="sd">            average number of hours in year.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">convert_timeslice</span><span class="p">(</span><span class="n">DataArray</span><span class="p">([</span><span class="n">nhours</span><span class="p">]),</span> <span class="n">timeslices</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span></div>
+
+
+<span class="n">setup_module</span><span class="p">(</span><span class="n">DEFAULT_TIMESLICE_DESCRIPTION</span><span class="p">)</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MUSE Documentation 0.8 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">muse.timeslices</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Sustainable Gas Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

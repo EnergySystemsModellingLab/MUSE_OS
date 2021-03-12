@@ -1,0 +1,6 @@
+ProcessName,RegionName,Time,Level,cap_par,cap_exp,fix_par,fix_exp,var_par,var_exp,MaxCapacityAddition,MaxCapacityGrowth,TotalCapacityLimit,TechnicalLife,UtilizationFactor,InterestRate,ScalingSize,Agent2,Type,Fuel,MinimumServiceFactor
+Unit,-,Year,-,MUS$2010/Mt,-,MUS$2010/Mt,-,MUS$2010/Mt,-,Mt,-,Mt,Years,-,-,-,Retrofit,-,-,-
+procammonia_1,R1,2010,fixed,100,1,0.5,1,0,1,5,0.03,100,20,0.85,0.1,0.1,1,energy,fuel1,0.01
+procammonia_1,R1,2050,fixed,100,1,0.5,1,0,1,5,0.03,100,20,0.85,0.1,0.1,1,energy,fuel1,0.9
+procammonia_2,R1,2010,fixed,97.5,1,0.4875,1,0,1,5,0.03,100,20,0.85,0.1,0.1,1,energy,fuel2,0
+procammonia_2,R1,2050,fixed,97.5,1,0.4875,1,0,1,5,0.03,100,20,0.85,0.1,0.1,1,energy,fuel2,0
