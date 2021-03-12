@@ -184,6 +184,7 @@ def demand_matching(
     extra_dims = set(demand.dims).difference(
         cost.dims, *(cons.dims for cons in constraints)
     )
+
     if extra_dims:
         summed_demand = demand.sum(extra_dims)
         demand_share = (demand / summed_demand).where(demand > 0, 0)
@@ -224,7 +225,9 @@ def demand_matching(
             "demand": demand,
         }
     )
+
     nocoords = set(ds.dims).difference(ds.coords.keys())
+
     if nocoords:
         for coord in nocoords:
             ds.coords[coord] = coord, ds.coords[coord].values
@@ -294,7 +297,6 @@ def _demand_matching_impl(
         delta_x = expand_dims(
             (remove_dims(current.demand, demand) - result.sum(idims)).clip(0), current
         )
-
         for cname in names:
             constraint = remove_dims(current[cname], data[cname])
             delta_x, constraint = align(delta_x, constraint, join="outer", fill_value=0)
@@ -310,6 +312,5 @@ def _demand_matching_impl(
                 ).fillna(0)
             ).fillna(0)
             delta_x = (expand_dims(delta_x, excess_share) - excess_share).clip(0)
-
         result = sum(align(result, delta_x.fillna(0), fill_value=0, join="left"))
     return result
