@@ -45,7 +45,7 @@ intersphinx_mapping = {
     "xarray": ("http://xarray.pydata.org/en/stable/", None),
 }
 
-bibtex_bibfiles = ["bibliography.bib"]
+bibtex_bibfiles = []
 
 # -- Options for HTML output -------------------------------------------------
 
