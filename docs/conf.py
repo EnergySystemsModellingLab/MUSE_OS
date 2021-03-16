@@ -30,7 +30,7 @@ extensions = [
 ]
 source_suffix = {".rst": "restructuredtext", ".txt": "markdown", ".md": "markdown"}
 templates_path = ["_templates"]
-exclude_patterns = ["build", "**.ipynb_checkpoints", "**/ResidentialBracket*.txt", "_sources/", "_build"]
+exclude_patterns = ["build", "**.ipynb_checkpoints", "**/ResidentialBracket*.txt", "_sources/*", "_build/*", "tutorial-code/*"]
 
 modindex_common_prefix = ["muse"]
 autodoc_typehints = "none"
@@ -44,6 +44,8 @@ intersphinx_mapping = {
     "pandas": ("http://pandas.pydata.org/pandas-docs/dev", None),
     "xarray": ("http://xarray.pydata.org/en/stable/", None),
 }
+
+bibtex_bibfiles = ["bibliography.bib"]
 
 # -- Options for HTML output -------------------------------------------------
 
