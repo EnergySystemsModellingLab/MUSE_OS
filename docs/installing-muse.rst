@@ -11,7 +11,7 @@ There are two ways to install MUSE: one for users who do not wish to modify the 
    
    Linux users may need to install a C compiler, whether GNU gcc or Clang, as well python development packages, depending on their distribution.
 
-   #.   Download Microsoft Visual C++ Build Tools from this link: https://visualstudio.microsoft.com/downloads/   
+   #.   Download the Microsoft Visual C++ Build Tools from the following link by downloading Visual Studio: https://visualstudio.microsoft.com/downloads/   
 
    #. Select your preferred edition. The "Community" is free and contains what is required.
 
