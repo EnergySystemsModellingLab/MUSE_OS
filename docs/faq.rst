@@ -68,7 +68,7 @@ Your conda environment is activated if you see something similar to the followin
     (muse) PS C:/Users/<my-username>
 
 
-I get a "Cannot find command 'git' - do you have 'git' insrtalled in your PATH?" error.
+I get a "Cannot find command 'git' - do you have 'git' insrtalled in your PATH?" error
 ---------------------------------------------------------------------------------------
 
 This is because you do not have git installed in your conda environment. To resolve this, run:
@@ -77,4 +77,7 @@ This is because you do not have git installed in your conda environment. To reso
 
     conda install git
 
-    
+When I input my GitHub password into Anaconda Powershell Prompt to download MUSE, I don't see any input
+-------------------------------------------------------------------------------------------------------
+
+This is normal behaviour. It is done to stop people watching as you type your password over your shoulder. Just continue typing in your password as you would on a website.
