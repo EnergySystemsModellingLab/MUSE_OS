@@ -1,0 +1,6 @@
+ProcessName,RegionName,Time,Level,electricity,gas,cook,heat,CO2f,wind
+Unit,-,Year,-,GWh/PJ,PJ/PJ,PJ/PJ,PJ/PJ,kt/PJ,PJ/PJ
+gasboiler,R1,2020,fixed,0,1.162790698,0,0,0,0
+heatpump,R1,2020,fixed,111.12,0,0,0,0,0
+estove,R1,2020,fixed,0,1,0,0,0,0
+gasstove,R1,2020,fixed,100,0,0,0,0,0

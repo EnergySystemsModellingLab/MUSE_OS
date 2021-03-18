@@ -1,0 +1,10 @@
+Commodity,CommodityType,CommodityName,CommodityEmissionFactor_CO2,HeatRate,Unit
+Fuel1,Energy,fuel1,0,1,PJ
+Fuel2,Energy,fuel2,94.6,1,PJ
+Fuel3,Energy,fuel3,77.4,1,PJ
+Ammonia,Material,ammonia,0,1,Mt
+CO2f,Environmental,CO2f,0,1,kt
+CO2r,Environmental,CO2r,0,1,kt
+CO2c,Environmental,CO2c,0,1,kt
+CO2s,Environmental,CO2s,0,1,kt
+N2O,Environmental,N2O,0,1,kt

@@ -1,0 +1,5 @@
+AgentShare,Name,RegionName,Objective1,Objective2,Objective3,ObjData1,ObjData2,ObjData3,Objsort1,Objsort2,Objsort3,SearchRule,DecisionMethod,Quantity,MaturityThreshold,Budget,Type
+new,A1,R1,LCOE,,,1,,,FALSE,,,all,singleObj,0.5,-1,inf,New
+retro1,A1,R1,LCOE,,,1,,,FALSE,,,all,singleObj,0.5,-1,inf,Retrofit
+new,A2,R1,LCOE,,,1,,,FALSE,,,all,singleObj,0.5,-1,inf,New
+retro2,A2,R1,LCOE,,,1,,,FALSE,,,all,singleObj,0.5,-1,inf,Retrofit

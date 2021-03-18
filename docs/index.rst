@@ -11,11 +11,16 @@ ModUlar energy system Simulation Environment: MUSE
    :maxdepth: 2
    :caption: Contents:
 
-   installation
-   model/index
-   user_guide/index
-   developer_guide/index
-   bibliography
+   Glossary <glossary>
+   Installing MUSE <installing-muse>
+   Running MUSE <running-muse-example>
+   MUSE Overview <overview>
+   Key MUSE Components <muse-components>
+   user-guide/index
+   inputs/index
+   advanced-guide/index
+   faq
+   api
 
 
 Indices and tables
