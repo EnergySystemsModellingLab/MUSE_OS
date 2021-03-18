@@ -11,15 +11,19 @@ There are two ways to install MUSE: one for users who do not wish to modify the 
    
    Linux users may need to install a C compiler, whether GNU gcc or Clang, as well python development packages, depending on their distribution.
 
-   #.   Download the Microsoft Visual C++ Build Tools from the following link by downloading Visual Studio: https://visualstudio.microsoft.com/downloads/   
+   #.   Download the Microsoft Visual C++ Build Tools from the following link by downloading Visual Studio 2019: https://visualstudio.microsoft.com/downloads/   
 
    #. Select your preferred edition. The "Community" is free and contains what is required.
 
    #.   Run the installer
 
-   #.   Select: Workloads → Visual C++ build tools.
+   #.   Select: Workloads → Desktop development with C++.
 
-   #. Install options: select only the “Windows 10 SDK” (assuming the computer is Windows 10)]
+   #. Install options: select only the “Windows 10 SDK” (assuming the computer is Windows 10)]. This will come up on the right hand side of the screen.
+
+   The installation screen should look similar to the following:
+
+   .. image:: figures/visual-studio-installation.png
 
    For further information, see this link: https://www.scivision.dev/python-windows-visual-c-14-required
 
