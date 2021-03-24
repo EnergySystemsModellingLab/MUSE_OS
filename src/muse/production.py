@@ -180,7 +180,6 @@ def costed_production(
     with_emission: bool = True,
 ) -> xr.DataArray:
     """Computes production from ranked assets.
-
     The assets are ranked according to their cost. The cost can be provided as an
     xarray, a callable creating an xarray, or as "alcoe". The asset with least cost are
     allowed to service the demand first, up to the maximum production. By default, the
@@ -224,4 +223,4 @@ def costed_production(
                 commodity=~check_usage(technologies.comm_usage, CommodityUsage.PRODUCT)
             )
         ] = 0
-    return production
+    return

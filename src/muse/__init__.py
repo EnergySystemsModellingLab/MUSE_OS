@@ -1,4 +1,4 @@
-"""MUSE model."""
+"""MUSE model"""
 
 
 def _create_logger():

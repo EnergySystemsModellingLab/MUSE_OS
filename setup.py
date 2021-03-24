@@ -78,7 +78,7 @@ setup(
         "scipy",
         "pandas>=0.21",
         "click",
-        "xarray>0.14",
+        "xarray>0.14" and "xarray<0.17",
         "bottleneck",
         "coloredlogs",
         "toml",

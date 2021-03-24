@@ -77,20 +77,28 @@ def test_comfort(search_space, demand_share, technologies, retro_agent):
 
 def test_capital_costs(demand_share, search_space, technologies, retro_agent):
     from muse.objectives import capital_costs
+    import numpy as np
 
     technologies["cap_par"] = add_var(technologies, "technology", "region", "year")
     technologies["cap_exp"] = add_var(technologies, "technology", "region", "year")
     technologies["scaling_size"] = add_var(technologies, "technology", "region", "year")
-
+    minyear = technologies.year.values.min()
+    maxyear = technologies.year.values.max()
+    years = np.linspace(minyear, maxyear, retro_agent.forecast).astype(int)
+    technologies = technologies.interp(year=years, method=retro_agent.interpolation)
     # exp == 0
     technologies.cap_exp.loc[
         {"region": retro_agent.region, "technology": search_space.replacement}
     ] = 0
     actual = capital_costs(retro_agent, demand_share, search_space, technologies)
+    actual = actual.sum("timeslice")
     assert set(actual.dims) == {"replacement"}
     expected = technologies.cap_par.sel(
-        technology=search_space.replacement, region=retro_agent.region
-    ).interp(year=retro_agent.year, method=retro_agent.interpolation)
+        technology=search_space.replacement,
+        region=retro_agent.region,
+        year=retro_agent.forecast_year,
+    )
+
     assert actual.values == approx(expected.values)
 
     # exp == 1
@@ -98,20 +106,28 @@ def test_capital_costs(demand_share, search_space, technologies, retro_agent):
         {"region": retro_agent.region, "technology": search_space.replacement}
     ] = 1
     actual = capital_costs(retro_agent, demand_share, search_space, technologies)
+    actual = actual.sum("timeslice")
     assert set(actual.dims) == {"replacement"}
     expected = technologies.cap_par * technologies.scaling_size
     expected = expected.sel(
-        technology=search_space.replacement, region=retro_agent.region
-    ).interp(year=retro_agent.year, method=retro_agent.interpolation)
+        technology=search_space.replacement,
+        region=retro_agent.region,
+        year=retro_agent.forecast_year,
+    )
+
     assert actual.values == approx(expected.values)
 
     # exp == numbers
     technologies["scaling_size"] = add_var(technologies, "technology", "region", "year")
     expected = technologies.cap_par * technologies.scaling_size ** technologies.cap_exp
     expected = expected.sel(
-        technology=search_space.replacement, region=retro_agent.region
-    ).interp(year=retro_agent.year, method=retro_agent.interpolation)
+        technology=search_space.replacement,
+        region=retro_agent.region,
+        year=retro_agent.forecast_year,
+    )
+
     actual = capital_costs(retro_agent, demand_share, search_space, technologies)
+    actual = actual.sum("timeslice")
     assert set(actual.dims) == {"replacement"}
     assert actual.values == approx(expected.values)
 
@@ -144,16 +160,13 @@ def test_emission_cost(
             * (prices * fouts).sum("commodity")
         )
         .sum("timeslice")
-        .sel(
-            region=retro_agent.region,
-            technology=search_space.replacement,
-            year=retro_agent.year,
-        )
+        .interp(year=retro_agent.forecast_year)
+        .sel(region=retro_agent.region, technology=search_space.replacement)
     )
 
     actual = emission_cost(
         retro_agent, demand_share, search_space, technologies, agent_market
-    )
+    ).sum("timeslice")
     assert {"asset", "replacement"}.issuperset(actual.dims)
 
     actual, expected = broadcast(actual, expected)
@@ -164,12 +177,18 @@ def test_capacity_fulfilling_demand(
     search_space, demand_share, technologies, retro_agent, agent_market
 ):
     from muse.objectives import capacity_to_service_demand, fixed_costs
+    import numpy as np
+
+    minyear = technologies.year.values.min()
+    maxyear = technologies.year.values.max()
+    years = np.linspace(minyear, maxyear, retro_agent.forecast).astype(int)
+    technologies = technologies.interp(year=years, method=retro_agent.interpolation)
 
     # capacity
     outs = technologies.fixed_outputs.sel(
         region=retro_agent.region,
         technology=search_space.replacement,
-        year=retro_agent.year,
+        year=retro_agent.forecast_year,
         commodity=demand_share.commodity,
     )
 
@@ -181,7 +200,7 @@ def test_capacity_fulfilling_demand(
     ufac = technologies.utilization_factor.sel(
         region=retro_agent.region,
         technology=search_space.replacement,
-        year=retro_agent.year,
+        year=retro_agent.forecast_year,
     )
 
     capacity = (max_demand / ufac / max_hours).sel(asset=search_space.asset)
@@ -199,18 +218,18 @@ def test_capacity_fulfilling_demand(
     fpar = technologies.fix_par.sel(
         region=retro_agent.region,
         technology=search_space.replacement,
-        year=retro_agent.year,
+        year=retro_agent.forecast_year,
     )
     fexp = technologies.fix_exp.sel(
         region=retro_agent.region,
         technology=search_space.replacement,
-        year=retro_agent.year,
+        year=retro_agent.forecast_year,
     )
     expected = fpar * capacity ** fexp
 
     actual = fixed_costs(
         retro_agent, demand_share, search_space, technologies, agent_market
-    )
+    ).sum("timeslice")
     assert actual.values == approx(expected.values)
     assert set(actual.dims) == set(expected.dims)
 
@@ -225,7 +244,7 @@ def test_fuel_consumption(
 
     actual = fuel_consumption_cost(
         retro_agent, demand_share, search_space, technologies, agent_market
-    )
+    ).sum("timeslice")
     assert {"asset", "replacement"}.issuperset(actual.dims)
 
     demand = (
@@ -235,7 +254,9 @@ def test_fuel_consumption(
     )
     cons = consumption(
         production=demand,
-        technologies=technologies.sel(year=retro_agent.year, region=retro_agent.region),
+        technologies=technologies.sel(region=retro_agent.region).interp(
+            year=retro_agent.forecast_year, method="linear"
+        ),
         prices=agent_market.prices.sel(region=retro_agent.region).interp(
             year=retro_agent.forecast_year, method="linear"
         ),
@@ -259,75 +280,100 @@ def test_net_present_value(
     It is essentially the same maths but filtering the inputs using the "sel" method
     rather than the agent.filter_input method, as well as changing the other in which
     things are added together.
-
-    Indeed, this is more compact and elegant than the actual implementation...
+.
     """
+    import xarray
     from muse.objectives import (
         net_present_value,
         capacity_to_service_demand,
         discount_factor,
-        fuel_consumption_cost,
-        fixed_costs,
     )
-    from muse.commodities import is_material, is_enduse, is_pollutant
+    from muse.quantities import consumption
+    from muse.commodities import is_material, is_enduse, is_fuel, is_pollutant
 
+    #    tech = technologies.interp(year=retro_agent.forecast_year, method="linear")
+    tech = technologies.interp(
+        year=range(agent_market.year.values.min(), agent_market.year.values.max()),
+        method="linear",
+    )
     actual = net_present_value(
-        retro_agent, demand_share, search_space, technologies, agent_market
-    )
-
-    tech = technologies.sel(
+        retro_agent, demand_share, search_space, tech, agent_market,
+    ).sum("timeslice")
+    tech = tech.sel(
         technology=search_space.replacement,
         region=retro_agent.region,
-        year=retro_agent.year,
+        year=retro_agent.forecast_year,
     )
 
     nyears = tech.technical_life.astype(int)
+    years = range(
+        retro_agent.year,
+        max(retro_agent.year + nyears.values.max(), retro_agent.forecast_year + 1),
+    )
+    # mask in discoutn rate could give error if different dimension
+    # used if all_ears is array
+    # ifxarray used, dimension differences d not tirgger errors
+    all_years = xarray.DataArray(years, coords={"year": years}, dims="year")
     interest_rate = tech.interest_rate
     cap_par = tech.cap_par
     cap_exp = tech.cap_exp
     var_par = tech.var_par
     var_exp = tech.var_exp
+    fix_par = tech.fix_par
+    fix_exp = tech.fix_exp
     fixed_outputs = tech.fixed_outputs
     utilization_factor = tech.utilization_factor
 
     # All years the simulation is running and the prices
-    all_years = range(retro_agent.year, retro_agent.year + nyears.values.max())
-    prices = agent_market.prices.sel(region=retro_agent.region).interp(year=all_years)
+    prices = agent_market.prices.interp(year=all_years)
 
     # Evolution of rates with time
     rates = discount_factor(
-        years=prices.year - retro_agent.year + 1,
+        years=all_years - retro_agent.year + 1,
         interest_rate=interest_rate,
-        mask=prices.year <= retro_agent.year + nyears,
+        mask=all_years <= retro_agent.year + nyears,
     )
+    print("test")
 
     # The individual prices
-    prices_environmental = prices.sel(commodity=is_pollutant(technologies.comm_usage))
-    prices_material = prices.sel(commodity=is_material(technologies.comm_usage))
-    prices_non_env = prices.sel(commodity=is_enduse(technologies.comm_usage))
-
+    prices_environmental = prices.sel(
+        commodity=is_pollutant(technologies.comm_usage), region=retro_agent.region
+    ).ffill("year")
+    prices_material = prices.sel(
+        commodity=is_material(technologies.comm_usage), region=retro_agent.region
+    ).ffill("year")
+    prices_non_env = prices.sel(
+        commodity=is_enduse(technologies.comm_usage), region=retro_agent.region
+    ).ffill("year")
+    prices_fuel = prices.sel(
+        commodity=is_fuel(technologies.comm_usage), region=retro_agent.region
+    ).ffill("year")
     # Capacity
     capacity = capacity_to_service_demand(
         retro_agent, demand_share, search_space, technologies, agent_market
     )
 
-    # raw revenues --> Make the NPV more positive
-    # This production is the absolute maximum production, given the capacity
-    production = capacity * fixed_outputs * utilization_factor
-    raw_revenues = (production * prices_non_env * rates).sum(("commodity", "year"))
-
     # Hours ratio
     hours_ratio = agent_market.represent_hours / agent_market.represent_hours.sum()
+
+    # raw revenues --> Make the NPV more positive
+    # This production is the absolute maximum production, given the capacity
+    production = hours_ratio * capacity * fixed_outputs * utilization_factor
+    raw_revenues = (production * prices_non_env * rates).sum(("commodity", "year"))
 
     # raw costs --> make the NPV more negative
     # Cost of installed capacity
     installed_capacity_costs = hours_ratio * cap_par * capacity ** cap_exp
 
     # Fuel/energy costs
-    fuel_cost = fuel_consumption_cost(
-        retro_agent, demand_share, search_space, technologies, agent_market
-    )
-    fuel_consumption_costs = (fuel_cost * rates).sum("year") * hours_ratio
+    fuel = consumption(
+        technologies=tech,
+        production=production,
+        prices=prices.sel(region=retro_agent.region),
+    ).sel(commodity=is_fuel(tech.comm_usage))
+    fuel_consumption_costs = (
+        (fuel * prices_fuel * rates).sum(("commodity", "year"))
+    ).drop_vars("technology")
 
     # Cost related to environmental products
     environmental_costs = (production * prices_environmental * rates).sum(
@@ -338,23 +384,26 @@ def test_net_present_value(
     material_costs = (production * prices_material * rates).sum(("commodity", "year"))
 
     # Fixed and Variable costs
-    non_env_production = production.sel(commodity=is_enduse(technologies.comm_usage))
-    fix_costs = (
-        rates
-        * hours_ratio
-        * fixed_costs(
-            retro_agent, demand_share, search_space, technologies, agent_market
-        )
-    ).sum("year")
-    variable_costs = (
-        rates * hours_ratio * var_par * non_env_production ** var_exp
-    ).sum(("commodity", "year"))
+    non_env_production = production.sel(commodity=is_enduse(tech.comm_usage)).sum(
+        "commodity"
+    )
+    fix_costs = ((rates * hours_ratio * fix_par * capacity ** fix_exp)).sum("year")
+
+    print(
+        all_years,
+        fuel.sum(),
+        fuel.replacement,
+        tech.technical_life,
+        environmental_costs.sum(),
+    )
+    variable_costs = (rates * var_par * (non_env_production ** var_exp)).sum("year")
     fixed_and_variable_costs = fix_costs + variable_costs
 
     assert set(installed_capacity_costs.dims) == set(fuel_consumption_costs.dims)
     assert set(environmental_costs.dims) == set(fuel_consumption_costs.dims)
     assert set(material_costs.dims) == set(fuel_consumption_costs.dims)
     assert set(fixed_and_variable_costs.dims) == set(fuel_consumption_costs.dims)
+
     raw_costs = (
         installed_capacity_costs
         + fuel_consumption_costs
@@ -367,4 +416,4 @@ def test_net_present_value(
     expected = (raw_revenues - raw_costs).sum("timeslice")
 
     assert {"replacement", "asset"}.issuperset(actual.dims)
-    assert actual.values == approx(expected.values, rel=5e-5)
+    assert actual.values == approx(expected.values, rel=1e-2)
