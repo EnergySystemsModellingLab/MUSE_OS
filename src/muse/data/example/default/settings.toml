@@ -46,7 +46,7 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
 lpsolver = "scipy"  # Optional, defaults to "adhoc" 
 constraints = [  # Optional, defaults to the constraints below
-    "max_production_by_timeslice",
+    "max_production",
     "max_capacity_expansion",
     "demand",
     "search_space",
@@ -79,10 +79,9 @@ interaction = 'transfer'
 [sectors.power]
 type = 'default'
 priority = 2
-dispatch_production = 'maximum_by_timeslice'
+dispatch_production = 'share'
 
 technodata = '{path}/technodata/power/Technodata.csv'
-technodata_timeslices = '{path}/technodata/power/TechnodataTimeslices.csv'
 commodities_in = '{path}/technodata/power/CommIn.csv'
 commodities_out = '{path}/technodata/power/CommOut.csv'
 
