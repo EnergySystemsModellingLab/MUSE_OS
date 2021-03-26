@@ -492,7 +492,7 @@ def max_production_by_timeslice(
     year: Optional[int] = None,
     **kwargs,
 ) -> Constraint:
-    """Constructs constraint between capacity and maximum production.
+    """Constructs constraint between capacity and maximum production by timeslice.
 
     Constrains the production decision variable by the maximum production for a given
     capacity.
