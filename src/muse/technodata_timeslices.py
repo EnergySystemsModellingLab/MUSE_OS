@@ -33,10 +33,3 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
     data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"), axis=0)
     result = xr.Dataset.from_dataframe(data.sort_index())
     return result
-
-
-technodata_timeslices = read_technodata_timeslices(
-    "/Users/alexanderkell/Documents/SGI/Projects/4-StarMuse/2-StarMuse/muse/src/muse/data/example/default/technodata/power/TechnodataTimeslices.csv"
-)
-
-print(technodata_timeslices)
