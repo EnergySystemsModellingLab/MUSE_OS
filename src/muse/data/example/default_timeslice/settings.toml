@@ -1,3 +1,5 @@
+plugins = "{cwd}/output.py"
+
 # Global settings - most REQUIRED
 time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
 foresight = 5   # Has to be a multiple of the minimum separation between the years in time framework
@@ -75,7 +77,6 @@ net = 'new_to_retro'
 interaction = 'transfer'
 
 
-
 [sectors.power]
 type = 'default'
 priority = 2
@@ -97,6 +98,12 @@ quantity = "capacity"
 sink = 'csv'
 overwrite = true
 index = false
+
+[[sectors.power.outputs]]
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+quantity = "supply_timeslice"
+sink = "csv"
+overwrite = true
 
 [[sectors.power.interactions]] 
 net = 'new_to_retro'
