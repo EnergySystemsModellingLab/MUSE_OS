@@ -7,4 +7,5 @@
     "python.linting.mypyEnabled": true,
     "python.testing.pytestEnabled": true,
     "restructuredtext.confPath": "${workspaceFolder}/docs",
+    "python.pythonPath": "/opt/anaconda3/envs/muse/bin/python",
 }

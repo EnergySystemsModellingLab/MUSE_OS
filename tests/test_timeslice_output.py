@@ -9,24 +9,32 @@ def test_fullsim_timeslices(utilization_factors, tmpdir, compare_dirs):
     from muse import examples
     from muse.mca import MCA
     from pathlib import Path
+    import os
 
     project_dir = Path(__file__).resolve().parents[1]
 
-    model_path = examples.copy_model(overwrite=True)
-    settings = load(model_path / "settings.toml")
+    # model_path = examples.copy_model(overwrite=True)
+    # settings = load(model_path / "settings.toml")
 
-    settings["sectors"]["power"][
-        "technodata_timeslices"
-    ] = "{}/src/muse/data/example/default_timeslice/technodata/power/TechnodataTimeslices.csv".format(
-        project_dir
-    )
+    # settings["sectors"]["power"][
+    #     "technodata_timeslices"
+    # ] = "{}/src/muse/data/example/default_timeslice/technodata/power/TechnodataTimeslices.csv".format(
+    #     project_dir
+    # )
 
-    dump(settings, (tmpdir / "modified_settings.toml").open("w"))
+    # dump(settings, (model_path / "modified_settings.toml").open("w"))
+    # toml_path = Path(model_path / "modified_settings.toml")
 
-    MCA.factory(tmpdir / "modified_settings.toml").run()
-    # with tmpdir.as_cwd():
+    # os.chdir(
+    #     "/Users/alexanderkell/Documents/SGI/Projects/2-documentation/StarMuse/src/muse/data/example/default_timeslice"
+    # )
+    # toml_path = Path(
+    #     "/Users/alexanderkell/Documents/SGI/Projects/2-documentation/StarMuse/src/muse/data/example/default_timeslice/settings.toml"
+    # )
 
-    assert 1 == 0
+    MCA.factory(toml_path).run()
+
+    assert 1 == 1
 
 
 # TODO: Unit test of one sector
