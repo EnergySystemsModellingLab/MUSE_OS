@@ -11,9 +11,9 @@ def test_fullsim_timeslices(utilization_factors, tmpdir, compare_dirs):
     from pathlib import Path
     import os
 
-    project_dir = Path(__file__).resolve().parents[1]
+    # project_dir = Path(__file__).resolve().parents[1]
 
-    # model_path = examples.copy_model(overwrite=True)
+    model_path = examples.copy_model(name="default_timeslice", overwrite=True)
     # settings = load(model_path / "settings.toml")
 
     # settings["sectors"]["power"][
@@ -31,8 +31,8 @@ def test_fullsim_timeslices(utilization_factors, tmpdir, compare_dirs):
     # toml_path = Path(
     #     "/Users/alexanderkell/Documents/SGI/Projects/2-documentation/StarMuse/src/muse/data/example/default_timeslice/settings.toml"
     # )
-
-    MCA.factory(toml_path).run()
+    print(model_path / "settings.toml")
+    MCA.factory(model_path / "settings.toml").run()
 
     assert 1 == 1
 

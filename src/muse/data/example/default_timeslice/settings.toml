@@ -1,4 +1,4 @@
-plugins = "{cwd}/output.py"
+plugins = "{cwd}/model/output.py"
 
 # Global settings - most REQUIRED
 time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
