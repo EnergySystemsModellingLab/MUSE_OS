@@ -9,18 +9,23 @@ def modify_technodata_timeslices(model_path, sector, process_name, utilization_f
     )
 
     technodata_timeslices.loc[
-        technodata_timeslices["ProcessName"] == process_name, "UtilizationFactor"
-    ] = utilization_factor
+        technodata_timeslices["ProcessName"] == process_name[0], "UtilizationFactor"
+    ] = utilization_factor[0]
+
+    technodata_timeslices.loc[
+        technodata_timeslices["ProcessName"] == process_name[1], "UtilizationFactor"
+    ] = utilization_factor[1]
 
     return technodata_timeslices
 
 
-@mark.parametrize("utilization_factor", [0.1])
-@mark.parametrize("process_name", ["gasCCGT"])
+@mark.parametrize("utilization_factor", [(0.1, 1), (1, 0.1)])
+@mark.parametrize("process_name", [("gasCCGT", "windturbine")])
 def test_fullsim_timeslices(tmpdir, utilization_factor, process_name):
     from muse import examples
     from muse.mca import MCA
     import pandas as pd
+    from operator import le, ge
 
     sector = "power"
 
@@ -45,14 +50,24 @@ def test_fullsim_timeslices(tmpdir, utilization_factor, process_name):
 
     MCACapacity = pd.read_csv(tmpdir / "Results/MCACapacity.csv")
 
-    assert len(
-        MCACapacity[
-            (MCACapacity.sector == sector) & (MCACapacity.technology == process_name)
-        ]
-    ) < len(
-        MCACapacity[
-            (MCACapacity.sector == sector) & (MCACapacity.technology == "windturbine")
-        ]
+    if utilization_factor[0] > utilization_factor[1]:
+        operator = ge
+    else:
+        operator = le
+
+    assert operator(
+        len(
+            MCACapacity[
+                (MCACapacity.sector == sector)
+                & (MCACapacity.technology == process_name[0])
+            ]
+        ),
+        len(
+            MCACapacity[
+                (MCACapacity.sector == sector)
+                & (MCACapacity.technology == process_name[1])
+            ]
+        ),
     )
 
 
