@@ -1,6 +1,4 @@
-from pytest import approx, fixture, mark
-from xarray import DataArray
-from toml import load, dump
+from pytest import mark
 
 
 def modify_technodata_timeslices(model_path, sector, process_name, utilization_factor):
@@ -14,20 +12,22 @@ def modify_technodata_timeslices(model_path, sector, process_name, utilization_f
         technodata_timeslices["ProcessName"] == process_name, "UtilizationFactor"
     ] = utilization_factor
 
-    print(technodata_timeslices)
-
     return technodata_timeslices
 
 
 @mark.parametrize("utilization_factor", [0.1])
 @mark.parametrize("process_name", ["gasCCGT"])
-def test_fullsim_timeslices(utilization_factor, process_name):
+def test_fullsim_timeslices(tmpdir, utilization_factor, process_name):
     from muse import examples
     from muse.mca import MCA
+    import pandas as pd
 
     sector = "power"
 
-    model_path = examples.copy_model(name="default_timeslice", overwrite=True)
+    # Copy the model inputs to tmpdir
+    model_path = examples.copy_model(
+        name="default_timeslice", path=tmpdir, overwrite=True
+    )
 
     technodata_timeslices = modify_technodata_timeslices(
         model_path=model_path,
@@ -40,9 +40,20 @@ def test_fullsim_timeslices(utilization_factor, process_name):
         model_path / "technodata" / sector / "TechnodataTimeslices.csv"
     )
 
-    MCA.factory(model_path / "settings.toml").run()
+    with tmpdir.as_cwd():
+        MCA.factory(model_path / "settings.toml").run()
 
-    assert 1 == 1
+    MCACapacity = pd.read_csv(tmpdir / "Results/MCACapacity.csv")
+
+    assert len(
+        MCACapacity[
+            (MCACapacity.sector == sector) & (MCACapacity.technology == process_name)
+        ]
+    ) < len(
+        MCACapacity[
+            (MCACapacity.sector == sector) & (MCACapacity.technology == "windturbine")
+        ]
+    )
 
 
 # TODO: Unit test of one sector
