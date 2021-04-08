@@ -19,56 +19,56 @@ def modify_technodata_timeslices(model_path, sector, process_name, utilization_f
     return technodata_timeslices
 
 
-# @mark.parametrize("utilization_factors", [([0.1], [1]), ([1], [0.1])])
-# @mark.parametrize("process_name", [("gasCCGT", "windturbine")])
-# def test_fullsim_timeslices(tmpdir, utilization_factors, process_name):
-#     from muse import examples
-#     from muse.mca import MCA
-#     import pandas as pd
-#     from operator import le, ge
+@mark.parametrize("utilization_factors", [([0.1], [1]), ([1], [0.1]), ([0], [1])])
+@mark.parametrize("process_name", [("gasCCGT", "windturbine")])
+def test_fullsim_timeslices(tmpdir, utilization_factors, process_name):
+    from muse import examples
+    from muse.mca import MCA
+    import pandas as pd
+    from operator import le, ge
 
-#     sector = "power"
+    sector = "power"
 
-#     # Copy the model inputs to tmpdir
-#     model_path = examples.copy_model(
-#         name="default_timeslice", path=tmpdir, overwrite=True
-#     )
+    # Copy the model inputs to tmpdir
+    model_path = examples.copy_model(
+        name="default_timeslice", path=tmpdir, overwrite=True
+    )
 
-#     technodata_timeslices = modify_technodata_timeslices(
-#         model_path=model_path,
-#         sector=sector,
-#         process_name=process_name,
-#         utilization_factors=utilization_factors,
-#     )
+    technodata_timeslices = modify_technodata_timeslices(
+        model_path=model_path,
+        sector=sector,
+        process_name=process_name,
+        utilization_factors=utilization_factors,
+    )
 
-#     technodata_timeslices.to_csv(
-#         model_path / "technodata" / sector / "TechnodataTimeslices.csv"
-#     )
+    technodata_timeslices.to_csv(
+        model_path / "technodata" / sector / "TechnodataTimeslices.csv"
+    )
 
-#     with tmpdir.as_cwd():
-#         MCA.factory(model_path / "settings.toml").run()
+    with tmpdir.as_cwd():
+        MCA.factory(model_path / "settings.toml").run()
 
-#     MCACapacity = pd.read_csv(tmpdir / "Results/MCACapacity.csv")
+    MCACapacity = pd.read_csv(tmpdir / "Results/MCACapacity.csv")
 
-#     if utilization_factors[0] > utilization_factors[1]:
-#         operator = ge
-#     else:
-#         operator = le
+    if utilization_factors[0] > utilization_factors[1]:
+        operator = ge
+    else:
+        operator = le
 
-#     assert operator(
-#         len(
-#             MCACapacity[
-#                 (MCACapacity.sector == sector)
-#                 & (MCACapacity.technology == process_name[0])
-#             ]
-#         ),
-#         len(
-#             MCACapacity[
-#                 (MCACapacity.sector == sector)
-#                 & (MCACapacity.technology == process_name[1])
-#             ]
-#         ),
-#     )
+    assert operator(
+        len(
+            MCACapacity[
+                (MCACapacity.sector == sector)
+                & (MCACapacity.technology == process_name[0])
+            ]
+        ),
+        len(
+            MCACapacity[
+                (MCACapacity.sector == sector)
+                & (MCACapacity.technology == process_name[1])
+            ]
+        ),
+    )
 
 
 @mark.parametrize(
@@ -134,17 +134,6 @@ def test_zero_utilization_factor_supply_timeslice(
         == 0
     )
 
-
-# TODO: Unit test of one sector
-
-# TODO: Check that there is zero supply in the timeslice that the technology has
-# zero utilization factor
-
-# TODO: Check that there is no consumption in the timeslice that the technology has
-# zero utilization factor
-
-# TODO: Observe that there are differences in investments for technologies with low
-# utilization factor
 
 # TODO: Check that LCOE is infinite for technology with 0 utilization factor in all
 # timeslices
