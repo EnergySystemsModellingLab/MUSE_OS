@@ -1,10 +1,7 @@
-from typing import Any, Callable, List, Mapping, MutableMapping, Optional, Text, Union
+from typing import List, Optional, Text, Union
 
-import pandas as pd
 import xarray as xr
-from mypy_extensions import KwArg
 
-from muse.registration import registrator
 from muse.outputs.sector import register_output_quantity
 from muse.outputs.sector import market_quantity
 
