@@ -124,7 +124,7 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
             months,
             days,
             hours,
-            # data.obj_sort,
+            # data.obj_sort, #TODO Implement minimum/maximum timeslice
         ],
         names=("technology", "region", "year", "month", "day", "hour"),
     )
@@ -249,6 +249,9 @@ def read_technologies(
             looks for a "technodataSECTORNAME.csv" file in the standard location for
             that sector. However, if  `comm_out_path` and `comm_in_path` are given, then
             this should be the path to the the technodata file.
+        technodata_timeslices_path: This argument refers to the TechnodataTimeslices
+            file which specifies the utilization factor per timeslice for the specified
+            technology.
         comm_out_path: If given, then refers to the path of the file specifying output
             commmodities. If not given, then defaults to
             "commOUTtechnodataSECTORNAME.csv" in the relevant sector directory.
