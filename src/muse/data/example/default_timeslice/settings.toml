@@ -48,7 +48,7 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
 lpsolver = "scipy"  # Optional, defaults to "adhoc" 
 constraints = [  # Optional, defaults to the constraints below
-    "max_production_by_timeslice",
+    "max_production",
     "max_capacity_expansion",
     "demand",
     "search_space",

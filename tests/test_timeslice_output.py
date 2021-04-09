@@ -109,7 +109,6 @@ def test_zero_utilization_factor_supply_timeslice(
     with tmpdir.as_cwd():
         MCA.factory(model_path / "settings.toml").run()
 
-    # MCACapacity = pd.read_csv(tmpdir / "Results/MCACapacity.csv")
     path = str(tmpdir / "Results" / "Power" / output)
     all_files = glob.glob(path + "/*.csv")
 
