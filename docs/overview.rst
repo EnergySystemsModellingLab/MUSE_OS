@@ -125,3 +125,18 @@ MUSE works by iterating between sectors shown above to ensure that energy demand
 
 #. This process repeats itself until commodity supply and demand converges for each energy commodity for each region. Once these converge, the model has found a “partial equilibrium” on the energy system and it moves forward to the next time period.
 
+Foresight in MUSE
+-----------------
+
+Within MUSE, investment decisions are made by the agents. To make these decisions, agents must use their limited knowledge of the future. This allows them to compare investment options under certain assumptions, such as prices, demand and technology costs. 
+
+To model this process in MUSE, the agents are given limited foresight. The amount of limited foresight can be set by the user as a number of years. For example, if agents are given 5 years of limited foresight, they have certainty on the exogenous demand and technology costs for the next 5 years. However, their expectations of prices are based on a flat-forward extension from the current year. The agents, therefore, have limited foresight. This relaxes the constraint exhibited by other models which have perfect foresight. Perfect foresight is where all variables in the future are known. Using this limited foresight period, enables the agents to make investments under uncertainty and provides them with a framework to make decisions in an uncertain future.
+
+The figure below details how a MUSE module runs. In the first timestep (t=1), the initial capacity, price and demand trajectory are known. At t=1, investment decisions are made based on the technology techno-economics of t=2. That is, the techno-economics at t=2 are known at t=1. 
+
+Next, the MUSE sector modules run. For this, multiple iterations are run to calculate marginal cost and supply, as well as price and demand. Once the MCA has converged, after carrying out these iterations, the forward price and demand trajectories can be calculated. After this, investments can be made based on the updated forward price and demand trajectory, and investments are made on the techno-economic data at t=3. This whole process repeats itself until the specified number of years have run.
+
+.. image:: figures/time-horizon.pdf
+    :width: 950px
+    :align: center
+    :alt: MUSE foresight.
