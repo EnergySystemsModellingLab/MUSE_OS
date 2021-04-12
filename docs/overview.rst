@@ -137,6 +137,6 @@ The figure below details how a MUSE module runs. In the first timestep (t=1), th
 Next, the MUSE sector modules run. For this, multiple iterations are run to calculate marginal cost and supply, as well as price and demand. Once the MCA has converged, after carrying out these iterations, the forward price and demand trajectories can be calculated. After this, investments can be made based on the updated forward price and demand trajectory, and investments are made on the techno-economic data at t=3. This whole process repeats itself until the specified number of years have run.
 
 .. image:: figures/time-horizon.pdf
-    :width: 950px
+    :width: 97%
     :align: center
     :alt: MUSE foresight.
