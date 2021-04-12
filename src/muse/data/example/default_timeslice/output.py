@@ -16,7 +16,6 @@ def supply_timeslice(
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current supply."""
-    print(market)
     market = market.reset_index("timeslice")
     result = (
         market_quantity(market.supply, sum_over=sum_over, drop=drop)
@@ -37,7 +36,6 @@ def consumption_timeslice(
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current consumption."""
-    print(market)
     market = market.reset_index("timeslice")
     result = (
         market_quantity(market.consumption, sum_over=sum_over, drop=drop)
