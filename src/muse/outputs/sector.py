@@ -199,7 +199,6 @@ def supply(
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current supply."""
-    print(market)
     result = (
         market_quantity(market.supply, sum_over=sum_over, drop=drop)
         .rename("supply")
