@@ -1,8 +1,6 @@
 MUSE Overview
 =============
 
-.. note::  TODO: Potentially find introductory image to place here.
-
 How to use MUSE
 ---------------
 
