@@ -20,7 +20,7 @@ timeslice,commodity,region,units_prices,supply,year
 "('winter', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.93090000000,2025
 "('winter', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,57445.60100000000,2025
 "('summer', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,15.38340000000,2025
-"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,59186.37680000000,2025
+"('summer', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,59186.37670000000,2025
 "('spring-autumn', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.93090000000,2025
 "('spring-autumn', 'all-week', 'all-day')",CO2f,R1,MUS$2010/kt,57445.60100000000,2025
 "('winter', 'all-week', 'all-day')",ammonia,R1,MUS$2010/Mt,14.94180000000,2030
