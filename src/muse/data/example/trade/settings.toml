@@ -42,7 +42,6 @@ tolerance_unmet_demand = -0.1
     priority = 0
     consumption_path= "{path}/technodata/preset/*Consumption.csv"
 
-
 [sectors.residential]
     type = 'default'
     priority = 1
@@ -67,6 +66,7 @@ tolerance_unmet_demand = -0.1
         demand_share = "new_and_retro"
         forecast = 5
         asset_threshhold = 1e-4
+
 
     [[sectors.residential.outputs]]
         filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'

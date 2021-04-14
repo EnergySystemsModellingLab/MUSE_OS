@@ -857,7 +857,6 @@ def read_technodata(
     """Helper function to create technodata for a given sector."""
     from muse.readers.csv import (
         read_technologies,
-        read_technodata_timeslices,
         read_trade,
     )
 
@@ -873,17 +872,14 @@ def read_technodata(
     if sector_name is not None:
         settings = getattr(settings.sectors, sector_name)
 
-    if not hasattr(settings, "technodata_timeslices"):
-        technodata_timeslices = None
-    else:
-        technodata_timeslices = settings.technodata_timeslices
-
+    technodata_timeslices = getattr(settings, "technodata_timeslices", None)
     # normalizes case where technodata is not in own subsection
     if not hasattr(settings, "technodata") and sector_name is not None:
         raise MissingSettings(f"Missing technodata section in {sector_name}")
     elif not hasattr(settings, "technodata"):
         raise MissingSettings("Missing technodata section")
     technosettings = undo_damage(settings.technodata)
+
     if isinstance(technosettings, Text):
         technosettings = dict(
             technodata=technosettings,
@@ -910,11 +906,12 @@ def read_technodata(
 
     technologies = read_technologies(
         technodata_path_or_sector=technosettings.pop("technodata"),
-        technodata_timeslices_path=technosettings.pop("technodata_timeslices"),
+        technodata_timeslices_path=technosettings.pop("technodata_timeslices", None),
         comm_out_path=technosettings.pop("commodities_out"),
         comm_in_path=technosettings.pop("commodities_in"),
         commodities=commodities,
     ).sel(region=regions)
+
     ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
     outs = (technologies.fixed_outputs > 0).any(("year", "region", "technology"))
     techcomms = technologies.commodity[ins | outs]

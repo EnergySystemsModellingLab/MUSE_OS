@@ -19,7 +19,7 @@ def modify_technodata_timeslices(model_path, sector, process_name, utilization_f
     return technodata_timeslices
 
 
-@mark.parametrize("utilization_factors", [([0.1], [1]), ([1], [0.1]), ([0], [1])])
+@mark.parametrize("utilization_factors", [([0.1], [1]), ([1], [0.1]), ([0.001], [1])])
 @mark.parametrize("process_name", [("gasCCGT", "windturbine")])
 def test_fullsim_timeslices(tmpdir, utilization_factors, process_name):
     from muse import examples
@@ -132,7 +132,3 @@ def test_zero_utilization_factor_supply_timeslice(
         )
         == 0
     )
-
-
-# TODO: Check that LCOE is infinite for technology with 0 utilization factor in all
-# timeslices

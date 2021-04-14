@@ -98,13 +98,6 @@ sink = 'csv'
 overwrite = true
 index = false
 
-[[sectors.power.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "supply"
-sink = 'csv'
-overwrite = true
-index = false
-
 [[sectors.power.interactions]] 
 net = 'new_to_retro'
 interaction = 'transfer'
