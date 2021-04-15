@@ -855,7 +855,10 @@ def read_technodata(
     **kwargs,
 ) -> xr.Dataset:
     """Helper function to create technodata for a given sector."""
-    from muse.readers.csv import read_technologies, read_trade
+    from muse.readers.csv import (
+        read_technologies,
+        read_trade,
+    )
 
     if time_framework is None:
         time_framework = getattr(settings, "time_framework", [2010, 2050])
@@ -869,15 +872,18 @@ def read_technodata(
     if sector_name is not None:
         settings = getattr(settings.sectors, sector_name)
 
+    technodata_timeslices = getattr(settings, "technodata_timeslices", None)
     # normalizes case where technodata is not in own subsection
     if not hasattr(settings, "technodata") and sector_name is not None:
         raise MissingSettings(f"Missing technodata section in {sector_name}")
     elif not hasattr(settings, "technodata"):
         raise MissingSettings("Missing technodata section")
     technosettings = undo_damage(settings.technodata)
+
     if isinstance(technosettings, Text):
         technosettings = dict(
             technodata=technosettings,
+            technodata_timeslices=technodata_timeslices,
             commodities_in=settings.commodities_in,
             commodities_out=settings.commodities_out,
         )
@@ -899,11 +905,13 @@ def read_technodata(
             raise IncorrectSettings(f"File {filename} is not a file.")
 
     technologies = read_technologies(
-        technosettings.pop("technodata"),
-        technosettings.pop("commodities_out"),
-        technosettings.pop("commodities_in"),
+        technodata_path_or_sector=technosettings.pop("technodata"),
+        technodata_timeslices_path=technosettings.pop("technodata_timeslices", None),
+        comm_out_path=technosettings.pop("commodities_out"),
+        comm_in_path=technosettings.pop("commodities_in"),
         commodities=commodities,
     ).sel(region=regions)
+
     ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
     outs = (technologies.fixed_outputs > 0).any(("year", "region", "technology"))
     techcomms = technologies.commodity[ins | outs]

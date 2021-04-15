@@ -153,6 +153,7 @@ def factory(
     existing_capacity_path: Optional[Union[Path, Text]] = None,
     agent_parameters_path: Optional[Union[Path, Text]] = None,
     technodata_path: Optional[Union[Path, Text]] = None,
+    technodata_timeslices_path: Optional[Union[Text, Path]] = None,
     sector: Optional[Text] = None,
     sectors_directory: Union[Text, Path] = DEFAULT_SECTORS_DIRECTORY,
     baseyear: int = 2010,
@@ -165,6 +166,7 @@ def factory(
         read_technodictionary,
         read_initial_assets,
         read_csv_agent_parameters,
+        read_technodata_timeslices,
     )
     from muse.readers.csv import find_sectors_file
 
@@ -189,11 +191,19 @@ def factory(
     params = read_csv_agent_parameters(agent_parameters_path)
     techno = read_technodictionary(technodata_path)
     capa = read_initial_assets(existing_capacity_path)
-
+    if technodata_timeslices_path and isinstance(
+        technodata_timeslices_path, (Text, Path)
+    ):
+        technodata_timeslices = read_technodata_timeslices(technodata_timeslices_path)
+    else:
+        technodata_timeslices = None
     result = []
     for param in params:
         if param["agent_type"] == "retrofit":
             param["technologies"] = techno.sel(region=param["region"])
+        if technodata_timeslices is not None:
+            param.drop_vars("utilization_factor")
+            param = param.merge(technodata_timeslices.sel(region=param["region"]))
         param["category"] = param["agent_type"]
         param["capacity"] = deepcopy(capa.sel(region=param["region"]))
         param["year"] = baseyear
