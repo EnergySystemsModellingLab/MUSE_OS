@@ -146,6 +146,18 @@ def change_timeslice_levels(model_path, sector, process_name, utilization_factor
     return technodata_timeslices
 
 
+def modify_toml_timeslices(model_path):
+    from toml import load
+
+    settings = load(model_path / "settings.toml")
+    print(settings["timeslices"])
+
+    settings["timeslices"] = {
+        "all-year": settings["timeslices"]["all-year"]["all-week"]
+    }
+    return settings
+
+
 @mark.parametrize(
     "utilization_factors",
     [
@@ -159,7 +171,7 @@ def test_dynamic_timeslice_levels(tmpdir, utilization_factors, process_name, out
     from muse import examples
     from muse.mca import MCA
     import pandas as pd
-    from toml import load, dump
+    from toml import dump
     import glob
 
     sector = "power"
@@ -179,12 +191,7 @@ def test_dynamic_timeslice_levels(tmpdir, utilization_factors, process_name, out
         model_path / "technodata" / sector / "TechnodataTimeslices.csv", index=False
     )
 
-    settings = load(model_path / "settings.toml")
-    print(settings["timeslices"])
-
-    settings["timeslices"] = {
-        "all-year": settings["timeslices"]["all-year"]["all-week"]
-    }
+    settings = modify_toml_timeslices(model_path)
 
     dump(settings, (model_path / "modified_settings.toml").open("w"))
 
