@@ -110,6 +110,7 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
     from muse.readers import camel_to_snake
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
+    print(csv)
     csv = csv.rename(columns=camel_to_snake)
     csv = csv.rename(
         columns={"process_name": "technology", "region_name": "region", "time": "year"}
@@ -117,24 +118,22 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
     data = csv[csv.technology != "Unit"]
     data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"))
 
-    ts = pd.MultiIndex.from_frame(
-        data.drop(columns=["utilization_factor", "obj_sort", "unnamed: 0"])
-    )
+    ts = pd.MultiIndex.from_frame(data.drop(columns=["utilization_factor", "obj_sort"]))
     data.index = ts
     data.columns.name = "technodata_timeslice"
     data.index.name = "technology"
-
     data = data.filter(["utilization_factor"])
 
     data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"))
-
     result = xr.Dataset.from_dataframe(data.sort_index())
 
-    timeslice_levels = list(
-        set(list(result.coords)) - set(["technology", "region", "year"])
-    )
+    timeslice_levels = [
+        item
+        for item in list(result.coords)
+        if item not in ["technology", "region", "year"]
+    ]
     result = result.stack(timeslice=timeslice_levels)
-
+    print(result)
     return result
 
 
