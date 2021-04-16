@@ -1,4 +1,4 @@
-from pytest import mark
+from pytest import mark, raises
 
 
 def modify_technodata_timeslices(model_path, sector, process_name, utilization_factors):
@@ -19,7 +19,7 @@ def modify_technodata_timeslices(model_path, sector, process_name, utilization_f
     return technodata_timeslices
 
 
-@mark.parametrize("utilization_factors", [([0.1], [1]), ([1], [0.1]), ([0.001], [1])])
+@mark.parametrize("utilization_factors", [([0.1], [1]), ([1], [0.1])])
 @mark.parametrize("process_name", [("gasCCGT", "windturbine")])
 def test_fullsim_timeslices(tmpdir, utilization_factors, process_name):
     from muse import examples
@@ -132,3 +132,33 @@ def test_zero_utilization_factor_supply_timeslice(
         )
         == 0
     )
+
+
+@mark.parametrize("utilization_factors", [([0], [1]), ([1], [0])])
+@mark.parametrize("process_name", [("gasCCGT", "windturbine")])
+def test_all_zero_fatal_error(tmpdir, utilization_factors, process_name):
+    from muse import examples
+    from muse.mca import MCA
+    import pandas as pd
+    from operator import le, ge
+
+    sector = "power"
+
+    # Copy the model inputs to tmpdir
+    model_path = examples.copy_model(
+        name="default_timeslice", path=tmpdir, overwrite=True
+    )
+
+    technodata_timeslices = modify_technodata_timeslices(
+        model_path=model_path,
+        sector=sector,
+        process_name=process_name,
+        utilization_factors=utilization_factors,
+    )
+
+    technodata_timeslices.to_csv(
+        model_path / "technodata" / sector / "TechnodataTimeslices.csv"
+    )
+
+    with tmpdir.as_cwd(), raises(ValueError):
+        MCA.factory(model_path / "settings.toml").run()

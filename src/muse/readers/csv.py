@@ -111,6 +111,24 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
     csv = csv.rename(columns=camel_to_snake)
+
+    process_factors = (
+        csv[1:]
+        .groupby("process_name")
+        .utilization_factor.unique()
+        .apply(lambda x: int(x))
+        .eq(0)
+    )
+
+    print(csv)
+    if process_factors.any():
+        technology = process_factors[process_factors].index[0]
+        raise ValueError(
+            'A technology can not have a utilization factor of 0 for every timeslice, please check technology "{}" in file {}.'.format(
+                technology, filename
+            )
+        )
+
     data = csv[csv.process_name != "Unit"]
     months = [u for u in data.month.dropna()]
     days = [u for u in data.day.dropna()]

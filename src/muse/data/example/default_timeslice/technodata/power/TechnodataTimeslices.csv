@@ -6,9 +6,9 @@ gasCCGT,R1,2020,upper,all-year,all-week,afternoon,1
 gasCCGT,R1,2020,upper,all-year,all-week,early-peak,1
 gasCCGT,R1,2020,upper,all-year,all-week,late-peak,1
 gasCCGT,R1,2020,upper,all-year,all-week,evening,1
-windturbine,R1,2020,upper,all-year,all-week,night,1
-windturbine,R1,2020,upper,all-year,all-week,morning,1
-windturbine,R1,2020,upper,all-year,all-week,afternoon,1
-windturbine,R1,2020,upper,all-year,all-week,early-peak,1
-windturbine,R1,2020,upper,all-year,all-week,late-peak,1
-windturbine,R1,2020,upper,all-year,all-week,evening,1
+windturbine,R1,2020,upper,all-year,all-week,night,0
+windturbine,R1,2020,upper,all-year,all-week,morning,0
+windturbine,R1,2020,upper,all-year,all-week,afternoon,0
+windturbine,R1,2020,upper,all-year,all-week,early-peak,0
+windturbine,R1,2020,upper,all-year,all-week,late-peak,0
+windturbine,R1,2020,upper,all-year,all-week,evening,0
