@@ -110,7 +110,6 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
     from muse.readers import camel_to_snake
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
-    print(csv)
     csv = csv.rename(columns=camel_to_snake)
     csv = csv.rename(
         columns={"process_name": "technology", "region_name": "region", "time": "year"}
@@ -133,7 +132,6 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
         if item not in ["technology", "region", "year"]
     ]
     result = result.stack(timeslice=timeslice_levels)
-    print(result)
     return result
 
 
