@@ -139,8 +139,6 @@ def test_zero_utilization_factor_supply_timeslice(
 def test_all_zero_fatal_error(tmpdir, utilization_factors, process_name):
     from muse import examples
     from muse.mca import MCA
-    import pandas as pd
-    from operator import le, ge
 
     sector = "power"
 

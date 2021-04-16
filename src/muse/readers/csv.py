@@ -112,22 +112,18 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
     csv = csv.rename(columns=camel_to_snake)
 
-    process_factors = (
-        csv[1:]
-        .groupby("process_name")
-        .utilization_factor.unique()
-        .apply(lambda x: int(x))
-        .eq(0)
-    )
-
-    print(csv)
-    if process_factors.any():
-        technology = process_factors[process_factors].index[0]
+    if check_utilization_not_all_zero(csv):
         raise ValueError(
-            'A technology can not have a utilization factor of 0 for every timeslice, please check technology "{}" in file {}.'.format(
-                technology, filename
+            """A technology can not have a utilization factor of 0 for every timeslice.
+            Please check file {}.""".format(
+                filename
             )
         )
+
+    # Add small value to 0 utilization factors to avoid numerical problems
+    csv.loc[csv.utilization_factor == 0, "utilization_factor"] = (
+        csv.loc[csv.utilization_factor == 0, "utilization_factor"] + 0.01
+    )
 
     data = csv[csv.process_name != "Unit"]
     months = [u for u in data.month.dropna()]
@@ -160,6 +156,31 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
     result = result.stack(timeslice=["month", "day", "hour"])
 
     return result
+
+
+def check_utilization_not_all_zero(csv):
+    process_factors = (
+        csv[1:]
+        .groupby("process_name")
+        .utilization_factor.nunique()
+        .apply(lambda x: float(x))
+    )
+
+    if process_factors[process_factors == 1].any():
+        single_UF = process_factors[process_factors == 1]
+        result = (
+            csv[1:][csv.process_name.isin(single_UF.index)]
+            .groupby("process_name")
+            .utilization_factor.unique()
+            .apply(lambda x: float(x))
+            .eq(0)
+            .all()
+        )
+
+    else:
+        result = False
+
+    result
 
 
 def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
