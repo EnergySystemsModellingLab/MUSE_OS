@@ -80,7 +80,7 @@ interaction = 'transfer'
 [sectors.power]
 type = 'default'
 priority = 2
-dispatch_production = 'maximum'
+dispatch_production = 'minimum'
 
 technodata = '{path}/technodata/power/Technodata.csv'
 technodata_timeslices = '{path}/technodata/power/TechnodataTimeslices.csv'
