@@ -590,8 +590,8 @@ def costed_production(
             current_prod = np.minimum(demand_prod, current_maxprod)
             current_demand = group_assets(current_prod)
         demand -= np.minimum(current_demand, demand)
-        production += current_prod
+        production = production + current_prod
 
     result = xr.zeros_like(maxprod)
-    result[dict(commodity=commodity)] += production
+    result[dict(commodity=commodity)] = result[dict(commodity=commodity)] + production
     return result
