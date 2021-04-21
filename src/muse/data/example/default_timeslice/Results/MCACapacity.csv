@@ -1,0 +1,4 @@
+index,technology,dst_region,region,agent,sector,type,year,installed,capacity
+0,gasboiler,R1,R1,A1,residential,retrofit,2020,2020,10.00000000000
+0,gasCCGT,R1,R1,A1,power,retrofit,2020,2020,1.00000000000
+0,gassupply1,R1,R1,A1,gas,retrofit,2020,2020,15.00000000000

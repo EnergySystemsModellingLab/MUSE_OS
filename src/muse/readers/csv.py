@@ -140,7 +140,7 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
     data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"), axis=0)
     result = xr.Dataset.from_dataframe(data.sort_index())
     result = result.stack(timeslice=["month", "day", "hour"])
-
+    print("result: {}".format(result))
     return result
 
 

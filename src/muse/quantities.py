@@ -563,10 +563,10 @@ def costed_production(
         .set_coords("has_output")
         .sel(commodity=commodity)
     )
+
     if not with_minimum_service:
         production = xr.zeros_like(constraints.maxprod)
     else:
-        print("production: {}".format(production))
         production = (
             getattr(technodata, "minimum_service_factor", 0) * constraints.maxprod
         )
