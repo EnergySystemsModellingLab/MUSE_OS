@@ -108,6 +108,33 @@ def maximum_production(
     return maximum_production(technologies, capacity)
 
 
+@register_production(name=("minimum"))
+def minimum_production(
+    market: xr.Dataset, capacity: xr.DataArray, technologies: xr.Dataset
+) -> xr.DataArray:
+    from muse.utilities import filter_input, broadcast_techs
+    from muse.commodities import is_enduse
+    from typing import Dict
+
+    filters = {}  # type: Dict
+
+    capa = filter_input(
+        capacity, **{k: v for k, v in filters.items() if k in capacity.dims}
+    )
+    btechs = broadcast_techs(  # type: ignore
+        cast(xr.Dataset, technologies[["fixed_outputs", "utilization_factor"]]), capa
+    )
+
+    print("btechs: {}".format(btechs))
+    ftechs = filter_input(
+        btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
+    )
+    result = capa * ftechs.fixed_outputs * ftechs.utilization_factor
+    print("result: {}".format(result))
+    print("result.where: {}".format(result.where(is_enduse(result.comm_usage), 0)))
+    return result.where(is_enduse(result.comm_usage), 0)
+
+
 @register_production(name=("share", "shares"))
 def supply(
     market: xr.Dataset, capacity: xr.DataArray, technologies: xr.Dataset
@@ -209,4 +236,4 @@ def costed_production(
                 commodity=~check_usage(technologies.comm_usage, CommodityUsage.PRODUCT)
             )
         ] = 0
-    return
+    return production

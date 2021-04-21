@@ -335,7 +335,9 @@ def annual_levelized_cost_of_energy(
 
     o_and_e_costs = (
         convert_timeslice(
-            (techs.fix_par + techs.var_par), prices.timeslice, QuantityType.EXTENSIVE,
+            (techs.fix_par + techs.var_par),
+            prices.timeslice,
+            QuantityType.EXTENSIVE,
         )
         / techs.utilization_factor
     )
@@ -564,6 +566,7 @@ def costed_production(
     if not with_minimum_service:
         production = xr.zeros_like(constraints.maxprod)
     else:
+        print("production: {}".format(production))
         production = (
             getattr(technodata, "minimum_service_factor", 0) * constraints.maxprod
         )
