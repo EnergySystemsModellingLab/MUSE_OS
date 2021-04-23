@@ -16,6 +16,8 @@ def modify_technodata_timeslices(model_path, sector, process_name, utilization_f
         technodata_timeslices["ProcessName"] == process_name[1], "UtilizationFactor"
     ] = utilization_factors[1]
 
+    technodata_timeslices["MinimumServiceFactor"] = 0
+
     return technodata_timeslices
 
 
