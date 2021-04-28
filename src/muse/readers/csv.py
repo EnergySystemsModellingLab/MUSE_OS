@@ -111,6 +111,8 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
     csv = csv.rename(columns=camel_to_snake)
+    csv = csv.rename(
+        columns={"process_name": "technology", "region_name": "region", "time": "year"}
 
     if check_utilization_not_all_zero(csv):
         raise ValueError(
