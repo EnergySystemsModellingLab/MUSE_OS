@@ -142,19 +142,24 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
         ],
         names=("technology", "region", "year", "month", "day", "hour"),
     )
+    data = csv[csv.technology != "Unit"]
+    data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"))
 
+    ts = pd.MultiIndex.from_frame(data.drop(columns=["utilization_factor", "obj_sort"]))
     data.index = ts
     data.columns.name = "technodata_timeslice"
     data.index.name = "technology"
-    data = data.drop(
-        ["process_name", "region_name", "time", "month", "day", "hour", "obj_sort"],
-        axis=1,
-    )
+    data = data.filter(["utilization_factor"])
 
-    data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"), axis=0)
+    data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"))
     result = xr.Dataset.from_dataframe(data.sort_index())
-    result = result.stack(timeslice=["month", "day", "hour"])
 
+    timeslice_levels = [
+        item
+        for item in list(result.coords)
+        if item not in ["technology", "region", "year"]
+    ]
+    result = result.stack(timeslice=timeslice_levels)
     return result
 
 
