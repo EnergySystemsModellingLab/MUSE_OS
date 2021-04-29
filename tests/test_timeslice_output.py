@@ -33,7 +33,6 @@ def test_fullsim_timeslices(tmpdir, utilization_factors, process_name):
     model_path = examples.copy_model(
         name="default_timeslice", path=tmpdir, overwrite=True
     )
-
     technodata_timeslices = modify_technodata_timeslices(
         model_path=model_path,
         sector=sector,
@@ -42,7 +41,7 @@ def test_fullsim_timeslices(tmpdir, utilization_factors, process_name):
     )
 
     technodata_timeslices.to_csv(
-        model_path / "technodata" / sector / "TechnodataTimeslices.csv"
+        model_path / "technodata" / sector / "TechnodataTimeslices.csv", index=False
     )
 
     with tmpdir.as_cwd():
@@ -146,7 +145,6 @@ def test_all_zero_fatal_error(tmpdir, utilization_factors, process_name):
     model_path = examples.copy_model(
         name="default_timeslice", path=tmpdir, overwrite=True
     )
-
     technodata_timeslices = modify_technodata_timeslices(
         model_path=model_path,
         sector=sector,
@@ -155,7 +153,7 @@ def test_all_zero_fatal_error(tmpdir, utilization_factors, process_name):
     )
 
     technodata_timeslices.to_csv(
-        model_path / "technodata" / sector / "TechnodataTimeslices.csv"
+        model_path / "technodata" / sector / "TechnodataTimeslices.csv", index=False
     )
 
     with tmpdir.as_cwd(), raises(ValueError):
