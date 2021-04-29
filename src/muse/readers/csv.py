@@ -107,41 +107,9 @@ def read_technodictionary(filename: Union[Text, Path]) -> xr.Dataset:
 
 
 def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
-    from muse.readers import camel_to_snake
 
-    csv = pd.read_csv(filename, float_precision="high", low_memory=False)
-    csv = csv.rename(columns=camel_to_snake)
+    csv = check_utilization_not_all_zero(filename)
 
-    if check_utilization_not_all_zero(csv):
-        raise ValueError(
-            """A technology can not have a utilization factor of 0 for every timeslice.
-            Please check file {}.""".format(
-                filename
-            )
-        )
-
-    # Add small value to 0 utilization factors to avoid numerical problems
-    csv.loc[csv.utilization_factor == 0, "utilization_factor"] = (
-        csv.loc[csv.utilization_factor == 0, "utilization_factor"] + 0.01
-    )
-
-    data = csv[csv.process_name != "Unit"]
-    months = [u for u in data.month.dropna()]
-    days = [u for u in data.day.dropna()]
-    hours = [u for u in data.hour.dropna()]
-
-    ts = pd.MultiIndex.from_arrays(
-        [
-            data.process_name,
-            data.region_name,
-            [int(u) for u in data.time],
-            months,
-            days,
-            hours,
-            # data.obj_sort, #TODO Implement minimum/maximum timeslice
-        ],
-        names=("technology", "region", "year", "month", "day", "hour"),
-    )
     data = csv[csv.technology != "Unit"]
     data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"))
 
@@ -151,7 +119,7 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
     data.index.name = "technology"
     data = data.filter(["utilization_factor"])
 
-    data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"))
+    #    data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"))
     result = xr.Dataset.from_dataframe(data.sort_index())
 
     timeslice_levels = [
@@ -161,31 +129,6 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
     ]
     result = result.stack(timeslice=timeslice_levels)
     return result
-
-
-def check_utilization_not_all_zero(csv):
-    process_factors = (
-        csv[1:]
-        .groupby("process_name")
-        .utilization_factor.nunique()
-        .apply(lambda x: float(x))
-    )
-
-    if process_factors[process_factors == 1].any():
-        single_UF = process_factors[process_factors == 1]
-        result = (
-            csv[1:][csv.process_name.isin(single_UF.index)]
-            .groupby("process_name")
-            .utilization_factor.unique()
-            .apply(lambda x: float(x))
-            .eq(0)
-            .all()
-        )
-
-    else:
-        result = False
-
-    result
 
 
 def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
@@ -894,3 +837,52 @@ def read_finite_resources(path: Union[Text, Path]) -> xr.DataArray:
     data.set_index(indices, inplace=True)
 
     return xr.Dataset.from_dataframe(data).to_array(dim="commodity")
+
+
+# def check_utilization_not_all_zero(csv):
+#     process_factors = (
+#         csv[1:]
+#         .groupby("process_name")
+#         .utilization_factor.nunique()
+#         .apply(lambda x: float(x))
+#     )
+
+#     if process_factors[process_factors == 1].any():
+#         single_UF = process_factors[process_factors == 1]
+#         result = (
+#             csv[1:][csv.process_name.isin(single_UF.index)]
+#             .groupby("process_name")
+#             .utilization_factor.unique()
+#             .apply(lambda x: float(x))
+#             .eq(0)
+#             .all()
+#         )
+
+#     else:
+#         result = False
+
+#     result
+
+
+def check_utilization_not_all_zero(filename):
+    from muse.readers import camel_to_snake
+
+    csv = pd.read_csv(filename, float_precision="high", low_memory=False)
+    csv = csv.rename(columns=camel_to_snake)
+    csv = csv.rename(
+        columns={"process_name": "technology", "region_name": "region", "time": "year"}
+    )
+    utilization_sum = csv.groupby(["technology", "region", "year"]).sum()
+
+    # Add small value to 0 utilization factors to avoid numerical problems
+    if utilization_sum.utilization_factor.any() == 0:
+        csv.loc[csv.utilization_factor == 0, "utilization_factor"] = (
+            csv.loc[csv.utilization_factor == 0, "utilization_factor"] + 0.01
+        )
+        raise ValueError(
+            """A technology can not have a utilization factor of 0 for every timeslice.
+            Please check file {}.""".format(
+                filename
+            )
+        )
+    return csv
