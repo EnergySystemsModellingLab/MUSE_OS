@@ -102,7 +102,7 @@ def test_zero_utilization_factor_supply_timeslice(
     )
 
     technodata_timeslices.to_csv(
-        model_path / "technodata" / sector / "TechnodataTimeslices.csv"
+        model_path / "technodata" / sector / "TechnodataTimeslices.csv", index=False
     )
 
     with tmpdir.as_cwd():
