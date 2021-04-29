@@ -46,7 +46,7 @@ def test_minimum_service_factor(tmpdir, minimum_service_factor, process_name):
     )
 
     technodata_timeslices.to_csv(
-        model_path / "technodata" / sector / "TechnodataTimeslices.csv"
+        model_path / "technodata" / sector / "TechnodataTimeslices.csv", index=False
     )
 
     with tmpdir.as_cwd():
