@@ -129,7 +129,7 @@ def refine_new_price(
     commodities: list,
     price_too_high_threshold: float,
 ) -> float:
-    """ Refine the value of the carbon price to ensure it is not too high or low.
+    """Refine the value of the carbon price to ensure it is not too high or low.
     Arguments:
         market: Market, with the prices, supply, consumption and demand.
         historic_price: DataArray with the historic carbon prices.

@@ -335,7 +335,9 @@ def annual_levelized_cost_of_energy(
 
     o_and_e_costs = (
         convert_timeslice(
-            (techs.fix_par + techs.var_par), prices.timeslice, QuantityType.EXTENSIVE,
+            (techs.fix_par + techs.var_par),
+            prices.timeslice,
+            QuantityType.EXTENSIVE,
         )
         / techs.utilization_factor
     )
@@ -561,6 +563,7 @@ def costed_production(
         .set_coords("has_output")
         .sel(commodity=commodity)
     )
+
     if not with_minimum_service:
         production = xr.zeros_like(constraints.maxprod)
     else:
@@ -587,8 +590,8 @@ def costed_production(
             current_prod = np.minimum(demand_prod, current_maxprod)
             current_demand = group_assets(current_prod)
         demand -= np.minimum(current_demand, demand)
-        production += current_prod
+        production = production + current_prod
 
     result = xr.zeros_like(maxprod)
-    result[dict(commodity=commodity)] += production
+    result[dict(commodity=commodity)] = result[dict(commodity=commodity)] + production
     return result

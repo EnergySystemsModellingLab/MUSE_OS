@@ -209,4 +209,4 @@ def costed_production(
                 commodity=~check_usage(technologies.comm_usage, CommodityUsage.PRODUCT)
             )
         ] = 0
-    return
+    return production
