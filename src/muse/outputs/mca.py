@@ -347,6 +347,7 @@ def metric_supply(
 def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Sector fuel costs with agent annotations."""
     from muse.production import supply
+
     data_sector: List[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
@@ -366,7 +367,11 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
                 year=output_year
             )
             result = convert_timeslice(
-                supply(agent_market, capacity, technologies,),
+                supply(
+                    agent_market,
+                    capacity,
+                    technologies,
+                ),
                 agent_market["consumption"].timeslice,
                 QuantityType.EXTENSIVE,
             )
@@ -386,7 +391,7 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
                 data_sector.append(c)
     if len(data_sector) > 0:
         output = pd.concat([u for u in data_sector])
-        
+
     else:
         output = pd.DataFrame()
     output = output.reset_index()
@@ -395,7 +400,12 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
 
 
 def costed_production(
-    demand, costs, capacity, technologies, with_minimum_service, year,
+    demand,
+    costs,
+    capacity,
+    technologies,
+    with_minimum_service,
+    year,
 ) -> xr.DataArray:
     """Computes production from ranked assets.
 
@@ -575,7 +585,11 @@ def sector_consumption(
 
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             production = convert_timeslice(
-                supply(agent_market, capacity, technologies,),
+                supply(
+                    agent_market,
+                    capacity,
+                    technologies,
+                ),
                 agent_market["consumption"].timeslice,
                 QuantityType.EXTENSIVE,
             )
@@ -636,9 +650,16 @@ def sector_fuel_costs(
                 technologies.comm_usage
             )  # .sel(commodity=market.commodity))
 
-            capacity = a.filter_input(a.assets.capacity, year=output_year,).fillna(0.0)
+            capacity = a.filter_input(
+                a.assets.capacity,
+                year=output_year,
+            ).fillna(0.0)
             production = convert_timeslice(
-                supply(agent_market, capacity, technologies,),
+                supply(
+                    agent_market,
+                    capacity,
+                    technologies,
+                ),
                 agent_market["consumption"].timeslice,
                 QuantityType.EXTENSIVE,
             )
@@ -701,7 +722,9 @@ def sector_capital_costs(
             )
             result = data.cap_par * (capacity ** data.cap_exp)
             data_agent = convert_timeslice(
-                result, demand.timeslice, QuantityType.EXTENSIVE,
+                result,
+                demand.timeslice,
+                QuantityType.EXTENSIVE,
             )
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
@@ -766,7 +789,11 @@ def sector_emission_costs(
             red_envs = envs[i].commodity.values
             prices = a.filter_input(market.prices, year=output_year, commodity=red_envs)
             production = convert_timeslice(
-                supply(agent_market, capacity, technologies,),
+                supply(
+                    agent_market,
+                    capacity,
+                    technologies,
+                ),
                 agent_market["consumption"].timeslice,
                 QuantityType.EXTENSIVE,
             )
@@ -798,8 +825,7 @@ def metric_lcoe(
 
 
 def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
-    """Levelized cost of energy () of technologies over their lifetime.
-    """
+    """Levelized cost of energy () of technologies over their lifetime."""
     from muse.commodities import is_pollutant, is_material, is_enduse, is_fuel
     from muse.objectives import discount_factor
     from muse.quantities import consumption
@@ -867,7 +893,11 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             )
 
             production = convert_timeslice(
-                supply(agent_market, capacity, technologies,),
+                supply(
+                    agent_market,
+                    capacity,
+                    technologies,
+                ),
                 agent_market["consumption"].timeslice,
                 QuantityType.EXTENSIVE,
             )
@@ -877,7 +907,9 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             prices = a.filter_input(market.prices, year=years.values).ffill("year")
             result = cap_par * (capacity ** cap_exp)
             installed_capacity_costs = convert_timeslice(
-                result, agent_market["consumption"].timeslice, QuantityType.EXTENSIVE,
+                result,
+                agent_market["consumption"].timeslice,
+                QuantityType.EXTENSIVE,
             )
             environmental_costs = (
                 (production * prices * rates)
@@ -905,7 +937,9 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             # Fixed and Variable costs
             result = fix_par * (capacity ** fix_exp)
             fixed_costs = convert_timeslice(
-                result, agent_market["consumption"].timeslice, QuantityType.EXTENSIVE,
+                result,
+                agent_market["consumption"].timeslice,
+                QuantityType.EXTENSIVE,
             )
             variable_costs = (
                 var_par * production.sel(commodity=products) ** var_exp
@@ -950,13 +984,12 @@ def metric_eac(
 
 
 def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
-    """Net Present Value of technologies over their lifetime.
-    """
+    """Net Present Value of technologies over their lifetime."""
     from muse.commodities import is_pollutant, is_material, is_enduse, is_fuel
     from muse.objectives import discount_factor
     from muse.quantities import consumption
     from muse.production import supply
-    
+
     # Filtering of the inputs
     data_sector: List[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
@@ -1022,7 +1055,11 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             crf = interest_rate / (1 - (1 / (1 + interest_rate) ** nyears))
 
             production = convert_timeslice(
-                supply(agent_market, capacity, technologies,),
+                supply(
+                    agent_market,
+                    capacity,
+                    technologies,
+                ),
                 agent_market["consumption"].timeslice,
                 QuantityType.EXTENSIVE,
             )
@@ -1041,7 +1078,9 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             # Cost of installed capacity
             result = cap_par * (capacity ** cap_exp)
             installed_capacity_costs = convert_timeslice(
-                result, agent_market["consumption"].timeslice, QuantityType.EXTENSIVE,
+                result,
+                agent_market["consumption"].timeslice,
+                QuantityType.EXTENSIVE,
             )
 
             # Cost related to environmental products
@@ -1071,7 +1110,9 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             # Fixed and Variable costs
             result = fix_par * (capacity ** fix_exp)
             fixed_costs = convert_timeslice(
-                result, agent_market.consumption.timeslice, QuantityType.EXTENSIVE,
+                result,
+                agent_market.consumption.timeslice,
+                QuantityType.EXTENSIVE,
             )
             variable_costs = (
                 var_par * production.sel(commodity=products) ** var_exp

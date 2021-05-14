@@ -107,19 +107,32 @@ def read_technodictionary(filename: Union[Text, Path]) -> xr.Dataset:
 
 
 def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
+    from muse.readers import camel_to_snake
 
-    csv = check_utilization_not_all_zero(filename)
+    csv = pd.read_csv(filename, float_precision="high", low_memory=False)
+    csv = csv.rename(columns=camel_to_snake)
 
+    csv = csv.rename(
+        columns={"process_name": "technology", "region_name": "region", "time": "year"}
+    )
     data = csv[csv.technology != "Unit"]
-    data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"))
 
-    ts = pd.MultiIndex.from_frame(data.drop(columns=["utilization_factor", "obj_sort"]))
+    data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"))
+    data = check_utilization_not_all_zero(data, filename)
+
+    ts = pd.MultiIndex.from_frame(
+        data.drop(
+            columns=["utilization_factor", "minimum_service_factor", "obj_sort"],
+            errors="ignore",
+        )
+    )
+
     data.index = ts
     data.columns.name = "technodata_timeslice"
     data.index.name = "technology"
-    data = data.filter(["utilization_factor"])
 
-    #    data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"))
+    data = data.filter(["utilization_factor", "minimum_service_factor"])
+
     result = xr.Dataset.from_dataframe(data.sort_index())
 
     timeslice_levels = [
@@ -864,25 +877,27 @@ def read_finite_resources(path: Union[Text, Path]) -> xr.DataArray:
 #     result
 
 
-def check_utilization_not_all_zero(filename):
-    from muse.readers import camel_to_snake
+def check_utilization_not_all_zero(data, filename):
 
-    csv = pd.read_csv(filename, float_precision="high", low_memory=False)
-    csv = csv.rename(columns=camel_to_snake)
-    csv = csv.rename(
-        columns={"process_name": "technology", "region_name": "region", "time": "year"}
-    )
-    utilization_sum = csv.groupby(["technology", "region", "year"]).sum()
-
-    # Add small value to 0 utilization factors to avoid numerical problems
-    if utilization_sum.utilization_factor.any() == 0:
-        csv.loc[csv.utilization_factor == 0, "utilization_factor"] = (
-            csv.loc[csv.utilization_factor == 0, "utilization_factor"] + 0.01
-        )
+    if "utilization_factor" not in data.columns:
         raise ValueError(
-            """A technology can not have a utilization factor of 0 for every timeslice.
+            """A technology needs to have a utilization factor defined for every timeslice.
             Please check file {}.""".format(
                 filename
             )
         )
-    return csv
+    else:
+        utilization_sum = data.groupby(["technology", "region", "year"]).sum()
+
+        # Add small value to 0 utilization factors to avoid numerical problems
+        if utilization_sum.utilization_factor.any() == 0:
+            data.loc[data.utilization_factor == 0, "utilization_factor"] = (
+                data.loc[data.utilization_factor == 0, "utilization_factor"] + 0.01
+            )
+            raise ValueError(
+                """A technology can not have a utilization factor of 0 for every timeslice.
+                Please check file {}.""".format(
+                    filename
+                )
+            )
+    return data

@@ -383,7 +383,7 @@ def new_consumption(
     current_year: Optional[int] = None,
     forecast: int = 5,
 ) -> xr.DataArray:
-    r""" Computes share of the demand attributed to new agents.
+    r"""Computes share of the demand attributed to new agents.
 
     The new agents service the demand that can be attributed specificaly to growth and
     that cannot be serviced by existing assets. In other words:
