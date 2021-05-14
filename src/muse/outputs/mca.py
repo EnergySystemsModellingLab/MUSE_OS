@@ -204,8 +204,6 @@ def capacity(
 
 def sector_capacity(sector: AbstractSector) -> pd.DataFrame:
     """Sector capacity with agent annotations."""
-    from pandas import DataFrame, concat
-
     capa_sector: List[xr.DataArray] = []
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
     for agent in agents:
@@ -237,9 +235,9 @@ def sector_capacity(sector: AbstractSector) -> pd.DataFrame:
             c = b.reset_index()
             capa_sector.append(c)
     if len(capa_sector) == 0:
-        return DataFrame()
+        return pd.DataFrame()
 
-    capacity = concat([u for u in capa_sector])
+    capacity = pd.concat([u for u in capa_sector])
     capacity = capacity[capacity.capacity != 0]
 
     capacity = capacity.reset_index()
@@ -348,7 +346,7 @@ def metric_supply(
 
 def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Sector fuel costs with agent annotations."""
-
+    from muse.production import supply
     data_sector: List[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
@@ -381,14 +379,17 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
-            if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
-                data_sector.append(data_agent.groupby("technology").fillna(0))
+            a = data_agent.to_dataframe("supply")
+            if len(a) > 0 and len(a.technology.values) > 0:
+                b = a.groupby("technology").fillna(0)
+                c = b.reset_index()
+                data_sector.append(c)
     if len(data_sector) > 0:
-        output = pd.concat([u.to_dataframe("supply") for u in data_sector])
-        output = output.reset_index()
-
+        output = pd.concat([u for u in data_sector])
+        
     else:
         output = pd.DataFrame()
+    output = output.reset_index()
 
     return output
 
@@ -552,6 +553,7 @@ def sector_consumption(
 ) -> pd.DataFrame:
     """Sector fuel costs with agent annotations."""
     from muse.quantities import consumption
+    from muse.production import supply
 
     data_sector: List[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
@@ -612,6 +614,7 @@ def sector_fuel_costs(
     """Sector fuel costs with agent annotations."""
     from muse.commodities import is_fuel
     from muse.quantities import consumption
+    from muse.production import supply
 
     data_sector: List[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
@@ -730,6 +733,7 @@ def sector_emission_costs(
 ) -> pd.DataFrame:
     """Sector emission costs with agent annotations."""
     from muse.commodities import is_enduse, is_pollutant
+    from muse.production import supply
 
     data_sector: List[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
@@ -799,6 +803,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
     from muse.commodities import is_pollutant, is_material, is_enduse, is_fuel
     from muse.objectives import discount_factor
     from muse.quantities import consumption
+    from muse.production import supply
 
     # Filtering of the inputs
     data_sector: List[xr.DataArray] = []
@@ -950,7 +955,8 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
     from muse.commodities import is_pollutant, is_material, is_enduse, is_fuel
     from muse.objectives import discount_factor
     from muse.quantities import consumption
-
+    from muse.production import supply
+    
     # Filtering of the inputs
     data_sector: List[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
