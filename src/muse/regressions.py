@@ -392,7 +392,7 @@ def ExponentialAdj(
 def Logistic(
     self, gdp: DataArray, population: DataArray, forecast: int = 5, n: int = 4, **kwargs
 ) -> DataArray:
-    """ (1 + t * f^n) / (1 + f^n) * a * pop / (1 + b * e^(gpd * c / pop))
+    """(1 + t * f^n) / (1 + f^n) * a * pop / (1 + b * e^(gpd * c / pop))
 
     With f the number of forecast years.
     """
