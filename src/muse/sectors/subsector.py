@@ -187,6 +187,7 @@ class Subsector:
             commodities = aggregate_enduses(
                 [agent.assets for agent in agents], technologies
             )
+
         if len(commodities) == 0:
             raise RuntimeError("Subsector commodities cannot be empty")
 
@@ -228,6 +229,7 @@ def aggregate_enduses(
     outputs = technologies.fixed_outputs.sel(
         commodity=is_enduse(technologies.comm_usage), technology=list(techs)
     )
+
     return outputs.commodity.sel(
         commodity=outputs.any([u for u in outputs.dims if u != "commodity"])
     ).values.tolist()

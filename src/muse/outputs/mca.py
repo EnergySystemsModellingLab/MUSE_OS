@@ -229,7 +229,7 @@ def sector_capacity(sector: AbstractSector) -> pd.DataFrame:
                         "installed",
                     ]
                 )
-                .sum("asset")
+                .sum()  # ("asset")
                 .fillna(0)
             )
             c = b.reset_index()
@@ -251,7 +251,7 @@ def _aggregate_sectors(
     alldata = [op(sector, *args) for sector in sectors]
     if len(alldata) == 0:
         return pd.DataFrame()
-    return pd.concat(alldata)
+    return pd.concat(alldata, sort=True)
 
 
 @register_output_quantity
@@ -340,7 +340,6 @@ def metric_supply(
     market: xr.Dataset, sectors: List[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current timeslice supply across all sectors."""
-    print("Preparing output functions")
     return _aggregate_sectors(sectors, market, op=sector_supply)
 
 
@@ -367,11 +366,7 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
                 year=output_year
             )
             result = convert_timeslice(
-                supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                ),
+                supply(agent_market, capacity, technologies,),
                 agent_market["consumption"].timeslice,
                 QuantityType.EXTENSIVE,
             )
@@ -390,7 +385,7 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
                 c = b.reset_index()
                 data_sector.append(c)
     if len(data_sector) > 0:
-        output = pd.concat([u for u in data_sector])
+        output = pd.concat([u for u in data_sector], sort=True)
 
     else:
         output = pd.DataFrame()
@@ -400,12 +395,7 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
 
 
 def costed_production(
-    demand,
-    costs,
-    capacity,
-    technologies,
-    with_minimum_service,
-    year,
+    demand, costs, capacity, technologies, with_minimum_service, year,
 ) -> xr.DataArray:
     """Computes production from ranked assets.
 
@@ -554,7 +544,6 @@ def metric_consumption(
     market: xr.Dataset, sectors: List[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current timeslice consumption across all sectors."""
-    print("Preparing output functions")
     return _aggregate_sectors(sectors, market, op=sector_consumption)
 
 
@@ -585,11 +574,7 @@ def sector_consumption(
 
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             production = convert_timeslice(
-                supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                ),
+                supply(agent_market, capacity, technologies,),
                 agent_market["consumption"].timeslice,
                 QuantityType.EXTENSIVE,
             )
@@ -604,7 +589,9 @@ def sector_consumption(
             if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
                 data_sector.append(data_agent.groupby("technology").fillna(0))
     if len(data_sector) > 0:
-        output = pd.concat([u.to_dataframe("consumption") for u in data_sector])
+        output = pd.concat(
+            [u.to_dataframe("consumption") for u in data_sector], sort=True
+        )
         output = output.reset_index()
 
     else:
@@ -618,7 +605,6 @@ def metric_fuel_costs(
     market: xr.Dataset, sectors: List[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current lifetime levelised cost across all sectors."""
-    print("Preparing output functions")
     return _aggregate_sectors(sectors, market, op=sector_fuel_costs)
 
 
@@ -650,16 +636,9 @@ def sector_fuel_costs(
                 technologies.comm_usage
             )  # .sel(commodity=market.commodity))
 
-            capacity = a.filter_input(
-                a.assets.capacity,
-                year=output_year,
-            ).fillna(0.0)
+            capacity = a.filter_input(a.assets.capacity, year=output_year,).fillna(0.0)
             production = convert_timeslice(
-                supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                ),
+                supply(agent_market, capacity, technologies,),
                 agent_market["consumption"].timeslice,
                 QuantityType.EXTENSIVE,
             )
@@ -676,7 +655,7 @@ def sector_fuel_costs(
                 data_sector.append(data_agent.groupby("technology").fillna(0))
     if len(data_sector) > 0:
         output = pd.concat(
-            [u.to_dataframe("fuel_consumption_costs") for u in data_sector]
+            [u.to_dataframe("fuel_consumption_costs") for u in data_sector], sort=True
         )
         output = output.reset_index()
 
@@ -691,7 +670,6 @@ def metric_capital_costs(
     market: xr.Dataset, sectors: List[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current capital costs across all sectors."""
-    print("Preparing output functions")
     return _aggregate_sectors(sectors, market, op=sector_capital_costs)
 
 
@@ -722,9 +700,7 @@ def sector_capital_costs(
             )
             result = data.cap_par * (capacity ** data.cap_exp)
             data_agent = convert_timeslice(
-                result,
-                demand.timeslice,
-                QuantityType.EXTENSIVE,
+                result, demand.timeslice, QuantityType.EXTENSIVE,
             )
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
@@ -733,7 +709,9 @@ def sector_capital_costs(
             if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
                 data_sector.append(data_agent.groupby("technology").fillna(0))
     if len(data_sector) > 0:
-        output = pd.concat([u.to_dataframe("capital_costs") for u in data_sector])
+        output = pd.concat(
+            [u.to_dataframe("capital_costs") for u in data_sector], sort=True
+        )
         output = output.reset_index()
 
     else:
@@ -747,7 +725,6 @@ def metric_emission_costs(
     market: xr.Dataset, sectors: List[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current emission costs across all sectors."""
-    print("Preparing output functions")
     return _aggregate_sectors(sectors, market, op=sector_emission_costs)
 
 
@@ -789,11 +766,7 @@ def sector_emission_costs(
             red_envs = envs[i].commodity.values
             prices = a.filter_input(market.prices, year=output_year, commodity=red_envs)
             production = convert_timeslice(
-                supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                ),
+                supply(agent_market, capacity, technologies,),
                 agent_market["consumption"].timeslice,
                 QuantityType.EXTENSIVE,
             )
@@ -806,7 +779,9 @@ def sector_emission_costs(
             if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
                 data_sector.append(data_agent.groupby("technology").fillna(0))
     if len(data_sector) > 0:
-        output = pd.concat([u.to_dataframe("emission_costs") for u in data_sector])
+        output = pd.concat(
+            [u.to_dataframe("emission_costs") for u in data_sector], sort=True
+        )
         output = output.reset_index()
 
     else:
@@ -820,7 +795,6 @@ def metric_lcoe(
     market: xr.Dataset, sectors: List[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current emission costs across all sectors."""
-    print("Preparing output functions")
     return _aggregate_sectors(sectors, market, op=sector_lcoe)
 
 
@@ -893,11 +867,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             )
 
             production = convert_timeslice(
-                supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                ),
+                supply(agent_market, capacity, technologies,),
                 agent_market["consumption"].timeslice,
                 QuantityType.EXTENSIVE,
             )
@@ -907,9 +877,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             prices = a.filter_input(market.prices, year=years.values).ffill("year")
             result = cap_par * (capacity ** cap_exp)
             installed_capacity_costs = convert_timeslice(
-                result,
-                agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
+                result, agent_market["consumption"].timeslice, QuantityType.EXTENSIVE,
             )
             environmental_costs = (
                 (production * prices * rates)
@@ -937,9 +905,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             # Fixed and Variable costs
             result = fix_par * (capacity ** fix_exp)
             fixed_costs = convert_timeslice(
-                result,
-                agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
+                result, agent_market["consumption"].timeslice, QuantityType.EXTENSIVE,
             )
             variable_costs = (
                 var_par * production.sel(commodity=products) ** var_exp
@@ -966,7 +932,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
                 data_sector.append(data_agent.groupby("technology").fillna(0))
     if len(data_sector) > 0:
-        output = pd.concat([u.to_dataframe("LCOE") for u in data_sector])
+        output = pd.concat([u.to_dataframe("LCOE") for u in data_sector], sort=True)
         output = output.reset_index()
 
     else:
@@ -979,7 +945,6 @@ def metric_eac(
     market: xr.Dataset, sectors: List[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current emission costs across all sectors."""
-    print("Preparing output functions")
     return _aggregate_sectors(sectors, market, op=sector_eac)
 
 
@@ -1055,11 +1020,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             crf = interest_rate / (1 - (1 / (1 + interest_rate) ** nyears))
 
             production = convert_timeslice(
-                supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                ),
+                supply(agent_market, capacity, technologies,),
                 agent_market["consumption"].timeslice,
                 QuantityType.EXTENSIVE,
             )
@@ -1078,9 +1039,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             # Cost of installed capacity
             result = cap_par * (capacity ** cap_exp)
             installed_capacity_costs = convert_timeslice(
-                result,
-                agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
+                result, agent_market["consumption"].timeslice, QuantityType.EXTENSIVE,
             )
 
             # Cost related to environmental products
@@ -1110,9 +1069,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             # Fixed and Variable costs
             result = fix_par * (capacity ** fix_exp)
             fixed_costs = convert_timeslice(
-                result,
-                agent_market.consumption.timeslice,
-                QuantityType.EXTENSIVE,
+                result, agent_market.consumption.timeslice, QuantityType.EXTENSIVE,
             )
             variable_costs = (
                 var_par * production.sel(commodity=products) ** var_exp
@@ -1137,7 +1094,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
                 data_sector.append(data_agent.groupby("technology").fillna(0))
     if len(data_sector) > 0:
-        output = pd.concat([u.to_dataframe("EAC") for u in data_sector])
+        output = pd.concat([u.to_dataframe("EAC") for u in data_sector], sort=True)
         output = output.reset_index()
 
     else:
