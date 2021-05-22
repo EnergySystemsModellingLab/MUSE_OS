@@ -150,15 +150,7 @@ class MCA(object):
         if excluded_commodities:
             self.excluded_commodities = excluded_commodities
         else:
-            self.excluded_commodities = [
-                "CO2f",
-                "CO2r",
-                "CO2c",
-                "CO2s",
-                "CH4",
-                "N2O",
-                "f-gases",
-            ]
+            self.excluded_commodities = []
 
         # Carbon budget parameters
         if isinstance(carbon_budget, DataArray) and "year" in carbon_budget.dims:
@@ -325,7 +317,8 @@ class MCA(object):
                     self.carbon_price = future_propagation(
                         self.carbon_price, future_price
                     )
-
+                    print(new_price, "New price mca")
+                    print(self.carbon_price, "mca", "updated with ", future_price)
             _, new_market, self.sectors = self.find_equilibrium(new_market)
 
             # If we need to account for the carbon budget, we might need to change
