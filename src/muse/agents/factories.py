@@ -267,7 +267,6 @@ def agents_factory(
         capacity = capacity.sel(dst_region=regions)
         if capacity.dst_region.size == 1:
             capacity = capacity.squeeze("dst_region", drop=True)
-
     result = []
     for param in params:
         if regions is not None and param["region"] not in regions:
