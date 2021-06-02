@@ -10,6 +10,7 @@ Input Files
    regions
    commodities
    technodata
+   technodata_timeslices
    timeslices
    commodities_io
    existing_capacity
