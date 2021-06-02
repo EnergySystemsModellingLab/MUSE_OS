@@ -18,6 +18,7 @@ We recommend following the tutorials step by step, as the files build on the pre
    modify-timing-data
    addition-service-demand
    add-gdp-correlation-demand
+   min-max-timeslice-constraints
 
 
 Tutorial Information
@@ -81,4 +82,10 @@ In the table below, you will notice a x2 after some of the technology tuples. Th
       - [gasCCGT, windturbine, solarPV]
       - [gassuply1]
       - [6]
-
+   *  - 7
+      - [A1]
+      - [R1]
+      - [gasboiler, heatpump]
+      - [gasCCGT, windturbine]
+      - [gassuply1]
+      - [7]
