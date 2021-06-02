@@ -5,10 +5,7 @@
     "editor.formatOnSave": true,
     "python.formatting.provider": "black",
     "python.linting.mypyEnabled": true,
-<<<<<<< HEAD
     "python.testing.pytestEnabled": true,
-    "restructuredtext.confPath": "${workspaceFolder}/docs"
-=======
-    "python.testing.pytestEnabled": true
->>>>>>> 44e9eaf3c2493e9a0ac61be1c74061027052e6c1
+    "restructuredtext.confPath": "${workspaceFolder}/docs",
+    "python.pythonPath": "/opt/anaconda3/envs/muse/bin/python",
 }

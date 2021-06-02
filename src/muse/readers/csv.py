@@ -106,6 +106,44 @@ def read_technodictionary(filename: Union[Text, Path]) -> xr.Dataset:
     return result
 
 
+def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
+    from muse.readers import camel_to_snake
+
+    csv = pd.read_csv(filename, float_precision="high", low_memory=False)
+    csv = csv.rename(columns=camel_to_snake)
+
+    csv = csv.rename(
+        columns={"process_name": "technology", "region_name": "region", "time": "year"}
+    )
+    data = csv[csv.technology != "Unit"]
+
+    data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"))
+    data = check_utilization_not_all_zero(data, filename)
+
+    ts = pd.MultiIndex.from_frame(
+        data.drop(
+            columns=["utilization_factor", "minimum_service_factor", "obj_sort"],
+            errors="ignore",
+        )
+    )
+
+    data.index = ts
+    data.columns.name = "technodata_timeslice"
+    data.index.name = "technology"
+
+    data = data.filter(["utilization_factor", "minimum_service_factor"])
+
+    result = xr.Dataset.from_dataframe(data.sort_index())
+
+    timeslice_levels = [
+        item
+        for item in list(result.coords)
+        if item not in ["technology", "region", "year"]
+    ]
+    result = result.stack(timeslice=timeslice_levels)
+    return result
+
+
 def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
     """Reads process inputs or ouputs.
 
@@ -196,6 +234,7 @@ def read_initial_capacity(data: Union[Text, Path, pd.DataFrame]) -> xr.DataArray
 
 def read_technologies(
     technodata_path_or_sector: Optional[Union[Text, Path]] = None,
+    technodata_timeslices_path: Optional[Union[Text, Path]] = None,
     comm_out_path: Optional[Union[Text, Path]] = None,
     comm_in_path: Optional[Union[Text, Path]] = None,
     commodities: Optional[Union[Text, Path, xr.Dataset]] = None,
@@ -210,6 +249,9 @@ def read_technologies(
             looks for a "technodataSECTORNAME.csv" file in the standard location for
             that sector. However, if  `comm_out_path` and `comm_in_path` are given, then
             this should be the path to the the technodata file.
+        technodata_timeslices_path: This argument refers to the TechnodataTimeslices
+            file which specifies the utilization factor per timeslice for the specified
+            technology.
         comm_out_path: If given, then refers to the path of the file specifying output
             commmodities. If not given, then defaults to
             "commOUTtechnodataSECTORNAME.csv" in the relevant sector directory.
@@ -259,14 +301,25 @@ def read_technologies(
     - outputs: {opath}
     - inputs: {ipath}
     """
+    if technodata_timeslices_path and isinstance(
+        technodata_timeslices_path, (Text, Path)
+    ):
+        ttpath = Path(technodata_timeslices_path)
+        msg += f"""- technodata_timeslices: {ttpath}
+        """
+    else:
+        ttpath = None
+
     if isinstance(commodities, (Text, Path)):
-        msg += f"- global commodities file {commodities}"
+        msg += f"""- global commodities file: {commodities}"""
+
     logger = getLogger(__name__)
     logger.info(msg)
 
     result = read_technodictionary(tpath)
     if any(result[u].isnull().any() for u in result.data_vars):
         raise ValueError(f"Inconsistent data in {tpath} (e.g. inconsistent years)")
+
     outs = read_io_technodata(opath).rename(
         flexible="flexible_outputs", fixed="fixed_outputs"
     )
@@ -281,6 +334,12 @@ def read_technologies(
 
     result = result.merge(outs).merge(ins)
 
+    if isinstance(ttpath, (Text, Path)):
+        technodata_timeslice = read_technodata_timeslices(ttpath)
+        result = result.drop_vars("utilization_factor")
+        result = result.merge(technodata_timeslice)
+    else:
+        technodata_timeslice = None
     # try and add info about commodities
     if isinstance(commodities, (Text, Path)):
         try:
@@ -463,6 +522,8 @@ def read_csv_agent_parameters(filename) -> List:
             data["quantity"] = row.Quantity
         if hasattr(row, "MaturityThreshold"):
             data["maturity_threshhold"] = row.MaturityThreshold
+        if hasattr(row, "SpendLimit"):
+            data["spend_limit"] = row.SpendLimit
         if agent_type != "newcapa":
             data["share"] = sub(r"Agent(\d)", r"agent_share_\1", row.AgentShare)
         if agent_type == "retrofit" and data["decision"] == "lexo":
@@ -758,11 +819,9 @@ def read_trade(
         var_name=col_region,
     )
     if parameters is None:
-        result: Union[xr.DataArray, xr.Dataset] = (
-            xr.DataArray.from_series(
-                data.set_index(indices + [col_region])["value"]
-            ).rename(name)
-        )
+        result: Union[xr.DataArray, xr.Dataset] = xr.DataArray.from_series(
+            data.set_index(indices + [col_region])["value"]
+        ).rename(name)
     else:
         result = xr.Dataset.from_dataframe(
             data.pivot_table(
@@ -793,3 +852,54 @@ def read_finite_resources(path: Union[Text, Path]) -> xr.DataArray:
     data.set_index(indices, inplace=True)
 
     return xr.Dataset.from_dataframe(data).to_array(dim="commodity")
+
+
+# def check_utilization_not_all_zero(csv):
+#     process_factors = (
+#         csv[1:]
+#         .groupby("process_name")
+#         .utilization_factor.nunique()
+#         .apply(lambda x: float(x))
+#     )
+
+#     if process_factors[process_factors == 1].any():
+#         single_UF = process_factors[process_factors == 1]
+#         result = (
+#             csv[1:][csv.process_name.isin(single_UF.index)]
+#             .groupby("process_name")
+#             .utilization_factor.unique()
+#             .apply(lambda x: float(x))
+#             .eq(0)
+#             .all()
+#         )
+
+#     else:
+#         result = False
+
+#     result
+
+
+def check_utilization_not_all_zero(data, filename):
+
+    if "utilization_factor" not in data.columns:
+        raise ValueError(
+            """A technology needs to have a utilization factor defined for every timeslice.
+            Please check file {}.""".format(
+                filename
+            )
+        )
+    else:
+        utilization_sum = data.groupby(["technology", "region", "year"]).sum()
+
+        # Add small value to 0 utilization factors to avoid numerical problems
+        if utilization_sum.utilization_factor.any() == 0:
+            data.loc[data.utilization_factor == 0, "utilization_factor"] = (
+                data.loc[data.utilization_factor == 0, "utilization_factor"] + 0.01
+            )
+            raise ValueError(
+                """A technology can not have a utilization factor of 0 for every timeslice.
+                Please check file {}.""".format(
+                    filename
+                )
+            )
+    return data
