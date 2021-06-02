@@ -170,6 +170,9 @@ class Agent(AbstractAgent):
         Threshhold when and if filtering replacement technologies with respect
         to market share.
         """
+        if kwargs is not None:
+            self.spend_limit = kwargs.get("spend_limit", 0)
+
         if objectives is None:
             objectives = objectives_factory()
         self.objectives = objectives
@@ -243,7 +246,6 @@ class Agent(AbstractAgent):
         """
         from logging import getLogger
 
-        print(self.name, self.category)
         # dataset with intermediate computational results from search
         # makes it easier to pass intermediate results to functions, as well as
         # filter them when inside a function
@@ -387,7 +389,6 @@ class InvestingAgent(Agent):
         Other attributes are left unchanged. Arguments to the function are
         never modified.
         """
-        print(self.name, self.category)
         current_year = self.year
         search = super().next(technologies, market, demand, time_period=time_period)
         if search is None:

@@ -764,7 +764,6 @@ def net_present_value(
     rates = discount_factor(
         years - agent.year + 1, interest_rate, years <= agent.year + nyears
     )
-    print("obj")
 
     # raw revenues --> Make the NPV more positive
     # This production is the absolute maximum production, given the capacity
@@ -812,13 +811,7 @@ def net_present_value(
         market.prices, commodity=material, year=years.values
     ).ffill("year")
     material_costs = (production * prices_material * rates).sum(("commodity", "year"))
-    print(
-        years,
-        fuel.sum(),
-        fuel.replacement,
-        tech.technical_life,
-        environmental_costs.sum(),
-    )
+
     # Fixed and Variable costs
     fixed_costs = convert_timeslice(
         fix_par * (capacity ** fix_exp),
