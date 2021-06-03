@@ -64,7 +64,7 @@ steps:
       cd StarMuse
       pip install pytest-cov
       pytest --junitxml=junit/pytest.xml \
-          --cov=src/muse \
+          --cov=muse \
           --cov-branch \
           --cov-report=xml:coverage/coverage.xml
     condition: eq(variables['Agent.OS'], 'Linux')
