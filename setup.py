@@ -29,7 +29,7 @@ tests_require = [
     "mypy",
     "numpy>=1.17",
 ]
-docs_require = ["sphinx", "recommonmark", "nbsphinx", "sphinxcontrib-bibtex", "ipython"]
+docs_require = ["sphinx", "recommonmark", "nbsphinx", "sphinxcontrib-bibtex", "ipython", "nb_conda_kernels"]
 
 
 def find_data_files(directory, suffixes=(".toml", ".csv")):
