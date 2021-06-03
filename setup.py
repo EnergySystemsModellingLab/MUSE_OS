@@ -83,6 +83,7 @@ setup(
         "coloredlogs",
         "toml",
         "xlrd==1.2.0",
+        "mypy-extensions"
     ],
     extras_require={
         "dev": tests_require,
