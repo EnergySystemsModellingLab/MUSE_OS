@@ -21,7 +21,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "recommonmark",
     "nbsphinx",
-    "nb_conda_kernels",
+    "ipykernel",
     "sphinx.ext.mathjax",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.viewcode",
