@@ -106,3 +106,7 @@ with:
 ```bash
 > python -m pip install -e "muse[private_sgi_model]"
 ```
+
+License
+-------
+Copyright © 2021 Imperial College London
