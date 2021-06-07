@@ -68,7 +68,7 @@ Your conda environment is activated if you see something similar to the followin
     (muse) PS C:/Users/<my-username>
 
 
-I get a "Cannot find command 'git' - do you have 'git' insrtalled in your PATH?" error
+I get a "Cannot find command 'git' - do you have 'git' installed in your PATH?" error
 ---------------------------------------------------------------------------------------
 
 This is because you do not have git installed in your conda environment. To resolve this, run:
