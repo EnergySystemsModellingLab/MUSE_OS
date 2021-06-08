@@ -120,6 +120,8 @@ The main page for the documentation can then be found at
 `build\\sphinx\\html\\index.html` (or `build/sphinx/html/index.html` on Mac and Linux).
 The file can viewed from any web browser.
 
+The source files to create the documentation can be found in the `docs/` folder from within the main MUSE directory.
+
 .. _anaconda distribution: https://www.anaconda.com/distribution/#download-section
 
 .. _anaconda prompt:
