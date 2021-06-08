@@ -3,7 +3,7 @@
 ======================
 Techno-data Timeslices
 ======================
-The techno-data timeslices file contains information on technologies, their region, timeslices, utilization factors and minimum service factor. The objective of this file is to link the utilization factor and minimum service factor to timeslices. For instance, if you were to model solar photovoltaics, you would probably want to specify that they can not produce any electricty at night, or if you're modelling a nuclear power plant, that they must generate a minimum amount of electricity. The techno-data timeslice file enables you to do that.
+The techno-data timeslices is an optinal file which contains information on technologies, their region, timeslices, utilization factors and minimum service factor. The objective of this file is to link the utilization factor and minimum service factor to timeslices. For instance, if you were to model solar photovoltaics, you would probably want to specify that they can not produce any electricty at night, or if you're modelling a nuclear power plant, that they must generate a minimum amount of electricity. The techno-data timeslice file enables you to do that. Note, that if this file is not present, the utilization facto will be used from the technodata file.
 
 
 .. csv-table:: Techno-data
