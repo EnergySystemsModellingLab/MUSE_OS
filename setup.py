@@ -29,7 +29,7 @@ tests_require = [
     "mypy",
     "numpy>=1.17",
 ]
-docs_require = ["sphinx", "recommonmark", "nbsphinx", "sphinxcontrib-bibtex", "ipython"]
+docs_require = ["sphinx", "recommonmark", "nbsphinx", "sphinxcontrib-bibtex", "ipython", "ipykernel"]
 
 
 def find_data_files(directory, suffixes=(".toml", ".csv")):
@@ -83,6 +83,7 @@ setup(
         "coloredlogs",
         "toml",
         "xlrd==1.2.0",
+        "mypy-extensions"
     ],
     extras_require={
         "dev": tests_require,

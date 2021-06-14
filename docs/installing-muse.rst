@@ -11,15 +11,25 @@ There are two ways to install MUSE: one for users who do not wish to modify the 
    
    Linux users may need to install a C compiler, whether GNU gcc or Clang, as well python development packages, depending on their distribution.
 
-   #.   Download Microsoft Visual C++ Build Tools from this link: https://visualstudio.microsoft.com/downloads/   
+   #. Install Visual Studio from the following link: https://visualstudio.microsoft.com/downloads/
+
+   #. Select your preferred edition. Although, the "Community" version is free and contains what is required.
+   
+   #. Install Visual Studio by selecting the default options.
+
+   #.   Download the Microsoft Visual C++ Build Tools from the following link by downloading Visual Studio 2019: https://visualstudio.microsoft.com/downloads/   
 
    #. Select your preferred edition. The "Community" is free and contains what is required.
 
    #.   Run the installer
 
-   #.   Select: Workloads → Visual C++ build tools.
+   #.   Select: Workloads → Desktop development with C++.
 
-   #. Install options: select only the “Windows 10 SDK” (assuming the computer is Windows 10)]
+   #. Install options: select only the “Windows 10 SDK” (assuming the computer is Windows 10)]. This will come up on the right hand side of the screen.
+
+   The installation screen should look similar to the following:
+
+   .. image:: figures/visual-studio-installation.png
 
    For further information, see this link: https://www.scivision.dev/python-windows-visual-c-14-required
 
@@ -115,6 +125,8 @@ The documentation can be built with:
 The main page for the documentation can then be found at
 `build\\sphinx\\html\\index.html` (or `build/sphinx/html/index.html` on Mac and Linux).
 The file can viewed from any web browser.
+
+The source files to create the documentation can be found in the `docs/` folder from within the main MUSE directory.
 
 .. _anaconda distribution: https://www.anaconda.com/distribution/#download-section
 

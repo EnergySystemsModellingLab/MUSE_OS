@@ -1,8 +1,6 @@
 MUSE Overview
 =============
 
-.. note::  TODO: Potentially find introductory image to place here.
-
 How to use MUSE
 ---------------
 
@@ -125,3 +123,18 @@ MUSE works by iterating between sectors shown above to ensure that energy demand
 
 #. This process repeats itself until commodity supply and demand converges for each energy commodity for each region. Once these converge, the model has found a “partial equilibrium” on the energy system and it moves forward to the next time period.
 
+Foresight in MUSE
+-----------------
+
+Within MUSE, investment decisions are made by the agents. To make these decisions, agents must use their limited knowledge of the future. This allows them to compare investment options under their expectations on prices and demand.
+
+To model this process in MUSE, the agents are given limited foresight. The amount of limited foresight can be set by the user as a set of years. For example, if agents are given 5 years of limited foresight, they have certainty on the exogenous technology costs for the next 5 years. However, their expectations of future demand and prices for the lifetime of the plant, in that moment, are based on a flat-forward extension of the prices from the current period. However these prices can change in the next iteration. In contrast to perfect foresight, where variables such as prices, demand and technology costs in all the future time periods are known from the beginning of the simulation, using the limited foresight period, agents make investments under expectations of the market, which might be wrong.
+
+The figure below details how MUSE runs. Firstly, the initial capacity, price trajectory and demand trajectory are known and set exogenously. These are used to initialize the MCA convergence algorithm. The MCA convergence algorithm finds a suitable set of investments which equilibrate supply and demand. Once equilibrium has been reached, technologies are decided and the commodity prices, which reflect the technology marginal costs. The investments balance asset retirements and the increase in demand, ensuring that supply meets demand.
+
+This whole process repeats itself at every timestep until the specified number of milestone years have run.
+
+.. image:: figures/time-horizon.pdf
+    :width: 97%
+    :align: center
+    :alt: MUSE foresight.

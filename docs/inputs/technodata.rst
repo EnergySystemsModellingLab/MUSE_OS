@@ -108,10 +108,6 @@ ScalingSize
 efficiency
    is calculated as the ratio between the total output commodities and the input commodities.
 
-AvailabiliyYear
-   defines the starting year of a technology; for example the value equals 1 when a
-   technology would be available or 0 when a technology would not be available. 
-
 Type
    defines the type of a technology. This variable is used for the search space in the agents csv file. It allows for the agents to filter for technologies of a similar type, for example.     
 

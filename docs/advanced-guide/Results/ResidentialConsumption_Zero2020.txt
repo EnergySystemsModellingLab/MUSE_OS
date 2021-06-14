@@ -1,0 +1,58 @@
+Hello, you!
+
+                       region units_prices  \
+year asset commodity                         
+2020 0     electricity     R1  MUS$2010/PJ   
+           gas             R1  MUS$2010/PJ   
+           heat            R1  MUS$2010/PJ   
+           CO2f            R1  MUS$2010/kt   
+     1     electricity     R1  MUS$2010/PJ   
+           gas             R1  MUS$2010/PJ   
+           heat            R1  MUS$2010/PJ   
+           CO2f            R1  MUS$2010/kt   
+2025 0     electricity     R1  MUS$2010/PJ   
+           gas             R1  MUS$2010/PJ   
+           heat            R1  MUS$2010/PJ   
+           CO2f            R1  MUS$2010/kt   
+     1     electricity     R1  MUS$2010/PJ   
+           gas             R1  MUS$2010/PJ   
+           heat            R1  MUS$2010/PJ   
+           CO2f            R1  MUS$2010/kt   
+
+                                                  comm_usage technology  \
+year asset commodity                                                      
+2020 0     electricity      CommodityUsage.ENERGY|CONSUMABLE  gasboiler   
+           gas              CommodityUsage.ENERGY|CONSUMABLE  gasboiler   
+           heat                CommodityUsage.ENERGY|PRODUCT  gasboiler   
+           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT  gasboiler   
+     1     electricity      CommodityUsage.ENERGY|CONSUMABLE   heatpump   
+           gas              CommodityUsage.ENERGY|CONSUMABLE   heatpump   
+           heat                CommodityUsage.ENERGY|PRODUCT   heatpump   
+           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT   heatpump   
+2025 0     electricity      CommodityUsage.ENERGY|CONSUMABLE  gasboiler   
+           gas              CommodityUsage.ENERGY|CONSUMABLE  gasboiler   
+           heat                CommodityUsage.ENERGY|PRODUCT  gasboiler   
+           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT  gasboiler   
+     1     electricity      CommodityUsage.ENERGY|CONSUMABLE   heatpump   
+           gas              CommodityUsage.ENERGY|CONSUMABLE   heatpump   
+           heat                CommodityUsage.ENERGY|PRODUCT   heatpump   
+           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT   heatpump   
+
+                        installed  consumption  
+year asset commodity                            
+2020 0     electricity       2020       0.0000  
+           gas               2020      11.6000  
+           heat              2020       0.0000  
+           CO2f              2020       0.0000  
+     1     electricity       2020       0.0000  
+           gas               2020       0.0000  
+           heat              2020       0.0000  
+           CO2f              2020       0.0000  
+2025 0     electricity       2020       0.0000  
+           gas               2020       3.2222  
+           heat              2020       0.0000  
+           CO2f              2020       0.0000  
+     1     electricity       2020       4.2222  
+           gas               2020       0.0000  
+           heat              2020       0.0000  
+           CO2f              2020       0.0000  

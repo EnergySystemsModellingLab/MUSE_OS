@@ -42,3 +42,42 @@ What units should I be using within MUSE?
 The units within MUSE should be consistent. Therefore it is up to you which units you use. You could use, like the examples, petajoules (PJ), however, the units used must be the same across each of the sectors, and each of the input files. MUSE does not make any unit conversion internally.
 
 
+How do I activate my conda environment?
+---------------------------------------
+
+To activate your conda environment, run the following command:
+
+.. code-block:: console
+
+    conda activate <name-of-environment>
+
+For example, if you want to activate your conda environment called muse run:
+
+.. code-block:: console
+
+    conda activate muse
+
+
+How do I know my conda environment is activated?
+------------------------------------------------
+
+Your conda environment is activated if you see something similar to the following in your Anaconda Powershell Prompt or command line:
+
+.. code-block:: console
+
+    (muse) PS C:/Users/<my-username>
+
+
+I get a "Cannot find command 'git' - do you have 'git' installed in your PATH?" error
+---------------------------------------------------------------------------------------
+
+This is because you do not have git installed in your conda environment. To resolve this, run:
+
+.. code-block:: console
+
+    conda install git
+
+When I input my GitHub password into Anaconda Powershell Prompt to download MUSE, I don't see any input
+-------------------------------------------------------------------------------------------------------
+
+This is normal behaviour. It is done to stop people watching as you type your password over your shoulder. Just continue typing in your password as you would on a website.
