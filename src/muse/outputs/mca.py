@@ -381,9 +381,8 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             data_agent["sector"] = getattr(sector, "name", "unnamed")
             a = data_agent.to_dataframe("supply")
             if len(a) > 0 and len(a.technology.values) > 0:
-                b = a.groupby("technology").fillna(0)
-                c = b.reset_index()
-                data_sector.append(c)
+                b = a.reset_index()
+                data_sector.append(b)
     if len(data_sector) > 0:
         output = pd.concat([u for u in data_sector], sort=True)
 
