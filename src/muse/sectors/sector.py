@@ -276,7 +276,10 @@ class Sector(AbstractSector):  # type: ignore
             market=market, capacity=capacity, technologies=technologies
         )
 
-        if "timeslice" in market.prices.dims and "timeslice" not in result["supply"].dims:
+        if (
+            "timeslice" in market.prices.dims
+            and "timeslice" not in result["supply"].dims
+        ):
             result["supply"] = convert_timeslice(
                 result["supply"], market.timeslice, QuantityType.EXTENSIVE
             )
