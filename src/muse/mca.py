@@ -421,9 +421,15 @@ def single_year_iteration(
         market.supply.loc[dims] += sector_market.supply
 
         costs = sector_market.costs.sel(commodity=is_enduse(sector_market.comm_usage))
-        costs = costs.where(costs > 1e-15, 0)  # do not write negative costs
-        dims = {i: costs[i] for i in costs.dims}
-        market.updated_prices.loc[dims] = costs.transpose(*market.updated_prices.dims)
+        # do not write negative costs
+        # do not write nil costs
+        if len(costs.commodity) > 0:
+            costs = costs.where(costs > 1e-15, 0)
+            dims = {i: costs[i] for i in costs.dims}
+            costs = costs.where(costs > 0, market.prices.loc[dims])
+            market.updated_prices.loc[dims] = (
+                costs.transpose(*market.updated_prices.dims)
+            )
 
     return SingleYearIterationResult(market, sectors)
 
@@ -497,14 +503,33 @@ def find_equilibrium(
             market.year[1],
         )
 
-        if equilibrium_reached or not expect_equilibrium:
+        if equilibrium_reached:
             converged = True
-            new_price = market.updated_prices.sel(year=market.year[1]).where(
-                market.updated_prices.sel(year=market.year[1]) > 1e-15,
-                prior_market["prices"].sel(year=market.year[1]),
+            new_price = prior_market["prices"].sel(year=market.year[1]).copy()
+            new_price.loc[dict(commodity=included)] = (
+                market.updated_prices.sel(commodity=included, year=market.year[1]))
+            market["prices"] = future_propagation(  # type: ignore
+                market["prices"], new_price
             )
-            market["prices"] = future_propagation(market["prices"], new_price)
 
+            break
+        if expect_equilibrium and not converged:
+            new_price = prior_market["prices"].sel(year=market.year[1]).copy()
+            new_price.loc[dict(commodity=included)] = (
+                0.8 * new_price.loc[dict(commodity=included)]
+            )
+            new_price.loc[dict(commodity=included)] += (
+                0.2
+                * market.updated_prices.loc[
+                    dict(year=market.year[1], commodity=included)
+                ]
+            )
+            market["prices"] = future_propagation(  # type: ignore
+                market["prices"], new_price
+            )
+        if not expect_equilibrium:
+            equilibrium_reached = True
+            converged = True
             break
 
     else:
@@ -512,6 +537,19 @@ def find_equilibrium(
         msg = (
             f"CONVERGENCE ERROR: Maximum number of iterations ({maxiter}) reached "
             f"in year {int(market.year[0])}"
+        )
+        new_price = prior_market["prices"].sel(year=market.year[1]).copy()
+        new_price.loc[dict(commodity=included)] = (
+            0.8 * new_price.loc[dict(commodity=included)]
+        )
+        new_price.loc[dict(commodity=included)] += (
+            0.2
+            * market.updated_prices.loc[
+                dict(year=market.year[1], commodity=included)
+            ]
+        )
+        market["prices"] = future_propagation(  # type: ignore
+            market["prices"], new_price
         )
         getLogger(__name__).critical(msg)
 

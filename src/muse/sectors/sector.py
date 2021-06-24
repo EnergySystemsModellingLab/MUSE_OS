@@ -266,6 +266,7 @@ class Sector(AbstractSector):  # type: ignore
         )
         from muse.commodities import is_pollutant
         from muse.utilities import broadcast_techs
+        from muse.timeslices import convert_timeslice, QuantityType
 
         years = market.year.values
         capacity = self.capacity.interp(year=years, **self.interpolation)
@@ -274,6 +275,14 @@ class Sector(AbstractSector):  # type: ignore
         result["supply"] = self.supply_prod(
             market=market, capacity=capacity, technologies=technologies
         )
+
+        if (
+            "timeslice" in market.prices.dims
+            and "timeslice" not in result["supply"].dims
+        ):
+            result["supply"] = convert_timeslice(
+                result["supply"], market.timeslice, QuantityType.EXTENSIVE
+            )
         result["consumption"] = consumption(technologies, result.supply, market.prices)
         technodata = cast(xr.Dataset, broadcast_techs(technologies, result.supply))
         result["costs"] = supply_cost(
