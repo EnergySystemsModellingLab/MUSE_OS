@@ -93,7 +93,7 @@ class MCA(object):
             if not hasattr(v, "_asdict") and k not in extras
         }
         if "equilibrium" in global_kw:
-            global_kw["expect_equilibrium"] = global_kw.pop("equilibrium")
+            global_kw["equilibrium"] = global_kw.pop("equilibrium")
         carbon_kw = {
             k: v._asdict() if hasattr(v, "_asdict") else v
             for k, v in settings.carbon_budget_control._asdict().items()
@@ -112,7 +112,6 @@ class MCA(object):
         outputs: Optional[Callable[[List[AbstractSector], Dataset], Any]] = None,
         time_framework: Sequence[int] = list(range(2010, 2100, 10)),
         equilibrium: bool = True,
-        expect_equilibrium: bool = True,
         equilibrium_variable: Text = "demand",
         maximum_iterations: int = 3,
         tolerance: float = 0.1,
@@ -142,7 +141,6 @@ class MCA(object):
         # Simulation flow parameters
         self.time_framework = array(time_framework)
         self.equilibrium = equilibrium
-        self.expect_equilibrium = expect_equilibrium
         self.equilibrium_variable = equilibrium_variable
         self.maximum_iterations = maximum_iterations
         self.tolerance = tolerance
@@ -199,7 +197,7 @@ class MCA(object):
             equilibrium_variable=self.equilibrium_variable,
             tol_unmet_demand=self.tolerance_unmet_demand,
             excluded_commodities=self.excluded_commodities,
-            expect_equilibrium=self.expect_equilibrium,
+            equilibrium=self.equilibrium,
         )
 
     def update_carbon_budget(self, market: Dataset, year_idx: int) -> float:
@@ -450,7 +448,7 @@ def find_equilibrium(
     equilibrium_variable: Text = "demand",
     tol_unmet_demand: float = -0.1,
     excluded_commodities: Optional[Sequence] = None,
-    expect_equilibrium: bool = True,
+    equilibrium: bool = True,
 ) -> FindEquilibriumResults:
     """Runs the equilibrium loop.
 
@@ -466,7 +464,7 @@ def find_equilibrium(
         equilibrium_variable: Variable to use to calculate the equilibrium condition.
         tol_unmet_demand: Tolerance for the unmet demand.
         excluded_commodities: Commodities to be excluded in check_demand_fulfillment
-        expect_equilibrium: if equilibrium should be reached. Useful to testing.
+        equilibrium: if equilibrium should be reached. Useful to testing.
 
     Returns:
         A tuple with the updated market (prices, supply, consumption and demand),
@@ -514,7 +512,7 @@ def find_equilibrium(
             )
 
             break
-        if expect_equilibrium and not converged:
+        if equilibrium and not converged:
             new_price = prior_market["prices"].sel(year=market.year[1]).copy()
             new_price.loc[dict(commodity=included)] = (
                 0.8 * new_price.loc[dict(commodity=included)]
@@ -528,7 +526,7 @@ def find_equilibrium(
             market["prices"] = future_propagation(  # type: ignore
                 market["prices"], new_price
             )
-        if not expect_equilibrium:
+        if not equilibrium:
             equilibrium_reached = True
             converged = True
             break

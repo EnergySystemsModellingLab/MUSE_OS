@@ -377,6 +377,7 @@ def read_settings(
 
     # User defined default settings
     default_path = Path(user_settings.get("default_settings", DEFAULT_SETTINGS_PATH))
+
     if not default_path.is_absolute():
         default_path = path / default_path
 
@@ -755,8 +756,8 @@ def check_iteration_control(settings: Dict) -> None:
     or the tolerance to consider convergence.
     """
     # Anything that is not "off" or False, means that equilibrium should be reached.
-    if str(settings["expect_equilibrium"]).lower() in ("false", "off"):
-        settings["expect_equilibrium"] = False
+    if str(settings["equilibrium"]).lower() in ("false", "off"):
+        settings["equilibrium"] = False
 
     else:
         settings["equilibrium"] = True
