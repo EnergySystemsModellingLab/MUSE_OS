@@ -841,7 +841,6 @@ def read_finite_resources(path: Union[Text, Path]) -> xr.DataArray:
     Other columns correspond to commodities.
     """
     from muse.timeslices import TIMESLICE
-    from numpy import array
 
     data = pd.read_csv(path)
     data.columns = [c.lower() for c in data.columns]
