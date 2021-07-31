@@ -848,10 +848,12 @@ def read_finite_resources(path: Union[Text, Path]) -> xr.DataArray:
     ts_levels = TIMESLICE.get_index("timeslice").names
 
     if set(data.columns).issuperset(ts_levels):
-        data_u = array( [data[u] for u in ts_levels])
-        timeslice = pd.MultiIndex.from_arrays([data[u] for u in ts_levels], names=ts_levels)
-        timeslice= pd.DataFrame(timeslice,columns=["timeslice"])
-        print (timeslice)
+        data_u = array([data[u] for u in ts_levels])
+        timeslice = pd.MultiIndex.from_arrays(
+            [data[u] for u in ts_levels], names=ts_levels
+        )
+        timeslice = pd.DataFrame(timeslice, columns=["timeslice"])
+        print(timeslice)
         data = pd.concat((data, timeslice), axis=1)
         data.drop(columns=ts_levels, inplace=True)
     indices = list({"year", "region", "timeslice"}.intersection(data.columns))

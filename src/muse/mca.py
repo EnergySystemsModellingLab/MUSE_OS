@@ -341,7 +341,7 @@ class MCA(object):
 
     def calibrate_legacy_sectors(self):
         """Run a calibration step in the lagacy sectors
-           Run historical years
+        Run historical years
         """
         from logging import getLogger
         from numpy import where
@@ -428,8 +428,8 @@ def single_year_iteration(
             costs = costs.where(costs > 1e-15, 0)
             dims = {i: costs[i] for i in costs.dims}
             costs = costs.where(costs > 0, market.prices.loc[dims])
-            market.updated_prices.loc[dims] = (
-                costs.transpose(*market.updated_prices.dims)
+            market.updated_prices.loc[dims] = costs.transpose(
+                *market.updated_prices.dims
             )
 
     return SingleYearIterationResult(market, sectors)
@@ -507,8 +507,9 @@ def find_equilibrium(
         if equilibrium_reached:
             converged = True
             new_price = prior_market["prices"].sel(year=market.year[1]).copy()
-            new_price.loc[dict(commodity=included)] = (
-                market.updated_prices.sel(commodity=included, year=market.year[1]))
+            new_price.loc[dict(commodity=included)] = market.updated_prices.sel(
+                commodity=included, year=market.year[1]
+            )
             market["prices"] = future_propagation(  # type: ignore
                 market["prices"], new_price
             )
@@ -545,9 +546,7 @@ def find_equilibrium(
         )
         new_price.loc[dict(commodity=included)] += (
             0.2
-            * market.updated_prices.loc[
-                dict(year=market.year[1], commodity=included)
-            ]
+            * market.updated_prices.loc[dict(year=market.year[1], commodity=included)]
         )
         market["prices"] = future_propagation(  # type: ignore
             market["prices"], new_price
