@@ -344,7 +344,6 @@ class MCA(object):
         Run historical years
         """
         from logging import getLogger
-        from numpy import where
 
         if len([s for s in self.sectors if "LegacySector" in str(type(s))]) == 0:
             return None, self.sectors
