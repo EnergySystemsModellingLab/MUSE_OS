@@ -93,7 +93,7 @@ class MCA(object):
             if not hasattr(v, "_asdict") and k not in extras
         }
         if "equilibrium" in global_kw:
-            global_kw["expect_equilibrium"] = global_kw.pop("equilibrium")
+            global_kw["equilibrium"] = global_kw.pop("equilibrium")
         carbon_kw = {
             k: v._asdict() if hasattr(v, "_asdict") else v
             for k, v in settings.carbon_budget_control._asdict().items()
@@ -112,7 +112,6 @@ class MCA(object):
         outputs: Optional[Callable[[List[AbstractSector], Dataset], Any]] = None,
         time_framework: Sequence[int] = list(range(2010, 2100, 10)),
         equilibrium: bool = True,
-        expect_equilibrium: bool = True,
         equilibrium_variable: Text = "demand",
         maximum_iterations: int = 3,
         tolerance: float = 0.1,
@@ -142,7 +141,6 @@ class MCA(object):
         # Simulation flow parameters
         self.time_framework = array(time_framework)
         self.equilibrium = equilibrium
-        self.expect_equilibrium = expect_equilibrium
         self.equilibrium_variable = equilibrium_variable
         self.maximum_iterations = maximum_iterations
         self.tolerance = tolerance
@@ -199,7 +197,7 @@ class MCA(object):
             equilibrium_variable=self.equilibrium_variable,
             tol_unmet_demand=self.tolerance_unmet_demand,
             excluded_commodities=self.excluded_commodities,
-            expect_equilibrium=self.expect_equilibrium,
+            equilibrium=self.equilibrium,
         )
 
     def update_carbon_budget(self, market: Dataset, year_idx: int) -> float:
@@ -285,7 +283,6 @@ class MCA(object):
         from xarray import DataArray
         from muse.utilities import future_propagation
 
-        # TODO: Remove when legacy sectors are no longer needed.
         _, self.sectors = self.calibrate_legacy_sectors()
 
         nyear = len(self.time_framework) - 1
@@ -341,9 +338,8 @@ class MCA(object):
             getLogger(__name__).info(f"Finish simulation year {years[0]}!")
 
     def calibrate_legacy_sectors(self):
-        """Run a calibration step in the lagacy sectors.
-
-        TODO: Remove when LegacySectors are no longer needed.
+        """Run a calibration step in the lagacy sectors
+        Run historical years
         """
         from logging import getLogger
 
@@ -359,8 +355,10 @@ class MCA(object):
                 idx.append(i)
 
         getLogger(__name__).info("Calibrating LegacySectors...")
+        years = self.time_framework[0]  # noqa: E203
+        if 2015 in self.time_framework:
+            years = self.time_framework.where(self.time_framework <= 2015)[0]
 
-        years = self.time_framework[0:2]  # noqa: E203
         variables = ["supply", "consumption", "prices"]
         new_market = self.market[variables].sel(year=years).copy(deep=True)
 
@@ -421,14 +419,15 @@ def single_year_iteration(
         market.supply.loc[dims] += sector_market.supply
 
         costs = sector_market.costs.sel(commodity=is_enduse(sector_market.comm_usage))
-        # do not write negative costs
-        # do not write nil costs
+
+        # do not write costs lower than 1e-4
+        # should correspond to rounding value
         if len(costs.commodity) > 0:
-            costs = costs.where(costs > 1e-15, 0)
+            costs = costs.where(costs > 1e-4, 0)
             dims = {i: costs[i] for i in costs.dims}
             costs = costs.where(costs > 0, market.prices.loc[dims])
-            market.updated_prices.loc[dims] = (
-                costs.transpose(*market.updated_prices.dims)
+            market.updated_prices.loc[dims] = costs.transpose(
+                *market.updated_prices.dims
             )
 
     return SingleYearIterationResult(market, sectors)
@@ -450,7 +449,7 @@ def find_equilibrium(
     equilibrium_variable: Text = "demand",
     tol_unmet_demand: float = -0.1,
     excluded_commodities: Optional[Sequence] = None,
-    expect_equilibrium: bool = True,
+    equilibrium: bool = True,
 ) -> FindEquilibriumResults:
     """Runs the equilibrium loop.
 
@@ -466,7 +465,7 @@ def find_equilibrium(
         equilibrium_variable: Variable to use to calculate the equilibrium condition.
         tol_unmet_demand: Tolerance for the unmet demand.
         excluded_commodities: Commodities to be excluded in check_demand_fulfillment
-        expect_equilibrium: if equilibrium should be reached. Useful to testing.
+        equilibrium: if equilibrium should be reached. Useful to testing.
 
     Returns:
         A tuple with the updated market (prices, supply, consumption and demand),
@@ -506,14 +505,15 @@ def find_equilibrium(
         if equilibrium_reached:
             converged = True
             new_price = prior_market["prices"].sel(year=market.year[1]).copy()
-            new_price.loc[dict(commodity=included)] = (
-                market.updated_prices.sel(commodity=included, year=market.year[1]))
+            new_price.loc[dict(commodity=included)] = market.updated_prices.sel(
+                commodity=included, year=market.year[1]
+            )
             market["prices"] = future_propagation(  # type: ignore
                 market["prices"], new_price
             )
 
             break
-        if expect_equilibrium and not converged:
+        if equilibrium and not converged:
             new_price = prior_market["prices"].sel(year=market.year[1]).copy()
             new_price.loc[dict(commodity=included)] = (
                 0.8 * new_price.loc[dict(commodity=included)]
@@ -527,7 +527,7 @@ def find_equilibrium(
             market["prices"] = future_propagation(  # type: ignore
                 market["prices"], new_price
             )
-        if not expect_equilibrium:
+        if not equilibrium:
             equilibrium_reached = True
             converged = True
             break
@@ -544,9 +544,7 @@ def find_equilibrium(
         )
         new_price.loc[dict(commodity=included)] += (
             0.2
-            * market.updated_prices.loc[
-                dict(year=market.year[1], commodity=included)
-            ]
+            * market.updated_prices.loc[dict(year=market.year[1], commodity=included)]
         )
         market["prices"] = future_propagation(  # type: ignore
             market["prices"], new_price
