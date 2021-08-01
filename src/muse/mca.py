@@ -419,10 +419,11 @@ def single_year_iteration(
         market.supply.loc[dims] += sector_market.supply
 
         costs = sector_market.costs.sel(commodity=is_enduse(sector_market.comm_usage))
-        # do not write negative costs
-        # do not write nil costs
+
+        # do not write costs lower than 1e-4 
+        # should correspond to rounding value
         if len(costs.commodity) > 0:
-            costs = costs.where(costs > 1e-15, 0)
+            costs = costs.where(costs > 1e-4, 0)
             dims = {i: costs[i] for i in costs.dims}
             costs = costs.where(costs > 0, market.prices.loc[dims])
             market.updated_prices.loc[dims] = costs.transpose(
