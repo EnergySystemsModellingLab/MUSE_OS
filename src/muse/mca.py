@@ -420,7 +420,7 @@ def single_year_iteration(
 
         costs = sector_market.costs.sel(commodity=is_enduse(sector_market.comm_usage))
 
-        # do not write costs lower than 1e-4 
+        # do not write costs lower than 1e-4
         # should correspond to rounding value
         if len(costs.commodity) > 0:
             costs = costs.where(costs > 1e-4, 0)
