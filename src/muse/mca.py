@@ -342,6 +342,7 @@ class MCA(object):
         Run historical years
         """
         from logging import getLogger
+        from numpy import where
 
         if len([s for s in self.sectors if "LegacySector" in str(type(s))]) == 0:
             return None, self.sectors
@@ -357,7 +358,7 @@ class MCA(object):
         getLogger(__name__).info("Calibrating LegacySectors...")
         years = self.time_framework[0]  # noqa: E203
         if 2015 in self.time_framework:
-            years = self.time_framework.where(self.time_framework <= 2015)[0]
+            years = self.time_framework[where(self.time_framework <= 2015)]
 
         variables = ["supply", "consumption", "prices"]
         new_market = self.market[variables].sel(year=years).copy(deep=True)
