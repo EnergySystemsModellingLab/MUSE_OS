@@ -193,17 +193,6 @@ def decommissioning_demand(
     capacity = capacity.interp(year=year, kwargs={"fill_value": 0.0})
     baseyear = min(year)
     dyears = [u for u in year if u != baseyear]
-    try:
-        print(
-            maximum_production(
-                technologies, capacity.sel(year=baseyear) - capacity.sel(year=dyears)
-            )
-            .clip(min=0)
-            .sel(commodity="heat"),
-            "decommissioning",
-        )
-    except:
-        pass
     return maximum_production(
         technologies, capacity.sel(year=baseyear) - capacity.sel(year=dyears)
     ).clip(min=0)
