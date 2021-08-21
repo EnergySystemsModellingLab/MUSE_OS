@@ -20,7 +20,7 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
     #    "recommonmark",
-    "myst_parser",
+    "myst-parser",
     "nbsphinx",
     "ipykernel",
     "sphinx.ext.mathjax",
