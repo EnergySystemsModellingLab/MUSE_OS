@@ -19,7 +19,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
-    "recommonmark",
+    #    "recommonmark",
     "myst_parser",
     "nbsphinx",
     "ipykernel",
@@ -32,7 +32,14 @@ extensions = [
 ]
 source_suffix = {".rst": "restructuredtext", ".txt": "markdown", ".md": "markdown"}
 templates_path = ["_templates"]
-exclude_patterns = ["build", "**.ipynb_checkpoints", "**/ResidentialBracket*.txt", "_sources/*", "_build/*", "tutorial-code/*"]
+exclude_patterns = [
+    "build",
+    "**.ipynb_checkpoints",
+    "**/ResidentialBracket*.txt",
+    "_sources/*",
+    "_build/*",
+    "tutorial-code/*",
+]
 
 modindex_common_prefix = ["muse"]
 autodoc_typehints = "none"
