@@ -31,13 +31,11 @@ tests_require = [
 ]
 docs_require = [
     "sphinx",
-    "myst-parser",
     "recommonmark",
     "nbsphinx",
     "sphinxcontrib-bibtex",
     "ipython",
     "ipykernel",
-    "",
 ]
 
 

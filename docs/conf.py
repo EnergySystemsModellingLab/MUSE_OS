@@ -19,8 +19,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
-    #    "recommonmark",
-    "myst-parser",
+    "recommonmark",
     "nbsphinx",
     "ipykernel",
     "sphinx.ext.mathjax",
@@ -62,15 +61,15 @@ html_theme = "classic"
 html_static_path = ["_static"]
 
 
-# import recommonmark  # noqa
+import recommonmark  # noqa
 
 
-# def setup(app):
-#     from recommonmark.transform import AutoStructify
+def setup(app):
+    from recommonmark.transform import AutoStructify
 
-#     app.add_config_value(
-#         "recommonmark_config",
-#         {"auto_toc_tree_section": "Contents", "enable_eval_rst": True},
-#         True,
-#     )
-#     app.add_transform(AutoStructify)
+    app.add_config_value(
+        "recommonmark_config",
+        {"auto_toc_tree_section": "Contents", "enable_eval_rst": True},
+        True,
+    )
+    app.add_transform(AutoStructify)
