@@ -242,12 +242,13 @@ def new_and_retro(
         is_enduse(technologies.comm_usage.sel(commodity=demands.commodity)), 0
     )
 
-    def decommissioning(capacity):
-        from muse.quantities import decommissioning_demand
+    quantity = {
+        agent.name: agent.quantity for agent in agents if agent.category != "retrofit"
+    }
 
-        return decommissioning_demand(
-            technologies, capacity, year=[current_year, current_year + forecast]
-        ).squeeze("year")
+    for agent in agents:
+        if not hasattr(agent, "quantity"):
+            setattr(agent, "quantity", quantity[agent.name])
 
     id_to_share: MutableMapping[Hashable, xr.DataArray] = {}
     for region in demands.region.values:
@@ -258,21 +259,37 @@ def new_and_retro(
             if agent.category == "retrofit" and agent.region == region
         }
 
-        retro_demands: MutableMapping[Hashable, xr.DataArray] = _inner_split(
-            retro_capacity, demands.retrofit.sel(region=region), decommissioning
-        )
-
-        id_to_share.update(retro_demands)
-
         name_to_id = {
             (agent.name, agent.region): agent.uuid
             for agent in agents
             if agent.category == "retrofit" and agent.region == region
         }
+
+        id_to_rquantity = {
+            agent.uuid: (agent.name, agent.region, agent.quantity)
+            for agent in agents
+            if agent.category == "retrofit" and agent.region == region
+        }
+
+        retro_demands: MutableMapping[Hashable, xr.DataArray] = _inner_split(
+            retro_capacity,
+            demands.retrofit.sel(region=region),
+            partial(maximum_production, technologies=regional_techs, year=current_year),
+            id_to_rquantity,
+        )
         assert len(name_to_id) == len(retro_capacity)
+
+        id_to_share.update(retro_demands)
+
         new_capacity: Mapping[Hashable, xr.DataArray] = {
             agent.uuid: retro_capacity[name_to_id[(agent.name, agent.region)]]
             * getattr(agent, "quantity", 0.3)
+            for agent in agents
+            if agent.category != "retrofit" and agent.region == region
+        }
+
+        id_to_nquantity = {
+            agent.uuid: (agent.name, agent.region, agent.quantity)
             for agent in agents
             if agent.category != "retrofit" and agent.region == region
         }
@@ -281,9 +298,11 @@ def new_and_retro(
             new_capacity,
             demands.new.sel(region=region),
             partial(maximum_production, technologies=regional_techs, year=current_year),
+            id_to_nquantity,
         )
 
         id_to_share.update(new_demands)
+
     result = cast(xr.DataArray, agent_concatenation(id_to_share))
     return result
 
@@ -321,7 +340,10 @@ def unmet_forecasted_demand(
 
 
 def _inner_split(
-    assets: Mapping[Hashable, xr.DataArray], demand: xr.DataArray, method: Callable
+    assets: Mapping[Hashable, xr.DataArray],
+    demand: xr.DataArray,
+    method: Callable,
+    quantity: Mapping,
 ) -> MutableMapping[Hashable, xr.DataArray]:
     r"""compute share of the demand for a set of agents.
 
@@ -341,8 +363,10 @@ def _inner_split(
     unassigned = (
         demand / (len(shares) * len(cast(xr.DataArray, sum(shares.values())).asset))
     ).where(logical_and(demand > 1e-12, total <= 1e-12), 0)
+
     return {
-        key: ((share / total).fillna(0) * demand).fillna(0) + unassigned
+        key: ((share / total).fillna(0) * demand * quantity[key][2]).fillna(0)
+        + unassigned
         for key, share in shares.items()
     }
 
@@ -444,7 +468,7 @@ def new_and_retro_demands(
         by existing assets in the current year, as computed in :py:func:`new_demand`.
     #. the retrofit demand is everything else.
     """
-    from numpy import minimum
+
     from muse.timeslices import convert_timeslice, QuantityType
     from muse.production import factory as prod_factory
 
@@ -480,9 +504,9 @@ def new_and_retro_demands(
         .sum("asset")
     )
     # existing asset should not execute beyond demand
-    service = minimum(
-        service, smarket.consumption.sel(year=current_year + forecast, drop=True)
-    )
+    # service = minimum(
+    #     service, smarket.consumption.sel(year=current_year + forecast, drop=True)
+    # )
     retro_demand = (
         smarket.consumption.sel(year=current_year + forecast, drop=True)
         - new_demand
