@@ -243,7 +243,9 @@ def new_and_retro(
     )
 
     quantity = {
-        agent.name: agent.quantity for agent in agents if agent.category != "retrofit"
+        agent.name: getattr(agent, "quantity", 0.3)  # type: ignore
+        for agent in agents
+        if agent.category != "retrofit"
     }
 
     for agent in agents:
