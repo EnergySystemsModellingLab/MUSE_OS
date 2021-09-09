@@ -31,7 +31,7 @@ tests_require = [
 ]
 docs_require = [
     "sphinx",
-    "recommonmark",
+    "myst-parser",
     "nbsphinx",
     "sphinxcontrib-bibtex",
     "ipython",
@@ -62,7 +62,7 @@ setup(
     description="Energy System Model",
     classifiers=[
         "Development Status :: 3 - Alpha",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Intended Audience :: Science",
         "Intended Audience :: Research",
         "Intended Audience :: Economists",
