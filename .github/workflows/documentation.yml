@@ -16,7 +16,7 @@ jobs:
         pre-build-command: |
             apt update -y 
             apt install -y python3-bottleneck python3-scipy pandoc
-            python -m pip install --upgrade setuptools wheel pip
+            python -m pip install --upgrade setuptools wheel pip sphinx
             python -m pip install -e .[docs]
         build-command: sphinx-build -n -b html . ../build/html
     - uses: actions/upload-artifact@v1
@@ -40,7 +40,7 @@ jobs:
         pre-build-command: |
             apt update -y 
             apt install -y python3-bottleneck python3-scipy pandoc
-            python -m pip install --upgrade setuptools wheel pip
+            python -m pip install --upgrade setuptools wheel pip sphinx
             python -m pip install -e .[docs]
         build-command: sphinx-build -n -b latex . ../build/latex
     - name: build latex
