@@ -17,7 +17,7 @@ jobs:
             apt update -y 
             apt install -y pandoc
             python -m pip install --upgrade setuptools wheel pip sphinx sphinx myst-parser nbsphinx sphinxcontrib-bibtex ipython ipykernel pandoc
-            python -m pip install -e .[docs]
+#            python -m pip install -e .[docs]
         build-command: sphinx-build -n -b html . ../build/html
     - uses: actions/upload-artifact@v1
       with:
@@ -41,7 +41,7 @@ jobs:
             apt update -y 
             apt install -y pandoc
             python -m pip install --upgrade setuptools wheel pip sphinx sphinx myst-parser nbsphinx sphinxcontrib-bibtex ipython ipykernel pandoc
-            python -m pip install -e .[docs]
+#            python -m pip install -e .[docs]
         build-command: sphinx-build -n -b latex . ../build/latex
     - name: build latex
       run: |
