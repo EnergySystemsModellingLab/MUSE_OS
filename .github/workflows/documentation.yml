@@ -15,8 +15,8 @@ jobs:
         docs-folder: "docs/"
         pre-build-command: |
             apt update -y 
-            apt install -y python3-bottleneck python3-scipy pandoc
-            python3 -m pip install --upgrade pip
+            apt install -y python3-dev python3-bottleneck python3-scipy pandoc
+            python3 -m pip install --upgrade setuptools wheel pip
             python3 -m pip install -e .[docs]
         build-command: "sphinx-build -n -b html . ../build/html"
     - uses: actions/upload-artifact@v1
@@ -39,8 +39,8 @@ jobs:
         docs-folder: "docs/"
         pre-build-command: |
             apt update -y 
-            apt install -y python3-bottleneck python3-scipy pandoc
-            python3 -m pip install --upgrade pip
+            apt install -y python3-dev python3-bottleneck python3-scipy pandoc
+            python3 -m pip install --upgrade setuptools wheel pip
             python3 -m pip install -e .[docs]
         build-command: sphinx-build -n -b latex . ../build/latex
     - name: build latex
