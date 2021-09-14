@@ -43,7 +43,7 @@ exclude_patterns = [
 modindex_common_prefix = ["muse"]
 autodoc_typehints = "none"
 add_module_names = False
-
+nbsphinx_allow_errors = True
 autosectionlabel_prefix_document = True
 
 intersphinx_mapping = {
