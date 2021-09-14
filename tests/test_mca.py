@@ -128,14 +128,14 @@ def test_find_equilibrium(market: Dataset):
         b.next.side_effect = lambda *args, **kwargs: b_market.sel(
             commodity=~is_other(b_market.comm_usage)
         ) * side_effect_b.pop(0)
-
-        result = find_equilibrium(market, deepcopy([a, b]), maxiter=1)
+        # maxiter equals 1 implicitly not convergence
+        result = find_equilibrium(market, deepcopy([a, b]), maxiter=2)
         assert not result.converged
         assert result.sectors[0].next.call_count == 1
         assert result.sectors[1].next.call_count == 1
         expected = a_market.supply + b_market.supply
         actual, expected = broadcast(result.market.supply, expected)
-        assert actual.values == approx(0.5 * expected.values)
+        assert actual.values == approx(0.7 * expected.values)
 
         side_effect_a.clear()
         side_effect_a.extend([0.5, 0.7, 0.9, 0.95, 1.0, 1.0, 1.0])

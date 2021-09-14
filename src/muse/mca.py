@@ -13,7 +13,6 @@ from typing import (
     Union,
     cast,
 )
-from numpy import histogram
 
 from xarray import Dataset, zeros_like
 
