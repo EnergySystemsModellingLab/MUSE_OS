@@ -101,8 +101,12 @@ class MCA(object):
         for key in {"budget", "commodities", "method"}:
             carbon_kw[f"carbon_{key}"] = carbon_kw[key]
             carbon_kw.pop(key)
-        return cls(  # type: ignore
-            sectors=sectors, market=market, outputs=outputs, **global_kw, **carbon_kw
+        return cls(
+            sectors=sectors,
+            market=market,
+            outputs=outputs,  # type: ignore
+            **global_kw,
+            **carbon_kw,
         )
 
     def __init__(
