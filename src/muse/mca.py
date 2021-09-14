@@ -355,8 +355,10 @@ class MCA(object):
         from logging import getLogger
         from numpy import where
 
+        hist_years = [self.time_framework[0]]
+
         if len([s for s in self.sectors if "LegacySector" in str(type(s))]) == 0:
-            return None, self.sectors
+            return None, self.sectors, hist_years
 
         sectors = []
         idx = []
@@ -367,7 +369,7 @@ class MCA(object):
                 idx.append(i)
 
         getLogger(__name__).info("Calibrating LegacySectors...")
-        hist_years = self.time_framework[0]  # noqa: E203
+
         if 2015 in self.time_framework:
             hist_years = self.time_framework[where(self.time_framework <= 2015)]
         hist = len(hist_years)
@@ -375,9 +377,6 @@ class MCA(object):
             years = self.time_framework[year_idx : year_idx + 1]
             variables = ["supply", "consumption", "prices"]
             new_market = self.market[variables].sel(year=years).copy(deep=True)
-            #            new_market["updated_prices"] = new_market.prices.copy()
-            # new_market.supply[:] = 0
-            # new_market.consumption[:] = 0
             _, sectors = single_year_iteration(new_market, sectors)
 
         for i, s in enumerate(sectors):
