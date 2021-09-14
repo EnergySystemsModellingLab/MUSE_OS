@@ -13,6 +13,7 @@ from typing import (
     Union,
     cast,
 )
+from numpy import histogram
 
 from xarray import Dataset, zeros_like
 
@@ -288,19 +289,21 @@ class MCA(object):
         from numpy import where
         from muse.utilities import future_propagation
 
-        calibration = True
-        if calibration:
-            _, self.sectors, hist_years = self.calibrate_legacy_sectors()
+        _, self.sectors, hist_years = self.calibrate_legacy_sectors()
         if len(hist_years) > 0:
             hist = where(self.time_framework <= hist_years[-1])[0]
+            start = hist[-1]
+
         else:
-            hist = -1
+            start = -1
+
         nyear = len(self.time_framework) - 1
         check_carbon_budget = len(self.carbon_budget) and len(self.carbon_commodities)
         shoots = self.control_undershoot or self.control_overshoot
         variables = ["supply", "consumption", "prices"]
 
-        for year_idx in range(hist[-1] + 1, nyear):  # range(nyear):
+        for year_idx in range(start + 1, nyear):
+
             years = self.time_framework[year_idx : year_idx + 2]
             getLogger(__name__).info(f"Running simulation year {years[0]}...")
             new_market = self.market[variables].sel(year=years)
@@ -355,8 +358,7 @@ class MCA(object):
         from logging import getLogger
         from numpy import where
 
-        hist_years = [self.time_framework[0]]
-
+        hist_years = []
         if len([s for s in self.sectors if "LegacySector" in str(type(s))]) == 0:
             return None, self.sectors, hist_years
 
