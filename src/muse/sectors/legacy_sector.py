@@ -129,7 +129,6 @@ class LegacySector(AbstractSector):  # type: ignore
 
         msg = "LegacySector {} created successfully.".format(name)
         getLogger(__name__).info(msg)
-
         return cls(
             name,
             old_sector,
@@ -259,10 +258,11 @@ class LegacySector(AbstractSector):  # type: ignore
         inouts = {"output_dir": self.output_dir, "sectors_dir": self.sectors_dir}
 
         if self.name == "Power":
-            if self.mode == "Calibration":
+            if self.mode == "Calibration" and t[1] == self.time_framework[0]:
                 params += [self.market_iterative]
                 result = self.old_sector.power_calibration(*params, **inouts)
             else:
+                self.mode = "Iteration"
                 params += [self.old_sector.instance, self.market_iterative, self.excess]
                 result = self.old_sector.runprocessmodule(*params, **inouts)
         else:
