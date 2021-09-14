@@ -281,17 +281,22 @@ class MCA(object):
         """
         from logging import getLogger
         from xarray import DataArray
+        from numpy import where
         from muse.utilities import future_propagation
 
-        _, self.sectors = self.calibrate_legacy_sectors()
-
+        calibration = True
+        if calibration:
+            _, self.sectors, hist_years = self.calibrate_legacy_sectors()
+        if len(hist_years) > 0:
+            hist = where(self.time_framework <= hist_years[-1])[0]
+        else:
+            hist = -1
         nyear = len(self.time_framework) - 1
         check_carbon_budget = len(self.carbon_budget) and len(self.carbon_commodities)
         shoots = self.control_undershoot or self.control_overshoot
         variables = ["supply", "consumption", "prices"]
 
-        for year_idx in range(nyear):
-
+        for year_idx in range(hist[-1] + 1, nyear):  # range(nyear):
             years = self.time_framework[year_idx : year_idx + 2]
             getLogger(__name__).info(f"Running simulation year {years[0]}...")
             new_market = self.market[variables].sel(year=years)
@@ -334,7 +339,9 @@ class MCA(object):
                 self.market.prices.sel(dims), new_market.prices.sel(year=years[1])
             )
 
-            self.outputs(self.market, self.sectors, year=self.time_framework[year_idx])
+            self.outputs(
+                self.market, self.sectors, year=self.time_framework[year_idx]
+            )  # type: ignore
             getLogger(__name__).info(f"Finish simulation year {years[0]}!")
 
     def calibrate_legacy_sectors(self):
@@ -356,15 +363,18 @@ class MCA(object):
                 idx.append(i)
 
         getLogger(__name__).info("Calibrating LegacySectors...")
-        years = self.time_framework[0]  # noqa: E203
+        hist_years = self.time_framework[0]  # noqa: E203
         if 2015 in self.time_framework:
-            years = self.time_framework[where(self.time_framework <= 2015)]
-
-        variables = ["supply", "consumption", "prices"]
-        new_market = self.market[variables].sel(year=years).copy(deep=True)
-
-        new_market["updated_prices"] = new_market.prices.copy()
-        _, sectors = single_year_iteration(new_market, sectors)
+            hist_years = self.time_framework[where(self.time_framework <= 2015)]
+        hist = len(hist_years)
+        for year_idx in range(hist):  # range(nyear):
+            years = self.time_framework[year_idx : year_idx + 1]
+            variables = ["supply", "consumption", "prices"]
+            new_market = self.market[variables].sel(year=years).copy(deep=True)
+            #            new_market["updated_prices"] = new_market.prices.copy()
+            # new_market.supply[:] = 0
+            # new_market.consumption[:] = 0
+            _, sectors = single_year_iteration(new_market, sectors)
 
         for i, s in enumerate(sectors):
             s.mode = "Iteration"
@@ -372,7 +382,7 @@ class MCA(object):
 
         getLogger(__name__).info("Finish calibration of LegacySectors!")
 
-        return None, self.sectors
+        return None, self.sectors, hist_years
 
 
 class SingleYearIterationResult(NamedTuple):
@@ -411,6 +421,7 @@ def single_year_iteration(
         sector_market = sector.next(
             market[["supply", "consumption", "prices"]]  # type:ignore
         )
+
         sector_market = sector_market.sel(year=market.year)
 
         dims = {i: sector_market[i] for i in sector_market.consumption.dims}
@@ -516,8 +527,8 @@ def find_equilibrium(
             break
         if equilibrium and not converged:
             new_price = prior_market["prices"].sel(year=market.year[1]).copy()
-            new_price.loc[dict(commodity=included)] = (
-                0.8 * new_price.loc[dict(commodity=included)]
+            new_price.loc[dict(commodity=included)] = (  # type: ignore
+                0.8 * new_price.loc[dict(commodity=included)]  # type: ignore
             )
             new_price.loc[dict(commodity=included)] += (
                 0.2
@@ -528,7 +539,7 @@ def find_equilibrium(
             market["prices"] = future_propagation(  # type: ignore
                 market["prices"], new_price
             )
-        if not equilibrium:
+        if not equilibrium or maxiter == 1:
             equilibrium_reached = True
             converged = True
             break
@@ -541,7 +552,7 @@ def find_equilibrium(
         )
         new_price = prior_market["prices"].sel(year=market.year[1]).copy()
         new_price.loc[dict(commodity=included)] = (
-            0.8 * new_price.loc[dict(commodity=included)]
+            0.8 * new_price.loc[dict(commodity=included)]  # type: ignore
         )
         new_price.loc[dict(commodity=included)] += (
             0.2
