@@ -258,9 +258,10 @@ class LegacySector(AbstractSector):  # type: ignore
         inouts = {"output_dir": self.output_dir, "sectors_dir": self.sectors_dir}
 
         if self.name == "Power":
-            if self.mode == "Calibration" and t[1] == self.time_framework[0]:
+            if self.mode == "Calibration":
                 params += [self.market_iterative]
                 result = self.old_sector.power_calibration(*params, **inouts)
+                self.mode = "Iteration"
             else:
                 self.mode = "Iteration"
                 params += [self.old_sector.instance, self.market_iterative, self.excess]
