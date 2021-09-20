@@ -222,7 +222,14 @@ def new_and_retro(
     from functools import partial
     from muse.commodities import is_enduse
     from muse.utilities import reduce_assets, agent_concatenation
-    from muse.quantities import maximum_production
+    from muse.quantities import maximum_production, costed_production
+
+    def decommissioning(capacity):
+        from muse.quantities import decommissioning_demand
+
+        return decommissioning_demand(
+            technologies, capacity, year=[current_year, current_year + forecast]
+        ).squeeze("year")
 
     if current_year is None:
         current_year = market.year.min()
@@ -243,13 +250,11 @@ def new_and_retro(
     )
 
     quantity = {
-        agent.name: getattr(agent, "quantity", 0.3)  # type: ignore
-        for agent in agents
-        if agent.category != "retrofit"
+        agent.name: agent.quantity for agent in agents if agent.category != "retrofit"
     }
 
     for agent in agents:
-        if not hasattr(agent, "quantity"):
+        if agent.category == "retrofit":
             setattr(agent, "quantity", quantity[agent.name])
 
     id_to_share: MutableMapping[Hashable, xr.DataArray] = {}
@@ -276,7 +281,7 @@ def new_and_retro(
         retro_demands: MutableMapping[Hashable, xr.DataArray] = _inner_split(
             retro_capacity,
             demands.retrofit.sel(region=region),
-            partial(maximum_production, technologies=regional_techs, year=current_year),
+            decommissioning,
             id_to_rquantity,
         )
         assert len(name_to_id) == len(retro_capacity)
@@ -285,7 +290,7 @@ def new_and_retro(
 
         new_capacity: Mapping[Hashable, xr.DataArray] = {
             agent.uuid: retro_capacity[name_to_id[(agent.name, agent.region)]]
-            * getattr(agent, "quantity", 0.3)
+            #            * agent.quantity
             for agent in agents
             if agent.category != "retrofit" and agent.region == region
         }
@@ -295,7 +300,6 @@ def new_and_retro(
             for agent in agents
             if agent.category != "retrofit" and agent.region == region
         }
-
         new_demands = _inner_split(
             new_capacity,
             demands.new.sel(region=region),
@@ -362,15 +366,21 @@ def _inner_split(
         for key, capacity in assets.items()
     }
     total = sum(shares.values()).sum("asset")  # type: ignore
+
     unassigned = (
         demand / (len(shares) * len(cast(xr.DataArray, sum(shares.values())).asset))
     ).where(logical_and(demand > 1e-12, total <= 1e-12), 0)
 
-    return {
-        key: ((share / total).fillna(0) * demand * quantity[key][2]).fillna(0)
-        + unassigned
-        for key, share in shares.items()
+    totals = {
+        key: (share / share.sum("asset")).fillna(0) for key, share in shares.items()
     }
+
+    newshares = {
+        key: (total * quantity[key][2] * demand).fillna(0)
+        + unassigned * quantity[key][2]
+        for key, total in totals.items()
+    }
+    return newshares
 
 
 def unmet_demand(
@@ -470,6 +480,7 @@ def new_and_retro_demands(
         by existing assets in the current year, as computed in :py:func:`new_demand`.
     #. the retrofit demand is everything else.
     """
+    from numpy import minimum
 
     from muse.timeslices import convert_timeslice, QuantityType
     from muse.production import factory as prod_factory
@@ -506,9 +517,9 @@ def new_and_retro_demands(
         .sum("asset")
     )
     # existing asset should not execute beyond demand
-    # service = minimum(
-    #     service, smarket.consumption.sel(year=current_year + forecast, drop=True)
-    # )
+    service = minimum(
+        service, smarket.consumption.sel(year=current_year + forecast, drop=True)
+    )
     retro_demand = (
         smarket.consumption.sel(year=current_year + forecast, drop=True)
         - new_demand
