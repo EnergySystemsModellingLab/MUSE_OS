@@ -41,7 +41,6 @@ from muse.registration import registrator
 from muse.sectors import AbstractSector
 
 from muse.timeslices import convert_timeslice, QuantityType
-from muse.quantities import maximum_production
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
     [xr.Dataset, List[AbstractSector], KwArg(Any)], Union[xr.DataArray, pd.DataFrame]
@@ -248,7 +247,9 @@ def _aggregate_sectors(
     sectors: List[AbstractSector], *args, op: Callable
 ) -> pd.DataFrame:
     """Aggregate outputs from all sectors."""
+
     alldata = [op(sector, *args) for sector in sectors]
+
     if len(alldata) == 0:
         return pd.DataFrame()
     return pd.concat(alldata, sort=True)
@@ -351,12 +352,6 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
-    for a in agents:
-        if hasattr(a, "quantity"):
-            name = a.name
-            attr = a.quantity
-        if a.name == name and not hasattr(a, "quantity"):
-            setattr(a, "quantity", attr)
     agent_market = market.copy()
     if len(technologies) > 0:
         for a in agents:
@@ -397,170 +392,18 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
     return output
 
 
-def costed_production(
-    demand,
-    costs,
-    capacity,
-    technologies,
-    with_minimum_service,
-    year,
-) -> xr.DataArray:
-    """Computes production from ranked assets.
-
-    The assets are ranked according to their cost. The asset with least cost are allowed
-    to service the demand first, up to the maximum production. By default, the mininum
-    service is applied first.
-    """
-
-    from muse.utilities import broadcast_techs
-
-    technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
-
-    if len(capacity.region.dims) == 0:
-
-        def group_assets(x: xr.DataArray) -> xr.DataArray:
-            return x.sum("asset")
-
-    else:
-
-        def group_assets(x: xr.DataArray) -> xr.DataArray:
-            return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
-
-    ranking = costs.rank("asset")
-    maxprod = convert_timeslice(
-        maximum_production(technodata, capacity),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
-    )
-    commodity = (maxprod > 0).any([i for i in maxprod.dims if i != "commodity"])
-    commodity = commodity.drop_vars(
-        [u for u in commodity.coords if u not in commodity.dims]
-    )
-
-    result = xr.zeros_like(maxprod)
-    demand = demand.copy()
-
-    constraints = (
-        xr.Dataset(dict(maxprod=maxprod, ranking=ranking, has_output=maxprod > 0))
-        .set_coords("ranking")
-        .set_coords("has_output")
-        .sel(commodity=commodity)
-    )
-    if maxprod.sum() > 1e-15:
-        if not with_minimum_service:
-            production = xr.zeros_like(constraints.maxprod)
-        else:
-            production = (
-                getattr(technodata, "minimum_service_factor", 0) * constraints.maxprod
-            )
-            demand = np.maximum(demand - group_assets(production), 0)
-
-        for rank in sorted(set(constraints.ranking.values.flatten())):
-
-            condition = (constraints.ranking == rank) & constraints.has_output
-            current_maxprod = constraints.maxprod.where(condition, 0)
-            fullprod = group_assets(current_maxprod)
-
-            if "region" in demand.dims:
-                if "year" in demand.dims:
-                    demand_prod = demand.sel(region=production.region, year=year)
-                else:
-                    demand_prod = demand.sel(region=production.region)
-            com = [
-                c for c in demand.commodity.values if c in constraints.commodity.values
-            ]
-            demand = demand.sel(commodity=com)
-            if (fullprod <= demand + 1e-10).all():
-                current_demand = fullprod.sel(year=year)
-                current_prod = current_maxprod.sel(year=year)
-            else:
-                demand_prod = demand
-                demand_prod = (
-                    current_maxprod / current_maxprod.sum("asset") * demand_prod
-                ).where(condition, 0)
-                current_prod = np.minimum(demand_prod, current_maxprod).sel(year=year)
-                current_demand = group_assets(current_prod)
-            value = np.minimum(current_demand, demand)
-            demand -= value
-            if "region" in current_prod.dims:
-                production += current_prod.sel(region=production.region)
-            else:
-                production += current_prod
-        result[dict(commodity=commodity)] += production
-    return result
-
-
-def costed_production_export(
-    market: xr.Dataset,
-    capacity: xr.DataArray,
-    technologies: xr.Dataset,
-    costs: Union[xr.DataArray, Callable, Text] = "alcoe",
-    with_minimum_service: bool = True,
-    with_emission: bool = True,
-    year=int,
-) -> xr.DataArray:
-    """Computes production from ranked assets.
-
-    The assets are ranked according to their cost. The cost can be provided as an
-    xarray, a callable creating an xarray, or as "alcoe". The asset with least cost are
-    allowed to service the demand first, up to the maximum production. By default, the
-    mininum service is applied first.
-    """
-
-    from muse.quantities import (
-        annual_levelized_cost_of_energy,
-        emission,
-    )
-    from muse.utilities import broadcast_techs
-    from muse.commodities import is_pollutant, check_usage, CommodityUsage
-
-    if isinstance(costs, Text) and costs.lower() == "alcoe":
-        costs = annual_levelized_cost_of_energy
-    elif isinstance(costs, Text):
-        raise ValueError(f"Unknown cost {costs}")
-    if callable(costs):
-        technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
-        costs = costs(market.prices.sel(region=technodata.region), technodata)
-    else:
-        costs = costs
-    assert isinstance(costs, xr.DataArray)
-
-    production = costed_production(
-        market.consumption,
-        costs,
-        capacity,
-        technologies,
-        with_minimum_service=with_minimum_service,
-        year=year,
-    )
-    # add production of environmental pollutants
-    if with_emission:
-        env = is_pollutant(technologies.comm_usage)
-        production[dict(commodity=env)] = emission(
-            production, technologies.fixed_outputs
-        ).transpose(*production.dims)
-        production[
-            dict(
-                commodity=~check_usage(technologies.comm_usage, CommodityUsage.PRODUCT)
-            )
-        ] = 0
-    return production
-
-
 @register_output_quantity(name=["timeslice_consumption"])
 def metric_consumption(
     market: xr.Dataset, sectors: List[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current timeslice consumption across all sectors."""
-    for sector in sectors:
-        print()
     return _aggregate_sectors(sectors, market, op=sector_consumption)
 
 
 def sector_consumption(
     sector: AbstractSector, market: xr.Dataset, **kwargs
 ) -> pd.DataFrame:
-    """Sector fuel costs with agent annotations."""
+    """Sector fuel consumption with agent annotations."""
     from muse.quantities import consumption
     from muse.production import supply
 
@@ -568,21 +411,14 @@ def sector_consumption(
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
-    for a in agents:
-        if hasattr(a, "quantity"):
-            name = a.name
-            attr = a.quantity
-        if a.name == name and not hasattr(a, "quantity"):
-            setattr(a, "quantity", attr)
     agent_market = market.copy()
     if len(technologies) > 0:
         for a in agents:
             output_year = a.year - a.forecast
+            capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             agent_market["consumption"] = (market.consumption * a.quantity).sel(
                 year=output_year
             )
-
-            capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             production = convert_timeslice(
                 supply(
                     agent_market,
@@ -593,23 +429,29 @@ def sector_consumption(
                 QuantityType.EXTENSIVE,
             )
             prices = a.filter_input(market.prices, year=output_year)
-            data_agent = consumption(
+            result = consumption(
                 technologies=technologies, production=production, prices=prices
             )
+            if "year" in result.dims:
+                data_agent = result.sel(year=output_year)
+            else:
+                data_agent = result
+                data_agent["year"] = output_year
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
-            data_agent["year"] = output_year
-            if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
-                data_sector.append(data_agent.groupby("technology").fillna(0))
+            a = data_agent.to_dataframe("consumption")
+            if len(a) > 0 and len(a.technology.values) > 0:
+                b = a.reset_index()
+                data_sector.append(b)
     if len(data_sector) > 0:
-        output = pd.concat(
-            [u.to_dataframe("consumption") for u in data_sector], sort=True
-        )
-        output = output.reset_index()
+        output = pd.concat([u for u in data_sector], sort=True)
 
     else:
         output = pd.DataFrame()
+    output = output.reset_index()
+
+    return output
 
 
 @register_output_quantity(name=["fuel_costs"])
@@ -631,12 +473,7 @@ def sector_fuel_costs(
     data_sector: List[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
-    for a in agents:
-        if hasattr(a, "quantity"):
-            name = a.name
-            attr = a.quantity
-        if a.name == name and not hasattr(a, "quantity"):
-            setattr(a, "quantity", attr)
+
     agent_market = market.copy()
     if len(technologies) > 0:
         for a in agents:
@@ -700,12 +537,7 @@ def sector_capital_costs(
     data_sector: List[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
-    for a in agents:
-        if hasattr(a, "quantity"):
-            name = a.name
-            attr = a.quantity
-        if a.name == name and not hasattr(a, "quantity"):
-            setattr(a, "quantity", attr)
+
     if len(technologies) > 0:
         for a in agents:
 
@@ -760,12 +592,6 @@ def sector_emission_costs(
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
-    for a in agents:
-        if hasattr(a, "quantity"):
-            name = a.name
-            attr = a.quantity
-        if a.name == name and not hasattr(a, "quantity"):
-            setattr(a, "quantity", attr)
     agent_market = market.copy()
     if len(technologies) > 0:
         for a in agents:
@@ -835,12 +661,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
     data_sector: List[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
-    for a in agents:
-        if hasattr(a, "quantity"):
-            name = a.name
-            attr = a.quantity
-        if a.name == name and not hasattr(a, "quantity"):
-            setattr(a, "quantity", attr)
+
     agent_market = market.copy()
     if len(technologies) > 0:
         for a in agents:
@@ -993,12 +814,6 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
-    for a in agents:
-        if hasattr(a, "quantity"):
-            name = a.name
-            attr = a.quantity
-        if a.name == name and not hasattr(a, "quantity"):
-            setattr(a, "quantity", attr)
     agent_market = market.copy()
 
     if len(technologies) > 0:
