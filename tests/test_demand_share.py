@@ -177,13 +177,13 @@ def test_demand_split(technologies, stock, matching_market):
     assert (share["scully"].sel(commodity=~enduse) == 0).all()
     assert (share["mulder"].sel(commodity=~enduse) == 0).all()
 
-    total = 2 * (share["scully"] + share["mulder"]).sum("asset")
+    total = (share["scully"] + share["mulder"]).sum("asset")
     demand = demand.where(enduse, 0)
     demand, total = xr.broadcast(demand, total)
     assert demand.values == approx(total.values)
-    expected, actual = xr.broadcast(0.5 * demand, share["scully"].sum("asset"))
+    expected, actual = xr.broadcast(demand, share["scully"].sum("asset"))
     assert actual.values == approx(0.3 * expected.values)
-    expected, actual = xr.broadcast(0.5 * demand, share["mulder"].sum("asset"))
+    expected, actual = xr.broadcast(demand, share["mulder"].sum("asset"))
     assert actual.values == approx(0.7 * expected.values)
 
 
@@ -204,7 +204,7 @@ def test_demand_split_zero_share(technologies, stock, matching_market):
     )
     capacity = stock.capacity
     agents = dict(scully=0.3 * capacity, mulder=0.7 * capacity)
-    quantity = dict(scully=("scully", "USA", 0.3), mulder=("mulder", "USA", 0.7))
+    quantity = dict(scully=("scully", "USA", 1), mulder=("mulder", "USA", 1))
     share = inner_split(agents, demand, method, quantity)
 
     enduse = is_enduse(technologies.comm_usage)
@@ -214,8 +214,10 @@ def test_demand_split_zero_share(technologies, stock, matching_market):
     total = (share["scully"] + share["mulder"]).sum("asset")
     demand = demand.where(enduse, 0)
     demand, total = xr.broadcast(demand, total)
+
     assert demand.values == approx(total.values, abs=1e-10)
     expected, actual = xr.broadcast(demand, share["scully"].sum("asset"))
+
     assert actual.values == approx(0.5 * expected.values)
     expected, actual = xr.broadcast(demand, share["mulder"].sum("asset"))
     assert actual.values == approx(0.5 * expected.values)
@@ -245,14 +247,15 @@ def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_f
         uuid: UUID
         name: Text
         region: Text
+        quantity: float
 
     agents = [
-        Agent(0.3 * usa_stock.squeeze("region"), "retrofit", uuid4(), "a", "USA"),
-        Agent(0.0 * usa_stock.squeeze("region"), "new", uuid4(), "a", "USA"),
-        Agent(0.7 * usa_stock.squeeze("region"), "retrofit", uuid4(), "b", "USA"),
-        Agent(0.0 * usa_stock.squeeze("region"), "new", uuid4(), "b", "USA"),
-        Agent(asia_stock.squeeze("region"), "retrofit", uuid4(), "a", "ASEAN"),
-        Agent(0 * asia_stock.squeeze("region"), "new", uuid4(), "a", "ASEAN"),
+        Agent(0.3 * usa_stock.squeeze("region"), "retrofit", uuid4(), "a", "USA", 0.3),
+        Agent(0.0 * usa_stock.squeeze("region"), "new", uuid4(), "a", "USA", 0.0),
+        Agent(0.7 * usa_stock.squeeze("region"), "retrofit", uuid4(), "b", "USA", 0.7),
+        Agent(0.0 * usa_stock.squeeze("region"), "new", uuid4(), "b", "USA", 0.0),
+        Agent(asia_stock.squeeze("region"), "retrofit", uuid4(), "a", "ASEAN", 1.0),
+        Agent(0 * asia_stock.squeeze("region"), "new", uuid4(), "a", "ASEAN", 0.0),
     ]
 
     results = new_and_retro(agents, market, technologies, current_year=2010, forecast=5)

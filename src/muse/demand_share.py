@@ -222,7 +222,7 @@ def new_and_retro(
     from functools import partial
     from muse.commodities import is_enduse
     from muse.utilities import reduce_assets, agent_concatenation
-    from muse.quantities import maximum_production, costed_production
+    from muse.quantities import maximum_production
 
     def decommissioning(capacity):
         from muse.quantities import decommissioning_demand
