@@ -193,6 +193,7 @@ def decommissioning_demand(
     capacity = capacity.interp(year=year, kwargs={"fill_value": 0.0})
     baseyear = min(year)
     dyears = [u for u in year if u != baseyear]
+
     return maximum_production(
         technologies, capacity.sel(year=baseyear) - capacity.sel(year=dyears)
     ).clip(min=0)
@@ -469,19 +470,23 @@ def capacity_in_use(
     prod = filter_input(
         production, **{k: v for k, v in filters.items() if k in production.dims}
     )
+
     techs = technologies[["fixed_outputs", "utilization_factor"]]
     assert isinstance(techs, xr.Dataset)
     btechs = broadcast_techs(techs, prod)
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in technologies.dims}
     )
+
     factor = 1 / (ftechs.fixed_outputs * ftechs.utilization_factor)
     capa_in_use = (prod * factor).where(~np.isinf(factor), 0)
+
     capa_in_use = capa_in_use.where(
         is_enduse(technologies.comm_usage.sel(commodity=capa_in_use.commodity)), 0
     )
     if max_dim:
         capa_in_use = capa_in_use.max(max_dim)
+    
     return capa_in_use
 
 

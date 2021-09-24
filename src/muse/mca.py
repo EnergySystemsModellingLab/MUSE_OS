@@ -355,7 +355,8 @@ class MCA(object):
         Run historical years
         """
         from logging import getLogger
-        from numpy import where
+        from numpy import where, clip
+        from copy import deepcopy
 
         hist_years = []
         if len([s for s in self.sectors if "LegacySector" in str(type(s))]) == 0:
@@ -376,9 +377,28 @@ class MCA(object):
         hist = len(hist_years)
         for year_idx in range(hist):  # range(nyear):
             years = self.time_framework[year_idx : year_idx + 1]
+            sectors = deepcopy(sectors)
             variables = ["supply", "consumption", "prices"]
             new_market = self.market[variables].sel(year=years).copy(deep=True)
-            _, sectors = single_year_iteration(new_market, sectors)
+            for sector in sectors:
+                sector_market = sector.next(
+                    new_market[["supply", "consumption", "prices"]]  # type:ignore
+                )
+
+                sector_market = sector_market.sel(year=new_market.year)
+
+                dims = {i: sector_market[i] for i in sector_market.consumption.dims}
+
+                sector_market.consumption.loc[dims] = clip(
+                    sector_market.consumption.loc[dims]
+                    - sector_market.supply.loc[dims],
+                    0.0,
+                    None,
+                )
+                new_market.consumption.loc[dims] += sector_market.consumption
+
+                dims = {i: sector_market[i] for i in sector_market.supply.dims}
+                new_market.supply.loc[dims] += sector_market.supply
 
         for i, s in enumerate(sectors):
             s.mode = "Iteration"
@@ -413,6 +433,7 @@ def single_year_iteration(
         A tuple with the new market and sectors.
     """
     from copy import deepcopy
+    from numpy import clip
     from muse.commodities import is_enduse
 
     sectors = deepcopy(sectors)
@@ -429,6 +450,12 @@ def single_year_iteration(
         sector_market = sector_market.sel(year=market.year)
 
         dims = {i: sector_market[i] for i in sector_market.consumption.dims}
+
+        sector_market.consumption.loc[dims] = clip(
+            sector_market.consumption.loc[dims] - sector_market.supply.loc[dims],
+            0.0,
+            None,
+        )
         market.consumption.loc[dims] += sector_market.consumption
 
         dims = {i: sector_market[i] for i in sector_market.supply.dims}
@@ -529,6 +556,7 @@ def find_equilibrium(
             )
 
             break
+
         if equilibrium and not converged:
             new_price = prior_market["prices"].sel(year=market.year[1]).copy()
             new_price.loc[dict(commodity=included)] = (  # type: ignore
@@ -543,7 +571,12 @@ def find_equilibrium(
             market["prices"] = future_propagation(  # type: ignore
                 market["prices"], new_price
             )
-        if not equilibrium or maxiter == 1:
+        if not equilibrium:
+            equilibrium_reached = True
+            converged = True
+            break
+
+        if maxiter == 1:
             equilibrium_reached = True
             converged = True
             break

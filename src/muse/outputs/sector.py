@@ -103,6 +103,7 @@ def _factory(
 
         if year is None:
             year = int(market.year.min())
+
         return [
             sink(quantity(market, *args), year=year)
             for quantity, sink in zip(quantities, sinks)
