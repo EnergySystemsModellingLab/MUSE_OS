@@ -486,7 +486,7 @@ def capacity_in_use(
     )
     if max_dim:
         capa_in_use = capa_in_use.max(max_dim)
-    
+
     return capa_in_use
 
 

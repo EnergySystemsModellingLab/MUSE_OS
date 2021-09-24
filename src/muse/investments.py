@@ -257,8 +257,11 @@ def adhoc_match_demand(
     minobj = costs.min()
     maxobj = costs.where(search_space, minobj).max("replacement") + 1
 
+    if "timeslice" in costs.dims and timeslice_op is not None:
+        costs = timeslice_op(costs)
+
     decision = costs.where(search_space, maxobj)
-    decision = decision.min("timeslice")
+
     production = demand_matching(
         demand.sel(asset=demand.asset.isin(search_space.asset)), decision, max_prod
     ).where(search_space, 0)
