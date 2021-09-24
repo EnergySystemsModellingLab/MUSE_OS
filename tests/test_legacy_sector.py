@@ -13,10 +13,18 @@ def legacy_inputs():
     from muse_legacy.sectors import SECTORS
 
     excluded = {
+        "Bioenergy",
+        "Commercial",
+        "Industry",
+        "NET",
+        "Refinery",
+        "Residential",
         "IndustryABM",
+        "Sequestration",
         "TradeSupply",
         "TradeRefinery",
         "TradePower",
+        "Transport",
         "Shipping",
         "Power",
     }
