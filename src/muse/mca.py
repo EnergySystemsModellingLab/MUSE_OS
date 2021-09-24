@@ -389,7 +389,10 @@ class MCA(object):
                 dims = {i: sector_market[i] for i in sector_market.consumption.dims}
 
                 sector_market.consumption.loc[dims] = clip(
-                    sector_market.consumption.loc[dims] - sector_market.supply.loc[dims], 0.0, None
+                    sector_market.consumption.loc[dims]
+                    - sector_market.supply.loc[dims],
+                    0.0,
+                    None,
                 )
                 new_market.consumption.loc[dims] += sector_market.consumption
 
@@ -448,7 +451,9 @@ def single_year_iteration(
         dims = {i: sector_market[i] for i in sector_market.consumption.dims}
 
         sector_market.consumption.loc[dims] = clip(
-            sector_market.consumption.loc[dims] - sector_market.supply.loc[dims], 0.0, None
+            sector_market.consumption.loc[dims] - sector_market.supply.loc[dims],
+            0.0,
+            None,
         )
         market.consumption.loc[dims] += sector_market.consumption
 
