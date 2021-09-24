@@ -238,6 +238,7 @@ def adhoc_match_demand(
     from muse.timeslices import convert_timeslice, QuantityType
 
     demand = next((c for c in constraints if c.name == "demand")).b
+
     max_capacity = next(
         (c for c in constraints if c.name == "max capacity expansion")
     ).b
@@ -255,8 +256,9 @@ def adhoc_match_demand(
     # Any production assigned to them by the demand-matching algorithm will be removed.
     minobj = costs.min()
     maxobj = costs.where(search_space, minobj).max("replacement") + 1
-    decision = costs.where(search_space, maxobj)
 
+    decision = costs.where(search_space, maxobj)
+    decision = decision.min("timeslice")
     production = demand_matching(
         demand.sel(asset=demand.asset.isin(search_space.asset)), decision, max_prod
     ).where(search_space, 0)
@@ -266,6 +268,7 @@ def adhoc_match_demand(
     ).drop_vars("technology")
     if "timeslice" in capacity.dims and timeslice_op is not None:
         capacity = timeslice_op(capacity)
+
     return capacity.rename("investment")
 
 
@@ -295,6 +298,7 @@ def scipy_match_demand(
     adapter = ScipyAdapter.factory(
         techs, -cast(np.ndarray, costs), timeslice, *constraints
     )
+
     res = linprog(**adapter.kwargs, options=dict(disp=False, sym_pos=False))
     if not res.success:
         getLogger(__name__).critical(res.message)

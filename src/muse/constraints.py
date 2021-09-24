@@ -379,6 +379,7 @@ def max_capacity_expansion(
     elif "dst_region" in b.dims:
         b = b.rename(region="src_region")
         capa = search_space.agent.region == b.src_region
+
     return xr.Dataset(
         dict(b=b, capacity=capa),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND, name="max capacity expansion"),

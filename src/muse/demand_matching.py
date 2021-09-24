@@ -242,6 +242,7 @@ def demand_matching(
     multics = {
         k: ds.coords[k] for k in ds.dims if isinstance(ds.get_index(k), MultiIndex)
     }
+
     if len(multics) > 0:
         for k in multics:
             ds.coords[k] = list(range(len(ds[k])))
@@ -283,12 +284,14 @@ def _demand_matching_impl(
     def expand_dims(x, like):
         """Add extra dims that are in ``like``."""
         N = max(1, prod([len(like[d]) for d in like.dims if d not in x.dims]))
-        return (x / N).expand_dims(**{d: like[d] for d in like.dims if d not in x.dims})
+        b = (x / N).expand_dims(**{d: like[d] for d in like.dims if d not in x.dims})
+        return b
 
     def remove_dims(x, to):
         """Remove extra dims that are not in ``to``."""
         extras = set(x.dims).difference(to.dims)
-        return x.sum(extras) / (~isnan(x)).sum(extras)
+        a = x.sum(extras) / (~isnan(x)).sum(extras)
+        return a
 
     idims = [dim for dim in result.dims if dim not in demand.dims]
     for _, same_cost in data.groupby("cost") if cost.dims else [(cost, data)]:
@@ -312,5 +315,7 @@ def _demand_matching_impl(
                 ).fillna(0)
             ).fillna(0)
             delta_x = (expand_dims(delta_x, excess_share) - excess_share).clip(0)
+
         result = sum(align(result, delta_x.fillna(0), fill_value=0, join="left"))
+
     return result

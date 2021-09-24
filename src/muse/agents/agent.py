@@ -426,4 +426,3 @@ class InvestingAgent(Agent):
             current_year=self.year - time_period,
             time_period=time_period,
         )
-
