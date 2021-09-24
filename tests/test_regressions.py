@@ -1,4 +1,4 @@
-from pytest import approx, fixture, mark
+from pytest import approx, fixture
 
 
 @fixture
