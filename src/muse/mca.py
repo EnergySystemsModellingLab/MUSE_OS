@@ -325,8 +325,7 @@ class MCA(object):
                     self.carbon_price = future_propagation(
                         self.carbon_price, future_price
                     )
-                    print(new_price, "New price mca")
-                    print(self.carbon_price, "mca", "updated with ", future_price)
+
             _, new_market, self.sectors = self.find_equilibrium(new_market)
 
             # If we need to account for the carbon budget, we might need to change
@@ -390,10 +389,7 @@ class MCA(object):
                 dims = {i: sector_market[i] for i in sector_market.consumption.dims}
 
                 sector_market.consumption.loc[dims] = clip(
-                    sector_market.consumption.loc[dims]
-                    - sector_market.supply.loc[dims],
-                    0.0,
-                    None,
+                    sector_market.consumption.loc[dims] - sector_market.supply.loc[dims], 0.0, None
                 )
                 new_market.consumption.loc[dims] += sector_market.consumption
 
@@ -452,9 +448,7 @@ def single_year_iteration(
         dims = {i: sector_market[i] for i in sector_market.consumption.dims}
 
         sector_market.consumption.loc[dims] = clip(
-            sector_market.consumption.loc[dims] - sector_market.supply.loc[dims],
-            0.0,
-            None,
+            sector_market.consumption.loc[dims] - sector_market.supply.loc[dims], 0.0, None
         )
         market.consumption.loc[dims] += sector_market.consumption
 
