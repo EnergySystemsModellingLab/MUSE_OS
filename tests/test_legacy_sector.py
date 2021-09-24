@@ -26,6 +26,7 @@ def legacy_inputs():
         "TradePower",
         "Transport",
         "Shipping",
+        "Supply",
         "Power",
     }
 

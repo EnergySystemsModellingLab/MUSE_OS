@@ -40,58 +40,6 @@ def drivers():
     return drivers
 
 
-@mark.sgidata
-@mark.legacy
-def test_exponential_adj_factory(loaded_residential_settings):
-    from xarray import Dataset
-    from muse.regressions import ExponentialAdj
-    from muse.readers import read_regression_parameters
-
-    regression_data = read_regression_parameters(
-        loaded_residential_settings.global_input_files.regression_parameters
-    ).sel(sector=["residential"], region=loaded_residential_settings.regions)
-
-    functor = ExponentialAdj.factory(regression_data)
-    assert hasattr(functor, "coeffs")
-    assert isinstance(functor.coeffs, Dataset)
-    assert set(functor.coeffs.dims) == {"region", "sector", "commodity"}
-    assert len(functor.coeffs.commodity) == 77
-    assert len(functor.coeffs.region) == 1
-    assert len(functor.coeffs.sector) == 1
-    assert set(functor.coeffs.data_vars) == {"a", "b", "w"}
-
-
-@mark.sgidata
-@mark.legacy
-def test_logistic_factory(loaded_residential_settings):
-    from xarray import Dataset
-    from muse.regressions import Logistic
-    from muse.readers import read_regression_parameters
-
-    regression_data = read_regression_parameters(
-        loaded_residential_settings.global_input_files.regression_parameters
-    ).sel(sector=["residential"], region=loaded_residential_settings.regions)
-
-    functor = Logistic.factory(regression_data)
-    assert hasattr(functor, "coeffs")
-    assert isinstance(functor.coeffs, Dataset)
-    assert set(functor.coeffs.dims) == {"region", "sector", "commodity"}
-    assert len(functor.coeffs.commodity) == 77
-    assert len(functor.coeffs.region) == 1
-    assert len(functor.coeffs.sector) == 1
-    assert set(functor.coeffs.data_vars) == {"a", "b", "c", "w"}
-
-    functor = Logistic.factory(
-        regression_data, sector="residential", commodity=["algae", "agrires"]
-    )
-    assert hasattr(functor, "coeffs")
-    assert isinstance(functor.coeffs, Dataset)
-    assert set(functor.coeffs.dims) == {"region", "commodity"}
-    assert len(functor.coeffs.commodity) == 2
-    assert len(functor.coeffs.region) == 1
-    assert set(functor.coeffs.data_vars) == {"a", "b", "c", "w"}
-
-
 def test_exponential(regression_params, drivers):
     from muse.regressions import Exponential
     from numpy import exp
