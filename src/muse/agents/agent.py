@@ -48,6 +48,8 @@ class AbstractAgent(ABC):
         """Interpolation method."""
         self.category = category
         """Attribute to classify different sets of agents."""
+        self.quantity = 1
+        """Attribute to classify different agents share of the population"""
 
     def filter_input(
         self,
@@ -290,12 +292,14 @@ class Agent(AbstractAgent):
         new_capacity = self.retirement_profile(
             technologies, investments, current_year, time_period
         )
+
         if new_capacity is None:
             return
         new_capacity = new_capacity.drop_vars(
             set(new_capacity.coords) - set(self.assets.coords)
         )
         new_assets = xr.Dataset(dict(capacity=new_capacity))
+
         self.assets = self.merge_transform(self.assets, new_assets)
 
     def retirement_profile(
@@ -422,3 +426,4 @@ class InvestingAgent(Agent):
             current_year=self.year - time_period,
             time_period=time_period,
         )
+
