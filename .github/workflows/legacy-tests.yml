@@ -38,7 +38,7 @@ jobs:
       with:
         repository: SGIModel/StarMuse
         ref: archive/legacy
-    - run: pip install ./StarMuse
+    - run: pip install .
     - run: |
         python -c "import SGIModelData; print(SGIModelData.__file__)"
         pip install -e .[dev,excel]
