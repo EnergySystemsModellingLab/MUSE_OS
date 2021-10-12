@@ -33,14 +33,14 @@ jobs:
       with:
         repository: SGIModel/SGIModelData
         ref: master
+        path: SGIModelData
         token: ${{ secrets.MUSE }}
-    - run: |
-        ls -al
-        pip install ./SGIModelData
+    - run: pip install ./SGIModelData
     - uses: actions/checkout@v2
       with:
         repository: SGIModel/StarMuse
         ref: archive/legacy
+        path: StarMuse
     - run: pip install ./StarMuse
     - run: |
         python -c "import SGIModelData; print(SGIModelData.__file__)"
@@ -58,22 +58,22 @@ jobs:
         cd StarMuse
         pytest --junitxml=junit/pytest.xml
       if: (runner.os != 'Linux')
-    - # "Error: the step 'PublishTestResults@2' does not have a conversion path yet"
-      run: |
-        echo "Error: the step 'PublishTestResults@2' does not have a conversion path yet"
-        #task: PublishTestResults@2
-        #condition: succeededOrFailed()
-        #inputs:
-        #  testresultsfiles: StarMuse/junit/*.xml
-        #  testruntitle: ${{ runner.os }} - ${{ github.run_number }}[${{ env.Agent.JobName }}]
-      if: (${{ job.status }} != 'cancelled')
-    - # "Error: the step 'PublishCodeCoverageResults@1' does not have a conversion path yet"
-      run: |
-        echo "Error: the step 'PublishCodeCoverageResults@1' does not have a conversion path yet"
-        #task: PublishCodeCoverageResults@1
-        #condition: and(succeededOrFailed(), eq(runner.os, 'Linux'))
-        #inputs:
-        #  codecoveragetool: cobertura
-        #  summaryfilelocation: StarMuse/coverage/coverage.xml
-        #  reportdirectory: coverage
-      if: ((${{ job.status }} != 'cancelled') && (runner.os == 'Linux'))
+#    - # "Error: the step 'PublishTestResults@2' does not have a conversion path yet"
+#      run: |
+#        echo "Error: the step 'PublishTestResults@2' does not have a conversion path yet"
+#        #task: PublishTestResults@2
+#        #condition: succeededOrFailed()
+#        #inputs:
+#        #  testresultsfiles: StarMuse/junit/*.xml
+#        #  testruntitle: ${{ runner.os }} - ${{ github.run_number }}[${{ env.Agent.JobName }}]
+#      if: (${{ job.status }} != 'cancelled')
+#    - # "Error: the step 'PublishCodeCoverageResults@1' does not have a conversion path yet"
+#      run: |
+#        echo "Error: the step 'PublishCodeCoverageResults@1' does not have a conversion path yet"
+#        #task: PublishCodeCoverageResults@1
+#        #condition: and(succeededOrFailed(), eq(runner.os, 'Linux'))
+#        #inputs:
+#        #  codecoveragetool: cobertura
+#        #  summaryfilelocation: StarMuse/coverage/coverage.xml
+#        #  reportdirectory: coverage
+#      if: ((${{ job.status }} != 'cancelled') && (runner.os == 'Linux'))
