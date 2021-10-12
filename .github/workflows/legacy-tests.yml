@@ -33,21 +33,19 @@ jobs:
         ref: master
         path: SGIModelData
         token: ${{ secrets.MUSE }}
-    - run: |
-        ls -al
-        pip install ./SGIModelData
+    - run: pip install ./SGIModelData
     - uses: actions/checkout@v2
       with:
         repository: SGIModel/StarMuse
         ref: archive/legacy
-    - run: |
-        ls -al
-        pip install .
+        path: StarMuse
+    - run: pip install ./StarMuse
     - run: |
         python -c "import SGIModelData; print(SGIModelData.__file__)"
-        pip install -e .[dev,excel]
+        pip install -e ./StarMuse[dev,excel]
         pip freeze
     - run: |
+        cd StarMuse
         pip install pytest-cov
         pytest --junitxml=junit/pytest.xml \
             --cov=muse \
@@ -55,6 +53,7 @@ jobs:
             --cov-report=xml:coverage/coverage.xml
       if: (runner.os == 'Linux')
     - run: |
+        cd StarMuse
         pytest --junitxml=junit/pytest.xml
       if: (runner.os != 'Linux')
 #    - # "Error: the step 'PublishTestResults@2' does not have a conversion path yet"
