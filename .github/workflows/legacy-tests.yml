@@ -18,16 +18,14 @@ jobs:
     runs-on: ${{ matrix.imageName }}
     strategy:
       matrix:
-        imageName:
-        - windows-latest
-        - ubuntu-latest
-        - macos-latest
+        imageName: [windows-latest, ubuntu-latest, macos-latest]
+        python-version: [3.8]
     steps:
     - uses: actions/checkout@v2
-    - name: Setup Python ${{ env.pythonVersion }}
+    - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ env.pythonVersion }}
+        python-version: ${{ matrix.python-version }}
     - run: pip install -U setuptools wheel xlrd==1.2.0
     - uses: actions/checkout@v2
       with:
