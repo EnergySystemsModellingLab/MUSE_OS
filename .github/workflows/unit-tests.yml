@@ -1,6 +1,8 @@
 name: open-source unit-tests
 
 on:
+    pull_request_target:
+        types: [opened, synchronize, reopened]
     pull_request:
         types: [opened, synchronize, reopened]
     push:
