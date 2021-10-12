@@ -33,6 +33,7 @@ jobs:
       with:
         repository: SGIModel/SGIModelData
         ref: master
+        token: ${{ github.MUSE }}
     - run: pip install ./SGIModelData
     - uses: actions/checkout@v2
       with:
