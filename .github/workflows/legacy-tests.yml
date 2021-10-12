@@ -33,12 +33,16 @@ jobs:
         ref: master
         path: SGIModelData
         token: ${{ secrets.MUSE }}
-    - run: pip install ./SGIModelData
+    - run: |
+        ls -al
+        pip install ./SGIModelData
     - uses: actions/checkout@v2
       with:
         repository: SGIModel/StarMuse
         ref: archive/legacy
-    - run: pip install .
+    - run: |
+        ls -al
+        pip install .
     - run: |
         python -c "import SGIModelData; print(SGIModelData.__file__)"
         pip install -e .[dev,excel]
