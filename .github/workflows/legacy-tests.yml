@@ -34,7 +34,9 @@ jobs:
         repository: SGIModel/SGIModelData
         ref: master
         token: ${{ secrets.MUSE }}
-    - run: pip install ./SGIModelData
+    - run: |
+        ls -al
+        pip install ./SGIModelData
     - uses: actions/checkout@v2
       with:
         repository: SGIModel/StarMuse
