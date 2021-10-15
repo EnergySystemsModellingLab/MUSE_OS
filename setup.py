@@ -30,7 +30,14 @@ tests_require = [
     "numpy>=1.17",
     "pytest-xdist"
 ]
-docs_require = ["sphinx", "recommonmark", "nbsphinx", "sphinxcontrib-bibtex", "ipython", "ipykernel"]
+docs_require = [
+    "sphinx",
+    "myst-parser",
+    "nbsphinx",
+    "sphinxcontrib-bibtex",
+    "ipython",
+    "ipykernel",
+]
 
 
 def find_data_files(directory, suffixes=(".toml", ".csv")):
@@ -56,7 +63,7 @@ setup(
     description="Energy System Model",
     classifiers=[
         "Development Status :: 3 - Alpha",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Intended Audience :: Science",
         "Intended Audience :: Research",
         "Intended Audience :: Economists",
@@ -84,7 +91,7 @@ setup(
         "coloredlogs",
         "toml",
         "xlrd==1.2.0",
-        "mypy-extensions"
+        "mypy-extensions",
     ],
     extras_require={
         "dev": tests_require,
