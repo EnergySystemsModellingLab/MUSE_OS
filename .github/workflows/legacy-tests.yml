@@ -11,11 +11,6 @@ on:
     - development
     - master
 
-  pull_request_target:
-    branches:
-      - development
-      - master
-
 jobs:
   build:
     runs-on: ${{ matrix.imageName }}
