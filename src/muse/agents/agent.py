@@ -18,6 +18,7 @@ class AbstractAgent(ABC):
         assets: Optional[xr.Dataset] = None,
         interpolation: Text = "linear",
         category: Optional[Text] = None,
+        quantity: Optional[float] = 1,
     ):
         """Creates a standard MUSE agent.
 
@@ -48,6 +49,8 @@ class AbstractAgent(ABC):
         """Interpolation method."""
         self.category = category
         """Attribute to classify different sets of agents."""
+        self.quantity = quantity
+        """Attribute to classify different agents share of the population"""
 
     def filter_input(
         self,
@@ -111,7 +114,7 @@ class Agent(AbstractAgent):
         demand_threshhold: Optional[float] = None,
         category: Optional[Text] = None,
         asset_threshhold: float = 1e-4,
-        quantity: float = 1,
+        quantity: Optional[float] = 1,
         **kwargs,
     ):
         """Creates a standard buildings agent.
@@ -145,6 +148,7 @@ class Agent(AbstractAgent):
             assets=assets,
             interpolation=interpolation,
             category=category,
+            quantity=quantity,
         )
 
         self.year = year
@@ -290,12 +294,14 @@ class Agent(AbstractAgent):
         new_capacity = self.retirement_profile(
             technologies, investments, current_year, time_period
         )
+
         if new_capacity is None:
             return
         new_capacity = new_capacity.drop_vars(
             set(new_capacity.coords) - set(self.assets.coords)
         )
         new_assets = xr.Dataset(dict(capacity=new_capacity))
+
         self.assets = self.merge_transform(self.assets, new_assets)
 
     def retirement_profile(

@@ -14,9 +14,10 @@ def matching_market(technologies, stock, timeslice):
 
 def _matching_market(technologies, stock, timeslice):
     """A market which matches stocks exactly."""
-    from muse.timeslices import convert_timeslice, QuantityType
-    from muse.quantities import maximum_production, consumption
     from numpy.random import random
+
+    from muse.quantities import consumption, maximum_production
+    from muse.timeslices import QuantityType, convert_timeslice
 
     market = xr.Dataset()
     production = convert_timeslice(
@@ -123,7 +124,7 @@ def test_new_retro_split_zero_new_unmet(technologies, stock, matching_market):
 def test_new_retro_accounting_identity(technologies, stock, market):
     from muse.demand_share import new_and_retro_demands
     from muse.production import factory
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.timeslices import QuantityType, convert_timeslice
 
     share = new_and_retro_demands(
         stock.capacity, market, technologies, current_year=2010, forecast=5
@@ -154,8 +155,8 @@ def test_new_retro_accounting_identity(technologies, stock, market):
 
 
 def test_demand_split(technologies, stock, matching_market):
-    from muse.demand_share import _inner_split as inner_split
     from muse.commodities import is_enduse
+    from muse.demand_share import _inner_split as inner_split
 
     def method(capacity):
         from muse.quantities import decommissioning_demand
@@ -168,8 +169,9 @@ def test_demand_split(technologies, stock, matching_market):
         is_enduse(technologies.comm_usage.sel(commodity=matching_market.commodity))
     )
     capacity = stock.capacity
-    agents = dict(scully=0.3 * capacity, mulder=0.7 * capacity)
-    share = inner_split(agents, demand, method=method)
+    agents = dict(scully=capacity, mulder=capacity)
+    quantity = dict(scully=("scully", "USA", 0.3), mulder=("mulder", "USA", 0.7))
+    share = inner_split(agents, demand, method, quantity)
 
     enduse = is_enduse(technologies.comm_usage)
     assert (share["scully"].sel(commodity=~enduse) == 0).all()
@@ -187,8 +189,8 @@ def test_demand_split(technologies, stock, matching_market):
 
 def test_demand_split_zero_share(technologies, stock, matching_market):
     """See issue SgiModel/StarMuse#688."""
-    from muse.demand_share import _inner_split as inner_split
     from muse.commodities import is_enduse
+    from muse.demand_share import _inner_split as inner_split
 
     def method(capacity):
         from muse.quantities import decommissioning_demand
@@ -202,7 +204,8 @@ def test_demand_split_zero_share(technologies, stock, matching_market):
     )
     capacity = stock.capacity
     agents = dict(scully=0.3 * capacity, mulder=0.7 * capacity)
-    share = inner_split(agents, demand, method=method)
+    quantity = dict(scully=("scully", "USA", 1), mulder=("mulder", "USA", 1))
+    share = inner_split(agents, demand, method, quantity)
 
     enduse = is_enduse(technologies.comm_usage)
     assert (share["scully"].sel(commodity=~enduse) == 0).all()
@@ -211,8 +214,10 @@ def test_demand_split_zero_share(technologies, stock, matching_market):
     total = (share["scully"] + share["mulder"]).sum("asset")
     demand = demand.where(enduse, 0)
     demand, total = xr.broadcast(demand, total)
+
     assert demand.values == approx(total.values, abs=1e-10)
     expected, actual = xr.broadcast(demand, share["scully"].sum("asset"))
+
     assert actual.values == approx(0.5 * expected.values)
     expected, actual = xr.broadcast(demand, share["mulder"].sum("asset"))
     assert actual.values == approx(0.5 * expected.values)
@@ -220,10 +225,11 @@ def test_demand_split_zero_share(technologies, stock, matching_market):
 
 def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_factory):
     from dataclasses import dataclass
-    from uuid import UUID, uuid4
     from typing import Text
-    from muse.demand_share import new_and_retro
+    from uuid import UUID, uuid4
+
     from muse.commodities import is_enduse
+    from muse.demand_share import new_and_retro
 
     asia_stock = stock_factory(coords, technologies).expand_dims(region=["ASEAN"])
     usa_stock = stock_factory(coords, technologies).expand_dims(region=["USA"])
@@ -241,14 +247,15 @@ def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_f
         uuid: UUID
         name: Text
         region: Text
+        quantity: float
 
     agents = [
-        Agent(0.3 * usa_stock.squeeze("region"), "retrofit", uuid4(), "a", "USA"),
-        Agent(0.0 * usa_stock.squeeze("region"), "new", uuid4(), "a", "USA"),
-        Agent(0.7 * usa_stock.squeeze("region"), "retrofit", uuid4(), "b", "USA"),
-        Agent(0.0 * usa_stock.squeeze("region"), "new", uuid4(), "b", "USA"),
-        Agent(asia_stock.squeeze("region"), "retrofit", uuid4(), "a", "ASEAN"),
-        Agent(0 * asia_stock.squeeze("region"), "new", uuid4(), "a", "ASEAN"),
+        Agent(0.3 * usa_stock.squeeze("region"), "retrofit", uuid4(), "a", "USA", 0.3),
+        Agent(0.0 * usa_stock.squeeze("region"), "new", uuid4(), "a", "USA", 0.0),
+        Agent(0.7 * usa_stock.squeeze("region"), "retrofit", uuid4(), "b", "USA", 0.7),
+        Agent(0.0 * usa_stock.squeeze("region"), "new", uuid4(), "b", "USA", 0.0),
+        Agent(asia_stock.squeeze("region"), "retrofit", uuid4(), "a", "ASEAN", 1.0),
+        Agent(0 * asia_stock.squeeze("region"), "new", uuid4(), "a", "ASEAN", 0.0),
     ]
 
     results = new_and_retro(agents, market, technologies, current_year=2010, forecast=5)
@@ -272,8 +279,9 @@ def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_f
 
 def test_unmet_forecast_demand(technologies, coords, timeslice, stock_factory):
     from dataclasses import dataclass
-    from muse.demand_share import unmet_forecasted_demand
+
     from muse.commodities import is_enduse
+    from muse.demand_share import unmet_forecasted_demand
 
     asia_stock = stock_factory(coords, technologies).expand_dims(region=["ASEAN"])
     usa_stock = stock_factory(coords, technologies).expand_dims(region=["USA"])

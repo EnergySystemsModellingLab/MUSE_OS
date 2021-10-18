@@ -73,7 +73,7 @@ class LegacySector(AbstractSector):  # type: ignore
             EndYear=end_year,
             Foresight=np.array([settings.foresight]),
             TimeFramework=settings.time_framework,
-            YearlyTimeFramework=np.arange(base_year, end_year + 1, 1, dtype=int),
+            YearlyTimeFramework=np.arange(base_year, end_year, 1, dtype=int),
             NYears=list(np.diff(settings.time_framework)),
             GlobalCommoditiesAttributes=global_commodities.commodity.values,
             CommoditiesBudget=settings.carbon_budget_control.commodities,
@@ -129,7 +129,6 @@ class LegacySector(AbstractSector):  # type: ignore
 
         msg = "LegacySector {} created successfully.".format(name)
         getLogger(__name__).info(msg)
-
         return cls(
             name,
             old_sector,
@@ -262,7 +261,9 @@ class LegacySector(AbstractSector):  # type: ignore
             if self.mode == "Calibration":
                 params += [self.market_iterative]
                 result = self.old_sector.power_calibration(*params, **inouts)
+                self.mode = "Iteration"
             else:
+                self.mode = "Iteration"
                 params += [self.old_sector.instance, self.market_iterative, self.excess]
                 result = self.old_sector.runprocessmodule(*params, **inouts)
         else:

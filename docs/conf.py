@@ -19,8 +19,8 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
-    "recommonmark",
     "nbsphinx",
+    "myst_parser",
     "ipykernel",
     "sphinx.ext.mathjax",
     "sphinx.ext.autosectionlabel",
@@ -31,12 +31,19 @@ extensions = [
 ]
 source_suffix = {".rst": "restructuredtext", ".txt": "markdown", ".md": "markdown"}
 templates_path = ["_templates"]
-exclude_patterns = ["build", "**.ipynb_checkpoints", "**/ResidentialBracket*.txt", "_sources/*", "_build/*", "tutorial-code/*"]
+exclude_patterns = [
+    "build",
+    "**.ipynb_checkpoints",
+    "**/ResidentialBracket*.txt",
+    "_sources/*",
+    "_build/*",
+    "tutorial-code/*",
+]
 
 modindex_common_prefix = ["muse"]
 autodoc_typehints = "none"
 add_module_names = False
-
+nbsphinx_allow_errors = True
 autosectionlabel_prefix_document = True
 
 intersphinx_mapping = {
@@ -52,17 +59,3 @@ bibtex_bibfiles = []
 
 html_theme = "classic"
 html_static_path = ["_static"]
-
-
-import recommonmark  # noqa
-
-
-def setup(app):
-    from recommonmark.transform import AutoStructify
-
-    app.add_config_value(
-        "recommonmark_config",
-        {"auto_toc_tree_section": "Contents", "enable_eval_rst": True},
-        True,
-    )
-    app.add_transform(AutoStructify)

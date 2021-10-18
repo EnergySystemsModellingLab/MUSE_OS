@@ -270,7 +270,6 @@ class Sector(AbstractSector):  # type: ignore
 
         years = market.year.values
         capacity = self.capacity.interp(year=years, **self.interpolation)
-
         result = xr.Dataset()
         result["supply"] = self.supply_prod(
             market=market, capacity=capacity, technologies=technologies
@@ -304,6 +303,7 @@ class Sector(AbstractSector):  # type: ignore
         region), year.
         """
         from muse.utilities import reduce_assets
+        from muse.utilities import filter_input
 
         traded = [
             u.assets.capacity
@@ -316,12 +316,35 @@ class Sector(AbstractSector):  # type: ignore
             if "dst_region" not in u.assets.capacity.dims
         ]
         if not traded:
+            full_list = [
+                list(nontraded[i].year.values)
+                for i in range(len(nontraded))
+                if "year" in nontraded[i].dims
+            ]
+            flat_list = [item for sublist in full_list for item in sublist]
+            years = sorted(list(set(flat_list)))
+            nontraded = [
+                filter_input(u.assets.capacity, year=years)
+                for u in self.agents
+                if "dst_region" not in u.assets.capacity.dims
+            ]
             return reduce_assets(nontraded)
         if not nontraded:
+            full_list = [
+                list(traded[i].year.values)
+                for i in range(len(traded))
+                if "year" in traded[i].dims
+            ]
+            flat_list = [item for sublist in full_list for item in sublist]
+            years = sorted(list(set(flat_list)))
+            traded = [
+                filter_input(u.assets.capacity, year=years)
+                for u in self.agents
+                if "dst_region" in u.assets.capacity.dims
+            ]
             return reduce_assets(traded)
         traded_results = reduce_assets(traded)
         nontraded_results = reduce_assets(nontraded)
-
         return reduce_assets(
             [
                 traded_results,
