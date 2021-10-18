@@ -1,5 +1,4 @@
-#Error (line 54): the step 'PublishTestResults@2' does not have a conversion path yet
-#Error (line 63): the step 'PublishCodeCoverageResults@1' does not have a conversion path yet
+name: Legacy tests
 
 on:
   push:
