@@ -6,7 +6,6 @@ on:
     branches:
     - development
     - master
-    - no_azure
 
   pull_request:
     branches:
@@ -21,57 +20,40 @@ jobs:
         imageName: [windows-latest, ubuntu-latest, macos-latest]
         python-version: [3.8]
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout MUSE
+      uses: actions/checkout@v2
+
+    - name: Checkout Legacy MUSE
+      uses: actions/checkout@v2
+      with:
+        repository: SGIModel/StarMuse
+        ref: archive/legacy
+        path: LegacyMuse
+
     - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - run: pip install -U setuptools wheel xlrd==1.2.0
-    - uses: actions/checkout@v2
-      with:
-        repository: SGIModel/SGIModelData
-        ref: master
-        path: SGIModelData
-        token: ${{ secrets.MUSE }}
-    - run: pip install ./SGIModelData
-    - uses: actions/checkout@v2
-      with:
-        repository: SGIModel/StarMuse
-        ref: archive/legacy
-        path: StarMuse
-    - run: pip install ./StarMuse
-    - run: |
-        python -c "import SGIModelData; print(SGIModelData.__file__)"
-        pip install -e ./StarMuse[dev,excel]
-        pip freeze
-    - run: |
-        cd StarMuse
+
+    - name: Install dependencies
+      run: pip install -U setuptools wheel xlrd==1.2.0
+
+    - name: Install Legacy MUSE
+      run: pip install ./LegacyMuse
+
+    - name: Install MUSE
+      run:  pip install -e .[dev,excel]
+
+    - name: Run tests in Linux
+      if: (runner.os == 'Linux')
+      run: |
         pip install pytest-cov
-        pytest --junitxml=junit/pytest.xml \
+        pytest -m "legacy" --junitxml=junit/pytest.xml \
             --cov=muse \
             --cov-branch \
             --cov-report=xml:coverage/coverage.xml
-      if: (runner.os == 'Linux')
-    - run: |
-        cd StarMuse
-        pytest --junitxml=junit/pytest.xml
+
+    - name: Run tests in Windows and MacOS
       if: (runner.os != 'Linux')
-#    - # "Error: the step 'PublishTestResults@2' does not have a conversion path yet"
-#      run: |
-#        echo "Error: the step 'PublishTestResults@2' does not have a conversion path yet"
-#        #task: PublishTestResults@2
-#        #condition: succeededOrFailed()
-#        #inputs:
-#        #  testresultsfiles: StarMuse/junit/*.xml
-#        #  testruntitle: ${{ runner.os }} - ${{ github.run_number }}[${{ env.Agent.JobName }}]
-#      if: (${{ job.status }} != 'cancelled')
-#    - # "Error: the step 'PublishCodeCoverageResults@1' does not have a conversion path yet"
-#      run: |
-#        echo "Error: the step 'PublishCodeCoverageResults@1' does not have a conversion path yet"
-#        #task: PublishCodeCoverageResults@1
-#        #condition: and(succeededOrFailed(), eq(runner.os, 'Linux'))
-#        #inputs:
-#        #  codecoveragetool: cobertura
-#        #  summaryfilelocation: StarMuse/coverage/coverage.xml
-#        #  reportdirectory: coverage
-#      if: ((${{ job.status }} != 'cancelled') && (runner.os == 'Linux'))
+      run: |
+        pytest --junitxml=junit/pytest.xml
