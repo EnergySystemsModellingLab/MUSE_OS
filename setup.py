@@ -28,6 +28,7 @@ tests_require = [
     "nbformat",
     "mypy",
     "numpy>=1.17",
+    "pytest-xdist"
 ]
 docs_require = [
     "sphinx",
