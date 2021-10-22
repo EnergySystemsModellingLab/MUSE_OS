@@ -325,7 +325,7 @@ def test_net_present_value(
     utilization_factor = tech.utilization_factor
 
     # All years the simulation is running and the prices
-    prices = agent_market.prices.interp(year=all_years)
+    prices = retro_agent.filter_input(agent_market.prices,year=all_years)
 
     # Evolution of rates with time
     rates = discount_factor(
@@ -333,7 +333,6 @@ def test_net_present_value(
         interest_rate=interest_rate,
         mask=all_years <= retro_agent.year + nyears,
     )
-    print("test")
 
     # The individual prices
     prices_environmental = prices.sel(
@@ -389,13 +388,6 @@ def test_net_present_value(
     )
     fix_costs = ((rates * hours_ratio * fix_par * capacity ** fix_exp)).sum("year")
 
-    print(
-        all_years,
-        fuel.sum(),
-        fuel.replacement,
-        tech.technical_life,
-        environmental_costs.sum(),
-    )
     variable_costs = (rates * var_par * (non_env_production ** var_exp)).sum("year")
     fixed_and_variable_costs = fix_costs + variable_costs
 
