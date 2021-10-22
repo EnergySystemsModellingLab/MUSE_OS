@@ -5,6 +5,7 @@
 # http://www.sphinx-doc.org/en/master/config
 
 # -- Project information -----------------------------------------------------
+from typing import List
 
 project = "MUSE"
 copyright = "2019, Sustainable Gas Institute"
@@ -53,7 +54,7 @@ intersphinx_mapping = {
     "xarray": ("http://xarray.pydata.org/en/stable/", None),
 }
 
-bibtex_bibfiles = []
+bibtex_bibfiles: List[str] = []
 
 # -- Options for HTML output -------------------------------------------------
 
