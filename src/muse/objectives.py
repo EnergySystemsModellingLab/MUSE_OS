@@ -692,7 +692,8 @@ def net_present_value(
     - capacity costs are given as technodata inputs and depend on the installed capacity
 
     Note:
-        Here, the installation year is always agent.forecast_year, since objectives compute the
+        Here, the installation year is always agent.forecast_year,
+        since objectives compute the
         NPV for technologies to be installed in the current year. A more general NPV
         computation (which would then live in quantities.py) would have to refer to
         installation year of the technology.
