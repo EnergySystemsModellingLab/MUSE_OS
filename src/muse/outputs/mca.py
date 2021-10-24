@@ -255,6 +255,20 @@ def _aggregate_sectors(
     return pd.concat(alldata, sort=True)
 
 
+def _aggregate_sectors_mod(
+    sectors: List[AbstractSector], market, *args, op: Callable
+) -> pd.DataFrame:
+    """Aggregate outputs from all sectors."""
+    alldata = []
+    for sector in sectors:
+        alldatasec = op(sector, market, *args)
+        alldata.append(alldatasec)
+
+    if len(alldata) == 0:
+        return pd.DataFrame()
+    return pd.concat(alldata, sort=True)
+
+
 @register_output_quantity
 class AggregateResources:
     """Aggregates a set of commodities."""
@@ -341,7 +355,8 @@ def metric_supply(
     market: xr.Dataset, sectors: List[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current timeslice supply across all sectors."""
-    return _aggregate_sectors(sectors, market, op=sector_supply)
+    market_out = market.copy(deep=True)
+    return _aggregate_sectors(sectors, market_out, op=sector_supply)
 
 
 def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
@@ -349,39 +364,48 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
     from muse.production import supply
 
     data_sector: List[xr.DataArray] = []
-    technologies = getattr(sector, "technologies", [])
+    techs = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
-    agent_market = market.copy()
-    if len(technologies) > 0:
+    if len(techs) > 0:
         for a in agents:
-            output_year = a.year - a.forecast
-            capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
-            agent_market["consumption"] = (market.consumption * a.quantity).sel(
-                year=output_year
-            )
-            result = convert_timeslice(
-                supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                ),
-                agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
-            )
+            if a.category == "retrofit":
+                output_year = a.year - a.forecast
+                capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(
+                    0.0
+                )
+                technologies = a.filter_input(techs, year=output_year).fillna(0.0)
+                agent_market = market.sel(year=output_year).copy()
+                agent_market["consumption"] = agent_market.consumption * a.quantity
+                included = [
+                    i
+                    for i in agent_market["commodity"].values
+                    if i in technologies.enduse.values
+                ]
+                agent_market = agent_market.where(agent_market.commodity == included, 0)
 
-            if "year" in result.dims:
-                data_agent = result.sel(year=output_year)
-            else:
-                data_agent = result
-                data_agent["year"] = output_year
-            data_agent["agent"] = a.name
-            data_agent["category"] = a.category
-            data_agent["sector"] = getattr(sector, "name", "unnamed")
-            a = data_agent.to_dataframe("supply")
-            if len(a) > 0 and len(a.technology.values) > 0:
-                b = a.reset_index()
-                data_sector.append(b)
+                result = convert_timeslice(
+                    supply(
+                        agent_market,
+                        capacity,
+                        technologies,
+                    ),
+                    agent_market["consumption"].timeslice,
+                    QuantityType.EXTENSIVE,
+                )
+
+                if "year" in result.dims:
+                    data_agent = result.sel(year=output_year)
+                else:
+                    data_agent = result
+                    data_agent["year"] = output_year
+                data_agent["agent"] = a.name
+                data_agent["category"] = a.category
+                data_agent["sector"] = getattr(sector, "name", "unnamed")
+                a = data_agent.to_dataframe("supply")
+                if len(a) > 0 and len(a.technology.values) > 0:
+                    b = a.reset_index()
+                    data_sector.append(b)
     if len(data_sector) > 0:
         output = pd.concat([u for u in data_sector], sort=True)
 
@@ -408,42 +432,52 @@ def sector_consumption(
     from muse.production import supply
 
     data_sector: List[xr.DataArray] = []
-    technologies = getattr(sector, "technologies", [])
+    techs = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
-    agent_market = market.copy()
-    if len(technologies) > 0:
+    agent_market = market
+    if len(techs) > 0:
         for a in agents:
-            output_year = a.year - a.forecast
-            capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
-            agent_market["consumption"] = (market.consumption * a.quantity).sel(
-                year=output_year
-            )
-            production = convert_timeslice(
-                supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                ),
-                agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
-            )
-            prices = a.filter_input(market.prices, year=output_year)
-            result = consumption(
-                technologies=technologies, production=production, prices=prices
-            )
-            if "year" in result.dims:
-                data_agent = result.sel(year=output_year)
-            else:
-                data_agent = result
-                data_agent["year"] = output_year
-            data_agent["agent"] = a.name
-            data_agent["category"] = a.category
-            data_agent["sector"] = getattr(sector, "name", "unnamed")
-            a = data_agent.to_dataframe("consumption")
-            if len(a) > 0 and len(a.technology.values) > 0:
-                b = a.reset_index()
-                data_sector.append(b)
+            if a.category == "retrofit":
+                output_year = a.year - a.forecast
+                capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(
+                    0.0
+                )
+                technologies = a.filter_input(techs, year=output_year).fillna(0.0)
+                agent_market = market.sel(year=output_year).copy()
+                agent_market["consumption"] = agent_market.consumption * a.quantity
+                included = [
+                    i
+                    for i in agent_market["commodity"].values
+                    if i in technologies.enduse.values
+                ]
+                agent_market = agent_market.where(agent_market.commodity == included, 0)
+
+                production = convert_timeslice(
+                    supply(
+                        agent_market,
+                        capacity,
+                        technologies,
+                    ),
+                    agent_market["consumption"].timeslice,
+                    QuantityType.EXTENSIVE,
+                )
+                prices = a.filter_input(market.prices, year=output_year)
+                result = consumption(
+                    technologies=technologies, production=production, prices=prices
+                )
+                if "year" in result.dims:
+                    data_agent = result.sel(year=output_year)
+                else:
+                    data_agent = result
+                    data_agent["year"] = output_year
+                data_agent["agent"] = a.name
+                data_agent["category"] = a.category
+                data_agent["sector"] = getattr(sector, "name", "unnamed")
+                a = data_agent.to_dataframe("consumption")
+                if len(a) > 0 and len(a.technology.values) > 0:
+                    b = a.reset_index()
+                    data_sector.append(b)
     if len(data_sector) > 0:
         output = pd.concat([u for u in data_sector], sort=True)
 
@@ -481,14 +515,13 @@ def sector_fuel_costs(
             agent_market["consumption"] = (market.consumption * a.quantity).sel(
                 year=output_year
             )
-            commodity = is_fuel(
-                technologies.comm_usage
-            )  # .sel(commodity=market.commodity))
+            commodity = is_fuel(technologies.comm_usage)
 
             capacity = a.filter_input(
                 a.assets.capacity,
                 year=output_year,
             ).fillna(0.0)
+
             production = convert_timeslice(
                 supply(
                     agent_market,
@@ -498,10 +531,12 @@ def sector_fuel_costs(
                 agent_market["consumption"].timeslice,
                 QuantityType.EXTENSIVE,
             )
+
             prices = a.filter_input(market.prices, year=output_year)
             fcons = consumption(
                 technologies=technologies, production=production, prices=prices
             )
+
             data_agent = (fcons * prices).sel(commodity=commodity)
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
@@ -665,126 +700,336 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
     agent_market = market.copy()
     if len(technologies) > 0:
         for a in agents:
-            output_year = a.year - a.forecast
-            agent_market["consumption"] = (market.consumption * a.quantity).sel(
-                year=output_year
-            )
+            if a.category == "retrofit":
+                output_year = a.year - a.forecast
+                agent_market["consumption"] = (market.consumption * a.quantity).sel(
+                    year=output_year
+                )
 
-            # Capacity
-            capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
-            tech = filter_input(
-                technologies[
-                    [
-                        "technical_life",
-                        "interest_rate",
-                        "cap_par",
-                        "cap_exp",
-                        "var_par",
-                        "var_exp",
-                        "fix_par",
-                        "fix_exp",
-                    ]
-                ],
-                year=output_year,
-            )
-            nyears = tech.technical_life.astype(int)
-            interest_rate = tech.interest_rate
-            cap_par = tech.cap_par
-            cap_exp = tech.cap_exp
-            var_par = tech.var_par
-            var_exp = tech.var_exp
-            fix_par = tech.fix_par
-            fix_exp = tech.fix_exp
+                # Capacity
+                capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(
+                    0.0
+                )
+                tech = filter_input(
+                    technologies[
+                        [
+                            "technical_life",
+                            "interest_rate",
+                            "cap_par",
+                            "cap_exp",
+                            "var_par",
+                            "var_exp",
+                            "fix_par",
+                            "fix_exp",
+                        ]
+                    ],
+                    year=output_year,
+                )
+                nyears = tech.technical_life.astype(int)
+                interest_rate = tech.interest_rate
+                cap_par = tech.cap_par
+                cap_exp = tech.cap_exp
+                var_par = tech.var_par
+                var_exp = tech.var_exp
+                fix_par = tech.fix_par
+                fix_exp = tech.fix_exp
 
-            # All years the simulation is running
-            # NOTE: see docstring about installation year
-            iyears = range(output_year, a.year + nyears.values.max())
-            years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
+                # All years the simulation is running
+                # NOTE: see docstring about installation year
+                iyears = range(output_year, a.year + nyears.values.max())
+                years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
 
-            # Filters
-            environmentals = is_pollutant(technologies.comm_usage)
-            material = is_material(technologies.comm_usage)
-            products = is_enduse(technologies.comm_usage)
-            fuels = is_fuel(technologies.comm_usage)
+                # Filters
+                environmentals = is_pollutant(technologies.comm_usage)
+                material = is_material(technologies.comm_usage)
+                products = is_enduse(technologies.comm_usage)
+                fuels = is_fuel(technologies.comm_usage)
 
-            # Evolution of rates with time
-            rates = discount_factor(
-                years - output_year + 1, interest_rate, years <= output_year + nyears
-            )
+                # Evolution of rates with time
+                rates = discount_factor(
+                    years - output_year + 1,
+                    interest_rate,
+                    years <= output_year + nyears,
+                )
 
-            production = convert_timeslice(
-                supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                ),
-                agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
-            )
+                production = convert_timeslice(
+                    supply(
+                        agent_market,
+                        capacity,
+                        technologies,
+                    ),
+                    agent_market["consumption"].timeslice,
+                    QuantityType.EXTENSIVE,
+                )
 
-            # raw costs --> make the NPV more negative
-            # Cost of installed capacity
-            prices = a.filter_input(market.prices, year=years.values).ffill("year")
-            result = cap_par * (capacity ** cap_exp)
-            installed_capacity_costs = convert_timeslice(
-                result,
-                agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
-            )
-            environmental_costs = (
-                (production * prices * rates)
-                .sel(commodity=environmentals)
-                .sum(("commodity", "year"))
-            )
+                # raw costs --> make the NPV more negative
+                # Cost of installed capacity
+                prices = a.filter_input(market.prices, year=years.values).ffill("year")
+                result = cap_par * (capacity ** cap_exp)
+                installed_capacity_costs = convert_timeslice(
+                    result,
+                    agent_market["consumption"].timeslice,
+                    QuantityType.EXTENSIVE,
+                )
+                environmental_costs = (
+                    (production * prices * rates)
+                    .sel(commodity=environmentals)
+                    .sum(("commodity", "year"))
+                )
 
-            # Fuel/energy costs
+                # Fuel/energy costs
 
-            fcons = consumption(
-                technologies=technologies, production=production, prices=prices
-            )
-            fuel_costs = (
-                (fcons * prices * rates).sel(commodity=fuels).sum(("commodity", "year"))
-            )
-            # Cost related to material other than fuel/energy and
-            # environmentals
+                fcons = consumption(
+                    technologies=technologies, production=production, prices=prices
+                )
+                fuel_costs = (
+                    (fcons * prices * rates)
+                    .sel(commodity=fuels)
+                    .sum(("commodity", "year"))
+                )
+                # Cost related to material other than fuel/energy and
+                # environmentals
 
-            material_costs = (
-                (production * prices * rates)
-                .sel(commodity=material)
-                .sum(("commodity", "year"))
-            )
+                material_costs = (
+                    (production * prices * rates)
+                    .sel(commodity=material)
+                    .sum(("commodity", "year"))
+                )
 
-            # Fixed and Variable costs
-            result = fix_par * (capacity ** fix_exp)
-            fixed_costs = convert_timeslice(
-                result,
-                agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
-            )
-            variable_costs = (
-                var_par * production.sel(commodity=products) ** var_exp
-            ).sum("commodity")
-            #    assert set(fixed_costs.dims) == set(variable_costs.dims)
-            fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum(
-                "year"
-            )
+                # Fixed and Variable costs
+                result = fix_par * (capacity ** fix_exp)
+                fixed_costs = convert_timeslice(
+                    result,
+                    agent_market["consumption"].timeslice,
+                    QuantityType.EXTENSIVE,
+                )
+                variable_costs = (
+                    var_par * production.sel(commodity=products) ** var_exp
+                ).sum("commodity")
+                #    assert set(fixed_costs.dims) == set(variable_costs.dims)
+                fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum(
+                    "year"
+                )
 
-            result = (
-                installed_capacity_costs
-                + fuel_costs
-                + environmental_costs
-                + material_costs
-                + fixed_and_variable_costs
-            ) / (production.sel(commodity=products).sum("commodity") * rates).sum(
-                "year"
-            )
-            data_agent = result
-            data_agent["agent"] = a.name
-            data_agent["category"] = a.category
-            data_agent["sector"] = getattr(sector, "name", "unnamed")
-            data_agent["year"] = output_year
-            if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
-                data_sector.append(data_agent.groupby("technology").fillna(0))
+                result = (
+                    installed_capacity_costs
+                    + fuel_costs
+                    + environmental_costs
+                    + material_costs
+                    + fixed_and_variable_costs
+                ) / (production.sel(commodity=products).sum("commodity") * rates).sum(
+                    "year"
+                )
+                data_agent = result
+                data_agent["agent"] = a.name
+                data_agent["category"] = a.category
+                data_agent["sector"] = getattr(sector, "name", "unnamed")
+                data_agent["year"] = output_year
+                if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
+                    data_sector.append(data_agent.groupby("technology").fillna(0))
+    if len(data_sector) > 0:
+        output = pd.concat([u.to_dataframe("LCOE") for u in data_sector], sort=True)
+        output = output.reset_index()
+
+    else:
+        output = pd.DataFrame()
+    return output
+
+
+@register_output_quantity(name=["LCOE1"])
+def metric_lcoe1(
+    market: xr.Dataset, sectors: List[AbstractSector], **kwargs
+) -> pd.DataFrame:
+    """Current emission costs across all sectors."""
+    return _aggregate_sectors(sectors, market, op=sector_lcoe1)
+
+
+def sector_lcoe1(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
+    """Levelized cost of energy () of technologies over their lifetime."""
+
+    from muse.commodities import is_pollutant, is_material, is_enduse, is_fuel
+    from muse.objectives import discount_factor
+    from muse.quantities import consumption
+
+    def capacity_to_service_demand(demand, technologies):
+        from muse.timeslices import represent_hours
+
+        hours = represent_hours(demand.timeslice)
+
+        max_hours = hours.max() / hours.sum()
+
+        commodity_output = technologies.fixed_outputs.sel(commodity=demand.commodity)
+
+        max_demand = (
+            demand.where(commodity_output > 0, 0)
+            / commodity_output.where(commodity_output > 0, 1)
+        ).max(("commodity", "timeslice"))
+
+        return max_demand / technologies.utilization_factor / max_hours
+
+    # Filtering of the inputs
+    data_sector: List[xr.DataArray] = []
+    technologies = getattr(sector, "technologies", [])
+    agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
+
+    if len(technologies) > 0:
+        for agent in agents:
+            if agent.category == "retrofit":
+                output_year = agent.year - agent.forecast
+                agent_market = market.sel(year=output_year).copy()
+                agent_market["consumption"] = agent_market.consumption * agent.quantity
+                included = [
+                    i
+                    for i in agent_market["commodity"].values
+                    if i in technologies.enduse.values
+                ]
+                agent_market["consumption"] = agent_market["consumption"].where(
+                    agent_market.commodity == included, 0
+                )
+                years = [output_year, agent.year]
+
+                agent_market["prices"] = agent.filter_input(
+                    market["prices"], year=years
+                )
+
+                tech = agent.filter_input(
+                    technologies[
+                        [
+                            "technical_life",
+                            "interest_rate",
+                            "cap_par",
+                            "cap_exp",
+                            "var_par",
+                            "var_exp",
+                            "fix_par",
+                            "fix_exp",
+                            "fixed_outputs",
+                            "fixed_inputs",
+                            "flexible_inputs",
+                            "utilization_factor",
+                        ]
+                    ],
+                    year=agent.year,
+                    region=agent.region,
+                )
+                nyears = tech.technical_life.astype(int)
+                interest_rate = tech.interest_rate
+                cap_par = tech.cap_par
+                cap_exp = tech.cap_exp
+                var_par = tech.var_par
+                var_exp = tech.var_exp
+                fix_par = tech.fix_par
+                fix_exp = tech.fix_exp
+                fixed_outputs = tech.fixed_outputs
+                utilization_factor = tech.utilization_factor
+
+                # All years the simulation is running
+                # NOTE: see docstring about installation year
+                iyears = range(
+                    agent.year,
+                    max(agent.year + nyears.values.max(), agent.forecast_year),
+                )
+                years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
+
+                prices = agent.filter_input(agent_market.prices, year=years.values)
+                # Filters
+                environmentals = is_pollutant(tech.comm_usage)
+                e = np.where(environmentals == True)
+                environmentals = environmentals[e].commodity.values
+                material = is_material(tech.comm_usage)
+                e = np.where(material == True)
+                material = material[e].commodity.values
+                products = is_enduse(tech.comm_usage)
+                e = np.where(products == True)
+                products = products[e].commodity.values
+                fuels = is_fuel(tech.comm_usage)
+                e = np.where(fuels == True)
+                fuels = fuels[e].commodity.values
+                # Capacity
+                demand = agent_market.consumption.sel(commodity=included)
+                capacity = capacity_to_service_demand(demand, tech)
+
+                # Evolution of rates with time
+                rates = discount_factor(
+                    years - agent.year + 1, interest_rate, years <= agent.year + nyears
+                )
+
+                production = capacity * fixed_outputs * utilization_factor
+                production = convert_timeslice(
+                    production,
+                    demand.timeslice,
+                    QuantityType.EXTENSIVE,
+                )
+                # raw costs --> make the NPV more negative
+                # Cost of installed capacity
+                installed_capacity_costs = convert_timeslice(
+                    cap_par * (capacity ** cap_exp),
+                    demand.timeslice,
+                    QuantityType.EXTENSIVE,
+                )
+
+                # Cost related to environmental products
+
+                prices_environmental = agent.filter_input(
+                    prices, year=years.values
+                ).sel(commodity=environmentals)
+                environmental_costs = (
+                    (production * prices_environmental * rates)
+                    .sel(commodity=environmentals, year=years.values)
+                    .sum(("commodity", "year"))  # , "timeslice")
+                )
+
+                # Fuel/energy costs
+                prices_fuel = agent.filter_input(prices, year=years.values).sel(
+                    commodity=fuels
+                )
+
+                fuel = consumption(
+                    technologies=tech,
+                    production=production.sel(region=tech.region),
+                    prices=prices,
+                )
+                fuel_costs = (fuel * prices_fuel * rates).sum(("commodity", "year"))
+
+                # Cost related to material other than fuel/energy and environmentals
+                prices_material = agent.filter_input(prices, year=years.values).sel(
+                    commodity=material
+                )
+                material_costs = (production * prices_material * rates).sum(
+                    ("commodity", "year")
+                )
+
+                # Fixed and Variable costs
+                fixed_costs = convert_timeslice(
+                    fix_par * (capacity ** fix_exp),
+                    demand.timeslice,
+                    QuantityType.EXTENSIVE,
+                )
+                variable_costs = (
+                    var_par * production.sel(commodity=products) ** var_exp
+                ).sum("commodity")
+                #    assert set(fixed_costs.dims) == set(variable_costs.dims)
+                fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum(
+                    "year"
+                )
+
+                result = (
+                    installed_capacity_costs
+                    + fuel_costs
+                    + environmental_costs
+                    + material_costs
+                    + fixed_and_variable_costs
+                ) / (production.sel(commodity=products).sum("commodity") * rates).sum(
+                    "year"
+                )
+
+                data_agent = result
+                data_agent["agent"] = agent.name
+                data_agent["category"] = agent.category
+                data_agent["sector"] = getattr(sector, "name", "unnamed")
+                data_agent["year"] = output_year
+                if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
+                    data_sector.append(data_agent.groupby("technology").fillna(0))
     if len(data_sector) > 0:
         output = pd.concat([u.to_dataframe("LCOE") for u in data_sector], sort=True)
         output = output.reset_index()
@@ -804,151 +1049,197 @@ def metric_eac(
 
 def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Net Present Value of technologies over their lifetime."""
+
     from muse.commodities import is_pollutant, is_material, is_enduse, is_fuel
     from muse.objectives import discount_factor
     from muse.quantities import consumption
-    from muse.production import supply
+
+    def capacity_to_service_demand(demand, technologies):
+        from muse.timeslices import represent_hours
+
+        hours = represent_hours(demand.timeslice)
+
+        max_hours = hours.max() / hours.sum()
+
+        commodity_output = technologies.fixed_outputs.sel(commodity=demand.commodity)
+
+        max_demand = (
+            demand.where(commodity_output > 0, 0)
+            / commodity_output.where(commodity_output > 0, 1)
+        ).max(("commodity", "timeslice"))
+
+        return max_demand / technologies.utilization_factor / max_hours
 
     # Filtering of the inputs
     data_sector: List[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
-    agent_market = market.copy()
-
     if len(technologies) > 0:
-        for a in agents:
-            output_year = a.year - a.forecast
-            agent_market["consumption"] = (market.consumption * a.quantity).sel(
-                year=output_year
-            )
+        for agent in agents:
+            if agent.category == "retrofit":
+                output_year = agent.year - agent.forecast
+                agent_market = market.sel(year=output_year).copy()
+                agent_market["consumption"] = agent_market.consumption * agent.quantity
+                included = [
+                    i
+                    for i in agent_market["commodity"].values
+                    if i in technologies.enduse.values
+                ]
+                agent_market["consumption"] = agent_market["consumption"].where(
+                    agent_market.commodity == included, 0
+                )
+                years = [output_year, agent.year]
 
-            # Capacity
-            capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
-            tech = a.filter_input(
-                technologies[
-                    [
-                        "technical_life",
-                        "interest_rate",
-                        "cap_par",
-                        "cap_exp",
-                        "var_par",
-                        "var_exp",
-                        "fix_par",
-                        "fix_exp",
-                    ]
-                ],
-                technology=capacity.technology,
-                year=output_year,
-            )
-            nyears = tech.technical_life.astype(int)
-            interest_rate = tech.interest_rate
-            cap_par = tech.cap_par
-            cap_exp = tech.cap_exp
-            var_par = tech.var_par
-            var_exp = tech.var_exp
-            fix_par = tech.fix_par
-            fix_exp = tech.fix_exp
+                agent_market["prices"] = agent.filter_input(
+                    market["prices"], year=years
+                )
 
-            # All years the simulation is running
-            # NOTE: see docstring about installation year
-            iyears = range(output_year, a.year + nyears.values.max())
-            years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
+                tech = agent.filter_input(
+                    technologies[
+                        [
+                            "technical_life",
+                            "interest_rate",
+                            "cap_par",
+                            "cap_exp",
+                            "var_par",
+                            "var_exp",
+                            "fix_par",
+                            "fix_exp",
+                            "fixed_outputs",
+                            "fixed_inputs",
+                            "flexible_inputs",
+                            "utilization_factor",
+                        ]
+                    ],
+                    year=agent.year,
+                    region=agent.region,
+                )
+                nyears = tech.technical_life.astype(int)
+                interest_rate = tech.interest_rate
+                cap_par = tech.cap_par
+                cap_exp = tech.cap_exp
+                var_par = tech.var_par
+                var_exp = tech.var_exp
+                fix_par = tech.fix_par
+                fix_exp = tech.fix_exp
+                fixed_outputs = tech.fixed_outputs
+                utilization_factor = tech.utilization_factor
 
-            # Filters
-            environmentals = is_pollutant(technologies.comm_usage)
-            material = is_material(technologies.comm_usage)
-            products = is_enduse(technologies.comm_usage)
-            fuels = is_fuel(technologies.comm_usage)
+                # All years the simulation is running
+                # NOTE: see docstring about installation year
+                iyears = range(
+                    agent.year,
+                    max(agent.year + nyears.values.max(), agent.forecast_year),
+                )
+                years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
 
-            # Evolution of rates with time
-            rates = discount_factor(
-                years - output_year + 1, interest_rate, years <= output_year + nyears
-            )
-            crf = interest_rate / (1 - (1 / (1 + interest_rate) ** nyears))
+                prices = agent.filter_input(agent_market.prices, year=years.values)
+                # Filters
+                environmentals = is_pollutant(tech.comm_usage)
+                e = np.where(environmentals == True)
+                environmentals = environmentals[e].commodity.values
+                material = is_material(tech.comm_usage)
+                e = np.where(material == True)
+                material = material[e].commodity.values
+                products = is_enduse(tech.comm_usage)
+                e = np.where(products == True)
+                products = products[e].commodity.values
+                fuels = is_fuel(tech.comm_usage)
+                e = np.where(fuels == True)
+                fuels = fuels[e].commodity.values
+                # Capacity
+                demand = agent_market.consumption.sel(commodity=included)
+                capacity = capacity_to_service_demand(demand, tech)
 
-            production = convert_timeslice(
-                supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                ),
-                agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
-            )
-            prices = a.filter_input(market.prices, year=years.values).ffill("year")
+                # Evolution of rates with time
+                rates = discount_factor(
+                    years - agent.year + 1, interest_rate, years <= agent.year + nyears
+                )
 
-            # raw revenues --> Make the NPV more positive
-            # This production is the absolute maximum production,
-            # given the capacity
-            raw_revenues = (
-                (production * prices * rates)
-                .sel(commodity=products)
-                .sum(("commodity", "year"))
-            )
+                production = capacity * fixed_outputs * utilization_factor
+                production = convert_timeslice(
+                    production,
+                    demand.timeslice,
+                    QuantityType.EXTENSIVE,
+                )
+                # raw costs --> make the NPV more negative
+                # Cost of installed capacity
+                installed_capacity_costs = convert_timeslice(
+                    cap_par * (capacity ** cap_exp),
+                    demand.timeslice,
+                    QuantityType.EXTENSIVE,
+                )
 
-            # raw costs --> make the NPV more negative
-            # Cost of installed capacity
-            result = cap_par * (capacity ** cap_exp)
-            installed_capacity_costs = convert_timeslice(
-                result,
-                agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
-            )
+                # Cost related to environmental products
 
-            # Cost related to environmental products
-            environmental_costs = (
-                (production * prices * rates)
-                .sel(commodity=environmentals)
-                .sum(("commodity", "year"))
-            )
+                prices_environmental = agent.filter_input(
+                    prices, year=years.values
+                ).sel(commodity=environmentals)
+                environmental_costs = (
+                    (production * prices_environmental * rates)
+                    .sel(commodity=environmentals, year=years.values)
+                    .sum(("commodity", "year"))
+                )
 
-            # Fuel/energy costs
+                # Fuel/energy costs
+                prices_fuel = agent.filter_input(prices, year=years.values).sel(
+                    commodity=fuels
+                )
 
-            fcons = consumption(
-                technologies=technologies, production=production, prices=prices
-            )
-            fuel_costs = (
-                (fcons * prices * rates).sel(commodity=fuels).sum(("commodity", "year"))
-            )
-            # Cost related to material other than fuel/energy
-            # and environmentals
+                fuel = consumption(
+                    technologies=tech,
+                    production=production.sel(region=tech.region),
+                    prices=prices,
+                )
+                fuel_costs = (fuel * prices_fuel * rates).sum(("commodity", "year"))
 
-            material_costs = (
-                (production * prices * rates)
-                .sel(commodity=material)
-                .sum(("commodity", "year"))
-            )
+                # Cost related to material other than fuel/energy and environmentals
+                prices_material = agent.filter_input(prices, year=years.values).sel(
+                    commodity=material
+                )  # .ffill("year")
+                material_costs = (production * prices_material * rates).sum(
+                    ("commodity", "year")
+                )
 
-            # Fixed and Variable costs
-            result = fix_par * (capacity ** fix_exp)
-            fixed_costs = convert_timeslice(
-                result,
-                agent_market.consumption.timeslice,
-                QuantityType.EXTENSIVE,
-            )
-            variable_costs = (
-                var_par * production.sel(commodity=products) ** var_exp
-            ).sum("commodity")
-            fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum(
-                "year"
-            )
+                # Fixed and Variable costs
+                fixed_costs = convert_timeslice(
+                    fix_par * (capacity ** fix_exp),
+                    demand.timeslice,
+                    QuantityType.EXTENSIVE,
+                )
+                variable_costs = (
+                    var_par * production.sel(commodity=products) ** var_exp
+                ).sum("commodity")
+                #    assert set(fixed_costs.dims) == set(variable_costs.dims)
+                fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum(
+                    "year"
+                )
+                # raw revenues --> Make the NPV more positive
+                # This production is the absolute maximum production,
+                # given the capacity
+                raw_revenues = (
+                    (production * prices * rates)
+                    .sel(commodity=products)
+                    .sum(("commodity", "year"))
+                )
 
-            result = -raw_revenues + (
-                installed_capacity_costs
-                + fuel_costs
-                + environmental_costs
-                + material_costs
-                + fixed_and_variable_costs
-            )
-            result *= crf
-            data_agent = result
-            data_agent["agent"] = a.name
-            data_agent["category"] = a.category
-            data_agent["sector"] = getattr(sector, "name", "unnamed")
-            data_agent["year"] = output_year
-            if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
-                data_sector.append(data_agent.groupby("technology").fillna(0))
+                result = (
+                    installed_capacity_costs
+                    + fuel_costs
+                    + environmental_costs
+                    + material_costs
+                    + fixed_and_variable_costs
+                ) - raw_revenues
+                crf = interest_rate / (1 - (1 / (1 + interest_rate) ** nyears))
+                result *= crf
+                data_agent = result
+                data_agent["agent"] = agent.name
+                data_agent["category"] = agent.category
+                data_agent["sector"] = getattr(sector, "name", "unnamed")
+                data_agent["year"] = output_year
+                if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
+                    data_sector.append(data_agent.groupby("technology").fillna(0))
     if len(data_sector) > 0:
         output = pd.concat([u.to_dataframe("EAC") for u in data_sector], sort=True)
         output = output.reset_index()

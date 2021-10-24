@@ -182,7 +182,10 @@ class MCA(object):
         self.outputs = ofactory() if outputs is None else outputs
 
     def find_equilibrium(
-        self, market: Dataset, sectors: Optional[List[AbstractSector]] = None
+        self,
+        market: Dataset,
+        sectors: Optional[List[AbstractSector]] = None,
+        maxiter: Optional[int] = None,
     ) -> FindEquilibriumResults:
         """Specialised version of the find_equilibrium function.
 
@@ -193,10 +196,11 @@ class MCA(object):
             A tuple with the updated market (prices, supply, consumption and demand) and
             sector.
         """
+        maxiter = self.maximum_iterations if not maxiter else maxiter
         return find_equilibrium(
             market=market,
             sectors=self.sectors if sectors is None else sectors,
-            maxiter=self.maximum_iterations,
+            maxiter=maxiter,
             tol=self.tolerance,
             equilibrium_variable=self.equilibrium_variable,
             tol_unmet_demand=self.tolerance_unmet_demand,
@@ -243,6 +247,8 @@ class MCA(object):
         Returns:
             The new carbon price or None
         """
+        from numpy import median
+
         future = market.year[-1]
 
         market, _ = single_year_iteration(market, self.sectors)
@@ -257,7 +263,8 @@ class MCA(object):
         )
 
         # Future emissions are OK, so we move on
-        if emissions < threshold and not self.debug:
+        cp = median(market.prices.sel(commodity=self.carbon_commodities, year=future))
+        if emissions < threshold and not self.debug and cp == 0.0:
             return None
 
         new_carbon_price = self.carbon_method(  # type: ignore
@@ -455,6 +462,7 @@ def single_year_iteration(
             0.0,
             None,
         )
+
         market.consumption.loc[dims] += sector_market.consumption
 
         dims = {i: sector_market[i] for i in sector_market.supply.dims}
@@ -605,7 +613,8 @@ def find_equilibrium(
 
 
 def check_demand_fulfillment(
-    market: Dataset, tol: float, excluded_commodities: Optional[Sequence] = None
+    market: Dataset,
+    tol: float,
 ) -> bool:
     """Checks if the supply will fulfill all the demand in the future.
 
@@ -670,4 +679,4 @@ def check_equilibrium(
         )
     else:
         delta = market.prices.sel(year=year) - int_market.prices.sel(year=year)
-    return bool((abs(delta.sum("timeslice")) < tolerance).all())
+    return bool(abs(delta < tolerance).all())  # .sum("timeslice")) < tolerance).all())
