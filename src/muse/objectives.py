@@ -586,7 +586,8 @@ def lifetime_levelized_cost_of_energy(
     # All years the simulation is running
     # NOTE: see docstring about installation year
     iyears = range(
-        agent.year, max(agent.year + nyears.values.max(), agent.forecast_year)
+        agent.forecast_year,
+        max(agent.forecast_year + nyears.values.max(), agent.forecast_year),
     )
     years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
 
@@ -602,9 +603,10 @@ def lifetime_levelized_cost_of_energy(
 
     # Evolution of rates with time
     rates = discount_factor(
-        years - agent.year + 1, interest_rate, years <= agent.year + nyears
+        years - agent.forecast_year + 1,
+        interest_rate,
+        years <= agent.forecast_year + nyears,
     )
-
     production = capacity * fixed_outputs * utilization_factor
     production = convert_timeslice(
         production,
@@ -624,7 +626,7 @@ def lifetime_levelized_cost_of_energy(
         market.prices, commodity=environmentals, year=years.values
     ).ffill("year")
     environmental_costs = (production * prices_environmental * rates).sum(
-        ("commodity", "year")  # , "timeslice")
+        ("commodity", "year")
     )
 
     # Fuel/energy costs
@@ -639,9 +641,7 @@ def lifetime_levelized_cost_of_energy(
     prices_material = agent.filter_input(
         market.prices, commodity=material, year=years.values
     ).ffill("year")
-    material_costs = (production * prices_material * rates).sum(
-        ("commodity", "year")  # , "timeslice")
-    )
+    material_costs = (production * prices_material * rates).sum(("commodity", "year"))
 
     # Fixed and Variable costs
     fixed_costs = convert_timeslice(
@@ -652,16 +652,15 @@ def lifetime_levelized_cost_of_energy(
     variable_costs = (var_par * production.sel(commodity=products) ** var_exp).sum(
         "commodity"
     )
-    #    assert set(fixed_costs.dims) == set(variable_costs.dims)
     fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
-
+    denominator = production.where(production > 0.0, 1e-6)
     results = (
         installed_capacity_costs
         + fuel_costs
         + environmental_costs
         + material_costs
         + fixed_and_variable_costs
-    ) / (production.sel(commodity=products).sum("commodity") * rates).sum("year")
+    ) / (denominator.sel(commodity=products).sum("commodity") * rates).sum("year")
 
     return results
 
@@ -693,7 +692,8 @@ def net_present_value(
     - capacity costs are given as technodata inputs and depend on the installed capacity
 
     Note:
-        Here, the installation year is always agent.year, since objectives compute the
+        Here, the installation year is always agent.forecast_year,
+        since objectives compute the
         NPV for technologies to be installed in the current year. A more general NPV
         computation (which would then live in quantities.py) would have to refer to
         installation year of the technology.
@@ -746,7 +746,8 @@ def net_present_value(
     # All years the simulation is running
     # NOTE: see docstring about installation year
     iyears = range(
-        agent.year, max(agent.year + nyears.values.max(), agent.forecast_year + 1)
+        agent.forecast_year,
+        max(agent.forecast_year + nyears.values.max(), agent.forecast_year + 1),
     )
     years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
 
@@ -762,7 +763,9 @@ def net_present_value(
 
     # Evolution of rates with time
     rates = discount_factor(
-        years - agent.year + 1, interest_rate, years <= agent.year + nyears
+        years - agent.forecast_year + 1,
+        interest_rate,
+        years <= agent.forecast_year + nyears,
     )
 
     # raw revenues --> Make the NPV more positive
