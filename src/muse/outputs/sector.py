@@ -201,7 +201,6 @@ def supply(
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current supply."""
-    from copy import deepcopy
 
     moutput = market.copy(deep=True).reset_index("timeslice")
     result = (
