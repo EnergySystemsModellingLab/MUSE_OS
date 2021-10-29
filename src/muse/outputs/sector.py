@@ -181,8 +181,9 @@ def consumption(
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current consumption."""
+    moutput = market.copy(deep=True).reset_index("timeslice")
     result = (
-        market_quantity(market.consumption, sum_over=sum_over, drop=drop)
+        market_quantity(moutput.consumption, sum_over=sum_over, drop=drop)
         .rename("consumption")
         .to_dataframe()
         .round(rounding)
@@ -200,8 +201,11 @@ def supply(
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current supply."""
+    from copy import deepcopy
+
+    moutput = market.copy(deep=True).reset_index("timeslice")
     result = (
-        market_quantity(market.supply, sum_over=sum_over, drop=drop)
+        market_quantity(moutput.supply, sum_over=sum_over, drop=drop)
         .rename("supply")
         .to_dataframe()
         .round(rounding)

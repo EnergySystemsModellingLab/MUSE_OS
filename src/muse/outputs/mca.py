@@ -255,20 +255,6 @@ def _aggregate_sectors(
     return pd.concat(alldata, sort=True)
 
 
-def _aggregate_sectors_mod(
-    sectors: List[AbstractSector], market, *args, op: Callable
-) -> pd.DataFrame:
-    """Aggregate outputs from all sectors."""
-    alldata = []
-    for sector in sectors:
-        alldatasec = op(sector, market, *args)
-        alldata.append(alldatasec)
-
-    if len(alldata) == 0:
-        return pd.DataFrame()
-    return pd.concat(alldata, sort=True)
-
-
 @register_output_quantity
 class AggregateResources:
     """Aggregates a set of commodities."""
