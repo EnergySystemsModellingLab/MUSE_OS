@@ -17,7 +17,6 @@ import pandas as pd
 import xarray as xr
 
 from muse.agents import AbstractAgent
-from muse.commodities import is_enduse
 from muse.production import PRODUCTION_SIGNATURE
 from muse.sectors.abstract import AbstractSector
 from muse.sectors.register import register_sector
@@ -294,18 +293,6 @@ class Sector(AbstractSector):  # type: ignore
             ),
             asset_dim="asset",
         )
-        # enduse = market.consumption.commodity.where(
-        #     is_enduse(result.comm_usage)
-        # ).dropna(dim="commodity")
-
-        # msg = (
-        #     f"Demand not met for commodity ({enduse}) " f"in year {int(market.year[0])}"
-        # )
-        # if np.any(
-        #     result.supply.sel(commodity=enduse)
-        #     < 0.999 * market.consumption.sel(commodity=enduse, region=result.region)
-        # ):
-        #     getLogger(__name__).critical(msg)
         return result
 
     @property
