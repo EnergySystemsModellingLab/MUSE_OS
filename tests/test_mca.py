@@ -18,6 +18,7 @@ def test_check_equilibrium(market: Dataset):
 
     assert check_equilibrium(new_market, market, tol, equilibrium_variable)
     new_market["supply"] += tol * 1.5
+
     assert not check_equilibrium(new_market, market, tol, equilibrium_variable)
 
     equilibrium_variable = "prices"
@@ -32,15 +33,16 @@ def test_check_demand_fulfillment(market):
     from muse.mca import check_demand_fulfillment
 
     tolerance_unmet_demand = -0.1
-    excluded_commodities = []
 
     market["supply"] = market.consumption.copy(deep=True)
     assert check_demand_fulfillment(
-        market, tolerance_unmet_demand, excluded_commodities
+        market,
+        tolerance_unmet_demand,
     )
     market["supply"] += tolerance_unmet_demand * 1.5
     assert not check_demand_fulfillment(
-        market, tolerance_unmet_demand, excluded_commodities
+        market,
+        tolerance_unmet_demand,
     )
 
 
