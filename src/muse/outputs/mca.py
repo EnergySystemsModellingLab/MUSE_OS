@@ -686,166 +686,6 @@ def metric_lcoe(
 
 def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Levelized cost of energy () of technologies over their lifetime."""
-    from muse.commodities import is_pollutant, is_material, is_enduse, is_fuel
-    from muse.objectives import discount_factor
-    from muse.quantities import consumption
-    from muse.production import supply
-    from muse.utilities import filter_input
-
-    # Filtering of the inputs
-    data_sector: List[xr.DataArray] = []
-    technologies = getattr(sector, "technologies", [])
-    agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
-
-    agent_market = market.copy()
-    if len(technologies) > 0:
-        for a in agents:
-            if a.category == "retrofit":
-                output_year = a.year - a.forecast
-                agent_market["consumption"] = (market.consumption * a.quantity).sel(
-                    year=output_year
-                )
-
-                # Capacity
-                capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(
-                    0.0
-                )
-                tech = filter_input(
-                    technologies[
-                        [
-                            "technical_life",
-                            "interest_rate",
-                            "cap_par",
-                            "cap_exp",
-                            "var_par",
-                            "var_exp",
-                            "fix_par",
-                            "fix_exp",
-                        ]
-                    ],
-                    year=output_year,
-                )
-                nyears = tech.technical_life.astype(int)
-                interest_rate = tech.interest_rate
-                cap_par = tech.cap_par
-                cap_exp = tech.cap_exp
-                var_par = tech.var_par
-                var_exp = tech.var_exp
-                fix_par = tech.fix_par
-                fix_exp = tech.fix_exp
-
-                # All years the simulation is running
-                # NOTE: see docstring about installation year
-                iyears = range(output_year, a.year + nyears.values.max())
-                years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
-
-                # Filters
-                environmentals = is_pollutant(technologies.comm_usage)
-                material = is_material(technologies.comm_usage)
-                products = is_enduse(technologies.comm_usage)
-                fuels = is_fuel(technologies.comm_usage)
-
-                # Evolution of rates with time
-                rates = discount_factor(
-                    years - output_year + 1,
-                    interest_rate,
-                    years <= output_year + nyears,
-                )
-
-                production = convert_timeslice(
-                    supply(
-                        agent_market,
-                        capacity,
-                        technologies,
-                    ),
-                    agent_market["consumption"].timeslice,
-                    QuantityType.EXTENSIVE,
-                )
-
-                # raw costs --> make the NPV more negative
-                # Cost of installed capacity
-                prices = a.filter_input(market.prices, year=years.values).ffill("year")
-                result = cap_par * (capacity ** cap_exp)
-                installed_capacity_costs = convert_timeslice(
-                    result,
-                    agent_market["consumption"].timeslice,
-                    QuantityType.EXTENSIVE,
-                )
-                environmental_costs = (
-                    (production * prices * rates)
-                    .sel(commodity=environmentals)
-                    .sum(("commodity", "year"))
-                )
-
-                # Fuel/energy costs
-
-                fcons = consumption(
-                    technologies=technologies, production=production, prices=prices
-                )
-                fuel_costs = (
-                    (fcons * prices * rates)
-                    .sel(commodity=fuels)
-                    .sum(("commodity", "year"))
-                )
-                # Cost related to material other than fuel/energy and
-                # environmentals
-
-                material_costs = (
-                    (production * prices * rates)
-                    .sel(commodity=material)
-                    .sum(("commodity", "year"))
-                )
-
-                # Fixed and Variable costs
-                result = fix_par * (capacity ** fix_exp)
-                fixed_costs = convert_timeslice(
-                    result,
-                    agent_market["consumption"].timeslice,
-                    QuantityType.EXTENSIVE,
-                )
-                variable_costs = (
-                    var_par * production.sel(commodity=products) ** var_exp
-                ).sum("commodity")
-                #    assert set(fixed_costs.dims) == set(variable_costs.dims)
-                fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum(
-                    "year"
-                )
-
-                result = (
-                    installed_capacity_costs
-                    + fuel_costs
-                    + environmental_costs
-                    + material_costs
-                    + fixed_and_variable_costs
-                ) / (production.sel(commodity=products).sum("commodity") * rates).sum(
-                    "year"
-                )
-                data_agent = result
-                data_agent["agent"] = a.name
-                data_agent["category"] = a.category
-                data_agent["sector"] = getattr(sector, "name", "unnamed")
-                data_agent["year"] = output_year
-                if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
-                    data_sector.append(data_agent.groupby("technology").fillna(0))
-    if len(data_sector) > 0:
-        output = pd.concat([u.to_dataframe("LCOE") for u in data_sector], sort=True)
-        output = output.reset_index()
-
-    else:
-        output = pd.DataFrame()
-    return output
-
-
-@register_output_quantity(name=["LCOE1"])
-def metric_lcoe1(
-    market: xr.Dataset, sectors: List[AbstractSector], **kwargs
-) -> pd.DataFrame:
-    """Current emission costs across all sectors."""
-    return _aggregate_sectors(sectors, market, op=sector_lcoe1)
-
-
-def sector_lcoe1(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
-    """Levelized cost of energy () of technologies over their lifetime."""
 
     from muse.commodities import is_pollutant, is_material, is_enduse, is_fuel
     from muse.objectives import discount_factor
@@ -934,16 +774,16 @@ def sector_lcoe1(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Dat
                 prices = agent.filter_input(agent_market.prices, year=years.values)
                 # Filters
                 environmentals = is_pollutant(tech.comm_usage)
-                e = np.where(environmentals == True)
+                e = np.where(environmentals)
                 environmentals = environmentals[e].commodity.values
                 material = is_material(tech.comm_usage)
-                e = np.where(material == True)
+                e = np.where(material)
                 material = material[e].commodity.values
                 products = is_enduse(tech.comm_usage)
-                e = np.where(products == True)
+                e = np.where(products)
                 products = products[e].commodity.values
                 fuels = is_fuel(tech.comm_usage)
-                e = np.where(fuels == True)
+                e = np.where(fuels)
                 fuels = fuels[e].commodity.values
                 # Capacity
                 demand = agent_market.consumption.sel(commodity=included)
@@ -1137,16 +977,16 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
                 prices = agent.filter_input(agent_market.prices, year=years.values)
                 # Filters
                 environmentals = is_pollutant(tech.comm_usage)
-                e = np.where(environmentals == True)
+                e = np.where(environmentals)
                 environmentals = environmentals[e].commodity.values
                 material = is_material(tech.comm_usage)
-                e = np.where(material == True)
+                e = np.where(material)
                 material = material[e].commodity.values
                 products = is_enduse(tech.comm_usage)
-                e = np.where(products == True)
+                e = np.where(products)
                 products = products[e].commodity.values
                 fuels = is_fuel(tech.comm_usage)
-                e = np.where(fuels == True)
+                e = np.where(fuels)
                 fuels = fuels[e].commodity.values
                 # Capacity
                 demand = agent_market.consumption.sel(commodity=included)
