@@ -679,4 +679,5 @@ def check_equilibrium(
         )
     else:
         delta = market.prices.sel(year=year) - int_market.prices.sel(year=year)
-    return bool(abs(delta < tolerance).all())  # .sum("timeslice")) < tolerance).all())
+
+    return bool((abs(delta) < tolerance).all())
