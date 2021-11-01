@@ -9,7 +9,7 @@
 project = "MUSE"
 copyright = "2019, Sustainable Gas Institute"
 author = "Imperial College London"
-release = "0.9.0"
+release = "0.9.1"
 version = ".".join(release.split(".")[:2])
 
 # -- General configuration ---------------------------------------------------
