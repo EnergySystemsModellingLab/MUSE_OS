@@ -3,6 +3,7 @@
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
+from typing import List
 
 # -- Project information -----------------------------------------------------
 
@@ -54,7 +55,7 @@ intersphinx_mapping = {
     "xarray": ("http://xarray.pydata.org/en/stable/", None),
 }
 
-bibtex_bibfiles = []
+bibtex_bibfiles: List[str] = []
 
 # -- Options for HTML output -------------------------------------------------
 
