@@ -293,6 +293,8 @@ def test_net_present_value(
     from muse.quantities import consumption
     from muse.commodities import is_material, is_enduse, is_fuel, is_pollutant
 
+    technologies.technical_life.loc[{"region": retro_agent.region}] = 10
+
     actual = net_present_value(
         retro_agent,
         demand_share,
@@ -345,15 +347,13 @@ def test_net_present_value(
     prices_environmental = prices.sel(
         commodity=is_pollutant(technologies.comm_usage)
     ).ffill("year")
-    prices_material = prices.sel(
-        commodity=is_material(technologies.comm_usage)
-    ).ffill("year")
-    prices_non_env = prices.sel(
-        commodity=is_enduse(technologies.comm_usage)
-    ).ffill("year")
-    prices_fuel = prices.sel(
-        commodity=is_fuel(technologies.comm_usage)
-    ).ffill("year")
+    prices_material = prices.sel(commodity=is_material(technologies.comm_usage)).ffill(
+        "year"
+    )
+    prices_non_env = prices.sel(commodity=is_enduse(technologies.comm_usage)).ffill(
+        "year"
+    )
+    prices_fuel = prices.sel(commodity=is_fuel(technologies.comm_usage)).ffill("year")
     # Capacity
     capacity = capacity_to_service_demand(
         retro_agent, demand_share, search_space, technologies, agent_market
