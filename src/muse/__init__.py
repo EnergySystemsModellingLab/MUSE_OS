@@ -1,4 +1,5 @@
 """MUSE model"""
+VERSION = "0.9.1"
 
 
 def _create_logger():

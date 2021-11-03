@@ -3,13 +3,15 @@
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
+from typing import List
 
 # -- Project information -----------------------------------------------------
 
 project = "MUSE"
 copyright = "2019, Sustainable Gas Institute"
 author = "Imperial College London"
-release = "0.9"
+release = "0.9.1"
+version = ".".join(release.split(".")[:2])
 
 # -- General configuration ---------------------------------------------------
 
@@ -53,7 +55,7 @@ intersphinx_mapping = {
     "xarray": ("http://xarray.pydata.org/en/stable/", None),
 }
 
-bibtex_bibfiles = []
+bibtex_bibfiles: List[str] = []
 
 # -- Options for HTML output -------------------------------------------------
 
