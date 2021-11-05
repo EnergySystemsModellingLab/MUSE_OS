@@ -40,8 +40,9 @@ class LegacySector(AbstractSector):  # type: ignore
     def factory(cls, name: Text, settings: Any, **kwargs) -> "LegacySector":
         from pathlib import Path
 
-        from muse.readers import read_technologies
         from muse_legacy.sectors import SECTORS
+
+        from muse.readers import read_technologies  # isort:skip
 
         sector = getattr(settings.sectors, name)
 
