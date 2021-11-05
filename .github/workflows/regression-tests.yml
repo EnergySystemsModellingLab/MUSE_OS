@@ -1,0 +1,37 @@
+name: regression tests
+
+on:
+    pull_request:
+        types: [opened, synchronize, reopened]
+    push:
+        branches: [master, development]
+
+jobs:
+  # Checks the style using the pre-commit hooks
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: pre-commit/action@v2.0.2
+
+  # Only then, normal testing proceeds
+  tests:
+    needs: qa
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -U setuptools wheel xlrd==1.2.0
+        pip install -e .[all]
+
+    # The regression tests (with non coverage)
+    - name: Regression tests
+      run: pytest -m "regression"

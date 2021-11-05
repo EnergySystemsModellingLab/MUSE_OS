@@ -1,4 +1,4 @@
-name: Unit, regression and legacy tests
+name: legacy tests
 
 on:
     pull_request:
@@ -31,24 +31,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -U setuptools wheel xlrd==1.2.0
         pip install -e .[all]
-
-    # First the unite tests, with coverage under linux
-    - name: Unit tests (linux)
-      if: (runner.os == 'Linux')
-      run: |
-        pip install pytest-cov
-        pytest -m "not regression" -m "not legacy" --junitxml=junit/pytest.xml \
-            --cov=muse \
-            --cov-branch \
-            --cov-report=xml:coverage/coverage.xml
-
-    - name: Unit tests (not linux)
-      if: (runner.os != 'Linux')
-      run: pytest -m "not regression" -m "not legacy"
-
-    # The regression tests (with non coverage)
-    - name: Regression tests
-      run: pytest -m "regression" -m "not legacy"
 
     # Then we install the dependencies to run the legacy tests
     - name: Checkout Legacy MUSE
