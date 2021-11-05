@@ -6,6 +6,7 @@
 from typing import List
 
 # -- Project information -----------------------------------------------------
+from typing import List
 
 project = "MUSE"
 copyright = "2019, Sustainable Gas Institute"
