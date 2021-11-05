@@ -1,4 +1,4 @@
-name: Unit tests
+name: unit tests
 
 on:
     pull_request:
@@ -15,7 +15,7 @@ jobs:
       - uses: pre-commit/action@v2.0.2
 
   # Only then, normal testing proceeds
-  unit-test:
+  unit-tests:
     needs: qa
     runs-on: ubuntu-latest
 
