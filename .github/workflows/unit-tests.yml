@@ -15,7 +15,7 @@ jobs:
       - uses: pre-commit/action@v2.0.2
 
   # Only then, normal testing proceeds
-  tests:
+  unit-test:
     needs: qa
     runs-on: ubuntu-latest
 
@@ -37,7 +37,7 @@ jobs:
       if: (runner.os == 'Linux')
       run: |
         pip install pytest-cov
-        pytest -m "not regression" -m --junitxml=junit/pytest.xml \
+        pytest -m "not regression" --junitxml=junit/pytest.xml \
             --cov=muse \
             --cov-branch \
             --cov-report=xml:coverage/coverage.xml
