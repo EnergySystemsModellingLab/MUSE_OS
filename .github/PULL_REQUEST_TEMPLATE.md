@@ -9,7 +9,7 @@ Fixes # (issue)
 ## Type of change
 
 Please add a line in the relevant section of
-[CHANGELOG.md](https://github.com/pybamm-team/PyBaMM/blob/develop/CHANGELOG.md) to
+[CHANGELOG.md](https://github.com/SGIModel/StarMuse/blob/develop/CHANGELOG.md) to
 document the change (include PR #) - note reverse order of PR #s.
 
 - [ ] New feature (non-breaking change which adds functionality)
