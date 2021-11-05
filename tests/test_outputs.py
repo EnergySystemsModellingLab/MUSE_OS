@@ -148,39 +148,6 @@ def test_save_with_fullpath_to_excel_with_sink(tmpdir):
     read_excel(result[0])
 
 
-@mark.sgidata
-@mark.legacy
-@mark.usefixtures("streetcred")
-def test_from_sector_with_single_string(buildings, market, tmpdir):
-    from muse.defaults import DEFAULT_OUTPUT_DIRECTORY
-    from muse.outputs.sector import factory
-
-    with tmpdir.as_cwd():
-        output_func = factory("streetcred", sector_name="Residential")
-        output_func(buildings.capacity, market, buildings.technologies)
-        assert (
-            Path(tmpdir) / DEFAULT_OUTPUT_DIRECTORY / "Residential2010Streetcred.csv"
-        ).exists()
-        assert (
-            Path(tmpdir) / DEFAULT_OUTPUT_DIRECTORY / "Residential2010Streetcred.csv"
-        ).is_file()
-
-
-@mark.sgidata
-@mark.legacy
-@mark.usefixtures("streetcred")
-def test_from_sector_with_directory(buildings, market, tmpdir):
-    from muse.outputs.sector import factory
-
-    output_func = factory(
-        {"quantity": "streetcred", "filename": tmpdir / "abc.csv"},
-        sector_name="Residential",
-    )
-    output_func(buildings.capacity, market, buildings.technologies)
-    assert (Path(tmpdir) / "abc.csv").exists()
-    assert (Path(tmpdir) / "abc.csv").is_file()
-
-
 @mark.usefixtures("streetcred")
 def test_no_sink_or_suffix(tmpdir):
     from muse.outputs.sector import factory

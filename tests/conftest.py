@@ -40,11 +40,6 @@ def regression_directories(cases_directory) -> Mapping[Text, Path]:
     }
 
 
-@fixture(scope="session")
-def residential_dir(regression_directories):
-    return regression_directories["Residential"]
-
-
 @fixture()
 def sectors_dir(tmpdir):
     """Copies sectors directory to new dir.
@@ -138,40 +133,6 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "legacy" in item.keywords:
                 item.add_marker(skip_legacy)
-
-
-@fixture(scope="session")
-def loaded_residential_settings(residential_input_file):
-    """Initialized MCA with the default settings and the residential sector."""
-    from muse.readers import read_settings
-    from muse.readers.toml import undo_damage, convert
-
-    settings = undo_damage(read_settings(residential_input_file))
-    residential = settings["sectors"]["residential"]
-    residential["subsectors"] = dict(
-        new_and_retro=dict(
-            agents=residential.pop("agents"),
-            existing_capacity=residential.pop("existing_capacity"),
-        )
-    )
-
-    return convert(settings)
-
-
-@fixture(scope="session")
-def mca(loaded_residential_settings):
-    """Initialized MCA with the default settings and the residential sector."""
-    from muse.mca import MCA
-
-    result = MCA.factory(loaded_residential_settings)
-
-    return result
-
-
-@fixture(scope="session")
-def buildings(mca):
-    """Residential sector as read from regression test case."""
-    return next((sector for sector in mca.sectors if sector.name == "residential"))
 
 
 @fixture
@@ -603,22 +564,6 @@ def settings(tmpdir) -> dict:
     out["carbon_budget_control"].update(carbon_budget_required)
 
     return out
-
-
-@fixture(scope="session")
-def residential_input_file() -> Path:
-    """Gets the example residential sector settings file."""
-    import muse_legacy
-
-    input_file = (
-        Path(muse_legacy.__file__).parent
-        / "data"
-        / "test"
-        / "cases"
-        / "Residential"
-        / "settings_residential.toml"
-    )
-    return input_file
 
 
 @fixture(autouse=True)
