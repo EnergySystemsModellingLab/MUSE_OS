@@ -200,8 +200,8 @@ def format_paths(
         >>> str(Path().absolute() / "toot" / "suite" / "c") == a["nested"]["b_path"]
         True
     """
-    from pathlib import Path
     import re
+    from pathlib import Path
 
     patterns = {
         **{
@@ -457,8 +457,10 @@ def read_ts_multiindex(
         ...
         muse.readers.toml.IncorrectSettings: Unexpected slice(s): ...
     """
-    from toml import loads
     from itertools import product
+
+    from toml import loads
+
     from muse.timeslices import TIMESLICE, TRANSFORMS
 
     indices = (TIMESLICE if timeslice is None else timeslice).get_index("timeslice")
@@ -549,7 +551,7 @@ def read_timeslices(
         Data variables:
             *empty*
     """
-    from muse.timeslices import timeslice_projector, TIMESLICE
+    from muse.timeslices import TIMESLICE, timeslice_projector
 
     if timeslice is None:
         timeslice = TIMESLICE
@@ -856,10 +858,7 @@ def read_technodata(
     **kwargs,
 ) -> xr.Dataset:
     """Helper function to create technodata for a given sector."""
-    from muse.readers.csv import (
-        read_technologies,
-        read_trade,
-    )
+    from muse.readers.csv import read_technologies, read_trade
 
     if time_framework is None:
         time_framework = getattr(settings, "time_framework", [2010, 2050])

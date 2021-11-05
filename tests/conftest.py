@@ -10,7 +10,7 @@ from muse.agents import Agent
 
 @fixture(autouse=True)
 def logger():
-    from logging import getLogger, CRITICAL
+    from logging import CRITICAL, getLogger
 
     logger = getLogger("muse")
     logger.setLevel(CRITICAL)
@@ -51,8 +51,9 @@ def sectors_dir(tmpdir):
 
     This gives some assurance the machinery for specifying sectors data actually works.
     """
-    from muse.defaults import DEFAULT_SECTORS_DIRECTORY
     from shutil import copytree
+
+    from muse.defaults import DEFAULT_SECTORS_DIRECTORY
 
     copytree(DEFAULT_SECTORS_DIRECTORY, tmpdir.join("sectors_data_dir"))
     return tmpdir.join("sectors_data_dir")
@@ -91,9 +92,10 @@ def compare_df(
 def compare_dirs() -> Callable:
     def compare_dirs(actual_dir, expected_dir, **kwargs):
         """Compares all the csv files in a directory."""
-        from pandas import read_csv
         from os import walk
         from pathlib import Path
+
+        from pandas import read_csv
 
         compared_something = False
         for (dirpath, _, filenames) in walk(expected_dir):
@@ -144,7 +146,7 @@ def pytest_collection_modifyitems(config, items):
 def loaded_residential_settings(residential_input_file):
     """Initialized MCA with the default settings and the residential sector."""
     from muse.readers import read_settings
-    from muse.readers.toml import undo_damage, convert
+    from muse.readers.toml import convert, undo_damage
 
     settings = undo_damage(read_settings(residential_input_file))
     residential = settings["sectors"]["residential"]
@@ -246,7 +248,7 @@ def coords() -> Mapping:
 @fixture
 def agent_args(coords) -> Mapping:
     """some standard arguments defining an agent."""
-    from numpy.random import randint, choice, rand
+    from numpy.random import choice, rand, randint
 
     return {
         "region": choice(coords["region"]),
@@ -262,8 +264,9 @@ def agent_args(coords) -> Mapping:
 @fixture
 def technologies(coords) -> Dataset:
     """randomly generated technology characteristics."""
-    from numpy import sum, nonzero
-    from numpy.random import rand, randint, choice
+    from numpy import nonzero, sum
+    from numpy.random import choice, rand, randint
+
     from muse.commodities import CommodityUsage
 
     result = Dataset(coords=coords)
@@ -390,6 +393,7 @@ def market(coords, technologies, timeslice) -> Dataset:
 
 def create_agent(agent_args, technologies, stock, agent_type="retrofit") -> Agent:
     from numpy.random import choice
+
     from muse.agents.factories import create_agent
 
     agent = create_agent(
@@ -448,9 +452,9 @@ def _stock(
     region: Optional[Sequence[Text]] = None,
     nassets: Optional[int] = None,
 ) -> Dataset:
-    from xarray import Dataset
     from numpy import cumprod, stack
-    from numpy.random import choice, randint, rand
+    from numpy.random import choice, rand, randint
+    from xarray import Dataset
 
     ymin, ymax = min(coords["year"]), max(coords["year"]) + 1
 
@@ -541,7 +545,7 @@ def demand_share(coords, timeslice):
 
 
 def create_fake_capacity(n: int, technologies: Dataset) -> DataArray:
-    from numpy.random import rand, choice
+    from numpy.random import choice, rand
     from xarray import Dataset
 
     n = 20
@@ -567,6 +571,7 @@ def capacity(technologies: Dataset) -> DataArray:
 def settings(tmpdir) -> dict:
     """Creates a dummy settings dictionary out of the default settings."""
     import toml
+
     from muse.readers import DEFAULT_SETTINGS_PATH
     from muse.readers.toml import format_paths
 
@@ -646,8 +651,8 @@ def save_registries():
 
     @contextmanager
     def saveme(module_name: Text, registry_name: Text):
-        from importlib import import_module
         from copy import deepcopy
+        from importlib import import_module
 
         module = import_module(module_name)
         old = getattr(module, registry_name)

@@ -29,12 +29,12 @@ class Sector(AbstractSector):  # type: ignore
 
     @classmethod
     def factory(cls, name: Text, settings: Any) -> Sector:
+        from muse.interactions import factory as interaction_factory
+        from muse.outputs.sector import factory as ofactory
+        from muse.production import factory as pfactory
         from muse.readers import read_timeslices
         from muse.readers.toml import read_technodata
         from muse.utilities import nametuple_to_dict
-        from muse.outputs.sector import factory as ofactory
-        from muse.production import factory as pfactory
-        from muse.interactions import factory as interaction_factory
 
         sector_settings = getattr(settings.sectors, name)._asdict()
         for attribute in ("name", "type", "priority", "path"):
@@ -106,9 +106,9 @@ class Sector(AbstractSector):  # type: ignore
         outputs: Optional[Callable] = None,
         supply_prod: Optional[PRODUCTION_SIGNATURE] = None,
     ):
-        from muse.production import maximum_production
-        from muse.outputs.sector import factory as ofactory
         from muse.interactions import factory as interaction_factory
+        from muse.outputs.sector import factory as ofactory
+        from muse.production import maximum_production
 
         self.name: Text = name
         """Name of the sector."""
@@ -259,14 +259,15 @@ class Sector(AbstractSector):  # type: ignore
         self, market: xr.Dataset, technologies: xr.Dataset
     ) -> xr.Dataset:
         """Computes resulting market: production, consumption, and costs."""
+        from muse.commodities import is_pollutant
         from muse.quantities import (
+            annual_levelized_cost_of_energy,
             consumption,
             supply_cost,
-            annual_levelized_cost_of_energy,
         )
-        from muse.commodities import is_pollutant
+        from muse.timeslices import QuantityType, convert_timeslice
         from muse.utilities import broadcast_techs
-        from muse.timeslices import convert_timeslice, QuantityType
+
         # from logging import getLogger
         # import numpy as np
 
@@ -303,8 +304,7 @@ class Sector(AbstractSector):  # type: ignore
         dimensions: asset (technology, installation date,
         region), year.
         """
-        from muse.utilities import reduce_assets
-        from muse.utilities import filter_input
+        from muse.utilities import filter_input, reduce_assets
 
         traded = [
             u.assets.capacity
@@ -367,7 +367,7 @@ class Sector(AbstractSector):  # type: ignore
         intensive: Union[Text, Tuple[Text]] = "prices",
     ) -> xr.Dataset:
         """Converts market from one to another timeslice."""
-        from muse.timeslices import convert_timeslice, QuantityType
+        from muse.timeslices import QuantityType, convert_timeslice
 
         if isinstance(intensive, Text):
             intensive = (intensive,)

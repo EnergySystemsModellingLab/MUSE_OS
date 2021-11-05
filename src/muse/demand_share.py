@@ -220,9 +220,10 @@ def new_and_retro(
         :py:func:`~muse.quantities.maximum_production`
     """
     from functools import partial
+
     from muse.commodities import is_enduse
-    from muse.utilities import reduce_assets, agent_concatenation
     from muse.quantities import maximum_production
+    from muse.utilities import agent_concatenation, reduce_assets
 
     def decommissioning(capacity):
         from muse.quantities import decommissioning_demand
@@ -324,7 +325,7 @@ def unmet_forecasted_demand(
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
     from muse.commodities import is_enduse
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import reduce_assets
 
     if current_year is None:
@@ -437,8 +438,9 @@ def new_consumption(
 
     Where :math:`P` is a production function taking the market and assets as arguments.
     """
-    from muse.timeslices import convert_timeslice, QuantityType
     from numpy import minimum
+
+    from muse.timeslices import QuantityType, convert_timeslice
 
     if current_year is None:
         current_year = market.year.min()
@@ -482,8 +484,8 @@ def new_and_retro_demands(
     """
     from numpy import minimum
 
-    from muse.timeslices import convert_timeslice, QuantityType
     from muse.production import factory as prod_factory
+    from muse.timeslices import QuantityType, convert_timeslice
 
     production_method = production if callable(production) else prod_factory(production)
     assert callable(production_method)

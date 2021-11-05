@@ -61,7 +61,8 @@ def mock_sector(buildings):
 @mark.legacy
 def test_calls_to_agents(mock_sector, real_market):
     """Checks logic of calling next on sector using mocked agents."""
-    from xarray import Dataset, DataArray
+    from xarray import DataArray, Dataset
+
     from muse.outputs.sector import factory
 
     mock_sector.outputs = factory()
@@ -97,6 +98,7 @@ def test_calls_to_agents(mock_sector, real_market):
 def test_call_each_agent(mock_sector, real_market, agent_id):
     """Checks logic of calling next on sector using mocked agents."""
     from copy import deepcopy
+
     from muse.outputs.sector import factory
 
     mock_sector.outputs.sector = factory()
