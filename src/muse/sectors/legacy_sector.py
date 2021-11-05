@@ -42,7 +42,7 @@ class LegacySector(AbstractSector):  # type: ignore
 
         from muse_legacy.sectors import SECTORS
 
-        from muse.readers import read_technologies  # isort:skip
+        from muse.readers import read_technologies
 
         sector = getattr(settings.sectors, name)
 
