@@ -457,7 +457,8 @@ agents
 lpsolver
    A string containing either "scipy" or "adhoc" solver. The scipy solver uses the 
    optimization solver provided in the scipy package. The adhoc solver is a solver
-   built within MUSE.
+   built specifically for MUSE.
+
 --------------
 Preset sectors
 --------------
