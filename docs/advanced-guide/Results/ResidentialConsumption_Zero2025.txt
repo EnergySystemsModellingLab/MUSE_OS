@@ -93,14 +93,14 @@ year asset commodity
            heat              2020       0.0000  
            CO2f              2020       0.0000  
      1     electricity       2025       0.0000  
-           gas               2025       1.9978  
+           gas               2025       2.6422  
            heat              2025       0.0000  
            CO2f              2025       0.0000  
      2     electricity       2020       4.2222  
            gas               2020       0.0000  
            heat              2020       0.0000  
            CO2f              2020       0.0000  
-     3     electricity       2025       1.7556  
+     3     electricity       2025       1.5333  
            gas               2025       0.0000  
            heat              2025       0.0000  
            CO2f              2025       0.0000  
