@@ -664,7 +664,7 @@ def lifetime_levelized_cost_of_energy(
         + material_costs
         + fixed_and_variable_costs
     ) / (denominator.sel(commodity=products).sum("commodity") * rates).sum("year")
-    print(results)
+
     return results
 
 
