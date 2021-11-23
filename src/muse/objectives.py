@@ -199,9 +199,12 @@ def comfort(
     **kwargs,
 ) -> xr.DataArray:
     """Comfort value provided by technologies."""
-    return technologies.comfort.sel(technology=search_space.replacement).drop_vars(
-        "technology"
-    )
+    output = agent.filter_input(
+        technologies.comfort,
+        year=agent.forecast_year,
+        technology=search_space.replacement,
+    ).drop_vars("technology")
+    return output
 
 
 @register_objective
@@ -661,7 +664,7 @@ def lifetime_levelized_cost_of_energy(
         + material_costs
         + fixed_and_variable_costs
     ) / (denominator.sel(commodity=products).sum("commodity") * rates).sum("year")
-
+    print (results)
     return results
 
 
