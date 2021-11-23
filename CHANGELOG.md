@@ -11,7 +11,7 @@
 
 ## Bug fixes
 
-- None
+- Comfort objective modified to keep asset dimensions ([#926](https://github.com/SGIModel/StarMuse/pull/926))
 
 ## Breaking changes
 
