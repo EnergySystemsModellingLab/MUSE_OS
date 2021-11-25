@@ -13,7 +13,8 @@
 
 ## Bug fixes
 
-- None
+- Update the documentation to correctly add an agent ([[#927](https://github.com/SGIModel/StarMuse/issues/927)])
+- Comfort objective modified to keep asset dimensions ([#926](https://github.com/SGIModel/StarMuse/pull/926))
 
 ## Breaking changes
 
