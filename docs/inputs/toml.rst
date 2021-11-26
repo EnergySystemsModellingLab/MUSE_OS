@@ -457,7 +457,13 @@ agents
 lpsolver
    A string containing either "scipy" or "adhoc" solver. The scipy solver uses the 
    optimization solver provided in the scipy package. The adhoc solver is a solver
-   built within MUSE.
+   built specifically for MUSE, which simulates decisions to invest in energy technologies sorted according to the agents' goals and bounded rationalit constraints.
+   Currently the adhoc sorting and the scipy optimisation directions are different. This reflects in the definition of an opposite direction in the objective of the agentss.
+   The Scipy solver should be used with metrics that are defined 
+   as per unit of output for improved functioning. Such as the levelized cost of 
+   electricity (MUS$/PJ)
+
+
 --------------
 Preset sectors
 --------------
