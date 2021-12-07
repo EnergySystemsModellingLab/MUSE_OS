@@ -170,6 +170,7 @@ class Subsector:
     ) -> Subsector:
         from muse.agents import agents_factory, InvestingAgent
         from muse.readers.toml import undo_damage
+        from muse.commodities import is_enduse
         from muse import demand_share as ds, investments as iv, constraints as cs
 
         agents = agents_factory(
@@ -182,7 +183,24 @@ class Subsector:
             # only used by self-investing agents
             investment=getattr(settings, "lpsolver", "adhoc"),
         )
+        # technologies can have nans where a commodity
+        # does not apply to a technology at all (i.e. hardcoal for a technology using hydrogen)
 
+        # check that all regions have technologies without nans
+        for a in agents:
+            techs = a.filter_input(technologies, region=a.region)
+            outputs = techs.fixed_outputs.sel(
+                commodity=is_enduse(technologies.comm_usage)
+            )
+            if len(outputs) == 0:
+                print(
+                    "Subsector with ",
+                    f"{techs.technology.values[0]}",
+                    "for region ",
+                    f"{a.region}",
+                    " has no output commodities",
+                )
+                raise RuntimeError("Subsector outputs commodities cannot be empty")
         if hasattr(settings, "commodities"):
             commodities = settings.commodities
         else:
@@ -190,7 +208,15 @@ class Subsector:
                 [agent.assets for agent in agents], technologies
             )
 
+        # len(commodities) == 0 may happen only if
+        # we run only one region or all regions have no outputs
+
         if len(commodities) == 0:
+            print(
+                "Subsector with ",
+                f"{technologies.technology.values[0]}",
+                " has no output commodities",
+            )
             raise RuntimeError("Subsector commodities cannot be empty")
 
         demand_share = ds.factory(undo_damage(getattr(settings, "demand_share", None)))
