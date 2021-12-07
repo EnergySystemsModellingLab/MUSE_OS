@@ -184,7 +184,8 @@ class Subsector:
             investment=getattr(settings, "lpsolver", "adhoc"),
         )
         # technologies can have nans where a commodity
-        # does not apply to a technology at all (i.e. hardcoal for a technology using hydrogen)
+        # does not apply to a technology at all
+        # (i.e. hardcoal for a technology using hydrogen)
 
         # check that all regions have technologies without nans
         for a in agents:
