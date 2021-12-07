@@ -187,7 +187,7 @@ class Subsector:
         # does not apply to a technology at all
         # (i.e. hardcoal for a technology using hydrogen)
 
-        # check that all regions have technologies without nans
+        # check that all regions have technologies with at least one end-use output
         for a in agents:
             techs = a.filter_input(technologies, region=a.region)
             outputs = techs.fixed_outputs.sel(
