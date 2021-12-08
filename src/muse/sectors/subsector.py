@@ -193,7 +193,7 @@ class Subsector:
             outputs = techs.fixed_outputs.sel(
                 commodity=is_enduse(technologies.comm_usage)
             )
-            msg = f"Subsector with {techs.technology.values[0]} for region {a.region} has no output commodities"
+            msg = f"Subsector with {techs.technology.values[0]} for region {a.region} has no output commodities"  # noqa: E501
 
             if len(outputs) == 0:
                 raise RuntimeError(msg)
