@@ -193,15 +193,14 @@ class Subsector:
             outputs = techs.fixed_outputs.sel(
                 commodity=is_enduse(technologies.comm_usage)
             )
+            msg = f"Subsector with {techs.technology.values[0]} for region {a.region} has no output commodities"
+
             if len(outputs) == 0:
-                print(
-                    "Subsector with ",
-                    f"{techs.technology.values[0]}",
-                    "for region ",
-                    f"{a.region}",
-                    " has no output commodities",
-                )
-                raise RuntimeError("Subsector outputs commodities cannot be empty")
+                raise RuntimeError(msg)
+
+            if np.sum(outputs) == 0.0:
+                raise RuntimeError(msg)
+
         if hasattr(settings, "commodities"):
             commodities = settings.commodities
         else:
@@ -211,14 +210,9 @@ class Subsector:
 
         # len(commodities) == 0 may happen only if
         # we run only one region or all regions have no outputs
-
+        msg = f"Subsector with {techs.technology.values[0]} has no output commodities"
         if len(commodities) == 0:
-            print(
-                "Subsector with ",
-                f"{technologies.technology.values[0]}",
-                " has no output commodities",
-            )
-            raise RuntimeError("Subsector commodities cannot be empty")
+            raise RuntimeError(msg)
 
         demand_share = ds.factory(undo_damage(getattr(settings, "demand_share", None)))
         constraints = cs.factory(getattr(settings, "constraints", None))
