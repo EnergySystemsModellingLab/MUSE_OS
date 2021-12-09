@@ -12,8 +12,9 @@
 - None
 
 ## Bug fixes
-- Specify error message for no commodity outputs ([[#937] (https://github.com/SGIModel/StarMuse/issues/937)])
-- Update the documentation to correctly add an agent ([[#927](https://github.com/SGIModel/StarMuse/issues/927)])
+- Fix typos in CHANGELOG file ([#939](https://github.com/SGIModel/StarMuse/pull/939))
+- Specify error message for no commodity outputs ([#937](https://github.com/SGIModel/StarMuse/issues/937))
+- Update the documentation to correctly add an agent ([#927](https://github.com/SGIModel/StarMuse/issues/927))
 - Comfort objective modified to keep asset dimensions ([#926](https://github.com/SGIModel/StarMuse/pull/926))
 
 ## Breaking changes
