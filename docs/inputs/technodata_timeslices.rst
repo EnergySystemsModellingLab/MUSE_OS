@@ -1,4 +1,4 @@
-.. _inputs-technodata:
+.. _inputs-technodata-ts:
 
 ======================
 Techno-data Timeslices
@@ -42,4 +42,7 @@ MinimumServiceFactor
 
 The input data has to be provided for the base year. Additional years within the time
 framework of the overall simulation can be defined. In this case, MUSE would interpolate
-the values between the provided periods and assume a constant value afterwards.
+the values between the provided periods and assume a constant value afterwards. The additional 
+years at which input data are defined needs to equal for :ref:`inputs-iocomms`, :ref:`inputs-technodata`, and :ref:`inputs-technodata-ts`.
+
+Interpolation is activated only if the feature *interpolation_mode = 'Active'* is defined in the TOML file.
