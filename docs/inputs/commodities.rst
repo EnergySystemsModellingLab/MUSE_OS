@@ -19,17 +19,31 @@ Commodity
    represents the extended name of a commodity
 
 CommodityType
-   defines the type of a commodity (i.e. energy, material or environmental)
+   defines the type of a commodity (i.e. Energy, Service, Material, or Environmental).
+   
+   The "energy" type includes the energy commodities, such as biomass, electricity, gasoline, and hydrogen,
+   which are either extracted, transformed from one to another, or used in the energy system.
+   
+   The "service" type includes commodities such as space heating or hot water which correspond to selected
+   poples' needs whose fulflment requires energy uses.
+   
+   The "material" type represent non-energy inputs for energy technologies, such as limestone or oxygen.
+   The "environmental" type refers to non-energy commodities whichare used to quantify an inpact on the environment,
+   such as greenhouse gases or CO2. They can be subjected to different types of environmental fees or taxes.
 
 CommodityName
    is the internal name used for a commodity inside the model. 
 
 CommodityEmissionFactor_CO2
-   is CO2 emission per unit of commodity flow 
+   is CO2 emission per unit of commodity flow.
+   This commodity property is not directly used in the MUSE core set of equations, but can be further referred to
+   for any subsequent development of the code.
 
 HeatRate
    represents the lower heating value of an energy commodity 
-
+   This commodity property is not directly used in the MUSE core set of equations, but can be further referred to
+   for any subsequent development of the code.
+   
 Unit
    is the unit used as a basis for all the input data. More specifically the model allows
    a totally flexible way of defining the commodities. CommodityName is currently the

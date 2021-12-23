@@ -120,7 +120,7 @@ The documentation can be built with:
 
 .. code-block:: bash
 
-   python setup.py build_sphinx
+   python setup.py docs
 
 The main page for the documentation can then be found at
 `build\\sphinx\\html\\index.html` (or `build/sphinx/html/index.html` on Mac and Linux).
