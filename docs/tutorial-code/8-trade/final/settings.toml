@@ -41,7 +41,7 @@ commodities_in = '{path}/technodata/residential/CommIn.csv'
 commodities_out = '{path}/technodata/residential/CommOut.csv'
 
 [sectors.residential.subsectors.retro_and_new]
-agents = '{path}/technodata/Agents.csv'
+agents = '{path}/technodata/residential/Agents.csv'
 existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
 lpsolver = "scipy"  # Optional, defaults to "adhoc" 
 constraints = [  # Optional, defaults to the constraints below
@@ -85,7 +85,7 @@ commodities_in = '{path}/technodata/power/CommIn.csv'
 commodities_out = '{path}/technodata/power/CommOut.csv'
 
 [sectors.power.subsectors.trade]
-agents = '{path}/technodata/Agents.csv'
+agents = '{path}/technodata/power/Agents.csv'
 existing_capacity = '{path}/technodata/power/ExistingTrade.csv'
 lpsolver = "scipy"
 demand_share = "unmet_forecasted_demand"
@@ -111,7 +111,7 @@ commodities_in = '{path}/technodata/gas/CommIn.csv'
 commodities_out = '{path}/technodata/gas/CommOut.csv'
 
 [sectors.gas.subsectors.retro_and_new]
-agents = '{path}/technodata/Agents.csv'
+agents = '{path}/technodata/gas/Agents.csv'
 existing_capacity = '{path}/technodata/gas/ExistingCapacity.csv'
 lpsolver = "scipy"
 

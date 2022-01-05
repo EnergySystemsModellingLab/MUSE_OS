@@ -30,3 +30,17 @@ windturbine,R1,2045,0,0
 windturbine,R2,2045,0,0
 windturbine,R1,2050,0,0
 windturbine,R2,2050,0,0
+solarPV,R1,2020,10,10
+solarPV,R2,2020,10,10
+solarPV,R1,2025,10,10
+solarPV,R2,2025,10,10
+solarPV,R1,2030,0,0
+solarPV,R2,2030,0,0
+solarPV,R1,2035,0,0
+solarPV,R2,2035,0,0
+solarPV,R1,2040,0,0
+solarPV,R2,2040,0,0
+solarPV,R1,2045,0,0
+solarPV,R2,2045,0,0
+solarPV,R1,2050,0,0
+solarPV,R2,2050,0,0
