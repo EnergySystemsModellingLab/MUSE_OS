@@ -88,6 +88,7 @@ commodities_out = '{path}/technodata/power/CommOut.csv'
 agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/power/ExistingTrade.csv'
 lpsolver = "scipy"
+demand_share = "unmet_forecasted_demand"
 
 [[sectors.power.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
