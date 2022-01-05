@@ -1,0 +1,9 @@
+ProcessName,RegionName,Parameter,Unit,R1,R2
+gasCCGT,R1,cap_par,MUSD/PJ,28.29,56.58
+windturbine,R1,cap_par,MUSD/PJ,43.2,0
+gasCCGT,R2,cap_par,MUSD/PJ,57.08,28.54
+windturbine,R2,cap_par,MUSD/PJ,0,43.57
+gasCCGT,R1,fix_par,MUSD/PJ,2.829,5.658
+windturbine,R1,fix_par,MUSD/PJ,0,0
+gasCCGT,R2,fix_par,MUSD/PJ,5.708,2.854
+windturbine,R2,fix_par,MUSD/PJ,0,0

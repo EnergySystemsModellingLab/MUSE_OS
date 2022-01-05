@@ -78,13 +78,15 @@ type = 'default'
 priority = 2
 dispatch_production = 'share'
 
+[sectors.power.technodata]
 technodata = '{path}/technodata/power/Technodata.csv'
+trade = '{path}/technodata/power/TradeTechnodata.csv'
 commodities_in = '{path}/technodata/power/CommIn.csv'
 commodities_out = '{path}/technodata/power/CommOut.csv'
 
-[sectors.power.subsectors.retro_and_new]
+[sectors.power.subsectors.trade]
 agents = '{path}/technodata/Agents.csv'
-existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
+existing_capacity = '{path}/technodata/power/ExistingTrade.csv'
 lpsolver = "scipy"
 
 [[sectors.power.outputs]]
@@ -93,9 +95,9 @@ quantity = "capacity"
 sink = 'csv'
 overwrite = true
 
-[[sectors.power.interactions]] 
-net = 'new_to_retro'
-interaction = 'transfer'
+# [[sectors.power.interactions]] 
+# net = 'new_to_retro'
+# interaction = 'transfer'
 
 
 [sectors.gas]
