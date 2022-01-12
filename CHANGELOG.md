@@ -12,6 +12,7 @@
 - None
 
 ## Bug fixes
+- Update the documentation to include a tutorial for implementing trade.
 - Update the documentation on adding spend limit constraint description ([#941] (https://github.com/SGIModel/StarMuse/issues/941))
 - Update the documentation on index redundancies ([#936] (https://github.com/SGIModel/StarMuse/issues/936))
 - Update the documentation on timeslice file removed ([#935] (https://github.com/SGIModel/StarMuse/issues/935))
