@@ -56,9 +56,9 @@ class LegacySector(AbstractSector):  # type: ignore
 
         path = settings.global_input_files.regions
         regions = pd.read_csv(path).sort_index(ascending=True)
-
         global_commodities = read_technologies(
             Path(sector.technodata_path) / f"technodata{name.title()}.csv",
+            None,
             Path(sector.technodata_path) / f"commOUTtechnodata{name.title()}.csv",
             Path(sector.technodata_path) / f"commINtechnodata{name.title()}.csv",
             commodities=settings.global_input_files.global_commodities,
@@ -129,7 +129,6 @@ class LegacySector(AbstractSector):  # type: ignore
 
         msg = "LegacySector {} created successfully.".format(name)
         getLogger(__name__).info(msg)
-
         return cls(
             name,
             old_sector,
@@ -262,7 +261,9 @@ class LegacySector(AbstractSector):  # type: ignore
             if self.mode == "Calibration":
                 params += [self.market_iterative]
                 result = self.old_sector.power_calibration(*params, **inouts)
+                self.mode = "Iteration"
             else:
+                self.mode = "Iteration"
                 params += [self.old_sector.instance, self.market_iterative, self.excess]
                 result = self.old_sector.runprocessmodule(*params, **inouts)
         else:

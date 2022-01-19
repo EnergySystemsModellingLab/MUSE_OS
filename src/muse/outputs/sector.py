@@ -103,6 +103,7 @@ def _factory(
 
         if year is None:
             year = int(market.year.min())
+
         return [
             sink(quantity(market, *args), year=year)
             for quantity, sink in zip(quantities, sinks)
@@ -149,18 +150,6 @@ def capacity(
     return result[result.capacity != 0]
 
 
-@register_output_quantity
-def llcoe(
-    market: xr.Dataset,
-    llcoe: xr.DataArray,
-    technologies: xr.Dataset,
-    rounding: int = 4,
-) -> pd.DataFrame:
-    """Current llcoe."""
-    result = llcoe.to_dataframe().round(rounding)
-    return result
-
-
 def market_quantity(
     quantity: xr.DataArray,
     sum_over: Optional[Union[Text, List[Text]]] = None,
@@ -192,8 +181,9 @@ def consumption(
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current consumption."""
+    moutput = market.copy(deep=True).reset_index("timeslice")
     result = (
-        market_quantity(market.consumption, sum_over=sum_over, drop=drop)
+        market_quantity(moutput.consumption, sum_over=sum_over, drop=drop)
         .rename("consumption")
         .to_dataframe()
         .round(rounding)
@@ -211,8 +201,10 @@ def supply(
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current supply."""
+
+    moutput = market.copy(deep=True).reset_index("timeslice")
     result = (
-        market_quantity(market.supply, sum_over=sum_over, drop=drop)
+        market_quantity(moutput.supply, sum_over=sum_over, drop=drop)
         .rename("supply")
         .to_dataframe()
         .round(rounding)

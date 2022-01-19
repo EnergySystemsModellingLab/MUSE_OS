@@ -71,6 +71,7 @@ def copy_model(
     from shutil import rmtree
 
     if name.lower() not in {
+        "default_timeslice",
         "default",
         "multiple-agents",
         "medium",
@@ -94,6 +95,8 @@ def copy_model(
 
     if name.lower() == "default":
         _copy_default(path)
+    elif name.lower() == "default_timeslice":
+        _copy_default_timeslice(path)
     elif name.lower() == "medium":
         _copy_medium(path)
     elif name.lower() == "multiple-agents":
@@ -272,6 +275,23 @@ def _copy_default(path: Path):
     copytree(example_data_dir() / "default" / "input", path / "input")
     copytree(example_data_dir() / "default" / "technodata", path / "technodata")
     copyfile(example_data_dir() / "default" / "settings.toml", path / "settings.toml")
+
+
+def _copy_default_timeslice(path: Path):
+    from shutil import copytree, copyfile
+
+    copytree(example_data_dir() / "default_timeslice" / "input", path / "input")
+    copytree(
+        example_data_dir() / "default_timeslice" / "technodata", path / "technodata"
+    )
+    copyfile(
+        example_data_dir() / "default_timeslice" / "settings.toml",
+        path / "settings.toml",
+    )
+    copyfile(
+        example_data_dir() / "default_timeslice" / "output.py",
+        path / "output.py",
+    )
 
 
 def _copy_multiple_agents(path: Path):

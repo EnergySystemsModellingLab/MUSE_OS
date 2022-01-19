@@ -341,18 +341,38 @@ def maturity(
 
     Specifically, the market share refers to the capacity for each end- use.
     """
-    from muse.commodities import is_enduse
-
     capacity = agent.filter_input(market.capacity, year=agent.year)
-    outputs = agent.filter_input(
-        technologies.fixed_outputs,
-        year=agent.year,
-        commodity=is_enduse(technologies.comm_usage),
+    total_capacity = capacity.sum("technology")
+    enduse_market_share = agent.maturity_threshhold * total_capacity
+    condition = enduse_market_share <= capacity
+    techs = (
+        condition.technology.where(condition, drop=True).drop_vars("technology").values
     )
-    enduse_production = (capacity * outputs).sum("technology")
-    enduse_market_share = agent.maturity_threshhold * enduse_production
+    replacement = search_space.sel(replacement=techs)
+    return search_space & replacement
 
-    return search_space & (enduse_market_share <= capacity).all("commodity")
+
+@register_filter
+def spend_limit(
+    agent: Agent,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
+    market: xr.Dataset,
+    enduse_label: Text = "service",
+    **kwargs
+) -> xr.DataArray:
+    """Only allows technologies that have achieve a given market share.
+
+    Specifically, the market share refers to the capacity for each end- use.
+    """
+    spend_limit = agent.spend_limit
+    unit_capex = agent.filter_input(technologies.cap_par, year=agent.year)
+    condition = (unit_capex <= spend_limit).rename("spend_limit")
+    techs = (
+        condition.technology.where(condition, drop=True).drop_vars("technology").values
+    )
+    replacement = search_space.sel(replacement=techs)
+    return search_space & replacement
 
 
 @register_filter
@@ -376,7 +396,6 @@ def compress(
         condition = search_space
     else:
         condition = search_space.any("asset")
-
     return search_space.sel(replacement=condition)
 
 

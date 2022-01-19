@@ -1,0 +1,7 @@
+ProcessName,RegionName,Unit,2010,2020,2030,2040,2050
+gasboiler,R1,PJ/y,946.8,473.4,0,0,0
+heatpump,R1,PJ/y,0,0,0,0,0
+gasboiler,R2,PJ/y,298.8,149.4,0,0,0
+heatpump,R2,PJ/y,0,0,0,0,0
+gasboiler,R3,PJ/y,7267.2,3633.6,0,0,0
+heatpump,R3,PJ/y,0,0,0,0,0

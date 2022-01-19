@@ -240,6 +240,10 @@ def to_csv(
     params.update({"float_format": "%.11f"})
     if isinstance(quantity, xr.DataArray):
         quantity = quantity.to_dataframe()
+    par_list = [i for i in params.keys()]
+    if len(par_list) > 0:
+        if "columns" in par_list:
+            quantity = quantity.reset_index()
     quantity.to_csv(filename, **params)
 
 
@@ -325,7 +329,7 @@ class YearlyAggregate:
         if self.aggregate is None:
             self.aggregate = dataframe
         else:
-            self.aggregate = pd.concat((self.aggregate, dataframe))
+            self.aggregate = pd.concat((self.aggregate, dataframe), sort=True)
         assert self.aggregate is not None
         if getattr(data, "name", None) is not None:
             self.aggregate.name = data.name

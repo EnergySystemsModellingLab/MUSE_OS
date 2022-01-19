@@ -26,8 +26,8 @@ tolerance_unmet_demand = -0.1
     sink.name = "aggregate"
     sink.sink.name = "csv"
     sink.sink.sort_index = true
-    sink.sink.index = false
-    sink.sink.keep_columns = [ "year", "region", "technology", "capacity"]
+    index = false
+    sink.sink.keep_columns = ['technology', 'dst_region', 'region', 'agent', 'sector', 'type', 'year', 'capacity']
     filename = "{cwd}/Results/Capacities.csv"
 
 [carbon_budget_control]
@@ -41,7 +41,6 @@ tolerance_unmet_demand = -0.1
     type = 'presets'
     priority = 0
     consumption_path= "{path}/technodata/preset/*Consumption.csv"
-
 
 [sectors.residential]
     type = 'default'
@@ -67,6 +66,7 @@ tolerance_unmet_demand = -0.1
         demand_share = "new_and_retro"
         forecast = 5
         asset_threshhold = 1e-4
+
 
     [[sectors.residential.outputs]]
         filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
