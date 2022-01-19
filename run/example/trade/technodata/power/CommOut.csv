@@ -1,0 +1,8 @@
+ProcessName,RegionName,Time,Level,electricity,gas,heat,CO2f,wind
+Unit,-,Year,-,PJ/PJ,PJ/PJ,PJ/PJ,kt/PJ,PJ/PJ
+gasCCGT,R1,2010,fixed,1,0,0,91.66666667,0
+windturbine,R1,2010,fixed,1,0,0,0,0
+gasCCGT,R2,2010,fixed,1,0,0,91.66666667,0
+windturbine,R2,2010,fixed,1,0,0,0,0
+gasCCGT,R3,2010,fixed,1,0,0,91.66666667,0
+windturbine,R3,2010,fixed,1,0,0,0,0

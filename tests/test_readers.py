@@ -176,26 +176,17 @@ def test_check_plugins(settings: dict, plugins: Path):
         check_plugins(settings)
 
 
-@mark.sgidata
-@mark.legacy
-def test_load_residential_settings(residential_input_file: Path):
-    """Tests the whole loading settings function."""
-    from muse.readers.toml import read_settings
-
-    read_settings(residential_input_file)
-
-
 def test_check_iteration_control(settings: dict):
     """Tests the whole loading settings function."""
     from muse.readers.toml import check_iteration_control
 
-    settings["expect_equilibrium"] = "off"
+    settings["equilibrium"] = "off"
     settings["maximum_iterations"] = 7
     check_iteration_control(settings)
 
-    assert not settings["expect_equilibrium"]
+    assert not settings["equilibrium"]
 
-    settings["expect_equilibrium"] = True
+    settings["equilibrium"] = True
     settings["maximum_iterations"] = -1
     with raises(AssertionError):
         check_iteration_control(settings)

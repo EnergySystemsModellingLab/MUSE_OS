@@ -1,0 +1,7 @@
+,RegionName,ProcessName,Timeslice,electricity,gas,heat,CO2f,wind
+0,R1,gasboiler,1,0,0,3,0,0
+1,R1,gasboiler,2,0,0,4.5,0,0
+2,R1,gasboiler,3,0,0,3,0,0
+3,R1,gasboiler,4,0,0,4.5,0,0
+4,R1,gasboiler,5,0,0,9,0,0
+5,R1,gasboiler,6,0,0,6,0,0

@@ -207,10 +207,10 @@ def new_and_retro(
                     {\sum_{i, t, \iota}\mathcal{D}_{t, c, \iota}^{i, r}(y)}
 
 
-    Note that tin the last two steps, the assets owned by the agent are aggregated over
+    Note that in the last two steps, the assets owned by the agent are aggregated over
     the installation year. The effect is that the demand serviced by agents is
     disaggregated over each technology, rather than not over each *model* of each
-    technology.
+    technology (asset).
 
     .. SeeAlso::
 
@@ -223,6 +223,13 @@ def new_and_retro(
     from muse.commodities import is_enduse
     from muse.utilities import reduce_assets, agent_concatenation
     from muse.quantities import maximum_production
+
+    def decommissioning(capacity):
+        from muse.quantities import decommissioning_demand
+
+        return decommissioning_demand(
+            technologies, capacity, year=[current_year, current_year + forecast]
+        ).squeeze("year")
 
     if current_year is None:
         current_year = market.year.min()
@@ -237,16 +244,18 @@ def new_and_retro(
         current_year=current_year,
         forecast=forecast,
     )
+
     demands = demands.where(
         is_enduse(technologies.comm_usage.sel(commodity=demands.commodity)), 0
     )
 
-    def decommissioning(capacity):
-        from muse.quantities import decommissioning_demand
+    quantity = {
+        agent.name: agent.quantity for agent in agents if agent.category != "retrofit"
+    }
 
-        return decommissioning_demand(
-            technologies, capacity, year=[current_year, current_year + forecast]
-        ).squeeze("year")
+    for agent in agents:
+        if agent.category == "retrofit":
+            setattr(agent, "quantity", quantity[agent.name])
 
     id_to_share: MutableMapping[Hashable, xr.DataArray] = {}
     for region in demands.region.values:
@@ -256,20 +265,38 @@ def new_and_retro(
             for agent in agents
             if agent.category == "retrofit" and agent.region == region
         }
-        retro_demands: MutableMapping[Hashable, xr.DataArray] = _inner_split(
-            retro_capacity, demands.retrofit.sel(region=region), decommissioning
-        )
-        id_to_share.update(retro_demands)
 
         name_to_id = {
             (agent.name, agent.region): agent.uuid
             for agent in agents
             if agent.category == "retrofit" and agent.region == region
         }
+
+        id_to_rquantity = {
+            agent.uuid: (agent.name, agent.region, agent.quantity)
+            for agent in agents
+            if agent.category == "retrofit" and agent.region == region
+        }
+
+        retro_demands: MutableMapping[Hashable, xr.DataArray] = _inner_split(
+            retro_capacity,
+            demands.retrofit.sel(region=region),
+            decommissioning,
+            id_to_rquantity,
+        )
         assert len(name_to_id) == len(retro_capacity)
+
+        id_to_share.update(retro_demands)
+
         new_capacity: Mapping[Hashable, xr.DataArray] = {
             agent.uuid: retro_capacity[name_to_id[(agent.name, agent.region)]]
-            * getattr(agent, "quantity", 0.3)
+            #            * agent.quantity
+            for agent in agents
+            if agent.category != "retrofit" and agent.region == region
+        }
+
+        id_to_nquantity = {
+            agent.uuid: (agent.name, agent.region, agent.quantity)
             for agent in agents
             if agent.category != "retrofit" and agent.region == region
         }
@@ -277,8 +304,11 @@ def new_and_retro(
             new_capacity,
             demands.new.sel(region=region),
             partial(maximum_production, technologies=regional_techs, year=current_year),
+            id_to_nquantity,
         )
+
         id_to_share.update(new_demands)
+
     result = cast(xr.DataArray, agent_concatenation(id_to_share))
     return result
 
@@ -316,7 +346,10 @@ def unmet_forecasted_demand(
 
 
 def _inner_split(
-    assets: Mapping[Hashable, xr.DataArray], demand: xr.DataArray, method: Callable
+    assets: Mapping[Hashable, xr.DataArray],
+    demand: xr.DataArray,
+    method: Callable,
+    quantity: Mapping,
 ) -> MutableMapping[Hashable, xr.DataArray]:
     r"""compute share of the demand for a set of agents.
 
@@ -333,13 +366,21 @@ def _inner_split(
         for key, capacity in assets.items()
     }
     total = sum(shares.values()).sum("asset")  # type: ignore
+
     unassigned = (
         demand / (len(shares) * len(cast(xr.DataArray, sum(shares.values())).asset))
     ).where(logical_and(demand > 1e-12, total <= 1e-12), 0)
-    return {
-        key: ((share / total).fillna(0) * demand).fillna(0) + unassigned
-        for key, share in shares.items()
+
+    totals = {
+        key: (share / share.sum("asset")).fillna(0) for key, share in shares.items()
     }
+
+    newshares = {
+        key: (total * quantity[key][2] * demand).fillna(0)
+        + unassigned * quantity[key][2]
+        for key, total in totals.items()
+    }
+    return newshares
 
 
 def unmet_demand(
@@ -365,7 +406,6 @@ def unmet_demand(
 
     prod_method = production if callable(production) else prod_factory(production)
     assert callable(prod_method)
-
     produced = prod_method(market=market, capacity=capacity, technologies=technologies)
     if "dst_region" in produced.dims:
         produced = produced.sum("asset").rename(dst_region="region")
@@ -383,7 +423,7 @@ def new_consumption(
     current_year: Optional[int] = None,
     forecast: int = 5,
 ) -> xr.DataArray:
-    r""" Computes share of the demand attributed to new agents.
+    r"""Computes share of the demand attributed to new agents.
 
     The new agents service the demand that can be attributed specificaly to growth and
     that cannot be serviced by existing assets. In other words:
@@ -398,6 +438,7 @@ def new_consumption(
     Where :math:`P` is a production function taking the market and assets as arguments.
     """
     from muse.timeslices import convert_timeslice, QuantityType
+    from numpy import minimum
 
     if current_year is None:
         current_year = market.year.min()
@@ -405,15 +446,20 @@ def new_consumption(
     ts_capa = convert_timeslice(
         capacity.interp(year=current_year), market.timeslice, QuantityType.EXTENSIVE
     )
+    ts_capa = convert_timeslice(
+        capacity.interp(year=current_year + forecast),
+        market.timeslice,
+        QuantityType.EXTENSIVE,
+    )
     assert isinstance(ts_capa, xr.DataArray)
     market = market.interp(year=[current_year, current_year + forecast])
     current = market.sel(year=current_year, drop=True)
     forecasted = market.sel(year=current_year + forecast, drop=True)
 
     delta = (forecasted.consumption - current.consumption).clip(min=0)
-    missing = unmet_demand(forecasted, ts_capa, technologies)
-
-    return delta.where(delta < missing, missing)
+    missing = unmet_demand(current, ts_capa, technologies)
+    consumption = minimum(delta, missing)
+    return consumption
 
 
 def new_and_retro_demands(
@@ -434,6 +480,8 @@ def new_and_retro_demands(
         by existing assets in the current year, as computed in :py:func:`new_demand`.
     #. the retrofit demand is everything else.
     """
+    from numpy import minimum
+
     from muse.timeslices import convert_timeslice, QuantityType
     from muse.production import factory as prod_factory
 
@@ -448,6 +496,7 @@ def new_and_retro_demands(
         market.timeslice,
         QuantityType.EXTENSIVE,
     )
+
     assert isinstance(ts_capa, xr.DataArray)
     if hasattr(ts_capa, "region") and ts_capa.region.dims == ():
         ts_capa["region"] = "asset", [str(ts_capa.region.values)] * len(ts_capa.asset)
@@ -467,11 +516,16 @@ def new_and_retro_demands(
         .groupby("region")
         .sum("asset")
     )
+    # existing asset should not execute beyond demand
+    service = minimum(
+        service, smarket.consumption.sel(year=current_year + forecast, drop=True)
+    )
     retro_demand = (
         smarket.consumption.sel(year=current_year + forecast, drop=True)
         - new_demand
         - service
     ).clip(min=0)
+
     if "year" in retro_demand.dims:
         retro_demand = retro_demand.squeeze("year")
 
