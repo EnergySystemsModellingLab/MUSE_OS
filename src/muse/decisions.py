@@ -334,5 +334,5 @@ def single_objective(
     elif len(parameters) == 3:
         params = parameters
     else:
-        raise ValueError("Incorrect format for the input 'parameters'")
+        raise ValueError("Incorrect format for the agent input 'parameters'")
     return objectives[params[0]] * coeff_sign(params[1], params[2])
