@@ -499,15 +499,21 @@ def read_csv_agent_parameters(filename) -> List:
         sorting = row[[i.startswith("Objsort") for i in row.index]]
 
         if len(objectives) != len(floats) or len(objectives) != len(sorting):
-            raise ValueError(f"Agent Objective, ObjData, and Objsort columns are inconsistent in {filename}")
+            raise ValueError(
+                f"Agent Objective, ObjData, and Objsort columns are inconsistent in {filename}"
+            )
         objectives = objectives.dropna().to_list()
         for u in objectives:
             if not issubclass(type(u), str):
-                raise ValueError(f"Agent Objective requires a string entry in {filename}")
+                raise ValueError(
+                    f"Agent Objective requires a string entry in {filename}"
+                )
         sort = sorting.dropna().to_list()
         for u in sort:
             if not issubclass(type(u), bool):
-                raise ValueError(f"Agent Objsort requires a boolean entry in {filename}")
+                raise ValueError(
+                    f"Agent Objsort requires a boolean entry in {filename}"
+                )
         floats = floats.dropna().to_list()
         for u in floats:
             if not issubclass(type(u), (int, float)):
