@@ -335,4 +335,5 @@ def single_objective(
         params = parameters
     else:
         raise ValueError("Incorrect format for the input 'parameters'")
+    print(coeff_sign(params[1], params[2]), params[1], params[2])
     return objectives[params[0]] * coeff_sign(params[1], params[2])
