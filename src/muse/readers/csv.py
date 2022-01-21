@@ -500,7 +500,7 @@ def read_csv_agent_parameters(filename) -> List:
 
         if len(objectives) != len(floats) or len(objectives) != len(sorting):
             raise ValueError(
-                f"Agent Objective, ObjData, and Objsort columns are inconsistent in {filename}"
+                f"Agent Objective, ObjData, and Objsort columns are inconsistent in {filename}"  # noqa: E501
             )
         objectives = objectives.dropna().to_list()
         for u in objectives:
