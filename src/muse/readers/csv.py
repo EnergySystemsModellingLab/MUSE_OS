@@ -497,11 +497,31 @@ def read_csv_agent_parameters(filename) -> List:
         objectives = row[[i.startswith("Objective") for i in row.index]]
         floats = row[[i.startswith("ObjData") for i in row.index]]
         sorting = row[[i.startswith("Objsort") for i in row.index]]
+
         if len(objectives) != len(floats) or len(objectives) != len(sorting):
-            raise ValueError("Objective, ObjData, and Objsort columns are inconsistent")
+            raise ValueError(
+                f"Agent Objective, ObjData, and Objsort columns are inconsistent in {filename}"  # noqa: E501
+            )
+        objectives = objectives.dropna().to_list()
+        for u in objectives:
+            if not issubclass(type(u), str):
+                raise ValueError(
+                    f"Agent Objective requires a string entry in {filename}"
+                )
+        sort = sorting.dropna().to_list()
+        for u in sort:
+            if not issubclass(type(u), bool):
+                raise ValueError(
+                    f"Agent Objsort requires a boolean entry in {filename}"
+                )
+        floats = floats.dropna().to_list()
+        for u in floats:
+            if not issubclass(type(u), (int, float)):
+                raise ValueError(f"Agent ObjData requires a float entry in {filename}")
         decision_params = [
             u for u in zip(objectives, sorting, floats) if isinstance(u[0], Text)
         ]
+
         agent_type = {
             "new": "newcapa",
             "newcapa": "newcapa",
@@ -858,31 +878,6 @@ def read_finite_resources(path: Union[Text, Path]) -> xr.DataArray:
     data.set_index(indices, inplace=True)
 
     return xr.Dataset.from_dataframe(data).to_array(dim="commodity")
-
-
-# def check_utilization_not_all_zero(csv):
-#     process_factors = (
-#         csv[1:]
-#         .groupby("process_name")
-#         .utilization_factor.nunique()
-#         .apply(lambda x: float(x))
-#     )
-
-#     if process_factors[process_factors == 1].any():
-#         single_UF = process_factors[process_factors == 1]
-#         result = (
-#             csv[1:][csv.process_name.isin(single_UF.index)]
-#             .groupby("process_name")
-#             .utilization_factor.unique()
-#             .apply(lambda x: float(x))
-#             .eq(0)
-#             .all()
-#         )
-
-#     else:
-#         result = False
-
-#     result
 
 
 def check_utilization_not_all_zero(data, filename):
