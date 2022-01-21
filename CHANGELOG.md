@@ -1,7 +1,7 @@
 # Version - Development
 
 ## Features
-
+- Introduces a check on the type of the data defining the objectives (string for Objective, float/int for ObjData, and Boolean for Objsort) ([#945] https://github.com/SGIModel/StarMuse/issues/945])
 - Updates the documentation to use the most recent version of MUSE ([#922](https://github.com/SGIModel/StarMuse/pull/922))
 
 - Introduces the CHANGELOG file and PR template
