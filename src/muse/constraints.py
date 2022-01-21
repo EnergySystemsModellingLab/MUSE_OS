@@ -951,7 +951,7 @@ class ScipyAdapter:
     @property
     def kwargs(self):
         return {
-            "c": -self.c,
+            "c": self.c,
             "A_eq": self.A_eq,
             "b_eq": self.b_eq,
             "A_ub": self.A_ub,
