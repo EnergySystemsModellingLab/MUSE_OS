@@ -454,6 +454,10 @@ agents
     Path to a csv file describing the agents in the sector.
     See :ref:`inputs-agents`.
 
+lpsolver
+   This is the optimisation solver used to make investment decisions. The two options
+   available for this are "adhoc" or "scipy" solvers. 
+
 
 --------------
 Preset sectors
