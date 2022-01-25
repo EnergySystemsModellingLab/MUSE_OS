@@ -456,7 +456,8 @@ agents
 
 lpsolver
    This is the optimisation solver used to make investment decisions. The two options
-   available for this are "adhoc" or "scipy" solvers. 
+   available for this are "adhoc" or "scipy" solvers. The "scipy" solver should be used
+   when introducing minimum constraints and using the trade functionality.
 
 
 --------------
