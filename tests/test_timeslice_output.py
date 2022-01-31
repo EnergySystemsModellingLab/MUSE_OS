@@ -73,8 +73,8 @@ def test_fullsim_timeslices(tmpdir, utilization_factors, process_name):
 @mark.parametrize(
     "utilization_factors",
     [
-        ([0, 0, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1]),
-        ([1, 1, 1, 1, 1, 1], [1, 1, 0, 0, 1, 1]),
+        ([0.0001, 0.0001, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1]),
+        ([1, 1, 1, 1, 1, 1], [1, 1, 0.0001, 0.0001, 1, 1]),
     ],
 )
 @mark.parametrize("process_name", [("gasCCGT", "windturbine")])

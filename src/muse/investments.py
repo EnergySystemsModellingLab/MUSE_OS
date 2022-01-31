@@ -299,7 +299,7 @@ def scipy_match_demand(
         techs = technologies
     timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
     adapter = ScipyAdapter.factory(
-        techs, -cast(np.ndarray, costs), timeslice, *constraints
+        techs, cast(np.ndarray, costs), timeslice, *constraints
     )
 
     res = linprog(**adapter.kwargs, options=dict(disp=False, sym_pos=False))
