@@ -595,13 +595,24 @@ def lp_costs(
         commodity=is_enduse(technologies.comm_usage),
         technology=technologies.technology.isin(costs.replacement),
     )
+
     if "region" in technologies.fixed_outputs.dims and "region" in ts_costs.coords:
         selection["region"] = ts_costs.region
     fouts = technologies.fixed_outputs.sel(selection).rename(technology="replacement")
+
+    # lpcosts.dims = Frozen({'asset': 2,
+    #                   'replacement': 2,
+    #                   'timeslice': 3,
+    #                   'commodity': 1})
+    # muse38: lpcosts.dims = Frozen({'asset': 2, ,
+    #                                'commodity': 1
+    #                                'replacement': 2,
+    #                                'timeslice': 3})
     production = zeros_like(ts_costs * fouts)
     for dim in production.dims:
         if isinstance(production.get_index(dim), pd.MultiIndex):
             production[dim] = pd.Index(production.get_index(dim), tupleize_cols=False)
+
     return xr.Dataset(dict(capacity=costs, production=production))
 
 
@@ -779,19 +790,27 @@ def lp_constraint_matrix(
     from functools import reduce
 
     result = constraint.sum(set(constraint.dims) - set(lpcosts.dims) - set(b.dims))
+
     result = result.rename(
         {k: f"d({k})" for k in set(result.dims).intersection(lpcosts.dims)}
     )
     result = result.rename(
         {k: f"c({k})" for k in set(result.dims).intersection(b.dims)}
     )
-
     expand = set(lpcosts.dims) - set(constraint.dims) - set(b.dims)
+
+    if expand == {"timeslice", "asset", "commodity"}:
+        expand = ["asset", "timeslice", "commodity"]
+
     result = result.expand_dims({f"d({k})": lpcosts[k] for k in expand})
     expand = set(b.dims) - set(constraint.dims) - set(lpcosts.dims)
+
     result = result.expand_dims({f"c({k})": b[k] for k in expand})
 
     diag_dims = set(b.dims).intersection(lpcosts.dims)
+
+    diag_dims = sorted(diag_dims)
+
     if diag_dims:
 
         def get_dimension(dim):
@@ -809,7 +828,9 @@ def lp_constraint_matrix(
             )
             for k in diag_dims
         ]
+
         result = result * reduce(xr.DataArray.__mul__, diagonal_submats)
+
     return result
 
 
@@ -937,10 +958,265 @@ class ScipyAdapter:
     ) -> ScipyAdapter:
 
         lpcosts = lp_costs(technologies, costs, timeslices)
+
         data = cls._unified_dataset(technologies, lpcosts, *constraints)
+        if hasattr(data, "production"):
+            new_dims = [
+                "d(asset)",
+                "d(commodity)",
+                "d(replacement)",
+                "d(timeslice)",
+            ]
+            new_dims_tr = [
+                "d(agent)",
+                "d(commodity)",
+                "d(dst_region)",
+                "d(replacement)",
+                "d(timeslice)",
+                "d(year)",
+            ]
+            if sorted(new_dims) == sorted(data.production.dims):
+                data["production"] = data.production.transpose(*new_dims)
+            if sorted(new_dims_tr) == sorted(data.production.dims):
+                data["production"] = data.production.transpose(*new_dims_tr)
+
+        if hasattr(data, "production0"):
+            new_dims = [
+                "c(asset)",
+                "c(commodity)",
+                "c(replacement)",
+                "c(timeslice)",
+                "d(asset)",
+                "d(commodity)",
+                "d(replacement)",
+                "d(timeslice)",
+            ]
+            new_dims_tr = [
+                "c(agent)",
+                "c(commodity)",
+                "c(dst_region)",
+                "c(replacement)",
+                "c(timeslice)",
+                "d(agent)",
+                "d(commodity)",
+                "d(dst_region)",
+                "d(replacement)",
+                "d(timeslice)",
+                "d(year)",
+            ]
+            if sorted(new_dims) == sorted(data.production0.dims):
+                data["production0"] = data.production0.transpose(*new_dims)
+            if sorted(new_dims_tr) == sorted(data.production0.dims):
+                data["production0"] = data.production0.transpose(*new_dims_tr)
+
+        if hasattr(data, "production1"):
+            new_dims = [
+                "c(replacement)",
+                "d(asset)",
+                "d(commodity)",
+                "d(replacement)",
+                "d(timeslice)",
+            ]
+            new_dims_tr = [
+                "c(dst_region)",
+                "c(replacement)",
+                "c(src_region)",
+                "d(agent)",
+                "d(commodity)",
+                "d(dst_region)",
+                "d(replacement)",
+                "d(timeslice)",
+                "d(year)",
+            ]
+            if sorted(new_dims) == sorted(data.production1.dims):
+                data["production1"] = data.production1.transpose(*new_dims)
+            if sorted(new_dims_tr) == sorted(data.production1.dims):
+                data["production1"] = data.production1.transpose(*new_dims_tr)
+
+        if hasattr(data, "production2"):
+            new_dims = [
+                "c(asset)",
+                "c(commodity)",
+                "c(timeslice)",
+                "d(asset)",
+                "d(commodity)",
+                "d(replacement)",
+                "d(timeslice)",
+            ]
+            new_dims_tr = [
+                "c(commodity)",
+                "c(dst_region)",
+                "c(timeslice)",
+                "d(agent)",
+                "d(commodity)",
+                "d(dst_region)",
+                "d(replacement)",
+                "d(timeslice)",
+                "d(year)",
+            ]
+            if sorted(new_dims) == sorted(data.production2.dims):
+                data["production2"] = data.production2.transpose(*new_dims)
+            if sorted(new_dims_tr) == sorted(data.production2.dims):
+                data["production2"] = data.production2.transpose(*new_dims_tr)
+        if hasattr(data, "production3"):
+            new_dims = [
+                "c(asset)",
+                "c(commodity)",
+                "c(replacement)",
+                "c(timeslice)",
+                "d(asset)",
+                "d(commodity)",
+                "d(replacement)",
+                "d(timeslice)",
+            ]
+
+            if sorted(new_dims) == sorted(data.production3.dims):
+                data["production3"] = data.production3.transpose(*new_dims)
+
+        if hasattr(data, "capacity"):
+            new_dims = [
+                "d(agent)",
+                "d(dst_region)",
+                "d(replacement)",
+                "d(year)",
+            ]
+            if sorted(new_dims) == sorted(data.capacity.dims):
+                data["capacity"] = data.capacity.transpose(*new_dims)
+
+        if hasattr(data, "capacity0"):
+            new_dims = [
+                "c(asset)",
+                "c(commodity)",
+                "c(replacement)",
+                "c(timeslice)",
+                "d(asset)",
+                "d(replacement)",
+            ]
+            # change dimension for trade
+            new_dims_tr = [
+                "c(agent)",
+                "c(commodity)",
+                "c(dst_region)",
+                "c(replacement)",
+                "c(timeslice)",
+                "d(agent)",
+                "d(dst_region)",
+                "d(replacement)",
+                "d(year)",
+            ]
+            if sorted(new_dims) == sorted(data.capacity0.dims):
+                data["capacity0"] = data.capacity0.transpose(*new_dims)
+            if sorted(new_dims_tr) == sorted(data.capacity0.dims):
+                data["capacity0"] = data.capacity0.transpose(*new_dims_tr)
+
+        if hasattr(data, "capacity1"):
+            new_dims = ["c(replacement)", "d(asset)", "d(replacement)"]
+            new_dims_tr = [
+                "c(dst_region)",
+                "c(replacement)",
+                "c(src_region)",
+                "d(agent)",
+                "d(dst_region)",
+                "d(replacement)",
+                "d(year)",
+            ]
+            if sorted(new_dims) == sorted(data.capacity1.dims):
+                data["capacity1"] = data.capacity1.transpose(*new_dims)
+            if sorted(new_dims_tr) == sorted(data.capacity1.dims):
+                data["capacity1"] = data.capacity1.transpose(*new_dims_tr)
+
+        if hasattr(data, "capacity2"):
+            new_dims = [
+                "c(asset)",
+                "c(commodity)",
+                "c(timeslice)",
+                "d(asset)",
+                "d(replacement)",
+            ]
+            new_dims_tr = [
+                "c(commodity)",
+                "c(dst_region)",
+                "c(timeslice)",
+                "d(agent)",
+                "d(dst_region)",
+                "d(replacement)",
+                "d(year)",
+            ]
+            if sorted(new_dims) == sorted(data.capacity2.dims):
+                data["capacity2"] = data.capacity2.transpose(*new_dims)
+            if sorted(new_dims_tr) == sorted(data.capacity2.dims):
+                data["capacity2"] = data.capacity2.transpose(*new_dims_tr)
+
+        if hasattr(data, "capacity3"):
+            new_dims = [
+                "c(asset)",
+                "c(commodity)",
+                "c(replacement)",
+                "c(timeslice)",
+                "d(asset)",
+                "d(replacement)",
+            ]
+
+            if sorted(new_dims) == sorted(data.capacity3.dims):
+                data["capacity3"] = data.capacity3.transpose(*new_dims)
+
+        if hasattr(data, "b0"):
+            new_dims = [
+                "c(asset)",
+                "c(commodity)",
+                "c(replacement)",
+                "c(timeslice)",
+            ]
+            new_dims_tr = [
+                "c(agent)",
+                "c(commodity)",
+                "c(dst_region)",
+                "c(replacement)",
+                "c(timeslice)",
+            ]
+            if sorted(new_dims) == sorted(data.b0.dims):
+                data["b0"] = data.b0.transpose(*new_dims)
+            if sorted(new_dims_tr) == sorted(data.b0.dims):
+                data["b0"] = data.b0.transpose(*new_dims_tr)
+
+        if hasattr(data, "b1"):
+            new_dims_tr = ["c(dst_region)", "c(replacement)", "c(src_region)"]
+            if sorted(new_dims_tr) == sorted(data.b1.dims):
+                data["b1"] = data.b1.transpose(*new_dims_tr)
+
+        if hasattr(data, "b2"):
+            new_dims = [
+                "c(asset)",
+                "c(commodity)",
+                "c(timeslice)",
+            ]
+            new_dims_tr = [
+                "c(commodity)",
+                "c(dst_region)",
+                "c(timeslice)",
+            ]
+            if sorted(new_dims) == sorted(data.b2.dims):
+                data["b2"] = data.b2.transpose(*new_dims)
+            if sorted(new_dims_tr) == sorted(data.b2.dims):
+                data["b2"] = data.b2.transpose(*new_dims_tr)
+
+        if hasattr(data, "b3"):
+            new_dims = [
+                "c(asset)",
+                "c(commodity)",
+                "c(replacement)",
+                "c(timeslice)",
+            ]
+
+            if sorted(new_dims) == sorted(data.b3.dims):
+                data["b3"] = data.b3.transpose(*new_dims)
+
         capacities = cls._selected_quantity(data, "capacity")
+
         productions = cls._selected_quantity(data, "production")
+
         bs = cls._selected_quantity(data, "b")
+
         kwargs = cls._to_scipy_adapter(capacities, productions, bs, *constraints)
 
         def to_muse(x: np.ndarray) -> xr.Dataset:
@@ -967,8 +1243,13 @@ class ScipyAdapter:
         from xarray import merge
 
         assert "year" not in technologies.dims
+
+        coords = sorted([k for k in lpcosts.dims])
+        lpcosts_df = lpcosts.to_dataframe().reset_index().set_index(coords)
+        slpcosts = lpcosts_df.to_xarray()  # sorted lpcosts.dims
+
         data = merge(
-            [lpcosts.rename({k: f"d({k})" for k in lpcosts.dims})]
+            [lpcosts.rename({k: f"d({k})" for k in slpcosts.dims})]
             + [
                 lp_constraint(constraint, lpcosts).rename(
                     b=f"b{i}", capacity=f"capacity{i}", production=f"production{i}"
@@ -976,18 +1257,32 @@ class ScipyAdapter:
                 for i, constraint in enumerate(constraints)
             ]
         )
+        if hasattr(data, "capacity2"):
+            new_dims = [
+                "c(timeslice)",
+                "c(commodity)",
+                "d(replacement)",
+                "c(asset)",
+                "d(asset)",
+            ]
+            if sorted(new_dims) == sorted(data.capacity2.dims):
+                data["capacity2"] = data.capacity2.transpose(*new_dims)
+
         for i, constraint in enumerate(constraints):
             if constraint.kind == ConstraintKind.LOWER_BOUND:
                 data[f"b{i}"] = -data[f"b{i}"]  # type: ignore
                 data[f"capacity{i}"] = -data[f"capacity{i}"]  # type: ignore
                 data[f"production{i}"] = -data[f"production{i}"]  # type: ignore
+
         return data.transpose(*data.dims)
 
     @staticmethod
     def _selected_quantity(data: xr.Dataset, name: Text) -> xr.Dataset:
+
         result = cast(
             xr.Dataset, data[[u for u in data.data_vars if str(u).startswith(name)]]
         )
+
         return result.rename(
             {
                 k: ("costs" if k == name else int(str(k).replace(name, "")))
@@ -1001,6 +1296,7 @@ class ScipyAdapter:
     ):
         def reshape(matrix: xr.DataArray) -> np.ndarray:
             assert list(matrix.dims) == sorted(matrix.dims)
+
             size = np.prod(
                 [matrix[u].shape[0] for u in matrix.dims if str(u).startswith("c")]
             )
