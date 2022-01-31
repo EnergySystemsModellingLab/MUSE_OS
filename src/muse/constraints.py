@@ -1188,10 +1188,10 @@ class ScipyAdapter:
                     "c(dst_region)",
                     "c(timeslice)",
                 ]
-                if sorted(new_dims) == sorted(data.b2.dims):
-                    data["b2"] = data.b2.transpose(*new_dims)
-                if sorted(new_dims_tr) == sorted(data.b2.dims):
-                    data["b2"] = data.b2.transpose(*new_dims_tr)
+                if sorted(new_dims) == sorted(data.data[f"b{i}"].dims):
+                    data[f"b{i}"] = data[f"b{i}"].transpose(*new_dims)
+                if sorted(new_dims_tr) == sorted(data[f"b{i}"].dims):
+                    data[f"b{i}"] = data[f"b{i}"].transpose(*new_dims_tr)
 
                 new_dims = [
                     "c(asset)",
