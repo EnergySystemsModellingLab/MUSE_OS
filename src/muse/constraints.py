@@ -989,7 +989,7 @@ class ScipyAdapter:
         if sorted(new_dims) == sorted(data.capacity.dims):
             data["capacity"] = data.capacity.transpose(*new_dims)
 
-        for i in enumerate(constraints):
+        for i in range(len(constraints)):
             if hasattr(data, f"production{i}"):
                 new_dims = [
                     "c(asset)",
@@ -1017,7 +1017,9 @@ class ScipyAdapter:
                 if sorted(new_dims) == sorted(data[f"production{i}"].dims):
                     data[f"production{i}"] = data[f"production{i}"].transpose(*new_dims)
                 if sorted(new_dims_tr) == sorted(data[f"production{i}"].dims):
-                    data[f"production{i}"] = data[f"production{i}"].transpose(*new_dims_tr)  # noqa: E501
+                    data[f"production{i}"] = data[f"production{i}"].transpose(
+                        *new_dims_tr
+                    )  # noqa: E501
 
                 new_dims = [
                     "c(replacement)",
@@ -1040,7 +1042,9 @@ class ScipyAdapter:
                 if sorted(new_dims) == sorted(data[f"production{i}"].dims):
                     data[f"production{i}"] = data[f"production{i}"].transpose(*new_dims)
                 if sorted(new_dims_tr) == sorted(data[f"production{i}"].dims):
-                    data[f"production{i}"] = data[f"production{i}"].transpose(*new_dims_tr)  # noqa: E501
+                    data[f"production{i}"] = data[f"production{i}"].transpose(
+                        *new_dims_tr
+                    )  # noqa: E501
 
                 new_dims = [
                     "c(asset)",
@@ -1065,7 +1069,9 @@ class ScipyAdapter:
                 if sorted(new_dims) == sorted(data[f"production{i}"].dims):
                     data[f"production{i}"] = data[f"production{i}"].transpose(*new_dims)
                 if sorted(new_dims_tr) == sorted(data[f"production{i}"].dims):
-                    data[f"production{i}"] = data[f"production{i}"].transpose(*new_dims_tr)  # noqa: E501
+                    data[f"production{i}"] = data[f"production{i}"].transpose(
+                        *new_dims_tr
+                    )  # noqa: E501
 
                 new_dims = [
                     "c(asset)",
@@ -1102,7 +1108,7 @@ class ScipyAdapter:
                     "d(replacement)",
                     "d(year)",
                 ]
-                if sorted(new_dims) == sorted(data.data[f"capacity{i}"].dims):
+                if sorted(new_dims) == sorted(data[f"capacity{i}"].dims):
                     data[f"capacity{i}"] = data[f"capacity{i}"].transpose(*new_dims)
                 if sorted(new_dims_tr) == sorted(data[f"capacity{i}"].dims):
                     data[f"capacity{i}"] = data[f"capacity{i}"].transpose(*new_dims_tr)
@@ -1117,7 +1123,7 @@ class ScipyAdapter:
                     "d(replacement)",
                     "d(year)",
                 ]
-                if sorted(new_dims) == sorted(data.data[f"capacity{i}"].dims):
+                if sorted(new_dims) == sorted(data[f"capacity{i}"].dims):
                     data[f"capacity{i}"] = data[f"capacity{i}"].transpose(*new_dims)
                 if sorted(new_dims_tr) == sorted(data[f"capacity{i}"].dims):
                     data[f"capacity{i}"] = data[f"capacity{i}"].transpose(*new_dims_tr)
@@ -1138,7 +1144,7 @@ class ScipyAdapter:
                     "d(replacement)",
                     "d(year)",
                 ]
-                if sorted(new_dims) == sorted(data.data[f"capacity{i}"].dims):
+                if sorted(new_dims) == sorted(data[f"capacity{i}"].dims):
                     data[f"capacity{i}"] = data[f"capacity{i}"].transpose(*new_dims)
                 if sorted(new_dims_tr) == sorted(data[f"capacity{i}"].dims):
                     data[f"capacity{i}"] = data[f"capacity{i}"].transpose(*new_dims_tr)
@@ -1152,7 +1158,7 @@ class ScipyAdapter:
                     "d(replacement)",
                 ]
 
-                if sorted(new_dims) == sorted(data.data[f"capacity{i}"].dims):
+                if sorted(new_dims) == sorted(data[f"capacity{i}"].dims):
                     data[f"capacity{i}"] = data[f"capacity{i}"].transpose(*new_dims)
 
             if hasattr(data, f"b{i}"):
@@ -1169,7 +1175,7 @@ class ScipyAdapter:
                     "c(replacement)",
                     "c(timeslice)",
                 ]
-                if sorted(new_dims) == sorted(data.data[f"b{i}"].dims):
+                if sorted(new_dims) == sorted(data[f"b{i}"].dims):
                     data[f"b{i}"] = data[f"b{i}"].transpose(*new_dims)
                 if sorted(new_dims_tr) == sorted(data[f"b{i}"].dims):
                     data[f"b{i}"] = data[f"b{i}"].transpose(*new_dims_tr)
@@ -1188,7 +1194,7 @@ class ScipyAdapter:
                     "c(dst_region)",
                     "c(timeslice)",
                 ]
-                if sorted(new_dims) == sorted(data.data[f"b{i}"].dims):
+                if sorted(new_dims) == sorted(data[f"b{i}"].dims):
                     data[f"b{i}"] = data[f"b{i}"].transpose(*new_dims)
                 if sorted(new_dims_tr) == sorted(data[f"b{i}"].dims):
                     data[f"b{i}"] = data[f"b{i}"].transpose(*new_dims_tr)
@@ -1199,7 +1205,7 @@ class ScipyAdapter:
                     "c(replacement)",
                     "c(timeslice)",
                 ]
-                if sorted(new_dims) == sorted(data.data[f"b{i}"].dims):
+                if sorted(new_dims) == sorted(data[f"b{i}"].dims):
                     data[f"b{i}"] = data[f"b{i}"].transpose(*new_dims)
 
         capacities = cls._selected_quantity(data, "capacity")
