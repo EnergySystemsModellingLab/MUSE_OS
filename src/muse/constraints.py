@@ -960,256 +960,247 @@ class ScipyAdapter:
         lpcosts = lp_costs(technologies, costs, timeslices)
 
         data = cls._unified_dataset(technologies, lpcosts, *constraints)
-        if hasattr(data, "production"):
-            new_dims = [
-                "d(asset)",
-                "d(commodity)",
-                "d(replacement)",
-                "d(timeslice)",
-            ]
-            new_dims_tr = [
-                "d(agent)",
-                "d(commodity)",
-                "d(dst_region)",
-                "d(replacement)",
-                "d(timeslice)",
-                "d(year)",
-            ]
-            if sorted(new_dims) == sorted(data.production.dims):
-                data["production"] = data.production.transpose(*new_dims)
-            if sorted(new_dims_tr) == sorted(data.production.dims):
-                data["production"] = data.production.transpose(*new_dims_tr)
 
-        if hasattr(data, "production0"):
-            new_dims = [
-                "c(asset)",
-                "c(commodity)",
-                "c(replacement)",
-                "c(timeslice)",
-                "d(asset)",
-                "d(commodity)",
-                "d(replacement)",
-                "d(timeslice)",
-            ]
-            new_dims_tr = [
-                "c(agent)",
-                "c(commodity)",
-                "c(dst_region)",
-                "c(replacement)",
-                "c(timeslice)",
-                "d(agent)",
-                "d(commodity)",
-                "d(dst_region)",
-                "d(replacement)",
-                "d(timeslice)",
-                "d(year)",
-            ]
-            if sorted(new_dims) == sorted(data.production0.dims):
-                data["production0"] = data.production0.transpose(*new_dims)
-            if sorted(new_dims_tr) == sorted(data.production0.dims):
-                data["production0"] = data.production0.transpose(*new_dims_tr)
+        new_dims = [
+            "d(asset)",
+            "d(commodity)",
+            "d(replacement)",
+            "d(timeslice)",
+        ]
+        new_dims_tr = [
+            "d(agent)",
+            "d(commodity)",
+            "d(dst_region)",
+            "d(replacement)",
+            "d(timeslice)",
+            "d(year)",
+        ]
+        if sorted(new_dims) == sorted(data.production.dims):
+            data["production"] = data.production.transpose(*new_dims)
+        if sorted(new_dims_tr) == sorted(data.production.dims):
+            data["production"] = data.production.transpose(*new_dims_tr)
 
-        if hasattr(data, "production1"):
-            new_dims = [
-                "c(replacement)",
-                "d(asset)",
-                "d(commodity)",
-                "d(replacement)",
-                "d(timeslice)",
-            ]
-            new_dims_tr = [
-                "c(dst_region)",
-                "c(replacement)",
-                "c(src_region)",
-                "d(agent)",
-                "d(commodity)",
-                "d(dst_region)",
-                "d(replacement)",
-                "d(timeslice)",
-                "d(year)",
-            ]
-            if sorted(new_dims) == sorted(data.production1.dims):
-                data["production1"] = data.production1.transpose(*new_dims)
-            if sorted(new_dims_tr) == sorted(data.production1.dims):
-                data["production1"] = data.production1.transpose(*new_dims_tr)
+        new_dims = [
+            "d(agent)",
+            "d(dst_region)",
+            "d(replacement)",
+            "d(year)",
+        ]
+        if sorted(new_dims) == sorted(data.capacity.dims):
+            data["capacity"] = data.capacity.transpose(*new_dims)
 
-        if hasattr(data, "production2"):
-            new_dims = [
-                "c(asset)",
-                "c(commodity)",
-                "c(timeslice)",
-                "d(asset)",
-                "d(commodity)",
-                "d(replacement)",
-                "d(timeslice)",
-            ]
-            new_dims_tr = [
-                "c(commodity)",
-                "c(dst_region)",
-                "c(timeslice)",
-                "d(agent)",
-                "d(commodity)",
-                "d(dst_region)",
-                "d(replacement)",
-                "d(timeslice)",
-                "d(year)",
-            ]
-            if sorted(new_dims) == sorted(data.production2.dims):
-                data["production2"] = data.production2.transpose(*new_dims)
-            if sorted(new_dims_tr) == sorted(data.production2.dims):
-                data["production2"] = data.production2.transpose(*new_dims_tr)
-        if hasattr(data, "production3"):
-            new_dims = [
-                "c(asset)",
-                "c(commodity)",
-                "c(replacement)",
-                "c(timeslice)",
-                "d(asset)",
-                "d(commodity)",
-                "d(replacement)",
-                "d(timeslice)",
-            ]
+        for i in enumerate(constraints):
+            if hasattr(data, f"production{i}"):
+                new_dims = [
+                    "c(asset)",
+                    "c(commodity)",
+                    "c(replacement)",
+                    "c(timeslice)",
+                    "d(asset)",
+                    "d(commodity)",
+                    "d(replacement)",
+                    "d(timeslice)",
+                ]
+                new_dims_tr = [
+                    "c(agent)",
+                    "c(commodity)",
+                    "c(dst_region)",
+                    "c(replacement)",
+                    "c(timeslice)",
+                    "d(agent)",
+                    "d(commodity)",
+                    "d(dst_region)",
+                    "d(replacement)",
+                    "d(timeslice)",
+                    "d(year)",
+                ]
+                if sorted(new_dims) == sorted(data[f"production{i}"].dims):
+                    data[f"production{i}"] = data[f"production{i}"].transpose(*new_dims)
+                if sorted(new_dims_tr) == sorted(data[f"production{i}"].dims):
+                    data[f"production{i}"] = data[f"production{i}"].transpose(*new_dims_tr)  # noqa: E501
 
-            if sorted(new_dims) == sorted(data.production3.dims):
-                data["production3"] = data.production3.transpose(*new_dims)
+                new_dims = [
+                    "c(replacement)",
+                    "d(asset)",
+                    "d(commodity)",
+                    "d(replacement)",
+                    "d(timeslice)",
+                ]
+                new_dims_tr = [
+                    "c(dst_region)",
+                    "c(replacement)",
+                    "c(src_region)",
+                    "d(agent)",
+                    "d(commodity)",
+                    "d(dst_region)",
+                    "d(replacement)",
+                    "d(timeslice)",
+                    "d(year)",
+                ]
+                if sorted(new_dims) == sorted(data[f"production{i}"].dims):
+                    data[f"production{i}"] = data[f"production{i}"].transpose(*new_dims)
+                if sorted(new_dims_tr) == sorted(data[f"production{i}"].dims):
+                    data[f"production{i}"] = data[f"production{i}"].transpose(*new_dims_tr)  # noqa: E501
 
-        if hasattr(data, "capacity"):
-            new_dims = [
-                "d(agent)",
-                "d(dst_region)",
-                "d(replacement)",
-                "d(year)",
-            ]
-            if sorted(new_dims) == sorted(data.capacity.dims):
-                data["capacity"] = data.capacity.transpose(*new_dims)
+                new_dims = [
+                    "c(asset)",
+                    "c(commodity)",
+                    "c(timeslice)",
+                    "d(asset)",
+                    "d(commodity)",
+                    "d(replacement)",
+                    "d(timeslice)",
+                ]
+                new_dims_tr = [
+                    "c(commodity)",
+                    "c(dst_region)",
+                    "c(timeslice)",
+                    "d(agent)",
+                    "d(commodity)",
+                    "d(dst_region)",
+                    "d(replacement)",
+                    "d(timeslice)",
+                    "d(year)",
+                ]
+                if sorted(new_dims) == sorted(data[f"production{i}"].dims):
+                    data[f"production{i}"] = data[f"production{i}"].transpose(*new_dims)
+                if sorted(new_dims_tr) == sorted(data[f"production{i}"].dims):
+                    data[f"production{i}"] = data[f"production{i}"].transpose(*new_dims_tr)  # noqa: E501
 
-        if hasattr(data, "capacity0"):
-            new_dims = [
-                "c(asset)",
-                "c(commodity)",
-                "c(replacement)",
-                "c(timeslice)",
-                "d(asset)",
-                "d(replacement)",
-            ]
-            # change dimension for trade
-            new_dims_tr = [
-                "c(agent)",
-                "c(commodity)",
-                "c(dst_region)",
-                "c(replacement)",
-                "c(timeslice)",
-                "d(agent)",
-                "d(dst_region)",
-                "d(replacement)",
-                "d(year)",
-            ]
-            if sorted(new_dims) == sorted(data.capacity0.dims):
-                data["capacity0"] = data.capacity0.transpose(*new_dims)
-            if sorted(new_dims_tr) == sorted(data.capacity0.dims):
-                data["capacity0"] = data.capacity0.transpose(*new_dims_tr)
+                new_dims = [
+                    "c(asset)",
+                    "c(commodity)",
+                    "c(replacement)",
+                    "c(timeslice)",
+                    "d(asset)",
+                    "d(commodity)",
+                    "d(replacement)",
+                    "d(timeslice)",
+                ]
 
-        if hasattr(data, "capacity1"):
-            new_dims = ["c(replacement)", "d(asset)", "d(replacement)"]
-            new_dims_tr = [
-                "c(dst_region)",
-                "c(replacement)",
-                "c(src_region)",
-                "d(agent)",
-                "d(dst_region)",
-                "d(replacement)",
-                "d(year)",
-            ]
-            if sorted(new_dims) == sorted(data.capacity1.dims):
-                data["capacity1"] = data.capacity1.transpose(*new_dims)
-            if sorted(new_dims_tr) == sorted(data.capacity1.dims):
-                data["capacity1"] = data.capacity1.transpose(*new_dims_tr)
+                if sorted(new_dims) == sorted(data[f"production{i}"].dims):
+                    data[f"production{i}"] = data[f"production{i}"].transpose(*new_dims)
 
-        if hasattr(data, "capacity2"):
-            new_dims = [
-                "c(asset)",
-                "c(commodity)",
-                "c(timeslice)",
-                "d(asset)",
-                "d(replacement)",
-            ]
-            new_dims_tr = [
-                "c(commodity)",
-                "c(dst_region)",
-                "c(timeslice)",
-                "d(agent)",
-                "d(dst_region)",
-                "d(replacement)",
-                "d(year)",
-            ]
-            if sorted(new_dims) == sorted(data.capacity2.dims):
-                data["capacity2"] = data.capacity2.transpose(*new_dims)
-            if sorted(new_dims_tr) == sorted(data.capacity2.dims):
-                data["capacity2"] = data.capacity2.transpose(*new_dims_tr)
+            if hasattr(data, f"capacity{i}"):
+                new_dims = [
+                    "c(asset)",
+                    "c(commodity)",
+                    "c(replacement)",
+                    "c(timeslice)",
+                    "d(asset)",
+                    "d(replacement)",
+                ]
+                # change dimension for trade
+                new_dims_tr = [
+                    "c(agent)",
+                    "c(commodity)",
+                    "c(dst_region)",
+                    "c(replacement)",
+                    "c(timeslice)",
+                    "d(agent)",
+                    "d(dst_region)",
+                    "d(replacement)",
+                    "d(year)",
+                ]
+                if sorted(new_dims) == sorted(data.data[f"capacity{i}"].dims):
+                    data[f"capacity{i}"] = data[f"capacity{i}"].transpose(*new_dims)
+                if sorted(new_dims_tr) == sorted(data[f"capacity{i}"].dims):
+                    data[f"capacity{i}"] = data[f"capacity{i}"].transpose(*new_dims_tr)
 
-        if hasattr(data, "capacity3"):
-            new_dims = [
-                "c(asset)",
-                "c(commodity)",
-                "c(replacement)",
-                "c(timeslice)",
-                "d(asset)",
-                "d(replacement)",
-            ]
+                new_dims = ["c(replacement)", "d(asset)", "d(replacement)"]
+                new_dims_tr = [
+                    "c(dst_region)",
+                    "c(replacement)",
+                    "c(src_region)",
+                    "d(agent)",
+                    "d(dst_region)",
+                    "d(replacement)",
+                    "d(year)",
+                ]
+                if sorted(new_dims) == sorted(data.data[f"capacity{i}"].dims):
+                    data[f"capacity{i}"] = data[f"capacity{i}"].transpose(*new_dims)
+                if sorted(new_dims_tr) == sorted(data[f"capacity{i}"].dims):
+                    data[f"capacity{i}"] = data[f"capacity{i}"].transpose(*new_dims_tr)
 
-            if sorted(new_dims) == sorted(data.capacity3.dims):
-                data["capacity3"] = data.capacity3.transpose(*new_dims)
+                new_dims = [
+                    "c(asset)",
+                    "c(commodity)",
+                    "c(timeslice)",
+                    "d(asset)",
+                    "d(replacement)",
+                ]
+                new_dims_tr = [
+                    "c(commodity)",
+                    "c(dst_region)",
+                    "c(timeslice)",
+                    "d(agent)",
+                    "d(dst_region)",
+                    "d(replacement)",
+                    "d(year)",
+                ]
+                if sorted(new_dims) == sorted(data.data[f"capacity{i}"].dims):
+                    data[f"capacity{i}"] = data[f"capacity{i}"].transpose(*new_dims)
+                if sorted(new_dims_tr) == sorted(data[f"capacity{i}"].dims):
+                    data[f"capacity{i}"] = data[f"capacity{i}"].transpose(*new_dims_tr)
 
-        if hasattr(data, "b0"):
-            new_dims = [
-                "c(asset)",
-                "c(commodity)",
-                "c(replacement)",
-                "c(timeslice)",
-            ]
-            new_dims_tr = [
-                "c(agent)",
-                "c(commodity)",
-                "c(dst_region)",
-                "c(replacement)",
-                "c(timeslice)",
-            ]
-            if sorted(new_dims) == sorted(data.b0.dims):
-                data["b0"] = data.b0.transpose(*new_dims)
-            if sorted(new_dims_tr) == sorted(data.b0.dims):
-                data["b0"] = data.b0.transpose(*new_dims_tr)
+                new_dims = [
+                    "c(asset)",
+                    "c(commodity)",
+                    "c(replacement)",
+                    "c(timeslice)",
+                    "d(asset)",
+                    "d(replacement)",
+                ]
 
-        if hasattr(data, "b1"):
-            new_dims_tr = ["c(dst_region)", "c(replacement)", "c(src_region)"]
-            if sorted(new_dims_tr) == sorted(data.b1.dims):
-                data["b1"] = data.b1.transpose(*new_dims_tr)
+                if sorted(new_dims) == sorted(data.data[f"capacity{i}"].dims):
+                    data[f"capacity{i}"] = data[f"capacity{i}"].transpose(*new_dims)
 
-        if hasattr(data, "b2"):
-            new_dims = [
-                "c(asset)",
-                "c(commodity)",
-                "c(timeslice)",
-            ]
-            new_dims_tr = [
-                "c(commodity)",
-                "c(dst_region)",
-                "c(timeslice)",
-            ]
-            if sorted(new_dims) == sorted(data.b2.dims):
-                data["b2"] = data.b2.transpose(*new_dims)
-            if sorted(new_dims_tr) == sorted(data.b2.dims):
-                data["b2"] = data.b2.transpose(*new_dims_tr)
+            if hasattr(data, f"b{i}"):
+                new_dims = [
+                    "c(asset)",
+                    "c(commodity)",
+                    "c(replacement)",
+                    "c(timeslice)",
+                ]
+                new_dims_tr = [
+                    "c(agent)",
+                    "c(commodity)",
+                    "c(dst_region)",
+                    "c(replacement)",
+                    "c(timeslice)",
+                ]
+                if sorted(new_dims) == sorted(data.data[f"b{i}"].dims):
+                    data[f"b{i}"] = data[f"b{i}"].transpose(*new_dims)
+                if sorted(new_dims_tr) == sorted(data[f"b{i}"].dims):
+                    data[f"b{i}"] = data[f"b{i}"].transpose(*new_dims_tr)
 
-        if hasattr(data, "b3"):
-            new_dims = [
-                "c(asset)",
-                "c(commodity)",
-                "c(replacement)",
-                "c(timeslice)",
-            ]
+                new_dims_tr = ["c(dst_region)", "c(replacement)", "c(src_region)"]
+                if sorted(new_dims_tr) == sorted(data[f"b{i}"].dims):
+                    data[f"b{i}"] = data[f"b{i}"].transpose(*new_dims_tr)
 
-            if sorted(new_dims) == sorted(data.b3.dims):
-                data["b3"] = data.b3.transpose(*new_dims)
+                new_dims = [
+                    "c(asset)",
+                    "c(commodity)",
+                    "c(timeslice)",
+                ]
+                new_dims_tr = [
+                    "c(commodity)",
+                    "c(dst_region)",
+                    "c(timeslice)",
+                ]
+                if sorted(new_dims) == sorted(data.b2.dims):
+                    data["b2"] = data.b2.transpose(*new_dims)
+                if sorted(new_dims_tr) == sorted(data.b2.dims):
+                    data["b2"] = data.b2.transpose(*new_dims_tr)
+
+                new_dims = [
+                    "c(asset)",
+                    "c(commodity)",
+                    "c(replacement)",
+                    "c(timeslice)",
+                ]
+                if sorted(new_dims) == sorted(data.data[f"b{i}"].dims):
+                    data[f"b{i}"] = data[f"b{i}"].transpose(*new_dims)
 
         capacities = cls._selected_quantity(data, "capacity")
 
@@ -1257,16 +1248,6 @@ class ScipyAdapter:
                 for i, constraint in enumerate(constraints)
             ]
         )
-        if hasattr(data, "capacity2"):
-            new_dims = [
-                "c(timeslice)",
-                "c(commodity)",
-                "d(replacement)",
-                "c(asset)",
-                "d(asset)",
-            ]
-            if sorted(new_dims) == sorted(data.capacity2.dims):
-                data["capacity2"] = data.capacity2.transpose(*new_dims)
 
         for i, constraint in enumerate(constraints):
             if constraint.kind == ConstraintKind.LOWER_BOUND:
