@@ -38,7 +38,6 @@ class MCA(object):
         Returns:
             The loaded MCA
         """
-        from numpy import array
         from logging import getLogger
         from muse.readers import read_settings
         from muse.readers.toml import convert
