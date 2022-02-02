@@ -42,7 +42,7 @@ For users
 
 MUSE is developed using python, an open-source programming language, which means that there are two steps to the installation process. First, python should be installed. Then so should MUSE.
 
-The simplest method to install python is by downloading the `Anaconda distribution`_. Make sure to choose the appropriate operating system (e.g. windows), python version 3.7, and the 64 bit installer. Once this has been done follow the steps for the anaconda installer, as prompted.
+The simplest method to install python is by downloading the `Anaconda distribution`_. Make sure to choose the appropriate operating system (e.g. windows), python version 3.8, and the 64 bit installer. Once this has been done follow the steps for the anaconda installer, as prompted.
 
 After python is installed we can install MUSE. MUSE can be installed via the `Anaconda Prompt`_ (or any terminal on Mac and Linux). This is a command-line interface to python and the python eco-system. In the anaconda prompt, run:
 
