@@ -354,7 +354,10 @@ def read_technologies(
         else:
             logger.warn("Commodities missing in global commodities file.")
 
-    result["comm_usage"] = "commodity", CommodityUsage.from_technologies(result)
+    result["comm_usage"] = (
+        "commodity",
+        CommodityUsage.from_technologies(result).values,
+    )
     result = result.set_coords("comm_usage")
     if "comm_type" in result.data_vars or "comm_type" in result.coords:
         result = result.drop_vars("comm_type")

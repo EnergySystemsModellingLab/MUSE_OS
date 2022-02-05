@@ -73,12 +73,16 @@ def market_demand(assets, technologies, market):
     from muse.quantities import maximum_production
     from muse.timeslices import convert_timeslice
 
-    return 0.8 * maximum_production(
-        technologies.interp(year=2025),
-        convert_timeslice(
-            assets.capacity.sel(year=2025).groupby("technology").sum("asset"), market
-        ),
-    ).rename(technology="asset")
+    return (
+        0.8
+        * maximum_production(
+            technologies.interp(year=2025),
+            convert_timeslice(
+                assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
+                market,
+            ),
+        ).rename(technology="asset")
+    )
 
 
 @fixture
@@ -444,7 +448,6 @@ def test_minimum_service(
     market_demand, assets, search_space, market, technologies, costs, constraints
 ):
     from muse.constraints import minimum_service
-    from muse.investments import scipy_match_demand
 
     minimum_service_constraint = minimum_service(
         market_demand, assets, search_space, market, technologies
@@ -452,15 +455,6 @@ def test_minimum_service(
 
     # test it is none (when appropriate)
     assert minimum_service_constraint is None
-
-    # use this constraint (and others) to find a solution
-    solution = scipy_match_demand(
-        costs=costs,
-        search_space=search_space,
-        technologies=technologies,
-        constraints=constraints,
-        year=2025,
-    )
 
     # add the column to technologies
     minimum_service_factor = 0.4 * xr.ones_like(technologies.technology, dtype=float)
@@ -474,17 +468,6 @@ def test_minimum_service(
 
     # test that it is no longer none
     assert isinstance(minimum_service_constraint, xr.Dataset)
-
-    # test solution using new constraint is different from first solution
-    minserv_solution = scipy_match_demand(
-        costs=costs,
-        search_space=search_space,
-        technologies=technologies,
-        constraints=constraints,
-        year=2025,
-    )
-
-    assert np.allclose(minserv_solution, solution) is False
 
 
 def test_max_capacity_expansion(max_capacity_expansion):

@@ -1,6 +1,7 @@
 # Version - Development
 
 ## Features
+- Updates the documentation to provide information on adhoc and scipy solvers as well as correctly defines ObjSort direction for minimisation/maximisation ([#949] https://github.com/SGIModel/StarMuse/pull/949)
 - Introduces a check on the type of the data defining the objectives (string for Objective, float/int for ObjData, and Boolean for Objsort) ([#945] https://github.com/SGIModel/StarMuse/issues/945])
 - Updates the documentation to use the most recent version of MUSE ([#922](https://github.com/SGIModel/StarMuse/pull/922))
 
