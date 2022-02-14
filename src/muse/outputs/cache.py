@@ -116,12 +116,14 @@ class OutputCache:
         """Save the cached data into disk and flushes cache.
 
         This method is meant to be called after each time period in the main loop of the
-        MCA, at the same time that market quantities are saved.
+        MCA, just after market quantities are saved.
 
         Args:
             year (int): Year being simulated.
         """
         for quantity, cache in self.to_save.items():
+            if len(cache) == 0:
+                continue
             self.factory[quantity](cache, year=year)
         self.to_save = {q: [] for q in self.to_save}
 

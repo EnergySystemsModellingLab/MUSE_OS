@@ -1,6 +1,7 @@
 """Test saving outputs to file."""
 from pathlib import Path
 from typing import Text
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -385,3 +386,77 @@ def test_finite_resources_in_sim(tmp_path, limits_path):
     mca = MCA.factory(read_settings(tmp_path / "model" / "settings.toml"))
     with raises(FiniteResourceException):
         mca.run()
+
+
+def test_register_output_quantity_cache():
+    from muse.outputs.cache import register_output_quantity, OUTPUT_QUANTITIES
+
+    @register_output_quantity
+    def dummy_quantity(*args):
+        pass
+
+    assert OUTPUT_QUANTITIES[dummy_quantity.__name__] == dummy_quantity
+
+
+class TestOutputCache:
+    @patch("pubsub.pub.subscribe")
+    @patch("muse.outputs.sector._factory")
+    def test_init(self, mock_factory, mock_subscribe):
+        from muse.outputs.cache import OutputCache
+
+        param = [dict(quantity="Height"), dict(quantity="Width")]
+        output_quantities = {q["quantity"]: lambda _: None for q in param}
+        output_quantities["Depth"] = lambda _: None
+        topic = "BBC Muse"
+
+        output_cache = OutputCache(
+            *param, output_quantities=output_quantities, topic=topic
+        )
+
+        assert mock_factory.call_count == len(param)
+        mock_subscribe.assert_called_once_with(output_cache.cache, topic)
+
+    @patch("pubsub.pub.subscribe")
+    @patch("muse.outputs.sector._factory")
+    def test_cache(self, mock_factory, mock_subscribe):
+        from muse.outputs.cache import OutputCache
+        import xarray as xr
+
+        param = [dict(quantity="Height"), dict(quantity="Width")]
+        output_quantities = {q["quantity"]: lambda _: None for q in param}
+        output_quantities["Depth"] = lambda _: None
+        topic = "BBC Muse"
+
+        output_cache = OutputCache(
+            *param, output_quantities=output_quantities, topic=topic
+        )
+
+        valid = xr.DataArray([], name=param[0]["quantity"])
+        not_valid = xr.DataArray([], name="Depth")
+        output_cache.cache(valid)
+        output_cache.cache(not_valid)
+
+        assert len(output_cache.to_save.get(valid.name)) == 1
+        assert len(output_cache.to_save.get(not_valid.name, [])) == 0
+
+    @patch("pubsub.pub.subscribe")
+    @patch("muse.outputs.sector._factory")
+    def test_consolidate_cache(self, mock_factory, mock_subscribe):
+        from muse.outputs.cache import OutputCache
+        import xarray as xr
+
+        param = [dict(quantity="Height"), dict(quantity="Width")]
+        output_quantities = {q["quantity"]: lambda _: None for q in param}
+        output_quantities["Depth"] = lambda _: None
+        topic = "BBC Muse"
+        year = 2042
+
+        output_cache = OutputCache(
+            *param, output_quantities=output_quantities, topic=topic
+        )
+
+        valid = xr.DataArray([], name=param[0]["quantity"])
+        output_cache.cache(valid)
+        output_cache.consolidate_cache(year)
+
+        output_cache.factory[valid.name].assert_called_once()
