@@ -80,7 +80,8 @@ class OutputCache:
         *parameters: Mapping,
         output_quantities: Optional[
             MutableMapping[Text, OUTPUT_QUANTITY_SIGNATURE]
-        ] = None
+        ] = None,
+        topic: str = "cache_quantity"
     ):
         from muse.outputs.sector import _factory
 
@@ -96,15 +97,17 @@ class OutputCache:
             for p in parameters
             if p["quantity"] in self.to_save
         }
-        pub.subscribe(self.cache, "cache_quantity")
+        pub.subscribe(self.cache, topic)
 
-    def cache(self, quantity: Text, data: xr.DataArray) -> None:
+    def cache(self, data: xr.DataArray, quantity: Optional[Text] = None) -> None:
         """Caches the data into memory for the given quantity.
 
         Args:
-            quantity (Text): The quantity this data relates to.
             data (xr.DataArray): The data to be cache.
+            quantity (Optional[Text]): The quantity this data relates to.
         """
+        quantity = quantity if quantity is not None else data.name
+
         if quantity not in self.to_save:
             return
         self.to_save[quantity].append(data.copy())
