@@ -4,9 +4,9 @@ Functions that output the state of diverse quantities at intermediate steps of t
 calculation.
 
 The core of the method is the OutputCache class that initiated by the MCA with input
-parameters defined in the TOML file (much like the existing 'output' options),
-enables a channel to "listen" for data to be cached and, after each period, saved into
-disk via the 'consolidate_cache' method.
+parameters defined in the TOML file, much like the existing 'output' options but in a
+'output_cache' list, enables a channel to "listen" for data to be cached and, after each
+period, saved into disk via the 'consolidate_cache' method.
 
 Anywhere in the code, you can write:
 
@@ -46,6 +46,8 @@ def register_output_quantity(
     """Registers a function to compute an output quantity."""
     from functools import wraps
 
+    assert function is not None
+
     @wraps(function)
     def decorated(*args, **kwargs):
         result = function(*args, **kwargs)
@@ -77,15 +79,27 @@ class OutputCache:
     "csv").
     """
 
-    def __init__(self, *parameters: Mapping):
+    def __init__(
+        self,
+        *parameters: Mapping,
+        output_quantities: Optional[
+            MutableMapping[Text, OUTPUT_QUANTITY_SIGNATURE]
+        ] = None
+    ):
         from muse.outputs.sector import _factory
 
+        output_quantities = (
+            OUTPUT_QUANTITIES if output_quantities is None else output_quantities
+        )
+
         self.to_save: Mapping[str, List[xr.DataArray]] = {
-            p["quantity"]: [] for p in parameters if p["quantity"] in OUTPUT_QUANTITIES
+            p["quantity"]: [] for p in parameters if p["quantity"] in output_quantities
         }
-        self.factory: List[Callable] = [
-            _factory(OUTPUT_QUANTITIES, p, sector_name="Cache") for p in self.to_save
-        ]
+        self.factory: Mapping[str, Callable] = {
+            p["quantity"]: _factory(output_quantities, p, sector_name="Cache")
+            for p in parameters
+            if p["quantity"] in self.to_save
+        }
         pub.subscribe(self.cache, "cache_quantity")
 
     def cache(self, quantity: Text, data: xr.DataArray) -> None:
@@ -110,7 +124,7 @@ class OutputCache:
         """
         for quantity, cache in self.to_save.items():
             self.factory[quantity](cache, year=year)
-        self.to_save = {p["quantity"]: [] for p in self.to_save}
+        self.to_save = {q: [] for q in self.to_save}
 
 
 @register_output_quantity
