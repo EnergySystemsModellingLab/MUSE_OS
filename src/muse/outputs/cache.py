@@ -40,14 +40,9 @@ OUTPUT_QUANTITIES: MutableMapping[Text, OUTPUT_QUANTITY_SIGNATURE] = {}
 
 
 @registrator(registry=OUTPUT_QUANTITIES)
-def register_output_quantity(
-    function: Optional[OUTPUT_QUANTITY_SIGNATURE] = None,
-) -> Callable:
+def register_output_quantity(function: OUTPUT_QUANTITY_SIGNATURE) -> Callable:
     """Registers a function to compute an output quantity."""
     from functools import wraps
-
-    if function is None:
-        raise ValueError("Decorated function cannot be None")
 
     @wraps(function)
     def decorated(*args, **kwargs):
