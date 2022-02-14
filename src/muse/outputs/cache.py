@@ -46,7 +46,8 @@ def register_output_quantity(
     """Registers a function to compute an output quantity."""
     from functools import wraps
 
-    assert function is not None
+    if function is None:
+        raise ValueError("Decorated function cannot be None")
 
     @wraps(function)
     def decorated(*args, **kwargs):
