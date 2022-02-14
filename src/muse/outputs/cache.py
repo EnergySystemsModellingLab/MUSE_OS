@@ -99,14 +99,17 @@ class OutputCache:
             return
         self.to_save[quantity].append(data.copy())
 
-    def consolidate_cache(self) -> None:
+    def consolidate_cache(self, year: int) -> None:
         """Save the cached data into disk and flushes cache.
 
         This method is meant to be called after each time period in the main loop of the
         MCA, at the same time that market quantities are saved.
+
+        Args:
+            year (int): Year being simulated.
         """
         for quantity, cache in self.to_save.items():
-            self.factory[quantity](cache)
+            self.factory[quantity](cache, year=year)
         self.to_save = {p["quantity"]: [] for p in self.to_save}
 
 

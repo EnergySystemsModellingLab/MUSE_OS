@@ -18,6 +18,7 @@ from xarray import Dataset, zeros_like
 
 from muse.readers import read_initial_market
 from muse.sectors import SECTORS_REGISTERED, AbstractSector
+from muse.outputs.cache import OutputCache
 
 
 class MCA(object):
@@ -60,10 +61,7 @@ class MCA(object):
                 ),
                 timeslices=settings.timeslices,
             ).sel(region=settings.regions)
-        ).interp(
-            year=settings.time_framework,
-            method=settings.interpolation_mode,
-        )
+        ).interp(year=settings.time_framework, method=settings.interpolation_mode)
 
         market["supply"] = zeros_like(market.exports)
         market["consumption"] = zeros_like(market.exports)
@@ -76,6 +74,7 @@ class MCA(object):
             getLogger(__name__).info(f"Created sector {sector}")
 
         outputs = ofactory(*getattr(settings, "outputs", []))
+        output_cache = OutputCache(*getattr(settings, "output_cache", []))
 
         extras = {
             "foresight",
@@ -106,6 +105,7 @@ class MCA(object):
             sectors=sectors,
             market=market,
             outputs=outputs,  # type: ignore
+            output_cache=output_cache,  # type: ignore
             **global_kw,
             **carbon_kw,
         )
@@ -115,6 +115,7 @@ class MCA(object):
         sectors: List[AbstractSector],
         market: Dataset,
         outputs: Optional[Callable[[List[AbstractSector], Dataset], Any]] = None,
+        output_cache: Optional[OutputCache] = None,
         time_framework: Sequence[int] = list(range(2010, 2100, 10)),
         equilibrium: bool = True,
         equilibrium_variable: Text = "demand",
@@ -181,6 +182,7 @@ class MCA(object):
         self.carbon_method = CARBON_BUDGET_METHODS[carbon_method]
         self.method_options = method_options
         self.outputs = ofactory() if outputs is None else outputs
+        self.output_cache = OutputCache() if output_cache is None else output_cache
 
     def find_equilibrium(
         self,
@@ -355,6 +357,7 @@ class MCA(object):
             self.outputs(
                 self.market, self.sectors, year=self.time_framework[year_idx]
             )  # type: ignore
+            self.output_cache.consolidate_cache(year=self.time_framework[year_idx])
             getLogger(__name__).info(f"Finish simulation year {years[0]}!")
 
     def calibrate_legacy_sectors(self):
@@ -613,10 +616,7 @@ def find_equilibrium(
     )
 
 
-def check_demand_fulfillment(
-    market: Dataset,
-    tol: float,
-) -> bool:
+def check_demand_fulfillment(market: Dataset, tol: float) -> bool:
     """Checks if the supply will fulfill all the demand in the future.
 
     If it does not, it logs a warning.
