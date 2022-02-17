@@ -469,7 +469,7 @@ def min_max_bisect(
             print("4a")
 
     if ub < threshold and lb > threshold:
-        "Inverted bounds "
+        "Inverted bounds"
         low1 = up
         up = low
         low = low1

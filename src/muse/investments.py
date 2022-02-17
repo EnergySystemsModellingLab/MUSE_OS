@@ -61,10 +61,10 @@ from typing import (
 import numpy as np
 import xarray as xr
 from mypy_extensions import KwArg
-from pubsub import pub
 
 from muse.constraints import Constraint
 from muse.registration import registrator
+from muse.outputs.cache import cache_quantity
 
 INVESTMENT_SIGNATURE = Callable[
     [xr.DataArray, xr.DataArray, xr.Dataset, List[Constraint], KwArg(Any)], xr.DataArray
@@ -226,6 +226,7 @@ class LinearProblemError(RuntimeError):
 
 
 @register_investment(name=["adhoc"])
+@cache_quantity(quantity="capacity")
 def adhoc_match_demand(
     costs: xr.DataArray,
     search_space: xr.DataArray,
@@ -273,12 +274,11 @@ def adhoc_match_demand(
     if "timeslice" in capacity.dims and timeslice_op is not None:
         capacity = timeslice_op(capacity)
 
-    pub.sendMessage("cache_quantity", data=capacity, quantity="capacity")
-    pub.sendMessage("cache_quantity", data=production, quantity="production")
     return capacity.rename("investment")
 
 
 @register_investment(name=["scipy", "match_demand"])
+@cache_quantity(quantity="capacity")
 def scipy_match_demand(
     costs: xr.DataArray,
     search_space: xr.DataArray,
@@ -310,8 +310,6 @@ def scipy_match_demand(
         raise LinearProblemError("LP system could not be solved", res)
 
     solution = cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(res.x)
-    pub.sendMessage("cache_quantity", data=solution.capacity)
-    pub.sendMessage("cache_quantity", data=solution.production)
     return solution.capacity
 
 

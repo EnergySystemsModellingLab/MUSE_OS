@@ -267,6 +267,7 @@ class Sector(AbstractSector):  # type: ignore
         from muse.commodities import is_pollutant
         from muse.utilities import broadcast_techs
         from muse.timeslices import convert_timeslice, QuantityType
+
         # from logging import getLogger
         # import numpy as np
 
