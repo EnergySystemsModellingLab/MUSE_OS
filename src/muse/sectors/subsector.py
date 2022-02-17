@@ -74,7 +74,11 @@ class Subsector:
         )
         if lp_problem is None:
             return
-        techs = technologies.interp(year=current_year + time_period).drop_vars("year")
+
+        years = technologies.year
+        techs = technologies.interp(year=years)
+        techs = techs.sel(year=current_year + time_period)
+       
         solution = self.investment(
             search=lp_problem[0], technologies=techs, constraints=lp_problem[1]
         )
