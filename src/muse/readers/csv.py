@@ -574,8 +574,8 @@ def read_macro_drivers(path: Union[Text, Path]) -> xr.Dataset:
     gdp = table[table.Variable == "GDP|PPP"].drop("Variable", axis=1)
 
     result = xr.Dataset({"gdp": gdp, "population": population})
-    result["year"] = "year", result.year.astype(int)
-    result["region"] = "region", result.region.astype(str)
+    result["year"] = "year", result.year.values.astype(int)
+    result["region"] = "region", result.region.values.astype(str)
     return result
 
 

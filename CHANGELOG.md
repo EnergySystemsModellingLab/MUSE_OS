@@ -13,6 +13,7 @@
 - None
 
 ## Bug fixes
+- Update the documentation to include a tutorial for implementing trade.
 - Ensures that the adhoc and scipy solvers require the same input in the agents file to minimise and maximise. Specifically, both solvers now require TRUE for minimisation and FALSE for maximisation ([#845] (https://github.com/SGIModel/StarMuse/issues/845))
 - Update the documentation on adding spend limit constraint description ([#941] (https://github.com/SGIModel/StarMuse/issues/941))
 - Update the documentation on index redundancies ([#936] (https://github.com/SGIModel/StarMuse/issues/936))
