@@ -207,6 +207,7 @@ def cliff_retirement_profile(
         dims="year",
         coords={"year": range(current_year, max_year + 1)},
     )
+
     profile = allyears < (current_year + technical_life)  # type: ignore
 
     # now we minimize the number of years needed to represent the profile fully
