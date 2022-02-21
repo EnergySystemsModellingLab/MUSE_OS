@@ -42,6 +42,15 @@
                 "--model",
                 "minimum-service"
             ]
-        }
+        },
+        {
+            "name": "CCMS_crashed",
+            "type": "python",
+            "request": "launch",
+            "module": "muse",
+            "args": [
+                "../CCMS_crashed/settings.toml",
+            ]
+        },
     ]
 }
