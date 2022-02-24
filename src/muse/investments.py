@@ -64,7 +64,6 @@ from mypy_extensions import KwArg
 
 from muse.constraints import Constraint
 from muse.registration import registrator
-from muse.outputs.cache import cache_quantity
 
 INVESTMENT_SIGNATURE = Callable[
     [xr.DataArray, xr.DataArray, xr.Dataset, List[Constraint], KwArg(Any)], xr.DataArray
@@ -226,7 +225,6 @@ class LinearProblemError(RuntimeError):
 
 
 @register_investment(name=["adhoc"])
-@cache_quantity(quantity="capacity")
 def adhoc_match_demand(
     costs: xr.DataArray,
     search_space: xr.DataArray,
@@ -278,7 +276,6 @@ def adhoc_match_demand(
 
 
 @register_investment(name=["scipy", "match_demand"])
-@cache_quantity(quantity="capacity")
 def scipy_match_demand(
     costs: xr.DataArray,
     search_space: xr.DataArray,
