@@ -292,6 +292,7 @@ class OutputCache:
                 continue
 
             self.to_save[quantity].append(value.copy())
+            self.to_save[quantity][-1].name = quantity
 
     def consolidate_cache(self, year: int) -> None:
         """Save the cached data into disk and flushes cache.
