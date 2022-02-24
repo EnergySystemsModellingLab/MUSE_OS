@@ -407,7 +407,7 @@ def Logistic(
 @register_regression(name="log-log")
 @regression_functor({"a": "constant", "b": "GDPexp"})
 def Loglog(self, gdp: DataArray, population: DataArray, *args, **kwargs) -> DataArray:
-    """ 1e6 * e^a * population * (gpd/population)^b """
+    """1e6 * e^a * population * (gpd/population)^b"""
     from numpy import power, exp
 
     factor = 1e6 * exp(self.coeffs.a) * population
@@ -426,7 +426,7 @@ def LogisticSigmoid(
     year: Optional[Union[int, Sequence[int]]] = None,
     **kwargs,
 ) -> DataArray:
-    """ 1e6 * (a * pop + gdp * c / sqrt(1 + (gdp * scale / pop)^2) """
+    """1e6 * (a * pop + gdp * c / sqrt(1 + (gdp * scale / pop)^2)"""
     from numpy import power
 
     if year is None:
@@ -451,7 +451,7 @@ def LogisticSigmoid(
 
 @register_regression
 class Linear(Regression):
-    """ a * population + b * (gdp - gdp[2010]/population[2010] * population)"""
+    """a * population + b * (gdp - gdp[2010]/population[2010] * population)"""
 
     __mappings__ = {"a": "constant", "b0": "GDPscaleLess", "b1": "GDPscaleGreater"}
 

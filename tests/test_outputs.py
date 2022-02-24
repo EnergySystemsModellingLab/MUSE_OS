@@ -404,9 +404,9 @@ class TestOutputCache:
     def test_init(self, mock_factory, mock_subscribe):
         from muse.outputs.cache import OutputCache
 
-        param = [dict(quantity="Height"), dict(quantity="Width")]
+        param = [dict(quantity="height"), dict(quantity="width")]
         output_quantities = {q["quantity"]: lambda _: None for q in param}
-        output_quantities["Depth"] = lambda _: None
+        output_quantities["depth"] = lambda _: None
         topic = "BBC Muse"
 
         output_cache = OutputCache(
@@ -422,22 +422,19 @@ class TestOutputCache:
         from muse.outputs.cache import OutputCache
         import xarray as xr
 
-        param = [dict(quantity="Height"), dict(quantity="Width")]
+        param = [dict(quantity="height"), dict(quantity="width")]
         output_quantities = {q["quantity"]: lambda _: None for q in param}
-        output_quantities["Depth"] = lambda _: None
+        output_quantities["depth"] = lambda _: None
         topic = "BBC Muse"
 
         output_cache = OutputCache(
             *param, output_quantities=output_quantities, topic=topic
         )
 
-        valid = xr.DataArray([], name=param[0]["quantity"])
-        not_valid = xr.DataArray([], name="Depth")
-        output_cache.cache(valid)
-        output_cache.cache(not_valid)
+        output_cache.cache(dict(height=xr.DataArray(), depth=xr.DataArray()))
 
-        assert len(output_cache.to_save.get(valid.name)) == 1
-        assert len(output_cache.to_save.get(not_valid.name, [])) == 0
+        assert len(output_cache.to_save.get("height")) == 1
+        assert len(output_cache.to_save.get("depth", [])) == 0
 
     @patch("pubsub.pub.subscribe")
     @patch("muse.outputs.sector._factory")
@@ -445,9 +442,9 @@ class TestOutputCache:
         from muse.outputs.cache import OutputCache
         import xarray as xr
 
-        param = [dict(quantity="Height"), dict(quantity="Width")]
+        param = [dict(quantity="height"), dict(quantity="width")]
         output_quantities = {q["quantity"]: lambda _: None for q in param}
-        output_quantities["Depth"] = lambda _: None
+        output_quantities["depth"] = lambda _: None
         topic = "BBC Muse"
         year = 2042
 
@@ -455,8 +452,7 @@ class TestOutputCache:
             *param, output_quantities=output_quantities, topic=topic
         )
 
-        valid = xr.DataArray([], name=param[0]["quantity"])
-        output_cache.cache(valid)
+        output_cache.cache(dict(height=xr.DataArray()))
         output_cache.consolidate_cache(year)
 
-        output_cache.factory[valid.name].assert_called_once()
+        output_cache.factory["height"].assert_called_once()
