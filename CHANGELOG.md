@@ -1,7 +1,8 @@
 # Version - Development
 
 ## Features
-
+- Updates the model and the documentation to use the most recent version of MUSE
+  ([#963](https://github.com/SGIModel/StarMuse/pull/963))
 - Updates the documentation to use the most recent version of MUSE
   ([#922](https://github.com/SGIModel/StarMuse/pull/922))
 - Updates the documentation to provide information on adhoc and scipy solvers as well as correctly defines ObjSort direction for minimisation/maximisation ([#949](https://github.com/SGIModel/StarMuse/pull/949))
