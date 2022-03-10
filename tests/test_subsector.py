@@ -25,6 +25,7 @@ def market(model) -> xr.Dataset:
 
 def test_subsector_investing_aggregation():
     from copy import deepcopy
+
     from muse import examples
     from muse.sectors.subsector import Subsector, aggregate_enduses
 
@@ -59,10 +60,12 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
     containing "agent" dimensions.
     """
     from copy import deepcopy
+
+    from muse import constraints as cs
+    from muse import demand_share as ds
     from muse import examples, readers
     from muse.agents.factories import create_agent
     from muse.sectors.subsector import Subsector, aggregate_enduses
-    from muse import demand_share as ds, constraints as cs
 
     examples.copy_model(model, tmp_path)
     path = tmp_path / "model" / "technodata" / "Agents.csv"

@@ -39,9 +39,10 @@ class MCA(object):
             The loaded MCA
         """
         from logging import getLogger
+
+        from muse.outputs.mca import factory as ofactory
         from muse.readers import read_settings
         from muse.readers.toml import convert
-        from muse.outputs.mca import factory as ofactory
 
         if isinstance(settings, (Text, Path)):
             settings = read_settings(settings)  # type: ignore
@@ -132,9 +133,11 @@ class MCA(object):
         method_options: Optional[Mapping] = None,
     ):
         """Market clearing algorithm class which rules the whole MUSE."""
+        from logging import getLogger
+
         from numpy import array
         from xarray import DataArray
-        from logging import getLogger
+
         from muse.carbon_budget import CARBON_BUDGET_METHODS
         from muse.outputs.mca import factory as ofactory
 
@@ -292,8 +295,10 @@ class MCA(object):
             None
         """
         from logging import getLogger
-        from xarray import DataArray
+
         from numpy import where
+        from xarray import DataArray
+
         from muse.utilities import future_propagation
 
         _, self.sectors, hist_years = self.calibrate_legacy_sectors()
@@ -361,9 +366,10 @@ class MCA(object):
         """Run a calibration step in the lagacy sectors
         Run historical years
         """
-        from logging import getLogger
-        from numpy import where, clip
         from copy import deepcopy
+        from logging import getLogger
+
+        from numpy import clip, where
 
         hist_years = []
         if len([s for s in self.sectors if "LegacySector" in str(type(s))]) == 0:
@@ -440,7 +446,9 @@ def single_year_iteration(
         A tuple with the new market and sectors.
     """
     from copy import deepcopy
+
     from numpy import clip
+
     from muse.commodities import is_enduse
 
     sectors = deepcopy(sectors)
@@ -522,8 +530,10 @@ def find_equilibrium(
         A tuple with the updated market (prices, supply, consumption and demand),
         sectors, and convergence status.
     """
-    from numpy import ones
     from logging import getLogger
+
+    from numpy import ones
+
     from muse.utilities import future_propagation
 
     market = market.copy(deep=True)

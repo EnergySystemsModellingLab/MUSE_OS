@@ -8,7 +8,7 @@ from pytest import approx, fixture
 @fixture
 def constraints_args(sector="power", model="trade") -> Mapping[Text, Any]:
     from muse import examples
-    from muse.utilities import reduce_assets, agent_concatenation
+    from muse.utilities import agent_concatenation, reduce_assets
 
     power = examples.sector(model=model, sector=sector)
     search_space = examples.search_space("power", model="trade")

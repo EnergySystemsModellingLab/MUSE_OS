@@ -22,10 +22,12 @@ def modify_technodata_timeslices(model_path, sector, process_name, utilization_f
 @mark.parametrize("utilization_factors", [([0.1], [1]), ([1], [0.1])])
 @mark.parametrize("process_name", [("gasCCGT", "windturbine")])
 def test_fullsim_timeslices(tmpdir, utilization_factors, process_name):
+    from operator import ge, le
+
+    import pandas as pd
+
     from muse import examples
     from muse.mca import MCA
-    import pandas as pd
-    from operator import le, ge
 
     sector = "power"
 
@@ -82,10 +84,12 @@ def test_fullsim_timeslices(tmpdir, utilization_factors, process_name):
 def test_zero_utilization_factor_supply_timeslice(
     tmpdir, utilization_factors, process_name, output
 ):
+    import glob
+
+    import pandas as pd
+
     from muse import examples
     from muse.mca import MCA
-    import pandas as pd
-    import glob
 
     sector = "power"
 

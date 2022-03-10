@@ -15,19 +15,21 @@ class PresetSector(AbstractSector):  # type: ignore
     @classmethod
     def factory(cls, name: Text, settings: Any) -> PresetSector:
         """Constructs a PresetSectors from input data."""
-        from xarray import zeros_like, DataArray
         from typing import Sequence
+
+        from xarray import DataArray, zeros_like
+
+        from muse.commodities import CommodityUsage
         from muse.readers import (
-            read_csv_outputs,
-            read_timeslices,
-            read_timeslice_shares,
-            read_regression_parameters,
-            read_macro_drivers,
             read_attribute_table,
+            read_csv_outputs,
+            read_macro_drivers,
+            read_regression_parameters,
+            read_timeslice_shares,
+            read_timeslices,
         )
         from muse.regressions import endogenous_demand
-        from muse.timeslices import convert_timeslice, QuantityType
-        from muse.commodities import CommodityUsage
+        from muse.timeslices import QuantityType, convert_timeslice
 
         sector_conf = getattr(settings.sectors, name)
         presets = Dataset()
@@ -144,7 +146,7 @@ class PresetSector(AbstractSector):  # type: ignore
 
     def next(self, mca_market: Dataset) -> Dataset:
         """Advance sector by one time period."""
-        from muse.timeslices import convert_timeslice, QuantityType
+        from muse.timeslices import QuantityType, convert_timeslice
 
         presets = self.presets.sel(region=mca_market.region)
         supply = self._interpolate(presets.supply, mca_market.year)

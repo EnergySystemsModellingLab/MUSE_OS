@@ -2,8 +2,7 @@ from typing import List, Optional, Text
 
 import xarray as xr
 
-from muse.outputs.sector import register_output_quantity
-from muse.outputs.sector import market_quantity
+from muse.outputs.sector import market_quantity, register_output_quantity
 
 
 @register_output_quantity

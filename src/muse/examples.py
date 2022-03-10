@@ -45,6 +45,7 @@ def example_data_dir() -> Path:
 def model(name: Text = "default") -> MCA:
     """Fully constructs a given example model."""
     from tempfile import TemporaryDirectory
+
     from muse.readers.toml import read_settings
 
     # we could modify the settings directly, but instead we use the copy_model function.
@@ -111,7 +112,8 @@ def copy_model(
 def technodata(sector: Text, model: Text = "default") -> xr.Dataset:
     """Technology for a sector of a given example model."""
     from tempfile import TemporaryDirectory
-    from muse.readers.toml import read_technodata, read_settings
+
+    from muse.readers.toml import read_settings, read_technodata
 
     sector = sector.lower()
     allowed = {"residential", "power", "gas", "preset"}
@@ -139,6 +141,7 @@ def search_space(sector: Text, model: Text = "default") -> xr.DataArray:
 def sector(sector: Text, model: Text = "default") -> AbstractSector:
     """Loads a given sector from a given example model."""
     from tempfile import TemporaryDirectory
+
     from muse.readers.toml import read_settings
     from muse.sectors import SECTORS_REGISTERED
 
@@ -152,6 +155,7 @@ def sector(sector: Text, model: Text = "default") -> AbstractSector:
 def available_sectors(model: Text = "default") -> List[Text]:
     """Sectors in this particular model."""
     from tempfile import TemporaryDirectory
+
     from muse.readers.toml import read_settings, undo_damage
 
     with TemporaryDirectory() as tmpdir:
@@ -163,7 +167,9 @@ def available_sectors(model: Text = "default") -> List[Text]:
 def mca_market(model: Text = "default") -> xr.Dataset:
     """Initial market as seen by the MCA."""
     from tempfile import TemporaryDirectory
+
     from xarray import zeros_like
+
     from muse.readers.csv import read_initial_market
     from muse.readers.toml import read_settings
 
@@ -229,11 +235,11 @@ def random_agent_assets(rng: np.random.Generator):
 
 def matching_market(sector: Text, model: Text = "default") -> xr.Dataset:
     """Market with a demand matching the maximum production from a sector."""
-    from muse.timeslices import convert_timeslice, QuantityType
-    from muse.quantities import maximum_production, consumption
-    from muse.utilities import agent_concatenation
     from muse.examples import sector as load_sector
+    from muse.quantities import consumption, maximum_production
     from muse.sectors import Sector
+    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.utilities import agent_concatenation
 
     loaded_sector = cast(Sector, load_sector(sector, model))
     assets = agent_concatenation({u.uuid: u.assets for u in list(loaded_sector.agents)})
@@ -270,7 +276,7 @@ def matching_market(sector: Text, model: Text = "default") -> xr.Dataset:
 
 
 def _copy_default(path: Path):
-    from shutil import copytree, copyfile
+    from shutil import copyfile, copytree
 
     copytree(example_data_dir() / "default" / "input", path / "input")
     copytree(example_data_dir() / "default" / "technodata", path / "technodata")
@@ -278,7 +284,7 @@ def _copy_default(path: Path):
 
 
 def _copy_default_timeslice(path: Path):
-    from shutil import copytree, copyfile
+    from shutil import copyfile, copytree
 
     copytree(example_data_dir() / "default_timeslice" / "input", path / "input")
     copytree(
@@ -295,8 +301,9 @@ def _copy_default_timeslice(path: Path):
 
 
 def _copy_multiple_agents(path: Path):
-    from shutil import copytree, copyfile
-    from toml import load, dump
+    from shutil import copyfile, copytree
+
+    from toml import dump, load
 
     copytree(example_data_dir() / "default" / "input", path / "input")
     copytree(example_data_dir() / "default" / "technodata", path / "technodata")
@@ -317,7 +324,7 @@ def _copy_multiple_agents(path: Path):
 
 
 def _copy_medium(path: Path):
-    from shutil import copytree, copyfile
+    from shutil import copyfile, copytree
 
     copytree(example_data_dir() / "medium" / "input", path / "input")
     copytree(example_data_dir() / "medium" / "technodata", path / "technodata")
@@ -337,7 +344,7 @@ def _copy_medium(path: Path):
 
 
 def _copy_minimum_service(path: Path):
-    from shutil import copytree, copyfile
+    from shutil import copyfile, copytree
 
     copytree(example_data_dir() / "minimum_service" / "input", path / "input")
     copytree(example_data_dir() / "minimum_service" / "technodata", path / "technodata")
@@ -347,7 +354,7 @@ def _copy_minimum_service(path: Path):
 
 
 def _copy_trade(path: Path):
-    from shutil import copytree, copyfile
+    from shutil import copyfile, copytree
 
     copytree(example_data_dir() / "trade" / "input", path / "input")
     copytree(example_data_dir() / "trade" / "technodata", path / "technodata")
@@ -355,10 +362,10 @@ def _copy_trade(path: Path):
 
 
 def _trade_search_space(sector: Text, model: Text = "default") -> xr.DataArray:
-    from muse.utilities import agent_concatenation
+    from muse.agents import Agent
     from muse.examples import sector as load_sector
     from muse.sectors import Sector
-    from muse.agents import Agent
+    from muse.utilities import agent_concatenation
 
     loaded_sector = cast(Sector, load_sector(sector, model))
 

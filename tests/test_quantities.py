@@ -9,7 +9,7 @@ from pytest import approx, fixture
 def demand(
     technologies: xr.Dataset, capacity: xr.DataArray, market: xr.DataArray
 ) -> xr.DataArray:
-    from typing import Mapping, Hashable, Any
+    from typing import Any, Hashable, Mapping
 
     region = xr.DataArray(list(set(capacity.region.values)), dims="region")
     coords: Mapping[Hashable, Any] = {
@@ -42,9 +42,10 @@ def make_array(array):
 
 def test_supply_enduse(technologies, capacity, timeslice):
     """End-use part of supply."""
-    from muse.quantities import supply, maximum_production
-    from muse.commodities import is_enduse
     from numpy.random import random
+
+    from muse.commodities import is_enduse
+    from muse.quantities import maximum_production, supply
 
     production = maximum_production(technologies, capacity)
     share = xr.DataArray(
@@ -71,8 +72,8 @@ def test_supply_enduse(technologies, capacity, timeslice):
 
 def test_supply_emissions(technologies, capacity):
     """Emission part of supply."""
-    from muse.quantities import supply, maximum_production, emission
     from muse.commodities import is_enduse, is_pollutant
+    from muse.quantities import emission, maximum_production, supply
 
     production = maximum_production(technologies, capacity)
     spl = supply(capacity, production.sum("asset") + 1, technologies)
@@ -84,8 +85,8 @@ def test_supply_emissions(technologies, capacity):
 
 
 def test_gross_margin(technologies, capacity, market):
+    from muse.commodities import is_enduse, is_fuel, is_pollutant
     from muse.quantities import gross_margin
-    from muse.commodities import is_pollutant, is_fuel, is_enduse
 
     # we modify the variables to have just the values we want for the testing
     technologies = technologies.sel(technology=technologies.technology == "soda_shaker")
@@ -117,8 +118,8 @@ def test_gross_margin(technologies, capacity, market):
 
 
 def test_decommissioning_demand(technologies, capacity):
-    from muse.quantities import decommissioning_demand
     from muse.commodities import is_enduse
+    from muse.quantities import decommissioning_demand
 
     years = [2010, 2015]
     capacity = capacity.interp(year=years)
@@ -134,8 +135,8 @@ def test_decommissioning_demand(technologies, capacity):
 
 
 def test_consumption_no_flex(technologies, production, market):
+    from muse.commodities import is_enduse, is_fuel
     from muse.quantities import consumption
-    from muse.commodities import is_fuel, is_enduse
 
     fins = (
         technologies.fixed_inputs.where(is_fuel(technologies.comm_usage), 0)
@@ -168,8 +169,9 @@ def test_consumption_no_flex(technologies, production, market):
 
 def test_consumption_with_flex(technologies, production, market):
     from itertools import product
+
+    from muse.commodities import is_enduse, is_fuel
     from muse.quantities import consumption
-    from muse.commodities import is_fuel, is_enduse
 
     techs = technologies.copy()
     techs.fixed_inputs[:] = 0
@@ -246,8 +248,8 @@ def test_production_aggregate_asset_view(
 
     E.g. capacity aggregated across agents.
     """
-    from muse.quantities import maximum_production
     from muse.commodities import is_enduse
+    from muse.quantities import maximum_production
 
     technologies: xr.Dataset = technologies[  # type:ignore
         ["fixed_outputs", "utilization_factor"]
@@ -283,15 +285,15 @@ def test_production_aggregate_asset_view(
 
 def test_production_agent_asset_view(capacity: xr.DataArray, technologies: xr.Dataset):
     """Production when capacity has format of agent.assets.capacity."""
-    from muse.utilities import reduce_assets, coords_to_multiindex
+    from muse.utilities import coords_to_multiindex, reduce_assets
 
     capacity = coords_to_multiindex(reduce_assets(capacity)).unstack("asset").fillna(0)
     test_production_aggregate_asset_view(capacity, technologies)
 
 
 def test_capacity_in_use(production: xr.DataArray, technologies: xr.Dataset):
-    from muse.quantities import capacity_in_use
     from muse.commodities import is_enduse
+    from muse.quantities import capacity_in_use
 
     technologies: xr.Dataset = technologies[  # type: ignore
         ["fixed_outputs", "utilization_factor"]
@@ -320,6 +322,7 @@ def test_capacity_in_use(production: xr.DataArray, technologies: xr.Dataset):
 def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
     from numpy import average
     from numpy.random import random
+
     from muse.quantities import supply_cost
 
     timeslice = timeslice.timeslice
@@ -359,6 +362,7 @@ def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
 
 def test_supply_cost_zero_prod(production: xr.DataArray, timeslice: xr.Dataset):
     from numpy.random import randn
+
     from muse.quantities import supply_cost
 
     timeslice = timeslice.timeslice
@@ -375,8 +379,8 @@ def test_supply_cost_zero_prod(production: xr.DataArray, timeslice: xr.Dataset):
 
 
 def test_emission(production: xr.DataArray, technologies: xr.Dataset):
+    from muse.commodities import is_enduse, is_pollutant
     from muse.quantities import emission
-    from muse.commodities import is_pollutant, is_enduse
 
     envs = is_pollutant(technologies.comm_usage)
     technologies = cast(xr.Dataset, technologies[["fixed_outputs"]])
@@ -395,9 +399,9 @@ def test_emission(production: xr.DataArray, technologies: xr.Dataset):
 def test_demand_matched_production(
     demand: xr.DataArray, capacity: xr.DataArray, technologies: xr.Dataset
 ):
-    from muse.quantities import maximum_production, demand_matched_production
-    from muse.timeslices import convert_timeslice, QuantityType
-    from muse.commodities import is_enduse, CommodityUsage
+    from muse.commodities import CommodityUsage, is_enduse
+    from muse.quantities import demand_matched_production, maximum_production
+    from muse.timeslices import QuantityType, convert_timeslice
 
     # try and make sure we have a few more outputs than the default fixture
     technologies.comm_usage[:] = np.random.choice(
@@ -424,12 +428,12 @@ def test_demand_matched_production(
 
 def test_costed_production_exact_match(market, capacity, technologies):
     from muse.quantities import (
-        maximum_production,
         annual_levelized_cost_of_energy,
         costed_production,
+        maximum_production,
     )
+    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
-    from muse.timeslices import convert_timeslice, QuantityType
 
     if set(capacity.region.values) != set(market.region.values):
         capacity.region.values[: len(set(market.region.values))] = list(
@@ -459,12 +463,12 @@ def test_costed_production_exact_match(market, capacity, technologies):
 
 def test_costed_production_single_region(market, capacity, technologies):
     from muse.quantities import (
-        maximum_production,
         annual_levelized_cost_of_energy,
         costed_production,
+        maximum_production,
     )
+    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
-    from muse.timeslices import convert_timeslice, QuantityType
 
     capacity = capacity.drop_vars("region")
     capacity["region"] = "USA"
@@ -490,12 +494,12 @@ def test_costed_production_single_region(market, capacity, technologies):
 
 def test_costed_production_single_year(market, capacity, technologies):
     from muse.quantities import (
-        maximum_production,
         annual_levelized_cost_of_energy,
         costed_production,
+        maximum_production,
     )
+    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
-    from muse.timeslices import convert_timeslice, QuantityType
 
     capacity = capacity.sel(year=2010)
     market = market.sel(year=2010)
@@ -523,12 +527,12 @@ def test_costed_production_single_year(market, capacity, technologies):
 
 def test_costed_production_over_capacity(market, capacity, technologies):
     from muse.quantities import (
-        maximum_production,
         annual_levelized_cost_of_energy,
         costed_production,
+        maximum_production,
     )
+    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
-    from muse.timeslices import convert_timeslice, QuantityType
 
     capacity = capacity.isel(asset=[0, 1, 2])
     if set(capacity.region.values) != set(market.region.values):
@@ -559,12 +563,12 @@ def test_costed_production_over_capacity(market, capacity, technologies):
 
 def test_costed_production_with_minimum_service(market, capacity, technologies, rng):
     from muse.quantities import (
-        maximum_production,
         annual_levelized_cost_of_energy,
         costed_production,
+        maximum_production,
     )
+    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
-    from muse.timeslices import convert_timeslice, QuantityType
 
     if set(capacity.region.values) != set(market.region.values):
         capacity.region.values[: len(set(market.region.values))] = list(
