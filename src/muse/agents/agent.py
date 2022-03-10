@@ -18,6 +18,7 @@ class AbstractAgent(ABC):
         assets: Optional[xr.Dataset] = None,
         interpolation: Text = "linear",
         category: Optional[Text] = None,
+        quantity: Optional[float] = 1,
     ):
         """Creates a standard MUSE agent.
 
@@ -48,6 +49,8 @@ class AbstractAgent(ABC):
         """Interpolation method."""
         self.category = category
         """Attribute to classify different sets of agents."""
+        self.quantity = quantity
+        """Attribute to classify different agents share of the population"""
 
     def filter_input(
         self,
@@ -111,6 +114,7 @@ class Agent(AbstractAgent):
         demand_threshhold: Optional[float] = None,
         category: Optional[Text] = None,
         asset_threshhold: float = 1e-4,
+        quantity: Optional[float] = 1,
         **kwargs,
     ):
         """Creates a standard buildings agent.
@@ -133,10 +137,10 @@ class Agent(AbstractAgent):
             category: optional attribute that could be used to classify
                 different agents together.
         """
-        from muse.hooks import housekeeping_factory, asset_merge_factory
-        from muse.filters import factory as filter_factory
-        from muse.objectives import factory as objectives_factory
         from muse.decisions import factory as decision_factory
+        from muse.filters import factory as filter_factory
+        from muse.hooks import asset_merge_factory, housekeeping_factory
+        from muse.objectives import factory as objectives_factory
 
         super().__init__(
             name=name,
@@ -144,6 +148,7 @@ class Agent(AbstractAgent):
             assets=assets,
             interpolation=interpolation,
             category=category,
+            quantity=quantity,
         )
 
         self.year = year
@@ -169,6 +174,9 @@ class Agent(AbstractAgent):
         Threshhold when and if filtering replacement technologies with respect
         to market share.
         """
+        if kwargs is not None:
+            self.spend_limit = kwargs.get("spend_limit", 0)
+
         if objectives is None:
             objectives = objectives_factory()
         self.objectives = objectives
@@ -286,12 +294,14 @@ class Agent(AbstractAgent):
         new_capacity = self.retirement_profile(
             technologies, investments, current_year, time_period
         )
+
         if new_capacity is None:
             return
         new_capacity = new_capacity.drop_vars(
             set(new_capacity.coords) - set(self.assets.coords)
         )
         new_assets = xr.Dataset(dict(capacity=new_capacity))
+
         self.assets = self.merge_transform(self.assets, new_assets)
 
     def retirement_profile(
@@ -326,8 +336,11 @@ class Agent(AbstractAgent):
             current_year=current_year + time_period,
             protected=max(self.forecast - time_period - 1, 0),
         )
+        if "dst_region" in investments.coords:
+            investments = investments.reindex_like(profile, method="ffill")
 
         new_assets = (investments * profile).rename(replacement="asset")
+
         new_assets["installed"] = "asset", [current_year] * len(new_assets.asset)
 
         # The new assets have picked up quite a few coordinates along the way.
@@ -355,8 +368,8 @@ class InvestingAgent(Agent):
             *kwargs: See :py:class:`~muse.agents.agent.Agent`
             investment: A function to perform investments
         """
-        from muse.investments import factory as ifactory
         from muse.constraints import factory as csfactory
+        from muse.investments import factory as ifactory
 
         super().__init__(*args, **kwargs)
 

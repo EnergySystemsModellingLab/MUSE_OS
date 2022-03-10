@@ -1,10 +1,10 @@
-from pytest import approx, fixture, mark
+from pytest import approx, fixture
 
 
 @fixture
 def regression_params():
-    from xarray import Dataset
     from numpy.random import rand
+    from xarray import Dataset
 
     params = Dataset()
     params["region"] = "region", ["USA", "ATE"]
@@ -40,62 +40,11 @@ def drivers():
     return drivers
 
 
-@mark.sgidata
-@mark.legacy
-def test_exponential_adj_factory(loaded_residential_settings):
-    from xarray import Dataset
-    from muse.regressions import ExponentialAdj
-    from muse.readers import read_regression_parameters
-
-    regression_data = read_regression_parameters(
-        loaded_residential_settings.global_input_files.regression_parameters
-    ).sel(sector=["residential"], region=loaded_residential_settings.regions)
-
-    functor = ExponentialAdj.factory(regression_data)
-    assert hasattr(functor, "coeffs")
-    assert isinstance(functor.coeffs, Dataset)
-    assert set(functor.coeffs.dims) == {"region", "sector", "commodity"}
-    assert len(functor.coeffs.commodity) == 77
-    assert len(functor.coeffs.region) == 1
-    assert len(functor.coeffs.sector) == 1
-    assert set(functor.coeffs.data_vars) == {"a", "b", "w"}
-
-
-@mark.sgidata
-@mark.legacy
-def test_logistic_factory(loaded_residential_settings):
-    from xarray import Dataset
-    from muse.regressions import Logistic
-    from muse.readers import read_regression_parameters
-
-    regression_data = read_regression_parameters(
-        loaded_residential_settings.global_input_files.regression_parameters
-    ).sel(sector=["residential"], region=loaded_residential_settings.regions)
-
-    functor = Logistic.factory(regression_data)
-    assert hasattr(functor, "coeffs")
-    assert isinstance(functor.coeffs, Dataset)
-    assert set(functor.coeffs.dims) == {"region", "sector", "commodity"}
-    assert len(functor.coeffs.commodity) == 77
-    assert len(functor.coeffs.region) == 1
-    assert len(functor.coeffs.sector) == 1
-    assert set(functor.coeffs.data_vars) == {"a", "b", "c", "w"}
-
-    functor = Logistic.factory(
-        regression_data, sector="residential", commodity=["algae", "agrires"]
-    )
-    assert hasattr(functor, "coeffs")
-    assert isinstance(functor.coeffs, Dataset)
-    assert set(functor.coeffs.dims) == {"region", "commodity"}
-    assert len(functor.coeffs.commodity) == 2
-    assert len(functor.coeffs.region) == 1
-    assert set(functor.coeffs.data_vars) == {"a", "b", "c", "w"}
-
-
 def test_exponential(regression_params, drivers):
-    from muse.regressions import Exponential
     from numpy import exp
     from xarray import broadcast
+
+    from muse.regressions import Exponential
 
     rp = regression_params.drop_vars(("c", "w", "b0", "b1"))
     functor = Exponential(**(rp.data_vars))
@@ -111,8 +60,9 @@ def test_exponential(regression_params, drivers):
 
 
 def test_linear(regression_params, drivers):
+    from xarray import DataArray, broadcast
+
     from muse.regressions import Linear
-    from xarray import broadcast, DataArray
 
     rp = regression_params.drop_vars(("c", "w", "b"))
     functor = Linear(**rp.data_vars)
@@ -140,8 +90,9 @@ def test_linear(regression_params, drivers):
 if __name__ == "__main__":
 
     from pytest import approx  # noqa
-    from tests.agents import test_regressions  # noqa
+
     from muse import DEFAULT_SECTORS_DIRECTORY
+    from tests.agents import test_regressions  # noqa
 
     sectors_dir = DEFAULT_SECTORS_DIRECTORY
     regression_params = test_regressions.regression_params()  # noqa

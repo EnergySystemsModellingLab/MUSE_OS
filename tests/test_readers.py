@@ -72,9 +72,10 @@ def test_add_known_parameters(settings: dict):
         - That missing optional parameters do not get a default value
         - That missing any other parameter gets a default value
     """
-    from muse.readers import DEFAULT_SETTINGS_PATH
-    from muse.readers.toml import add_known_parameters, MissingSettings
     from copy import copy
+
+    from muse.readers import DEFAULT_SETTINGS_PATH
+    from muse.readers.toml import MissingSettings, add_known_parameters
 
     defaults = toml.load(DEFAULT_SETTINGS_PATH)
 
@@ -93,9 +94,10 @@ def test_add_known_parameters(settings: dict):
 
 def test_add_unknown_parameters(settings: dict):
     """Test the add_unknown_parameters function."""
+    from copy import copy
+
     from muse.readers import DEFAULT_SETTINGS_PATH
     from muse.readers.toml import add_unknown_parameters
-    from copy import copy
 
     defaults = toml.load(DEFAULT_SETTINGS_PATH)
 
@@ -165,7 +167,7 @@ def test_check_global_data_dir(settings: dict, user_data_files):
 
 
 def test_check_plugins(settings: dict, plugins: Path):
-    from muse.readers.toml import check_plugins, IncorrectSettings
+    from muse.readers.toml import IncorrectSettings, check_plugins
 
     # Now we run check_plugins, which should succeed in finding the files
     check_plugins(settings)
@@ -176,26 +178,17 @@ def test_check_plugins(settings: dict, plugins: Path):
         check_plugins(settings)
 
 
-@mark.sgidata
-@mark.legacy
-def test_load_residential_settings(residential_input_file: Path):
-    """Tests the whole loading settings function."""
-    from muse.readers.toml import read_settings
-
-    read_settings(residential_input_file)
-
-
 def test_check_iteration_control(settings: dict):
     """Tests the whole loading settings function."""
     from muse.readers.toml import check_iteration_control
 
-    settings["expect_equilibrium"] = "off"
+    settings["equilibrium"] = "off"
     settings["maximum_iterations"] = 7
     check_iteration_control(settings)
 
-    assert not settings["expect_equilibrium"]
+    assert not settings["equilibrium"]
 
-    settings["expect_equilibrium"] = True
+    settings["equilibrium"] = True
     settings["maximum_iterations"] = -1
     with raises(AssertionError):
         check_iteration_control(settings)
@@ -208,6 +201,7 @@ def test_check_iteration_control(settings: dict):
 
 def test_format_paths_cwd():
     from pathlib import Path
+
     from muse.readers.toml import format_paths
 
     settings = format_paths({"a_path": "{cwd}/a/b/c"})
@@ -216,6 +210,7 @@ def test_format_paths_cwd():
 
 def test_format_paths_default_path():
     from pathlib import Path
+
     from muse.readers.toml import format_paths
 
     settings = format_paths({"a_path": "{path}/a/b/c"})
@@ -224,6 +219,7 @@ def test_format_paths_default_path():
 
 def test_format_paths_path():
     from pathlib import Path
+
     from muse.readers.toml import format_paths
 
     settings = format_paths({"path": "{cwd}/a/b/", "a_path": "{path}/c"})
@@ -232,6 +228,7 @@ def test_format_paths_path():
 
 def test_split_toml_one_down(tmpdir):
     from toml import dumps
+
     from muse.readers.toml import read_split_toml
 
     (tmpdir / "outer.toml").write(
@@ -256,6 +253,7 @@ def test_split_toml_one_down(tmpdir):
 
 def test_split_toml_nested(tmpdir):
     from toml import dumps
+
     from muse.readers.toml import read_split_toml
 
     (tmpdir / "outer.toml").write(
@@ -282,7 +280,8 @@ def test_split_toml_nested(tmpdir):
 def test_split_toml_too_manyops_in_outer(tmpdir):
     from pytest import raises
     from toml import dumps
-    from muse.readers.toml import read_split_toml, IncorrectSettings
+
+    from muse.readers.toml import IncorrectSettings, read_split_toml
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -305,7 +304,8 @@ def test_split_toml_too_manyops_in_outer(tmpdir):
 def test_split_toml_too_manyops_in_inner(tmpdir):
     from pytest import raises
     from toml import dumps
-    from muse.readers.toml import read_split_toml, IncorrectSettings
+
+    from muse.readers.toml import IncorrectSettings, read_split_toml
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -328,7 +328,8 @@ def test_split_toml_too_manyops_in_inner(tmpdir):
 def test_split_toml_incorrect_inner_name(tmpdir):
     from pytest import raises
     from toml import dumps
-    from muse.readers.toml import read_split_toml, MissingSettings
+
+    from muse.readers.toml import MissingSettings, read_split_toml
 
     (tmpdir / "outer.toml").write(
         dumps(

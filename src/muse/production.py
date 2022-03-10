@@ -76,6 +76,7 @@ def factory(
         **kwargs: any keyword argument the production method accepts.
     """
     from functools import partial
+
     from muse.production import PRODUCTION_METHODS
 
     if isinstance(settings, Text):
@@ -130,11 +131,8 @@ def demand_matched_production(
     costs: Text = "prices",
 ) -> xr.DataArray:
     """Production from matching demand via annual lcoe."""
-    from muse.quantities import (
-        demand_matched_production,
-        gross_margin,
-        annual_levelized_cost_of_energy as lcoe,
-    )
+    from muse.quantities import annual_levelized_cost_of_energy as lcoe
+    from muse.quantities import demand_matched_production, gross_margin
     from muse.utilities import broadcast_techs
 
     if costs == "prices":
@@ -166,20 +164,19 @@ def costed_production(
     with_emission: bool = True,
 ) -> xr.DataArray:
     """Computes production from ranked assets.
-
     The assets are ranked according to their cost. The cost can be provided as an
     xarray, a callable creating an xarray, or as "alcoe". The asset with least cost are
     allowed to service the demand first, up to the maximum production. By default, the
     mininum service is applied first.
     """
 
+    from muse.commodities import CommodityUsage, check_usage, is_pollutant
     from muse.quantities import (
         annual_levelized_cost_of_energy,
         costed_production,
         emission,
     )
     from muse.utilities import broadcast_techs
-    from muse.commodities import is_pollutant, check_usage, CommodityUsage
 
     if isinstance(costs, Text) and costs.lower() == "alcoe":
         costs = annual_levelized_cost_of_energy

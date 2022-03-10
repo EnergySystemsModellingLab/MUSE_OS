@@ -29,12 +29,12 @@ class Sector(AbstractSector):  # type: ignore
 
     @classmethod
     def factory(cls, name: Text, settings: Any) -> Sector:
+        from muse.interactions import factory as interaction_factory
+        from muse.outputs.sector import factory as ofactory
+        from muse.production import factory as pfactory
         from muse.readers import read_timeslices
         from muse.readers.toml import read_technodata
         from muse.utilities import nametuple_to_dict
-        from muse.outputs.sector import factory as ofactory
-        from muse.production import factory as pfactory
-        from muse.interactions import factory as interaction_factory
 
         sector_settings = getattr(settings.sectors, name)._asdict()
         for attribute in ("name", "type", "priority", "path"):
@@ -100,14 +100,15 @@ class Sector(AbstractSector):  # type: ignore
         technologies: xr.Dataset,
         subsectors: Sequence[Subsector] = [],
         timeslices: Optional[pd.MultiIndex] = None,
+        technodata_timeslices: xr.Dataset = None,
         interactions: Optional[Callable[[Sequence[AbstractAgent]], None]] = None,
         interpolation: Text = "linear",
         outputs: Optional[Callable] = None,
         supply_prod: Optional[PRODUCTION_SIGNATURE] = None,
     ):
-        from muse.production import maximum_production
-        from muse.outputs.sector import factory as ofactory
         from muse.interactions import factory as interaction_factory
+        from muse.outputs.sector import factory as ofactory
+        from muse.production import maximum_production
 
         self.name: Text = name
         """Name of the sector."""
@@ -258,21 +259,32 @@ class Sector(AbstractSector):  # type: ignore
         self, market: xr.Dataset, technologies: xr.Dataset
     ) -> xr.Dataset:
         """Computes resulting market: production, consumption, and costs."""
+        from muse.commodities import is_pollutant
         from muse.quantities import (
+            annual_levelized_cost_of_energy,
             consumption,
             supply_cost,
-            annual_levelized_cost_of_energy,
         )
-        from muse.commodities import is_pollutant
+        from muse.timeslices import QuantityType, convert_timeslice
         from muse.utilities import broadcast_techs
+
+        # from logging import getLogger
+        # import numpy as np
 
         years = market.year.values
         capacity = self.capacity.interp(year=years, **self.interpolation)
-
         result = xr.Dataset()
         result["supply"] = self.supply_prod(
             market=market, capacity=capacity, technologies=technologies
         )
+
+        if (
+            "timeslice" in market.prices.dims
+            and "timeslice" not in result["supply"].dims
+        ):
+            result["supply"] = convert_timeslice(
+                result["supply"], market.timeslice, QuantityType.EXTENSIVE
+            )
         result["consumption"] = consumption(technologies, result.supply, market.prices)
         technodata = cast(xr.Dataset, broadcast_techs(technologies, result.supply))
         result["costs"] = supply_cost(
@@ -282,7 +294,6 @@ class Sector(AbstractSector):  # type: ignore
             ),
             asset_dim="asset",
         )
-
         return result
 
     @property
@@ -293,7 +304,7 @@ class Sector(AbstractSector):  # type: ignore
         dimensions: asset (technology, installation date,
         region), year.
         """
-        from muse.utilities import reduce_assets
+        from muse.utilities import filter_input, reduce_assets
 
         traded = [
             u.assets.capacity
@@ -306,12 +317,35 @@ class Sector(AbstractSector):  # type: ignore
             if "dst_region" not in u.assets.capacity.dims
         ]
         if not traded:
+            full_list = [
+                list(nontraded[i].year.values)
+                for i in range(len(nontraded))
+                if "year" in nontraded[i].dims
+            ]
+            flat_list = [item for sublist in full_list for item in sublist]
+            years = sorted(list(set(flat_list)))
+            nontraded = [
+                filter_input(u.assets.capacity, year=years)
+                for u in self.agents
+                if "dst_region" not in u.assets.capacity.dims
+            ]
             return reduce_assets(nontraded)
         if not nontraded:
+            full_list = [
+                list(traded[i].year.values)
+                for i in range(len(traded))
+                if "year" in traded[i].dims
+            ]
+            flat_list = [item for sublist in full_list for item in sublist]
+            years = sorted(list(set(flat_list)))
+            traded = [
+                filter_input(u.assets.capacity, year=years)
+                for u in self.agents
+                if "dst_region" in u.assets.capacity.dims
+            ]
             return reduce_assets(traded)
         traded_results = reduce_assets(traded)
         nontraded_results = reduce_assets(nontraded)
-
         return reduce_assets(
             [
                 traded_results,
@@ -333,7 +367,7 @@ class Sector(AbstractSector):  # type: ignore
         intensive: Union[Text, Tuple[Text]] = "prices",
     ) -> xr.Dataset:
         """Converts market from one to another timeslice."""
-        from muse.timeslices import convert_timeslice, QuantityType
+        from muse.timeslices import QuantityType, convert_timeslice
 
         if isinstance(intensive, Text):
             intensive = (intensive,)

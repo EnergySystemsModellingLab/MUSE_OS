@@ -10,7 +10,7 @@ from muse.agents import Agent
 
 @fixture(autouse=True)
 def logger():
-    from logging import getLogger, CRITICAL
+    from logging import CRITICAL, getLogger
 
     logger = getLogger("muse")
     logger.setLevel(CRITICAL)
@@ -40,19 +40,15 @@ def regression_directories(cases_directory) -> Mapping[Text, Path]:
     }
 
 
-@fixture(scope="session")
-def residential_dir(regression_directories):
-    return regression_directories["Residential"]
-
-
 @fixture()
 def sectors_dir(tmpdir):
     """Copies sectors directory to new dir.
 
     This gives some assurance the machinery for specifying sectors data actually works.
     """
-    from muse.defaults import DEFAULT_SECTORS_DIRECTORY
     from shutil import copytree
+
+    from muse.defaults import DEFAULT_SECTORS_DIRECTORY
 
     copytree(DEFAULT_SECTORS_DIRECTORY, tmpdir.join("sectors_data_dir"))
     return tmpdir.join("sectors_data_dir")
@@ -91,9 +87,10 @@ def compare_df(
 def compare_dirs() -> Callable:
     def compare_dirs(actual_dir, expected_dir, **kwargs):
         """Compares all the csv files in a directory."""
-        from pandas import read_csv
         from os import walk
         from pathlib import Path
+
+        from pandas import read_csv
 
         compared_something = False
         for (dirpath, _, filenames) in walk(expected_dir):
@@ -138,40 +135,6 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "legacy" in item.keywords:
                 item.add_marker(skip_legacy)
-
-
-@fixture(scope="session")
-def loaded_residential_settings(residential_input_file):
-    """Initialized MCA with the default settings and the residential sector."""
-    from muse.readers import read_settings
-    from muse.readers.toml import undo_damage, convert
-
-    settings = undo_damage(read_settings(residential_input_file))
-    residential = settings["sectors"]["residential"]
-    residential["subsectors"] = dict(
-        new_and_retro=dict(
-            agents=residential.pop("agents"),
-            existing_capacity=residential.pop("existing_capacity"),
-        )
-    )
-
-    return convert(settings)
-
-
-@fixture(scope="session")
-def mca(loaded_residential_settings):
-    """Initialized MCA with the default settings and the residential sector."""
-    from muse.mca import MCA
-
-    result = MCA.factory(loaded_residential_settings)
-
-    return result
-
-
-@fixture(scope="session")
-def buildings(mca):
-    """Residential sector as read from regression test case."""
-    return next((sector for sector in mca.sectors if sector.name == "residential"))
 
 
 @fixture
@@ -246,7 +209,7 @@ def coords() -> Mapping:
 @fixture
 def agent_args(coords) -> Mapping:
     """some standard arguments defining an agent."""
-    from numpy.random import randint, choice, rand
+    from numpy.random import choice, rand, randint
 
     return {
         "region": choice(coords["region"]),
@@ -262,8 +225,9 @@ def agent_args(coords) -> Mapping:
 @fixture
 def technologies(coords) -> Dataset:
     """randomly generated technology characteristics."""
-    from numpy import sum, nonzero
-    from numpy.random import rand, randint, choice
+    from numpy import nonzero, sum
+    from numpy.random import choice, rand, randint
+
     from muse.commodities import CommodityUsage
 
     result = Dataset(coords=coords)
@@ -340,7 +304,7 @@ def technologies(coords) -> Dataset:
 
     result["interest_rate"] = var("technology", "region", "year", factor=0.1)
 
-    result["comm_usage"] = "commodity", CommodityUsage.from_technologies(result)
+    result["comm_usage"] = "commodity", CommodityUsage.from_technologies(result).values
     result = result.set_coords("comm_usage").drop_vars("comm_type")
 
     return result
@@ -390,6 +354,7 @@ def market(coords, technologies, timeslice) -> Dataset:
 
 def create_agent(agent_args, technologies, stock, agent_type="retrofit") -> Agent:
     from numpy.random import choice
+
     from muse.agents.factories import create_agent
 
     agent = create_agent(
@@ -448,9 +413,9 @@ def _stock(
     region: Optional[Sequence[Text]] = None,
     nassets: Optional[int] = None,
 ) -> Dataset:
-    from xarray import Dataset
     from numpy import cumprod, stack
-    from numpy.random import choice, randint, rand
+    from numpy.random import choice, rand, randint
+    from xarray import Dataset
 
     ymin, ymax = min(coords["year"]), max(coords["year"]) + 1
 
@@ -541,7 +506,7 @@ def demand_share(coords, timeslice):
 
 
 def create_fake_capacity(n: int, technologies: Dataset) -> DataArray:
-    from numpy.random import rand, choice
+    from numpy.random import choice, rand
     from xarray import Dataset
 
     n = 20
@@ -549,7 +514,7 @@ def create_fake_capacity(n: int, technologies: Dataset) -> DataArray:
     techs = choice(technologies.technology.values, 5)
     regions = choice(technologies.region.values, 5)
     data = Dataset()
-    data["year"] = "year", technologies.year
+    data["year"] = "year", technologies.year.values
     data["installed"] = "asset", choice(range(baseyear, baseyear + 5), n)
     data["technology"] = "asset", choice(techs, len(data.installed))
     data["region"] = "asset", choice(regions, len(data.installed))
@@ -567,6 +532,7 @@ def capacity(technologies: Dataset) -> DataArray:
 def settings(tmpdir) -> dict:
     """Creates a dummy settings dictionary out of the default settings."""
     import toml
+
     from muse.readers import DEFAULT_SETTINGS_PATH
     from muse.readers.toml import format_paths
 
@@ -605,22 +571,6 @@ def settings(tmpdir) -> dict:
     return out
 
 
-@fixture(scope="session")
-def residential_input_file() -> Path:
-    """Gets the example residential sector settings file."""
-    import muse_legacy
-
-    input_file = (
-        Path(muse_legacy.__file__).parent
-        / "data"
-        / "test"
-        / "cases"
-        / "Residential"
-        / "settings_residential.toml"
-    )
-    return input_file
-
-
 @fixture(autouse=True)
 def warnings_as_errors(request):
     from warnings import simplefilter
@@ -646,8 +596,8 @@ def save_registries():
 
     @contextmanager
     def saveme(module_name: Text, registry_name: Text):
-        from importlib import import_module
         from copy import deepcopy
+        from importlib import import_module
 
         module = import_module(module_name)
         old = getattr(module, registry_name)

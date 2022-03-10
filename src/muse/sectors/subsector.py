@@ -34,7 +34,9 @@ class Subsector:
         forecast: int = 5,
         expand_market_prices: bool = False,
     ):
-        from muse import demand_share as ds, constraints as cs, investments as iv
+        from muse import constraints as cs
+        from muse import demand_share as ds
+        from muse import investments as iv
 
         self.agents: Sequence[Agent] = list(agents)
         self.commodities: List[Text] = list(commodities)
@@ -74,10 +76,15 @@ class Subsector:
         )
         if lp_problem is None:
             return
-        techs = technologies.interp(year=current_year + time_period).drop_vars("year")
+
+        years = technologies.year
+        techs = technologies.interp(year=years)
+        techs = techs.sel(year=current_year + time_period)
+
         solution = self.investment(
             search=lp_problem[0], technologies=techs, constraints=lp_problem[1]
         )
+
         self.assign_back_to_agents(technologies, solution, current_year, time_period)
 
     def assign_back_to_agents(
@@ -88,6 +95,7 @@ class Subsector:
         time_period: int,
     ):
         agents = {u.uuid: u for u in self.agents}
+
         for uuid, assets in solution.groupby("agent"):
             agents[uuid].add_investments(
                 technologies, assets, current_year, time_period
@@ -166,9 +174,12 @@ class Subsector:
         current_year: Optional[int] = None,
         name: Text = "subsector",
     ) -> Subsector:
-        from muse.agents import agents_factory, InvestingAgent
+        from muse import constraints as cs
+        from muse import demand_share as ds
+        from muse import investments as iv
+        from muse.agents import InvestingAgent, agents_factory
+        from muse.commodities import is_enduse
         from muse.readers.toml import undo_damage
-        from muse import demand_share as ds, investments as iv, constraints as cs
 
         agents = agents_factory(
             settings.agents,
@@ -180,6 +191,23 @@ class Subsector:
             # only used by self-investing agents
             investment=getattr(settings, "lpsolver", "adhoc"),
         )
+        # technologies can have nans where a commodity
+        # does not apply to a technology at all
+        # (i.e. hardcoal for a technology using hydrogen)
+
+        # check that all regions have technologies with at least one end-use output
+        for a in agents:
+            techs = a.filter_input(technologies, region=a.region)
+            outputs = techs.fixed_outputs.sel(
+                commodity=is_enduse(technologies.comm_usage)
+            )
+            msg = f"Subsector with {techs.technology.values[0]} for region {a.region} has no output commodities"  # noqa: E501
+
+            if len(outputs) == 0:
+                raise RuntimeError(msg)
+
+            if np.sum(outputs) == 0.0:
+                raise RuntimeError(msg)
 
         if hasattr(settings, "commodities"):
             commodities = settings.commodities
@@ -187,8 +215,12 @@ class Subsector:
             commodities = aggregate_enduses(
                 [agent.assets for agent in agents], technologies
             )
+
+        # len(commodities) == 0 may happen only if
+        # we run only one region or all regions have no outputs
+        msg = f"Subsector with {techs.technology.values[0]} has no output commodities"
         if len(commodities) == 0:
-            raise RuntimeError("Subsector commodities cannot be empty")
+            raise RuntimeError(msg)
 
         demand_share = ds.factory(undo_damage(getattr(settings, "demand_share", None)))
         constraints = cs.factory(getattr(settings, "constraints", None))
@@ -228,6 +260,7 @@ def aggregate_enduses(
     outputs = technologies.fixed_outputs.sel(
         commodity=is_enduse(technologies.comm_usage), technology=list(techs)
     )
+
     return outputs.commodity.sel(
         commodity=outputs.any([u for u in outputs.dims if u != "commodity"])
     ).values.tolist()

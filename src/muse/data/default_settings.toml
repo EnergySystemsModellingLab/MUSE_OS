@@ -9,7 +9,7 @@ interpolation_mode = 'Active'
 log_level = 'info'
 
 # Convergence parameters
-expect_equilibrium = true
+equilibrium = true
 equilibrium_variable = 'demand'
 maximum_iterations = 3
 tolerance = 0.1

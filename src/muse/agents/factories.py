@@ -53,6 +53,7 @@ def create_retrofit_agent(
 ):
     """Creates retrofit agent from muse primitives."""
     from logging import getLogger
+
     from muse.filters import factory as filter_factory
 
     if not callable(decision):
@@ -153,18 +154,21 @@ def factory(
     existing_capacity_path: Optional[Union[Path, Text]] = None,
     agent_parameters_path: Optional[Union[Path, Text]] = None,
     technodata_path: Optional[Union[Path, Text]] = None,
+    technodata_timeslices_path: Optional[Union[Text, Path]] = None,
     sector: Optional[Text] = None,
     sectors_directory: Union[Text, Path] = DEFAULT_SECTORS_DIRECTORY,
     baseyear: int = 2010,
 ) -> List[Agent]:
     """Reads list of agents from standard MUSE input files."""
+    from copy import deepcopy
     from logging import getLogger
     from textwrap import dedent
-    from copy import deepcopy
+
     from muse.readers import (
-        read_technodictionary,
-        read_initial_assets,
         read_csv_agent_parameters,
+        read_initial_assets,
+        read_technodata_timeslices,
+        read_technodictionary,
     )
     from muse.readers.csv import find_sectors_file
 
@@ -189,11 +193,19 @@ def factory(
     params = read_csv_agent_parameters(agent_parameters_path)
     techno = read_technodictionary(technodata_path)
     capa = read_initial_assets(existing_capacity_path)
-
+    if technodata_timeslices_path and isinstance(
+        technodata_timeslices_path, (Text, Path)
+    ):
+        technodata_timeslices = read_technodata_timeslices(technodata_timeslices_path)
+    else:
+        technodata_timeslices = None
     result = []
     for param in params:
         if param["agent_type"] == "retrofit":
             param["technologies"] = techno.sel(region=param["region"])
+        if technodata_timeslices is not None:
+            param.drop_vars("utilization_factor")
+            param = param.merge(technodata_timeslices.sel(region=param["region"]))
         param["category"] = param["agent_type"]
         param["capacity"] = deepcopy(capa.sel(region=param["region"]))
         param["year"] = baseyear
@@ -237,9 +249,10 @@ def agents_factory(
     **kwargs,
 ) -> List[Agent]:
     """Creates a list of agents for the chosen sector."""
-    from logging import getLogger
     from copy import deepcopy
-    from muse.readers import read_initial_assets, read_csv_agent_parameters
+    from logging import getLogger
+
+    from muse.readers import read_csv_agent_parameters, read_initial_assets
 
     if isinstance(params_or_path, (Text, Path)):
         params = read_csv_agent_parameters(params_or_path)
@@ -257,7 +270,6 @@ def agents_factory(
         capacity = capacity.sel(dst_region=regions)
         if capacity.dst_region.size == 1:
             capacity = capacity.squeeze("dst_region", drop=True)
-
     result = []
     for param in params:
         if regions is not None and param["region"] not in regions:
@@ -321,9 +333,9 @@ def _standardize_inputs(
     decision: Union[Callable, Text, Mapping] = "mean",
     **kwargs,
 ):
-    from muse.hooks import housekeeping_factory, asset_merge_factory
-    from muse.objectives import factory as objectives_factory
     from muse.decisions import factory as decision_factory
+    from muse.hooks import asset_merge_factory, housekeeping_factory
+    from muse.objectives import factory as objectives_factory
 
     if not callable(housekeeping):
         housekeeping = housekeeping_factory(housekeeping)
@@ -349,8 +361,8 @@ def _standardize_investing_inputs(
     ] = None,
     **kwargs,
 ) -> Dict[Text, Any]:
-    from muse.investments import factory as investment_factory
     from muse.constraints import factory as constraints_factory
+    from muse.investments import factory as investment_factory
 
     kwargs = _standardize_inputs(**kwargs)
     if search_rules is None:

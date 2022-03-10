@@ -207,6 +207,7 @@ def cliff_retirement_profile(
         dims="year",
         coords={"year": range(current_year, max_year + 1)},
     )
+
     profile = allyears < (current_year + technical_life)  # type: ignore
 
     # now we minimize the number of years needed to represent the profile fully
@@ -234,10 +235,11 @@ def adhoc_match_demand(
     timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
 ) -> xr.DataArray:
     from muse.demand_matching import demand_matching
-    from muse.quantities import maximum_production, capacity_in_use
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.quantities import capacity_in_use, maximum_production
+    from muse.timeslices import QuantityType, convert_timeslice
 
     demand = next((c for c in constraints if c.name == "demand")).b
+
     max_capacity = next(
         (c for c in constraints if c.name == "max capacity expansion")
     ).b
@@ -255,6 +257,10 @@ def adhoc_match_demand(
     # Any production assigned to them by the demand-matching algorithm will be removed.
     minobj = costs.min()
     maxobj = costs.where(search_space, minobj).max("replacement") + 1
+
+    if "timeslice" in costs.dims and timeslice_op is not None:
+        costs = timeslice_op(costs)
+
     decision = costs.where(search_space, maxobj)
 
     production = demand_matching(
@@ -266,6 +272,7 @@ def adhoc_match_demand(
     ).drop_vars("technology")
     if "timeslice" in capacity.dims and timeslice_op is not None:
         capacity = timeslice_op(capacity)
+
     return capacity.rename("investment")
 
 
@@ -279,23 +286,25 @@ def scipy_match_demand(
     timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
     **options,
 ) -> xr.DataArray:
-    from muse.constraints import ScipyAdapter
-    from scipy.optimize import linprog
     from logging import getLogger
+
+    from scipy.optimize import linprog
+
+    from muse.constraints import ScipyAdapter
 
     if "timeslice" in costs.dims and timeslice_op is not None:
         costs = timeslice_op(costs)
     if "year" in technologies.dims and year is None:
         raise ValueError("Missing year argument")
     elif "year" in technologies.dims:
-        techs = technologies.interp(year=year).drop_vars("year")
+        techs = technologies.sel(year=year).drop_vars("year")
     else:
         techs = technologies
     timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
     adapter = ScipyAdapter.factory(
-        techs, -cast(np.ndarray, costs), timeslice, *constraints
+        techs, cast(np.ndarray, costs), timeslice, *constraints
     )
-    res = linprog(**adapter.kwargs, options=dict(disp=False, sym_pos=False))
+    res = linprog(**adapter.kwargs, method="highs")
     if not res.success:
         getLogger(__name__).critical(res.message)
         raise LinearProblemError("LP system could not be solved", res)
@@ -314,8 +323,9 @@ def cvxopt_match_demand(
     timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
     **options,
 ) -> xr.DataArray:
-    from logging import getLogger
     from importlib import import_module
+    from logging import getLogger
+
     from muse.constraints import ScipyAdapter
 
     if "year" in technologies.dims and year is None:

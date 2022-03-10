@@ -174,8 +174,8 @@ def demand_matching(
         `demand`, containing the supply that fulfills the demand. The units of this
         supply are the same as `demand` and `max_production`.
     """
-    from xarray import Dataset
     from pandas import MultiIndex
+    from xarray import Dataset
 
     if protected_dims is None:
         protected_dims = set()
@@ -184,6 +184,7 @@ def demand_matching(
     extra_dims = set(demand.dims).difference(
         cost.dims, *(cons.dims for cons in constraints)
     )
+
     if extra_dims:
         summed_demand = demand.sum(extra_dims)
         demand_share = (demand / summed_demand).where(demand > 0, 0)
@@ -224,7 +225,9 @@ def demand_matching(
             "demand": demand,
         }
     )
+
     nocoords = set(ds.dims).difference(ds.coords.keys())
+
     if nocoords:
         for coord in nocoords:
             ds.coords[coord] = coord, ds.coords[coord].values
@@ -239,6 +242,7 @@ def demand_matching(
     multics = {
         k: ds.coords[k] for k in ds.dims if isinstance(ds.get_index(k), MultiIndex)
     }
+
     if len(multics) > 0:
         for k in multics:
             ds.coords[k] = list(range(len(ds[k])))
@@ -260,8 +264,8 @@ def _demand_matching_impl(
     dimensions have coordinates. Input sanitization is performed in `demand_matching`
     proper.
     """
-    from xarray import full_like, Dataset, align
     from numpy import isnan, prod
+    from xarray import Dataset, align, full_like
 
     assert not set(demand.dims).difference(
         cost.dims, *(cons.dims for cons in constraints)
@@ -280,12 +284,14 @@ def _demand_matching_impl(
     def expand_dims(x, like):
         """Add extra dims that are in ``like``."""
         N = max(1, prod([len(like[d]) for d in like.dims if d not in x.dims]))
-        return (x / N).expand_dims(**{d: like[d] for d in like.dims if d not in x.dims})
+        b = (x / N).expand_dims(**{d: like[d] for d in like.dims if d not in x.dims})
+        return b
 
     def remove_dims(x, to):
         """Remove extra dims that are not in ``to``."""
         extras = set(x.dims).difference(to.dims)
-        return x.sum(extras) / (~isnan(x)).sum(extras)
+        a = x.sum(extras) / (~isnan(x)).sum(extras)
+        return a
 
     idims = [dim for dim in result.dims if dim not in demand.dims]
     for _, same_cost in data.groupby("cost") if cost.dims else [(cost, data)]:
@@ -294,7 +300,6 @@ def _demand_matching_impl(
         delta_x = expand_dims(
             (remove_dims(current.demand, demand) - result.sum(idims)).clip(0), current
         )
-
         for cname in names:
             constraint = remove_dims(current[cname], data[cname])
             delta_x, constraint = align(delta_x, constraint, join="outer", fill_value=0)
@@ -312,4 +317,5 @@ def _demand_matching_impl(
             delta_x = (expand_dims(delta_x, excess_share) - excess_share).clip(0)
 
         result = sum(align(result, delta_x.fillna(0), fill_value=0, join="left"))
+
     return result

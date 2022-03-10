@@ -1,5 +1,5 @@
 from logging import getLogger
-from typing import Callable, Text, Mapping
+from typing import Callable, Mapping, Text
 
 from muse.registration import registrator
 

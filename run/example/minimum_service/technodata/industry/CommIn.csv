@@ -1,0 +1,8 @@
+ProcessName,RegionName,Time,Level,fuel3,fuel1,fuel2,ammonia,CO2f,CO2r,CO2c,CO2s,N2O
+Unit,-,Year,-,PJ/Mt,PJ/Mt,PJ/Mt,Mt/Mt,kt/Mt,kt/Mt,kt/Mt,kt/Mt,kt/Mt
+procammonia_1,R1,2010,fixed,4796.528066,44.05983087,0,0,0,0,0,0,0
+procammonia_2,R1,2010,fixed,648.1794681,0,40.20459567,0,0,0,0,0,0
+procammonia_1,R1,2050,fixed,4500.446087,41.34008822,0,0,0,0,0,0,0
+procammonia_2,R1,2050,fixed,608.1683898,0,37.72283051,0,0,0,0,0,0
+procammonia_1,R1,2100,fixed,4500.446087,41.34008822,0,0,0,0,0,0,0
+procammonia_2,R1,2100,fixed,608.1683898,0,37.72283051,0,0,0,0,0,0

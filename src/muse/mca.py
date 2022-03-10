@@ -39,9 +39,10 @@ class MCA(object):
             The loaded MCA
         """
         from logging import getLogger
+
+        from muse.outputs.mca import factory as ofactory
         from muse.readers import read_settings
         from muse.readers.toml import convert
-        from muse.outputs.mca import factory as ofactory
 
         if isinstance(settings, (Text, Path)):
             settings = read_settings(settings)  # type: ignore
@@ -59,9 +60,10 @@ class MCA(object):
                     settings.global_input_files, "base_year_import", None
                 ),
                 timeslices=settings.timeslices,
-            )
-            .sel(region=settings.regions)
-            .interp(year=settings.time_framework, method=settings.interpolation_mode)
+            ).sel(region=settings.regions)
+        ).interp(
+            year=settings.time_framework,
+            method=settings.interpolation_mode,
         )
 
         market["supply"] = zeros_like(market.exports)
@@ -93,7 +95,7 @@ class MCA(object):
             if not hasattr(v, "_asdict") and k not in extras
         }
         if "equilibrium" in global_kw:
-            global_kw["expect_equilibrium"] = global_kw.pop("equilibrium")
+            global_kw["equilibrium"] = global_kw.pop("equilibrium")
         carbon_kw = {
             k: v._asdict() if hasattr(v, "_asdict") else v
             for k, v in settings.carbon_budget_control._asdict().items()
@@ -101,8 +103,12 @@ class MCA(object):
         for key in {"budget", "commodities", "method"}:
             carbon_kw[f"carbon_{key}"] = carbon_kw[key]
             carbon_kw.pop(key)
-        return cls(  # type: ignore
-            sectors=sectors, market=market, outputs=outputs, **global_kw, **carbon_kw
+        return cls(
+            sectors=sectors,
+            market=market,
+            outputs=outputs,  # type: ignore
+            **global_kw,
+            **carbon_kw,
         )
 
     def __init__(
@@ -112,7 +118,6 @@ class MCA(object):
         outputs: Optional[Callable[[List[AbstractSector], Dataset], Any]] = None,
         time_framework: Sequence[int] = list(range(2010, 2100, 10)),
         equilibrium: bool = True,
-        expect_equilibrium: bool = True,
         equilibrium_variable: Text = "demand",
         maximum_iterations: int = 3,
         tolerance: float = 0.1,
@@ -128,9 +133,11 @@ class MCA(object):
         method_options: Optional[Mapping] = None,
     ):
         """Market clearing algorithm class which rules the whole MUSE."""
+        from logging import getLogger
+
         from numpy import array
         from xarray import DataArray
-        from logging import getLogger
+
         from muse.carbon_budget import CARBON_BUDGET_METHODS
         from muse.outputs.mca import factory as ofactory
 
@@ -142,7 +149,6 @@ class MCA(object):
         # Simulation flow parameters
         self.time_framework = array(time_framework)
         self.equilibrium = equilibrium
-        self.expect_equilibrium = expect_equilibrium
         self.equilibrium_variable = equilibrium_variable
         self.maximum_iterations = maximum_iterations
         self.tolerance = tolerance
@@ -150,15 +156,7 @@ class MCA(object):
         if excluded_commodities:
             self.excluded_commodities = excluded_commodities
         else:
-            self.excluded_commodities = [
-                "CO2f",
-                "CO2r",
-                "CO2c",
-                "CO2s",
-                "CH4",
-                "N2O",
-                "f-gases",
-            ]
+            self.excluded_commodities = []
 
         # Carbon budget parameters
         if isinstance(carbon_budget, DataArray) and "year" in carbon_budget.dims:
@@ -188,7 +186,10 @@ class MCA(object):
         self.outputs = ofactory() if outputs is None else outputs
 
     def find_equilibrium(
-        self, market: Dataset, sectors: Optional[List[AbstractSector]] = None
+        self,
+        market: Dataset,
+        sectors: Optional[List[AbstractSector]] = None,
+        maxiter: Optional[int] = None,
     ) -> FindEquilibriumResults:
         """Specialised version of the find_equilibrium function.
 
@@ -199,15 +200,16 @@ class MCA(object):
             A tuple with the updated market (prices, supply, consumption and demand) and
             sector.
         """
+        maxiter = self.maximum_iterations if not maxiter else maxiter
         return find_equilibrium(
             market=market,
             sectors=self.sectors if sectors is None else sectors,
-            maxiter=self.maximum_iterations,
+            maxiter=maxiter,
             tol=self.tolerance,
             equilibrium_variable=self.equilibrium_variable,
             tol_unmet_demand=self.tolerance_unmet_demand,
             excluded_commodities=self.excluded_commodities,
-            expect_equilibrium=self.expect_equilibrium,
+            equilibrium=self.equilibrium,
         )
 
     def update_carbon_budget(self, market: Dataset, year_idx: int) -> float:
@@ -249,6 +251,8 @@ class MCA(object):
         Returns:
             The new carbon price or None
         """
+        from numpy import median
+
         future = market.year[-1]
 
         market, _ = single_year_iteration(market, self.sectors)
@@ -263,7 +267,8 @@ class MCA(object):
         )
 
         # Future emissions are OK, so we move on
-        if emissions < threshold and not self.debug:
+        cp = median(market.prices.sel(commodity=self.carbon_commodities, year=future))
+        if emissions < threshold and not self.debug and cp == 0.0:
             return None
 
         new_carbon_price = self.carbon_method(  # type: ignore
@@ -290,18 +295,26 @@ class MCA(object):
             None
         """
         from logging import getLogger
+
+        from numpy import where
         from xarray import DataArray
+
         from muse.utilities import future_propagation
 
-        # TODO: Remove when legacy sectors are no longer needed.
-        _, self.sectors = self.calibrate_legacy_sectors()
+        _, self.sectors, hist_years = self.calibrate_legacy_sectors()
+        if len(hist_years) > 0:
+            hist = where(self.time_framework <= hist_years[-1])[0]
+            start = hist[-1]
+
+        else:
+            start = -1
 
         nyear = len(self.time_framework) - 1
         check_carbon_budget = len(self.carbon_budget) and len(self.carbon_commodities)
         shoots = self.control_undershoot or self.control_overshoot
         variables = ["supply", "consumption", "prices"]
 
-        for year_idx in range(nyear):
+        for year_idx in range(start + 1, nyear):
 
             years = self.time_framework[year_idx : year_idx + 2]
             getLogger(__name__).info(f"Running simulation year {years[0]}...")
@@ -344,18 +357,23 @@ class MCA(object):
                 self.market.prices.sel(dims), new_market.prices.sel(year=years[1])
             )
 
-            self.outputs(self.market, self.sectors, year=self.time_framework[year_idx])
+            self.outputs(
+                self.market, self.sectors, year=self.time_framework[year_idx]
+            )  # type: ignore
             getLogger(__name__).info(f"Finish simulation year {years[0]}!")
 
     def calibrate_legacy_sectors(self):
-        """Run a calibration step in the lagacy sectors.
-
-        TODO: Remove when LegacySectors are no longer needed.
+        """Run a calibration step in the lagacy sectors
+        Run historical years
         """
+        from copy import deepcopy
         from logging import getLogger
 
+        from numpy import clip, where
+
+        hist_years = []
         if len([s for s in self.sectors if "LegacySector" in str(type(s))]) == 0:
-            return None, self.sectors
+            return None, self.sectors, hist_years
 
         sectors = []
         idx = []
@@ -367,12 +385,33 @@ class MCA(object):
 
         getLogger(__name__).info("Calibrating LegacySectors...")
 
-        years = self.time_framework[0:2]  # noqa: E203
-        variables = ["supply", "consumption", "prices"]
-        new_market = self.market[variables].sel(year=years).copy(deep=True)
+        if 2015 in self.time_framework:
+            hist_years = self.time_framework[where(self.time_framework <= 2015)]
+        hist = len(hist_years)
+        for year_idx in range(hist):  # range(nyear):
+            years = self.time_framework[year_idx : year_idx + 1]
+            sectors = deepcopy(sectors)
+            variables = ["supply", "consumption", "prices"]
+            new_market = self.market[variables].sel(year=years).copy(deep=True)
+            for sector in sectors:
+                sector_market = sector.next(
+                    new_market[["supply", "consumption", "prices"]]  # type:ignore
+                )
 
-        new_market["updated_prices"] = new_market.prices.copy()
-        _, sectors = single_year_iteration(new_market, sectors)
+                sector_market = sector_market.sel(year=new_market.year)
+
+                dims = {i: sector_market[i] for i in sector_market.consumption.dims}
+
+                sector_market.consumption.loc[dims] = clip(
+                    sector_market.consumption.loc[dims]
+                    - sector_market.supply.loc[dims],
+                    0.0,
+                    None,
+                )
+                new_market.consumption.loc[dims] += sector_market.consumption
+
+                dims = {i: sector_market[i] for i in sector_market.supply.dims}
+                new_market.supply.loc[dims] += sector_market.supply
 
         for i, s in enumerate(sectors):
             s.mode = "Iteration"
@@ -380,7 +419,7 @@ class MCA(object):
 
         getLogger(__name__).info("Finish calibration of LegacySectors!")
 
-        return None, self.sectors
+        return None, self.sectors, hist_years
 
 
 class SingleYearIterationResult(NamedTuple):
@@ -407,6 +446,9 @@ def single_year_iteration(
         A tuple with the new market and sectors.
     """
     from copy import deepcopy
+
+    from numpy import clip
+
     from muse.commodities import is_enduse
 
     sectors = deepcopy(sectors)
@@ -419,17 +461,33 @@ def single_year_iteration(
         sector_market = sector.next(
             market[["supply", "consumption", "prices"]]  # type:ignore
         )
+
         sector_market = sector_market.sel(year=market.year)
 
         dims = {i: sector_market[i] for i in sector_market.consumption.dims}
+
+        sector_market.consumption.loc[dims] = clip(
+            sector_market.consumption.loc[dims] - sector_market.supply.loc[dims],
+            0.0,
+            None,
+        )
+
         market.consumption.loc[dims] += sector_market.consumption
 
         dims = {i: sector_market[i] for i in sector_market.supply.dims}
         market.supply.loc[dims] += sector_market.supply
 
         costs = sector_market.costs.sel(commodity=is_enduse(sector_market.comm_usage))
-        dims = {i: costs[i] for i in costs.dims}
-        market.updated_prices.loc[dims] = costs.transpose(*market.updated_prices.dims)
+
+        # do not write costs lower than 1e-4
+        # should correspond to rounding value
+        if len(costs.commodity) > 0:
+            costs = costs.where(costs > 1e-4, 0)
+            dims = {i: costs[i] for i in costs.dims}
+            costs = costs.where(costs > 0, market.prices.loc[dims])
+            market.updated_prices.loc[dims] = costs.transpose(
+                *market.updated_prices.dims
+            )
 
     return SingleYearIterationResult(market, sectors)
 
@@ -450,7 +508,7 @@ def find_equilibrium(
     equilibrium_variable: Text = "demand",
     tol_unmet_demand: float = -0.1,
     excluded_commodities: Optional[Sequence] = None,
-    expect_equilibrium: bool = True,
+    equilibrium: bool = True,
 ) -> FindEquilibriumResults:
     """Runs the equilibrium loop.
 
@@ -466,14 +524,17 @@ def find_equilibrium(
         equilibrium_variable: Variable to use to calculate the equilibrium condition.
         tol_unmet_demand: Tolerance for the unmet demand.
         excluded_commodities: Commodities to be excluded in check_demand_fulfillment
-        expect_equilibrium: if equilibrium should be reached. Useful to testing.
+        equilibrium: if equilibrium should be reached. Useful to testing.
 
     Returns:
         A tuple with the updated market (prices, supply, consumption and demand),
         sectors, and convergence status.
     """
-    from numpy import ones
     from logging import getLogger
+
+    from numpy import ones
+
+    from muse.utilities import future_propagation
 
     market = market.copy(deep=True)
     if excluded_commodities:
@@ -502,9 +563,40 @@ def find_equilibrium(
             market.year[1],
         )
 
-        if equilibrium_reached or not expect_equilibrium:
+        if equilibrium_reached:
             converged = True
-            market["prices"] = market.updated_prices
+            new_price = prior_market["prices"].sel(year=market.year[1]).copy()
+            new_price.loc[dict(commodity=included)] = market.updated_prices.sel(
+                commodity=included, year=market.year[1]
+            )
+            market["prices"] = future_propagation(  # type: ignore
+                market["prices"], new_price
+            )
+
+            break
+
+        if equilibrium and not converged:
+            new_price = prior_market["prices"].sel(year=market.year[1]).copy()
+            new_price.loc[dict(commodity=included)] = (  # type: ignore
+                0.8 * new_price.loc[dict(commodity=included)]  # type: ignore
+            )
+            new_price.loc[dict(commodity=included)] += (
+                0.2
+                * market.updated_prices.loc[
+                    dict(year=market.year[1], commodity=included)
+                ]
+            )
+            market["prices"] = future_propagation(  # type: ignore
+                market["prices"], new_price
+            )
+        if not equilibrium:
+            equilibrium_reached = True
+            converged = True
+            break
+
+        if maxiter == 1:
+            equilibrium_reached = True
+            converged = True
             break
 
     else:
@@ -512,6 +604,17 @@ def find_equilibrium(
         msg = (
             f"CONVERGENCE ERROR: Maximum number of iterations ({maxiter}) reached "
             f"in year {int(market.year[0])}"
+        )
+        new_price = prior_market["prices"].sel(year=market.year[1]).copy()
+        new_price.loc[dict(commodity=included)] = (
+            0.8 * new_price.loc[dict(commodity=included)]  # type: ignore
+        )
+        new_price.loc[dict(commodity=included)] += (
+            0.2
+            * market.updated_prices.loc[dict(year=market.year[1], commodity=included)]
+        )
+        market["prices"] = future_propagation(  # type: ignore
+            market["prices"], new_price
         )
         getLogger(__name__).critical(msg)
 
@@ -521,7 +624,8 @@ def find_equilibrium(
 
 
 def check_demand_fulfillment(
-    market: Dataset, tol: float, excluded_commodities: Optional[Sequence] = None
+    market: Dataset,
+    tol: float,
 ) -> bool:
     """Checks if the supply will fulfill all the demand in the future.
 
@@ -586,4 +690,5 @@ def check_equilibrium(
         )
     else:
         delta = market.prices.sel(year=year) - int_market.prices.sel(year=year)
-    return bool((abs(delta.sum("timeslice")) < tolerance).all())
+
+    return bool((abs(delta) < tolerance).all())

@@ -13,11 +13,20 @@ def legacy_inputs():
     from muse_legacy.sectors import SECTORS
 
     excluded = {
+        "Bioenergy",
+        "Commercial",
+        "Industry",
+        "NET",
+        "Refinery",
+        "Residential",
         "IndustryABM",
+        "Sequestration",
         "TradeSupply",
         "TradeRefinery",
         "TradePower",
+        "Transport",
         "Shipping",
+        "Supply",
         "Power",
     }
 
@@ -77,9 +86,10 @@ def test_legacy_sector_creation(sector, filepath):
 
 
 def test_xarray_to_array(market):
+    import numpy as np
+
     from muse.sectors.legacy_sector import xarray_to_ndarray
     from muse.timeslices import QuantityType
-    import numpy as np
 
     dims = ("commodity", "region", "year", "timeslice")
     arr = xarray_to_ndarray(
@@ -98,6 +108,7 @@ def test_xarray_to_array(market):
 def test_array_to_xarray(market):
     from numpy import array
     from xarray import broadcast
+
     from muse.sectors.legacy_sector import ndarray_to_xarray
     from muse.timeslices import QuantityType
 
@@ -122,6 +133,7 @@ def test_array_to_xarray(market):
 def test_round_trip(market):
     from numpy import array
     from xarray import broadcast
+
     from muse.sectors.legacy_sector import ndarray_to_xarray, xarray_to_ndarray
     from muse.timeslices import QuantityType
 

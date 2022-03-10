@@ -69,6 +69,10 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/_static/
+docs/_sources/
+docs/_modules/
+docs/_images/
 
 # PyBuilder
 target/
@@ -153,6 +157,7 @@ docs/developer_guide/tutorial/mynewfunctions.py
 .envrc
 shell.nix
 
+
 .vscode/*
 !.vscode/settings.json
 !.vscode/launch.json
@@ -160,3 +165,5 @@ shell.nix
 !.vscode/tasks.json
 
 model/
+
+*.html

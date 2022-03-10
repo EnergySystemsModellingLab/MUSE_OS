@@ -45,9 +45,10 @@ OUTPUT_SINKS: MutableMapping[Text, Union[OUTPUT_SINK_SIGNATURE, Callable]] = {}
 
 
 def factory(parameters: Mapping, sector_name: Text = "default") -> Callable:
-    from pathlib import Path
-    from inspect import isclass
     from functools import partial
+    from inspect import isclass
+    from pathlib import Path
+
     from muse.outputs.sinks import OUTPUT_SINKS
 
     config = dict(**parameters)
@@ -105,6 +106,7 @@ def sink_to_file(suffix: Text):
     from functools import wraps
     from logging import getLogger
     from pathlib import Path
+
     from muse.defaults import DEFAULT_OUTPUT_DIRECTORY
 
     def decorator(function: Callable[[Union[pd.DataFrame, xr.DataArray], Text], None]):
@@ -240,6 +242,10 @@ def to_csv(
     params.update({"float_format": "%.11f"})
     if isinstance(quantity, xr.DataArray):
         quantity = quantity.to_dataframe()
+    par_list = [i for i in params.keys()]
+    if len(par_list) > 0:
+        if "columns" in par_list:
+            quantity = quantity.reset_index()
     quantity.to_csv(filename, **params)
 
 
@@ -325,7 +331,7 @@ class YearlyAggregate:
         if self.aggregate is None:
             self.aggregate = dataframe
         else:
-            self.aggregate = pd.concat((self.aggregate, dataframe))
+            self.aggregate = pd.concat((self.aggregate, dataframe), sort=True)
         assert self.aggregate is not None
         if getattr(data, "name", None) is not None:
             self.aggregate.name = data.name

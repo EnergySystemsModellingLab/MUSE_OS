@@ -379,6 +379,7 @@ def max_capacity_expansion(
     elif "dst_region" in b.dims:
         b = b.rename(region="src_region")
         capa = search_space.agent.region == b.src_region
+
     return xr.Dataset(
         dict(b=b, capacity=capa),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND, name="max capacity expansion"),
@@ -444,9 +445,10 @@ def max_production(
     Constrains the production decision variable by the maximum production for a given
     capacity.
     """
-    from xarray import zeros_like, ones_like
+    from xarray import ones_like, zeros_like
+
     from muse.commodities import is_enduse
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.timeslices import QuantityType, convert_timeslice
 
     if year is None:
         year = int(market.year.min())
@@ -492,9 +494,10 @@ def minimum_service(
     year: Optional[int] = None,
 ) -> Optional[Constraint]:
     """Constructs constraint between capacity and minimum service."""
-    from xarray import zeros_like, ones_like
+    from xarray import ones_like, zeros_like
+
     from muse.commodities import is_enduse
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.timeslices import QuantityType, convert_timeslice
 
     if "minimum_service_factor" not in technologies.data_vars:
         return None
@@ -584,6 +587,7 @@ def lp_costs(
         ('timeslice', 'asset', 'replacement', 'commodity')
     """
     from xarray import zeros_like
+
     from muse.commodities import is_enduse
     from muse.timeslices import convert_timeslice
 
@@ -594,13 +598,24 @@ def lp_costs(
         commodity=is_enduse(technologies.comm_usage),
         technology=technologies.technology.isin(costs.replacement),
     )
+
     if "region" in technologies.fixed_outputs.dims and "region" in ts_costs.coords:
         selection["region"] = ts_costs.region
     fouts = technologies.fixed_outputs.sel(selection).rename(technology="replacement")
+
+    # lpcosts.dims = Frozen({'asset': 2,
+    #                   'replacement': 2,
+    #                   'timeslice': 3,
+    #                   'commodity': 1})
+    # muse38: lpcosts.dims = Frozen({'asset': 2, ,
+    #                                'commodity': 1
+    #                                'replacement': 2,
+    #                                'timeslice': 3})
     production = zeros_like(ts_costs * fouts)
     for dim in production.dims:
         if isinstance(production.get_index(dim), pd.MultiIndex):
             production[dim] = pd.Index(production.get_index(dim), tupleize_cols=False)
+
     return xr.Dataset(dict(capacity=costs, production=production))
 
 
@@ -684,113 +699,122 @@ def lp_constraint_matrix(
 ):
     """Transforms one constraint block into an lp matrix.
 
-   The goal is to create from ``lpcosts``, ``constraint``, and ``b`` a 2d-matrix of
-   constraints vs decision variables.
+    The goal is to create from ``lpcosts``, ``constraint``, and ``b`` a 2d-matrix of
+    constraints vs decision variables.
 
-    #. The dimensions of ``b`` are the constraint dimensions. They are renamed
-        ``"c(xxx)"``.
-    #. The dimensions of ``lpcosts`` are the decision-variable dimensions. They are
-        renamed ``"d(xxx)"``.
-    #. ``set(b.dims).intersection(lpcosts.dims)`` are diagonal
-        in constraint dimensions and decision variables dimension
-    #. ``set(constraint.dims) - set(lpcosts.dims) - set(b.dims)`` are reduced by
-        summation
-    #. ``set(lpcosts.dims) - set(constraint.dims) - set(b.dims)`` are added for
-        expansion
-    #. ``set(b.dims) - set(constraint.dims) - set(lpcosts.dims)`` are added for
-        expansion. Such dimensions only make sense if they consist of one point.
+     #. The dimensions of ``b`` are the constraint dimensions. They are renamed
+         ``"c(xxx)"``.
+     #. The dimensions of ``lpcosts`` are the decision-variable dimensions. They are
+         renamed ``"d(xxx)"``.
+     #. ``set(b.dims).intersection(lpcosts.dims)`` are diagonal
+         in constraint dimensions and decision variables dimension
+     #. ``set(constraint.dims) - set(lpcosts.dims) - set(b.dims)`` are reduced by
+         summation
+     #. ``set(lpcosts.dims) - set(constraint.dims) - set(b.dims)`` are added for
+         expansion
+     #. ``set(b.dims) - set(constraint.dims) - set(lpcosts.dims)`` are added for
+         expansion. Such dimensions only make sense if they consist of one point.
 
-    The result is the constraint matrix, expanded, reduced and diagonalized for the
-    conditions above.
+     The result is the constraint matrix, expanded, reduced and diagonalized for the
+     conditions above.
 
-    Example:
+     Example:
 
-        Lets first setup a constraint and a cost matrix:
+         Lets first setup a constraint and a cost matrix:
 
-        >>> from muse import examples
-        >>> from muse import constraints as cs
-        >>> res = examples.sector("residential", model="medium")
-        >>> technologies = res.technologies
-        >>> market = examples.residential_market("medium")
-        >>> search = examples.search_space("residential", model="medium")
-        >>> assets = next(a.assets for a in res.agents if a.category == "retrofit")
-        >>> demand = None # not used in max production
-        >>> constraint = cs.max_production(demand, assets, search, market, technologies)
-        >>> lpcosts = cs.lp_costs(
-        ...     (
-        ...         technologies
-        ...         .interp(year=market.year.min() + 5)
-        ...         .drop_vars("year")
-        ...         .sel(region=assets.region)
-        ...     ),
-        ...     costs=search * np.arange(np.prod(search.shape)).reshape(search.shape),
-        ...     timeslices=market.timeslice,
-        ... )
+         >>> from muse import examples
+         >>> from muse import constraints as cs
+         >>> res = examples.sector("residential", model="medium")
+         >>> technologies = res.technologies
+         >>> market = examples.residential_market("medium")
+         >>> search = examples.search_space("residential", model="medium")
+         >>> assets = next(a.assets for a in res.agents if a.category == "retrofit")
+         >>> demand = None # not used in max production
+         >>> constraint = cs.max_production(demand, assets, search, market, technologies) # noqa: E501
+         >>> lpcosts = cs.lp_costs(
+         ...     (
+         ...         technologies
+         ...         .interp(year=market.year.min() + 5)
+         ...         .drop_vars("year")
+         ...         .sel(region=assets.region)
+         ...     ),
+         ...     costs=search * np.arange(np.prod(search.shape)).reshape(search.shape),
+         ...     timeslices=market.timeslice,
+         ... )
 
-        For a simple example, we can first check the case where b is scalar. The result
-        ought to be a single row of a matrix, or a vector with only decision variables:
+         For a simple example, we can first check the case where b is scalar. The result
+         ought to be a single row of a matrix, or a vector with only decision variables:
 
-        >>> from pytest import approx
-        >>> result = cs.lp_constraint_matrix(
-        ...     xr.DataArray(1), constraint.capacity, lpcosts.capacity
-        ... )
-        >>> assert result.values == approx(-1)
-        >>> assert set(result.dims) == {f"d({x})" for x in lpcosts.capacity.dims}
-        >>> result = cs.lp_constraint_matrix(
-        ...     xr.DataArray(1), constraint.production, lpcosts.production
-        ... )
-        >>> assert set(result.dims) == {f"d({x})" for x in lpcosts.production.dims}
-        >>> assert result.values == approx(1)
+         >>> from pytest import approx
+         >>> result = cs.lp_constraint_matrix(
+         ...     xr.DataArray(1), constraint.capacity, lpcosts.capacity
+         ... )
+         >>> assert result.values == approx(-1)
+         >>> assert set(result.dims) == {f"d({x})" for x in lpcosts.capacity.dims}
+         >>> result = cs.lp_constraint_matrix(
+         ...     xr.DataArray(1), constraint.production, lpcosts.production
+         ... )
+         >>> assert set(result.dims) == {f"d({x})" for x in lpcosts.production.dims}
+         >>> assert result.values == approx(1)
 
-        As expected, the capacity vector is 1, whereas the production vector is -1.
-        These are the values the :py:func:`~muse.constraints.max_production` is set up
-        to create.
+         As expected, the capacity vector is 1, whereas the production vector is -1.
+         These are the values the :py:func:`~muse.constraints.max_production` is set up
+         to create.
 
-        Now, let's check the case where ``b`` is the one from the
-        :py:func:`~muse.constraints.max_production` constraint. In that case, all the
-        dimensions should end up as constraint dimensions: the production for each
-        timeslice, region, asset, and replacement technology should not outstrip the
-        capacity assigned for the asset and replacement technology.
+         Now, let's check the case where ``b`` is the one from the
+         :py:func:`~muse.constraints.max_production` constraint. In that case, all the
+         dimensions should end up as constraint dimensions: the production for each
+         timeslice, region, asset, and replacement technology should not outstrip the
+         capacity assigned for the asset and replacement technology.
 
-        >>> result = cs.lp_constraint_matrix(
-        ...     constraint.b, constraint.capacity, lpcosts.capacity
-        ... )
-        >>> decision_dims = {f"d({x})" for x in lpcosts.capacity.dims}
-        >>> constraint_dims = {
-        ...     f"c({x})" for x in set(lpcosts.production.dims).union(constraint.b.dims)
-        ... }
-        >>> assert set(result.dims) == decision_dims.union(constraint_dims)
+         >>> result = cs.lp_constraint_matrix(
+         ...     constraint.b, constraint.capacity, lpcosts.capacity
+         ... )
+         >>> decision_dims = {f"d({x})" for x in lpcosts.capacity.dims}
+         >>> constraint_dims = {
+         ...     f"c({x})" for x in set(lpcosts.production.dims).union(constraint.b.dims) # noqa: E501
+         ... }
+         >>> assert set(result.dims) == decision_dims.union(constraint_dims)
 
-        The :py:func:`~muse.constraints.max_production` constraint on the production
-        side is the identy matrix with a factor :math:`-1`. We can easily check this
-        by stacking the decision and constraint dimensions in the result:
+         The :py:func:`~muse.constraints.max_production` constraint on the production
+         side is the identy matrix with a factor :math:`-1`. We can easily check this
+         by stacking the decision and constraint dimensions in the result:
 
-        >>> result = cs.lp_constraint_matrix(
-        ...     constraint.b, constraint.production, lpcosts.production
-        ... )
-        >>> decision_dims = {f"d({x})" for x in lpcosts.production.dims}
-        >>> assert set(result.dims) == decision_dims.union(constraint_dims)
-        >>> stacked = result.stack(d=sorted(decision_dims), c=sorted(constraint_dims))
-        >>> assert stacked.shape[0] == stacked.shape[1]
-        >>> assert stacked.values == approx(np.eye(stacked.shape[0]))
+         >>> result = cs.lp_constraint_matrix(
+         ...     constraint.b, constraint.production, lpcosts.production
+         ... )
+         >>> decision_dims = {f"d({x})" for x in lpcosts.production.dims}
+         >>> assert set(result.dims) == decision_dims.union(constraint_dims)
+         >>> stacked = result.stack(d=sorted(decision_dims), c=sorted(constraint_dims))
+         >>> assert stacked.shape[0] == stacked.shape[1]
+         >>> assert stacked.values == approx(np.eye(stacked.shape[0]))
     """
-    from numpy import eye
     from functools import reduce
 
+    from numpy import eye
+
     result = constraint.sum(set(constraint.dims) - set(lpcosts.dims) - set(b.dims))
+
     result = result.rename(
         {k: f"d({k})" for k in set(result.dims).intersection(lpcosts.dims)}
     )
     result = result.rename(
         {k: f"c({k})" for k in set(result.dims).intersection(b.dims)}
     )
-
     expand = set(lpcosts.dims) - set(constraint.dims) - set(b.dims)
+
+    if expand == {"timeslice", "asset", "commodity"}:
+        expand = ["asset", "timeslice", "commodity"]
+
     result = result.expand_dims({f"d({k})": lpcosts[k] for k in expand})
     expand = set(b.dims) - set(constraint.dims) - set(lpcosts.dims)
+
     result = result.expand_dims({f"c({k})": b[k] for k in expand})
 
     diag_dims = set(b.dims).intersection(lpcosts.dims)
+
+    diag_dims = sorted(diag_dims)
+
     if diag_dims:
 
         def get_dimension(dim):
@@ -808,7 +832,9 @@ def lp_constraint_matrix(
             )
             for k in diag_dims
         ]
+
         result = result * reduce(xr.DataArray.__mul__, diagonal_submats)
+
     return result
 
 
@@ -936,10 +962,15 @@ class ScipyAdapter:
     ) -> ScipyAdapter:
 
         lpcosts = lp_costs(technologies, costs, timeslices)
+
         data = cls._unified_dataset(technologies, lpcosts, *constraints)
+
         capacities = cls._selected_quantity(data, "capacity")
+
         productions = cls._selected_quantity(data, "production")
+
         bs = cls._selected_quantity(data, "b")
+
         kwargs = cls._to_scipy_adapter(capacities, productions, bs, *constraints)
 
         def to_muse(x: np.ndarray) -> xr.Dataset:
@@ -966,8 +997,13 @@ class ScipyAdapter:
         from xarray import merge
 
         assert "year" not in technologies.dims
+
+        coords = sorted([k for k in lpcosts.dims])
+        lpcosts_df = lpcosts.to_dataframe().reset_index().set_index(coords)
+        slpcosts = lpcosts_df.to_xarray()  # sorted lpcosts.dims
+
         data = merge(
-            [lpcosts.rename({k: f"d({k})" for k in lpcosts.dims})]
+            [lpcosts.rename({k: f"d({k})" for k in slpcosts.dims})]
             + [
                 lp_constraint(constraint, lpcosts).rename(
                     b=f"b{i}", capacity=f"capacity{i}", production=f"production{i}"
@@ -975,18 +1011,22 @@ class ScipyAdapter:
                 for i, constraint in enumerate(constraints)
             ]
         )
+
         for i, constraint in enumerate(constraints):
             if constraint.kind == ConstraintKind.LOWER_BOUND:
                 data[f"b{i}"] = -data[f"b{i}"]  # type: ignore
                 data[f"capacity{i}"] = -data[f"capacity{i}"]  # type: ignore
                 data[f"production{i}"] = -data[f"production{i}"]  # type: ignore
+
         return data.transpose(*data.dims)
 
     @staticmethod
     def _selected_quantity(data: xr.Dataset, name: Text) -> xr.Dataset:
+
         result = cast(
             xr.Dataset, data[[u for u in data.data_vars if str(u).startswith(name)]]
         )
+
         return result.rename(
             {
                 k: ("costs" if k == name else int(str(k).replace(name, "")))
@@ -999,10 +1039,16 @@ class ScipyAdapter:
         capacities: xr.Dataset, productions: xr.Dataset, bs: xr.Dataset, *constraints
     ):
         def reshape(matrix: xr.DataArray) -> np.ndarray:
-            assert list(matrix.dims) == sorted(matrix.dims)
+            if list(matrix.dims) != sorted(matrix.dims):
+                new_dims = sorted(matrix.dims)
+                matrix = matrix.transpose(*new_dims)
+
+            # before building LP we need to sort dimensions for consistency
+
             size = np.prod(
                 [matrix[u].shape[0] for u in matrix.dims if str(u).startswith("c")]
             )
+
             return matrix.values.reshape((size, -1))
 
         def extract_bA(constraints, *kinds):
