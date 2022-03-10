@@ -1,6 +1,7 @@
 # Version - Development
 
 ## Features
+
 - Updates the model and the documentation to use the most recent version of MUSE
   ([#963](https://github.com/SGIModel/StarMuse/pull/963))
 - Updates the documentation to use the most recent version of MUSE
