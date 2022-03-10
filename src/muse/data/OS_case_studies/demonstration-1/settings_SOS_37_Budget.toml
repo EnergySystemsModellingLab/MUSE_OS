@@ -14,14 +14,6 @@ tolerance = 0.1
 tolerance_unmet_demand = -0.1
 excluded_commodities = ["CO2f"]
 
-# Custom modules
-# Rather than a section, it can also be a list, e.g.:
-# plugins = ["{cwd}/plugin/x.py"]
-# Or even just a string:
-# plugins = "{cwd}/plugin/x.py"
-[plugins]
-plugins = ["{path}/plugin.py"] 
-
 # Carbon budget control
 [carbon_budget_control]
 

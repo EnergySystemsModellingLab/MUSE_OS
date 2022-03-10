@@ -13,9 +13,6 @@ maximum_iterations = 100
 tolerance = 0.1
 tolerance_unmet_demand = -0.1
 excluded_commodities= "CO2f"
-# Custom modules
-[plugins]
-plugins = ["{path}/plugin.py"] 
 
 # Carbon budget control
 [carbon_budget_control]
