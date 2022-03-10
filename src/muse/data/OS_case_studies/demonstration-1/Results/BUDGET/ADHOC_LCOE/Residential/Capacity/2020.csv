@@ -1,0 +1,6 @@
+,asset,year,region,technology,installed,capacity
+0,0,2020,R1,gasboiler,2020,11.00000000000
+1,0,2025,R1,gasboiler,2020,7.00000000000
+11,1,2025,R1,heatpump,2020,4.40350000000
+12,1,2030,R1,heatpump,2020,4.40350000000
+13,1,2034,R1,heatpump,2020,4.40350000000
