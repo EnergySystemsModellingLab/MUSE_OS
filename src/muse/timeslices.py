@@ -111,8 +111,9 @@ def reference_timeslice(
           - season     (timeslice) object 'spring' 'spring' ... 'summer' 'summer'
           - week       (timeslice) object 'weekday' 'weekend' ... 'weekday' 'weekend'
     """
-    from typing import List, Tuple
     from functools import reduce
+    from typing import List, Tuple
+
     from toml import loads
 
     if isinstance(settings, Text):
@@ -191,8 +192,9 @@ def aggregate_transforms(
         >>> transforms[("spautumn", "week")].T
         array([1, 1, 1, 1, 0, 0, 0, 0])
     """
-    from numpy import identity, sum
     from itertools import product
+
+    from numpy import identity, sum
     from toml import loads
 
     if timeslice is None:
@@ -343,8 +345,8 @@ def timeslice_projector(
           - finest_day        (finest_timeslice) object 'day' 'night' ... 'night' 'dusk'
         Dimensions without coordinates: timeslice
     """
-    from xarray import DataArray
     from numpy import concatenate, ones_like
+    from xarray import DataArray
 
     if finest is None:
         global TIMESLICE

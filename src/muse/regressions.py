@@ -204,6 +204,7 @@ def register_regression(
     """
     from logging import getLogger
     from pathlib import Path
+
     from muse.registration import name_variations
 
     # allows specifyng the registered name as a keyword argument
@@ -407,8 +408,8 @@ def Logistic(
 @register_regression(name="log-log")
 @regression_functor({"a": "constant", "b": "GDPexp"})
 def Loglog(self, gdp: DataArray, population: DataArray, *args, **kwargs) -> DataArray:
-    """ 1e6 * e^a * population * (gpd/population)^b """
-    from numpy import power, exp
+    """1e6 * e^a * population * (gpd/population)^b"""
+    from numpy import exp, power
 
     factor = 1e6 * exp(self.coeffs.a) * population
     return factor * power(gdp / population, self.coeffs.b)
@@ -426,7 +427,7 @@ def LogisticSigmoid(
     year: Optional[Union[int, Sequence[int]]] = None,
     **kwargs,
 ) -> DataArray:
-    """ 1e6 * (a * pop + gdp * c / sqrt(1 + (gdp * scale / pop)^2) """
+    """1e6 * (a * pop + gdp * c / sqrt(1 + (gdp * scale / pop)^2)"""
     from numpy import power
 
     if year is None:
@@ -451,7 +452,7 @@ def LogisticSigmoid(
 
 @register_regression
 class Linear(Regression):
-    """ a * population + b * (gdp - gdp[2010]/population[2010] * population)"""
+    """a * population + b * (gdp - gdp[2010]/population[2010] * population)"""
 
     __mappings__ = {"a": "constant", "b0": "GDPscaleLess", "b1": "GDPscaleGreater"}
 

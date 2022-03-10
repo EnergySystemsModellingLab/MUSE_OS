@@ -4,8 +4,8 @@ from pytest import fixture
 @fixture(autouse=True)
 def add_np(doctest_namespace):
     import numpy
-    import xarray
     import pandas
+    import xarray
 
     doctest_namespace["np"] = numpy
     doctest_namespace["xr"] = xarray

@@ -431,8 +431,8 @@ def avoid_repetitions(data: xr.DataArray, dim: Text = "year") -> xr.DataArray:
 
 def nametuple_to_dict(nametup: Union[Mapping, NamedTuple]) -> Mapping:
     """Transforms a nametuple of type GenericDict into an OrderDict."""
-    from dataclasses import is_dataclass, asdict
     from collections import OrderedDict
+    from dataclasses import asdict, is_dataclass
 
     if is_dataclass(nametup):
         out = asdict(nametup, OrderedDict)  # type: ignore

@@ -53,6 +53,7 @@ def create_retrofit_agent(
 ):
     """Creates retrofit agent from muse primitives."""
     from logging import getLogger
+
     from muse.filters import factory as filter_factory
 
     if not callable(decision):
@@ -159,14 +160,15 @@ def factory(
     baseyear: int = 2010,
 ) -> List[Agent]:
     """Reads list of agents from standard MUSE input files."""
+    from copy import deepcopy
     from logging import getLogger
     from textwrap import dedent
-    from copy import deepcopy
+
     from muse.readers import (
-        read_technodictionary,
-        read_initial_assets,
         read_csv_agent_parameters,
+        read_initial_assets,
         read_technodata_timeslices,
+        read_technodictionary,
     )
     from muse.readers.csv import find_sectors_file
 
@@ -247,9 +249,10 @@ def agents_factory(
     **kwargs,
 ) -> List[Agent]:
     """Creates a list of agents for the chosen sector."""
-    from logging import getLogger
     from copy import deepcopy
-    from muse.readers import read_initial_assets, read_csv_agent_parameters
+    from logging import getLogger
+
+    from muse.readers import read_csv_agent_parameters, read_initial_assets
 
     if isinstance(params_or_path, (Text, Path)):
         params = read_csv_agent_parameters(params_or_path)
@@ -330,9 +333,9 @@ def _standardize_inputs(
     decision: Union[Callable, Text, Mapping] = "mean",
     **kwargs,
 ):
-    from muse.hooks import housekeeping_factory, asset_merge_factory
-    from muse.objectives import factory as objectives_factory
     from muse.decisions import factory as decision_factory
+    from muse.hooks import asset_merge_factory, housekeeping_factory
+    from muse.objectives import factory as objectives_factory
 
     if not callable(housekeeping):
         housekeeping = housekeeping_factory(housekeeping)
@@ -358,8 +361,8 @@ def _standardize_investing_inputs(
     ] = None,
     **kwargs,
 ) -> Dict[Text, Any]:
-    from muse.investments import factory as investment_factory
     from muse.constraints import factory as constraints_factory
+    from muse.investments import factory as investment_factory
 
     kwargs = _standardize_inputs(**kwargs)
     if search_rules is None:

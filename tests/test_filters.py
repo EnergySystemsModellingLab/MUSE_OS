@@ -63,8 +63,8 @@ def test_filtering():
 
 
 def test_same_enduse(retro_agent, technologies, search_space):
-    from muse.filters import same_enduse
     from muse.commodities import is_enduse
+    from muse.filters import same_enduse
 
     result = same_enduse(retro_agent, search_space, technologies)
     enduses = is_enduse(technologies.comm_usage)
@@ -154,8 +154,8 @@ def test_currently_existing(retro_agent, search_space, technologies, agent_marke
 
 @mark.xfail
 def test_maturity(retro_agent, search_space, technologies, agent_market):
-    from muse.filters import maturity
     from muse.commodities import is_enduse
+    from muse.filters import maturity
 
     enduses = is_enduse(technologies.comm_usage)
     outputs = technologies.fixed_outputs.sel(commodity=enduses, region="USA", year=2010)
@@ -183,6 +183,7 @@ def test_maturity(retro_agent, search_space, technologies, agent_market):
 
 def test_init_from_tech(demand_share, technologies, agent_market):
     from collections import namedtuple
+
     from muse.filters import initialize_from_technologies
 
     agent = namedtuple("DummyAgent", ["tolerance"])(tolerance=1e-8)
@@ -196,6 +197,7 @@ def test_init_from_tech(demand_share, technologies, agent_market):
 
 def test_init_from_asset(technologies, rng):
     from collections import namedtuple
+
     from muse.filters import initialize_from_assets
 
     technology = rng.choice(technologies.technology, 5)
@@ -222,6 +224,7 @@ def test_init_from_asset(technologies, rng):
 
 def test_init_from_asset_no_assets(technologies, rng):
     from collections import namedtuple
+
     from muse.filters import initialize_from_assets
 
     agent = namedtuple("DummyAgent", ["assets"])(
