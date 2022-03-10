@@ -207,6 +207,7 @@ def cliff_retirement_profile(
         dims="year",
         coords={"year": range(current_year, max_year + 1)},
     )
+
     profile = allyears < (current_year + technical_life)  # type: ignore
 
     # now we minimize the number of years needed to represent the profile fully
@@ -296,15 +297,14 @@ def scipy_match_demand(
     if "year" in technologies.dims and year is None:
         raise ValueError("Missing year argument")
     elif "year" in technologies.dims:
-        techs = technologies.interp(year=year).drop_vars("year")
+        techs = technologies.sel(year=year).drop_vars("year")
     else:
         techs = technologies
     timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
     adapter = ScipyAdapter.factory(
-        techs, -cast(np.ndarray, costs), timeslice, *constraints
+        techs, cast(np.ndarray, costs), timeslice, *constraints
     )
-
-    res = linprog(**adapter.kwargs, options=dict(disp=False, sym_pos=False))
+    res = linprog(**adapter.kwargs, method="highs")
     if not res.success:
         getLogger(__name__).critical(res.message)
         raise LinearProblemError("LP system could not be solved", res)

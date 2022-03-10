@@ -304,7 +304,7 @@ def technologies(coords) -> Dataset:
 
     result["interest_rate"] = var("technology", "region", "year", factor=0.1)
 
-    result["comm_usage"] = "commodity", CommodityUsage.from_technologies(result)
+    result["comm_usage"] = "commodity", CommodityUsage.from_technologies(result).values
     result = result.set_coords("comm_usage").drop_vars("comm_type")
 
     return result
@@ -514,7 +514,7 @@ def create_fake_capacity(n: int, technologies: Dataset) -> DataArray:
     techs = choice(technologies.technology.values, 5)
     regions = choice(technologies.region.values, 5)
     data = Dataset()
-    data["year"] = "year", technologies.year
+    data["year"] = "year", technologies.year.values
     data["installed"] = "asset", choice(range(baseyear, baseyear + 5), n)
     data["technology"] = "asset", choice(techs, len(data.installed))
     data["region"] = "asset", choice(regions, len(data.installed))

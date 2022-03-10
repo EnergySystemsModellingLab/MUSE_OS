@@ -60,9 +60,10 @@ class MCA(object):
                     settings.global_input_files, "base_year_import", None
                 ),
                 timeslices=settings.timeslices,
-            )
-            .sel(region=settings.regions)
-            .interp(year=settings.time_framework, method=settings.interpolation_mode)
+            ).sel(region=settings.regions)
+        ).interp(
+            year=settings.time_framework,
+            method=settings.interpolation_mode,
         )
 
         market["supply"] = zeros_like(market.exports)

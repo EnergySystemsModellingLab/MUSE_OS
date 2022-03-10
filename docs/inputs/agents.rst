@@ -126,16 +126,19 @@ ObjData3
 .. _Objsort1:
 
 Objsort1
-   Whether to maximize (`True`) or minimize (`False`) the :ref:`first objective
-   <Objective1>`.
+   Sets whether :ref:`first objective <Objective1>` is maximized or minimized. For both 
+   "adhoc" and "scipy" solvers this should be set to "True" for minimization and 
+   "False" for maximisation.
 
 Objsort2
-   Whether to maximize (`True`) or minimize (`False`) the :ref:`second objective
-   <Objective2>`.
+   Sets whether :ref:`second objective <Objective2>` is maximized or minimized. For both 
+   "adhoc" and "scipy" solvers this should be set to "True" for minimization and 
+   "False" for maximisation.
 
 Objsort3
-   Whether to maximize (`True`) or minimize (`False`) the :ref:`third objective
-   <Objective3>`.
+   Sets whether :ref:`third objective <Objective3>` is maximized or minimized. For both 
+   "adhoc" and "scipy" solvers this should be set to "True" for minimization and 
+   "False" for maximisation.
 
 .. py:currentmodule:: muse.filters
 
@@ -170,9 +173,11 @@ SearchRule
 
    - :py:func:`maturity <maturity>`: Only allows technologies that have achieved a given
      market share.
-   
-   The implementation allows for combining these filters. However, the CSV data format
-   described here does not.
+
+   - :py:func:`spend_limit <spend_limit>`: Only allows technologies with a unit capital cost (cap_par in
+      :ref:`inputs-technodata`) lower than the spend limit.
+
+   The implementation allows for combining these filters.
 
 .. py:currentmodule:: muse.decisions
 
@@ -214,3 +219,6 @@ Quantity
 
 MaturityThreshold
    Parameter for the search rule :py:func:`maturity <muse.filters.maturity>`.
+
+SpendLimit
+   Parameter for the search rule :py:func:`spend_limit <muse.filters.spend_limit>`.

@@ -395,10 +395,7 @@ def merge_assets(
     years = sorted(set(capa_a.year.values).union(capa_b.year.values))
 
     levels = (coord for coord in capa_a.coords if capa_a[coord].dims == (dimension,))
-    if len(capa_a.year) == 1 and len(capa_b.year) > 1:
-        capa_a, capa_b = xr.broadcast(capa_a, capa_b)
-    if len(capa_a.year) > 1 and len(capa_b.year) == 1:
-        capa_a, capa_b = xr.broadcast(capa_a, capa_b)
+
     result = xr.concat(
         (
             capa_a.interp(year=years, method=interpolation).fillna(0),

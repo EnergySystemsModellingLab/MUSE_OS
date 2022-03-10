@@ -1,33 +1,27 @@
-.. _inputs-icomms:
+.. _inputs-iocomms:
 
 =================
-Input Commodities
+Commodities
 =================
-Input commodities are the commodities consumed (also called consumables in MUSE) by each
+
+Input
+
+Input commodities are the commodities consumed by each
 technology.  They are defined in a csv file which describes the commodity inputs to each
-technology, calculated per unit of technology activity. Where the unit is defined by the user (e.g. petajoules). See :ref:`below
-<inputs-iocomms>` for a description.
+technology, calculated per unit of technology activity, Where the unit is defined by the user (e.g. petajoules).
+
+Output
 
 
-.. _inputs-ocomms:
-
-==================
-Output Commodities
-==================
-
-Output commodities are the commodities produced (also called products in MUSE) by each
+Output commodities are the commodities produced by each
 technology.  They are defined in a csv file which describes the commodity outputs from
 each technology, defined per unit of technology activity. Emissions, such as CO2
 (produced from fuel combustion and reactions), CH4, N2O, F-gases, can also be accounted
-for in this file. See :ref:`below <inputs-iocomms>` for a description.
+for in this file. 
 
 
-
-.. _inputs-iocomms:
-
-==================
 General features
-==================
+
 
 To illustrate the data required for a generic technology in MUSE, the *electric boiler
 technology* is used as an example. The commodity flow for the electric boiler, capable
@@ -74,7 +68,9 @@ Unit
    reports the unit in which the technology consumption is defined; it is for the user
    internal reference only.
 
-The same structure for the csv file would also apply for the output commodity file. The
-input data has to be provided for the base year. Additional years within the time
+The input data has to be provided for the base year. Additional years within the time
 framework of the overall simulation can be defined. In this case, MUSE would interpolate
-the values between the provided periods and assume a constant value afterwards.
+the values between the provided periods and assume a constant value afterwards. The additional 
+years at which input data are defined needs to equal for :ref:`inputs-iocomms`,  :ref:`inputs-technodata`, and :ref:`inputs-technodata-ts`.
+
+Interpolation is activated only if the feature *interpolation_mode = 'Active'* is defined in the TOML file.

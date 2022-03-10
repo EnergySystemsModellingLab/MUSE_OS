@@ -7,15 +7,28 @@ Initial Market Projection
 MUSE needs an initial projection of the market prices for each period of the simulation.
 
 * The price trajectory is needed if the MCA works in *equilibrium* mode as an initial
-  start point for the base year of the simulation. The market will override the
+  trajectory for the base year of the simulation. The market will override the
   calculated prices obtained from each commodity equilibrium for all the future periods
-  following the base year
+  following the base year (setting market keyword *equilibrium = true*)
 * Similarly, if the market works in a *carbon budget* mode, the prices are used as a
-  starting point. The only difference from the previous case is that
-  the MCA calculates an additional global market price for carbon dioxide (and
+  starting point. The only difference from the previous case is given by the fact that
+  the MCA will be calculating an additional global market price for carbon dioxide (and
   additional pollutants if required)
-* If the MCA works in an *exogenous* mode, it will use the initial market projection as
-  the projection for the the base year and all the future periods of the simulation
+* If the MCA works in an *exogenous* mode (setting market keyword *equilibrium = false*
+  or *maximum_iterations = 1*), it will use the initial market projection as the projection
+  for the the base year and
+  all the future periods of the simulation
+
+By default, MUSE works in *equilibrium* mode with a number of iterations greater than 1.
+These are the typical conditions for a complete simulations with multiple sectors, belonging
+to the supply and the demand. In this way the iterative methods for the market converges
+can have a meaningful application. While global settings files, such as the initial price file
+as well as the commodidity definition files need to refer to all the commodities present in all
+the sectors, each sector allows a definition of the sector-specific attribute referring just to
+commodities either consumed or produced in the same sector.
+
+As MUSE allows 1 sector model simulations, the market convergence settings could be conveniently
+modified into *equilibrium = false* and setting *maximum_iterations = 1*).
 
 The forward price trajectory should follow the structure reported in the table below.
 

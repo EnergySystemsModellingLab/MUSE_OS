@@ -336,8 +336,11 @@ class Agent(AbstractAgent):
             current_year=current_year + time_period,
             protected=max(self.forecast - time_period - 1, 0),
         )
+        if "dst_region" in investments.coords:
+            investments = investments.reindex_like(profile, method="ffill")
 
         new_assets = (investments * profile).rename(replacement="asset")
+
         new_assets["installed"] = "asset", [current_year] * len(new_assets.asset)
 
         # The new assets have picked up quite a few coordinates along the way.
