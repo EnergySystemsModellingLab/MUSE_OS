@@ -178,9 +178,8 @@ class Subsector:
         from muse import demand_share as ds
         from muse import investments as iv
         from muse.agents import InvestingAgent, agents_factory
-        from muse.readers.toml import undo_damage
         from muse.commodities import is_enduse
-        from muse import demand_share as ds, investments as iv, constraints as cs
+        from muse.readers.toml import undo_damage
 
         agents = agents_factory(
             settings.agents,
