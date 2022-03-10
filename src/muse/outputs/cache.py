@@ -74,7 +74,7 @@ def cache_quantity(
     function: Optional[Callable] = None,
     quantity: Union[str, Sequence[str], None] = None,
     **kwargs: xr.DataArray,
-) -> Callable:
+) -> Optional[Callable]:
     """Cache one or more quantities to be post-processed later on.
 
     This function can be used as a decorator, in which case the quantity input argument
@@ -92,7 +92,7 @@ def cache_quantity(
         As a decorator, the quantity argument must be set:
 
         >>> @cache_quantity(quantity="capacity")
-        >>> def some_calculation():
+        ... def some_calculation():
         ...     return xr.DataArray()
 
         If returning a sequence of DataArrays, the number of quantities to record must
@@ -100,7 +100,7 @@ def cache_quantity(
         given and the 'name' attribute of the arrays, if present, is ignored.
 
         >>> @cache_quantity(quantity=["capacity", "production"])
-        >>> def other_calculation():
+        ... def other_calculation():
         ...     return xr.DataArray(), xr.DataArray()
 
         For a finer control of what is cached when there is a complex output, combine
@@ -109,7 +109,7 @@ def cache_quantity(
         Dataset.
 
         >>> @cache_quantity(quantity=["capacity", "production"])
-        >>> def and_another_one():
+        ... def and_another_one():
         ...     return xr.Dataset(
         ...         {
         ...             "not cached": xr.DataArray(),
@@ -136,7 +136,8 @@ def cache_quantity(
         keyword arguments.
 
     Return:
-        (Callable) The decorated function (or a dummy function if called directly).
+        (Optional[Callable]) The decorated function (or a dummy function if called
+        directly).
     """
     from functools import wraps
 
@@ -147,7 +148,7 @@ def cache_quantity(
                 "If keyword arguments are provided, then 'function' must be None"
             )
         pub.sendMessage(CACHE_TOPIC_CHANNEL, data=kwargs)
-        return lambda: None
+        return None
 
     # When used as a decorator
     if function is None:
