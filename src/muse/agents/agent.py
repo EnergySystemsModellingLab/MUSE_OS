@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import Callable, Optional, Sequence, Text, Union
 
 import xarray as xr
-from muse.outputs.cache import cache_quantity
 
 
 class AbstractAgent(ABC):
@@ -422,7 +421,6 @@ class InvestingAgent(Agent):
             constraints,
             year=current_year,
         )
-        cache_quantity(capacity=investments)
 
         self.add_investments(
             technologies,
