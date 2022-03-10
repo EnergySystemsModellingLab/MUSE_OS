@@ -14,7 +14,7 @@ reproducibility from day to day.
 Create a virtual env including python with:
 
 ```bash
-> conda create -n muse python=3.7
+> conda create -n muse python=3.8
 ```
 
 Activate the environment with:
