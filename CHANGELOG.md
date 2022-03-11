@@ -2,6 +2,9 @@
 
 ## Features
 
+- Added new cases studies with multiple agents and spend limit ([#1](https://github.com/SGIModel/MUSE_OS/pull/1))
+- Updates the model and the documentation to use the most recent version of MUSE
+  ([#964](https://github.com/SGIModel/StarMuse/pull/964))
 - Updates the model and the documentation to use the most recent version of MUSE
   ([#963](https://github.com/SGIModel/StarMuse/pull/963))
 - Updates the documentation to use the most recent version of MUSE

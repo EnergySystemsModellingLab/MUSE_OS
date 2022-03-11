@@ -1,0 +1,7 @@
+AgentShare,Name,AgentNumber,RegionName,Objective1,Objective2,Objective3,ObjData1,ObjData2,ObjData3,Objsort1,Objsort2,Objsort3,SearchRule,DecisionMethod,Quantity,MaturityThreshold,SpendLimit,Type
+Agent1,A1,1,R1,EAC,,,1,,,TRUE,,,all,single_objective,0.4,-1,inf,New
+Agent2,A1,2,R1,EAC,,,1,,,TRUE,,,all,single_objective,0.4,-1,inf,Retrofit
+Agent3,A2,3,R1,EAC,,,1,,,TRUE,,,maturity,single_objective,0.3,0.1,inf,New
+Agent4,A2,4,R1,EAC,,,1,,,TRUE,,,maturity,single_objective,0.3,0.1,inf,Retrofit
+Agent3,A3,5,R1,EAC,,,1,,,TRUE,,,spend_limit,single_objective,0.3,-1,6,New
+Agent4,A3,6,R1,EAC,,,1,,,TRUE,,,spend_limit,single_objective,0.3,-1,6,Retrofit
