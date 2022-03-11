@@ -48,7 +48,7 @@ After python is installed we can install MUSE. MUSE can be installed via the `An
 
 .. code-block:: bash
 
-   python -m pip install --user git+https://github.com/SGIModel/StarMuse
+   python -m pip install --user git+https://github.com/SGIModel/MUSE_OS
 
 It should now be possible to run muse. Again, this can be done in the anaconda prompt as follows:
 
@@ -93,7 +93,7 @@ The simplest approach is to first download the muse code with `git`_:
 
 .. code-block:: bash
 
-   git clone https://github.com/SGIModel/StarMuse.git muse
+   git clone https://github.com/SGIModel/MUSE_OS.git muse
 
 For interested users, there are plenty of `good`__ tutorials for `git`_. 
 Next, it is possible to install the working directory into the conda environment:

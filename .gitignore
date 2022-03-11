@@ -127,6 +127,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+/docs/advanced-guide/Results/
 /Results/
 /FileLog.txt
 /Power/Data/MusePower/Data/

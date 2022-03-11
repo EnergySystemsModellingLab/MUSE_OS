@@ -105,7 +105,7 @@ year asset commodity
                         installed  consumption  
 year asset commodity                            
 2045 0     electricity       2035       0.0000  
-           gas               2035       0.0000  
+           gas               2035       0.5864  
            heat              2035       0.0000  
            CO2f              2035       0.0000  
      1     electricity       2040       0.0000  
@@ -116,7 +116,7 @@ year asset commodity
            gas               2045       0.0000  
            heat              2045       0.0000  
            CO2f              2045       0.0000  
-     3     electricity       2035       3.7778  
+     3     electricity       2035       3.5756  
            gas               2035       0.0000  
            heat              2035       0.0000  
            CO2f              2035       0.0000  
