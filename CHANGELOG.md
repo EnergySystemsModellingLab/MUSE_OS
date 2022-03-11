@@ -2,6 +2,9 @@
 
 ## Features
 
+- Added new cases studies with multiple agents and spend limit ([#1](https://github.com/SGIModel/MUSE_OS/pull/1))
+- Updates the model and the documentation to use the most recent version of MUSE
+  ([#964](https://github.com/SGIModel/StarMuse/pull/964))
 - Updates the model and the documentation to use the most recent version of MUSE
   ([#963](https://github.com/SGIModel/StarMuse/pull/963))
 - Updates the documentation to use the most recent version of MUSE
@@ -21,7 +24,6 @@
 ## Bug fixes
 
 - Ensures that the adhoc and scipy solvers require the same input in the agents file to minimise and maximise. Specifically, both solvers now require TRUE for minimisation and FALSE for maximisation ([#845](https://github.com/SGIModel/StarMuse/issues/845))
-
 - Update the documentation to include a tutorial for implementing trade.
 - Update the documentation on adding spend limit constraint description ([#941](https://github.com/SGIModel/StarMuse/issues/941))
 - Fix typos in CHANGELOG file ([#939](https://github.com/SGIModel/StarMuse/pull/939))
