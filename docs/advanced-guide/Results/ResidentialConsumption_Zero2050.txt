@@ -1,4 +1,4 @@
-Hello world!
+Hello, you!
 
                        region units_prices  \
 year asset commodity                         
@@ -7,9 +7,38 @@ year asset commodity
            heat            R1  MUS$2010/PJ   
            CO2f            R1  MUS$2010/kt   
      1     electricity     R1  MUS$2010/PJ   
-...                       ...          ...   
-2055 6     CO2f            R1  MUS$2010/kt   
-     7     electricity     R1  MUS$2010/PJ   
+           gas             R1  MUS$2010/PJ   
+           heat            R1  MUS$2010/PJ   
+           CO2f            R1  MUS$2010/kt   
+     2     electricity     R1  MUS$2010/PJ   
+           gas             R1  MUS$2010/PJ   
+           heat            R1  MUS$2010/PJ   
+           CO2f            R1  MUS$2010/kt   
+     3     electricity     R1  MUS$2010/PJ   
+           gas             R1  MUS$2010/PJ   
+           heat            R1  MUS$2010/PJ   
+           CO2f            R1  MUS$2010/kt   
+     4     electricity     R1  MUS$2010/PJ   
+           gas             R1  MUS$2010/PJ   
+           heat            R1  MUS$2010/PJ   
+           CO2f            R1  MUS$2010/kt   
+2055 0     electricity     R1  MUS$2010/PJ   
+           gas             R1  MUS$2010/PJ   
+           heat            R1  MUS$2010/PJ   
+           CO2f            R1  MUS$2010/kt   
+     1     electricity     R1  MUS$2010/PJ   
+           gas             R1  MUS$2010/PJ   
+           heat            R1  MUS$2010/PJ   
+           CO2f            R1  MUS$2010/kt   
+     2     electricity     R1  MUS$2010/PJ   
+           gas             R1  MUS$2010/PJ   
+           heat            R1  MUS$2010/PJ   
+           CO2f            R1  MUS$2010/kt   
+     3     electricity     R1  MUS$2010/PJ   
+           gas             R1  MUS$2010/PJ   
+           heat            R1  MUS$2010/PJ   
+           CO2f            R1  MUS$2010/kt   
+     4     electricity     R1  MUS$2010/PJ   
            gas             R1  MUS$2010/PJ   
            heat            R1  MUS$2010/PJ   
            CO2f            R1  MUS$2010/kt   
@@ -21,9 +50,38 @@ year asset commodity
            heat                CommodityUsage.ENERGY|PRODUCT       2035   
            CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT       2035   
      1     electricity      CommodityUsage.ENERGY|CONSUMABLE       2035   
-...                                                      ...        ...   
-2055 6     CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT       2050   
-     7     electricity      CommodityUsage.ENERGY|CONSUMABLE       2050   
+           gas              CommodityUsage.ENERGY|CONSUMABLE       2035   
+           heat                CommodityUsage.ENERGY|PRODUCT       2035   
+           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT       2035   
+     2     electricity      CommodityUsage.ENERGY|CONSUMABLE       2040   
+           gas              CommodityUsage.ENERGY|CONSUMABLE       2040   
+           heat                CommodityUsage.ENERGY|PRODUCT       2040   
+           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT       2040   
+     3     electricity      CommodityUsage.ENERGY|CONSUMABLE       2045   
+           gas              CommodityUsage.ENERGY|CONSUMABLE       2045   
+           heat                CommodityUsage.ENERGY|PRODUCT       2045   
+           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT       2045   
+     4     electricity      CommodityUsage.ENERGY|CONSUMABLE       2050   
+           gas              CommodityUsage.ENERGY|CONSUMABLE       2050   
+           heat                CommodityUsage.ENERGY|PRODUCT       2050   
+           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT       2050   
+2055 0     electricity      CommodityUsage.ENERGY|CONSUMABLE       2035   
+           gas              CommodityUsage.ENERGY|CONSUMABLE       2035   
+           heat                CommodityUsage.ENERGY|PRODUCT       2035   
+           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT       2035   
+     1     electricity      CommodityUsage.ENERGY|CONSUMABLE       2035   
+           gas              CommodityUsage.ENERGY|CONSUMABLE       2035   
+           heat                CommodityUsage.ENERGY|PRODUCT       2035   
+           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT       2035   
+     2     electricity      CommodityUsage.ENERGY|CONSUMABLE       2040   
+           gas              CommodityUsage.ENERGY|CONSUMABLE       2040   
+           heat                CommodityUsage.ENERGY|PRODUCT       2040   
+           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT       2040   
+     3     electricity      CommodityUsage.ENERGY|CONSUMABLE       2045   
+           gas              CommodityUsage.ENERGY|CONSUMABLE       2045   
+           heat                CommodityUsage.ENERGY|PRODUCT       2045   
+           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT       2045   
+     4     electricity      CommodityUsage.ENERGY|CONSUMABLE       2050   
            gas              CommodityUsage.ENERGY|CONSUMABLE       2050   
            heat                CommodityUsage.ENERGY|PRODUCT       2050   
            CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT       2050   
@@ -35,11 +93,38 @@ year asset commodity
            heat         gasboiler       0.0000  
            CO2f         gasboiler       0.0000  
      1     electricity   heatpump       0.0000  
-...                           ...          ...  
-2055 6     CO2f         gasboiler       0.0000  
-     7     electricity   heatpump       6.8889  
            gas           heatpump       0.0000  
            heat          heatpump       0.0000  
            CO2f          heatpump       0.0000  
-
-[64 rows x 6 columns]
+     2     electricity   heatpump       6.8889  
+           gas           heatpump       0.0000  
+           heat          heatpump       0.0000  
+           CO2f          heatpump       0.0000  
+     3     electricity   heatpump       5.1111  
+           gas           heatpump       0.0000  
+           heat          heatpump       0.0000  
+           CO2f          heatpump       0.0000  
+     4     electricity   heatpump       0.0000  
+           gas           heatpump       0.0000  
+           heat          heatpump       0.0000  
+           CO2f          heatpump       0.0000  
+2055 0     electricity  gasboiler       0.0000  
+           gas          gasboiler       0.0000  
+           heat         gasboiler       0.0000  
+           CO2f         gasboiler       0.0000  
+     1     electricity   heatpump       0.0000  
+           gas           heatpump       0.0000  
+           heat          heatpump       0.0000  
+           CO2f          heatpump       0.0000  
+     2     electricity   heatpump       0.0000  
+           gas           heatpump       0.0000  
+           heat          heatpump       0.0000  
+           CO2f          heatpump       0.0000  
+     3     electricity   heatpump       5.1111  
+           gas           heatpump       0.0000  
+           heat          heatpump       0.0000  
+           CO2f          heatpump       0.0000  
+     4     electricity   heatpump       6.8889  
+           gas           heatpump       0.0000  
+           heat          heatpump       0.0000  
+           CO2f          heatpump       0.0000  
