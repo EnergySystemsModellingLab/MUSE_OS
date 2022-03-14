@@ -413,8 +413,9 @@ def consolidate_investment_quantity(
                 continue
             data.loc[filter, key] = value
 
-    data = data.rename(columns={"year": "installed", "replacement": "technology"})
+    data = data.rename(columns={"replacement": "technology"})
     data["installed"] = installed
+    data["year"] = installed
 
     group_cols = [c for c in data.columns if c not in [quantity, "asset"]]
     data = data.groupby(group_cols).sum().fillna(0).reset_index()
