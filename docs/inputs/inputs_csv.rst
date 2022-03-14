@@ -7,7 +7,6 @@ Input Files
    :caption: Contents:
 
    projections
-   regions
    commodities
    technodata
    technodata_timeslices
