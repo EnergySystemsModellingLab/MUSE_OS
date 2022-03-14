@@ -367,10 +367,20 @@ def _aggregate_cache(quantity: Text, data: List[xr.DataArray]) -> pd.DataFrame:
         pd.DataFrame: A Dataframe with the data aggregated.
     """
     data = [da.to_dataframe().reset_index() for da in data]
-    cols = [c for c in data[0].columns if c != quantity]
+    cols = list(
+        set.intersection(
+            *map(set, [[c for c in d.columns if c != quantity] for d in data])
+        )
+    )
+
+    def check_col(colname: str) -> str:
+        if colname.endswith("_x") or colname.endswith("_y"):
+            return colname.split("_")[0]
+        return colname
+
     return reduce(
         lambda left, right: pd.DataFrame.merge(left, right, how="outer", on=cols)
-        .groupby(lambda x: x.split("_")[0], axis=1)
+        .groupby(check_col, axis=1)
         .last(),
         data,
     )
