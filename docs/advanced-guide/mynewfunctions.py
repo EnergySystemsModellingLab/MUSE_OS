@@ -1,4 +1,5 @@
 from typing import Any, Text
+
 from muse.outputs.sinks import register_output_sink, sink_to_file
 
 
