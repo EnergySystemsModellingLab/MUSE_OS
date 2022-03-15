@@ -456,3 +456,98 @@ class TestOutputCache:
         output_cache.consolidate_cache(year)
 
         output_cache.factory["height"].assert_called_once()
+
+
+def test_cache_quantity():
+    return False
+
+
+def test_match_quantities():
+    return False
+
+
+@patch("muse.outputs.cache.extract_agents_internal")
+def test_extract_agents(mock_extract):
+    from muse.outputs.cache import extract_agents
+
+    sectors = set((1, 2, 3))
+    mock_extract.side_effect = [{s: None} for s in sectors]
+
+    actual = extract_agents(sectors)
+
+    assert set(actual.keys()) == sectors
+    assert set(actual.values()) == set((None,))
+
+
+def test_extract_agents_internal():
+    return False
+
+
+def test_aggregate_cache():
+    from muse.outputs.cache import _aggregate_cache
+    import xarray as xr
+    import numpy as np
+    from pandas.testing import assert_frame_equal
+
+    quantity = "heigth"
+
+    a = xr.DataArray(np.ones((3, 4, 5)), name=quantity)
+    b = a.copy()
+    b[0, 0, 0] = 0
+
+    actual = _aggregate_cache(quantity, [a, b])
+    assert_frame_equal(actual, b.to_dataframe().reset_index().astype(float))
+
+    actual = _aggregate_cache(quantity, [b, a])
+    assert_frame_equal(actual, a.to_dataframe().reset_index().astype(float))
+
+    c = a.copy()
+    c.assign_coords(dim_0=c.dim_0.data * 10)
+    dc, da = [da.to_dataframe().reset_index() for da in [c, a]]
+
+    actual = _aggregate_cache(quantity, [c, a])
+    expected = pd.DataFrame.merge(dc, da, how="outer").astype(float)
+    assert_frame_equal(actual, expected)
+
+
+def test_consolidate_quantity():
+    return False
+
+
+@patch("muse.outputs.cache.consolidate_quantity")
+def test_output_capacity(mock_consolidate):
+    from muse.outputs.cache import capacity
+    import xarray as xr
+
+    cached = [xr.DataArray() for _ in range(3)]
+    agents = {}
+    installed = 2042
+
+    capacity(cached, agents, installed)
+    mock_consolidate.assert_called_once_with("capacity", cached, agents, installed)
+
+
+@patch("muse.outputs.cache.consolidate_quantity")
+def test_output_production(mock_consolidate):
+    from muse.outputs.cache import production
+    import xarray as xr
+
+    cached = [xr.DataArray() for _ in range(3)]
+    agents = {}
+    installed = 2042
+
+    production(cached, agents, installed)
+    mock_consolidate.assert_called_once_with("production", cached, agents, installed)
+
+
+@patch("muse.outputs.cache.consolidate_quantity")
+def test_output_lcoe(mock_consolidate):
+    from muse.outputs.cache import lcoe
+    import xarray as xr
+
+    cached = [xr.DataArray() for _ in range(3)]
+    agents = {}
+    installed = 2042
+
+    lcoe(cached, agents, installed)
+    mock_consolidate.assert_called_once_with("lcoe", cached, agents, installed)

@@ -383,7 +383,7 @@ def _aggregate_cache(quantity: Text, data: List[xr.DataArray]) -> pd.DataFrame:
 
     def check_col(colname: str) -> str:
         if colname.endswith("_x") or colname.endswith("_y"):
-            return colname.split("_")[0]
+            return colname.rsplit("_", maxsplit=1)[0]
         return colname
 
     return reduce(
@@ -394,7 +394,7 @@ def _aggregate_cache(quantity: Text, data: List[xr.DataArray]) -> pd.DataFrame:
     )
 
 
-def consolidate_investment_quantity(
+def consolidate_quantity(
     quantity: Text,
     cached: List[xr.DataArray],
     agents: MutableMapping[Text, MutableMapping[Text, Text]],
@@ -448,7 +448,7 @@ def capacity(
     Returns:
         pd.DataFrame: DataFrame with the consolidated data.
     """
-    return consolidate_investment_quantity("capacity", cached, agents, installed)
+    return consolidate_quantity("capacity", cached, agents, installed)
 
 
 @register_output_quantity
@@ -467,7 +467,7 @@ def production(
     Returns:
         pd.DataFrame: DataFrame with the consolidated data.
     """
-    return consolidate_investment_quantity("production", cached, agents, installed)
+    return consolidate_quantity("production", cached, agents, installed)
 
 
 @register_output_quantity(name="lifetime_levelized_cost_of_energy")
@@ -487,4 +487,4 @@ def lcoe(
     """
     """Consolidates the cached LCOE into a single DataFrame to save."""
     to_consolidate = [c.assign_coords(timeslice=c.timeslice.data) for c in cached]
-    return consolidate_investment_quantity("lcoe", to_consolidate, agents, installed)
+    return consolidate_quantity("lcoe", to_consolidate, agents, installed)
