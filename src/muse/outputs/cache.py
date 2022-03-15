@@ -275,6 +275,13 @@ class OutputCache:
             if p["quantity"] in self.to_save
         }
 
+        self.normalized = {}
+        for p in self.to_save:
+            for alt, val in output_quantities.items():
+                if val != output_quantities[p]:
+                    continue
+                self.normalized[alt] = p
+
         pub.subscribe(self.cache, topic)
 
     def cache(self, data: Mapping[str, xr.DataArray]) -> None:
@@ -289,11 +296,12 @@ class OutputCache:
             DataArray values to save.
         """
         for quantity, value in data.items():
-            if quantity not in self.to_save:
+            normalized = self.normalized.get(quantity, "")
+            if normalized not in self.to_save:
                 continue
 
-            self.to_save[quantity].append(value.copy())
-            self.to_save[quantity][-1].name = quantity
+            self.to_save[normalized].append(value.copy())
+            self.to_save[normalized][-1].name = normalized
 
     def consolidate_cache(self, year: int) -> None:
         """Save the cached data into disk and flushes cache.
@@ -462,9 +470,11 @@ def production(
     return consolidate_investment_quantity("production", cached, agents, installed)
 
 
-@register_output_quantity
+@register_output_quantity(name="lifetime_levelized_cost_of_energy")
 def lcoe(
-    cached: List[xr.DataArray], agents: MutableMapping[Text, MutableMapping[Text, Text]]
+    cached: List[xr.DataArray],
+    agents: MutableMapping[Text, MutableMapping[Text, Text]],
+    installed: int,
 ) -> pd.DataFrame:
     """Consolidates the cached LCOE into a single DataFrame to save.
 
@@ -476,4 +486,5 @@ def lcoe(
         pd.DataFrame: DataFrame with the consolidated data.
     """
     """Consolidates the cached LCOE into a single DataFrame to save."""
-    pass
+    to_consolidate = [c.assign_coords(timeslice=c.timeslice.data) for c in cached]
+    return consolidate_investment_quantity("lcoe", to_consolidate, agents, installed)
