@@ -17,7 +17,7 @@ jobs:
             apt update -y 
             apt install -y pandoc
             python -m pip install --upgrade -r docs/requirements.txt
-            python -m pip install .
+            python -m pip install -e .
         build-command: sphinx-build -n -b html . ../build/html
     - uses: actions/upload-artifact@v1
       with:
@@ -41,7 +41,7 @@ jobs:
             apt update -y 
             apt install -y pandoc
             python -m pip install --upgrade -r docs/requirements.txt
-            python -m pip install .
+            python -m pip install -e .
         build-command: sphinx-build -n -b latex . ../build/latex
     - name: build latex
       run: |
