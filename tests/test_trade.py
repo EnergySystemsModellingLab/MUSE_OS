@@ -8,7 +8,7 @@ from pytest import approx, fixture
 @fixture
 def constraints_args(sector="power", model="trade") -> Mapping[Text, Any]:
     from muse import examples
-    from muse.utilities import reduce_assets, agent_concatenation
+    from muse.utilities import agent_concatenation, reduce_assets
 
     power = examples.sector(model=model, sector=sector)
     search_space = examples.search_space("power", model="trade")
@@ -141,8 +141,6 @@ def test_power_sector_some_investment():
     initial = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
     result = power.next(market)
     final = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
-
     assert "windturbine" not in initial.technology
     assert "windturbine" in final.technology
-    assert final.sel(asset=final.technology == "windturbine").sum() < 1
     assert "dst_region" not in result.dims

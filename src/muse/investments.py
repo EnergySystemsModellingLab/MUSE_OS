@@ -226,6 +226,7 @@ def cliff_retirement_profile(
         dims="year",
         coords={"year": range(current_year, max_year + 1)},
     )
+
     profile = allyears < (current_year + technical_life)  # type: ignore
 
     # now we minimize the number of years needed to represent the profile fully
@@ -253,8 +254,8 @@ def adhoc_match_demand(
     timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
 ) -> xr.DataArray:
     from muse.demand_matching import demand_matching
-    from muse.quantities import maximum_production, capacity_in_use
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.quantities import capacity_in_use, maximum_production
+    from muse.timeslices import QuantityType, convert_timeslice
 
     demand = next((c for c in constraints if c.name == "demand")).b
 
@@ -305,9 +306,11 @@ def scipy_match_demand(
     timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
     **options,
 ) -> xr.DataArray:
-    from muse.constraints import ScipyAdapter
-    from scipy.optimize import linprog
     from logging import getLogger
+
+    from scipy.optimize import linprog
+
+    from muse.constraints import ScipyAdapter
 
     if "timeslice" in costs.dims and timeslice_op is not None:
         costs = timeslice_op(costs)
@@ -340,8 +343,9 @@ def cvxopt_match_demand(
     timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
     **options,
 ) -> xr.DataArray:
-    from logging import getLogger
     from importlib import import_module
+    from logging import getLogger
+
     from muse.constraints import ScipyAdapter
 
     if "year" in technologies.dims and year is None:

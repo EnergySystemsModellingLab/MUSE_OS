@@ -31,11 +31,12 @@ if "__main__" == __name__:
 
         SETTINGS should be a .toml file.
         """
-        from pathlib import Path
         from logging import getLogger
-        from muse.readers.toml import read_settings
-        from muse.mca import MCA
+        from pathlib import Path
+
         from muse import examples
+        from muse.mca import MCA
+        from muse.readers.toml import read_settings
 
         if (not model) and not Path(settings).exists():
             print(f"Invalid or missing input: file {settings} does not exist.")

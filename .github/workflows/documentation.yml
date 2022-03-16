@@ -16,8 +16,8 @@ jobs:
         pre-build-command: |
             apt update -y 
             apt install -y pandoc
-            python -m pip install --upgrade setuptools wheel pip sphinx sphinx myst-parser nbsphinx sphinxcontrib-bibtex ipython ipykernel pandoc
-#            python -m pip install -e .[docs]
+            python -m pip install -e .
+            python -m pip install --upgrade -r docs/requirements.txt
         build-command: sphinx-build -n -b html . ../build/html
     - uses: actions/upload-artifact@v1
       with:
@@ -40,8 +40,8 @@ jobs:
         pre-build-command: |
             apt update -y 
             apt install -y pandoc
-            python -m pip install --upgrade setuptools wheel pip sphinx sphinx myst-parser nbsphinx sphinxcontrib-bibtex ipython ipykernel pandoc
-#            python -m pip install -e .[docs]
+            python -m pip install -e .
+            python -m pip install --upgrade -r docs/requirements.txt
         build-command: sphinx-build -n -b latex . ../build/latex
     - name: build latex
       run: |

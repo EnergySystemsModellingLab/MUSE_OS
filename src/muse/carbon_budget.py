@@ -1,12 +1,12 @@
-from typing import Callable, MutableMapping, Text, Sequence
+from typing import Callable, MutableMapping, Sequence, Text
 
 import numpy as np
 import xarray as xr
 from scipy.optimize import curve_fit
 
 from muse.mca import FindEquilibriumResults
-from muse.sectors import AbstractSector
 from muse.registration import registrator
+from muse.sectors import AbstractSector
 
 CARBON_BUDGET_METHODS_SIGNATURE = Callable[
     [xr.Dataset, list, Callable, xr.DataArray, xr.DataArray], float

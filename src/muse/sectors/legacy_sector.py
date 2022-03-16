@@ -13,9 +13,9 @@ import pandas as pd
 from xarray import DataArray, Dataset
 
 from muse.readers import read_csv_timeslices, read_initial_market
-from muse.timeslices import QuantityType, new_to_old_timeslice
 from muse.sectors.abstract import AbstractSector
 from muse.sectors.register import register_sector
+from muse.timeslices import QuantityType, new_to_old_timeslice
 
 
 @dataclass
@@ -39,7 +39,9 @@ class LegacySector(AbstractSector):  # type: ignore
     @classmethod
     def factory(cls, name: Text, settings: Any, **kwargs) -> "LegacySector":
         from pathlib import Path
+
         from muse_legacy.sectors import SECTORS
+
         from muse.readers import read_technologies
 
         sector = getattr(settings.sectors, name)
@@ -382,7 +384,8 @@ def ndarray_to_xarray(
     regions: Sequence[Text],
 ) -> DataArray:
     """From ndarray to dataarray."""
-    from typing import Mapping, Hashable
+    from typing import Hashable, Mapping
+
     from muse.timeslices import convert_timeslice
 
     coords: Mapping[Hashable, Any] = {
@@ -406,7 +409,8 @@ def xarray_to_ndarray(
     regions: Sequence[Text],
 ) -> np.ndarray:
     """From dataarray to ndarray."""
-    from typing import Mapping, Hashable
+    from typing import Hashable, Mapping
+
     from muse.timeslices import convert_timeslice
 
     coords: Mapping[Hashable, Any] = {

@@ -37,7 +37,7 @@ def supply(
         A data array where the commodity dimension only contains actual outputs (i.e. no
         input commodities).
     """
-    from muse.commodities import is_pollutant, CommodityUsage, check_usage
+    from muse.commodities import CommodityUsage, check_usage, is_pollutant
 
     if production_method is None:
         production_method = maximum_production
@@ -82,8 +82,8 @@ def emission(production: xr.DataArray, fixed_outputs: xr.DataArray):
     Return:
         A data array containing emissions (and only emissions).
     """
-    from muse.utilities import broadcast_techs
     from muse.commodities import is_enduse, is_pollutant
+    from muse.utilities import broadcast_techs
 
     # just in case we are passed a technologies dataset, like in other functions
     fouts = broadcast_techs(
@@ -106,9 +106,9 @@ def gross_margin(
     - variable costs is given as technodata inputs
     - non-environmental commodities OUTPUTS are related to revenues
     """
+    from muse.commodities import is_enduse, is_pollutant
+    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
-    from muse.commodities import is_pollutant, is_enduse
-    from muse.timeslices import convert_timeslice, QuantityType
 
     tech = broadcast_techs(  # type: ignore
         cast(
@@ -210,9 +210,9 @@ def consumption(
     Currently, the consumption is implemented for commodity_max == +infinity. If prices
     are not given, then flexible consumption is *not* considered.
     """
+    from muse.commodities import is_enduse, is_fuel
+    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import filter_with_template
-    from muse.commodities import is_fuel, is_enduse
-    from muse.timeslices import convert_timeslice, QuantityType
 
     params = filter_with_template(
         technologies[["fixed_inputs", "flexible_inputs"]], production, **kwargs
@@ -296,8 +296,8 @@ def annual_levelized_cost_of_energy(
 
     .. _simplified LCOE: https://www.nrel.gov/analysis/tech-lcoe-documentation.html
     """
-    from muse.timeslices import convert_timeslice, QuantityType
     from muse.commodities import is_pollutant
+    from muse.timeslices import QuantityType, convert_timeslice
 
     techs = technologies[
         [
@@ -393,8 +393,8 @@ def maximum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
         `capacity * fixed_outputs * utilization_factor`, whittled down according to the
         filters and the set of technologies in `capacity`.
     """
-    from muse.utilities import filter_input, broadcast_techs
     from muse.commodities import is_enduse
+    from muse.utilities import broadcast_techs, filter_input
 
     capa = filter_input(
         capacity, **{k: v for k, v in filters.items() if k in capacity.dims}
@@ -426,8 +426,8 @@ def demand_matched_production(
             data arrays., e.g. region, or year.
     """
     from muse.demand_matching import demand_matching
+    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
-    from muse.timeslices import convert_timeslice, QuantityType
 
     technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
     cost = annual_levelized_cost_of_energy(prices, technodata, **filters)
@@ -464,8 +464,8 @@ def capacity_in_use(
     Return:
         Capacity-in-use for each technology, whittled down by the filters.
     """
-    from muse.utilities import filter_input, broadcast_techs
     from muse.commodities import is_enduse
+    from muse.utilities import broadcast_techs, filter_input
 
     prod = filter_input(
         production, **{k: v for k, v in filters.items() if k in production.dims}
@@ -536,8 +536,8 @@ def costed_production(
     """
 
     from muse.quantities import maximum_production
+    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
-    from muse.timeslices import convert_timeslice, QuantityType
 
     technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
 

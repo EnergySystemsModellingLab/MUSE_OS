@@ -50,7 +50,8 @@ def sector_market(market: Dataset, comm_usage: Sequence[CommodityUsage]) -> Data
     """Creates a likely return market from a sector."""
     from numpy.random import randint
     from xarray import DataArray
-    from muse.commodities import is_other, is_enduse, is_consumable
+
+    from muse.commodities import is_consumable, is_enduse, is_other
 
     shape = (
         len(market.year),
@@ -81,13 +82,15 @@ def sector_market(market: Dataset, comm_usage: Sequence[CommodityUsage]) -> Data
 
 
 def test_find_equilibrium(market: Dataset):
-    from muse.mca import find_equilibrium
-    from muse.commodities import is_other, is_enduse
-    from numpy.random import choice
-    from unittest.mock import patch
-    from pytest import approx
     from copy import deepcopy
+    from unittest.mock import patch
+
+    from numpy.random import choice
+    from pytest import approx
     from xarray import broadcast
+
+    from muse.commodities import is_enduse, is_other
+    from muse.mca import find_equilibrium
 
     market = market.interp(year=[2010, 2015])
     a_enduses = choice(market.commodity.values, 5, replace=False).tolist()

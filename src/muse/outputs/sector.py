@@ -155,8 +155,9 @@ def market_quantity(
     sum_over: Optional[Union[Text, List[Text]]] = None,
     drop: Optional[Union[Text, List[Text]]] = None,
 ) -> xr.DataArray:
-    from muse.utilities import multiindex_to_coords
     from pandas import MultiIndex
+
+    from muse.utilities import multiindex_to_coords
 
     if isinstance(sum_over, Text):
         sum_over = [sum_over]
