@@ -22,10 +22,6 @@ year asset commodity
            gas             R1  MUS$2010/PJ   
            heat            R1  MUS$2010/PJ   
            CO2f            R1  MUS$2010/kt   
-     5     electricity     R1  MUS$2010/PJ   
-           gas             R1  MUS$2010/PJ   
-           heat            R1  MUS$2010/PJ   
-           CO2f            R1  MUS$2010/kt   
 2040 0     electricity     R1  MUS$2010/PJ   
            gas             R1  MUS$2010/PJ   
            heat            R1  MUS$2010/PJ   
@@ -46,10 +42,6 @@ year asset commodity
            gas             R1  MUS$2010/PJ   
            heat            R1  MUS$2010/PJ   
            CO2f            R1  MUS$2010/kt   
-     5     electricity     R1  MUS$2010/PJ   
-           gas             R1  MUS$2010/PJ   
-           heat            R1  MUS$2010/PJ   
-           CO2f            R1  MUS$2010/kt   
 
                                                   comm_usage technology  \
 year asset commodity                                                      
@@ -61,19 +53,15 @@ year asset commodity
            gas              CommodityUsage.ENERGY|CONSUMABLE  gasboiler   
            heat                CommodityUsage.ENERGY|PRODUCT  gasboiler   
            CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT  gasboiler   
-     2     electricity      CommodityUsage.ENERGY|CONSUMABLE  gasboiler   
-           gas              CommodityUsage.ENERGY|CONSUMABLE  gasboiler   
-           heat                CommodityUsage.ENERGY|PRODUCT  gasboiler   
-           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT  gasboiler   
+     2     electricity      CommodityUsage.ENERGY|CONSUMABLE   heatpump   
+           gas              CommodityUsage.ENERGY|CONSUMABLE   heatpump   
+           heat                CommodityUsage.ENERGY|PRODUCT   heatpump   
+           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT   heatpump   
      3     electricity      CommodityUsage.ENERGY|CONSUMABLE   heatpump   
            gas              CommodityUsage.ENERGY|CONSUMABLE   heatpump   
            heat                CommodityUsage.ENERGY|PRODUCT   heatpump   
            CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT   heatpump   
      4     electricity      CommodityUsage.ENERGY|CONSUMABLE   heatpump   
-           gas              CommodityUsage.ENERGY|CONSUMABLE   heatpump   
-           heat                CommodityUsage.ENERGY|PRODUCT   heatpump   
-           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT   heatpump   
-     5     electricity      CommodityUsage.ENERGY|CONSUMABLE   heatpump   
            gas              CommodityUsage.ENERGY|CONSUMABLE   heatpump   
            heat                CommodityUsage.ENERGY|PRODUCT   heatpump   
            CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT   heatpump   
@@ -85,10 +73,10 @@ year asset commodity
            gas              CommodityUsage.ENERGY|CONSUMABLE  gasboiler   
            heat                CommodityUsage.ENERGY|PRODUCT  gasboiler   
            CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT  gasboiler   
-     2     electricity      CommodityUsage.ENERGY|CONSUMABLE  gasboiler   
-           gas              CommodityUsage.ENERGY|CONSUMABLE  gasboiler   
-           heat                CommodityUsage.ENERGY|PRODUCT  gasboiler   
-           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT  gasboiler   
+     2     electricity      CommodityUsage.ENERGY|CONSUMABLE   heatpump   
+           gas              CommodityUsage.ENERGY|CONSUMABLE   heatpump   
+           heat                CommodityUsage.ENERGY|PRODUCT   heatpump   
+           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT   heatpump   
      3     electricity      CommodityUsage.ENERGY|CONSUMABLE   heatpump   
            gas              CommodityUsage.ENERGY|CONSUMABLE   heatpump   
            heat                CommodityUsage.ENERGY|PRODUCT   heatpump   
@@ -97,34 +85,26 @@ year asset commodity
            gas              CommodityUsage.ENERGY|CONSUMABLE   heatpump   
            heat                CommodityUsage.ENERGY|PRODUCT   heatpump   
            CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT   heatpump   
-     5     electricity      CommodityUsage.ENERGY|CONSUMABLE   heatpump   
-           gas              CommodityUsage.ENERGY|CONSUMABLE   heatpump   
-           heat                CommodityUsage.ENERGY|PRODUCT   heatpump   
-           CO2f         CommodityUsage.ENVIRONMENTAL|PRODUCT   heatpump   
 
                         installed  consumption  
 year asset commodity                            
 2035 0     electricity       2025       0.0000  
-           gas               2025       1.9978  
+           gas               2025       2.6422  
            heat              2025       0.0000  
            CO2f              2025       0.0000  
-     1     electricity       2030       0.0000  
-           gas               2030       0.0000  
-           heat              2030       0.0000  
-           CO2f              2030       0.0000  
-     2     electricity       2035       0.0000  
+     1     electricity       2035       0.0000  
            gas               2035       0.0000  
            heat              2035       0.0000  
            CO2f              2035       0.0000  
-     3     electricity       2025       1.7556  
+     2     electricity       2025       1.5333  
            gas               2025       0.0000  
            heat              2025       0.0000  
            CO2f              2025       0.0000  
-     4     electricity       2030       5.5556  
+     3     electricity       2030       5.5556  
            gas               2030       0.0000  
            heat              2030       0.0000  
            CO2f              2030       0.0000  
-     5     electricity       2035       0.0000  
+     4     electricity       2035       0.0000  
            gas               2035       0.0000  
            heat              2035       0.0000  
            CO2f              2035       0.0000  
@@ -132,23 +112,19 @@ year asset commodity
            gas               2025       0.0000  
            heat              2025       0.0000  
            CO2f              2025       0.0000  
-     1     electricity       2030       0.0000  
-           gas               2030       0.0000  
-           heat              2030       0.0000  
-           CO2f              2030       0.0000  
-     2     electricity       2035       0.0000  
-           gas               2035       0.0000  
+     1     electricity       2035       0.0000  
+           gas               2035       0.5864  
            heat              2035       0.0000  
            CO2f              2035       0.0000  
-     3     electricity       2025       0.0000  
+     2     electricity       2025       0.0000  
            gas               2025       0.0000  
            heat              2025       0.0000  
            CO2f              2025       0.0000  
-     4     electricity       2030       5.5556  
+     3     electricity       2030       5.5556  
            gas               2030       0.0000  
            heat              2030       0.0000  
            CO2f              2030       0.0000  
-     5     electricity       2035       3.7778  
+     4     electricity       2035       3.5756  
            gas               2035       0.0000  
            heat              2035       0.0000  
            CO2f              2035       0.0000  

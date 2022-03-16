@@ -121,19 +121,19 @@ UtilizationFactor
    represents the maximum actual output of the technology in a year, divided by the theoretical maximum output if the technology were operating at full capacity for the whole year.
 
 ScalingSize
-   represents the reference capacity at which capital costs are estimated when used as agents' objective as described in :ref:`inputs-agents'.
+   represents the reference capacity at which capital costs are estimated when used as agents' objective as described in :ref:`inputs-agents`.
 
 efficiency
-   represents the technology efficiency used as agents' objective to sort investment according to their energy or material efficiency (see :ref:`inputs-agents').
+   represents the technology efficiency used as agents' objective to sort investment according to their energy or material efficiency (see :ref:`inputs-agents`).
 
 Type
    defines the type of a technology. This variable is used for the search space in the agents csv file. It allows for the agents to filter for technologies of a similar type, for example.     
 
 Fuel
-   defines the fuel used by a technology, defined to restrict the new investments of each agent to selected technologies using selected fuels (see :ref:`inputs-agents').
+   defines the fuel used by a technology, defined to restrict the new investments of each agent to selected technologies using selected fuels (see :ref:`inputs-agents`).
 
 EndUse
-   defines the end use of a technology, defined to restrict the new investments of each agent to selected technologies using selected end uses (see :ref:`inputs-agents').
+   defines the end use of a technology, defined to restrict the new investments of each agent to selected technologies using selected end uses (see :ref:`inputs-agents`).
 
 InterestRate
    is the technology interest rate (called hurdle rates in other models).
@@ -141,7 +141,7 @@ InterestRate
 
 Agent_0, ..., Agent_N
    represent the allocation of the initial capacity to the each agent.
-   The column heading refers each retrofit agent "AgentShare" as defined in the agents' definition (see :ref:`inputs-agents').
+   The column heading refers each retrofit agent "AgentShare" as defined in the agents' definition (see :ref:`inputs-agents`).
    The value corresponds to the ownership of the initial stock, as defined in the :ref:`inputs-existing-capacity` for the starting year of the simulation. 
    For example, if an initial boiler stock of 10 PJ is available, this is allocated to each agent according to the "AgentShare".
 
@@ -155,9 +155,9 @@ Agent_0, ..., Agent_N
       resBoilerElectric, region1, 2030, ..., 1
 
    In a two-agent simulation, a new column neeeds to be added for each retrofit agent belonging to the new-retrofit agent pair.
-   The column heading refers each retrofit agent "AgentShare" as defined in the agents' definition (see :ref:`inputs-agents').
+   The column heading refers each retrofit agent "AgentShare" as defined in the agents' definition (see :ref:`inputs-agents`).
    Assuming a split of the initial capacity into 30 \% and 70 \% for each retrofit agent, the model table would be setup as follows.
-   The values of the "AgetnShare" needs to reflect the demand split represented by the "Quantity" attribute (see :ref:`inputs-agents'),
+   The values of the "AgetnShare" needs to reflect the demand split represented by the "Quantity" attribute (see :ref:`inputs-agents`),
    to make sure that the initial demand is fullfilled with the initial stock.
 
    .. csv-table:: Techno-data: AgentShare - 2 agents
