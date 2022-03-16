@@ -445,9 +445,10 @@ def max_production(
     Constrains the production decision variable by the maximum production for a given
     capacity.
     """
-    from xarray import zeros_like, ones_like
+    from xarray import ones_like, zeros_like
+
     from muse.commodities import is_enduse
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.timeslices import QuantityType, convert_timeslice
 
     if year is None:
         year = int(market.year.min())
@@ -493,9 +494,10 @@ def minimum_service(
     year: Optional[int] = None,
 ) -> Optional[Constraint]:
     """Constructs constraint between capacity and minimum service."""
-    from xarray import zeros_like, ones_like
+    from xarray import ones_like, zeros_like
+
     from muse.commodities import is_enduse
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.timeslices import QuantityType, convert_timeslice
 
     if "minimum_service_factor" not in technologies.data_vars:
         return None
@@ -585,6 +587,7 @@ def lp_costs(
         ('timeslice', 'asset', 'replacement', 'commodity')
     """
     from xarray import zeros_like
+
     from muse.commodities import is_enduse
     from muse.timeslices import convert_timeslice
 
@@ -786,8 +789,9 @@ def lp_constraint_matrix(
          >>> assert stacked.shape[0] == stacked.shape[1]
          >>> assert stacked.values == approx(np.eye(stacked.shape[0]))
     """
-    from numpy import eye
     from functools import reduce
+
+    from numpy import eye
 
     result = constraint.sum(set(constraint.dims) - set(lpcosts.dims) - set(b.dims))
 

@@ -45,9 +45,10 @@ OUTPUT_SINKS: MutableMapping[Text, Union[OUTPUT_SINK_SIGNATURE, Callable]] = {}
 
 
 def factory(parameters: Mapping, sector_name: Text = "default") -> Callable:
-    from pathlib import Path
-    from inspect import isclass
     from functools import partial
+    from inspect import isclass
+    from pathlib import Path
+
     from muse.outputs.sinks import OUTPUT_SINKS
 
     config = dict(**parameters)
@@ -105,6 +106,7 @@ def sink_to_file(suffix: Text):
     from functools import wraps
     from logging import getLogger
     from pathlib import Path
+
     from muse.defaults import DEFAULT_OUTPUT_DIRECTORY
 
     def decorator(function: Callable[[Union[pd.DataFrame, xr.DataArray], Text], None]):

@@ -23,7 +23,7 @@ __all__ = [
 
 from typing import Callable, List, Mapping, Optional, Sequence, Text, Tuple, Union
 
-from muse.agents import Agent, AbstractAgent
+from muse.agents import AbstractAgent, Agent
 from muse.registration import registrator
 
 AGENT_INTERACTIONS: Mapping[Text, Callable] = {}
@@ -168,6 +168,7 @@ def new_to_retro_net(
 def transfer_assets(from_: Agent, to_: Agent) -> None:
     """Transfer assets from first agent to second agent."""
     from xarray import zeros_like
+
     from muse.utilities import merge_assets
 
     to_.assets = merge_assets(to_.assets, from_.assets)

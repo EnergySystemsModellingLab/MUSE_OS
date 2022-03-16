@@ -6,9 +6,11 @@ from pytest import mark
 @mark.parametrize("model", ["default", "minimum-service", "trade"])
 def test_fullsim_regression(model, tmpdir, compare_dirs):
     from warnings import simplefilter
+
     from pandas.errors import DtypeWarning
-    from muse.mca import MCA
+
     from muse.examples import copy_model, example_data_dir
+    from muse.mca import MCA
 
     # fail the test if this warning crops up
     simplefilter("error", DtypeWarning)

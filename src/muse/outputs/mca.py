@@ -15,6 +15,7 @@ same signature:
 The function should never modify it's arguments. It can return either a pandas dataframe
 or an xarray xr.DataArray.
 """
+from operator import attrgetter
 from pathlib import Path
 from typing import (
     Any,
@@ -31,16 +32,14 @@ from typing import (
     cast,
 )
 
+import numpy as np
 import pandas as pd
 import xarray as xr
-import numpy as np
 from mypy_extensions import KwArg
-from operator import attrgetter
 
 from muse.registration import registrator
 from muse.sectors import AbstractSector
-
-from muse.timeslices import convert_timeslice, QuantityType
+from muse.timeslices import QuantityType, convert_timeslice
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
     [xr.Dataset, List[AbstractSector], KwArg(Any)], Union[xr.DataArray, pd.DataFrame]
@@ -414,8 +413,8 @@ def sector_consumption(
     sector: AbstractSector, market: xr.Dataset, **kwargs
 ) -> pd.DataFrame:
     """Sector fuel consumption with agent annotations."""
-    from muse.quantities import consumption
     from muse.production import supply
+    from muse.quantities import consumption
 
     data_sector: List[xr.DataArray] = []
     techs = getattr(sector, "technologies", [])
@@ -487,8 +486,8 @@ def sector_fuel_costs(
 ) -> pd.DataFrame:
     """Sector fuel costs with agent annotations."""
     from muse.commodities import is_fuel
-    from muse.quantities import consumption
     from muse.production import supply
+    from muse.quantities import consumption
 
     data_sector: List[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
@@ -673,7 +672,7 @@ def metric_lcoe(
 def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Levelized cost of energy () of technologies over their lifetime."""
 
-    from muse.commodities import is_pollutant, is_material, is_enduse, is_fuel
+    from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
     from muse.objectives import discount_factor
     from muse.quantities import consumption
 
@@ -876,7 +875,7 @@ def metric_eac(
 def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Net Present Value of technologies over their lifetime."""
 
-    from muse.commodities import is_pollutant, is_material, is_enduse, is_fuel
+    from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
     from muse.objectives import discount_factor
     from muse.quantities import consumption
 
