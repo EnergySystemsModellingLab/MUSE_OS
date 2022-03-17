@@ -4,7 +4,7 @@ on:
     pull_request:
         types: [opened, synchronize, reopened]
     push:
-        branches: [main, development]
+        branches: [main, develop]
 
 jobs:
   # Checks the style using the pre-commit hooks
