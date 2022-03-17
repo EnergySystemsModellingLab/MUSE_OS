@@ -464,8 +464,34 @@ class TestOutputCache:
         output_cache.factory["height"].assert_called_once()
 
 
-def test_cache_quantity():
-    return False
+@patch("pubsub.pub.sendMessage")
+@patch("muse.outputs.cache.match_quantities")
+def test_cache_quantity(mock_match, mock_send):
+    from muse.outputs.cache import CACHE_TOPIC_CHANNEL, cache_quantity
+
+    result = {"mass": 42}
+    mock_match.return_value = result
+
+    cache_quantity(**result)
+    mock_send.assert_called_once_with(CACHE_TOPIC_CHANNEL, data=result)
+    mock_send.reset_mock()
+
+    with raises(ValueError):
+        cache_quantity(function=lambda: None, mass=42)
+
+    with raises(ValueError):
+
+        @cache_quantity
+        def fun():
+            pass
+
+    @cache_quantity(quantity="mass")
+    def fun2():
+        return 42
+
+    fun2()
+    mock_match.assert_called_once_with("mass", 42)
+    mock_send.assert_called_once_with(CACHE_TOPIC_CHANNEL, data=result)
 
 
 def test_match_quantities():
