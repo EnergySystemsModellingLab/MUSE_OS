@@ -57,6 +57,7 @@ def read_technodictionary(filename: Union[Text, Path]) -> xr.Dataset:
     There are three axes: technologies, regions, and year.
     """
     from re import sub
+
     from muse.readers import camel_to_snake
 
     def to_agent_share(name):
@@ -149,8 +150,9 @@ def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
 
     There are four axes: (technology, region, year, commodity)
     """
-    from muse.readers import camel_to_snake
     from functools import partial
+
+    from muse.readers import camel_to_snake
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
     data = csv[csv.ProcessName != "Unit"]
@@ -270,6 +272,7 @@ def read_technologies(
         A dataset with all the characteristics of the technologies.
     """
     from logging import getLogger
+
     from muse.commodities import CommodityUsage
 
     if (not comm_out_path) and (not comm_in_path):
@@ -397,6 +400,7 @@ def read_csv_timeslices(path: Union[Text, Path], **kwargs) -> xr.DataArray:
 def read_global_commodities(path: Union[Text, Path]) -> xr.Dataset:
     """Reads commodities information from input."""
     from logging import getLogger
+
     from muse.readers import camel_to_snake
 
     path = Path(path)
@@ -435,8 +439,8 @@ def read_timeslice_shares(
     import file "Timeslices{sector}.csv" in the same directory as the timeslice shares.
     Pass `None` if this behaviour is not required.
     """
-    from re import match
     from logging import getLogger
+    from re import match
 
     path = Path(path)
     if sector is None:
@@ -574,8 +578,8 @@ def read_macro_drivers(path: Union[Text, Path]) -> xr.Dataset:
     gdp = table[table.Variable == "GDP|PPP"].drop("Variable", axis=1)
 
     result = xr.Dataset({"gdp": gdp, "population": population})
-    result["year"] = "year", result.year.astype(int)
-    result["region"] = "region", result.region.astype(str)
+    result["year"] = "year", result.year.values.astype(int)
+    result["region"] = "region", result.region.values.astype(str)
     return result
 
 
@@ -587,7 +591,8 @@ def read_initial_market(
 ) -> xr.Dataset:
     """Read projections, import and export csv files."""
     from logging import getLogger
-    from muse.timeslices import convert_timeslice, QuantityType
+
+    from muse.timeslices import QuantityType, convert_timeslice
 
     # Projections must always be present
     if isinstance(projections, (Text, Path)):
@@ -645,6 +650,7 @@ def read_initial_market(
 def read_attribute_table(path: Union[Text, Path]) -> xr.DataArray:
     """Read a standard MUSE csv file for price projections."""
     from logging import getLogger
+
     from muse.readers import camel_to_snake
 
     path = Path(path)
@@ -681,6 +687,7 @@ def read_attribute_table(path: Union[Text, Path]) -> xr.DataArray:
 def read_regression_parameters(path: Union[Text, Path]) -> xr.Dataset:
     """Reads the regression parameters from a standard MUSE csv file."""
     from logging import getLogger
+
     from muse.readers import camel_to_snake
 
     path = Path(path)
@@ -742,6 +749,7 @@ def read_csv_outputs(
 ) -> xr.Dataset:
     """Read standard MUSE output files for consumption or supply."""
     from re import match
+
     from muse.readers import camel_to_snake
 
     def expand_paths(path):
@@ -804,6 +812,7 @@ def read_trade(
 ) -> Union[xr.DataArray, xr.Dataset]:
     """Read CSV table with source and destination regions."""
     from functools import partial
+
     from muse.readers import camel_to_snake
 
     if not isinstance(data, pd.DataFrame):

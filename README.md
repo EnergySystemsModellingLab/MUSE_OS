@@ -14,7 +14,7 @@ reproducibility from day to day.
 Create a virtual env including python with:
 
 ```bash
-> conda create -n muse python=3.7
+> conda create -n muse python=3.8
 ```
 
 Activate the environment with:
@@ -53,7 +53,6 @@ Once installed, users can:
 - run `python -m muse --help` to get a description of the command-line arguments,
     including the name of any additional models provided with MUSE.
 
-
 Development
 -----------
 
@@ -76,7 +75,7 @@ Please note the quotation marks. `muse` in the last line above is the path to so
 just downloaded with `git`. The downloaded code can then be modified. The changes will be
 automatically reflected in the conda environment.
 
-In the developing phase, MUSE can also be used to run test cases to check that the model would reproduce expected results from a defined set of input data. 
+In the developing phase, MUSE can also be used to run test cases to check that the model would reproduce expected results from a defined set of input data.
 Tests can be run with the command [pytest](https://docs.pytest.org/en/latest/), from
 theb testing framework of the same name.
 
@@ -109,4 +108,5 @@ with:
 
 Copyright
 ---------
+
 Copyright © 2021 Imperial College London

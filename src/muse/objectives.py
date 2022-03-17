@@ -77,9 +77,8 @@ import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.agents import Agent
-from muse.registration import registrator
 from muse.outputs.cache import cache_quantity
-
+from muse.registration import registrator
 
 OBJECTIVE_SIGNATURE = Callable[
     [Agent, xr.DataArray, xr.DataArray, xr.Dataset, xr.Dataset, KwArg(Any)],
@@ -113,8 +112,8 @@ def factory(
     as any extra parameters to pass to the objective. Or it can be a sequence of
     objectives defined by name or by dictionary.
     """
-    from typing import List, Dict
     from logging import getLogger
+    from typing import Dict, List
 
     if isinstance(settings, Text):
         params: List[Dict] = [{"name": settings}]
@@ -290,7 +289,7 @@ def fixed_costs(
     :math:`\alpha` and :math:`\beta` are "fix_par" and "fix_exp" in
     :ref:`inputs-technodata`, respectively.
     """
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.timeslices import QuantityType, convert_timeslice
 
     cfd = capacity_to_service_demand(
         agent, demand, search_space, technologies, market, *args, **kwargs
@@ -322,7 +321,7 @@ def capital_costs(
     :math:`\alpha` is "cap_exp". In other words, capital costs are constant across the
     simulation for each technology.
     """
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.timeslices import QuantityType, convert_timeslice
 
     data = agent.filter_input(
         technologies[["cap_par", "scaling_size", "cap_exp"]],
@@ -445,8 +444,8 @@ def fuel_consumption_cost(
     **kwargs,
 ):
     """Cost of fuels when fulfilling whole demand."""
-    from muse.quantities import consumption
     from muse.commodities import is_fuel
+    from muse.quantities import consumption
 
     commodity = is_fuel(technologies.comm_usage.sel(commodity=market.commodity))
     params = agent.filter_input(
@@ -551,9 +550,9 @@ def lifetime_levelized_cost_of_energy(
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
     """
-    from muse.commodities import is_pollutant, is_material, is_enduse, is_fuel
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
     from muse.quantities import consumption
+    from muse.timeslices import QuantityType, convert_timeslice
 
     # Filtering of the inputs
     tech = agent.filter_input(
@@ -703,9 +702,9 @@ def net_present_value(
     Return:
         xr.DataArray with the NPV calculated for the relevant technologies
     """
-    from muse.commodities import is_pollutant, is_material, is_enduse, is_fuel
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
     from muse.quantities import consumption
+    from muse.timeslices import QuantityType, convert_timeslice
 
     # Filtering of the inputs
     tech = agent.filter_input(

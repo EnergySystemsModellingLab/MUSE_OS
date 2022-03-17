@@ -50,10 +50,11 @@ def test_weighted_sum(objectives):
 
 def test_lexical():
     """Test lexical comparison against hand-constructed tuples."""
-    from xarray import Dataset
     from numpy import floor, zeros
-    from numpy.random import rand, choice
+    from numpy.random import choice, rand
     from scipy.stats import rankdata
+    from xarray import Dataset
+
     from muse.decisions import lexical_comparison
 
     a = rand(5, 10) * 10 - 5
@@ -89,10 +90,10 @@ def test_lexical():
 
 
 def test_epsilon_constraints(objectives):
-    from muse.decisions import epsilon_constraints
-    from muse.decisions import retro_epsilon_constraints
     from numpy import array, isnan
     from numpy.random import choice
+
+    from muse.decisions import epsilon_constraints, retro_epsilon_constraints
 
     objectives.b[:] = array(range(1, objectives.b.size + 1)).reshape(objectives.b.shape)
     objectives.c[:] = array(range(1, objectives.c.size + 1)).reshape(objectives.c.shape)

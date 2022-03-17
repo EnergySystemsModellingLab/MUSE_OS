@@ -174,8 +174,8 @@ def demand_matching(
         `demand`, containing the supply that fulfills the demand. The units of this
         supply are the same as `demand` and `max_production`.
     """
-    from xarray import Dataset
     from pandas import MultiIndex
+    from xarray import Dataset
 
     if protected_dims is None:
         protected_dims = set()
@@ -264,8 +264,8 @@ def _demand_matching_impl(
     dimensions have coordinates. Input sanitization is performed in `demand_matching`
     proper.
     """
-    from xarray import full_like, Dataset, align
     from numpy import isnan, prod
+    from xarray import Dataset, align, full_like
 
     assert not set(demand.dims).difference(
         cost.dims, *(cons.dims for cons in constraints)

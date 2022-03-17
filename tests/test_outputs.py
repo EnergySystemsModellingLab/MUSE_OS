@@ -133,8 +133,9 @@ def test_save_with_path_to_nc_with_sink(tmpdir):
 
 @mark.usefixtures("streetcred")
 def test_save_with_fullpath_to_excel_with_sink(tmpdir):
-    from pandas import read_excel
     from warnings import simplefilter
+
+    from pandas import read_excel
 
     importorskip("openpyxl")
     simplefilter("default", PendingDeprecationWarning)
@@ -167,7 +168,7 @@ def test_no_sink_or_suffix(tmpdir):
 
 @mark.usefixtures("save_registries")
 def test_can_register_class():
-    from muse.outputs.sinks import register_output_sink, factory
+    from muse.outputs.sinks import factory, register_output_sink
 
     @register_output_sink
     class AClass:
@@ -193,7 +194,7 @@ def test_can_register_class():
 
 @mark.usefixtures("save_registries")
 def test_can_register_function():
-    from muse.outputs.sinks import register_output_sink, factory
+    from muse.outputs.sinks import factory, register_output_sink
 
     @register_output_sink
     def a_function(*args):
@@ -206,7 +207,7 @@ def test_can_register_function():
 
 @mark.usefixtures("save_registries")
 def test_yearly_aggregate():
-    from muse.outputs.sinks import register_output_sink, factory
+    from muse.outputs.sinks import factory, register_output_sink
 
     received_data = None
     gyear = None
@@ -276,7 +277,8 @@ def test_yearly_aggregate_no_outputs(tmpdir):
 
 
 def test_mca_aggregate_outputs(tmpdir):
-    from toml import load, dump
+    from toml import dump, load
+
     from muse import examples
     from muse.mca import MCA
 
@@ -298,11 +300,12 @@ def test_mca_aggregate_outputs(tmpdir):
 
 @mark.usefixtures("save_registries")
 def test_path_formatting(tmpdir):
-    from muse.mca import MCA
+    from toml import dump, load
+
     from muse.examples import copy_model
-    from muse.outputs.sinks import register_output_sink, sink_to_file
+    from muse.mca import MCA
     from muse.outputs.mca import register_output_quantity
-    from toml import load, dump
+    from muse.outputs.sinks import register_output_sink, sink_to_file
 
     # Copy the data to tmpdir
     copy_model(path=tmpdir)
@@ -364,11 +367,12 @@ def test_finite_resources_quantity(limits_path):
 
 
 def test_finite_resources_in_sim(tmp_path, limits_path):
+    from toml import dump, load
+
     from muse import examples
-    from muse.readers.toml import read_settings
     from muse.mca import MCA
     from muse.outputs.sinks import FiniteResourceException
-    from toml import load, dump
+    from muse.readers.toml import read_settings
 
     examples.copy_model("default", path=tmp_path)
     toml = load(tmp_path / "model" / "settings.toml")
@@ -389,7 +393,7 @@ def test_finite_resources_in_sim(tmp_path, limits_path):
 
 
 def test_register_output_quantity_cache():
-    from muse.outputs.cache import register_output_quantity, OUTPUT_QUANTITIES
+    from muse.outputs.cache import OUTPUT_QUANTITIES, register_output_quantity
 
     @register_output_quantity
     def dummy_quantity(*args):
@@ -419,8 +423,9 @@ class TestOutputCache:
     @patch("pubsub.pub.subscribe")
     @patch("muse.outputs.sector._factory")
     def test_cache(self, mock_factory, mock_subscribe):
-        from muse.outputs.cache import OutputCache
         import xarray as xr
+
+        from muse.outputs.cache import OutputCache
 
         param = [dict(quantity="height"), dict(quantity="width")]
         output_quantities = {q["quantity"]: lambda _: None for q in param}
@@ -439,8 +444,9 @@ class TestOutputCache:
     @patch("pubsub.pub.subscribe")
     @patch("muse.outputs.sector._factory")
     def test_consolidate_cache(self, mock_factory, mock_subscribe):
-        from muse.outputs.cache import OutputCache
         import xarray as xr
+
+        from muse.outputs.cache import OutputCache
 
         param = [dict(quantity="height"), dict(quantity="width")]
         output_quantities = {q["quantity"]: lambda _: None for q in param}
@@ -484,10 +490,11 @@ def test_extract_agents_internal():
 
 
 def test_aggregate_cache():
-    from muse.outputs.cache import _aggregate_cache
-    import xarray as xr
     import numpy as np
+    import xarray as xr
     from pandas.testing import assert_frame_equal
+
+    from muse.outputs.cache import _aggregate_cache
 
     quantity = "heigth"
 
@@ -516,8 +523,9 @@ def test_consolidate_quantity():
 
 @patch("muse.outputs.cache.consolidate_quantity")
 def test_output_capacity(mock_consolidate):
-    from muse.outputs.cache import capacity
     import xarray as xr
+
+    from muse.outputs.cache import capacity
 
     cached = [xr.DataArray() for _ in range(3)]
     agents = {}
@@ -529,8 +537,9 @@ def test_output_capacity(mock_consolidate):
 
 @patch("muse.outputs.cache.consolidate_quantity")
 def test_output_production(mock_consolidate):
-    from muse.outputs.cache import production
     import xarray as xr
+
+    from muse.outputs.cache import production
 
     cached = [xr.DataArray() for _ in range(3)]
     agents = {}
@@ -542,8 +551,9 @@ def test_output_production(mock_consolidate):
 
 @patch("muse.outputs.cache.consolidate_quantity")
 def test_output_lcoe(mock_consolidate):
-    from muse.outputs.cache import lcoe
     import xarray as xr
+
+    from muse.outputs.cache import lcoe
 
     cached = [xr.DataArray() for _ in range(3)]
     agents = {}

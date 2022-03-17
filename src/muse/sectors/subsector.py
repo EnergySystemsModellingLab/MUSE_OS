@@ -34,7 +34,9 @@ class Subsector:
         forecast: int = 5,
         expand_market_prices: bool = False,
     ):
-        from muse import demand_share as ds, constraints as cs, investments as iv
+        from muse import constraints as cs
+        from muse import demand_share as ds
+        from muse import investments as iv
 
         self.agents: Sequence[Agent] = list(agents)
         self.commodities: List[Text] = list(commodities)
@@ -74,7 +76,11 @@ class Subsector:
         )
         if lp_problem is None:
             return
-        techs = technologies.interp(year=current_year + time_period).drop_vars("year")
+
+        years = technologies.year
+        techs = technologies.interp(year=years)
+        techs = techs.sel(year=current_year + time_period)
+
         solution = self.investment(
             search=lp_problem[0], technologies=techs, constraints=lp_problem[1]
         )
@@ -168,10 +174,12 @@ class Subsector:
         current_year: Optional[int] = None,
         name: Text = "subsector",
     ) -> Subsector:
-        from muse.agents import agents_factory, InvestingAgent
-        from muse.readers.toml import undo_damage
+        from muse import constraints as cs
+        from muse import demand_share as ds
+        from muse import investments as iv
+        from muse.agents import InvestingAgent, agents_factory
         from muse.commodities import is_enduse
-        from muse import demand_share as ds, investments as iv, constraints as cs
+        from muse.readers.toml import undo_damage
 
         agents = agents_factory(
             settings.agents,

@@ -204,6 +204,7 @@ def register_regression(
     """
     from logging import getLogger
     from pathlib import Path
+
     from muse.registration import name_variations
 
     # allows specifyng the registered name as a keyword argument
@@ -408,7 +409,7 @@ def Logistic(
 @regression_functor({"a": "constant", "b": "GDPexp"})
 def Loglog(self, gdp: DataArray, population: DataArray, *args, **kwargs) -> DataArray:
     """1e6 * e^a * population * (gpd/population)^b"""
-    from numpy import power, exp
+    from numpy import exp, power
 
     factor = 1e6 * exp(self.coeffs.a) * population
     return factor * power(gdp / population, self.coeffs.b)

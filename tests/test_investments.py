@@ -6,6 +6,7 @@ def capacity_expansion():
     from numpy import arange
     from numpy.random import rand
     from xarray import Dataset
+
     from muse.investments import CapacityAddition
 
     data = Dataset()
@@ -30,9 +31,10 @@ def add_var(coordinates, *dims, factor=100.0):
 
 
 def test_cliff_retirement_known_profile():
-    from muse.investments import cliff_retirement_profile
     from numpy import array
     from xarray import DataArray
+
+    from muse.investments import cliff_retirement_profile
 
     technology = ["a", "b", "c"]
     lifetime = DataArray(
@@ -56,9 +58,10 @@ def test_cliff_retirement_known_profile():
 
 @mark.parametrize("protected", range(12))
 def test_cliff_retirement_random_profile(protected):
-    from muse.investments import cliff_retirement_profile
     from numpy.random import randint
     from xarray import DataArray
+
+    from muse.investments import cliff_retirement_profile
 
     technology = list("abcde")
 

@@ -38,8 +38,8 @@ def test_computing_objectives(demand_share, search_space):
 
     @register_objective
     def second(retro_agent, demand_share, search_space, switch=True, assets=None):
-        from xarray import DataArray
         from numpy import full
+        from xarray import DataArray
 
         shape = len(search_space.asset), len(search_space.replacement)
         result = DataArray(full(shape, 5), dims=search_space.coords)
@@ -76,8 +76,9 @@ def test_comfort(search_space, demand_share, technologies, retro_agent):
 
 
 def test_capital_costs(demand_share, search_space, technologies, retro_agent):
-    from muse.objectives import capital_costs
     import numpy as np
+
+    from muse.objectives import capital_costs
 
     technologies["cap_par"] = add_var(technologies, "technology", "region", "year")
     technologies["cap_exp"] = add_var(technologies, "technology", "region", "year")
@@ -135,9 +136,10 @@ def test_capital_costs(demand_share, search_space, technologies, retro_agent):
 def test_emission_cost(
     demand_share, search_space, technologies, retro_agent, agent_market
 ):
-    from muse.objectives import emission_cost
-    from muse.commodities import is_enduse, is_pollutant
     from xarray import broadcast
+
+    from muse.commodities import is_enduse, is_pollutant
+    from muse.objectives import emission_cost
 
     fouts = technologies.fixed_outputs.sel(
         commodity=is_pollutant(technologies.comm_usage)
@@ -176,8 +178,9 @@ def test_emission_cost(
 def test_capacity_fulfilling_demand(
     search_space, demand_share, technologies, retro_agent, agent_market
 ):
-    from muse.objectives import capacity_to_service_demand, fixed_costs
     import numpy as np
+
+    from muse.objectives import capacity_to_service_demand, fixed_costs
 
     minyear = technologies.year.values.min()
     maxyear = technologies.year.values.max()
@@ -237,10 +240,11 @@ def test_capacity_fulfilling_demand(
 def test_fuel_consumption(
     demand_share, search_space, technologies, retro_agent, agent_market
 ):
-    from muse.quantities import consumption
-    from muse.objectives import fuel_consumption_cost
-    from muse.commodities import is_fuel
     from xarray import broadcast
+
+    from muse.commodities import is_fuel
+    from muse.objectives import fuel_consumption_cost
+    from muse.quantities import consumption
 
     actual = fuel_consumption_cost(
         retro_agent, demand_share, search_space, technologies, agent_market
@@ -285,13 +289,14 @@ def test_net_present_value(
     .
     """
     import xarray
+
+    from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
     from muse.objectives import (
-        net_present_value,
         capacity_to_service_demand,
         discount_factor,
+        net_present_value,
     )
     from muse.quantities import consumption
-    from muse.commodities import is_material, is_enduse, is_fuel, is_pollutant
 
     technologies.technical_life.loc[{"region": retro_agent.region}] = 10
 

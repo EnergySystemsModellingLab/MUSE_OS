@@ -137,10 +137,10 @@ class Agent(AbstractAgent):
             category: optional attribute that could be used to classify
                 different agents together.
         """
-        from muse.hooks import housekeeping_factory, asset_merge_factory
-        from muse.filters import factory as filter_factory
-        from muse.objectives import factory as objectives_factory
         from muse.decisions import factory as decision_factory
+        from muse.filters import factory as filter_factory
+        from muse.hooks import asset_merge_factory, housekeeping_factory
+        from muse.objectives import factory as objectives_factory
 
         super().__init__(
             name=name,
@@ -336,8 +336,11 @@ class Agent(AbstractAgent):
             current_year=current_year + time_period,
             protected=max(self.forecast - time_period - 1, 0),
         )
+        if "dst_region" in investments.coords:
+            investments = investments.reindex_like(profile, method="ffill")
 
         new_assets = (investments * profile).rename(replacement="asset")
+
         new_assets["installed"] = "asset", [current_year] * len(new_assets.asset)
 
         # The new assets have picked up quite a few coordinates along the way.
@@ -365,8 +368,8 @@ class InvestingAgent(Agent):
             *kwargs: See :py:class:`~muse.agents.agent.Agent`
             investment: A function to perform investments
         """
-        from muse.investments import factory as ifactory
         from muse.constraints import factory as csfactory
+        from muse.investments import factory as ifactory
 
         super().__init__(*args, **kwargs)
 

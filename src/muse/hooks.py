@@ -157,6 +157,7 @@ def merge_assets(old_assets: Dataset, new_assets: Dataset) -> Dataset:
     did not take into account) are set to zero.
     """
     from logging import getLogger
+
     from muse.utilities import merge_assets
 
     assert "asset" not in old_assets

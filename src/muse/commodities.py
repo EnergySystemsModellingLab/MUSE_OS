@@ -2,8 +2,8 @@
 from enum import IntFlag, auto
 from typing import Sequence, Text, Union
 
-from xarray import DataArray, Dataset
 from numpy import ndarray
+from xarray import DataArray, Dataset
 
 
 class CommodityUsage(IntFlag):
@@ -41,7 +41,7 @@ class CommodityUsage(IntFlag):
 
     @staticmethod
     def from_technologies(technologies: Dataset) -> DataArray:
-        from numpy import bitwise_or, array
+        from numpy import array, bitwise_or
 
         def just_tech(x):
             dims = set(x.dims)
@@ -176,6 +176,7 @@ def check_usage(
         [True, False, False, False]
     """
     from functools import reduce
+
     from numpy import bitwise_and, equal
 
     if isinstance(flag, Text) and len(flag) > 0:

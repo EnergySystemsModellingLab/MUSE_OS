@@ -135,9 +135,9 @@ def registrator(
         vary_name: bool = True,
         overwrite: bool = False,
     ):
-        from logging import getLogger
-        from inspect import signature, isclass
+        from inspect import isclass, signature
         from itertools import chain
+        from logging import getLogger
 
         # allows specifyng the registered name as a keyword argument
         if function is None:

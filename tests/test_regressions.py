@@ -3,8 +3,8 @@ from pytest import approx, fixture
 
 @fixture
 def regression_params():
-    from xarray import Dataset
     from numpy.random import rand
+    from xarray import Dataset
 
     params = Dataset()
     params["region"] = "region", ["USA", "ATE"]
@@ -41,9 +41,10 @@ def drivers():
 
 
 def test_exponential(regression_params, drivers):
-    from muse.regressions import Exponential
     from numpy import exp
     from xarray import broadcast
+
+    from muse.regressions import Exponential
 
     rp = regression_params.drop_vars(("c", "w", "b0", "b1"))
     functor = Exponential(**(rp.data_vars))
@@ -59,8 +60,9 @@ def test_exponential(regression_params, drivers):
 
 
 def test_linear(regression_params, drivers):
+    from xarray import DataArray, broadcast
+
     from muse.regressions import Linear
-    from xarray import broadcast, DataArray
 
     rp = regression_params.drop_vars(("c", "w", "b"))
     functor = Linear(**rp.data_vars)
@@ -88,8 +90,9 @@ def test_linear(regression_params, drivers):
 if __name__ == "__main__":
 
     from pytest import approx  # noqa
-    from tests.agents import test_regressions  # noqa
+
     from muse import DEFAULT_SECTORS_DIRECTORY
+    from tests.agents import test_regressions  # noqa
 
     sectors_dir = DEFAULT_SECTORS_DIRECTORY
     regression_params = test_regressions.regression_params()  # noqa

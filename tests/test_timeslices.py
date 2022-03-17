@@ -105,6 +105,7 @@ def test_convert_intensive_timeslice(reference, rough, transforms):
 
 def test_reference_timeslice():
     from toml import loads
+
     from muse.timeslices import reference_timeslice
 
     inputs = loads(
@@ -138,6 +139,7 @@ def test_reference_timeslice():
 
 def test_no_overlap():
     from pytest import raises
+
     from muse.timeslices import reference_timeslice
 
     with raises(ValueError):
@@ -155,10 +157,12 @@ def test_no_overlap():
 
 
 def test_aggregate_transforms_no_aggregates():
-    from typing import Dict
     from itertools import product
+    from typing import Dict
+
     from numpy import ndarray, zeros
-    from muse.timeslices import reference_timeslice, aggregate_transforms
+
+    from muse.timeslices import aggregate_transforms, reference_timeslice
 
     reference = reference_timeslice(
         """
@@ -183,10 +187,12 @@ def test_aggregate_transforms_no_aggregates():
 
 
 def test_aggregate_transforms_with_aggregates():
-    from typing import Dict
     from itertools import product
+    from typing import Dict
+
     from toml import loads
-    from muse.timeslices import reference_timeslice, aggregate_transforms
+
+    from muse.timeslices import aggregate_transforms, reference_timeslice
 
     toml = loads(
         """

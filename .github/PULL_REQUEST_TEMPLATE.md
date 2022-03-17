@@ -17,12 +17,12 @@ document the change (include PR #) - note reverse order of PR #s.
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] Breaking change (whatever its nature)
 
-# Key checklist:
+## Key checklist
 
 - [ ] All tests pass: `$ python -m pytest`
 - [ ] The documentation builds and looks OK: `$ python setup.py build_sphinx`
 
-## Further checks:
+## Further checks
 
 - [ ] Code is commented, particularly in hard-to-understand areas
 - [ ] Tests added that prove fix is effective or that feature works

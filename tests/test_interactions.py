@@ -5,8 +5,9 @@ from pytest import fixture, mark
 
 @fixture
 def agents():
-    from numpy.random import choice
     from collections import namedtuple
+
+    from numpy.random import choice
 
     Agent = namedtuple("Agent", ["region", "name", "category", "assets"])
     regions = ["Area52", "Bermuda Triangle", "City of London"]
@@ -22,8 +23,9 @@ def agents():
 
 
 def test_groupby(agents):
-    from muse.interactions import agents_groupby
     from itertools import chain
+
+    from muse.interactions import agents_groupby
 
     grouped = agents_groupby(agents, ("category", "name"))
     assert sum(len(u) for u in grouped.values()) == len(agents)
@@ -35,8 +37,9 @@ def test_groupby(agents):
 
 
 def test_new_to_retro_net(agents):
-    from muse.interactions import new_to_retro_net
     from itertools import chain
+
+    from muse.interactions import new_to_retro_net
 
     net = new_to_retro_net(agents, "nope")
     assert sum(len(u) for u in net) <= len(agents)
@@ -53,7 +56,7 @@ def test_new_to_retro_net(agents):
 
 @mark.usefixtures("save_registries")
 def test_compute_interactions(agents):
-    from muse.interactions import factory, register_agent_interaction, new_to_retro_net
+    from muse.interactions import factory, new_to_retro_net, register_agent_interaction
 
     @register_agent_interaction
     def dummy_interaction(a, b):
