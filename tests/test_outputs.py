@@ -1,6 +1,6 @@
 """Test saving outputs to file."""
 from pathlib import Path
-from typing import Text
+from typing import Dict, Text
 from unittest.mock import patch
 
 import numpy as np
@@ -495,7 +495,43 @@ def test_cache_quantity(mock_match, mock_send):
 
 
 def test_match_quantities():
-    return False
+    import xarray as xr
+
+    from muse.outputs.cache import match_quantities
+
+    q = "mass"
+    da = xr.DataArray(name=q)
+    ds = xr.Dataset({q: da})
+
+    def assert_equal(a: Dict[str, xr.DataArray], b: Dict[str, xr.DataArray]):
+        assert set(a.keys()) == set(b.keys())
+        for k in a:
+            xr.testing.assert_equal(a[k], b[k])
+
+    actual = match_quantities(quantity=q, data=da)
+    assert_equal(actual, {q: da})
+
+    actual = match_quantities(quantity=q, data=ds)
+    assert_equal(actual, {q: da})
+
+    p = "height"
+    ds = xr.Dataset({q: da, p: da, "rubish": da})
+    actual = match_quantities(quantity=[q, p], data=ds)
+    assert_equal(actual, {q: da, p: da})
+
+    actual = match_quantities(quantity=[q, p], data=[da, da])
+    assert_equal(actual, {q: da, p: da})
+
+    with raises(ValueError):
+        match_quantities(
+            quantity=[q, p],
+            data=[
+                da,
+            ],
+        )
+
+    with raises(TypeError):
+        match_quantities(quantity=[q, p], data=42)
 
 
 @patch("muse.outputs.cache.extract_agents_internal")
