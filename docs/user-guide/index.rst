@@ -46,46 +46,46 @@ In the table below, you will notice a x2 after some of the technology tuples. Th
       - [gasboiler, heatpump]
       - [gasCCGT, windturbine, solarPV]
       - [gassuply1]
-      - `[1] <https://github.com/SGIModel/MUSE_OS/tree/main/docs/tutorial-code/1-add-new-technology>`_
+      - [1]
    *  - 2
       - [A1, A2]
       - [R1]
       - [gasboiler, heatpump]
       - [gasCCGT, windturbine, solarPV]
       - [gassuply1]
-      - `[2] <https://github.com/SGIModel/MUSE_OS/tree/main/docs/tutorial-code/2-add-agent>`_
+      - [2]
    *  - 3
       - [A1, A2] x2
       - [R1, R2]
       - [gasboiler, heatpump] x2
       - [gasCCGT, windturbine, solarPV] x2
       - [gassuply1] x2
-      - `[3] <https://github.com/SGIModel/MUSE_OS/tree/main/docs/tutorial-code/3-add-region>`_
+      - [3]
    *  - 4
       - [A1, A2] x2
       - [R1, R2]
       - [gasboiler, heatpump] x2
       - [gasCCGT, windturbine, solarPV] x2
       - [gassuply1] x2
-      - `[4] <https://github.com/SGIModel/MUSE_OS/tree/main/docs/tutorial-code/4-modify-timing-data>`_
+      - [4]
    *  - 5
       - [A1, A2] x2
       - [R1, R2]
       - [gasboiler, heatpump, electric_stove, gas_stove] x2
       - [gasCCGT, windturbine, solarPV] x2
       - [gassuply1] x2
-      - `[5] <https://github.com/SGIModel/MUSE_OS/tree/main/docs/tutorial-code/5-add-service-demand>`_
+      - [5]
    *  - 6
       - [A1]
       - [R1]
       - [gasboiler, heatpump]
       - [gasCCGT, windturbine, solarPV]
       - [gassuply1]
-      - `[6] <https://github.com/SGIModel/MUSE_OS/tree/main/docs/tutorial-code/6-add-correlation-demand>`_
+      - [6]
    *  - 7
       - [A1]
       - [R1]
       - [gasboiler, heatpump]
       - [gasCCGT, windturbine]
       - [gassuply1]
-      - `[7] <https://github.com/SGIModel/MUSE_OS/tree/main/docs/tutorial-code/7-min-max-timeslice-constraints>`_
+      - [7]
