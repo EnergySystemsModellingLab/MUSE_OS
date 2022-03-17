@@ -8,6 +8,4 @@
     "python.testing.pytestEnabled": true,
     "restructuredtext.confPath": "${workspaceFolder}/docs",
     "python.pythonPath": "/opt/anaconda3/envs/muse/bin/python",
-    "esbonio.server.enabled": true,
-    "esbonio.sphinx.confDir": "/Users/alexanderkell/GitHub/SGI/1-muse/StarMuse/docs",
 }
