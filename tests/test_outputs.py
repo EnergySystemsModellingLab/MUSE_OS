@@ -599,8 +599,55 @@ def test_aggregate_cache():
     assert_frame_equal(actual, expected)
 
 
-def test_consolidate_quantity():
-    return False
+def test_consolidate_quantity(newcapa_agent, retro_agent):
+    from types import SimpleNamespace
+
+    from muse.outputs.cache import consolidate_quantity, extract_agents_internal
+
+    newcapa_agent.name = "A1"
+    retro_agent.name = "A2"
+    newcapa_agent.category = "newcapa"
+    retro_agent.category = "retro"
+    sector = SimpleNamespace(name="IT", agents=[newcapa_agent, retro_agent])
+    agents = extract_agents_internal(sector)
+
+    year = 2042
+    quantity = "heigth"
+    a = xr.DataArray(
+        np.ones((3, 4, 5)),
+        dims=("agent", "replacement", "asset"),
+        coords={
+            "agent": [
+                newcapa_agent.uuid,
+            ]
+            * 3
+        },
+        name=quantity,
+    )
+    b = a.copy()
+    b[0, 0, 0] = 0
+    b.assign_coords(
+        agent=[
+            retro_agent.uuid,
+        ]
+        * 3
+    )
+
+    actual = consolidate_quantity(quantity, [a, b], agents, year)
+
+    cols = set(
+        list(agents[retro_agent.uuid].keys())
+        + ["installed", "year", "technology", quantity]
+    )
+    assert set(actual.columns) == cols
+    assert all(actual.installed == year)
+    assert all(actual.year == year)
+    assert all(
+        [
+            name in (newcapa_agent.name, retro_agent.name)
+            for name in actual.agent.unique()
+        ]
+    )
 
 
 @patch("muse.outputs.cache.consolidate_quantity")
