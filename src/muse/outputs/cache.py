@@ -5,19 +5,22 @@ calculation.
 
 The core of the method is the OutputCache class that initiated by the MCA with input
 parameters defined in the TOML file, much like the existing 'output' options but in a
-'outputs_cache' list, enables a channel to "listen" for data to be cached and, after
+'outputs_cache' list, enables listening for data to be cached and, after
 each period, saved into disk via the 'consolidate_cache' method.
 
 Anywhere in the code, you can write:
 
 .. code-block:: python
 
-    pub.sendMessage("cache_quantity", quantity=quantity_name, data=some_data)
+    cache_quantity(quantity_name=some_data)
 
 If the quantity has been set as something to cache, the data will be stored and,
-eventually, save to disk after - possibly - agregating the data and remove those entries
-corresponding to non-convergent investment attempts. This process of cleaning and
-aggregation is quantity specific.
+eventually, save to disk after - possibly - agregating the data and removing those
+entries corresponding to non-convergent investment attempts. This process of cleaning
+and aggregation is quantity specific.
+
+See documentation for the `cache_quantity` function as well as how to setup the toml
+input file to cache quantities.
 """
 from __future__ import annotations
 
