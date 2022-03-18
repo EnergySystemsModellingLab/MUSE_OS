@@ -112,7 +112,7 @@ def factory(
     objectives defined by name or by dictionary.
     """
     from logging import getLogger
-    from typing import List, Dict
+    from typing import Dict, List
 
     if isinstance(settings, Text):
         params: List[Dict] = [{"name": settings}]
