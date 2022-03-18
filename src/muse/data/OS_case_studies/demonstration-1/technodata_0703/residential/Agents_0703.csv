@@ -1,0 +1,5 @@
+AgentShare,Name,RegionName,Objective1,Objective2,Objective3,ObjData1,ObjData2,ObjData3,Objsort1,Objsort2,Objsort3,SearchRule,DecisionMethod,Quantity,MaturityThreshold,Budget,Type
+Agent1,A1,R1,LCOE,,,1,,,TRUE,,,all,single_objective,0.7,-1,inf,New
+Agent2,A1,R1,LCOE,,,1,,,TRUE,,,all,single_objective,0.7,-1,inf,Retrofit
+Agent3,A2,R1,fuel_consumption_cost,,,1,,,TRUE,,,all,single_objective,0.3,-1,inf,New
+Agent4,A2,R1,fuel_consumption_cost,,,1,,,TRUE,,,all,single_objective,0.3,-1,inf,Retrofit

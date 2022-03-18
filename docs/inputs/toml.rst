@@ -155,10 +155,6 @@ explained in the :ref:`toml-primer`.
 projections:
    Path to a csv file giving initial market projection. See :ref:`inputs-projection`.
 
-regions:
-   Path to a csv file describing the regions. See
-   :ref:`regional_data`.
-
 global_commodities:
    Path to a csv file describing the comodities in the simulation. See
    :ref:`inputs-commodities`.
@@ -460,7 +456,7 @@ commodities_in
 
 commodities_out
    Path to a csv file describing the outputs of each technology involved in the sector.
-   See :ref:`inputs-ocomms`.
+   See :ref:`inputs-iocomms`.
 
 existing_capacity
    Path to a csv file describing the initial capacity of the sector.
@@ -632,9 +628,6 @@ agregation_level:
 
 excess:
    Excess factor used to model early obsolescence.
-
-timeslices_path:
-   Path to a timeslice  :ref:`time_slices<inputs-legacy-timeslices>`.
 
 userdata_path:
    Path to a directory with sector-specific data files.

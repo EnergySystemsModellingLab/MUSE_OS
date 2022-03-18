@@ -1,4 +1,3 @@
-[![](https://dev.azure.com/SGIModel/StarMuse/_apis/build/status/SGIModel.StarMuse?branchName=updatedevelopment)](https://dev.azure.com/SGIModel/StarMuse/_build/latest?definitionId=1?branchName=updatedevelopment)
 
 Installation
 ============
@@ -36,7 +35,7 @@ Once a virtual environment has been *activated*, as describe above, we can
 install muse without fear of interfering with other python jobs. Run:
 
 ```bash
-> python -m pip install git+https://github.com/SGIModel/StarMuse.git#egg=muse
+> python -m pip install https://github.com/SGIModel/MUSE_OS.git#egg=muse
 ```
 
 Usage
@@ -60,7 +59,7 @@ It is strongly recommened to use a conda virtual environment, as above. The simp
 first download the muse code with:
 
 ```bash
-> git clone https://github.com/SGIModel/StarMuse.git muse
+> git clone https://github.com/SGIModel/MUSE_OS.git muse
 ```
 
 And then install the working directory into the conda environment:
@@ -95,16 +94,6 @@ environment](https://code.visualstudio.com/docs/python/environments#_select-and-
 or conda environment where to run the code. This will change the `.vscode/settings.json`
 file and add a user-specific path to it. Users should try and avoid commiting changes to
 `.vscode/settings.json` indiscriminately.
-
-Private SGI Model and Data
---------------------------
-
-Users with access to the private SGI repositories on github can install it automatically
-with:
-
-```bash
-> python -m pip install -e "muse[private_sgi_model]"
-```
 
 Copyright
 ---------

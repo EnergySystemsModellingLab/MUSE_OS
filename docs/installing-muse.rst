@@ -11,15 +11,15 @@ There are two ways to install MUSE: one for users who do not wish to modify the 
    
    Linux users may need to install a C compiler, whether GNU gcc or Clang, as well python development packages, depending on their distribution.
 
-   #. Install Visual Studio from the following link: https://visualstudio.microsoft.com/downloads/
+   #. Install Visual Studio from the following link: https://visualstudio.microsoft.com/vs/older-downloads/. Please select the 2019 version. Click on download.
 
-   #. Select your preferred edition. Although, the "Community" version is free and contains what is required.
+   #. Select the “Visual Studio Community” version. Click on “Download” and save the executable vs_Commmunity.exe.
    
-   #. Install Visual Studio by selecting the default options.
+   #. Install Visual Studio by selecting the default options. You may be asked to reboot your computer to complete the installation.
 
-   #.   Download the Microsoft Visual C++ Build Tools from the following link by downloading Visual Studio 2019: https://visualstudio.microsoft.com/downloads/   
+   #.   Download the Microsoft Visual C++ Build Tools from the following link: https://visualstudio.microsoft.com/vs/older-downloads/.
 
-   #. Select your preferred edition. The "Community" is free and contains what is required.
+   #. Please select the “Build Tools for Visual Studio 2019 (version 16.9)”. Click on download. Save the vs_BuildTools.exe.
 
    #.   Run the installer
 
@@ -48,7 +48,7 @@ After python is installed we can install MUSE. MUSE can be installed via the `An
 
 .. code-block:: bash
 
-   python -m pip install --user git+https://github.com/SGIModel/StarMuse
+   python -m pip install --user git+https://github.com/SGIModel/MUSE_OS
 
 It should now be possible to run muse. Again, this can be done in the anaconda prompt as follows:
 
@@ -93,7 +93,7 @@ The simplest approach is to first download the muse code with `git`_:
 
 .. code-block:: bash
 
-   git clone https://github.com/SGIModel/StarMuse.git muse
+   git clone https://github.com/SGIModel/MUSE_OS.git muse
 
 For interested users, there are plenty of `good`__ tutorials for `git`_. 
 Next, it is possible to install the working directory into the conda environment:
