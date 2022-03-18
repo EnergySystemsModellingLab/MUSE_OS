@@ -490,5 +490,6 @@ def lcoe(
         pd.DataFrame: DataFrame with the consolidated data.
     """
     """Consolidates the cached LCOE into a single DataFrame to save."""
-    to_consolidate = [c.assign_coords(timeslice=c.timeslice.data) for c in cached]
-    return consolidate_quantity("lcoe", to_consolidate, agents, installed)
+    if "timeslice" in cached[0].dims:
+        cached = [c.assign_coords(timeslice=c.timeslice.data) for c in cached]
+    return consolidate_quantity("lcoe", cached, agents, installed)
