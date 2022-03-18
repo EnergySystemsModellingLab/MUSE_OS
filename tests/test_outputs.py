@@ -393,9 +393,9 @@ def test_finite_resources_in_sim(tmp_path, limits_path):
 
 
 def test_register_output_quantity_cache():
-    from muse.outputs.cache import OUTPUT_QUANTITIES, register_output_quantity
+    from muse.outputs.cache import OUTPUT_QUANTITIES, register_cached_quantity
 
-    @register_output_quantity
+    @register_cached_quantity
     def dummy_quantity(*args):
         pass
 

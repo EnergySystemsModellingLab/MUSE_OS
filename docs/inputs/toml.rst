@@ -430,6 +430,22 @@ output
    - overwrite: If `False` MUSE will issue an error and abort, instead of
       overwriting an existing file. Defaults to `False`. This prevents important output files from being overwritten.
 
+outputs_cache
+   This option behaves exactly like `outputs` above and accepts the same options but
+   controls the output of cahced quantities instead. This option is NOT available for
+   sectors (i.e using [[sector.comercial.outputs_cache]] will have no effect). See
+   :py:mod:`muse.outputs.cache` for more details.
+
+   A single row looks like this:
+
+   .. code-block:: TOML
+
+      [[outputs_cache]]
+      quantity = "production"
+      sink = "aggregate"
+      filename = "{cwd}/{default_output_dir}/Cache{Quantity}.csv"
+      index = false
+
 technodata
    Path to a csv file containing the characterization of the technologies involved in
    the sector, e.g. lifetime, capital costs, etc... See :ref:`inputs-technodata`.

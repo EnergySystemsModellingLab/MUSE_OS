@@ -19,8 +19,10 @@ eventually, save to disk after - possibly - agregating the data and removing tho
 entries corresponding to non-convergent investment attempts. This process of cleaning
 and aggregation is quantity specific.
 
-See documentation for the `cache_quantity` function as well as how to setup the toml
-input file to cache quantities.
+See documentation for the :py:func:`muse.outputs.cache.cache_quantity` function as well
+as how to setup the toml input file to cache quantities. Users can customize and create
+further output quantities by registering with MUSE via
+:py:func:`muse.outputs.cache.register_cached_quantity`.
 """
 from __future__ import annotations
 
@@ -58,7 +60,7 @@ CACHE_TOPIC_CHANNEL = "cache_quantity"
 
 
 @registrator(registry=OUTPUT_QUANTITIES)
-def register_output_quantity(function: OUTPUT_QUANTITY_SIGNATURE) -> Callable:
+def register_cached_quantity(function: OUTPUT_QUANTITY_SIGNATURE) -> Callable:
     """Registers a function to compute an output quantity."""
     from functools import wraps
 
@@ -439,7 +441,7 @@ def consolidate_quantity(
     return data[sorted(data.columns)]
 
 
-@register_output_quantity
+@register_cached_quantity
 def capacity(
     cached: List[xr.DataArray],
     agents: MutableMapping[Text, MutableMapping[Text, Text]],
@@ -458,7 +460,7 @@ def capacity(
     return consolidate_quantity("capacity", cached, agents, installed)
 
 
-@register_output_quantity
+@register_cached_quantity
 def production(
     cached: List[xr.DataArray],
     agents: MutableMapping[Text, MutableMapping[Text, Text]],
@@ -477,7 +479,7 @@ def production(
     return consolidate_quantity("production", cached, agents, installed)
 
 
-@register_output_quantity(name="lifetime_levelized_cost_of_energy")
+@register_cached_quantity(name="lifetime_levelized_cost_of_energy")
 def lcoe(
     cached: List[xr.DataArray],
     agents: MutableMapping[Text, MutableMapping[Text, Text]],
