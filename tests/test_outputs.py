@@ -547,8 +547,28 @@ def test_extract_agents(mock_extract):
     assert set(actual.values()) == set((None,))
 
 
-def test_extract_agents_internal():
-    return False
+def test_extract_agents_internal(newcapa_agent, retro_agent):
+    from types import SimpleNamespace
+
+    from muse.outputs.cache import extract_agents_internal
+
+    newcapa_agent.name = "A1"
+    retro_agent.name = "A2"
+    sector = SimpleNamespace(name="IT", agents=[newcapa_agent, retro_agent])
+
+    actual = extract_agents_internal(sector)
+    for agent in [newcapa_agent, retro_agent]:
+        assert agent.uuid in actual
+        assert tuple(actual[agent.uuid].keys()) == (
+            "agent",
+            "type",
+            "sector",
+            "dst_region",
+        )
+        assert actual[agent.uuid]["agent"] == agent.name
+        assert actual[agent.uuid]["type"] == agent.category
+        assert actual[agent.uuid]["sector"] == "IT"
+        assert actual[agent.uuid]["dst_region"] == agent.region
 
 
 def test_aggregate_cache():
