@@ -18,3 +18,14 @@ same, including the casing. Check the consistency of the units across those thre
 
     def __str__(self):
         return self.msg
+
+
+class GrowthOfCapacityTooConstrained(Exception):
+    """Indicataes that the investment step failed because capacity could not grow."""
+
+    msg = """Error during the investment process. The capacity was not allowed to grow
+suficiently in order to match the demand. Consider increating the MaxCapacityAddition
+and/or the MaxCapacityGrowth in the technodata."""
+
+    def __str__(self):
+        return self.msg
