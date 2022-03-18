@@ -4,9 +4,9 @@ Functions that output the state of diverse quantities at intermediate steps of t
 calculation.
 
 The core of the method is the OutputCache class that initiated by the MCA with input
-parameters defined in the TOML file, much like the existing 'output' options but in a
-'outputs_cache' list, enables listening for data to be cached and, after
-each period, saved into disk via the 'consolidate_cache' method.
+parameters defined in the TOML file, much like the existing `output` options but in a
+`outputs_cache` list, enables listening for data to be cached and, after
+each period, saved into disk via the `consolidate_cache` method.
 
 Anywhere in the code, you can write:
 
