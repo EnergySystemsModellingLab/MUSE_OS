@@ -23,25 +23,24 @@ from __future__ import annotations
 
 from collections import ChainMap
 from functools import reduce
+from operator import attrgetter
 from typing import (
+    Callable,
     List,
     Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
     Text,
     Union,
-    Callable,
-    Optional,
-    MutableMapping,
-    Sequence,
 )
-from operator import attrgetter
 
-from pubsub import pub
-import xarray as xr
 import pandas as pd
+import xarray as xr
+from pubsub import pub
 
 from muse.registration import registrator
 from muse.sectors import AbstractSector
-
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
     [List[xr.DataArray]], Union[xr.DataArray, pd.DataFrame]
@@ -414,7 +413,7 @@ def consolidate_quantity(
     data = _aggregate_cache(quantity, cached)
 
     ignore_dst_region = "dst_region" in data.columns
-    for agent in list(agents):
+    for agent in tuple(agents):
         filter = data.agent == agent
         for key, value in agents[agent].items():
             if key == "dst_region" and ignore_dst_region:
@@ -426,8 +425,13 @@ def consolidate_quantity(
     data["year"] = installed
 
     group_cols = [c for c in data.columns if c not in [quantity, "asset"]]
-    data = data.groupby(group_cols).sum().fillna(0).reset_index()
-
+    data = (
+        data.groupby(group_cols)
+        .sum()
+        .fillna(0)
+        .reset_index()
+        .drop("asset", axis=1, errors="ignore")
+    )
     data = data[data[quantity] != 0]
     return data[sorted(data.columns)]
 
