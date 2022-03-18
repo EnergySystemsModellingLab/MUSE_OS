@@ -115,6 +115,11 @@ def factory(settings: Optional[Union[Text, Mapping]] = None) -> Callable:
 
                 return (x / convert_timeslice(xr.DataArray(1), x)).max("timeslice")
 
+        elif top.lower() == "mean":
+
+            def timeslice_op(x: xr.DataArray) -> xr.DataArray:
+                return x.mean(dim="asset")
+
         elif top.lower() == "sum":
 
             def timeslice_op(x: xr.DataArray) -> xr.DataArray:
@@ -235,8 +240,8 @@ def adhoc_match_demand(
     timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
 ) -> xr.DataArray:
     from muse.demand_matching import demand_matching
-    from muse.quantities import capacity_in_use, maximum_production
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.quantities import maximum_production, capacity_in_use
+    from muse.timeslices import convert_timeslice, QuantityType
 
     demand = next((c for c in constraints if c.name == "demand")).b
 
@@ -250,6 +255,7 @@ def adhoc_match_demand(
         technology=costs.replacement,
         commodity=demand.commodity,
     ).drop_vars("technology")
+
     if "timeslice" in demand.dims and "timeslice" not in max_prod.dims:
         max_prod = convert_timeslice(max_prod, demand, QuantityType.EXTENSIVE)
 
@@ -257,16 +263,19 @@ def adhoc_match_demand(
     # Any production assigned to them by the demand-matching algorithm will be removed.
     minobj = costs.min()
     maxobj = costs.where(search_space, minobj).max("replacement") + 1
-
-    if "timeslice" in costs.dims and timeslice_op is not None:
-        costs = timeslice_op(costs)
+    # Take average asset cost over the assets
+    if "timeslice" in costs.dims:
+        costs = costs.mean(dim="asset")
 
     decision = costs.where(search_space, maxobj)
 
     production = demand_matching(
-        demand.sel(asset=demand.asset.isin(search_space.asset)), decision, max_prod
+        demand.sel(asset=demand.asset.isin(search_space.asset)).sum("asset"),
+        decision,
+        max_prod,
     ).where(search_space, 0)
 
+    # capacity can come with timeslices if the utilization factor has timeslices
     capacity = capacity_in_use(
         production, technologies, year=year, technology=production.replacement
     ).drop_vars("technology")
@@ -286,11 +295,9 @@ def scipy_match_demand(
     timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
     **options,
 ) -> xr.DataArray:
-    from logging import getLogger
-
-    from scipy.optimize import linprog
-
     from muse.constraints import ScipyAdapter
+    from scipy.optimize import linprog
+    from logging import getLogger
 
     if "timeslice" in costs.dims and timeslice_op is not None:
         costs = timeslice_op(costs)
@@ -323,9 +330,8 @@ def cvxopt_match_demand(
     timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
     **options,
 ) -> xr.DataArray:
-    from importlib import import_module
     from logging import getLogger
-
+    from importlib import import_module
     from muse.constraints import ScipyAdapter
 
     if "year" in technologies.dims and year is None:
