@@ -2,7 +2,7 @@
 
 ## Features
 
-- Adds trade tutorial to the documentation ([#16]https://github.com/SGIModel/MUSE_OS/pull/16)
+- Adds trade tutorial to the documentation ([#16](https://github.com/SGIModel/MUSE_OS/pull/16))
 - Updated branch names on pipelines ([#9](https://github.com/SGIModel/MUSE_OS/issues/9))
 - Edited default package name from StarMUSE to MUSE ([#4](https://github.com/SGIModel/MUSE_OS/issues/4))
 - Added new cases studies with multiple agents and spend limit ([#1](https://github.com/SGIModel/MUSE_OS/pull/1))
