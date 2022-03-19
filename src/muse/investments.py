@@ -115,11 +115,6 @@ def factory(settings: Optional[Union[Text, Mapping]] = None) -> Callable:
 
                 return (x / convert_timeslice(xr.DataArray(1), x)).max("timeslice")
 
-        elif top.lower() == "mean":
-
-            def timeslice_op(x: xr.DataArray) -> xr.DataArray:
-                return x.mean(dim="asset")
-
         elif top.lower() == "sum":
 
             def timeslice_op(x: xr.DataArray) -> xr.DataArray:
@@ -239,6 +234,9 @@ def adhoc_match_demand(
     year: int,
     timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
 ) -> xr.DataArray:
+    from logging import getLogger
+    from numpy import any, round
+
     from muse.demand_matching import demand_matching
     from muse.quantities import capacity_in_use, maximum_production
     from muse.timeslices import QuantityType, convert_timeslice
@@ -274,6 +272,15 @@ def adhoc_match_demand(
         decision,
         max_prod,
     ).where(search_space, 0)
+
+    res = round(
+        production.sum("replacement").sum("asset")
+        - demand.sel(asset=demand.asset.isin(search_space.asset)).sum("asset"),
+        4,
+    )
+
+    if any(res) < 0:
+        raise ValueError("System could not be solved")
 
     # capacity can come with timeslices if the utilization factor has timeslices
     capacity = capacity_in_use(
