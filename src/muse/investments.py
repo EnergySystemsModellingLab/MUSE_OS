@@ -64,6 +64,7 @@ from mypy_extensions import KwArg
 
 from muse.constraints import Constraint
 from muse.registration import registrator
+from muse.errors import GrowthOfCapacityTooConstrained
 
 INVESTMENT_SIGNATURE = Callable[
     [xr.DataArray, xr.DataArray, xr.Dataset, List[Constraint], KwArg(Any)], xr.DataArray
@@ -307,7 +308,7 @@ def scipy_match_demand(
     res = linprog(**adapter.kwargs, method="highs")
     if not res.success:
         getLogger(__name__).critical(res.message)
-        raise LinearProblemError("LP system could not be solved", res)
+        raise GrowthOfCapacityTooConstrained
 
     solution = cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(res.x)
     return solution.capacity
