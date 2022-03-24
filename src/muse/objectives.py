@@ -730,9 +730,9 @@ def net_present_value(
     Return:
         xr.DataArray with the NPV calculated for the relevant technologies
     """
-    from muse.commodities import is_pollutant, is_material, is_enduse, is_fuel
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
     from muse.quantities import consumption
+    from muse.timeslices import QuantityType, convert_timeslice
 
     # Filtering of the inputs
     tech = agent.filter_input(
