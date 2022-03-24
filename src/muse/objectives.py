@@ -77,6 +77,7 @@ import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.agents import Agent
+from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
 
 OBJECTIVE_SIGNATURE = Callable[
@@ -111,8 +112,8 @@ def factory(
     as any extra parameters to pass to the objective. Or it can be a sequence of
     objectives defined by name or by dictionary.
     """
-    from typing import List, Dict
     from logging import getLogger
+    from typing import Dict, List
 
     if isinstance(settings, Text):
         params: List[Dict] = [{"name": settings}]
@@ -184,6 +185,7 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
         if "technology" in result.coords:
             raise RuntimeError("Objective should not return a coordinate 'technology'")
         result.name = function.__name__
+        cache_quantity(**{result.name: result})
         return result
 
     return decorated_objective
@@ -287,7 +289,7 @@ def fixed_costs(
     :math:`\alpha` and :math:`\beta` are "fix_par" and "fix_exp" in
     :ref:`inputs-technodata`, respectively.
     """
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.timeslices import QuantityType, convert_timeslice
 
     cfd = capacity_to_service_demand(
         agent, demand, search_space, technologies, market, *args, **kwargs
@@ -298,9 +300,7 @@ def fixed_costs(
         year=agent.forecast_year,
     ).drop_vars("technology")
     result = convert_timeslice(
-        data.fix_par * (cfd ** data.fix_exp),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
+        data.fix_par * (cfd ** data.fix_exp), demand.timeslice, QuantityType.EXTENSIVE
     )
     return xr.DataArray(result)
 
@@ -321,7 +321,7 @@ def capital_costs(
     :math:`\alpha` is "cap_exp". In other words, capital costs are constant across the
     simulation for each technology.
     """
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.timeslices import QuantityType, convert_timeslice
 
     data = agent.filter_input(
         technologies[["cap_par", "scaling_size", "cap_exp"]],
@@ -444,8 +444,8 @@ def fuel_consumption_cost(
     **kwargs,
 ):
     """Cost of fuels when fulfilling whole demand."""
-    from muse.quantities import consumption
     from muse.commodities import is_fuel
+    from muse.quantities import consumption
 
     commodity = is_fuel(technologies.comm_usage.sel(commodity=market.commodity))
     params = agent.filter_input(
@@ -550,9 +550,9 @@ def lifetime_levelized_cost_of_energy(
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
     """
-    from muse.commodities import is_pollutant, is_material, is_enduse, is_fuel
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
     from muse.quantities import consumption
+    from muse.timeslices import QuantityType, convert_timeslice
 
     # Filtering of the inputs
     tech = agent.filter_input(
@@ -604,17 +604,6 @@ def lifetime_levelized_cost_of_energy(
         agent, demand, search_space, technologies, market
     )
 
-    if "timeslice" in capacity.dims:
-        capacity = capacity.where(
-            ~np.isinf(capacity),
-            capacity.where(~np.isinf(capacity)).max("replacement").max("timeslice"),
-        )
-    else:
-        capacity = capacity.where(
-            ~np.isinf(capacity),
-            capacity.where(~np.isinf(capacity)).max("replacement"),
-        )
-
     # Evolution of rates with time
     rates = discount_factor(
         years - agent.forecast_year + 1,
@@ -622,18 +611,11 @@ def lifetime_levelized_cost_of_energy(
         years <= agent.forecast_year + nyears,
     )
     production = capacity * fixed_outputs * utilization_factor
-    production = convert_timeslice(
-        production,
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
-    )
-
+    production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
     # raw costs --> make the NPV more negative
     # Cost of installed capacity
     installed_capacity_costs = convert_timeslice(
-        cap_par * (capacity ** cap_exp),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
+        cap_par * (capacity ** cap_exp), demand.timeslice, QuantityType.EXTENSIVE
     )
 
     # Cost related to environmental products
@@ -660,23 +642,13 @@ def lifetime_levelized_cost_of_energy(
 
     # Fixed and Variable costs
     fixed_costs = convert_timeslice(
-        fix_par * (capacity ** fix_exp),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
+        fix_par * (capacity ** fix_exp), demand.timeslice, QuantityType.EXTENSIVE
     )
     variable_costs = (var_par * production.sel(commodity=products) ** var_exp).sum(
         "commodity"
     )
     fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
-
-    # assume a 20% lower than minimum by asset, replacement, and ts when production 0
-    small_m = 0.8 * production.where(production > 0).sel(commodity=products).min(
-        "asset"
-    ).min("replacement").min("timeslice")
-    denominator = production.copy(deep=True)
-    denominator.loc[dict(commodity=products)] = production.sel(
-        commodity=products
-    ).where(production.sel(commodity=products) > 0.0, small_m.values)
+    denominator = production.where(production > 0.0, 1e-6)
     results = (
         installed_capacity_costs
         + fuel_costs
@@ -730,9 +702,9 @@ def net_present_value(
     Return:
         xr.DataArray with the NPV calculated for the relevant technologies
     """
-    from muse.commodities import is_pollutant, is_material, is_enduse, is_fuel
-    from muse.timeslices import convert_timeslice, QuantityType
+    from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
     from muse.quantities import consumption
+    from muse.timeslices import QuantityType, convert_timeslice
 
     # Filtering of the inputs
     tech = agent.filter_input(
@@ -798,20 +770,14 @@ def net_present_value(
     ).ffill("year")
 
     production = capacity * fixed_outputs * utilization_factor
-    production = convert_timeslice(
-        production,
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
-    )
+    production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
     raw_revenues = (production * prices_non_env * rates).sum(("commodity", "year"))
 
     # raw costs --> make the NPV more negative
     # Cost of installed capacity
     installed_capacity_costs = convert_timeslice(
-        cap_par * (capacity ** cap_exp),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
+        cap_par * (capacity ** cap_exp), demand.timeslice, QuantityType.EXTENSIVE
     )
 
     # Cost related to environmental products
@@ -840,9 +806,7 @@ def net_present_value(
 
     # Fixed and Variable costs
     fixed_costs = convert_timeslice(
-        fix_par * (capacity ** fix_exp),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
+        fix_par * (capacity ** fix_exp), demand.timeslice, QuantityType.EXTENSIVE
     )
     variable_costs = var_par * (
         (production.sel(commodity=products).sum("commodity")) ** var_exp

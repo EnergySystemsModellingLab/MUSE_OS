@@ -264,7 +264,7 @@ def _demand_matching_impl(
     dimensions have coordinates. Input sanitization is performed in `demand_matching`
     proper.
     """
-    from numpy import all, isnan, prod
+    from numpy import isnan, prod
     from xarray import Dataset, align, full_like
 
     assert not set(demand.dims).difference(
@@ -296,33 +296,18 @@ def _demand_matching_impl(
     idims = [dim for dim in result.dims if dim not in demand.dims]
     for _, same_cost in data.groupby("cost") if cost.dims else [(cost, data)]:
         current = same_cost.drop_vars("cost").unstack()
-        current = current.reindex_like(demand)
-        current["demand"].fillna(demand.values)
-        for cname in names:
-            current[cname] = data[cname].where(
-                data[cname].replacement == current.replacement
-            )
         assert (~isnan(result)).all()
-
-        # current.dims may differ from demand.dims
-        # typically it may contain the replacement dimension
-        delta_x = expand_dims((demand - result.sum(idims)).clip(0), current)
-
+        delta_x = expand_dims(
+            (remove_dims(current.demand, demand) - result.sum(idims)).clip(0), current
+        )
         for cname in names:
             constraint = remove_dims(current[cname], data[cname])
-
-            assert all(current[cname] == data[cname])
-
-            constraint = (constraint - result).clip(0)
-
             delta_x, constraint = align(delta_x, constraint, join="outer", fill_value=0)
-
             excess = (
                 result.sum(set(data.dims).difference(data[cname].dims))
                 + delta_x.sum(set(data.dims).difference(data[cname].dims))
                 - constraint
             ).clip(min=0)
-
             excess_share = (
                 excess
                 * (
@@ -330,6 +315,7 @@ def _demand_matching_impl(
                 ).fillna(0)
             ).fillna(0)
             delta_x = (expand_dims(delta_x, excess_share) - excess_share).clip(0)
+
         result = sum(align(result, delta_x.fillna(0), fill_value=0, join="left"))
 
     return result
