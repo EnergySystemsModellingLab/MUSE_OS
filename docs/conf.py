@@ -9,7 +9,7 @@ from typing import List
 project = "MUSE"
 copyright = "2022, Sustainable Gas Institute"
 author = "Imperial College London"
-release = "0.9.2"
+release = "1.0.0"
 version = ".".join(release.split(".")[:2])
 
 # -- General configuration ---------------------------------------------------
