@@ -296,7 +296,6 @@ def scipy_match_demand(
     **options,
 ) -> xr.DataArray:
     from logging import getLogger
-   
     from scipy.optimize import linprog
     
     from muse.constraints import ScipyAdapter
@@ -335,6 +334,7 @@ def cvxopt_match_demand(
 ) -> xr.DataArray:
     from logging import getLogger
     from importlib import import_module
+    
     from muse.constraints import ScipyAdapter
 
     if "year" in technologies.dims and year is None:
