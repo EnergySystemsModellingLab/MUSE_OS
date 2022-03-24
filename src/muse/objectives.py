@@ -289,6 +289,7 @@ def fixed_costs(
     """
     from muse.timeslices import QuantityType, convert_timeslice
     
+    
     cfd = capacity_to_service_demand(
         agent, demand, search_space, technologies, market, *args, **kwargs
     )
