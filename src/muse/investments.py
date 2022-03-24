@@ -296,9 +296,9 @@ def scipy_match_demand(
     **options,
 ) -> xr.DataArray:
     from logging import getLogger
-    
+
     from scipy.optimize import linprog
-    
+
     from muse.constraints import ScipyAdapter
 
     if "timeslice" in costs.dims and timeslice_op is not None:
