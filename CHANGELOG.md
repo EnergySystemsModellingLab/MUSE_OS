@@ -2,7 +2,7 @@
 
 ## Features
 
-- Update adhoc solver to include timeslce variations ([#19](https://github.com/SGIModel/MUSE_OS/pull/19))
+- Update adhoc solver to include timeslice variations ([#19](https://github.com/SGIModel/MUSE_OS/pull/19))
 - Update main version ([#28](https://github.com/SGIModel/MUSE_OS/pull/28))
 - Update main version ([#26](https://github.com/SGIModel/MUSE_OS/pull/26))
 - Adds version numbering ([#21](https://github.com/SGIModel/MUSE_OS/pull/21))
