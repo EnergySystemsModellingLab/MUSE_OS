@@ -356,6 +356,7 @@ def adhoc_timeslice_demand(
 
     return capacity.rename("investment")
 
+
 @register_investment(name=["scipy", "match_demand"])
 def scipy_match_demand(
     costs: xr.DataArray,
