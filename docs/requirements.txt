@@ -3,3 +3,4 @@ ipykernel
 nbsphinx
 myst_parser
 sphinxcontrib-bibtex
+markupsafe==2.0.1
