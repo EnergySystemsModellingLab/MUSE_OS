@@ -264,7 +264,7 @@ def _demand_matching_impl(
     dimensions have coordinates. Input sanitization is performed in `demand_matching`
     proper.
     """
-    from numpy import all, isnan, prod
+    from numpy import isnan, prod
     from xarray import Dataset, align, full_like
 
     assert not set(demand.dims).difference(
@@ -296,12 +296,16 @@ def _demand_matching_impl(
     idims = [dim for dim in result.dims if dim not in demand.dims]
     for _, same_cost in data.groupby("cost") if cost.dims else [(cost, data)]:
         current = same_cost.drop_vars("cost").unstack()
-        current = current.reindex_like(demand)
-        current["demand"].fillna(demand.values)
-        for cname in names:
-            current[cname] = data[cname].where(
-                data[cname].replacement == current.replacement
-            )
+        # do not reindex if current has different dimension than demand
+        # this may happen if cost is the same across timeslices for many replacement
+        if len(current.dims) < len(demand.dims):
+            current = current.reindex_like(demand)
+            current["demand"].fillna(demand.values)
+            for cname in names:
+                if "replacement" in data[cname].dims:
+                    current[cname] = data[cname].where(
+                        data[cname].replacement == current.replacement
+                    )
         assert (~isnan(result)).all()
 
         # current.dims may differ from demand.dims
@@ -310,8 +314,6 @@ def _demand_matching_impl(
 
         for cname in names:
             constraint = remove_dims(current[cname], data[cname])
-
-            assert all(current[cname] == data[cname])
 
             constraint = (constraint - result).clip(0)
 
