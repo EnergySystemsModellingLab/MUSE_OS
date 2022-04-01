@@ -12,9 +12,9 @@ repos:
       - id: isort
         additional_dependencies: [toml]
   - repo: https://github.com/psf/black
-    rev: "21.9b0"
+    rev: "22.3.0"
     hooks:
-      - id: black22.3.0
+      - id: black
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.9.2
     hooks:
