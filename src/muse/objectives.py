@@ -298,7 +298,7 @@ def fixed_costs(
         year=agent.forecast_year,
     ).drop_vars("technology")
     result = convert_timeslice(
-        data.fix_par * (cfd ** data.fix_exp),
+        data.fix_par * (cfd**data.fix_exp),
         demand.timeslice,
         QuantityType.EXTENSIVE,
     )
@@ -329,7 +329,7 @@ def capital_costs(
         year=agent.forecast_year,
     ).drop_vars("technology")
     result = convert_timeslice(
-        data.cap_par * (data.scaling_size ** data.cap_exp),
+        data.cap_par * (data.scaling_size**data.cap_exp),
         demand.timeslice,
         QuantityType.EXTENSIVE,
     )
@@ -631,7 +631,7 @@ def lifetime_levelized_cost_of_energy(
     # raw costs --> make the NPV more negative
     # Cost of installed capacity
     installed_capacity_costs = convert_timeslice(
-        cap_par * (capacity ** cap_exp),
+        cap_par * (capacity**cap_exp),
         demand.timeslice,
         QuantityType.EXTENSIVE,
     )
@@ -660,7 +660,7 @@ def lifetime_levelized_cost_of_energy(
 
     # Fixed and Variable costs
     fixed_costs = convert_timeslice(
-        fix_par * (capacity ** fix_exp),
+        fix_par * (capacity**fix_exp),
         demand.timeslice,
         QuantityType.EXTENSIVE,
     )
@@ -809,7 +809,7 @@ def net_present_value(
     # raw costs --> make the NPV more negative
     # Cost of installed capacity
     installed_capacity_costs = convert_timeslice(
-        cap_par * (capacity ** cap_exp),
+        cap_par * (capacity**cap_exp),
         demand.timeslice,
         QuantityType.EXTENSIVE,
     )
@@ -840,7 +840,7 @@ def net_present_value(
 
     # Fixed and Variable costs
     fixed_costs = convert_timeslice(
-        fix_par * (capacity ** fix_exp),
+        fix_par * (capacity**fix_exp),
         demand.timeslice,
         QuantityType.EXTENSIVE,
     )
