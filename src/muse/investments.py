@@ -234,7 +234,6 @@ def adhoc_match_demand(
     year: int,
     timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
 ) -> xr.DataArray:
-    from logging import getLogger
     from numpy import any, round
 
     from muse.demand_matching import demand_matching
