@@ -561,12 +561,14 @@ def test_extract_agents_internal(newcapa_agent, retro_agent):
         assert agent.uuid in actual
         assert tuple(actual[agent.uuid].keys()) == (
             "agent",
-            "type",
+            "category",
             "sector",
             "dst_region",
+            "year",
+            "installed",
         )
         assert actual[agent.uuid]["agent"] == agent.name
-        assert actual[agent.uuid]["type"] == agent.category
+        assert actual[agent.uuid]["category"] == agent.category
         assert actual[agent.uuid]["sector"] == "IT"
         assert actual[agent.uuid]["dst_region"] == agent.region
 
@@ -611,7 +613,6 @@ def test_consolidate_quantity(newcapa_agent, retro_agent):
     sector = SimpleNamespace(name="IT", agents=[newcapa_agent, retro_agent])
     agents = extract_agents_internal(sector)
 
-    year = 2042
     quantity = "heigth"
     a = xr.DataArray(
         np.ones((3, 4, 5)),
@@ -633,15 +634,15 @@ def test_consolidate_quantity(newcapa_agent, retro_agent):
         * 3
     )
 
-    actual = consolidate_quantity(quantity, [a, b], agents, year)
+    actual = consolidate_quantity(quantity, [a, b], agents)
 
     cols = set(
         list(agents[retro_agent.uuid].keys())
         + ["installed", "year", "technology", quantity]
     )
     assert set(actual.columns) == cols
-    assert all(actual.installed == year)
-    assert all(actual.year == year)
+    assert all(actual.year == newcapa_agent.forecast_year)
+    assert all(actual.installed == newcapa_agent.year)
     assert all(
         [
             name in (newcapa_agent.name, retro_agent.name)

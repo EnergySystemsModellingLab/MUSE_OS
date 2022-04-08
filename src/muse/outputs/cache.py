@@ -320,7 +320,7 @@ class OutputCache:
             if len(cache) == 0:
                 continue
 
-            self.factory[quantity](cache, self.agents, year, year=year)
+            self.factory[quantity](cache, self.agents, year=year)
         self.to_save = {q: [] for q in self.to_save}
 
 
@@ -357,9 +357,11 @@ def extract_agents_internal(
         aid = agent.uuid
         info[aid] = {}
         info[aid]["agent"] = agent.name
-        info[aid]["type"] = agent.category
+        info[aid]["category"] = agent.category
         info[aid]["sector"] = sector_name
         info[aid]["dst_region"] = agent.region
+        info[aid]["year"] = agent.forecast_year
+        info[aid]["installed"] = agent.year
 
     return info
 
@@ -402,7 +404,6 @@ def consolidate_quantity(
     quantity: Text,
     cached: List[xr.DataArray],
     agents: MutableMapping[Text, MutableMapping[Text, Text]],
-    installed: int,
 ) -> pd.DataFrame:
     """Consolidates the cached quantity into a single DataFrame to save.
 
@@ -410,7 +411,6 @@ def consolidate_quantity(
         quantity (Text): The quantity to cache.
         cached (List[xr.DataArray]): The list of cached arrays
         agents (MutableMapping[Text, MutableMapping[Text, Text]]): Agents' metadata.
-        installed (int): Year of installation of the technology.
 
     Returns:
         pd.DataFrame: DataFrame with the consolidated data.
@@ -426,8 +426,6 @@ def consolidate_quantity(
             data.loc[filter, key] = value
 
     data = data.rename(columns={"replacement": "technology"})
-    data["installed"] = installed
-    data["year"] = installed
 
     group_cols = [c for c in data.columns if c not in [quantity, "asset"]]
     data = (
