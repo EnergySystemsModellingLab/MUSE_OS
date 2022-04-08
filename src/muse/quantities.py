@@ -134,7 +134,7 @@ def gross_margin(
 
     # Hours ratio
     variable_costs = convert_timeslice(
-        var_par * capacity ** var_exp, prices.timeslice, QuantityType.EXTENSIVE
+        var_par * capacity**var_exp, prices.timeslice, QuantityType.EXTENSIVE
     )
 
     prices = prices.sel(region=capacity.region).interp(year=capacity.year)
