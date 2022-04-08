@@ -73,16 +73,13 @@ def market_demand(assets, technologies, market):
     from muse.quantities import maximum_production
     from muse.timeslices import convert_timeslice
 
-    return (
-        0.8
-        * maximum_production(
-            technologies.interp(year=2025),
-            convert_timeslice(
-                assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
-                market,
-            ),
-        ).rename(technology="asset")
-    )
+    return 0.8 * maximum_production(
+        technologies.interp(year=2025),
+        convert_timeslice(
+            assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
+            market,
+        ),
+    ).rename(technology="asset")
 
 
 @fixture
