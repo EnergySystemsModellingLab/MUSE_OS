@@ -63,8 +63,8 @@ import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.constraints import Constraint
-from muse.registration import registrator
 from muse.errors import GrowthOfCapacityTooConstrained
+from muse.registration import registrator
 
 INVESTMENT_SIGNATURE = Callable[
     [xr.DataArray, xr.DataArray, xr.Dataset, List[Constraint], KwArg(Any)], xr.DataArray
