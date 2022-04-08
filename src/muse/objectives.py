@@ -77,6 +77,7 @@ import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.agents import Agent
+from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
 
 OBJECTIVE_SIGNATURE = Callable[
@@ -184,6 +185,7 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
         if "technology" in result.coords:
             raise RuntimeError("Objective should not return a coordinate 'technology'")
         result.name = function.__name__
+        cache_quantity(**{result.name: result})
         return result
 
     return decorated_objective
@@ -298,9 +300,7 @@ def fixed_costs(
         year=agent.forecast_year,
     ).drop_vars("technology")
     result = convert_timeslice(
-        data.fix_par * (cfd ** data.fix_exp),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
+        data.fix_par * (cfd ** data.fix_exp), demand.timeslice, QuantityType.EXTENSIVE
     )
     return xr.DataArray(result)
 
@@ -611,17 +611,11 @@ def lifetime_levelized_cost_of_energy(
         years <= agent.forecast_year + nyears,
     )
     production = capacity * fixed_outputs * utilization_factor
-    production = convert_timeslice(
-        production,
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
-    )
+    production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
     # raw costs --> make the NPV more negative
     # Cost of installed capacity
     installed_capacity_costs = convert_timeslice(
-        cap_par * (capacity ** cap_exp),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
+        cap_par * (capacity ** cap_exp), demand.timeslice, QuantityType.EXTENSIVE
     )
 
     # Cost related to environmental products
@@ -648,9 +642,7 @@ def lifetime_levelized_cost_of_energy(
 
     # Fixed and Variable costs
     fixed_costs = convert_timeslice(
-        fix_par * (capacity ** fix_exp),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
+        fix_par * (capacity ** fix_exp), demand.timeslice, QuantityType.EXTENSIVE
     )
     variable_costs = (var_par * production.sel(commodity=products) ** var_exp).sum(
         "commodity"
@@ -778,20 +770,14 @@ def net_present_value(
     ).ffill("year")
 
     production = capacity * fixed_outputs * utilization_factor
-    production = convert_timeslice(
-        production,
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
-    )
+    production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
     raw_revenues = (production * prices_non_env * rates).sum(("commodity", "year"))
 
     # raw costs --> make the NPV more negative
     # Cost of installed capacity
     installed_capacity_costs = convert_timeslice(
-        cap_par * (capacity ** cap_exp),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
+        cap_par * (capacity ** cap_exp), demand.timeslice, QuantityType.EXTENSIVE
     )
 
     # Cost related to environmental products
@@ -820,9 +806,7 @@ def net_present_value(
 
     # Fixed and Variable costs
     fixed_costs = convert_timeslice(
-        fix_par * (capacity ** fix_exp),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
+        fix_par * (capacity ** fix_exp), demand.timeslice, QuantityType.EXTENSIVE
     )
     variable_costs = var_par * (
         (production.sel(commodity=products).sum("commodity")) ** var_exp
