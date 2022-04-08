@@ -2,6 +2,10 @@
 
 ## Features
 
+- Update main version ([#28](https://github.com/SGIModel/MUSE_OS/pull/28))
+- Update main version ([#26](https://github.com/SGIModel/MUSE_OS/pull/26))
+- Adds version numbering ([#21](https://github.com/SGIModel/MUSE_OS/pull/21))
+- Adds trade tutorial to the documentation ([#16](https://github.com/SGIModel/MUSE_OS/pull/16))
 - Updated branch names on pipelines ([#9](https://github.com/SGIModel/MUSE_OS/issues/9))
 - Edited default package name from StarMUSE to MUSE ([#4](https://github.com/SGIModel/MUSE_OS/issues/4))
 - Added new cases studies with multiple agents and spend limit ([#1](https://github.com/SGIModel/MUSE_OS/pull/1))
@@ -25,6 +29,7 @@
 
 ## Bug fixes
 
+- Fix error in black ([#32](https://github.com/SGIModel/MUSE_OS/pull/32))
 - Fixes the dead links in the documentation now that the repository is open-sourced ([#3](https://github.com/SGIModel/MUSE_OS/issues/3))
 - Ensures that the adhoc and scipy solvers require the same input in the agents file to minimise and maximise. Specifically, both solvers now require TRUE for minimisation and FALSE for maximisation ([#845](https://github.com/SGIModel/StarMuse/issues/845))
 - Update the documentation to include a tutorial for implementing trade.
