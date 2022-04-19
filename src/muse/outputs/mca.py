@@ -569,7 +569,7 @@ def sector_capital_costs(
                 year=output_year,
                 technology=capacity.technology,
             )
-            result = data.cap_par * (capacity ** data.cap_exp)
+            result = data.cap_par * (capacity**data.cap_exp)
             data_agent = convert_timeslice(
                 result,
                 demand.timeslice,
@@ -788,7 +788,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
                 # raw costs --> make the NPV more negative
                 # Cost of installed capacity
                 installed_capacity_costs = convert_timeslice(
-                    cap_par * (capacity ** cap_exp),
+                    cap_par * (capacity**cap_exp),
                     demand.timeslice,
                     QuantityType.EXTENSIVE,
                 )
@@ -826,7 +826,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
 
                 # Fixed and Variable costs
                 fixed_costs = convert_timeslice(
-                    fix_par * (capacity ** fix_exp),
+                    fix_par * (capacity**fix_exp),
                     demand.timeslice,
                     QuantityType.EXTENSIVE,
                 )
@@ -991,7 +991,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
                 # raw costs --> make the NPV more negative
                 # Cost of installed capacity
                 installed_capacity_costs = convert_timeslice(
-                    cap_par * (capacity ** cap_exp),
+                    cap_par * (capacity**cap_exp),
                     demand.timeslice,
                     QuantityType.EXTENSIVE,
                 )
@@ -1029,7 +1029,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
 
                 # Fixed and Variable costs
                 fixed_costs = convert_timeslice(
-                    fix_par * (capacity ** fix_exp),
+                    fix_par * (capacity**fix_exp),
                     demand.timeslice,
                     QuantityType.EXTENSIVE,
                 )

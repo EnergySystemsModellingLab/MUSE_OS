@@ -120,7 +120,7 @@ def test_capital_costs(demand_share, search_space, technologies, retro_agent):
 
     # exp == numbers
     technologies["scaling_size"] = add_var(technologies, "technology", "region", "year")
-    expected = technologies.cap_par * technologies.scaling_size ** technologies.cap_exp
+    expected = technologies.cap_par * technologies.scaling_size**technologies.cap_exp
     expected = expected.sel(
         technology=search_space.replacement,
         region=retro_agent.region,
@@ -228,7 +228,7 @@ def test_capacity_fulfilling_demand(
         technology=search_space.replacement,
         year=retro_agent.forecast_year,
     )
-    expected = fpar * capacity ** fexp
+    expected = fpar * capacity**fexp
 
     actual = fixed_costs(
         retro_agent, demand_share, search_space, technologies, agent_market
@@ -374,7 +374,7 @@ def test_net_present_value(
 
     # raw costs --> make the NPV more negative
     # Cost of installed capacity
-    installed_capacity_costs = hours_ratio * cap_par * capacity ** cap_exp
+    installed_capacity_costs = hours_ratio * cap_par * capacity**cap_exp
 
     # Fuel/energy costs
     fuel = consumption(
@@ -398,9 +398,9 @@ def test_net_present_value(
     non_env_production = production.sel(commodity=is_enduse(tech.comm_usage)).sum(
         "commodity"
     )
-    fix_costs = ((rates * hours_ratio * fix_par * capacity ** fix_exp)).sum("year")
+    fix_costs = ((rates * hours_ratio * fix_par * capacity**fix_exp)).sum("year")
 
-    variable_costs = (rates * var_par * (non_env_production ** var_exp)).sum("year")
+    variable_costs = (rates * var_par * (non_env_production**var_exp)).sum("year")
     fixed_and_variable_costs = fix_costs + variable_costs
 
     assert set(installed_capacity_costs.dims) == set(fuel_consumption_costs.dims)
