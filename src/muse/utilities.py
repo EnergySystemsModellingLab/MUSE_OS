@@ -582,6 +582,16 @@ def agent_concatenation(
     result = xr.concat(data.values(), dim=dim)
     if isinstance(result, xr.Dataset):
         result = result.set_coords("agent")
+    if isinstance(result, xr.DataArray):
+        if result[name].data.shape == ():
+            result = result.assign_coords(
+                {
+                    name: (
+                        dim,
+                        result[name].data[None],
+                    )
+                }
+            )
     if "year" in result.dims:
         result = result.ffill("year")
     if fill_value is not np.nan:
