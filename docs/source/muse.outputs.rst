@@ -12,6 +12,14 @@ muse.outputs.mca module
    :undoc-members:
    :show-inheritance:
 
+muse.outputs.cache module
+-------------------------
+
+.. automodule:: muse.outputs.cache
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 muse.outputs.sector module
 --------------------------
 
