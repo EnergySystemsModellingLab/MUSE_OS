@@ -574,24 +574,26 @@ def agent_concatenation(
         from all agents. Missing values for the "year" dimension are forward filled (and
         backfilled with zeros). Others are left with "NaN".
     """
+    from itertools import repeat
+
     data = {k: v.copy() for k, v in data.items()}
     for key, datum in data.items():
         if name in datum.coords:
             raise ValueError(f"Coordinate {name} already exists")
-        datum[name] = key
-    result = xr.concat(data.values(), dim=dim)
-    if isinstance(result, xr.Dataset):
-        result = result.set_coords("agent")
-    if isinstance(result, xr.DataArray):
-        if result[name].data.shape == ():
-            result = result.assign_coords(
+        if isinstance(datum, xr.DataArray):
+            data[key] = datum.assign_coords(
                 {
                     name: (
                         dim,
-                        result[name].data[None],
+                        list(repeat(key, datum.sizes[dim])),
                     )
                 }
             )
+        else:
+            datum[name] = key
+    result = xr.concat(data.values(), dim=dim)
+    if isinstance(result, xr.Dataset):
+        result = result.set_coords("agent")
     if "year" in result.dims:
         result = result.ffill("year")
     if fill_value is not np.nan:

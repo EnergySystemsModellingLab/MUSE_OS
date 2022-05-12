@@ -93,10 +93,10 @@ def factory(
     settings: Optional[Union[Text, Mapping[Text, Any]]] = None
 ) -> DEMAND_SHARE_SIGNATURE:
     if settings is None or isinstance(settings, Text):
-        name = settings or "split_demand"
+        name = settings or "new_and_retro"
         params: Mapping[Text, Any] = {}
     else:
-        name = settings.get("name", "split_demand")
+        name = settings.get("name", "new_and_retro")
         params = {k: v for k, v in settings.items() if k != "name"}
 
     function = DEMAND_SHARE[name]
@@ -325,8 +325,8 @@ def new_and_retro(
     return result
 
 
-@register_demand_share(name="split_demand")
-def split_demand(
+@register_demand_share(name="standard_demand")
+def standard_demand(
     agents: Sequence[AbstractAgent],
     market: xr.Dataset,
     technologies: xr.Dataset,
