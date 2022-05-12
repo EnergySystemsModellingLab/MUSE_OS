@@ -63,11 +63,8 @@ import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.constraints import Constraint
-
 from muse.errors import GrowthOfCapacityTooConstrained
-
 from muse.outputs.cache import cache_quantity
-
 from muse.registration import registrator
 
 INVESTMENT_SIGNATURE = Callable[
