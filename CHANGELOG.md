@@ -2,10 +2,8 @@
 
 ## Features
 
-- Update main version ([#28](https://github.com/SGIModel/MUSE_OS/pull/28))
-- Update main version ([#26](https://github.com/SGIModel/MUSE_OS/pull/26))
-- Adds version numbering ([#21](https://github.com/SGIModel/MUSE_OS/pull/21))
-- Adds trade tutorial to the documentation ([#16](https://github.com/SGIModel/MUSE_OS/pull/16))
+- Adds cache of quan tities ([#15](https://github.com/SGIModel/MUSE_OS/pull/15))
+- Adds trade tutorial to the documentation
 - Updated branch names on pipelines ([#9](https://github.com/SGIModel/MUSE_OS/issues/9))
 - Edited default package name from StarMUSE to MUSE ([#4](https://github.com/SGIModel/MUSE_OS/issues/4))
 - Added new cases studies with multiple agents and spend limit ([#1](https://github.com/SGIModel/MUSE_OS/pull/1))
