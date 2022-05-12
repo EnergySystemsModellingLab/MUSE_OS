@@ -580,7 +580,7 @@ def agent_concatenation(
     for key, datum in data.items():
         if name in datum.coords:
             raise ValueError(f"Coordinate {name} already exists")
-        if isinstance(datum, xr.DataArray):
+        if len(data) == 1 and isinstance(datum, xr.DataArray):
             data[key] = datum.assign_coords(
                 {
                     name: (
