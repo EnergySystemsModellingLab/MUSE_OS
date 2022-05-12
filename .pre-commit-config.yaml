@@ -2,12 +2,12 @@ default_language_version:
   python: python3.8
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1
+    rev: v4.2.0
     hooks:
       - id: check-merge-conflict
       - id: debug-statements
   - repo: https://github.com/timothycrosley/isort
-    rev: "5.9.3"
+    rev: "5.10.1"
     hooks:
       - id: isort
         additional_dependencies: [toml]
