@@ -23,6 +23,7 @@ import pandas as pd
 import xarray as xr
 
 from muse.defaults import DEFAULT_SECTORS_DIRECTORY
+from muse.errors import UnitsConflictInCommodities
 
 
 def find_sectors_file(
@@ -335,7 +336,10 @@ def read_technologies(
         if all(len(ins[d]) > 1 for d in ins.dims if ins[d].dtype.kind in "uifc"):
             ins = ins.interp(year=result.year)
 
-    result = result.merge(outs).merge(ins)
+    try:
+        result = result.merge(outs).merge(ins)
+    except xr.core.merge.MergeError:
+        raise UnitsConflictInCommodities
 
     if isinstance(ttpath, (Text, Path)):
         technodata_timeslice = read_technodata_timeslices(ttpath)
