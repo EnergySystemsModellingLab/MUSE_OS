@@ -61,18 +61,11 @@ import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.agents import AbstractAgent
+from muse.errors import (
+    AgentWithNoAssetsInDemandShare,
+    RetrofitAgentInStandardDemandShare,
+)
 from muse.registration import registrator
-
-
-class InconsistencyInDemandShare(Exception):
-
-    msg = """A retrofit agent has been found in a 'New agents'-only demand share
-function. Make sure you remove all the retro agents from the Agents input files or use a
-demand share method that can handle both new and retro agents."""
-
-    def __str__(self):
-        return self.msg
-
 
 DEMAND_SHARE_SIGNATURE = Callable[
     [Sequence[AbstractAgent], xr.Dataset, xr.Dataset, KwArg(Any)], xr.DataArray
@@ -337,7 +330,7 @@ def standard_demand(
     r"""Splits demand across new agents.
 
     The input demand is split amongst *new* agents. *New* agents get a
-    share of the increase in demand for the forecast yearas well as the demand that
+    share of the increase in demand for the forecast years well as the demand that
     occurs from decommissioned assets.
 
     Args:
@@ -377,7 +370,7 @@ def standard_demand(
 
     for agent in agents:
         if agent.category == "retrofit":
-            raise InconsistencyInDemandShare()
+            raise RetrofitAgentInStandardDemandShare()
 
     id_to_share: MutableMapping[Hashable, xr.DataArray] = {}
     for region in demands.region.values:
@@ -460,7 +453,10 @@ def _inner_split(
         .rename(technology="asset")
         for key, capacity in assets.items()
     }
-    total = sum(shares.values()).sum("asset")  # type: ignore
+    try:
+        total = sum(shares.values()).sum("asset")  # type: ignore
+    except AttributeError:
+        raise AgentWithNoAssetsInDemandShare()
 
     unassigned = (
         demand / (len(shares) * len(cast(xr.DataArray, sum(shares.values())).asset))
