@@ -350,12 +350,19 @@ def standard_demand(
     from muse.quantities import maximum_production
     from muse.utilities import agent_concatenation, reduce_assets
 
+    def decommissioning(capacity):
+        from muse.quantities import decommissioning_demand
+
+        return decommissioning_demand(
+            technologies, capacity, year=[current_year, current_year + forecast]
+        ).squeeze("year")
+
     if current_year is None:
         current_year = market.year.min()
 
     capacity = reduce_assets([agent.assets.capacity for agent in agents])
 
-    demands = new_demand(
+    demands = new_and_retro_demands(
         capacity,
         market,
         technologies,
@@ -379,23 +386,34 @@ def standard_demand(
             for agent in agents
             if agent.region == region
         }
-        id_to_nquantity = {
+        id_to_quantity = {
             agent.uuid: (agent.name, agent.region, agent.quantity)
             for agent in agents
             if agent.region == region
         }
+
+        retro_demands: MutableMapping[Hashable, xr.DataArray] = _inner_split(
+            current_capacity,
+            demands.retrofit.sel(region=region),
+            decommissioning,
+            id_to_quantity,
+        )
+
         new_demands = _inner_split(
             current_capacity,
-            demands.sel(region=region),
+            demands.new.sel(region=region),
             partial(
                 maximum_production,
                 technologies=technologies.sel(region=region),
                 year=current_year,
             ),
-            id_to_nquantity,
+            id_to_quantity,
         )
 
-        id_to_share.update(new_demands)
+        total_demands = {
+            k: new_demands[k] + retro_demands[k] for k in new_demands.keys()
+        }
+        id_to_share.update(total_demands)
 
     result = cast(xr.DataArray, agent_concatenation(id_to_share))
     return result

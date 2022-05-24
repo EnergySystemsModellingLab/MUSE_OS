@@ -143,6 +143,10 @@ def create_newcapa_agent(
         for name in kwargs.pop("search_rules")
     ]
 
+    if not retrofit_present:
+        if "with_asset_technology" not in search_rules:
+            search_rules.insert(-1, "with_asset_technology")
+
     result = InvestingAgent(
         assets=assets,
         region=region,
