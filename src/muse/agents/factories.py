@@ -91,6 +91,7 @@ def create_newcapa_agent(
     capacity: xr.DataArray,
     year: int,
     region: Text,
+    share: Text,
     search_rules: Union[Text, Sequence[Text]] = "all",
     interpolation: Text = "linear",
     merge_transform: Union[Text, Mapping, Callable] = "new",
@@ -120,7 +121,6 @@ def create_newcapa_agent(
             capacity.sel(asset=existing.values, year=years)
         )
     else:
-        share = "agent_share_2"
         technologies = kwargs["technologies"]
         assets["capacity"] = _shared_capacity(
             technologies, capacity, region, share, year, interpolation=interpolation
