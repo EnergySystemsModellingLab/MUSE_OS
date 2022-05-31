@@ -125,6 +125,7 @@ def create_newcapa_agent(
         assets["capacity"] = _shared_capacity(
             technologies, capacity, region, share, year, interpolation=interpolation
         )
+        merge_transform = "merge"
 
     kwargs = _standardize_investing_inputs(
         search_rules=search_rules,
