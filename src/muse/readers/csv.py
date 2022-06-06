@@ -361,7 +361,7 @@ def read_technologies(
 
         else:
             raise IOError(
-                "Commodities not found in global commodities file. Check spelling of names across input and sector data."
+                "Commodities not found in global commodities file: check spelling."
             )
 
     result["comm_usage"] = (
