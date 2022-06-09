@@ -358,8 +358,11 @@ def read_technologies(
     if isinstance(commodities, xr.Dataset):
         if result.commodity.isin(commodities.commodity).all():
             result = result.merge(commodities.sel(commodity=result.commodity))
+
         else:
-            logger.warn("Commodities missing in global commodities file.")
+            raise IOError(
+                "Commodities not found in global commodities file: check spelling."
+            )
 
     result["comm_usage"] = (
         "commodity",
