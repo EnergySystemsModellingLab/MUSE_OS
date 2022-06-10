@@ -312,7 +312,7 @@ def scipy_match_demand(
 
     from muse.constraints import ScipyAdapter
 
-    if not technologies.to_dataframe().isnull().values.any():
+    if technologies.to_dataframe().isnull().sum().sum() > 0:
         raise FailedInterpolation
 
     if "timeslice" in costs.dims and timeslice_op is not None:
