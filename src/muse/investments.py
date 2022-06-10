@@ -63,7 +63,7 @@ import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.constraints import Constraint
-from muse.errors import GrowthOfCapacityTooConstrained
+from muse.errors import FailedInterpolation, GrowthOfCapacityTooConstrained
 from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
 
@@ -311,6 +311,9 @@ def scipy_match_demand(
     from scipy.optimize import linprog
 
     from muse.constraints import ScipyAdapter
+
+    if technologies.to_dataframe().isnull().sum().sum() > 0:
+        raise FailedInterpolation
 
     if "timeslice" in costs.dims and timeslice_op is not None:
         costs = timeslice_op(costs)

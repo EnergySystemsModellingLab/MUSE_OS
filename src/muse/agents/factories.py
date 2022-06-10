@@ -6,7 +6,7 @@ import xarray as xr
 
 from muse.agents.agent import Agent, InvestingAgent
 from muse.defaults import DEFAULT_SECTORS_DIRECTORY
-from muse.errors import RetrofitAgentNotDefined
+from muse.errors import RetrofitAgentNotDefined, TechnologyNotDefined
 
 
 def create_standard_agent(
@@ -313,9 +313,14 @@ def _shared_capacity(
         technologies = technologies.sel(region=region)
 
     try:
-        shares = technologies[share].sel(technology=capacity.technology)
+        shares = technologies[share]
     except KeyError:
         raise RetrofitAgentNotDefined
+
+    try:
+        shares = shares.sel(technology=capacity.technology)
+    except KeyError:
+        raise TechnologyNotDefined
 
     if "region" in shares.dims:
         shares = shares.sel(region=region)

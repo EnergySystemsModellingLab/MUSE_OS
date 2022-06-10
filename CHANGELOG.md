@@ -2,6 +2,7 @@
 
 ## Features
 
+- Adds error messages ([#42](https://github.com/SGIModel/MUSE_OS/pull/42))
 - Adds cache of quantities ([#15](https://github.com/SGIModel/MUSE_OS/pull/15))
 - Adds trade tutorial to the documentation
 - Updated branch names on pipelines ([#9](https://github.com/SGIModel/MUSE_OS/issues/9))

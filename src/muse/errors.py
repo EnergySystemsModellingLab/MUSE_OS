@@ -28,8 +28,33 @@ class GrowthOfCapacityTooConstrained(Exception):
     """Indicates that the investment step failed because capacity could not grow."""
 
     msg = """Error during the investment process. The capacity was not allowed to grow
-suficiently in order to match the demand. Consider increating the MaxCapacityAddition
+sufficiently in order to match the demand. Consider increating the MaxCapacityAddition
 and/or the MaxCapacityGrowth in the technodata."""
+
+    def __str__(self):
+        return self.msg
+
+
+class TechnologyNotDefined(Exception):
+    """Indicates that the initialisation fails because a technology is not found"""
+
+    msg = """Error during the initialisation of a sector.
+The model tries to assign a share of the total capacity to an agent but it
+cannot find a match between technodata and existing capacity.
+Check the spelling of the technology names."""
+
+    def __str__(self):
+        return self.msg
+
+
+class FailedInterpolation(Exception):
+    """Indicates that the initialisation fails due to interpolation"""
+
+    msg = """Error during the initialisation of a sector.
+The model tries to interpolate values in time of the technologies.
+It fails to interpolate some parameters for selected years.
+This results in nans in the datasets of technology data.
+Check the spelling of the technology names in the sector data."""
 
     def __str__(self):
         return self.msg
