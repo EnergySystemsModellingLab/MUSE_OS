@@ -6,7 +6,7 @@ import xarray as xr
 
 from muse.agents.agent import Agent, InvestingAgent
 from muse.defaults import DEFAULT_SECTORS_DIRECTORY
-from muse.errors import RetrofitAgentNotDefined
+from muse.errors import RetrofitAgentNotDefined, TechnologyNotDefined
 
 
 def create_standard_agent(
