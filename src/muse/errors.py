@@ -58,3 +58,26 @@ Check the spelling of the technology names in the sector data."""
 
     def __str__(self):
         return self.msg
+
+
+class RetrofitAgentInStandardDemandShare(Exception):
+
+    msg = """A retrofit agent has been found in a 'New agents'-only demand share
+function. Make sure you remove all the retro agents from the Agents input files or use a
+demand share method that can handle both new and retro agents."""
+
+    def __str__(self):
+        return self.msg
+
+
+class AgentWithNoAssetsInDemandShare(Exception):
+
+    msg = """This error refers to an agent with no assets. To fix this error, check the
+capacity assigment to the agents. One possibility is that you have decided not
+to use "Retrofit" agents, as such you may have already removed them from the
+agent definition file and the file of technodata, the system TOML file should
+change the demand_share to "standard_demand" function in each subsector
+section for each of the selected sectors to model."""
+
+    def __str__(self):
+        return self.msg
