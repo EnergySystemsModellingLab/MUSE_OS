@@ -112,7 +112,10 @@ def factory(
         interactions.append(((net, net_params), (interaction, action_params)))
 
     def compute_interactions(agents: Sequence[AbstractAgent]) -> None:
-        """Applies interaction net and agent interaction functions."""
+        """Applies interaction net and agent interaction functions.
+
+        If a network is found with no interactions, an error is raised.
+        """
         from logging import getLogger
 
         for (net, net_params), (interaction, interaction_params) in interactions:
