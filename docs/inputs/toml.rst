@@ -339,8 +339,8 @@ dispatch_production
    It has the same format and options as the *production* attribute above.
 
 demand_share
-    A method used to split the MCA demand into seperate parts to be serviced by specific
-    agents. There is currently two options:
+   A method used to split the MCA demand into seperate parts to be serviced by specific
+   agents. There is currently two options:
    
    - "standard_demand", where all the demand is split among the "new" agents, raising
      and error if retro agents are found for the sector.
