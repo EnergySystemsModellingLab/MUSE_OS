@@ -2,6 +2,7 @@
 
 ## Features
 
+- Update documentation about not using retrofit ([51](https://github.com/SGIModel/MUSE_OS/pull/51))
 - Add error about not finding interaction network ([50](https://github.com/SGIModel/MUSE_OS/pull/50))
 - Add option for `standard_demand` and remove retro agents ([#35](https://github.com/SGIModel/MUSE_OS/pull/35))
 - Update main version ([#28](https://github.com/SGIModel/MUSE_OS/pull/28))
