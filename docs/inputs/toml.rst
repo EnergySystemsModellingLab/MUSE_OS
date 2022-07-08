@@ -85,7 +85,7 @@ plugins
 outputs_cache
    This option behaves exactly like `outputs` below for sectors and accepts the same options but
    controls the output of cached quantities instead. This option is NOT available for
-   sectors themse;ves (i.e using `[[sector.comercial.outputs_cache]]` will have no effect). See
+   sectors themselves (i.e using `[[sector.comercial.outputs_cache]]` will have no effect). See
    :py:mod:`muse.outputs.cache` for more details.
 
    A single row looks like this:
@@ -340,8 +340,13 @@ dispatch_production
 
 demand_share
     A method used to split the MCA demand into seperate parts to be serviced by specific
-    agents. There is currently only one option, "new_and_retro", corresponding to *new*
-    and *retro* agents.
+    agents. There is currently two options:
+   
+   - "standard_demand", where all the demand is split among the "new" agents, raising
+     and error if retro agents are found for the sector.
+   - "new_and_retro", corresponding to splitting the demand among *new* and *retro* 
+      agents, in adition to splitting it between agents of the same type.
+
 
 interactions
    Defines interactions between agents. These interactions take place right before new
@@ -390,6 +395,10 @@ interactions
    The parameters will depend on the net and interaction functions. Neither
    "new_to_retro" nor "transfer" take any arguments at this point. MUSE interaction
    facilities are defined in :py:mod:`muse.interactions`.
+
+   An error is raised if and empty network is found. This is the case, for example, if a
+   "new_to_retro" type of network has been defined but no retro agents are included in
+   the sector.
 
 
 output
