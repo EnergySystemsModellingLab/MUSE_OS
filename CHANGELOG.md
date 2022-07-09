@@ -2,6 +2,7 @@
 
 ## Features
 
+- Add a tutorial for caching quantities and fix a bug in the caching pipeline ([#52](https://github.com/SGIModel/MUSE_OS/pull/52))
 - Add option for `standard_demand` and remove retro agents ([#35](https://github.com/SGIModel/MUSE_OS/pull/35))
 - Update main version ([#28](https://github.com/SGIModel/MUSE_OS/pull/28))
 - Update main version ([#26](https://github.com/SGIModel/MUSE_OS/pull/26))
