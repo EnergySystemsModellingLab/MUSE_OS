@@ -24,6 +24,7 @@ __all__ = [
 from typing import Callable, List, Mapping, Optional, Sequence, Text, Tuple, Union
 
 from muse.agents import AbstractAgent, Agent
+from muse.errors import NoInteractionsFound
 from muse.registration import registrator
 
 AGENT_INTERACTIONS: Mapping[Text, Callable] = {}
@@ -111,12 +112,18 @@ def factory(
         interactions.append(((net, net_params), (interaction, action_params)))
 
     def compute_interactions(agents: Sequence[AbstractAgent]) -> None:
-        """Applies interaction net and agent interaction functions."""
+        """Applies interaction net and agent interaction functions.
+
+        If a network is found with no interactions, an error is raised.
+        """
         from logging import getLogger
 
         for (net, net_params), (interaction, interaction_params) in interactions:
             nparams = {k: v for k, v in net_params.items() if k != "name"}
             sets = net(agents, **nparams)
+
+            if len(sets) == 0:
+                raise NoInteractionsFound
 
             getLogger(__name__).info(
                 f"Net {net_params['name']} of {len(sets)} interactions interacting "

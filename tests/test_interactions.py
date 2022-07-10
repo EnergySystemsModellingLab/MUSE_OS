@@ -1,5 +1,6 @@
 """Test agent interactions."""
 
+import pytest
 from pytest import fixture, mark
 
 
@@ -56,6 +57,7 @@ def test_new_to_retro_net(agents):
 
 @mark.usefixtures("save_registries")
 def test_compute_interactions(agents):
+    from muse.errors import NoInteractionsFound
     from muse.interactions import factory, new_to_retro_net, register_agent_interaction
 
     @register_agent_interaction
@@ -74,3 +76,7 @@ def test_compute_interactions(agents):
     assert len(new_to_retro_net(agents)) == 0 or len(not_none) != 0
     for agent in not_none:
         assert agent.assets[0].assets[0] is agent
+
+    agents2 = [a for a in agents if a.category == "nope"]
+    with pytest.raises(NoInteractionsFound):
+        interactions(agents2)

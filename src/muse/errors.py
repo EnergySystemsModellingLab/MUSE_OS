@@ -81,3 +81,14 @@ section for each of the selected sectors to model."""
 
     def __str__(self):
         return self.msg
+
+
+class NoInteractionsFound(Exception):
+
+    msg = """A network with no interactions has been found. This might be the case if
+there are no retrofit agents and yet a 'new_to_retro' network has been defined for a
+particular sector. Asses the existance of both new and retrofit agents for all sectors
+and remove the new_to_retro interacton network if it is not needed """
+
+    def __str__(self):
+        return self.msg
