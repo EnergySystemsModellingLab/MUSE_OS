@@ -659,10 +659,9 @@ def test_output_capacity(mock_consolidate):
 
     cached = [xr.DataArray() for _ in range(3)]
     agents = {}
-    installed = 2042
 
-    capacity(cached, agents, installed)
-    mock_consolidate.assert_called_once_with("capacity", cached, agents, installed)
+    capacity(cached, agents)
+    mock_consolidate.assert_called_once_with("capacity", cached, agents)
 
 
 @patch("muse.outputs.cache.consolidate_quantity")
@@ -673,10 +672,9 @@ def test_output_production(mock_consolidate):
 
     cached = [xr.DataArray() for _ in range(3)]
     agents = {}
-    installed = 2042
 
-    production(cached, agents, installed)
-    mock_consolidate.assert_called_once_with("production", cached, agents, installed)
+    production(cached, agents)
+    mock_consolidate.assert_called_once_with("production", cached, agents)
 
 
 @patch("muse.outputs.cache.consolidate_quantity")
@@ -687,7 +685,6 @@ def test_output_lcoe(mock_consolidate):
 
     cached = [xr.DataArray() for _ in range(3)]
     agents = {}
-    installed = 2042
 
-    lcoe(cached, agents, installed)
-    mock_consolidate.assert_called_once_with("lcoe", cached, agents, installed)
+    lcoe(cached, agents)
+    mock_consolidate.assert_called_once_with("lcoe", cached, agents)

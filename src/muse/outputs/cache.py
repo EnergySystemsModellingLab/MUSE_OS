@@ -443,45 +443,40 @@ def consolidate_quantity(
 def capacity(
     cached: List[xr.DataArray],
     agents: MutableMapping[Text, MutableMapping[Text, Text]],
-    installed: int,
 ) -> pd.DataFrame:
     """Consolidates the cached capacities into a single DataFrame to save.
 
     Args:
         cached (List[xr.DataArray]): The list of cached arrays
         agents (MutableMapping[Text, MutableMapping[Text, Text]]): Agents' metadata.
-        installed (int): Year of installation of the technology.
 
     Returns:
         pd.DataFrame: DataFrame with the consolidated data.
     """
-    return consolidate_quantity("capacity", cached, agents, installed)
+    return consolidate_quantity("capacity", cached, agents)
 
 
 @register_cached_quantity
 def production(
     cached: List[xr.DataArray],
     agents: MutableMapping[Text, MutableMapping[Text, Text]],
-    installed: int,
 ) -> pd.DataFrame:
     """Consolidates the cached production into a single DataFrame to save.
 
     Args:
         cached (List[xr.DataArray]): The list of cached arrays
         agents (MutableMapping[Text, MutableMapping[Text, Text]]): Agents' metadata.
-        installed (int): Year of installation of the technology.
 
     Returns:
         pd.DataFrame: DataFrame with the consolidated data.
     """
-    return consolidate_quantity("production", cached, agents, installed)
+    return consolidate_quantity("production", cached, agents)
 
 
 @register_cached_quantity(name="lifetime_levelized_cost_of_energy")
 def lcoe(
     cached: List[xr.DataArray],
     agents: MutableMapping[Text, MutableMapping[Text, Text]],
-    installed: int,
 ) -> pd.DataFrame:
     """Consolidates the cached LCOE into a single DataFrame to save.
 
@@ -495,4 +490,4 @@ def lcoe(
     """Consolidates the cached LCOE into a single DataFrame to save."""
     if "timeslice" in cached[0].dims:
         cached = [c.assign_coords(timeslice=c.timeslice.data) for c in cached]
-    return consolidate_quantity("lcoe", cached, agents, installed)
+    return consolidate_quantity("lcoe", cached, agents)
