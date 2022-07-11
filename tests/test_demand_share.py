@@ -1,5 +1,5 @@
 import xarray as xr
-from pytest import approx, fixture
+from pytest import approx, fixture, raises
 
 
 @fixture
@@ -275,6 +275,62 @@ def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_f
         }
         expected, actual = xr.broadcast(0.3 * sum(subset.values()), subset["a"])
         assert actual.values == approx(expected.values)
+
+
+def test_standard_demand_share(technologies, coords, market, timeslice, stock_factory):
+    from dataclasses import dataclass
+    from typing import Text
+    from uuid import UUID, uuid4
+
+    from muse.commodities import is_enduse
+    from muse.demand_share import standard_demand
+    from muse.errors import RetrofitAgentInStandardDemandShare
+
+    asia_stock = stock_factory(coords, technologies).expand_dims(region=["ASEAN"])
+    usa_stock = stock_factory(coords, technologies).expand_dims(region=["USA"])
+
+    asia_market = _matching_market(technologies, asia_stock, timeslice)
+    usa_market = _matching_market(technologies, usa_stock, timeslice)
+    market = xr.concat((asia_market, usa_market), dim="region")
+    market.consumption.loc[{"year": 2031}] *= 2
+
+    # spoof some agents
+    @dataclass
+    class Agent:
+        assets: xr.Dataset
+        category: Text
+        uuid: UUID
+        name: Text
+        region: Text
+        quantity: float
+
+    agents = [
+        Agent(0.3 * usa_stock.squeeze("region"), "retrofit", uuid4(), "a", "USA", 0.3),
+        Agent(0.0 * usa_stock.squeeze("region"), "new", uuid4(), "a", "USA", 0.0),
+        Agent(0.7 * usa_stock.squeeze("region"), "retrofit", uuid4(), "b", "USA", 0.7),
+        Agent(0.0 * usa_stock.squeeze("region"), "new", uuid4(), "b", "USA", 0.0),
+        Agent(asia_stock.squeeze("region"), "retrofit", uuid4(), "a", "ASEAN", 1.0),
+        Agent(0 * asia_stock.squeeze("region"), "new", uuid4(), "a", "ASEAN", 0.0),
+    ]
+
+    with raises(RetrofitAgentInStandardDemandShare):
+        standard_demand(agents, market, technologies, current_year=2010, forecast=5)
+
+    agents = [a for a in agents if a.category != "retrofit"]
+
+    results = standard_demand(
+        agents, market, technologies, current_year=2010, forecast=5
+    )
+
+    uuid_to_category = {agent.uuid: agent.category for agent in agents}
+    uuid_to_name = {agent.uuid: agent.name for agent in agents}
+    subset = {
+        uuid_to_name[uuid]: share.sel(commodity=is_enduse(technologies.comm_usage))
+        for uuid, share in results.groupby("agent")
+        if uuid_to_category[uuid] == "new" and (share.region == "USA").all()
+    }
+    expected, actual = xr.broadcast(0.3 * sum(subset.values()), subset["a"])
+    assert actual.values == approx(expected.values)
 
 
 def test_unmet_forecast_demand(technologies, coords, timeslice, stock_factory):
