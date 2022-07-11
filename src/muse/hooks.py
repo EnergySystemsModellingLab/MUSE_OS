@@ -71,6 +71,7 @@ def asset_merge_factory(settings: Union[Text, Mapping] = "new") -> Callable:
     def final_assets_transform(old_assets: Dataset, new_assets):
         return transform(old_assets, new_assets, **params)
 
+    final_assets_transform.__name__ = name
     return final_assets_transform
 
 
