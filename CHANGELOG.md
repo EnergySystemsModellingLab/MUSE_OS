@@ -2,6 +2,7 @@
 
 ## Features
 
+- Add tests to check the case of not using retrofit agents ([#53](https://github.com/SGIModel/MUSE_OS/pull/53))
 - Add a tutorial for caching quantities and fix a bug in the caching pipeline ([#52](https://github.com/SGIModel/MUSE_OS/pull/52))
 - Update documentation about not using retrofit ([51](https://github.com/SGIModel/MUSE_OS/pull/51))
 - Add error about not finding interaction network ([50](https://github.com/SGIModel/MUSE_OS/pull/50))
