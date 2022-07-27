@@ -1,7 +1,7 @@
 setuptools
 wheel
 pip 
-sphinx>=1.4
+sphinx==5.0.2
 ipykernel
 nbsphinx
 myst-parser
