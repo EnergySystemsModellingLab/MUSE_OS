@@ -23,6 +23,7 @@ import pandas as pd
 import xarray as xr
 
 from muse.defaults import DEFAULT_SECTORS_DIRECTORY
+from muse.errors import UnitsConflictInCommodities
 
 
 def find_sectors_file(
@@ -335,7 +336,10 @@ def read_technologies(
         if all(len(ins[d]) > 1 for d in ins.dims if ins[d].dtype.kind in "uifc"):
             ins = ins.interp(year=result.year)
 
-    result = result.merge(outs).merge(ins)
+    try:
+        result = result.merge(outs).merge(ins)
+    except xr.core.merge.MergeError:
+        raise UnitsConflictInCommodities
 
     if isinstance(ttpath, (Text, Path)):
         technodata_timeslice = read_technodata_timeslices(ttpath)
@@ -354,8 +358,11 @@ def read_technologies(
     if isinstance(commodities, xr.Dataset):
         if result.commodity.isin(commodities.commodity).all():
             result = result.merge(commodities.sel(commodity=result.commodity))
+
         else:
-            logger.warn("Commodities missing in global commodities file.")
+            raise IOError(
+                "Commodities not found in global commodities file: check spelling."
+            )
 
     result["comm_usage"] = (
         "commodity",
@@ -551,8 +558,8 @@ def read_csv_agent_parameters(filename) -> List:
             data["maturity_threshhold"] = row.MaturityThreshold
         if hasattr(row, "SpendLimit"):
             data["spend_limit"] = row.SpendLimit
-        if agent_type != "newcapa":
-            data["share"] = sub(r"Agent(\d)", r"agent_share_\1", row.AgentShare)
+        # if agent_type != "newcapa":
+        data["share"] = sub(r"Agent(\d)", r"agent_share_\1", row.AgentShare)
         if agent_type == "retrofit" and data["decision"] == "lexo":
             data["decision"] = "retro_lexo"
         result.append(data)

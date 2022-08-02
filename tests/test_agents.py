@@ -58,6 +58,61 @@ def test_create_retrofit(agent_args, technologies, stock):
     assert isinstance(agent, Agent)
     assert "asset" in agent.assets.dims
     assert len(agent.assets.capacity) != 0
+    assert (agent.assets.capacity != 0).any()
+
+
+def test_create_newcapa(agent_args, technologies, stock):
+    from muse.agents.agent import Agent
+    from muse.agents.factories import create_agent
+
+    # If there is no retrofit, new capa should behave identical to retrofit.
+    agent_args["share"] = "agent_share_zero"
+    agent_args["retrofit_present"] = False
+    agent = create_agent(
+        agent_type="Newcapa",
+        technologies=technologies,
+        capacity=stock.capacity,
+        year=2010,
+        **agent_args,
+    )
+    assert isinstance(agent, Agent)
+    assert len(agent.assets.capacity) == 0
+    assert "asset" in agent.assets.dims and len(agent.assets.asset) == 0
+    assert "year" in agent.assets.dims or len(agent.assets.year) > 1
+    assert "region" not in agent.assets.dims
+    assert "commodity" not in agent.assets.dims
+    assert agent.merge_transform.__name__ == "merge"
+
+    agent_args["share"] = "agent_share"
+    agent = create_agent(
+        agent_type="Newcapa",
+        technologies=technologies,
+        capacity=stock.capacity,
+        year=2010,
+        **agent_args,
+    )
+    assert isinstance(agent, Agent)
+    assert "asset" in agent.assets.dims
+    assert len(agent.assets.capacity) != 0
+    assert (agent.assets.capacity != 0).any()
+    assert agent.merge_transform.__name__ == "merge"
+
+    # If there are retrofit agents, these are really newcapa agents with no capacity
+    agent_args["share"] = "agent_share"
+    agent_args["retrofit_present"] = True
+    agent = create_agent(
+        agent_type="Newcapa",
+        technologies=technologies,
+        capacity=stock.capacity,
+        year=2010,
+        **agent_args,
+    )
+
+    assert isinstance(agent, Agent)
+    assert "asset" in agent.assets.dims
+    assert len(agent.assets.capacity) != 0
+    assert (agent.assets.capacity == 0).all()
+    assert agent.merge_transform.__name__ == "new"
 
 
 def test_issue_835_and_842(agent_args, technologies, stock):

@@ -61,6 +61,10 @@ import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.agents import AbstractAgent
+from muse.errors import (
+    AgentWithNoAssetsInDemandShare,
+    RetrofitAgentInStandardDemandShare,
+)
 from muse.registration import registrator
 
 DEMAND_SHARE_SIGNATURE = Callable[
@@ -314,6 +318,107 @@ def new_and_retro(
     return result
 
 
+@register_demand_share(name="standard_demand")
+def standard_demand(
+    agents: Sequence[AbstractAgent],
+    market: xr.Dataset,
+    technologies: xr.Dataset,
+    production: Union[Text, Mapping, Callable] = "maximum_production",
+    current_year: Optional[int] = None,
+    forecast: int = 5,
+) -> xr.DataArray:
+    r"""Splits demand across new agents.
+
+    The input demand is split amongst *new* agents. *New* agents get a
+    share of the increase in demand for the forecast years well as the demand that
+    occurs from decommissioned assets.
+
+    Args:
+        agents: a list of all agents. This list should mainly be used to determine the
+            type of an agent and the assets it owns. The agents will not be modified in
+            any way.
+        market: the market for which to satisfy the demand. It should contain at-least
+            ``consumption`` and ``supply``. It may contain ``prices`` if that is of use
+            to the production method. The ``consumption`` reflects the demand for the
+            commodities produced by the current sector.
+        technologies: quantities describing the technologies.
+
+    """
+    from functools import partial
+
+    from muse.commodities import is_enduse
+    from muse.quantities import maximum_production
+    from muse.utilities import agent_concatenation, reduce_assets
+
+    def decommissioning(capacity):
+        from muse.quantities import decommissioning_demand
+
+        return decommissioning_demand(
+            technologies, capacity, year=[current_year, current_year + forecast]
+        ).squeeze("year")
+
+    if current_year is None:
+        current_year = market.year.min()
+
+    capacity = reduce_assets([agent.assets.capacity for agent in agents])
+
+    demands = new_and_retro_demands(
+        capacity,
+        market,
+        technologies,
+        production=production,
+        current_year=current_year,
+        forecast=forecast,
+    )
+
+    demands = demands.where(
+        is_enduse(technologies.comm_usage.sel(commodity=demands.commodity)), 0
+    )
+
+    for agent in agents:
+        if agent.category == "retrofit":
+            raise RetrofitAgentInStandardDemandShare()
+
+    id_to_share: MutableMapping[Hashable, xr.DataArray] = {}
+    for region in demands.region.values:
+        current_capacity: MutableMapping[Hashable, xr.DataArray] = {
+            agent.uuid: agent.assets.capacity
+            for agent in agents
+            if agent.region == region
+        }
+        id_to_quantity = {
+            agent.uuid: (agent.name, agent.region, agent.quantity)
+            for agent in agents
+            if agent.region == region
+        }
+
+        retro_demands: MutableMapping[Hashable, xr.DataArray] = _inner_split(
+            current_capacity,
+            demands.retrofit.sel(region=region),
+            decommissioning,
+            id_to_quantity,
+        )
+
+        new_demands = _inner_split(
+            current_capacity,
+            demands.new.sel(region=region),
+            partial(
+                maximum_production,
+                technologies=technologies.sel(region=region),
+                year=current_year,
+            ),
+            id_to_quantity,
+        )
+
+        total_demands = {
+            k: new_demands[k] + retro_demands[k] for k in new_demands.keys()
+        }
+        id_to_share.update(total_demands)
+
+    result = cast(xr.DataArray, agent_concatenation(id_to_share))
+    return result
+
+
 @register_demand_share(name="unmet_demand")
 def unmet_forecasted_demand(
     agents: Sequence[AbstractAgent],
@@ -352,7 +457,7 @@ def _inner_split(
     method: Callable,
     quantity: Mapping,
 ) -> MutableMapping[Hashable, xr.DataArray]:
-    r"""compute share of the demand for a set of agents.
+    r"""Compute share of the demand for a set of agents.
 
     The input ``demand`` is split between agents according to their share of the
     demand computed by ``method``.
@@ -366,7 +471,10 @@ def _inner_split(
         .rename(technology="asset")
         for key, capacity in assets.items()
     }
-    total = sum(shares.values()).sum("asset")  # type: ignore
+    try:
+        total = sum(shares.values()).sum("asset")  # type: ignore
+    except AttributeError:
+        raise AgentWithNoAssetsInDemandShare()
 
     unassigned = (
         demand / (len(shares) * len(cast(xr.DataArray, sum(shares.values())).asset))
@@ -476,7 +584,7 @@ def new_and_retro_demands(
 
     The demand (.i.e. `market.consumption`) in the forecast year is split three ways:
 
-    #. the demand that can be serviced the assets that will still be operational that
+    #. the demand that can be serviced by the assets that will still be operational that
         year.
     #. the *new* demand is defined as the growth in consumption that cannot be serviced
         by existing assets in the current year, as computed in :py:func:`new_demand`.
@@ -532,3 +640,23 @@ def new_and_retro_demands(
         retro_demand = retro_demand.squeeze("year")
 
     return xr.Dataset({"new": new_demand, "retrofit": retro_demand})
+
+
+def new_demand(
+    capacity: xr.DataArray,
+    market: xr.Dataset,
+    technologies: xr.Dataset,
+    production: Union[Text, Mapping, Callable] = "maximum_production",
+    current_year: Optional[int] = None,
+    forecast: int = 5,
+) -> xr.DataArray:
+    """Calculates the new demand that needs to be covered.
+
+    It groups the demand related to an increase in consumption as well as the existing
+    demand associated with decomissoned assets. Internally, it just call `new_and_retro`
+    demands and adds together both components.
+    """
+    demand = new_and_retro_demands(
+        capacity, market, technologies, production, current_year, forecast
+    )
+    return (demand["new"] + demand["retrofit"]).rename("demand")

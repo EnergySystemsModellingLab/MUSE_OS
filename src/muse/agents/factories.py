@@ -6,6 +6,7 @@ import xarray as xr
 
 from muse.agents.agent import Agent, InvestingAgent
 from muse.defaults import DEFAULT_SECTORS_DIRECTORY
+from muse.errors import RetrofitAgentNotDefined, TechnologyNotDefined
 
 
 def create_standard_agent(
@@ -90,14 +91,20 @@ def create_newcapa_agent(
     capacity: xr.DataArray,
     year: int,
     region: Text,
+    share: Text,
     search_rules: Union[Text, Sequence[Text]] = "all",
     interpolation: Text = "linear",
     merge_transform: Union[Text, Mapping, Callable] = "new",
     quantity: float = 0.3,
     housekeeping: Union[Text, Mapping, Callable] = "noop",
+    retrofit_present: bool = True,
     **kwargs,
 ):
-    """Creates newcapa agent from muse primitives."""
+    """Creates newcapa agent from muse primitives.
+
+    If there are no retrofit agents present in the sector, then the newcapa agent need
+    to be initialised with the initial capacity of the sector.
+    """
     from muse.filters import factory as filter_factory
     from muse.registration import name_variations
 
@@ -107,8 +114,18 @@ def create_newcapa_agent(
     existing = capacity.interp(year=year, method=interpolation) > 0
     assert set(existing.dims) == {"asset"}
     years = [capacity.year.min().values, capacity.year.max().values]
+
     assets = xr.Dataset()
-    assets["capacity"] = xr.zeros_like(capacity.sel(asset=existing.values, year=years))
+    if retrofit_present:
+        assets["capacity"] = xr.zeros_like(
+            capacity.sel(asset=existing.values, year=years)
+        )
+    else:
+        technologies = kwargs["technologies"]
+        assets["capacity"] = _shared_capacity(
+            technologies, capacity, region, share, year, interpolation=interpolation
+        )
+        merge_transform = "merge"
 
     kwargs = _standardize_investing_inputs(
         search_rules=search_rules,
@@ -126,6 +143,10 @@ def create_newcapa_agent(
         "currently_referenced_tech" if name in variations else name
         for name in kwargs.pop("search_rules")
     ]
+
+    if not retrofit_present:
+        if "with_asset_technology" not in search_rules:
+            search_rules.insert(-1, "with_asset_technology")
 
     result = InvestingAgent(
         assets=assets,
@@ -271,6 +292,11 @@ def agents_factory(
         if capacity.dst_region.size == 1:
             capacity = capacity.squeeze("dst_region", drop=True)
     result = []
+
+    retrofit_present = False
+    for param in params:
+        retrofit_present = retrofit_present or param["agent_type"] == "retrofit"
+
     for param in params:
         if regions is not None and param["region"] not in regions:
             continue
@@ -282,7 +308,7 @@ def agents_factory(
         param["capacity"] = deepcopy(capacity.sel(region=param["region"]))
         param["year"] = year
         param.update(kwargs)
-        result.append(create_agent(**param))
+        result.append(create_agent(**param, retrofit_present=retrofit_present))
 
     nregs = len({u.region for u in result})
     types = [u.name for u in result]
@@ -311,7 +337,16 @@ def _shared_capacity(
     if "region" in technologies.dims:
         technologies = technologies.sel(region=region)
 
-    shares = technologies[share].sel(technology=capacity.technology)
+    try:
+        shares = technologies[share]
+    except KeyError:
+        raise RetrofitAgentNotDefined
+
+    try:
+        shares = shares.sel(technology=capacity.technology)
+    except KeyError:
+        raise TechnologyNotDefined
+
     if "region" in shares.dims:
         shares = shares.sel(region=region)
     if "year" in shares.dims:

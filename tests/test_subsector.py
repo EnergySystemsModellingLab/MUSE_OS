@@ -79,6 +79,10 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
             param["capacity"] = deepcopy(capa.sel(region=param["region"]))
         else:
             param["capacity"] = xr.zeros_like(capa.sel(region=param["region"]))
+
+        if "share" in param:
+            del param["share"]
+
         param["agent_type"] = "default"
         param["category"] = "trade"
         param["year"] = 2020

@@ -63,10 +63,13 @@ import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.constraints import Constraint
+from muse.errors import FailedInterpolation, GrowthOfCapacityTooConstrained
+from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
 
 INVESTMENT_SIGNATURE = Callable[
-    [xr.DataArray, xr.DataArray, xr.Dataset, List[Constraint], KwArg(Any)], xr.DataArray
+    [xr.DataArray, xr.DataArray, xr.Dataset, List[Constraint], KwArg(Any)],
+    Union[xr.DataArray, xr.Dataset],
 ]
 """Investment signature. """
 
@@ -76,7 +79,13 @@ INVESTMENTS: MutableMapping[Text, INVESTMENT_SIGNATURE] = {}
 
 @registrator(registry=INVESTMENTS, loglevel="info")
 def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
-    """Decorator to register a function as an investment."""
+    """Decorator to register a function as an investment.
+
+    The output of the function can be a DataArray, with the invested capacity, or a
+    Dataset. In this case, it must contain a DataArray named "capacity" and, optionally,
+    a DataArray named "production". Only the invested capacity DataArray is returned to
+    the calling function.
+    """
     from functools import wraps
 
     @wraps(function)
@@ -88,7 +97,17 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
         **kwargs,
     ) -> xr.DataArray:
         result = function(costs, search_space, technologies, constraints, **kwargs)
-        return result.rename("investment")
+
+        if isinstance(result, xr.Dataset):
+            investment = result["capacity"].rename("investment")
+            if "production" in result:
+                cache_quantity(production=result["production"])
+        else:
+            investment = result.rename("investment")
+
+        cache_quantity(capacity=investment)
+
+        return investment
 
     return decorated
 
@@ -354,7 +373,8 @@ def adhoc_timeslice_demand(
     if "timeslice" in capacity.dims and timeslice_op is not None:
         capacity = timeslice_op(capacity)
 
-    return capacity.rename("investment")
+    result = xr.Dataset({"capacity": capacity, "production": production})
+    return result
 
 
 @register_investment(name=["scipy", "match_demand"])
@@ -373,6 +393,9 @@ def scipy_match_demand(
 
     from muse.constraints import ScipyAdapter
 
+    if technologies.to_dataframe().isnull().sum().sum() > 0:
+        raise FailedInterpolation
+
     if "timeslice" in costs.dims and timeslice_op is not None:
         costs = timeslice_op(costs)
     if "year" in technologies.dims and year is None:
@@ -388,10 +411,10 @@ def scipy_match_demand(
     res = linprog(**adapter.kwargs, method="highs")
     if not res.success:
         getLogger(__name__).critical(res.message)
-        raise LinearProblemError("LP system could not be solved", res)
+        raise GrowthOfCapacityTooConstrained
 
     solution = cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(res.x)
-    return solution.capacity
+    return solution
 
 
 @register_investment(name=["cvxopt"])
@@ -458,4 +481,4 @@ def cvxopt_match_demand(
         raise LinearProblemError("Infeasible system", res)
 
     solution = cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(list(res["x"]))
-    return solution.capacity
+    return solution

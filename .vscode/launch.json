@@ -42,6 +42,15 @@
                 "--model",
                 "minimum-service"
             ]
-        }
+        },
+        {
+            "name": "No retro",
+            "type": "python",
+            "request": "launch",
+            "module": "muse",
+            "args": [
+                "/Users/dalonsoa/Documents/Projects/scratch/MUSE/run/example/default_sara/settings.toml",
+            ]
+        },
     ]
 }
