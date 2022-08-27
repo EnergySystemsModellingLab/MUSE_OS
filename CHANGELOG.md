@@ -2,6 +2,7 @@
 
 ## Features
 
+- Inconsistent trade case study ([#58](https://github.com/SGIModel/MUSE_OS/pull/58))
 - Update README.txt in installation path ([#57](https://github.com/SGIModel/MUSE_OS/pull/57))
 - Add tests to check the case of not using retrofit agents ([#53](https://github.com/SGIModel/MUSE_OS/pull/53))
 - Add a tutorial for caching quantities and fix a bug in the caching pipeline ([#52](https://github.com/SGIModel/MUSE_OS/pull/52))
