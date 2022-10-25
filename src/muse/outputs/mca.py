@@ -389,7 +389,7 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
                 data_agent["agent"] = a.name
                 data_agent["category"] = a.category
                 data_agent["sector"] = getattr(sector, "name", "unnamed")
-                
+
                 a = data_agent.to_dataframe("supply")
                 if len(a) > 0 and len(a.technology.values) > 0:
                     b = a.reset_index()
@@ -460,7 +460,7 @@ def sector_consumption(
                     data_agent = result
                     data_agent["year"] = output_year
                 if "dst_region" not in data_agent.coords:
-                        data_agent["dst_region"] = a.region
+                    data_agent["dst_region"] = a.region
                 data_agent["agent"] = a.name
                 data_agent["category"] = a.category
                 data_agent["sector"] = getattr(sector, "name", "unnamed")
