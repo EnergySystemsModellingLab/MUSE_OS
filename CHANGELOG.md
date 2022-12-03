@@ -62,4 +62,4 @@
 
 ## Breaking changes
 
-- None
+- Flake8 update on yaml ([#985](https://github.com/SGIModel/StarMuse/pull/985))
