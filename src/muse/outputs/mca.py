@@ -367,7 +367,10 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
                     for i in agent_market["commodity"].values
                     if i in technologies.enduse.values
                 ]
-                agent_market = agent_market.where(agent_market.commodity == included, 0)
+                excluded = [
+                    i for i in agent_market["commodity"].values if i not in included
+                ]
+                agent_market.loc[dict(commodity=excluded)] = 0
 
                 result = convert_timeslice(
                     supply(
@@ -439,7 +442,10 @@ def sector_consumption(
                     for i in agent_market["commodity"].values
                     if i in technologies.enduse.values
                 ]
-                agent_market = agent_market.where(agent_market.commodity == included, 0)
+                excluded = [
+                    i for i in agent_market["commodity"].values if i not in included
+                ]
+                agent_market.loc[dict(commodity=excluded)] = 0
 
                 production = convert_timeslice(
                     supply(
