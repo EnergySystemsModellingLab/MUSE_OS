@@ -40,6 +40,8 @@
 
 ## Bug fixes
 
+- Error in supply/consumption reporting ([#70](https://github.com/SGIModel/MUSE_OS/pull/70))
+- Added destination region in output ([#64](https://github.com/SGIModel/MUSE_OS/pull/64))
 - Consistency in packages use ([#38](https://github.com/SGIModel/MUSE_OS/pull/56))
 - Raise error for inconsistent commodities ([#38](https://github.com/SGIModel/MUSE_OS/issues/38))
 - Fix error in black ([#32](https://github.com/SGIModel/MUSE_OS/pull/32))
@@ -62,4 +64,4 @@
 
 ## Breaking changes
 
-- None
+- Flake8 update on yaml ([#985](https://github.com/SGIModel/StarMuse/pull/985))

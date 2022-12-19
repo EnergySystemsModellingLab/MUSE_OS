@@ -903,8 +903,8 @@ def check_utilization_not_all_zero(data, filename):
 
     if "utilization_factor" not in data.columns:
         raise ValueError(
-            """A technology needs to have a utilization factor defined for every timeslice.
-            Please check file {}.""".format(
+            """A technology needs to have a utilization factor defined for every
+             timeslice. Please check file {}.""".format(
                 filename
             )
         )
@@ -917,8 +917,8 @@ def check_utilization_not_all_zero(data, filename):
                 data.loc[data.utilization_factor == 0, "utilization_factor"] + 0.01
             )
             raise ValueError(
-                """A technology can not have a utilization factor of 0 for every timeslice.
-                Please check file {}.""".format(
+                """A technology can not have a utilization factor of 0 for every
+                 timeslice. Please check file {}.""".format(
                     filename
                 )
             )

@@ -367,7 +367,10 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
                     for i in agent_market["commodity"].values
                     if i in technologies.enduse.values
                 ]
-                agent_market = agent_market.where(agent_market.commodity == included, 0)
+                excluded = [
+                    i for i in agent_market["commodity"].values if i not in included
+                ]
+                agent_market.loc[dict(commodity=excluded)] = 0
 
                 result = convert_timeslice(
                     supply(
@@ -384,9 +387,12 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
                 else:
                     data_agent = result
                     data_agent["year"] = output_year
+                if "dst_region" not in data_agent.coords:
+                    data_agent["dst_region"] = a.region
                 data_agent["agent"] = a.name
                 data_agent["category"] = a.category
                 data_agent["sector"] = getattr(sector, "name", "unnamed")
+
                 a = data_agent.to_dataframe("supply")
                 if len(a) > 0 and len(a.technology.values) > 0:
                     b = a.reset_index()
@@ -436,7 +442,10 @@ def sector_consumption(
                     for i in agent_market["commodity"].values
                     if i in technologies.enduse.values
                 ]
-                agent_market = agent_market.where(agent_market.commodity == included, 0)
+                excluded = [
+                    i for i in agent_market["commodity"].values if i not in included
+                ]
+                agent_market.loc[dict(commodity=excluded)] = 0
 
                 production = convert_timeslice(
                     supply(
@@ -456,6 +465,8 @@ def sector_consumption(
                 else:
                     data_agent = result
                     data_agent["year"] = output_year
+                if "dst_region" not in data_agent.coords:
+                    data_agent["dst_region"] = a.region
                 data_agent["agent"] = a.name
                 data_agent["category"] = a.category
                 data_agent["sector"] = getattr(sector, "name", "unnamed")
