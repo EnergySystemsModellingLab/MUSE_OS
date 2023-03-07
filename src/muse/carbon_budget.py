@@ -73,7 +73,6 @@ def fitting(
     price_too_high_threshold: float = 10,
     fitter: Text = "slinear",
 ) -> float:
-
     future = market.year[-1]
 
     threshold = carbon_budget.sel(year=future).values
@@ -88,7 +87,6 @@ def fitting(
     # For each sample price, we calculate the new emissions
     new_market = None
     for i, new_price in enumerate(sample_prices[1:]):
-
         # Reset market and sectors
         new_market = market.copy(deep=True)
 
@@ -338,7 +336,6 @@ def bisection(
     price_too_high_threshold: float = 10,
     fitter: Text = "slinear",
 ) -> float:
-
     # to be set as moving value in superloop before emissions start increasing
     current = carbon_price.year.min() + sectors[-1].forecast
     future = market.year[-1]

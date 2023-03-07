@@ -900,7 +900,6 @@ def read_finite_resources(path: Union[Text, Path]) -> xr.DataArray:
 
 
 def check_utilization_not_all_zero(data, filename):
-
     if "utilization_factor" not in data.columns:
         raise ValueError(
             """A technology needs to have a utilization factor defined for every

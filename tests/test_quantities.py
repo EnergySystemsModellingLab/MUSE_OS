@@ -35,7 +35,6 @@ def production(technologies: xr.Dataset, capacity: xr.DataArray) -> xr.DataArray
 
 
 def make_array(array):
-
     data = np.random.randint(1, 5, len(array))
     return xr.DataArray(data, dims=array.dims, coords=array.coords)
 
@@ -218,7 +217,7 @@ def test_consumption_with_flex(technologies, production, market):
     allprods = [
         allprods[i] for i in np.random.choice(range(len(allprods)), 50, replace=False)
     ]
-    for (ts, asset, year) in allprods:
+    for ts, asset, year in allprods:
         flexs = techs.flexible_inputs.sel(
             region=asset.region, technology=asset.technology
         ).interp(year=asset.installed, method="slinear")
@@ -346,7 +345,6 @@ def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
         )
 
     for region in set(production.region.values):
-
         weight = production / production.sel(asset=production.region == region).sum(
             "asset"
         ).sum("timeslice")

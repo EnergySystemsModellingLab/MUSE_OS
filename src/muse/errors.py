@@ -61,7 +61,6 @@ Check the spelling of the technology names in the sector data."""
 
 
 class RetrofitAgentInStandardDemandShare(Exception):
-
     msg = """A retrofit agent has been found in a 'New agents'-only demand share
 function. Make sure you remove all the retro agents from the Agents input files or use a
 demand share method that can handle both new and retro agents."""
@@ -71,7 +70,6 @@ demand share method that can handle both new and retro agents."""
 
 
 class AgentWithNoAssetsInDemandShare(Exception):
-
     msg = """This error refers to an agent with no assets. To fix this error, check the
 capacity assigment to the agents. One possibility is that you have decided not
 to use "Retrofit" agents, as such you may have already removed them from the
@@ -84,7 +82,6 @@ section for each of the selected sectors to model."""
 
 
 class NoInteractionsFound(Exception):
-
     msg = """A network with no interactions has been found. This might be the case if
 there are no retrofit agents and yet a 'new_to_retro' network has been defined for a
 particular sector. Asses the existance of both new and retrofit agents for all sectors

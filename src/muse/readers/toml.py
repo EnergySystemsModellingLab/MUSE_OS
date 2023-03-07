@@ -315,7 +315,6 @@ def read_split_toml(
     from toml import load
 
     def splice_section(settings: Mapping):
-
         settings = dict(**settings)
 
         for key, section in settings.items():

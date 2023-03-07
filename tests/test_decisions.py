@@ -148,7 +148,6 @@ def test_single_objectives(objectives):
 # when developping/debugging, these few lines help setup the input for the
 # different tests
 if __name__ == "main":
-
     # fmt: off
     from tests.agents import test_objectives  # noqa
     objectives = test_decisions.objectives()  # noqa
