@@ -51,7 +51,6 @@ def model(name: Text = "default") -> MCA:
     # we could modify the settings directly, but instead we use the copy_model function.
     # That way, there is only one function to get a model.
     with TemporaryDirectory() as tmpdir:
-
         path = copy_model(name, tmpdir)
         return MCA.factory(read_settings(path / "settings.toml"))
 

@@ -960,7 +960,6 @@ class ScipyAdapter:
         timeslices: pd.Index,
         *constraints: Constraint,
     ) -> ScipyAdapter:
-
         lpcosts = lp_costs(technologies, costs, timeslices)
 
         data = cls._unified_dataset(technologies, lpcosts, *constraints)
@@ -1022,7 +1021,6 @@ class ScipyAdapter:
 
     @staticmethod
     def _selected_quantity(data: xr.Dataset, name: Text) -> xr.Dataset:
-
         result = cast(
             xr.Dataset, data[[u for u in data.data_vars if str(u).startswith(name)]]
         )

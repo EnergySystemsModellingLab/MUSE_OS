@@ -320,7 +320,6 @@ class MCA(object):
         variables = ["supply", "consumption", "prices"]
 
         for year_idx in range(start + 1, nyear):
-
             years = self.time_framework[year_idx : year_idx + 2]
             getLogger(__name__).info(f"Running simulation year {years[0]}...")
             new_market = self.market[variables].sel(year=years)

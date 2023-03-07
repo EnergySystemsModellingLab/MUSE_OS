@@ -17,7 +17,6 @@ def streetcred(save_registries):
 
     @register_output_quantity
     def streetcred(*args, **kwargs):
-
         return xr.DataArray(
             np.random.randint(0, 5, (3, 2)),
             coords={

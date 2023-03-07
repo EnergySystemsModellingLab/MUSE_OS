@@ -17,7 +17,6 @@ def test_aggregate_sector():
 
     frame = DataFrame()
     for ai in agent_list[0]:
-
         for y in year:
             if y in ai.assets.year:
                 if ai.assets.capacity.sel(year=y).values > 0.0:
