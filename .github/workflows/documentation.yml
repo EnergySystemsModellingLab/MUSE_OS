@@ -9,7 +9,7 @@ jobs:
   html_docs:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: ammaraskar/sphinx-action@master
       with:
         docs-folder: "docs/"
@@ -19,7 +19,7 @@ jobs:
             python -m pip install -e .
             python -m pip install --upgrade -r docs/requirements.txt
         build-command: sphinx-build -n -b html . ../build/html
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v3
       with:
         name: DocumentationHTML
         path: build/html/
@@ -33,7 +33,7 @@ jobs:
   pdf_docs:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: ammaraskar/sphinx-action@master
       with:
         docs-folder: "docs/"
@@ -51,7 +51,7 @@ jobs:
         sudo chown -R $(whoami) build
         cd build/latex
         latexmk -interaction=nonstopmode -pdf muse
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v3
       with:
         name: DocumentationPDF
         path: build/latex/muse.pdf
