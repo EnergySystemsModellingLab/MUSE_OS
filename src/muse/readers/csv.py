@@ -72,6 +72,7 @@ def read_technodictionary(filename: Union[Text, Path]) -> xr.Dataset:
         .rename(columns={"end_use": "enduse", "availabiliy year": "availability"})
     )
     data = csv[csv.process_name != "Unit"]
+
     ts = pd.MultiIndex.from_arrays(
         [data.process_name, data.region_name, [int(u) for u in data.time]],
         names=("technology", "region", "year"),
@@ -867,6 +868,7 @@ def read_trade(
                 values="value", columns=parameters, index=indices + [col_region]
             ).rename(columns=camel_to_snake)
         )
+
     return result.rename(src_region="region")
 
 
@@ -890,7 +892,6 @@ def read_finite_resources(path: Union[Text, Path]) -> xr.DataArray:
             [data[u] for u in ts_levels], names=ts_levels
         )
         timeslice = pd.DataFrame(timeslice, columns=["timeslice"])
-        print(timeslice)
         data = pd.concat((data, timeslice), axis=1)
         data.drop(columns=ts_levels, inplace=True)
     indices = list({"year", "region", "timeslice"}.intersection(data.columns))
@@ -900,6 +901,7 @@ def read_finite_resources(path: Union[Text, Path]) -> xr.DataArray:
 
 
 def check_utilization_not_all_zero(data, filename):
+
     if "utilization_factor" not in data.columns:
         raise ValueError(
             """A technology needs to have a utilization factor defined for every

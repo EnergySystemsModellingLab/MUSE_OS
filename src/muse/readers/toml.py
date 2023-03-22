@@ -315,6 +315,7 @@ def read_split_toml(
     from toml import load
 
     def splice_section(settings: Mapping):
+
         settings = dict(**settings)
 
         for key, section in settings.items():
@@ -924,6 +925,7 @@ def read_technodata(
                 data = data.sel(dst_region=regions)
                 if data.dst_region.size == 1:
                     data = data.squeeze("dst_region", drop=True)
+
         else:
             data = value
         if isinstance(data, xr.Dataset):
