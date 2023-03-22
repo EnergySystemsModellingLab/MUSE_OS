@@ -41,6 +41,7 @@
 
 ## Bug fixes
 
+- Fix typo in README ([#85](https://github.com/SGIModel/MUSE_OS/pull/85))
 - Error in supply/consumption reporting ([#70](https://github.com/SGIModel/MUSE_OS/pull/70))
 - Added destination region in output ([#64](https://github.com/SGIModel/MUSE_OS/pull/64))
 - Consistency in packages use ([#38](https://github.com/SGIModel/MUSE_OS/pull/56))

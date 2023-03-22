@@ -67,7 +67,7 @@ And then install the working directory into the conda environment:
 ```bash
 > # after activating the virtual environment with:
 > # conda activate muse
-> python -m pip install -e ."muse[dev,docs]"
+> python -m pip install -e ."muse[dev,doc]"
 ```
 
 Please note the quotation marks. `muse` in the last line above is the path to source code that was
