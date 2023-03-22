@@ -294,7 +294,7 @@ def regression_functor(
                 )
 
             if forecast is not None and years is not None:
-                years = years + forecast
+                years = years
 
             data = data.sel(filters)
             if years is not None:
@@ -365,7 +365,7 @@ def Exponential(
 
 
 @register_regression
-@regression_functor({"a": "constant", "b": "GDPexp", "w": "ConstantAdjDem"})
+@regression_functor({"a": "constant", "b": "GDPexp", "w": "timeEff"})
 def ExponentialAdj(
     self,
     gdp: DataArray,
@@ -373,7 +373,7 @@ def ExponentialAdj(
     *args,
     year: Optional[Union[int, Sequence[int]]] = None,
     forecast: int = 5,
-    n: int = 2,
+    n: int = 6,
     **kwargs,
 ) -> DataArray:
     from numpy import exp, power
@@ -416,7 +416,7 @@ def Loglog(self, gdp: DataArray, population: DataArray, *args, **kwargs) -> Data
 
 @register_regression
 @regression_functor(
-    {"a": "constant", "b0": "GDPscaleLess", "b1": "GDPscaleGreater", "c": "GDPexp"}
+    {"a": "scale", "b0": "GDPscaleLess", "b1": "GDPscaleGreater", "c": "GDPexp"}
 )
 def LogisticSigmoid(
     self,
@@ -426,13 +426,13 @@ def LogisticSigmoid(
     year: Optional[Union[int, Sequence[int]]] = None,
     **kwargs,
 ) -> DataArray:
-    """1e6 * (a * pop + gdp * c / sqrt(1 + (gdp * scale / pop)^2)"""
+    """0.001 * (constant * pop + gdp * c / sqrt(1 + (gdp * scale / pop)^2)"""
     from numpy import power
 
     if year is None:
         year = self.base_year
     if isinstance(year, int):
-        scale = self.coeffs.b0 if year < 2015 else self.coeffs.b1
+        constant = self.coeffs.b0 if year < 2015 else self.coeffs.b1
     elif year is not None and "year" in gdp.dims:
         # fmt: disable
         years = (
@@ -441,12 +441,13 @@ def LogisticSigmoid(
             else DataArray(year, coords={"year": year}, dims="year")
         )
         # fmt: enable
-        scale = self.coeffs.b0.where(years < 2015, self.coeffs.b1)
+        constant = self.coeffs.b0.where(years < 2015, self.coeffs.b1)
     else:
-        scale = 1
+        constant = 1
 
-    p = power(1 + power(gdp * scale / population, 2), 0.5)
-    return 1e6 * (population * self.coeffs.a + gdp * self.coeffs.c / p)
+    p = power(1 + power(gdp * self.coeffs.a / population, 2), 0.5)
+
+    return 0.001 * (constant * population + gdp * self.coeffs.c / p)
 
 
 @register_regression
