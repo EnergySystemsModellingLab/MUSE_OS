@@ -41,6 +41,7 @@
 
 ## Bug fixes
 
+- Fix trade reporting function ([#89](https://github.com/SGIModel/MUSE_OS/pull/89))
 - Fix foresight in regressions ([#88](https://github.com/SGIModel/MUSE_OS/pull/88))
 - Fix typo in README ([#85](https://github.com/SGIModel/MUSE_OS/pull/85))
 - Error in supply/consumption reporting ([#70](https://github.com/SGIModel/MUSE_OS/pull/70))
