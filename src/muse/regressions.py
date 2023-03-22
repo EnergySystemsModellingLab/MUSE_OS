@@ -102,7 +102,6 @@ class Regression(Callable):
     def _to_dataset(
         first: Union[DataArray, Dataset], population: Optional[DataArray]
     ) -> Dataset:
-
         data = first if isinstance(first, Dataset) else Dataset({"gdp": first})
         if population is not None:
             data["population"] = population
