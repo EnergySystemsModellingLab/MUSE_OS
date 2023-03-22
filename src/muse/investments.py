@@ -345,7 +345,7 @@ def scipy_match_demand(
         )
         if not res.success:
             getLogger(__name__).critical(res.message)
-            print(f"in sector containing ", df_technologies.technology)
+            print(f'in sector containing ', df_technologies.technology)
             raise GrowthOfCapacityTooConstrained
 
     solution = cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(res.x)
