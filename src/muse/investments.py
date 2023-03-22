@@ -63,7 +63,7 @@ import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.constraints import Constraint
-from muse.errors import FailedInterpolation, GrowthOfCapacityTooConstrained
+from muse.errors import GrowthOfCapacityTooConstrained
 from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
 
@@ -274,16 +274,19 @@ def adhoc_match_demand(
 
     # Push disabled techs to last rank.
     # Any production assigned to them by the demand-matching algorithm will be removed.
-    minobj = costs.min()
-    maxobj = costs.where(search_space, minobj).max("replacement") + 1
 
     if "timeslice" in costs.dims and timeslice_op is not None:
-        costs = timeslice_op(costs)
+        costs = costs.mean("timeslice").mean("asset")  # timeslice_op(costs)
+
+    minobj = costs.min()
+    maxobj = costs.where(search_space, minobj).max("replacement") + 1
 
     decision = costs.where(search_space, maxobj)
 
     production = demand_matching(
-        demand.sel(asset=demand.asset.isin(search_space.asset)), decision, max_prod
+        demand.sel(asset=demand.asset.isin(search_space.asset)),
+        decision,
+        max_prod,
     ).where(search_space, 0)
 
     capacity = capacity_in_use(
@@ -312,8 +315,7 @@ def scipy_match_demand(
 
     from muse.constraints import ScipyAdapter
 
-    if technologies.to_dataframe().isnull().sum().sum() > 0:
-        raise FailedInterpolation
+    df_technologies = technologies.to_dataframe()
 
     if "timeslice" in costs.dims and timeslice_op is not None:
         costs = timeslice_op(costs)
@@ -324,13 +326,27 @@ def scipy_match_demand(
     else:
         techs = technologies
     timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
+
     adapter = ScipyAdapter.factory(
         techs, cast(np.ndarray, costs), timeslice, *constraints
     )
     res = linprog(**adapter.kwargs, method="highs")
-    if not res.success:
-        getLogger(__name__).critical(res.message)
-        raise GrowthOfCapacityTooConstrained
+    if not res.success and (res.status != 0):
+        res = linprog(
+            **adapter.kwargs,
+            method="highs-ipm",
+            options={
+                "disp": True,
+                "presolve": False,
+                "dual_feasibility_tolerance": 1e-2,
+                "primal_feasibility_tolerance": 1e-2,
+                "ipm_optimality_tolerance": 1e-2,
+            },
+        )
+        if not res.success:
+            getLogger(__name__).critical(res.message)
+            print(f"in sector containing ", df_technologies.technology)
+            raise GrowthOfCapacityTooConstrained
 
     solution = cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(res.x)
     return solution
