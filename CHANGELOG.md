@@ -2,6 +2,7 @@
 
 ## Features
 
+- Iterate investment algorithm if first option fails ([#86](https://github.com/SGIModel/MUSE_OS/pull/86))
 - Update GitHub Actions revamp to latest versions ([#80](https://github.com/SGIModel/MUSE_OS/pull/80))
 - Inconsistent trade case study ([#58](https://github.com/SGIModel/MUSE_OS/pull/58))
 - Update README.txt in installation path ([#57](https://github.com/SGIModel/MUSE_OS/pull/57))
