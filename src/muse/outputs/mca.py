@@ -523,6 +523,15 @@ def sectory_supply(
                 technologies = techs.sel(year=output_year, region=agent.region)
                 agent_market = market.sel(year=output_year).copy()
                 agent_market["consumption"] = agent_market.consumption * agent.quantity
+                included = [
+                    i
+                    for i in agent_market["commodity"].values
+                    if i in technologies.enduse.values
+                ]
+                excluded = [
+                    i for i in agent_market["commodity"].values if i not in included
+                ]
+                agent_market.loc[dict(commodity=excluded)] = 0
 
                 result = supply(
                     agent_market,
@@ -927,7 +936,9 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
     data_sector: List[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
-
+    retro = [a for a in agents if a.category == "retrofit"]
+    new = [a for a in agents if a.category == "new"]
+    agents = retro if len(retro) > 0 else new
     if len(technologies) > 0:
         for agent in agents:
             output_year = agent.year - agent.forecast
@@ -938,9 +949,10 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
                 for i in agent_market["commodity"].values
                 if i in technologies.enduse.values
             ]
-            agent_market["consumption"] = agent_market["consumption"].where(
-                agent_market.commodity == included, 0
-            )
+            excluded = [
+                i for i in agent_market["commodity"].values if i not in included
+            ]
+            agent_market.loc[dict(commodity=excluded)] = 0
             years = [output_year, agent.year]
 
             agent_market["prices"] = agent.filter_input(market["prices"], year=years)
@@ -1127,7 +1139,9 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
     data_sector: List[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
-
+    retro = [a for a in agents if a.category == "retrofit"]
+    new = [a for a in agents if a.category == "new"]
+    agents = retro if len(retro) > 0 else new
     if len(technologies) > 0:
         for agent in agents:
             output_year = agent.year - agent.forecast
@@ -1138,9 +1152,11 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
                 for i in agent_market["commodity"].values
                 if i in technologies.enduse.values
             ]
-            agent_market["consumption"] = agent_market["consumption"].where(
-                agent_market.commodity == included, 0
-            )
+            excluded = [
+                i for i in agent_market["commodity"].values if i not in included
+            ]
+            agent_market.loc[dict(commodity=excluded)] = 0
+
             years = [output_year, agent.year]
 
             agent_market["prices"] = agent.filter_input(market["prices"], year=years)

@@ -2,8 +2,6 @@
 
 ## Features
 
-- Iterate investment algorithm if first option fails ([#86](https://github.com/SGIModel/MUSE_OS/pull/86))
-- Update GitHub Actions revamp to latest versions ([#80](https://github.com/SGIModel/MUSE_OS/pull/80))
 - Inconsistent trade case study ([#58](https://github.com/SGIModel/MUSE_OS/pull/58))
 - Update README.txt in installation path ([#57](https://github.com/SGIModel/MUSE_OS/pull/57))
 - Add tests to check the case of not using retrofit agents ([#53](https://github.com/SGIModel/MUSE_OS/pull/53))
@@ -41,9 +39,7 @@
 
 ## Bug fixes
 
-- Fix trade reporting function ([#89](https://github.com/SGIModel/MUSE_OS/pull/89))
-- Fix foresight in regressions ([#88](https://github.com/SGIModel/MUSE_OS/pull/88))
-- Fix typo in README ([#85](https://github.com/SGIModel/MUSE_OS/pull/85))
+- Error in costs reporting ([#92](https://github.com/SGIModel/MUSE_OS/pull/92))
 - Error in supply/consumption reporting ([#70](https://github.com/SGIModel/MUSE_OS/pull/70))
 - Added destination region in output ([#64](https://github.com/SGIModel/MUSE_OS/pull/64))
 - Consistency in packages use ([#38](https://github.com/SGIModel/MUSE_OS/pull/56))
