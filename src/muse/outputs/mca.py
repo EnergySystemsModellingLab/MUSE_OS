@@ -354,50 +354,47 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
 
     if len(techs) > 0:
         for a in agents:
-            if a.category == "retrofit":
-                output_year = a.year - a.forecast
-                capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(
-                    0.0
-                )
-                technologies = a.filter_input(techs, year=output_year).fillna(0.0)
-                agent_market = market.sel(year=output_year).copy()
-                agent_market["consumption"] = agent_market.consumption * a.quantity
-                included = [
-                    i
-                    for i in agent_market["commodity"].values
-                    if i in technologies.enduse.values
-                ]
-                excluded = [
-                    i for i in agent_market["commodity"].values if i not in included
-                ]
-                agent_market.loc[dict(commodity=excluded)] = 0
+            output_year = a.year - a.forecast
+            capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
+            technologies = a.filter_input(techs, year=output_year).fillna(0.0)
+            agent_market = market.sel(year=output_year).copy()
+            agent_market["consumption"] = agent_market.consumption * a.quantity
+            included = [
+                i
+                for i in agent_market["commodity"].values
+                if i in technologies.enduse.values
+            ]
+            excluded = [
+                i for i in agent_market["commodity"].values if i not in included
+            ]
+            agent_market.loc[dict(commodity=excluded)] = 0
 
-                result = convert_timeslice(
-                    supply(
-                        agent_market,
-                        capacity,
-                        technologies,
-                    ),
-                    agent_market["consumption"].timeslice,
-                    QuantityType.EXTENSIVE,
-                )
+            result = convert_timeslice(
+                supply(
+                    agent_market,
+                    capacity,
+                    technologies,
+                ),
+                agent_market["consumption"].timeslice,
+                QuantityType.EXTENSIVE,
+            )
 
-                if "year" in result.dims:
-                    data_agent = result.sel(year=output_year)
-                else:
-                    data_agent = result
-                    data_agent["year"] = output_year
-                if "dst_region" not in data_agent.coords:
-                    data_agent["dst_region"] = a.region
-                data_agent["agent"] = a.name
-                data_agent["category"] = a.category
-                data_agent["sector"] = getattr(sector, "name", "unnamed")
+            if "year" in result.dims:
+                data_agent = result.sel(year=output_year)
+            else:
+                data_agent = result
+                data_agent["year"] = output_year
+            if "dst_region" not in data_agent.coords:
+                data_agent["dst_region"] = a.region
+            data_agent["agent"] = a.name
+            data_agent["category"] = a.category
+            data_agent["sector"] = getattr(sector, "name", "unnamed")
 
-                a = data_agent.to_dataframe("supply")
-                if len(a) > 0 and len(a.technology.values) > 0:
-                    b = a.reset_index()
-                    b = b[b["supply"] != 0]
-                    data_sector.append(b)
+            a = data_agent.to_dataframe("supply")
+            if len(a) > 0 and len(a.technology.values) > 0:
+                b = a.reset_index()
+                b = b[b["supply"] != 0]
+                data_sector.append(b)
     if len(data_sector) > 0:
         output = pd.concat([u for u in data_sector], sort=True)
 
@@ -591,7 +588,6 @@ def sector_consumption(
     agent_market = market
     if len(techs) > 0:
         for a in agents:
-            #        if a.category == "retrofit":
             output_year = a.year - a.forecast
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             technologies = a.filter_input(techs, year=output_year).fillna(0.0)
@@ -667,7 +663,6 @@ def sectory_consumption(
     agent_market = market
     if len(techs) > 0:
         for a in agents:
-            #        if a.category == "retrofit":
             output_year = a.year - a.forecast
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             technologies = a.filter_input(techs, year=output_year).fillna(0.0)
