@@ -39,7 +39,7 @@
 
 ## Bug fixes
 
-- Harmonise time dimension for asset interpolation before merging them ([#93](https://github.com/SGIModel/MUSE_OS/pull/93))
+- Harmonise time dimension for asset interpolation before merging them ([#94](https://github.com/SGIModel/MUSE_OS/pull/94))
 - Error in costs reporting ([#92](https://github.com/SGIModel/MUSE_OS/pull/92))
 - Error in supply/consumption reporting ([#70](https://github.com/SGIModel/MUSE_OS/pull/70))
 - Added destination region in output ([#64](https://github.com/SGIModel/MUSE_OS/pull/64))
