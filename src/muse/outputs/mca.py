@@ -800,7 +800,6 @@ def sector_capital_costs(
 
     if len(technologies) > 0:
         for a in agents:
-
             demand = market.consumption * a.quantity
             output_year = a.year - a.forecast
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
