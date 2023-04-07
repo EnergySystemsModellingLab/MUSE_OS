@@ -43,14 +43,46 @@ def supply(
         production_method = maximum_production
 
     maxprod = production_method(technologies, capacity)
-    if "region" in demand.dims and "region" in maxprod.coords:
+    size = np.array(maxprod.region).size
+    # in presence of trade demand needs to map maxprod dst_region
+    if (
+        "region" in demand.dims
+        and "region" in maxprod.coords
+        and "dst_region" not in maxprod.dims
+        and size == 1
+    ):
         demand = demand.sel(region=maxprod.region)
-    expanded_maxprod = (
-        maxprod * demand / demand.sum(set(demand.dims).difference(maxprod.dims))
-    ).fillna(0)
-    expanded_demand = (
-        demand * maxprod / maxprod.sum(set(maxprod.dims).difference(demand.dims))
-    ).fillna(0)
+        prodsum = set(demand.dims).difference(maxprod.dims)
+        demsum = set(maxprod.dims).difference(demand.dims)
+        expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
+
+    elif (
+        "region" in demand.dims
+        and "region" in maxprod.coords
+        and "dst_region" not in maxprod.dims
+        and size > 1
+    ):
+        prodsum = set(demand.dims).difference(maxprod.dims)
+        demsum = set(maxprod.dims).difference(demand.dims)
+        expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
+
+    elif (
+        "region" in demand.dims
+        and "region" in maxprod.coords
+        and "dst_region" in maxprod.dims
+    ):
+        demand = demand.rename(region="dst_region")
+        prodsum = {"timeslice"}
+        demsum = {"asset"}
+        expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
+
+    else:
+        prodsum = set(demand.dims).difference(maxprod.dims)
+        demsum = set(maxprod.dims).difference(demand.dims)
+        expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
+
+    expanded_maxprod = (maxprod * demand / demand.sum(prodsum)).fillna(0)
+
     expanded_demand = expanded_demand.reindex_like(maxprod)
 
     result = expanded_demand.where(
@@ -65,6 +97,7 @@ def supply(
     result[
         {"commodity": ~check_usage(technologies.comm_usage, CommodityUsage.PRODUCT)}
     ] = 0
+
     return result
 
 
@@ -243,9 +276,11 @@ def consumption(
     flexs = params.flexible_inputs.where(params_fuels, 0)
     # cheapest fuel for each flexible technology
     assert prices is not None
-    assert all(flexs.commodity.values == prices.commodity.values)
+    flexprice = [i for i in flexs.commodity.values if i in prices.commodity.values]
+    assert all(flexprice)
+    priceflex = prices.loc[dict(commodity=flexs.commodity)]
     minprices = flexs.commodity[
-        prices.where(flexs > 0, prices.max() + 1).argmin("commodity")
+        priceflex.where(flexs > 0, priceflex.max() + 1).argmin("commodity")
     ]
     # add consumption from cheapest fuel
     assert all(flexs.commodity.values == consumption.commodity.values)

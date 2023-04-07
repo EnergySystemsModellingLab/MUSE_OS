@@ -14,7 +14,7 @@ gasboiler,R1,R1,A1,residential,retrofit,2035,394.34220000000
 gasboiler,R1,R1,A1,residential,retrofit,2030,463.93200000000
 gasboiler,R1,R1,A1,residential,retrofit,2035,74.53330000000
 gasboiler,R1,R1,A1,residential,retrofit,2030,355.93470000000
-gassupply1,R2,R2,A1,gas,agent,2035,595.00000000000
+gassupply1,R2,R2,A1,gas,agent,2035,490.00000000000
 gasboiler,R1,R1,A1,residential,retrofit,2030,74.53330000000
 gassupply1,R2,R2,A1,gas,agent,2030,700.00000000000
 gasboiler,R1,R1,A1,residential,retrofit,2035,444.15780000000
