@@ -80,11 +80,10 @@ def test_fullsim_timeslices(tmpdir, utilization_factors, process_name):
     ],
 )
 @mark.parametrize("process_name", [("gasCCGT", "windturbine")])
-@mark.parametrize("output", ["Supply_Timeslice", "Consumption_Timeslice"])
+@mark.parametrize("output", ["MCAMetric_Supply.csv", "MCAMetric_Consumption.csv"])
 def test_zero_utilization_factor_supply_timeslice(
     tmpdir, utilization_factors, process_name, output
 ):
-    import glob
 
     import pandas as pd
 
@@ -112,16 +111,11 @@ def test_zero_utilization_factor_supply_timeslice(
     with tmpdir.as_cwd():
         MCA.factory(model_path / "settings.toml").run()
 
-    path = str(tmpdir / "Results" / "Power" / output)
-    all_files = glob.glob(path + "/*.csv")
+    path = str(tmpdir / "Results" / output)
 
-    results = []
-    for filename in all_files:
-        result = pd.read_csv(filename, index_col=None, header=0)
-        results.append(result)
+    output = pd.read_csv(path)
 
-    output = pd.concat(results, axis=0, ignore_index=True)
-
+    output = output.reset_index()
     zero_utilization_factors = [i for i, e in enumerate(utilization_factors) if e == 0]
 
     assert (

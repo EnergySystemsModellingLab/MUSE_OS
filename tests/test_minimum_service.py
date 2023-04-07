@@ -26,10 +26,8 @@ def modify_minimum_service_factors(
     "minimum_service_factor", [([1, 2, 3, 4, 5, 6], [0] * 6), ([0], [1, 2, 3, 4, 5, 6])]
 )
 def test_minimum_service_factor(tmpdir, minimum_service_factor, process_name):
-    import glob
 
     import pandas as pd
-
     from muse import examples
     from muse.mca import MCA
 
@@ -54,16 +52,7 @@ def test_minimum_service_factor(tmpdir, minimum_service_factor, process_name):
     with tmpdir.as_cwd():
         MCA.factory(model_path / "settings.toml").run()
 
-    path = str(tmpdir / "Results" / "Power" / "Supply_Timeslice")
-    all_files = glob.glob(path + "/*.csv")
-
-    results = []
-    for filename in all_files:
-        result = pd.read_csv(filename, index_col=None, header=0)
-        results.append(result)
-
-    supply_timeslice = pd.concat(results)
-    supply_timeslice
+    supply_timeslice = pd.read_csv(tmpdir / "Results/MCAMetric_Supply.csv")
 
     for process, service_factor in zip(process_name, minimum_service_factor):
         for i, factor in enumerate(service_factor):
