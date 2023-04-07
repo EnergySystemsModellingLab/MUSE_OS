@@ -84,7 +84,6 @@ def test_fullsim_timeslices(tmpdir, utilization_factors, process_name):
 def test_zero_utilization_factor_supply_timeslice(
     tmpdir, utilization_factors, process_name, output
 ):
-
     import pandas as pd
 
     from muse import examples
