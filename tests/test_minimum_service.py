@@ -26,6 +26,7 @@ def modify_minimum_service_factors(
     "minimum_service_factor", [([1, 2, 3, 4, 5, 6], [0] * 6), ([0], [1, 2, 3, 4, 5, 6])]
 )
 def test_minimum_service_factor(tmpdir, minimum_service_factor, process_name):
+
     import pandas as pd
 
     from muse import examples
