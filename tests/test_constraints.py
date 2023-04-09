@@ -491,7 +491,7 @@ def test_max_production(max_production):
         }
     else:
         dims = {"replacement", "asset", "commodity", "timeslice"}
-    print(max_production.capacity.dims)
+
     assert set(max_production.capacity.dims) == dims
     assert set(max_production.production.dims) == dims
     assert set(max_production.b.dims) == dims
