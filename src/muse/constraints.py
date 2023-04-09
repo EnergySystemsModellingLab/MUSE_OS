@@ -369,11 +369,14 @@ def max_capacity_expansion(
 
     max_growth = techs.max_capacity_growth
     initial = capacity.sel(year=year, drop=True)
+
     growth_cap = initial * (max_growth * forecast + 1) - forecasted
+    growth_cap = growth_cap.where(growth_cap > 0, total_cap)
 
     zero_cap = add_cap.where(add_cap < total_cap, total_cap)
     with_growth = zero_cap.where(zero_cap < growth_cap, growth_cap)
     b = with_growth.where(initial > 0, zero_cap)
+
     if b.region.dims == ():
         capa = 1
     elif "dst_region" in b.dims:
@@ -404,7 +407,6 @@ def demand(
     b = demand.sel(commodity=demand.commodity.isin(enduse))
     if "region" in b.dims and "dst_region" in assets.dims:
         b = b.rename(region="dst_region")
-
     assert "year" not in b.dims
     return xr.Dataset(
         dict(b=b, production=1), attrs=dict(kind=ConstraintKind.LOWER_BOUND)
@@ -476,8 +478,22 @@ def max_production(
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
     b = zeros_like(production)
+    # Include maxaddition constraint in max production to match region-dst_region
     if "dst_region" in assets.dims:
         b = b.expand_dims(dst_region=assets.dst_region)
+        capacity = capacity.rename(region="src_region")
+        production = production.rename(region="src_region")
+        maxadd = technologies.max_capacity_addition.rename(region="src_region")
+        if "year" in maxadd.dims:
+            maxadd = maxadd.sel(year=year)
+
+        maxadd = maxadd.rename(technology="replacement")
+        maxadd = maxadd.where(maxadd == 0, 1.0)
+        maxadd = maxadd.where(maxadd > 0, -1.0)
+        capacity = capacity * maxadd
+        production = production * maxadd
+        b = b.rename(region="src_region")
+
     return xr.Dataset(
         dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
@@ -960,6 +976,7 @@ class ScipyAdapter:
         timeslices: pd.Index,
         *constraints: Constraint,
     ) -> ScipyAdapter:
+
         lpcosts = lp_costs(technologies, costs, timeslices)
 
         data = cls._unified_dataset(technologies, lpcosts, *constraints)
@@ -1021,6 +1038,7 @@ class ScipyAdapter:
 
     @staticmethod
     def _selected_quantity(data: xr.Dataset, name: Text) -> xr.Dataset:
+
         result = cast(
             xr.Dataset, data[[u for u in data.data_vars if str(u).startswith(name)]]
         )
