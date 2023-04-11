@@ -480,18 +480,7 @@ def test_max_capacity_expansion(max_capacity_expansion):
 
 
 def test_max_production(max_production):
-    if "src_region" in max_production.capacity.dims:
-        dims = {
-            "replacement",
-            "asset",
-            "commodity",
-            "timeslice",
-            "src_region",
-            "dst_region",
-        }
-    else:
-        dims = {"replacement", "asset", "commodity", "timeslice"}
-
+    dims = {"replacement", "asset", "commodity", "timeslice"}
     assert set(max_production.capacity.dims) == dims
     assert set(max_production.production.dims) == dims
     assert set(max_production.b.dims) == dims

@@ -488,12 +488,11 @@ def max_production(
             maxadd = maxadd.sel(year=year)
 
         maxadd = maxadd.rename(technology="replacement")
-        maxadd = maxadd.where(maxadd == 0, 1.0)
+        maxadd = maxadd.where(maxadd == 0, 0.0)
         maxadd = maxadd.where(maxadd > 0, -1.0)
         capacity = capacity * maxadd
         production = production * maxadd
         b = b.rename(region="src_region")
-
     return xr.Dataset(
         dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
