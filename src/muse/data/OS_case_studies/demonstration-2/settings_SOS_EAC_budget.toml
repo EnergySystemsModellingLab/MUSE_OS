@@ -109,35 +109,9 @@ demand_share = "new_and_retro"  # Optional, default to new_and_retro
 forecast = 5  # Optional, defaults to 5 
 
 
-[[sectors.residential.outputs]]
-filename = '{path}/{default_output_dir}/BUDGET/ADHOC/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "capacity"
-sink = 'csv'
-overwrite = true
-
-[[sectors.residential.outputs]]
-filename = '{path}/{default_output_dir}/BUDGET/ADHOC/{Sector}/{Quantity}/{year}{suffix}'
-quantity.name = "supply"
-quantity.sum_over = "timeslice"
-quantity.drop = ["comm_usage", "units_prices"]
-columns = ["commodity", "region", 	"technology", "year",	"supply"]
-sink = 'csv'
-overwrite = true
-
-
-[[sectors.residential.outputs]]
-filename = '{path}/{default_output_dir}/BUDGET/ADHOC/{Sector}/{Quantity}/{year}{suffix}'
-quantity.name = "consumption"
-quantity.sum_over = "timeslice"
-quantity.drop = ["comm_usage", "units_prices"]
-columns = ["commodity", "region", 	"technology", "year",	"consumption"]
-sink = 'csv'
-overwrite = true
-
 [[sectors.residential.interactions]] 
 net = 'new_to_retro'
 interaction = 'transfer'
-
 
 
 [sectors.power]
@@ -154,29 +128,6 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
 lpsolver =  "adhoc" 
 
-[[sectors.power.outputs]]
-filename = '{path}/{default_output_dir}/BUDGET/ADHOC/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "capacity"
-sink = 'csv'
-overwrite = true
-
-[[sectors.power.outputs]]
-filename = '{path}/{default_output_dir}/BUDGET/ADHOC/{Sector}/{Quantity}/{year}{suffix}'
-quantity.name = "supply"
-quantity.sum_over = "timeslice"
-quantity.drop = ["comm_usage", "units_prices"]
-columns = ["commodity", "region", 	"technology", "year",	"supply"]
-sink = 'csv'
-overwrite = true
-
-[[sectors.power.outputs]]
-filename = '{path}/{default_output_dir}/BUDGET/ADHOC/{Sector}/{Quantity}/{year}{suffix}'
-quantity.name = "consumption"
-quantity.sum_over = "timeslice"
-quantity.drop = ["comm_usage", "units_prices"]
-columns = ["commodity", "region", 	"technology", "year",	"consumption"]
-sink = 'csv'
-overwrite = true
 
 [[sectors.power.interactions]] 
 net = 'new_to_retro'
@@ -197,30 +148,6 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/gas/ExistingCapacity.csv'
 lpsolver =  "adhoc" 
 
-
-[[sectors.gas.outputs]]
-filename = '{path}/{default_output_dir}/BUDGET/ADHOC/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "capacity"
-sink = 'csv'
-overwrite = true
-
-[[sectors.gas.outputs]]
-filename = '{path}/{default_output_dir}/BUDGET/ADHOC/{Sector}/{Quantity}/{year}{suffix}'
-quantity.name = "supply"
-quantity.sum_over = "timeslice"
-quantity.drop = ["comm_usage", "units_prices"]
-columns = ["commodity", "region", 	"technology", "year",	"supply"]
-sink = 'csv'
-overwrite = true
-
-[[sectors.gas.outputs]]
-filename = '{path}/{default_output_dir}/BUDGET/ADHOC/{Sector}/{Quantity}/{year}{suffix}'
-quantity.name = "consumption"
-quantity.sum_over = "timeslice"
-quantity.drop = ["comm_usage", "units_prices"]
-columns = ["commodity", "region", 	"technology", "year",	"consumption"]
-sink = 'csv'
-overwrite = true
 
 [[sectors.gas.interactions]] 
 net = 'new_to_retro'
