@@ -1,3 +1,4 @@
+"""Makes MUSE executable."""
 import click
 INPUT_PATH = click.Path(exists=False, file_okay=True, resolve_path=True)
 MODEL_PATH = click.Path(file_okay=False, resolve_path=True)
@@ -5,7 +6,7 @@ MODELS = click.Choice(
     ["default", "multiple-agents", "medium", "minimum-service", "trade"]
 )
 
-"""Makes MUSE executable."""
+
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
 @click.argument("settings", default="settings.toml", type=INPUT_PATH)
 @click.option(
@@ -46,6 +47,7 @@ def muse_main(settings, model, copy):
         settings = read_settings(settings)
         getLogger("muse").setLevel(settings.log_level)
         MCA.factory(settings).run()
+
 
 if "__main__" == __name__:
     from sys import argv, executable
