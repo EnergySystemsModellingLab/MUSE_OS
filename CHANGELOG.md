@@ -2,6 +2,7 @@
 
 ## Features
 
+- Add GitHub action to check for broken links ([#115](https://github.com/SGIModel/MUSE_OS/pull/115))
 - Inconsistent trade case study ([#58](https://github.com/SGIModel/MUSE_OS/pull/58))
 - Update README.txt in installation path ([#57](https://github.com/SGIModel/MUSE_OS/pull/57))
 - Add tests to check the case of not using retrofit agents ([#53](https://github.com/SGIModel/MUSE_OS/pull/53))
