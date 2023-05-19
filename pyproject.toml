@@ -39,6 +39,9 @@ dynamic = ["version"]
 [project.urls]
 Homepage = "http://www.sustainablegasinstitute.org/home/muse-energy-model/"
 
+[project.scripts]
+muse = "muse.__main__:muse_main"
+
 [project.optional-dependencies]
 all = ["MUSE[dev,doc,excel]"]
 dev = [
