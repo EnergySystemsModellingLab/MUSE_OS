@@ -16,4 +16,4 @@ jobs:
         uses: technote-space/broken-link-checker-action@v2
         with:
           TARGET: https://muse-os.readthedocs.io/en/latest/
-
+          RECURSIVE: true
