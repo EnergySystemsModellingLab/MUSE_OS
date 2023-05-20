@@ -36,9 +36,6 @@ dependencies = [
 ]
 dynamic = ["version"]
 
-[project.urls]
-Homepage = "http://www.sustainablegasinstitute.org/home/muse-energy-model/"
-
 [project.optional-dependencies]
 all = ["MUSE[dev,doc,excel]"]
 dev = [
@@ -70,16 +67,20 @@ private_sgi_model = [
     "StarMUSELegacy @ git+https://github.com/SGIModel/StarMuse.git@archive/legacy",
 ]
 
+[project.urls]
+Homepage = "http://www.sustainablegasinstitute.org/home/muse-energy-model/"
+
+[project.scripts]
+muse = "muse.__main__:muse_main"
+
 [tool.setuptools]
-package-dir = {"" = "src"}
+license-files = ["LICENSE"]
 include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
-namespaces = false
-
-[tool.setuptools.package-data]
-"*" = ["**/*.toml", "**/*.csv"]
+include = ["*"]
+namespaces = true
 
 [tool.setuptools.dynamic]
 version = {attr = "muse.VERSION"}
@@ -87,7 +88,7 @@ version = {attr = "muse.VERSION"}
 [tool.setuptools_scm]
 
 [tool.pyls]
-configurationsources = ['flake8']
+configurationsources = ["flake8"]
 
 [tool.aliases]
 test = "pytest"
