@@ -214,12 +214,12 @@ def factory(
     functions = [
         partial(
             SEARCH_SPACE_INITIALIZERS[initial_settings["name"]],
-            **{k: v for k, v in initial_settings.items() if k != "name"}
+            **{k: v for k, v in initial_settings.items() if k != "name"},
         ),
         *(
             partial(
                 SEARCH_SPACE_FILTERS[setting["name"]],
-                **{k: v for k, v in setting.items() if k != "name"}
+                **{k: v for k, v in setting.items() if k != "name"},
             )
             for setting in parameters
         ),
@@ -242,7 +242,7 @@ def same_enduse(
     technologies: xr.Dataset,
     *args,
     enduse_label: Text = "service",
-    **kwargs
+    **kwargs,
 ) -> xr.DataArray:
     """Only allow for technologies with at least the same end-use."""
     from muse.commodities import is_enduse
@@ -335,7 +335,7 @@ def maturity(
     technologies: xr.Dataset,
     market: xr.Dataset,
     enduse_label: Text = "service",
-    **kwargs
+    **kwargs,
 ) -> xr.DataArray:
     """Only allows technologies that have achieve a given market share.
 
@@ -359,7 +359,7 @@ def spend_limit(
     technologies: xr.Dataset,
     market: xr.Dataset,
     enduse_label: Text = "service",
-    **kwargs
+    **kwargs,
 ) -> xr.DataArray:
     """Only allows technologies that have achieve a given market share.
 
@@ -381,7 +381,7 @@ def compress(
     search_space: xr.DataArray,
     technologies: xr.Dataset,
     market: xr.Dataset,
-    **kwargs
+    **kwargs,
 ) -> xr.DataArray:
     """Compress search space to include only potential technologies.
 
@@ -405,7 +405,7 @@ def reduce_asset(
     search_space: xr.DataArray,
     technologies: xr.Dataset,
     market: xr.Dataset,
-    **kwargs
+    **kwargs,
 ) -> xr.DataArray:
     """Reduce over assets."""
     return search_space.any("asset") if "asset" in search_space.dims else search_space
@@ -417,7 +417,7 @@ def with_asset_technology(
     search_space: xr.DataArray,
     technologies: xr.Dataset,
     market: xr.Dataset,
-    **kwargs
+    **kwargs,
 ) -> xr.DataArray:
     """Search space *also* contains its asset technology for each asset."""
     return search_space | (search_space.asset == search_space.replacement)
@@ -447,7 +447,7 @@ def initialize_from_assets(
     technologies: xr.Dataset,
     *args,
     coords: Sequence[Text] = ("region", "technology"),
-    **kwargs
+    **kwargs,
 ):
     """Initialize a search space from existing technologies."""
     from muse.utilities import reduce_assets
