@@ -99,7 +99,7 @@ def factory(
         agents: Sequence[AbstractAgent],
         market: xr.Dataset,
         technologies: xr.Dataset,
-        **kwargs
+        **kwargs,
     ) -> xr.DataArray:
         from copy import copy
 

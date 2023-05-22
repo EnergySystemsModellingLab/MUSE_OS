@@ -1,5 +1,6 @@
 """Makes MUSE executable."""
 import click
+
 INPUT_PATH = click.Path(exists=False, file_okay=True, resolve_path=True)
 MODEL_PATH = click.Path(file_okay=False, resolve_path=True)
 MODELS = click.Choice(
@@ -51,5 +52,6 @@ def muse_main(settings, model, copy):
 
 if "__main__" == __name__:
     from sys import argv, executable
+
     argv[0] = "%s -m muse" % executable
     muse_main()
