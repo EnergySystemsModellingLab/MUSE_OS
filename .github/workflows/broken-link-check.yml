@@ -1,0 +1,19 @@
+on:
+  schedule:
+    - cron: 0 0 1 * * # run monthly
+  repository_dispatch: # run manually
+    types: [check-link]
+  push:
+    branches: [main, develop_imperial]
+
+name: Broken Link Check
+jobs:
+  check:
+    name: Broken Link Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Broken Link Check
+        uses: ruzickap/action-my-broken-link-checker@v2
+        with:
+          url: https://muse-os.readthedocs.io/en/latest/
+          cmd_params: '--buffer-size=8192 --max-connections=3 --color=always --skip-tls-verification --header="User-Agent:curl/7.54.0"'  # muffet parameters
