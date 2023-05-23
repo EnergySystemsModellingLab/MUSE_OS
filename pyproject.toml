@@ -9,7 +9,7 @@ authors = [
 ]
 description = "Energy System Model"
 readme = "README.md"
-requires-python = ">= 3.7"
+requires-python = ">= 3.8, <3.10"
 keywords = ["energy", "modelling"]
 classifiers = [
     "Development Status :: 3 - Alpha",
