@@ -114,10 +114,3 @@ ignore_errors = true
 line_length = 88
 multi_line_output = 3
 include_trailing_comma = true
-
-[tool.build_sphinx]
-project = "'MUSE'"
-version = "attr: muse.VERSION"
-release = "attr: muse.VERSION"
-source-dir = "docs"
-build-dir = "docs/build"

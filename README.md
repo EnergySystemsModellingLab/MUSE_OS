@@ -81,11 +81,11 @@ theb testing framework of the same name.
 The documentation can be built with:
 
 ```bash
-> python setup.py docs
+> python -m sphinx -b html docs docs/build 
 ```
 
 The main page for the documentation can then be found at
-`build\\sphinx\\html\\index.html` (or `build/sphinx/html/index.html` on Mac and Linux).
+`docs\\build\\html\\index.html` (or `docs/build/html/index.html` on Mac and Linux).
 The file can viewed from any web browser.
 
 [vscode](https://code.visualstudio.com/) users will find that the repository is setup
