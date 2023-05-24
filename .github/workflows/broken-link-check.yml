@@ -18,4 +18,4 @@ jobs:
         uses: ruzickap/action-my-broken-link-checker@v2
         with:
           url: https://muse-os.readthedocs.io/en/latest/
-          cmd_params: '-v --buffer-size=8192 --max-connections=3 --color=always --skip-tls-verification --header="User-Agent:curl/7.54.0"'  # muffet parameters
+          cmd_params: '--timeout=20 --buffer-size=8192 --max-connections=3 --color=always --skip-tls-verification --header="User-Agent:curl/7.54.0"'  # muffet parameters
