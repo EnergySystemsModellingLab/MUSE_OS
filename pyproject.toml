@@ -91,9 +91,6 @@ version = {attr = "muse.VERSION"}
 [tool.pyls]
 configurationsources = ["flake8"]
 
-[tool.aliases]
-test = "pytest"
-
 [tool.pytest.ini_options]
 testpaths = ["tests", "src/muse"]
 addopts = "--doctest-modules --flake8 -rfE -n auto"
