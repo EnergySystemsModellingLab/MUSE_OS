@@ -1,87 +1,135 @@
+# ModUlar energy system Simulation Environment: MUSE
 
-Installation
-============
+## Installation
 
-Pre-requisite: A virtual environment
-------------------------------------
+### Recommended way
 
-Although not strictly necessary, creating a [conda](https://www.anaconda.com/what-is-anaconda/)
-virtual environment is highly recommended: it will isolate users and developers from changes
-occuring on their operating system, and from conflicts between python packages. It ensures
-reproducibility from day to day.
+The recommended way for **end users** to access and use the tool is via `pipx`.
+This will create an isolated environment and install MUSE-OS within in one go,
+also letting you to invoke `muse` anywhere in your system.
 
-Create a virtual env including python with:
+1. Install and configure [`pipx`](https://pypa.github.io/pipx/) following the
+   instructions appropriate for your operative system. Make sure it works well before
+   moving on.
+2. Install MUSE-OS with `pipx install MUSE-OS`. It might take a
+   while to complete, but afterwards updates should be pretty fast.
+3. To run MUSE-OS just open a terminal and execute `muse`, with the appropriate input
+   arguments, if relevant. See section below about usage.
+
+Whenever there is a new version of MUSE-OS, just run `pipx upgrade MUSE-OS` and
+it will be downloaded and installed with no fuss.
+
+### Alternative way
+
+If you want to have a bit more control - or you don't want to use `pipx`,
+just create a virtual environment first and then install `MUSE-OS`.
+
+Although not strictly necessary, **creating a virtual environment is highly recommended**:
+it will isolate users and developers from changes occuring on their operating system,
+and from conflicts between python packages. It ensures reproducibility from day to day.
+
+There are several ways of creating a virtual environment - below we list two of them.
+Regardless of the method used, **once it has been created and activated**, you can install
+`MUSE-OS` within using:
 
 ```bash
-> conda create -n muse python=3.8
+python -m pip install MUSE-OS
+```
+
+And then use it by invoking `muse` with the relevant input arguments.
+
+#### Creating a virtual environment using `conda`
+
+Create a virtual environment including python with:
+
+```bash
+conda create -n muse_env python=3.9
 ```
 
 Activate the environment with:
 
 ```bash
-> conda activate muse
+conda activate muse_env
 ```
 
 Later, to recover the system-wide "normal" python, deactivate the environment with:
 
 ```bash
-> conda deactivate
+conda deactivate
 ```
 
-Installing muse itself
-----------------------
+#### Creating a virtual environment using `venv`
 
-Once a virtual environment has been *activated*, as describe above, we can
-install muse without fear of interfering with other python jobs. Run:
+Create a virtual environment with:
 
 ```bash
-> python -m pip install https://github.com/SGIModel/MUSE_OS.git#egg=muse
+python -m pip install venv
+python -m venv muse_env
 ```
 
-Usage
------
+Activate the environment with:
+
+```powershell
+# In Powershell
+muse_env\Scripts\Activate.ps1
+
+# In Linux/MacOS
+source muse_env/bin/activate
+```
+
+Later, to recover the system-wide "normal" python, deactivate the environment with:
+
+```bash
+deactivate
+```
+
+## Usage
 
 Once installed, users can:
 
 - activate the virtual environment (needed only once per session) as explained
   above
-- run `python -m muse --model default` to run the default example model
-- run `python -m muse --model default --copy XXX` to copy the model to subfolder `XXX`.
-- Alternatively, run `python -m muse settings.toml`, where `settings.toml` is an input
+- run `muse --model default` to run the default example model
+- run `muse --model default --copy XXX` to copy the model to subfolder `XXX`.
+- Alternatively, run `muse settings.toml`, where `settings.toml` is an input
   file for a custom model
-- run `python -m muse --help` to get a description of the command-line arguments,
+- run `muse --help` to get a description of the command-line arguments,
     including the name of any additional models provided with MUSE.
 
-Development
------------
+## Development
 
-It is strongly recommened to use a conda virtual environment, as above. The simplest approach is to
+It is strongly recommened to use a virtual environment, as above. The simplest approach is to
 first download the muse code with:
 
 ```bash
-> git clone https://github.com/SGIModel/MUSE_OS.git muse
+> git clone https://github.com/SGIModel/MUSE_OS.git
 ```
-
-And then install the working directory into the conda environment:
 
 ```bash
-> # after activating the virtual environment with:
-> # conda activate muse
-> python -m pip install -e ."muse[dev,doc]"
+cd MUSE_OS
+# Create virtual environment - for development, this is typically called ".venv"
+# Activate virtual environment. Finally, install muse:
+python -m pip install -e ."[dev,doc]"
 ```
 
-Please note the quotation marks. `muse` in the last line above is the path to source code that was
-just downloaded with `git`. The downloaded code can then be modified. The changes will be
-automatically reflected in the conda environment.
+Please note the quotation marks. The downloaded code can then be modified. The changes will be
+automatically reflected in the environment.
 
-In the developing phase, MUSE can also be used to run test cases to check that the model would reproduce expected results from a defined set of input data.
-Tests can be run with the command [pytest](https://docs.pytest.org/en/latest/), from
-theb testing framework of the same name.
+To ensure the consistency of the code with other developers, install the pre-commit hooks with:
+
+```bash
+python -m pip install pre-commit
+pre-commit install
+```
+
+This will ensure that a series of quality assurance tools are run with every commit you make.
+
+In the developing phase, MUSE can also be used to run test cases to check that the model would reproduce expected results from a defined set of input data. Tests can be run with the command [pytest](https://docs.pytest.org/en/latest/), from the testing framework of the same name.
 
 The documentation can be built with:
 
 ```bash
-> python -m sphinx -b html docs docs/build 
+python -m sphinx -b html docs docs/build 
 ```
 
 The main page for the documentation can then be found at
@@ -95,7 +143,6 @@ or conda environment where to run the code. This will change the `.vscode/settin
 file and add a user-specific path to it. Users should try and avoid commiting changes to
 `.vscode/settings.json` indiscriminately.
 
-Copyright
----------
+## Copyrigh
 
-Copyright © 2021 Imperial College London
+Copyright © 2023 Imperial College London
