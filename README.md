@@ -19,6 +19,10 @@ also letting you to invoke `muse` anywhere in your system.
    moving on.
 2. Install MUSE-OS with `pipx install MUSE-OS`. It might take a
    while to complete, but afterwards updates should be pretty fast.
+   - **Note**: `pipx` will use by default a python version which might not be compatible 
+   with MUSE-OS. To select a specific python version use the `--python` flag or set the
+   environment variable `PIPX_DEFAULT_PYTHON` to the appropriate executable. 
+   See [`pipx install`](https://pypa.github.io/pipx/docs/) documentation for more information.
 3. To run MUSE-OS just open a terminal and execute `muse`, with the appropriate input
    arguments, if relevant. See section below about usage.
 
