@@ -1,3 +1,9 @@
+[![PyPI version shields.io](https://img.shields.io/pypi/v/MUSE-OS.svg)](https://pypi.python.org/pypi/MUSE-OS/)
+[![PyPI status](https://img.shields.io/pypi/status/MUSE-OS.svg)](https://pypi.python.org/pypi/MUSE-OS/)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/MUSE-OS.svg)](https://pypi.python.org/pypi/MUSE-OS/)
+[![PyPI license](https://img.shields.io/pypi/l/MUSE-OS.svg)](https://pypi.python.org/pypi/MUSE-OS/)
+[![QA, tests and publishing](https://github.com/SGIModel/MUSE_OS/actions/workflows/ci.yml/badge.svg)](https://github.com/SGIModel/MUSE_OS/actions/workflows/ci.yml)
+
 # ModUlar energy system Simulation Environment: MUSE
 
 ## Installation
