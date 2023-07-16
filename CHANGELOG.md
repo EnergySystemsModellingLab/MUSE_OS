@@ -43,6 +43,7 @@
 
 ## Bug fixes
 
+- NPV fails to align timeslices ([#135]https://github.com/SGIModel/MUSE_OS/pull/135)
 - OS case studies had obsolete output function removed ([#101]https://github.com/SGIModel/MUSE_OS/pull/101)
 - Growth constraints with destination and source region ([#96](https://github.com/SGIModel/MUSE_OS/pull/96))
 - Harmonise time dimension for asset interpolation before merging them ([#94](https://github.com/SGIModel/MUSE_OS/pull/94))
