@@ -829,11 +829,14 @@ def net_present_value(
     assert set(raw_revenues.dims) == set(fuel_costs.dims)
     assert set(raw_revenues.dims) == set(material_costs.dims)
     assert set(raw_revenues.dims) == set(fixed_and_variable_costs.dims)
-    results = raw_revenues - installed_capacity_costs
-    results -= environmental_costs
-    results -= material_costs
-    results -= fixed_and_variable_costs
-    results -= fuel_costs
+
+    results = raw_revenues - (
+        +installed_capacity_costs
+        + environmental_costs
+        + material_costs
+        + fixed_and_variable_costs
+        + fuel_costs
+    )
 
     return results
 
