@@ -17,13 +17,13 @@ There are two ways to install MUSE: one for users who do not wish to modify the 
    
    Linux users may need to install a C compiler, whether GNU gcc or Clang, as well python development packages, depending on their distribution.
 
-   #. Install latest Visual Studio from the following link: <https://visualstudio.microsoft.com/downloads/>__
+   #. Install latest Visual Studio from the following link: https://visualstudio.microsoft.com/downloads/
    
    #. Select the “Visual Studio Community” version. Click on “Download” and save the executable vs_Commmunity.exe.
   
    #. Install Visual Studio by selecting the default options. You may be asked to reboot your computer to complete the installation.
 
-   #. Download the Microsoft Visual C++ Build Tools from the following link: <https://visualstudio.microsoft.com/downloads/>__.
+   #. Download the Microsoft Visual C++ Build Tools from the following link: https://visualstudio.microsoft.com/downloads.
 
    #. Please select the “Build Tools for Visual Studio 2019 (version 16.9)”. Click on download. Save the vs_BuildTools.exe.
 
@@ -31,10 +31,10 @@ There are two ways to install MUSE: one for users who do not wish to modify the 
 
    #. Select: Workloads → Desktop development with C++.
 
-   #. Install options: select only the “Windows 10 SDK” (assuming the computer is Windows 10)]. This will come up on the right hand side of the screen.
+   #. Install options: select only the “Windows 10 SDK” (assuming the computer is Windows 10). This will come up on the right hand side of the screen.
 
 
-   Earlier versions of Visual Studio BuildTools than the latest can be downloaded at <https://visualstudio.microsoft.com/vs/older-downloads/>__ selecting the desired version of the VisualStudio installer and the corresponding VuildTools version.
+   Earlier versions of Visual Studio BuildTools than the latest can be downloaded at https://visualstudio.microsoft.com/vs/older-downloads selecting the desired version of the VisualStudio installer and the corresponding VuildTools version.
    
    For the 2019 version, the installation screen should look similar to the following:
 
