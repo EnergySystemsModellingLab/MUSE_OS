@@ -56,9 +56,9 @@ The search for new technologies can depend on several factors such as agents' bu
 
 Examples of the questions MUSE can answer include:
 
-- `How may India's steel industry decarbonise? <https://www.sciencedirect.com/science/article/pii/S0306261920308072>`_
+- `How may India's steel industry decarbonise? <https://doi.org/10.1016/j.apenergy.2020.115295>`_
 
-- `How might residential consumers change their investment decisions over time? <https://www.sciencedirect.com/science/article/pii/S036054421930177X>`_
+- `How might residential consumers change their investment decisions over time? <https://doi.org/10.1016/j.energy.2019.01.161>`_
 
 - How might a carbon tax impact investments made in the power sector?
 
