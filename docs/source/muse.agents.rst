@@ -1,4 +1,4 @@
-muse.agents package
+muse.agents
 ===================
 
 Submodules
