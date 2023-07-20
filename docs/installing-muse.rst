@@ -112,12 +112,12 @@ Next, it is possible to install the working directory into the conda environment
    # On Linux and Mac
    cd muse
    conda activate muse
-   python -m pip install -e ".[dev,docs]"
+   python -m pip install -e ".[dev,doc]"
 
    # On Windows
    dir muse
    conda activate muse
-   python -m pip install -e ".[dev,docs]"
+   python -m pip install -e ".[dev,doc]"
 
 The quotation marks are needed on some systems or shells, and do not hurt on any. The
 downloaded code can then be modified. The changes will be automatically reflected in the
@@ -137,12 +137,12 @@ The file can viewed from any web browser.
 
 The source files to create the documentation can be found in the `docs/` folder from within the main MUSE directory.
 
-.. _anaconda distribution: https://www.anaconda.com/distribution/#download-section
+.. _anaconda distribution: https://docs.anaconda.com/free/anaconda/index.html
 
 .. _anaconda prompt:
    https://docs.anaconda.com/anaconda/user-guide/getting-started/#write-a-python-program-using-anaconda-prompt-or-terminal
 
-.. _anaconda virtual environment: https://www.anaconda.com/what-is-anaconda/
+.. _anaconda virtual environment: https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html
 
 .. _pytest: https://docs.pytest.org/en/latest/
 
