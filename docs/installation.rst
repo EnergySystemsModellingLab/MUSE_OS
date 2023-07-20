@@ -221,7 +221,23 @@ And that is all! Now, MUSE should be available system wide simply by invoking ``
 
     muse --model default
 
-This will run a default, example model, completing after reaching year 2050.
+This will run a default, example model, completing after reaching year 2050. The following are the last few lines of the simulation:
+
+.. code-block::
+
+    ...
+    -- 2023-07-20 13:45:25 - muse.demand_share - INFO
+    Computing demand_share: default
+
+    -- 2023-07-20 13:45:25 - muse.production - INFO
+    Computing production: share
+
+    -- 2023-07-20 13:45:25 - muse.mca - WARNING
+    Check growth constraints for wind.
+
+    -- 2023-07-20 13:45:25 - muse.mca - INFO
+    Finish simulation year 2050!
+
 
 Alternative installation instructions
 -------------------------------------
