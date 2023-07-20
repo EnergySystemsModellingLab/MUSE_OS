@@ -5,7 +5,6 @@
 # http://www.sphinx-doc.org/en/master/config
 # -- Project information -----------------------------------------------------
 from typing import List
-from sphinx.writers.html import HTMLTranslator
 
 project = "MUSE"
 copyright = "2022, Sustainable Gas Institute"
