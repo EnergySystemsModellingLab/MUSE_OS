@@ -18,8 +18,9 @@ In the following sections, we will guide you step by step in configuring your sy
 
 .. note::
 
-    The next sections will explain in detail the appropriate steps as well as commenting on possible caveats, but in the end, what we are going to do to install MUSE is the following:
+    The next sections will explain in detail the appropriate steps as well as commenting on possible caveats. **We strongly encourage you to read through the sections below** to understand what these steps entitle, but in the end, what we are going to do to install MUSE is the following:
 
+    - Open a terminal
     - Install `pyenv <https://github.com/pyenv/pyenv>`_ (Linux and MacOS) or `pyenv-win <https://pyenv-win.github.io/pyenv-win/>`_ (Windows) and make sure it works.
     - Run the following commands in the terminal:
 
@@ -31,9 +32,9 @@ In the following sections, we will guide you step by step in configuring your sy
             python -m pipx ensurepath
             python -m pipx install muse-os
 
-    - After this, MUSE will be available to use system wide symply by invoking ``muse`` in the terminal.
+    - After this, MUSE will be available to use system wide simply by invoking ``muse`` in the terminal, for example ``muse --model default``.
 
-    This might work for you without any issues, but we strongly encourage you to read through the sections below to understand what these commands mean.
+
 
 Launching a terminal
 ~~~~~~~~~~~~~~~~~~~~
