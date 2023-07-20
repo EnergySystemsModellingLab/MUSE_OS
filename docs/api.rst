@@ -162,8 +162,8 @@ Reading the inputs
 Writing Outputs
 ---------------
 
-.. automodule:: muse.outputs
-   :members:
+.. .. automodule:: muse.outputs
+..    :members:
 
 Sinks
 ~~~~~
