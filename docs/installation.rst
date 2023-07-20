@@ -349,15 +349,14 @@ Once you have ``git`` in your system, clone MUSE repository with:
 
     git clone https://github.com/SGIModel/MUSE_OS.git
 
-Then, we will create a virtual environment using `venv`, as explained above:
+Then, we will create a virtual environment, either using ``conda`` or using ``venv`` as explained above, and install MUSE within the environment:
 
 .. code-block:: bash
 
     cd MUSE_OS
-    # Create virtual environment - for development, this is typically called ".venv"
-    python -m venv .venv
-    # Activate virtual environment following the instructions for your operative system.
-    # Finally, install MUSE in editable mode:
+    # 1- Create virtual environment
+    # 2- Activate virtual environment
+    # 3- Finally, install MUSE in editable mode with:
     python -m pip install -e .[dev,doc]
 
 Depending on your system, you might need to add quotation marks around ``[dev,doc]`` as in ``"[dev,doc]"``. This will install MUSE and all the dependencies required for its development. The downloaded code can be modified and the changes will be automatically reflected in the environment.
