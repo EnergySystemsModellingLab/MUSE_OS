@@ -67,12 +67,6 @@ Production
 .. automodule:: muse.production
    :members:
 
-Agents
-~~~~~~~~~~~~~~~~~~
-
-.. automodule:: muse.agents
-   :members:
-
 
 Agent Interactions
 ~~~~~~~~~~~~~~~~~~
