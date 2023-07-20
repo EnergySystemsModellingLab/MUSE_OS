@@ -145,7 +145,7 @@ Agent_0, ..., Agent_N
    The value corresponds to the ownership of the initial stock, as defined in the :ref:`inputs-existing-capacity` for the starting year of the simulation. 
    For example, if an initial boiler stock of 10 PJ is available, this is allocated to each agent according to the "AgentShare".
 
-   In a one-agent simulation, assuming that the *AgentShare* equals to *Agent_2" for the retrofit agent, the technodata should indicate the stock ownership as follows.
+   In a one-agent simulation, assuming that the *AgentShare* equals to *Agent_2* for the retrofit agent, the technodata should indicate the stock ownership as follows.
    The modelled agent would own the total 10 PJ of the initial stock of boilers.
 
    .. csv-table:: Techno-data: AgentShare - 1 agent
