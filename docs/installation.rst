@@ -258,7 +258,7 @@ Creating virtual environments
 
 Although not strictly necessary, **creating a virtual environment is highly recommended** regardless of how you installed Python. It will isolate users and developers from changes occurring on their operating system, and from conflicts between python packages and it ensures reproducibility from day to day.
 
-Using ``pipx`` ensures that putting each application it installs in its own virtual environment and running it under the hood. However, you can explicitly create and manage the virtual environment if you prefer.
+Using ``pipx`` ensures that each application it installs has its own virtual environment, running it under the hood. However, you can explicitly create and manage the virtual environment if you prefer.
 
 Creating a ``conda`` virtual environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -288,7 +288,7 @@ Later, to recover the system-wide "normal" python, deactivate the environment wi
 Creating a virtual environment with ``venv``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Modern Python versions, regardless of their origin, come with a built in tool to create virtual environments, ``venv``. However, contrary to ``conda`` it does not let you select the version of Python that will be used - it will be the same one you are using to create the environment. Therefore, you still need to make sure your version of Python is compatible with MUSE.
+Modern Python versions, regardless of their origin, come with a built in tool to create virtual environments, ``venv``. However, contrary to ``conda`` it does not let you select the version of Python that will be used - it will be the same one you are using to create the environment. Therefore, you still need to make sure your version of Python is compatible with MUSE. You can check it with ``python --version``.
 
 Another caveat is that the virtual environment will be created in a specific folder, so whenever you want to use it in the future, you will need to remember in what folder it was created and activate the environment from there.
 
@@ -296,7 +296,6 @@ You can create a virtual environment with:
 
 .. code-block:: bash
 
-    python -m pip install venv
     python -m venv venv
 
 And then you activate the environment with:
