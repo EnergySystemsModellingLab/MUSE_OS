@@ -15,7 +15,7 @@ class CommodityUsage(IntFlag):
     are consumed by the sector, and commodities that produced by the sectors, as well
     commodities that are, somehow, *environmental*.
 
-    __ https://docs.python.org/3/library/enum.html#intflag
+    __ https://docs.python.org/3/library/enum.html#enum.intflag
 
     With the exception of ``CommodityUsage.OTHER``, flags can be combined in any
     fashion. ``CommodityUsage.PRODUCT | CommodityUsage.CONSUMABLE`` is a commodity that
