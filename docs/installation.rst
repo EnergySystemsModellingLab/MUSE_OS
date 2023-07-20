@@ -383,4 +383,4 @@ The main page for the documentation can then be found at ``docs/build/html/index
 Configuring VSCode
 ~~~~~~~~~~~~~~~~~~
 
-[vscode](https://code.visualstudio.com/) users will find that the repository is setup with default settings file.  Users will still need to [choose the virtual environment](https://code.visualstudio.com/docs/python/environments#_select-and-activate-an-environment), or conda environment where to run the code. This will change the ``.vscode/settings.json`` file and add a user-specific path to it. Users should try and avoid committing changes to ``.vscode/settings.json`` indiscriminately.
+`VSCode <https://code.visualstudio.com/>`_ users will find that the repository is setup with default settings file.  Users will still need to `choose the virtual environment <https://code.visualstudio.com/docs/python/environments#_select-and-activate-an-environment>`_, or conda environment where to run the code. This will change the ``.vscode/settings.json`` file and add a user-specific path to it. Users should try and avoid committing changes to ``.vscode/settings.json`` indiscriminately.
