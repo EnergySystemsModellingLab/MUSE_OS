@@ -682,8 +682,7 @@ def net_present_value(
     a Component earns over its lifetime minus all the costs of installing and operating
     it. Follows the definition of the `net present cost`_ given by HOMER Energy.
     Metrics are calculated
-    .. _net present cost:
-        https://www.homerenergy.com/products/pro/docs/3.11/net_present_cost.html
+    .. _net present cost: https://www.homerenergy.com/products/pro/docs/3.11/net_present_cost.html # noqa
 
     - energy commodities INPUTS are related to fuel costs
     - environmental commodities OUTPUTS are related to environmental costs
