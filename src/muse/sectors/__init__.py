@@ -16,9 +16,9 @@ here means a common programming practice where some concept in the code (e.g. a 
 is given an explicit interface, with the goal of making it easier for other programmers
 to use and implement the concept.
 
-__ : https://docs.python.org/3/library/abc.html
+__ https://docs.python.org/3/library/abc.html
 
-__ : https://www.python-course.eu/python3_abstract_classes.php
+__ https://www.python-course.eu/python3_abstract_classes.php
 
 - :meth:`AbstractSector.factory`: Creates a sector from input data
 - :meth:`AbstractSector.next`: A function which takes a market (demand, supply,
