@@ -59,7 +59,6 @@ doc = [
     "sphinxcontrib-bibtex",
     "ipython",
     "pandoc",
-    "sphinxcontrib-mermaid>=0.9.2",
 ]
 excel = ["openpyxl"]
 
