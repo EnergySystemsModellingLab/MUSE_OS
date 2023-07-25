@@ -134,21 +134,27 @@ The figure below details how MUSE runs. Firstly, the initial capacity, price tra
 
 This whole process repeats itself at every timestep until the specified number of milestone years have run.
 
-.. image:: figures/time-horizon.pdf
-    :width: 97%
+.. graphviz::
     :align: center
-    :alt: MUSE foresight.
 
-.. mermaid::
+    digraph foo {
+        node [fontname="Helvetica,Arial,sans-serif", shape=box]
+        edge [fontname="Helvetica,Arial,sans-serif"]
 
-   sequenceDiagram
-      participant Alice
-      participant Bob
-      Alice->John: Hello John, how are you?
-      loop Healthcheck
-          John->John: Fight against hypochondria
-      end
-      Note right of John: Rational thoughts <br/>prevail...
-      John-->Alice: Great!
-      John->Bob: How about you?
-      Bob-->John: Jolly good!
+        inputs [label="Initial capacity,\nprice trajectory &\ndemand trajectory", style=rounded];
+        first [label="MUSE module\nt=1", fontsize=20, style=filled, color=lightgrey];
+        second [label="MUSE module\nt=2", fontsize=20, style=filled, color=lightgrey];
+        repeat [label="... Repeat ...", fontsize=20, style="rounded,dotted"];
+        end [label="Simulated\ntime horizon", style=rounded];
+        {node [label="MCA convergence"] mca1; mca2;}
+        {node [label="Investment"] inv1; inv2;}
+
+        rank=same {inputs -> first -> second -> repeat -> end [penwidth=5]};
+        first -> mca1 [label="Marginal cost\n &supply", constraint=false];
+        mca1 -> first [label="Price &\n demand"];
+        second -> mca2 [label="Marginal cost\n& supply", constraint=false];
+        mca2 -> second [label="Price &\n demand"];
+        first -> inv1 [style=invis]
+        second -> inv2 [style=invis]
+    }
+
