@@ -1,7 +1,7 @@
 Application Flow
 ================
 
-While not essential to be able to use MUSE, it will be useful to know the sequence of events that a run of MUSE will follow in a bit more detail that the brief overview of the :ref:`MUSE Overview` section. Let's start with the big picture.
+While not essential to be able to use MUSE, it is useful to know the sequence of events that a run of MUSE will follow in a bit more detail that the brief overview of the :ref:`MUSE Overview` section. Let's start with the big picture.
 
 High level sequence
 -------------------
@@ -55,4 +55,45 @@ Initialization
 
 The initialization phase is where all the parameters of the simulation are pulled from the :ref:`input-files` and the relevant objects required to run the simulation are created. If there is any configuration that does not make sense, it should be spotted during this phase and the execution of MUSE interrupted (with a meaningful error message) so no time is wasted in running a simulation that is wrong.
 
-Each of the steps above can be further split into smaller steps, as described in the following chart:
+Each of the steps above can be further split into smaller steps, described individually in the following sections:
+
+Read settings
+~~~~~~~~~~~~~
+
+The settings TOML file is where the higher level configuration of the simulation is defined. See :ref:`simulation-settings` for details of its content and structure. During the initialisation, the file is read, merged with default settings included in MUSE to get those parameters that are required and not provided by the user and, finally, the resulting settings are validated.
+
+The validation step covers a wide range of checks (and more that can be added by the user via plugins) that not only asses if the relevant information is correct but that, in some cases, also create the relevant Python objects or normalizes it to some defined format.
+
+.. graphviz::
+    :align: center
+    :alt: Read settings detailed flow chart
+
+    digraph read_settings {
+        fontname="Helvetica,Arial,sans-serif"
+        node [fontname="Helvetica,Arial,sans-serif", shape=box, style=rounded]
+        edge [fontname="Helvetica,Arial,sans-serif", len=2]
+        rankdir=TB
+        labelloc=t
+
+        usettings [label="Read user\nsettings"]
+        dsettings [label="Read default\nsettings"]
+        settings [label="Merge settings"]
+        plugins [label="Check user plugins"]
+        validate [label="Validate\nsettings"]
+
+        usettings -> settings
+        dsettings -> settings
+        settings -> plugins -> validate
+
+        validate -> {
+            "Log level"
+            "Interpolation\nmode"
+            "Carbon budget\nparameters"
+            "Foresight"
+            "Iteration control"
+            "Timeslices"
+            "Global\ndata files"
+            "Sector files"
+            "... others"
+        } [dir=both color="red:blue"]
+    }
