@@ -132,3 +132,50 @@ This market object (an xarray Dataset, internally) will be instrumental througho
         imports -> interpolate
         interpolate -> initial
     }
+
+Create sectors
+~~~~~~~~~~~~~~
+
+The sectors manage all the actors that will drive the evolution of the simulation: the technologies available, the commodities consumed and produced and the agents that will invest in the different technologies to ensure that the supply of commodities meets the demand. Sections :ref:`Key MUSE Components` and :ref:`input-files` provide more information on the different factors that influence sectors and their components.
+
+During the initialisation step, all input files relevant to a sector are loaded, their consistency validated and the agents that will be investing in this sector created. A broad description of the steps involved in the creation of **each sector defined in the input file**, ignoring validation and reformatting steps, are included in the following chart.
+
+.. graphviz::
+    :align: center
+    :alt: Simplified process of the creation of the sectors
+
+    digraph sectors {
+            fontname="Helvetica,Arial,sans-serif"
+            node [fontname="Helvetica,Arial,sans-serif", shape=box, style=rounded]
+            edge [fontname="Helvetica,Arial,sans-serif"]
+            rankdir=LR
+            clusterrank=local
+            newrank=true
+
+        {node [shape=""]; start; end;}
+        technodata [label="Read\ntechnodata"]
+        coms_in [label="Read\ncommodities\nIN"]
+        coms_out [label="Read\ncommodities\nOUT"]
+        agents [label="Create agents"]
+        share [label="Create demand share"]
+        constraints [label="Create constraints"]
+
+        start -> {
+            technodata
+            coms_in
+            coms_out
+        }
+        {
+            technodata
+            coms_in
+            coms_out
+        } -> agents
+        agents -> share
+        share -> constraints
+        constraints -> end
+
+    }
+
+Create the MCA
+~~~~~~~~~~~~~~
+
