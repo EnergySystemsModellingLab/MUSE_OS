@@ -29,6 +29,8 @@ Any MUSE simulation follows the steps outlined in the following graph:
             equilibrium [label="Find\nequilibrium"]
             propagate [label="Propagate\nprices"]
             outputs [label="Produce\noutputs"]
+            {node [style="invis"]; int1; int2;}
+
 
             subgraph cluster_1 {
                 settings -> market -> sectors -> mca
@@ -44,8 +46,10 @@ Any MUSE simulation follows the steps outlined in the following graph:
             }
 
             start -> settings
-            mca -> equilibrium [label="year=1"]
+            mca -> int1 [label="year=1"]
+            int2 -> equilibrium [label="year=1"]
             run -> end [label="Yes"]
+            start -> int2 [style="invis", constraint=false]
         }
 
 It has two main components, the **Initialisation** phase when the input settings file is read and, based on it, all the components needed for the simulation are created, and the **Run** phase when the actual simulation takes place and intermediate outputs are produced along the way.
@@ -72,7 +76,7 @@ The validation step covers a wide range of checks (and more that can be added by
         fontname="Helvetica,Arial,sans-serif"
         node [fontname="Helvetica,Arial,sans-serif", shape=box, style=rounded]
         edge [fontname="Helvetica,Arial,sans-serif", len=2]
-        rankdir=TB
+        rankdir=LR
         labelloc=t
 
         usettings [label="Read user\nsettings"]
@@ -96,4 +100,35 @@ The validation step covers a wide range of checks (and more that can be added by
             "Sector files"
             "... others"
         } [dir=both color="red:blue"]
+    }
+
+Create initial market
+~~~~~~~~~~~~~~~~~~~~~
+
+As described in :ref:`inputs-projection`, MUSE needs an initial market with prices and potential imports and exports of commodities to kick-off the simulation. These prices will be updated as the simulation progresses, or used as a static market throughout the whole timeline of the simulation.
+
+This market object (an xarray Dataset, internally) will be instrumental throughout the simulation and regularly updated with supply, consumption and new prices, if relevant.
+
+.. graphviz::
+    :align: center
+    :alt: Steps when creating the initial market
+
+    digraph create_market {
+        fontname="Helvetica,Arial,sans-serif"
+        node [fontname="Helvetica,Arial,sans-serif", shape=box, style=rounded]
+        edge [fontname="Helvetica,Arial,sans-serif", len=2]
+        rankdir=LR
+        labelloc=t
+
+        // nodes
+        projections [label="Read projections"]
+        exports [label="Read exports\n(optional)\nor exports=0"]
+        imports [label="Read imports\n(optional)\nor imports=0"]
+        interpolate [label="Interpolate\nto time framework"]
+        initial [label="Set initial\nsupply=0\nconsumption=0"]
+
+        projections -> interpolate
+        exports -> interpolate
+        imports -> interpolate
+        interpolate -> initial
     }
