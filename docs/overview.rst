@@ -144,17 +144,18 @@ This whole process repeats itself at every timestep until the specified number o
         inputs [label="Initial capacity,\nprice trajectory &\ndemand trajectory", style=rounded];
         first [label="MUSE module\nt=1", fontsize=20, style=filled, color=lightgrey];
         second [label="MUSE module\nt=2", fontsize=20, style=filled, color=lightgrey];
-        repeat [label="... Repeat ...", fontsize=20, style="rounded,dotted"];
+        repeat [label="... repeat ...", fontsize=20, color=white];
         end [label="Simulated\ntime horizon", style=rounded];
         {node [label="MCA convergence"] mca1; mca2;}
-        {node [label="Investment"] inv1; inv2;}
+        invFirst [label="Investment based on\ntechnology techno-\neconomics of t=2", color=white]
+        invSecond [label="Investment based on\ntechnology techno-\neconomics of t=3", color=white]
 
         rank=same {inputs -> first -> second -> repeat -> end [penwidth=5]};
-        first -> mca1 [label="Marginal cost\n &supply", constraint=false];
-        mca1 -> first [label="Price &\n demand"];
-        second -> mca2 [label="Marginal cost\n& supply", constraint=false];
-        mca2 -> second [label="Price &\n demand"];
-        first -> inv1 [style=invis]
-        second -> inv2 [style=invis]
+        first -> mca1 [label="Marginal cost\n& supply", color=red, fontcolor=red, constraint=false];
+        mca1 -> first [label="Price &\n demand", color=blue, fontcolor=blue];
+        second -> mca2 [label="Marginal cost\n& supply", color=red, fontcolor=red, constraint=false];
+        mca2 -> second [label="Price &\n demand", color=blue, fontcolor=blue];
+        first -> invFirst [style=invis]
+        second -> invSecond [style=invis]
     }
 
