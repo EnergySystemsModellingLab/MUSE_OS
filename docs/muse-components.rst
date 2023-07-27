@@ -1,3 +1,5 @@
+.. _muse-components:
+
 Key MUSE Components
 ===================
 

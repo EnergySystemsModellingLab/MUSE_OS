@@ -25,10 +25,13 @@ Any MUSE simulation follows the steps outlined in the following graph:
             market [label="Create\nmarket"]
             sectors [label="Create\nsectors"]
             mca [label="Create\nMCA"]
-            run [label="Last year?", shape=diamond, style=""]
+            run [label="Last\nyear?", shape=diamond, style=""]
             equilibrium [label="Find\nequilibrium"]
-            propagate [label="Propagate\nprices"]
+            propagate [label="Update\nprices"]
             outputs [label="Produce\noutputs"]
+            check_c [label="Carbon\nbudget?", shape=diamond, style=""]
+            c_prices [label="Update carbon\nprices"]
+            next_year [label="Next year", shape=""]
             {node [style="invis"]; int1; int2;}
 
 
@@ -39,15 +42,20 @@ Any MUSE simulation follows the steps outlined in the following graph:
             }
 
             subgraph cluster_2 {
+                next_year -> check_c
+                check_c -> equilibrium [label="No"]
+                check_c -> c_prices [label="Yes", constraint=false]
+                c_prices -> equilibrium [constraint=false]
                 equilibrium -> propagate -> outputs -> run
-                run -> equilibrium [label="No", constraint=false]
+                run -> next_year [label="No", constraint=false]
                 label="Run"
                 color=lightgrey
+                {rank=same; check_c; c_prices}
             }
 
             start -> settings
-            mca -> int1 [label="year=1"]
-            int2 -> equilibrium [label="year=1"]
+            mca -> int1
+            int2 -> next_year
             run -> end [label="Yes"]
             start -> int2 [style="invis", constraint=false]
         }
@@ -136,15 +144,62 @@ This market object (an xarray Dataset, internally) will be instrumental througho
 Create sectors
 ~~~~~~~~~~~~~~
 
-The sectors manage all the actors that will drive the evolution of the simulation: the technologies available, the commodities consumed and produced and the agents that will invest in the different technologies to ensure that the supply of commodities meets the demand. Sections :ref:`Key MUSE Components` and :ref:`input-files` provide more information on the different factors that influence sectors and their components.
+The sectors manage all the actors that will drive the evolution of the simulation: the technologies available, the commodities consumed and produced and the agents that will invest in the different technologies to ensure that the supply of commodities meets the demand. Sections :ref:`muse-components` and :ref:`input-files` provide more information on the different factors that influence sectors and their components.
 
-During the initialisation step, all input files relevant to a sector are loaded, their consistency validated and the agents that will be investing in this sector created. A broad description of the steps involved in the creation of **each sector defined in the input file**, ignoring validation and reformatting steps, are included in the following chart.
+During the initialisation step, all input files relevant to a sector are loaded, their consistency validated and the agents that will be investing in this sector created. A broad description of the steps involved in the creation of **each sector defined in the input file** are included in the following chart (there might be other validation and data reformatting steps).
 
 .. graphviz::
     :align: center
     :alt: Simplified process of the creation of the sectors
 
     digraph sectors {
+
+        fontname="Helvetica,Arial,sans-serif"
+        node [fontname="Helvetica,Arial,sans-serif", shape=box, style=rounded]
+        edge [fontname="Helvetica,Arial,sans-serif"]
+        rankdir=LR
+        clusterrank=local
+        newrank=true
+
+        technodata [label="Read\ntechnodata"]
+        coms_in [label="Read\ncommodities\nIN"]
+        coms_out [label="Read\ncommodities\nOUT"]
+        validate [label="Validate\ntechnologies"]
+        outputs [label="Setup\noutputs"]
+        interaction [label="Setup agents\ninteractions"]
+
+        subgraph cluster_1 {
+            label="For each subsector within sector"
+            agents [label="Create\nagents"]
+            share [label="Setup\ndemand share"]
+            constraints [label="Setup\nconstraints"]
+            investment [label="Setup\ninvestment"]
+            capacity [label="Read initial\ncapacity"]
+            agents -> share -> constraints -> investment
+            agents -> capacity [color="red", constraint=false]
+            capacity -> agents [color="blue", constraint=false]
+            {rank=same; agents;capacity}
+        }
+
+        {
+            technodata
+            coms_in
+            coms_out
+        } -> validate
+        validate -> agents
+        investment -> outputs -> interaction
+    }
+
+Create the MCA
+~~~~~~~~~~~~~~
+
+The last step of the initialization is also the simplest one. The MCA (market clearing algorithm) is initialized with all the objects created in the previous sections and, specifically, the global simulation parameters, the handling of the carbon budget and the global outputs. Once the MCA is initialized, the simulation is ready to run!
+
+.. graphviz::
+    :align: center
+    :alt: Steps of the creation of the MCA
+
+    digraph mca {
             fontname="Helvetica,Arial,sans-serif"
             node [fontname="Helvetica,Arial,sans-serif", shape=box, style=rounded]
             edge [fontname="Helvetica,Arial,sans-serif"]
@@ -152,30 +207,9 @@ During the initialisation step, all input files relevant to a sector are loaded,
             clusterrank=local
             newrank=true
 
-        {node [shape=""]; start; end;}
-        technodata [label="Read\ntechnodata"]
-        coms_in [label="Read\ncommodities\nIN"]
-        coms_out [label="Read\ncommodities\nOUT"]
-        agents [label="Create agents"]
-        share [label="Create demand share"]
-        constraints [label="Create constraints"]
+            simulation [label="Setup global\nsimulation parameters"]
+            outputs [label="Setup global\noutputs"]
+            budget [label="Setup carbon\nbudget"]
 
-        start -> {
-            technodata
-            coms_in
-            coms_out
+            simulation -> budget -> outputs
         }
-        {
-            technodata
-            coms_in
-            coms_out
-        } -> agents
-        agents -> share
-        share -> constraints
-        constraints -> end
-
-    }
-
-Create the MCA
-~~~~~~~~~~~~~~
-
