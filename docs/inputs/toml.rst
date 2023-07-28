@@ -283,7 +283,7 @@ type
 
 priority
    An integer denoting which sectors runs when. Lower values imply the sector will run
-   earlier. If two sectors share the same priority. Later sectors can depend on earlier
+   earlier. Later sectors can depend on earlier
    sectors for the their input. If two sectors share the same priority, then their
    order is not defined. Indeed, it should indicate that they can run in parallel.
    For simplicity, the keyword also accepts standard values:

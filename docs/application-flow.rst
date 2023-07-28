@@ -286,6 +286,8 @@ The method used to calculate the new carbon price can be selected by the user. T
 
 As it can be seen, this method will run the ``Find market equilibrium`` algorithm multiple times and, as a result, the simulation will take significantly longer to complete.
 
+.. _find-equilibrium:
+
 Find market equilibrium
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -326,4 +328,69 @@ An overall picture of this process can be seen in the following chart, but there
             {rank=same; prices2; single_year}
             {rank=same; maxiter; converged;}
             {rank=same; prices1; prices;}
+        }
+
+Single year iteration
+^^^^^^^^^^^^^^^^^^^^^
+
+Both in the carbon budget and in the equilibrium calculation, a single year iteration step is involved. It is in this step where MUSE will go through each sector and use the agents to appropriately invest in different technologies, aiming to match these two factors.
+
+**As sectors have different priorities, sectors with lower priorities will run last and see a market updated by the higher priority sectors**. In general, demand sectors should run before conversion sectors and these before supply sectors, such that the later can see the real demand. As these investment in the supply sectors will change the prices of their commodities, the demand of those commodities will change. Balancing that is the purpose of the :ref:`find-equilibrium` loop described above.
+
+A chart summarising this process is depicted below:
+
+.. graphviz::
+    :align: center
+    :alt: Steps of a single year iteration
+
+    digraph single_year {
+            fontname="Helvetica,Arial,sans-serif"
+            node [fontname="Helvetica,Arial,sans-serif", shape=box, style=rounded]
+            edge [fontname="Helvetica,Arial,sans-serif"]
+            rankdir=LR
+            clusterrank=local
+            newrank=true
+
+            {node [shape=""]; start; end;}
+            run_sector [label="Run sector"]
+            consumption [label="Update market\nconsumption"];
+            supply [label="Update market\nsupply"];
+            all_done [label="All sectors\ndone?", shape=diamond, style=""]
+            prices [label="Update prices"]
+
+
+            start -> run_sector -> consumption -> supply -> prices -> all_done
+            all_done -> end [label="Yes"]
+            all_done -> run_sector [label="No", constraint=false]
+        }
+
+With the run of each sector involving the following steps:
+
+.. graphviz::
+    :align: center
+    :alt: Steps of one period step in a sector
+
+    digraph sector_step {
+            fontname="Helvetica,Arial,sans-serif"
+            node [fontname="Helvetica,Arial,sans-serif", shape=box, style=rounded]
+            edge [fontname="Helvetica,Arial,sans-serif"]
+            rankdir=LR
+            clusterrank=local
+            newrank=true
+
+            {node [shape=""]; start; end;}
+            interactions [label="Run agents\ninteractions"]
+            invest [label="Invest"]
+            update_agents [label="Update agents'\nassets"]
+            all_subsectors [label="Sub-sectors done?", shape=diamond, style=""]
+
+            subgraph cluster {
+                label="Run sector"
+                interactions -> invest -> update_agents -> all_subsectors
+                all_subsectors -> invest [label="No", constraint=false]
+
+            }
+
+            start -> interactions
+            all_subsectors -> end [label="Yes"]
         }
