@@ -163,7 +163,7 @@ You should see a very long list of versions to choose from. Let's install the la
 
     pyenv install 3.9.13
 
-The command will take a minute or two to complete, depending on your internet connexion, and show an output similar to the following (this is just an example for Windows):
+The command will take a minute or two to complete, depending on your internet connection, and show an output similar to the following (this is just an example for Windows):
 
 .. code-block:: output
 
@@ -215,7 +215,7 @@ With all the system prepared, installing MUSE is the easiest part:
 
 As above, make sure you run this command with the appropriate Python version.
 
-And that is all! Now, MUSE should be available system wide simply by invoking ``muse`` in the terminal. To check that everything works as expected, open a new terminal and run:
+And that is all! Now, MUSE should be available system wide simply by running ``muse`` in the terminal. For example, open a new terminal and run:
 
 .. code-block:: bash
 
