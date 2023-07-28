@@ -213,3 +213,75 @@ The last step of the initialization is also the simplest one. The MCA (market cl
 
             simulation -> budget -> outputs
         }
+
+Simulation run
+--------------
+
+If the initialization is successful, the execution of the simulation will start. Depending on the configuration of the carbon budget and what to do with it, the steps will be slightly different, but in all cases the main part will be the steps for reaching the equilibrium between the supply and the consumption based on the investment.
+
+Update carbon prices
+~~~~~~~~~~~~~~~~~~~~
+
+One of MUSE core features is to (optionally) consider carbon emission as a constrain for the investment in future technologies. A carbon budget can be defined in the :ref:`simulation-settings` across all years of the simulation and this will result in an increase of prices for those technologies that are less green.
+
+The sequence of steps related to the carbon budget control are as follows:
+
+.. graphviz::
+    :align: center
+    :alt: Description of the carbon budget cycle
+
+    digraph carbon_budget {
+            fontname="Helvetica,Arial,sans-serif"
+            node [fontname="Helvetica,Arial,sans-serif", shape=box, style=rounded]
+            edge [fontname="Helvetica,Arial,sans-serif"]
+            rankdir=LR
+            clusterrank=local
+            newrank=true
+
+            {node [shape=""]; start; end;}
+            single_year [label="Single year\niteration"]
+            emissions [label="Calculate emissions\nof carbon comodities"]
+            comparison [label="Emissions\n> budget\n", shape=diamond, style=""]
+            new_price [label="Calculate new\ncarbon price"]
+
+
+            subgraph cluster_1 {
+                label="Initial estimate of carbon emissions in Future year"
+                single_year -> emissions -> comparison
+            }
+
+            start -> single_year
+            comparison -> end [label="No", constraint=false]
+            comparison -> new_price [label="Yes"]
+            new_price -> end
+        }
+
+The method used to calculate the new carbon price can be selected by the user. The only option built-in in MUSE at the moment is ``fitting``, however this can be expanded by the user with the ``@register_carbon_budget_method`` hook in ``muse.carbon_budget``. The ``fitting`` method is based in the following algorithm:
+
+.. graphviz::
+    :align: center
+    :alt: Fitting method to calculate the new carbon price in the future year
+
+    digraph carbon_budget_method {
+            fontname="Helvetica,Arial,sans-serif"
+            node [fontname="Helvetica,Arial,sans-serif", shape=box, style=rounded]
+            edge [fontname="Helvetica,Arial,sans-serif"]
+            rankdir=LR
+            clusterrank=local
+            newrank=true
+
+            {node [shape=""]; start; end;}
+            emissions [label="Calculate emissions\nof carbon comodities"];
+            sample_prices [label="Sample\ncarbon prices"]
+            all_samples [label="All samples\ndone?", shape=diamond, style=""]
+            find_equilibrium [label="Find market\nequilibrium"]
+            fit [label="Regression\nprices-emissions\nfor emissions=0"]
+            refine [label="Refine\ncarbon price"]
+
+            start -> sample_prices -> find_equilibrium -> emissions -> all_samples
+            all_samples -> find_equilibrium [label="No", constraint=false]
+            all_samples -> fit [label="Yes"]
+            fit -> refine -> end
+        }
+
+As it can be seen, this method will run the ``Find Market Equilibrium`` algorithm multiple times and, as a result, the simulation will take significantly longer to complete.
