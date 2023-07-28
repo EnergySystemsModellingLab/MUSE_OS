@@ -26,7 +26,7 @@ Any MUSE simulation follows the steps outlined in the following graph:
             sectors [label="Create\nsectors"]
             mca [label="Create\nMCA"]
             run [label="Last\nyear?", shape=diamond, style=""]
-            equilibrium [label="Find\nequilibrium"]
+            equilibrium [label="Find market\nequilibrium"]
             propagate [label="Update\nprices"]
             outputs [label="Produce\noutputs"]
             check_c [label="Carbon\nbudget?", shape=diamond, style=""]
@@ -217,7 +217,7 @@ The last step of the initialization is also the simplest one. The MCA (market cl
 Simulation run
 --------------
 
-If the initialization is successful, the execution of the simulation will start. Depending on the configuration of the carbon budget and what to do with it, the steps will be slightly different, but in all cases the main part will be the steps for reaching the equilibrium between the supply and the consumption based on the investment.
+If the initialization is successful, the execution of the simulation will start. Depending on the configuration of the carbon budget and what to do with it, the steps will be slightly different, but in all cases the main part will be the steps for reaching the equilibrium between the demand and the supply based on the investment.
 
 Update carbon prices
 ~~~~~~~~~~~~~~~~~~~~
@@ -284,4 +284,46 @@ The method used to calculate the new carbon price can be selected by the user. T
             fit -> refine -> end
         }
 
-As it can be seen, this method will run the ``Find Market Equilibrium`` algorithm multiple times and, as a result, the simulation will take significantly longer to complete.
+As it can be seen, this method will run the ``Find market equilibrium`` algorithm multiple times and, as a result, the simulation will take significantly longer to complete.
+
+Find market equilibrium
+~~~~~~~~~~~~~~~~~~~~~~~
+
+This is the main part of MUSE, in which the agents in the different sectors will invest in new - or old - technologies to make sure that the supply of commodities matches their demand in years to come across all the regions of the simulation.
+
+An overall picture of this process can be seen in the following chart, but there are many fine-grained steps related to specific objectives and criteria that heavily influence the results of the calculation. These steps are described in other parts of the documentation.
+
+.. graphviz::
+    :align: center
+    :alt: Main loop to find the market equilibrium
+
+    digraph find_equilibrium {
+            fontname="Helvetica,Arial,sans-serif"
+            node [fontname="Helvetica,Arial,sans-serif", shape=box, style=rounded]
+            edge [fontname="Helvetica,Arial,sans-serif"]
+            rankdir=LR
+            clusterrank=local
+            newrank=true
+
+            {node [shape=""]; start; end;}
+            exclude [label="Exclude\ncommodities\nfrom market"];
+            single_year [label="Single year\niteration"]
+            maxiter [label="Maxium iter?", shape=diamond, style=""]
+            converged [label="Converged?", shape=diamond, style=""]
+            prices [label="Update with\nconverged prices"]
+            {node [label="Update with not\nconverged prices"]; prices1; prices2;}
+            check_demand [label="Check demand\nfulfilment"]
+            equilibrium [label="Check\nequilibrium"]
+
+            start -> exclude -> single_year -> equilibrium -> check_demand -> converged
+            converged -> prices [label="Yes"]
+            prices -> end
+            converged -> maxiter [label="No"]
+            maxiter -> prices2 [label="No"]
+            maxiter -> prices1 [label="Yes"]
+            prices1 -> end
+            prices2 -> single_year [constraint=false]
+            {rank=same; prices2; single_year}
+            {rank=same; maxiter; converged;}
+            {rank=same; prices1; prices;}
+        }
