@@ -3,6 +3,10 @@ Application Flow
 
 While not essential to be able to use MUSE, it is useful to know the sequence of events that a run of MUSE will follow in a bit more detail that the brief overview of the :ref:`MUSE Overview` section. Let's start with the big picture.
 
+.. note::
+
+    Throughout this section, greyed nodes will be further described in a more detailed chart, so keep reading to find out more about those, probably unclear steps.
+
 High level sequence
 -------------------
 
@@ -21,16 +25,16 @@ Any MUSE simulation follows the steps outlined in the following graph:
             newrank=true
 
             {node [shape=""]; start; end;}
-            settings [label="Read\nsettings"]
-            market [label="Create\nmarket"]
-            sectors [label="Create\nsectors"]
-            mca [label="Create\nMCA"]
+            settings [label="Read\nsettings", fillcolor="lightgrey", style="rounded,filled"]
+            market [label="Create\nmarket", fillcolor="lightgrey", style="rounded,filled"]
+            sectors [label="Create\nsectors", fillcolor="lightgrey", style="rounded,filled"]
+            mca [label="Create\nMCA", fillcolor="lightgrey", style="rounded,filled"]
             run [label="Last\nyear?", shape=diamond, style=""]
-            equilibrium [label="Find market\nequilibrium"]
+            equilibrium [label="Find market\nequilibrium", fillcolor="lightgrey", style="rounded,filled"]
             propagate [label="Update\nprices"]
             outputs [label="Produce\noutputs"]
             check_c [label="Carbon\nbudget?", shape=diamond, style=""]
-            c_prices [label="Update carbon\nprices"]
+            c_prices [label="Update carbon\nprices", fillcolor="lightgrey", style="rounded,filled"]
             next_year [label="Next year", shape=""]
             {node [style="invis"]; int1; int2;}
 
@@ -239,10 +243,10 @@ The sequence of steps related to the carbon budget control are as follows:
             newrank=true
 
             {node [shape=""]; start; end;}
-            single_year [label="Single year\niteration"]
+            single_year [label="Single year\niteration", fillcolor="lightgrey", style="rounded,filled"]
             emissions [label="Calculate emissions\nof carbon comodities"]
             comparison [label="Emissions\n> budget\n", shape=diamond, style=""]
-            new_price [label="Calculate new\ncarbon price"]
+            new_price [label="Calculate new\ncarbon price", fillcolor="lightgrey", style="rounded,filled"]
 
 
             subgraph cluster_1 {
@@ -256,7 +260,7 @@ The sequence of steps related to the carbon budget control are as follows:
             new_price -> end
         }
 
-The method used to calculate the new carbon price can be selected by the user. The only option built-in in MUSE at the moment is ``fitting``, however this can be expanded by the user with the ``@register_carbon_budget_method`` hook in ``muse.carbon_budget``. The ``fitting`` method is based in the following algorithm:
+The **method used to calculate the new carbon price** can be selected by the user. The only option built-in in MUSE at the moment is ``fitting``, however this can be expanded by the user with the ``@register_carbon_budget_method`` hook in ``muse.carbon_budget``. The ``fitting`` method is based in the following algorithm:
 
 .. graphviz::
     :align: center
@@ -309,7 +313,7 @@ An overall picture of this process can be seen in the following chart, but there
 
             {node [shape=""]; start; end;}
             exclude [label="Exclude\ncommodities\nfrom market"];
-            single_year [label="Single year\niteration"]
+            single_year [label="Single year\niteration", fillcolor="lightgrey", style="rounded,filled"]
             maxiter [label="Maxium iter?", shape=diamond, style=""]
             converged [label="Converged?", shape=diamond, style=""]
             prices [label="Update with\nconverged prices"]
@@ -331,7 +335,7 @@ An overall picture of this process can be seen in the following chart, but there
         }
 
 Single year iteration
-^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~
 
 Both in the carbon budget and in the equilibrium calculation, a single year iteration step is involved. It is in this step where MUSE will go through each sector and use the agents to appropriately invest in different technologies, aiming to match these two factors.
 
@@ -352,16 +356,17 @@ A chart summarising this process is depicted below:
             newrank=true
 
             {node [shape=""]; start; end;}
-            run_sector [label="Run sector"]
+            next [label="Next\nsector", shape=""]
+            run_sector [label="Run sector", fillcolor="lightgrey", style="rounded,filled"]
             consumption [label="Update market\nconsumption"];
             supply [label="Update market\nsupply"];
             all_done [label="All sectors\ndone?", shape=diamond, style=""]
             prices [label="Update prices"]
 
 
-            start -> run_sector -> consumption -> supply -> prices -> all_done
+            start -> next -> run_sector -> consumption -> supply -> prices -> all_done
             all_done -> end [label="Yes"]
-            all_done -> run_sector [label="No", constraint=false]
+            all_done -> next [label="No", constraint=false]
         }
 
 With the run of each sector involving the following steps:
@@ -379,6 +384,7 @@ With the run of each sector involving the following steps:
             newrank=true
 
             {node [shape=""]; start; end;}
+            next [label="Next\nsub-sector", shape=""]
             interactions [label="Run agents\ninteractions"]
             invest [label="Invest"]
             update_agents [label="Update agents'\nassets"]
@@ -386,8 +392,8 @@ With the run of each sector involving the following steps:
 
             subgraph cluster {
                 label="Run sector"
-                interactions -> invest -> update_agents -> all_subsectors
-                all_subsectors -> invest [label="No", constraint=false]
+                interactions -> next -> invest -> update_agents -> all_subsectors
+                all_subsectors -> next [label="No", constraint=false]
 
             }
 
