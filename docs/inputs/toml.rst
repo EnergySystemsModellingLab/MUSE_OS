@@ -24,7 +24,9 @@ a whole.
 .. code-block:: TOML
 
    time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
+   foresight = 5
    regions = ["USA"]
+   interest_rate = 0.1
    interpolation_mode = 'Active'
    log_level = 'info'
 
@@ -35,6 +37,11 @@ a whole.
 
 time_framework
    Required. List of years for which the simulation will run.
+
+
+foresight
+   Required. Integer defining the interval where prices are updated and are kept at a
+   a flat-forward trajectory after that.
 
 region
    Subset of regions to consider. If not given, defaults to all regions found in the
@@ -57,9 +64,8 @@ interpolation_mode
    * `cubic` interpolation is similar to `quadratic` interpolation, but uses a cubic function for interpolation.
 
 
-
 log_level:
-   verbosity of the output.
+   verbosity of the output. Options include: "info", "critical".
 
 equilibirum_variable
    whether equilibrium of `demand` or `prices` should be sought. Defaults to `demand`.
@@ -74,8 +80,8 @@ tolerance_unmet_demand
    Criteria checking whether the demand has been met.  Defaults to -0.1.
 
 excluded_commodities
-   List of commodities excluded from the equilibrium considerations. Defaults to the
-   list `["CO2f", "CO2r", "CO2c", "CO2s", "CH4", "N2O", "f-gases"]`.
+   List of commodities excluded from the equilibrium considerations.
+
 
 plugins
     Path or list of paths to extra python plugins, i.e. files with registered functions
@@ -135,7 +141,7 @@ control_overshoot
 method_options:
    Additional options for the specific carbon method.
 
-   `fitter` specifies the regression model fit. Predefined options are `linear` and `exponential`. Further options can be defined using the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
+   `fitter` specifies the regression model fit. Predefined options are `linear`, `exponential`, and bisection. Further options can be defined using the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
 
 
 ------------------
@@ -296,6 +302,87 @@ priority
    
    Defaults to "last".
 
+subsectors
+
+    Subsectors group together agents into separate groups servicing the demand for
+    different commodities. There should be at least one subsector. And there can be as
+    many as required. For instance, a one-subsector setup would look like:
+
+    .. code-block:: toml
+
+        [sectors.gas.subsectors.all]
+        agents = '{path}/technodata/Agents.csv'
+        existing_capacity = '{path}/technodata/gas/Existing.csv'
+
+    A two-subsector could look like:
+
+    .. code-block:: toml
+
+        [sectors.gas.subsectors.methane_and_ethanol]
+        agents = '{path}/technodata/me_agents.csv'
+        existing_capacity = '{path}/technodata/gas/me_existing.csv'
+        commodities = ["methane", "ethanol"]
+
+        [sectors.gas.subsectors.natural]
+        agents = '{path}/technodata/nat_agents.csv'
+        existing_capacity = '{path}/technodata/gas/nat_existing.csv'
+        commodities = ["refined", "crude"]
+
+    In the case of multiple subsectors, it is important to specify disjoint sets of
+    commodities so that each subsector can service a separate demand.
+    The subsectors accept the following keywords:
+
+    agents
+        Path to a csv file describing the agents in the sector.
+        See :ref:`user_guide/inputs/agents:agents`.
+
+    existing_capacity
+       Path to a csv file describing the initial capacity of the sector.
+       See :ref:`user_guide/inputs/existing_capacity:existing sectoral capacity`.
+
+    lpsolver:
+        The solver for linear problems to use when figuring out investments. The solvers
+        are registered via :py:func:`~muse.investments.register_investment`. At time of
+        writing, three are available:
+
+        - an "adhoc" solver: Simple in-house solver that ranks the technologies
+          according to cost and sevice the demand incrementally.
+
+        - "scipy" solver: Formulates investment as a true LP problem and solves it using
+          the `scipy solver`_.
+
+        - "cvxopt" solver: Formulates investment as a true LP problem and solves it
+          using the python package `cvxopt`_. `cvxopt`_ is *not* installed by default.
+          Users can install it with ``pip install cvxopt`` or ``conda install cvxopt``.
+
+    demand_share
+        A method used to split the MCA demand into seperate parts to be serviced by
+        specific agents. A basic distinction is between *new* and *retrofit* agents: the
+        former asked to respond to an increase of commodity demand investing in new
+        assets; the latter asked to invest in new asset to balance the decommissined
+        assets.
+
+        There are currently two options:
+
+        - :py:func:`~muse.demand_share.new_and_retro`: the demand is split into a
+          retrofit demand corresponding to demand that used to be serviced by
+          decommisioned assets, and the *new* demand.
+        - :py:func:`~muse.demand_share.market_demand`: simply the consumption for the
+          forecast year.
+
+    constraints
+        The list of constraints to apply to the LP problem solved by the sector. By
+        default all of the following are included:
+
+        - :py:func:`~muse.constraints.demand`: a lower-bound of the production decision
+          variables specifying the target demand.
+        - :py:func:`~muse.constraints.max_production`: an upper bound limiting how much
+          can be produced for a given capacity.
+        - :py:func:`~muse.constraints.max_capacity_expansion`: an upper bound limiting
+          how much the capacity can grow during each investment event.
+        - :py:func:`~muse.constraints.search_space`: a binary (on-off) constraint
+          specifying which technologies are considered for investment.
+
 interpolation
    Interpolation method user when filling in missing values. Available interpolation
    methods depend on the underlying `scipy method's kind attribute`_.
@@ -420,8 +507,8 @@ output
 
    The following attributes are available:
 
-   - quantity: Name of the quantity to save. Currently, only `capacity` exists,
-      refering to :py:func:`muse.outputs.capacity`. However, users can
+   - quantity: Name of the quantity to save. Currently, `capacity` exists,
+      referring to :py:func:`muse.outputs.capacity`. However, users can
       customize and create further output quantities by registering with MUSE via
       :py:func:`muse.outputs.register_output_quantity`. See
       :py:mod:`muse.outputs` for more details.
@@ -450,6 +537,26 @@ output
 
    - overwrite: If `False` MUSE will issue an error and abort, instead of
       overwriting an existing file. Defaults to `False`. This prevents important output files from being overwritten.
+   There is a special output sink for aggregating over years. It can be invoked as
+   follows:
+
+   .. code-block:: TOML
+
+      [[sectors.commercial.outputs]]
+      quantity = "capacity"
+      sink.aggregate = 'csv'
+
+   Or, if specifying additional output, where ... can be any parameter for the final
+   sink:
+
+   .. code-block:: TOML
+
+      [[sectors.commercial.outputs]]
+      quantity = "capacity"
+      sink.aggregate.name = { ... }
+
+   Note that the aggregate sink always overwrites the final file, since it will
+   overwrite itself.
 
 technodata
    Path to a csv file containing the characterization of the technologies involved in
@@ -542,7 +649,10 @@ consumption_path:
 
    The index column as well as "RegionName", "ProcessName", and "TimeSlice" must be
    present. Further columns are reserved for commodities. "TimeSlice" refers to the
-   index of the timeslice.
+   index of the timeslice. Timeslices should be defined consistently to the sectoral
+   level timeslices.
+   The column "ProcessName" needs to be present and filled in, in order for the data
+   to be read properly but it does not affect the simulation.
 
 
 supply_path:
@@ -580,7 +690,9 @@ regression_path:
    Also requires :ref:`macrodrivers_path<preset-macro>`.
 
 timeslice_shares_path
-   Optional csv file giving shares per timeslice. Requires
+   Optional csv file giving shares per timeslice.    The timeslice share definition needs to have a consistent number of timeslices as the
+   sectoral level time slices.
+   Requires
    :ref:`macrodrivers_path<preset-consumption>`.
 
 filters:
