@@ -341,7 +341,7 @@ def bisection(
     future = market.year[-1]
     threshold = carbon_budget.sel(year=future).values
     price = market.prices.sel(year=future, commodity=commodities).mean().values
-    print(carbon_price, "carbon price")
+
     niter = sample_size
     # We create a sample of prices at which we want to calculate emissions
     time_exp = max(0, (int(future - current)))
@@ -390,15 +390,15 @@ def bisection(
             )
             if abs(low - up) <= 0.001:
                 new_price = round((low + up) / 2.0, 7)
-                print("5")
+
                 break
             elif abs(ub - threshold) <= abs(0.1 * threshold):
                 new_price = low
-                print("6")
+
                 break
             elif abs(lb - threshold) <= abs(0.1 * threshold):
                 new_price = up
-                print("7")
+
                 break
             if low != low0:
                 low0 = low
@@ -407,7 +407,6 @@ def bisection(
                 up0 = up
                 lb = bisect_loop(market, sectors, equilibrium, commodities, up)
             new_price = round((low + up) / 2.0, 7)
-            print(low0, low, up0, up, "8")
 
     if new_price <= 0:
         new_price = 1e-2
