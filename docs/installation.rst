@@ -230,16 +230,31 @@ This will run a default, example model, completing after reaching year 2050. The
 .. code-block::
 
     ...
-    -- 2023-07-20 13:45:25 - muse.demand_share - INFO
+    -- 2023-08-02 09:11:50 - muse.sectors.sector - INFO
+    Running gas for year 2050
+    
+    -- 2023-08-02 09:11:50 - muse.interactions - INFO
+    Net new_to_retro of 1 interactions interacting via transfer
+    
+    -- 2023-08-02 09:11:50 - muse.hooks - INFO
+    Computing initial_asset_transform: default
+    
+    -- 2023-08-02 09:11:50 - muse.hooks - INFO
+    Computing initial_asset_transform: clean
+    
+    -- 2023-08-02 09:11:50 - muse.demand_share - INFO
     Computing demand_share: default
-
-    -- 2023-07-20 13:45:25 - muse.production - INFO
+    
+    -- 2023-08-02 09:11:51 - muse.production - INFO
+    Computing production: max
+    
+    -- 2023-08-02 09:11:51 - muse.production - INFO
+    Computing production: max
+    
+    -- 2023-08-02 09:11:51 - muse.production - INFO
     Computing production: share
-
-    -- 2023-07-20 13:45:25 - muse.mca - WARNING
-    Check growth constraints for wind.
-
-    -- 2023-07-20 13:45:25 - muse.mca - INFO
+    
+    -- 2023-08-02 09:11:51 - muse.mca - INFO
     Finish simulation year 2050!
 
 
