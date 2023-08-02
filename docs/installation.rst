@@ -82,6 +82,10 @@ MUSE needs Python to run but, for now, it only works with versions 3.8 and 3.9, 
         :align: center
         :alt: Screen to disable the Python aliases defined by Windows.
 
+.. note::
+
+    If you already have a Python version installed from the Microsoft Store, you might have a ``py`` command that will launch Python in the terminal. That Python Launcher will use a Microsoft Stored-installed version of Python. Unless any of those versions, under the control of Microsoft and their autoupdating schedule, happen to be compatible with MUSE, we advise against using the launcher and follow the instructions below, which will give you more control on what is exactly being run and how MUSE is being installed. 
+
 The first thing will be to check if you already have a suitable python version installed. Open a terminal and run:
 
 .. code-block:: bash
