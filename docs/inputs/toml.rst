@@ -65,7 +65,7 @@ interpolation_mode
 
 
 log_level:
-   verbosity of the output. Options include: "info" and "critical", the highest and lowest level of verbosity.
+   verbosity of the output. Valid options, from the highest to the lowest level of verbosity, are: "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL".
 
 equilibirum_variable
    whether equilibrium of `demand` or `prices` should be sought. Defaults to `demand`.
