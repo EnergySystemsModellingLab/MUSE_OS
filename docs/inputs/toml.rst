@@ -65,7 +65,7 @@ interpolation_mode
 
 
 log_level:
-   verbosity of the output. Options include: "info", "critical".
+   verbosity of the output. Options include: "info" and "critical", the highest and lowest level of verbosity.
 
 equilibirum_variable
    whether equilibrium of `demand` or `prices` should be sought. Defaults to `demand`.
@@ -141,7 +141,7 @@ control_overshoot
 method_options:
    Additional options for the specific carbon method.
 
-   `fitter` specifies the regression model fit. Predefined options are `linear` and `exponential`. Further options can be defined using the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
+`fitter` specifies the regression model fit. The regresion approximates the model emissions. Predefined options are `linear` and `exponential`. Further options can be defined using the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
 
 
 
@@ -262,6 +262,7 @@ sectors with a finer timeslice framework will be lost.
 Standard sectors
 ----------------
 
+A MUSE model requires at least one sector.
 Sectors are declared in the TOML file by adding a subsection to the `sectors` section:
 
 .. code-block:: TOML
@@ -277,7 +278,7 @@ the user, since it will not affect the model itself.
 
 Sectors are defined in :py:class:`~muse.sectors.Sector`.
 
-A sector accepts a number of attributes and subsections.
+A sector accepts these atributes:
 
 .. _sector-type:
 
@@ -302,6 +303,132 @@ priority
    - "last": 100
    
    Defaults to "last".
+
+interpolation
+   Interpolation method user when filling in missing values. Available interpolation
+   methods depend on the underlying `scipy method's kind attribute`_.
+   
+   .. _scipy method's kind attribute: https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
+
+investment_production
+   In its simplest form, this is the name of a method to compute the production from a
+   sector, as used when splitting the demand across agents. In other words, this is the
+   computation of the production which affects future investments. In it's more general
+   form, *production* can be a subsection of its own, with a "name" attribute. For
+   instance:
+
+   .. code-block:: TOML
+
+      [sectors.residential.production]
+      name = "match"
+      costing = "prices"
+
+   MUSE provides two methods in :py:mod:`muse.production`:
+   
+   - share: the production is the maximum production for the existing capacity and
+      the technology's utilization factor.
+      See :py:func:`muse.production.maximum_production`.
+   - match: production and demand are matched according to a given cost metric. The
+      cost metric defaults to "prices". It can be modified by using the general form
+      given above, with a "costing" attribute. The latter can be "prices",
+      "gross_margin", or "lcoe".
+      See :py:func:`muse.production.demand_matched_production`.
+
+   *production* can also refer to any custom production method registered with MUSE via
+   :py:func:`muse.production.register_production`.
+
+   Defaults to "share".
+
+dispatch_production
+   The name of the production method used to compute the sector's output, as returned
+   to the muse market clearing algorithm. In other words, this is computation of the
+   production method which will affect other sectors.
+
+   It has the same format and options as the *production* attribute above.
+
+Sectors contain a number of subsections:
+interactions
+   Defines interactions between agents. These interactions take place right before new
+   investments are computed. The interactions can be anything. They are expected to
+   modify the agents and their assets. MUSE provides a default set of interactions that
+   have *new* agents pass on their assets to the corresponding *retro* agent, and the
+   *retro* agents pass on the make-up of their assets to the corresponding *new*
+   agents.
+
+   *interactions* are specified as a :ref:`TOML array<toml-array>`, e.g. with double
+   brackets. Each sector can specify an arbitrary number of interactaction, simply by
+   adding an extra interaction row.    
+
+   There are two orthogonal concepts to interactions:
+
+   - a *net* defines the set of agents that interact. A set can contain any
+     number of agents, whether zero, two, or all agents in a sector. See
+     :py:func:`muse.interactions.register_interaction_net`.
+   - an *interaction* defines how the net actually interacts.  See
+     :py:func:`muse.interactions.register_agent_interaction`.
+
+   In practice, we always consider sequences of nets (i.e. more than one net) that
+   interact using the same interaction function.
+
+   Hence, the input looks something like the following:
+
+   .. code-block:: TOML
+
+      [[sectors.commercial.interactions]]
+      net = 'new_to_retro'
+      interaction = 'transfer'
+
+   "new_to_retro" is a function that figures out all "new/retro" pairs of agents.
+   Whereas "transfer" is a function that performs the transfer of assets and
+   information between each pair.
+
+   Furthermore, it is possible to pass parameters to either the net of the interaction
+   as follows:
+
+   .. code-block:: TOML
+
+      [[sectors.commercial.interactions]]
+      net = {"name": "some_net", "param": "some value"}
+      interaction = {"name": "some_interaction", "param": "some other value"}
+
+   The parameters will depend on the net and interaction functions. Neither
+   "new_to_retro" nor "transfer" take any arguments at this point. MUSE interaction
+   facilities are defined in :py:mod:`muse.interactions`.
+
+   An error is raised if and empty network is found. This is the case, for example, if a
+   "new_to_retro" type of network has been defined but no retro agents are included in
+   the sector.
+
+technodata
+
+   Defines technologies and their features, in terms of costs, efficiencies, and emissions.
+
+   *technodata* are specified as an inline TOML table, e.g. with single
+   brackets. A technodata section would look like:
+
+   .. code-block:: TOML
+
+      [sectors.residential.technodata]
+        technodata = '{path}/technodata/residential/Technodata.csv'
+        commodities_in = '{path}/technodata/residential/CommIn.csv'
+        commodities_out = '{path}/technodata/residential/CommOut.csv'
+
+Where:
+   technodata
+      Path to a csv file containing the characterization of the technologies involved in
+      the sector, e.g. lifetime, capital costs, etc... See :ref:`inputs-technodata`.
+
+   timeslice_levels
+      Slices to consider in a level. If absent, defaults to the finest timeslices.  See
+      `Timeslices`_
+
+   commodities_in
+      Path to a csv file describing the inputs of each technology involved in the sector.
+      See :ref:`inputs-iocomms`.
+
+   commodities_out
+      Path to a csv file describing the outputs of each technology involved in the sector.
+      See :ref:`inputs-iocomms`.
 
 subsectors
 
@@ -384,110 +511,6 @@ subsectors
         - :py:func:`~muse.constraints.search_space`: a binary (on-off) constraint
           specifying which technologies are considered for investment.
 
-interpolation
-   Interpolation method user when filling in missing values. Available interpolation
-   methods depend on the underlying `scipy method's kind attribute`_.
-   
-   .. _scipy method's kind attribute: https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
-
-investment_production
-   In its simplest form, this is the name of a method to compute the production from a
-   sector, as used when splitting the demand across agents. In other words, this is the
-   computation of the production which affects future investments. In it's more general
-   form, *production* can be a subsection of its own, with a "name" attribute. For
-   instance:
-
-   .. code-block:: TOML
-
-      [sectors.residential.production]
-      name = "match"
-      costing = "prices"
-
-   MUSE provides two methods in :py:mod:`muse.production`:
-   
-   - share: the production is the maximum production for the existing capacity and
-      the technology's utilization factor.
-      See :py:func:`muse.production.maximum_production`.
-   - match: production and demand are matched according to a given cost metric. The
-      cost metric defaults to "prices". It can be modified by using the general form
-      given above, with a "costing" attribute. The latter can be "prices",
-      "gross_margin", or "lcoe".
-      See :py:func:`muse.production.demand_matched_production`.
-
-   *production* can also refer to any custom production method registered with MUSE via
-   :py:func:`muse.production.register_production`.
-
-   Defaults to "share".
-
-dispatch_production
-   The name of the production method used to compute the sector's output, as returned
-   to the muse market clearing algorithm. In other words, this is computation of the
-   production method which will affect other sectors.
-
-   It has the same format and options as the *production* attribute above.
-
-demand_share
-   A method used to split the MCA demand into seperate parts to be serviced by specific
-   agents. There is currently two options:
-   
-   - "standard_demand", where all the demand is split among the "new" agents, raising
-     and error if retro agents are found for the sector.
-   - "new_and_retro", corresponding to splitting the demand among *new* and *retro* 
-      agents, in adition to splitting it between agents of the same type.
-
-
-interactions
-   Defines interactions between agents. These interactions take place right before new
-   investments are computed. The interactions can be anything. They are expected to
-   modify the agents and their assets. MUSE provides a default set of interactions that
-   have *new* agents pass on their assets to the corresponding *retro* agent, and the
-   *retro* agents pass on the make-up of their assets to the corresponding *new*
-   agents.
-
-   *interactions* are specified as a :ref:`TOML array<toml-array>`, e.g. with double
-   brackets. Each sector can specify an arbitrary number of interactaction, simply by
-   adding an extra interaction row.    
-
-   There are two orthogonal concepts to interactions:
-
-   - a *net* defines the set of agents that interact. A set can contain any
-     number of agents, whether zero, two, or all agents in a sector. See
-     :py:func:`muse.interactions.register_interaction_net`.
-   - an *interaction* defines how the net actually interacts.  See
-     :py:func:`muse.interactions.register_agent_interaction`.
-
-   In practice, we always consider sequences of nets (i.e. more than one net) that
-   interact using the same interaction function.
-
-   Hence, the input looks something like the following:
-
-   .. code-block:: TOML
-
-      [[sectors.commercial.interactions]]
-      net = 'new_to_retro'
-      interaction = 'transfer'
-
-   "new_to_retro" is a function that figures out all "new/retro" pairs of agents.
-   Whereas "transfer" is a function that performs the transfer of assets and
-   information between each pair.
-
-   Furthermore, it is possible to pass parameters to either the net of the interaction
-   as follows:
-
-   .. code-block:: TOML
-
-      [[sectors.commercial.interactions]]
-      net = {"name": "some_net", "param": "some value"}
-      interaction = {"name": "some_interaction", "param": "some other value"}
-
-   The parameters will depend on the net and interaction functions. Neither
-   "new_to_retro" nor "transfer" take any arguments at this point. MUSE interaction
-   facilities are defined in :py:mod:`muse.interactions`.
-
-   An error is raised if and empty network is found. This is the case, for example, if a
-   "new_to_retro" type of network has been defined but no retro agents are included in
-   the sector.
-
 
 output
    Outputs are made up of several components. MUSE is designed to allow users to
@@ -558,36 +581,6 @@ output
 
    Note that the aggregate sink always overwrites the final file, since it will
    overwrite itself.
-
-technodata
-   Path to a csv file containing the characterization of the technologies involved in
-   the sector, e.g. lifetime, capital costs, etc... See :ref:`inputs-technodata`.
-
-timeslice_levels
-   Slices to consider in a level. If absent, defaults to the finest timeslices.  See
-   `Timeslices`_
-
-commodities_in
-   Path to a csv file describing the inputs of each technology involved in the sector.
-   See :ref:`inputs-iocomms`.
-
-commodities_out
-   Path to a csv file describing the outputs of each technology involved in the sector.
-   See :ref:`inputs-iocomms`.
-
-existing_capacity
-   Path to a csv file describing the initial capacity of the sector.
-   See :ref:`inputs-existing-capacity`.
-
-agents
-    Path to a csv file describing the agents in the sector.
-    See :ref:`inputs-agents`.
-
-lpsolver
-   This is the optimisation solver used to make investment decisions. The two options
-   available for this are "adhoc" or "scipy" solvers. The "scipy" solver should be used
-   when introducing minimum constraints and using the trade functionality.
-
 
 --------------
 Preset sectors
@@ -685,13 +678,15 @@ macrodrivers_path:
 .. _preset-regression:
 
 regression_path:
-   Incompatible with :ref:`consumption_path<preset-consumption>` or
-   :ref:`demand_path<preset-demand>`. Path to a CSV file giving the regression
+   Incompatible with :ref:`consumption_path<preset-consumption>`.
+   Path to a CSV file giving the regression
    parameters with respect to the macrodrivers.
    Also requires :ref:`macrodrivers_path<preset-macro>`.
 
 timeslice_shares_path
-   Optional csv file giving shares per timeslice.    The timeslice share definition needs to have a consistent number of timeslices as the
+   Incompatible with :ref:`consumption_path<preset-consumption>` or
+   :ref:`demand_path<preset-demand>`. Optional csv file giving shares per timeslice. 
+   The timeslice share definition needs to have a consistent number of timeslices as the
    sectoral level time slices.
    Requires
    :ref:`macrodrivers_path<preset-consumption>`.
