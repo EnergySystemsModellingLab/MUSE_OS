@@ -167,3 +167,5 @@ shell.nix
 model/
 
 *.html
+
+.idea/

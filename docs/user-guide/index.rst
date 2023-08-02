@@ -10,7 +10,6 @@ We recommend following the tutorials step by step, as the files build on the pre
 .. toctree::
    :maxdepth: 1
    :caption: Tutorial contents:
-   :numbered:
 
    add-solar
    add-agent
