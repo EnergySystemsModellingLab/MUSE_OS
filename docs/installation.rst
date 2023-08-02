@@ -75,12 +75,16 @@ MUSE needs Python to run but, for now, it only works with versions 3.8 and 3.9, 
 
 .. note::
 
-    Windows users should disable the alias for Python that comes by default with Windows and that will try to install Python from the Microsoft Store everytime we write ``python`` in the terminal. To do so, press the ``Windows key`` and start typing ``alias``, when it shows up, click in ``Manage app execution aliases``. In the window that opens, disable the two entries related to Python, like in the image.
+    Windows users should disable the alias for Python that comes by default with Windows and that will try to install Python from the Microsoft Store everytime we write ``python`` in the terminal. To do so, press the ``Windows key`` and start typing ``alias``, when it shows up, click in ``Manage app execution aliases``. In the window that opens, disable all the entries related to Python, like in the image.
 
     .. image:: figures/disable_python_alias.png
         :width: 400
         :align: center
         :alt: Screen to disable the Python aliases defined by Windows.
+
+.. note::
+
+    If you already have a Python version installed from the Microsoft Store, you might have a ``py`` command that will launch Python in the terminal. That Python Launcher will use a Microsoft Stored-installed version of Python. Unless any of those versions, under the control of Microsoft and their autoupdating schedule, happen to be compatible with MUSE, we advise against using the launcher and follow the instructions below, which will give you more control on what is exactly being run and how MUSE is being installed. 
 
 The first thing will be to check if you already have a suitable python version installed. Open a terminal and run:
 
@@ -163,7 +167,7 @@ You should see a very long list of versions to choose from. Let's install the la
 
     pyenv install 3.9.13
 
-The command will take a minute or two to complete, depending on your internet connexion, and show an output similar to the following (this is just an example for Windows):
+The command will take a minute or two to complete, depending on your internet connection, and show an output similar to the following (this is just an example for Windows):
 
 .. code-block:: output
 
@@ -215,7 +219,7 @@ With all the system prepared, installing MUSE is the easiest part:
 
 As above, make sure you run this command with the appropriate Python version.
 
-And that is all! Now, MUSE should be available system wide simply by invoking ``muse`` in the terminal. To check that everything works as expected, open a new terminal and run:
+And that is all! Now, MUSE should be available system wide simply by running ``muse`` in the terminal. For example, open a new terminal and run:
 
 .. code-block:: bash
 
@@ -226,16 +230,31 @@ This will run a default, example model, completing after reaching year 2050. The
 .. code-block::
 
     ...
-    -- 2023-07-20 13:45:25 - muse.demand_share - INFO
+    -- 2023-08-02 09:11:50 - muse.sectors.sector - INFO
+    Running gas for year 2050
+    
+    -- 2023-08-02 09:11:50 - muse.interactions - INFO
+    Net new_to_retro of 1 interactions interacting via transfer
+    
+    -- 2023-08-02 09:11:50 - muse.hooks - INFO
+    Computing initial_asset_transform: default
+    
+    -- 2023-08-02 09:11:50 - muse.hooks - INFO
+    Computing initial_asset_transform: clean
+    
+    -- 2023-08-02 09:11:50 - muse.demand_share - INFO
     Computing demand_share: default
-
-    -- 2023-07-20 13:45:25 - muse.production - INFO
+    
+    -- 2023-08-02 09:11:51 - muse.production - INFO
+    Computing production: max
+    
+    -- 2023-08-02 09:11:51 - muse.production - INFO
+    Computing production: max
+    
+    -- 2023-08-02 09:11:51 - muse.production - INFO
     Computing production: share
-
-    -- 2023-07-20 13:45:25 - muse.mca - WARNING
-    Check growth constraints for wind.
-
-    -- 2023-07-20 13:45:25 - muse.mca - INFO
+    
+    -- 2023-08-02 09:11:51 - muse.mca - INFO
     Finish simulation year 2050!
 
 
