@@ -24,7 +24,9 @@ a whole.
 .. code-block:: TOML
 
    time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
+   foresight = 5
    regions = ["USA"]
+   interest_rate = 0.1
    interpolation_mode = 'Active'
    log_level = 'info'
 
@@ -33,14 +35,18 @@ a whole.
    tolerance = 0.1
    tolerance_unmet_demand = -0.1
 
-time_framework
+*time_framework*
    Required. List of years for which the simulation will run.
 
-region
+*foresight*
+   Required. Integer defining the number of years at which prices are updated at every iteration.
+   It needs to equal or be a multiple of the interval of years in the *time_framework*. Default to 5 years.
+
+*region*
    Subset of regions to consider. If not given, defaults to all regions found in the
    simulation data.
 
-interpolation_mode
+*interpolation_mode*
    interpolation when reading the initial market. One of
    `linear`, `nearest`, `zero`, `slinear`, `quadratic`, `cubic`. Defaults to `linear`.
 
@@ -57,46 +63,28 @@ interpolation_mode
    * `cubic` interpolation is similar to `quadratic` interpolation, but uses a cubic function for interpolation.
 
 
+*log_level*
+   verbosity of the output. Valid options, from the highest to the lowest level of verbosity, are: "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL".
 
-log_level:
-   verbosity of the output.
-
-equilibirum_variable
+*equilibirum_variable*
    whether equilibrium of `demand` or `prices` should be sought. Defaults to `demand`.
 
-maximum_iterations
+*maximum_iterations*
    Maximum number of iterations when searching for equilibrium. Defaults to 3.
 
-tolerance
+*tolerance*
    Tolerance criteria when checking for equilibrium. Defaults to 0.1. 0.1 signifies that 10% of a deviation is allowed among the iterative value of either demand or price over a year per region.
 
-tolerance_unmet_demand
+*tolerance_unmet_demand*
    Criteria checking whether the demand has been met.  Defaults to -0.1.
 
-excluded_commodities
-   List of commodities excluded from the equilibrium considerations. Defaults to the
-   list `["CO2f", "CO2r", "CO2c", "CO2s", "CH4", "N2O", "f-gases"]`.
+*excluded_commodities*
+   List of commodities excluded from the equilibrium considerations.
 
-plugins
+*plugins*
     Path or list of paths to extra python plugins, i.e. files with registered functions
     such as :py:meth:`~muse.outputs.register_output_quantity`.
 
-
-outputs_cache
-   This option behaves exactly like `outputs` below for sectors and accepts the same options but
-   controls the output of cached quantities instead. This option is NOT available for
-   sectors themselves (i.e using `[[sector.comercial.outputs_cache]]` will have no effect). See
-   :py:mod:`muse.outputs.cache` for more details.
-
-   A single row looks like this:
-
-   .. code-block:: TOML
-
-      [[outputs_cache]]
-      quantity = "production"
-      sink = "aggregate"
-      filename = "{cwd}/{default_output_dir}/Cache{Quantity}.csv"
-      index = false
 
 -------------
 Carbon market
@@ -112,31 +100,31 @@ Example
    [carbon_budget_control]
    budget = []
 
-budget
+*budget*
    Yearly budget. There should be one item for each year the simulation will run. In
    other words, if given and not empty, this is a list with the same length as
    `time_framework` from the main section. If not given or an empty list, then the
    carbon market feature is disabled. Defaults to an empty list.
 
-method
-   Method used to equilibrate the carbon market. The only preset option is `fitting`, however this can be expanded with the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
+*method*
+   Method used to equilibrate the carbon market. Available options are `fitting` and `bisection`, however this can be expanded with the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
 
    The market-clearing algortihm iterates over the sectors until the market reaches an equilibrium in the foresight period (the period next to the one analysed). This is represented by a stable variation of a commodity demand (or price) between iterations below a defined tolerance. The market-clearing algorithm samples a user-defined set of carbon prices and estimates a regression model of the global emissions as a function of the carbon price. The regression model is set by the user. The new carbon price is estimated as a root of the regression model estimated at the value of the emission equal to the user-defined emission cap in the foresight period.
 
-commodities
+*commodities*
    Commodities that make up the carbon market. Defaults to an empty list.
 
-control_undershoot
+*control_undershoot*
    Whether to control carbon budget undershoots. This parameter allows for carbon tax credit from one year to be passed to the next in the case of less carbon being emitted than the budget. Defaults to True.
 
-control_overshoot
+*control_overshoot*
    Whether to control carbon budget overshoots. If the amount of carbon emitted is above the carbon budget, this parameter specifies whether this deficit is carried over to the next year. Defaults to True.
 
-method_options:
+*method_options*
    Additional options for the specific carbon method.
 
-   `fitter` specifies the regression model fit. Predefined options are `linear` and `exponential`. Further options can be defined using the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
-
+*fitter*
+   `fitter` specifies the regression model fit. The regresion approximates the model emissions. Predefined options are `linear` and `exponential`. Further options can be defined using the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
 
 ------------------
 Global input files
@@ -152,12 +140,22 @@ explained in the :ref:`toml-primer`.
    regions = '{path}/inputs/Regions.csv'
    global_commodities = '{path}/inputs/MUSEGlobalCommodities.csv'
 
-projections:
+*projections*
    Path to a csv file giving initial market projection. See :ref:`inputs-projection`.
 
-global_commodities:
+*global_commodities*
    Path to a csv file describing the comodities in the simulation. See
    :ref:`inputs-commodities`.
+
+*base_year_import*
+   Optional. Path to a file describing fixed amounts of commodities imported by region.
+   A CSV file containing the consumption in the
+   same format as :ref:`inputs-projection`.
+
+*base_year_export*
+   Optional. Path to a file describing fixed amounts of commodities imported.
+   A CSV file containing the consumption in the
+   same format as :ref:`inputs-projection`.
 
 .. _timeslices_toml:
 
@@ -233,28 +231,31 @@ aggregates such as:
     daylight = ["morning", "afternoon", "early-peak", "late-peak"]
     nightlife = ["evening", "night"]
 
-Once the finest timeslice and its aggregates are given, it is  possible for each sector
-to define the timeslice simply by refering to the slices it will use at each level.
+ It is possible to specify a timeslice level for the mca by adding an
+`mca.timeslice_levels` section, using an inline table format. 
+See section on `Timeslices_`.
 
-.. code-block:: TOML
+*outputs_cache*
+   This option behaves exactly like `outputs` for sectors and accepts the same options but
+   controls the output of cached quantities instead. This option is NOT available for
+   sectors themselves (i.e using `[[sector.comercial.outputs_cache]]` will have no effect). See
+   :py:mod:`muse.outputs.cache` for more details.
 
-    [sectors.some_sector.timeslice_levels]
-    day = ["daylight", "nightlife"]
-    month = ["all-year"]
+   A single row looks like this:
 
-Above, ``sectors.some_sector.timeslice_levels.week`` defaults its value in the finest
-timeslice. Indeed, if the subsection ``sectors.some_sector.timeslice_levels`` is not
-given, then the sector will default to using the finest timeslices.
+   .. code-block:: TOML
 
-Similarly, it is possible to specify a timeslice for the mca by adding an
-`mca.timeslice_levels` section. However, be aware that if the MCA uses a rougher
-timeslice framework, the market will be expressed within it. Hence information from
-sectors with a finer timeslice framework will be lost.
+      [[outputs_cache]]
+      quantity = "production"
+      sink = "aggregate"
+      filename = "{cwd}/{default_output_dir}/Cache{Quantity}.csv"
+      index = false
 
 ----------------
 Standard sectors
 ----------------
 
+A MUSE model requires at least one sector.
 Sectors are declared in the TOML file by adding a subsection to the `sectors` section:
 
 .. code-block:: TOML
@@ -270,18 +271,18 @@ the user, since it will not affect the model itself.
 
 Sectors are defined in :py:class:`~muse.sectors.Sector`.
 
-A sector accepts a number of attributes and subsections.
+A sector accepts these atributes:
 
 .. _sector-type:
 
-type
+*type*
    Defines the kind of sector this is. *Standard* sectors are those with type
    "default". This value corresponds to the name with which a sector class is registerd
    with MUSE, via :py:meth:`~muse.sectors.register_sector`. [INSERT OTHER OPTIONS HERE]
 
 .. _sector-priority:
 
-priority
+*priority*
    An integer denoting which sectors runs when. Lower values imply the sector will run
    earlier. If two sectors share the same priority. Later sectors can depend on earlier
    sectors for the their input. If two sectors share the same priority, then their
@@ -296,13 +297,13 @@ priority
    
    Defaults to "last".
 
-interpolation
+*interpolation*
    Interpolation method user when filling in missing values. Available interpolation
    methods depend on the underlying `scipy method's kind attribute`_.
    
    .. _scipy method's kind attribute: https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
 
-investment_production
+*investment_production*
    In its simplest form, this is the name of a method to compute the production from a
    sector, as used when splitting the demand across agents. In other words, this is the
    computation of the production which affects future investments. In it's more general
@@ -331,24 +332,15 @@ investment_production
 
    Defaults to "share".
 
-dispatch_production
+*dispatch_production*
    The name of the production method used to compute the sector's output, as returned
    to the muse market clearing algorithm. In other words, this is computation of the
    production method which will affect other sectors.
 
    It has the same format and options as the *production* attribute above.
 
-demand_share
-   A method used to split the MCA demand into seperate parts to be serviced by specific
-   agents. There is currently two options:
-   
-   - "standard_demand", where all the demand is split among the "new" agents, raising
-     and error if retro agents are found for the sector.
-   - "new_and_retro", corresponding to splitting the demand among *new* and *retro* 
-      agents, in adition to splitting it between agents of the same type.
-
-
-interactions
+Sectors contain a number of subsections:
+*interactions*
    Defines interactions between agents. These interactions take place right before new
    investments are computed. The interactions can be anything. They are expected to
    modify the agents and their assets. MUSE provides a default set of interactions that
@@ -400,8 +392,140 @@ interactions
    "new_to_retro" type of network has been defined but no retro agents are included in
    the sector.
 
+*technodata*
 
-output
+   Defines technologies and their features, in terms of costs, efficiencies, and emissions.
+
+   *technodata* are specified as an inline TOML table, e.g. with single
+   brackets. A technodata section would look like:
+
+   .. code-block:: TOML
+
+      [sectors.residential.technodata]
+        technodata = '{path}/technodata/residential/Technodata.csv'
+        commodities_in = '{path}/technodata/residential/CommIn.csv'
+        commodities_out = '{path}/technodata/residential/CommOut.csv'
+
+   Where:
+   *technodata*
+      Path to a csv file containing the characterization of the technologies involved in
+      the sector, e.g. lifetime, capital costs, etc... See :ref:`inputs-technodata`.
+
+   *commodities_in*
+      Path to a csv file describing the inputs of each technology involved in the sector.
+      See :ref:`inputs-iocomms`.
+
+   *commodities_out*
+      Path to a csv file describing the outputs of each technology involved in the sector.
+      See :ref:`inputs-iocomms`.
+
+   Once the finest timeslice and its aggregates are given, it is  possible for each sector
+to define the timeslice simply by refering to the slices it will use at each level.
+
+.. _sector-timeslices:
+
+*timeslice_levels*
+   Optional. These define the timeslices of a sector. If not specified, the finest timeslice levels will be used 
+   (See `Timeslices`_).
+   It can be implemented with the following rows:
+
+.. code-block:: TOML
+
+    [sectors.some_sector.timeslice_levels]
+    day = ["daylight", "nightlife"]
+    month = ["all-year"]
+
+   Above, ``sectors.some_sector.timeslice_levels.week`` defaults its value in the finest
+   timeslice. Indeed, if the subsection ``sectors.some_sector.timeslice_levels`` is not
+   given, then the sector will default to using the finest timeslices.
+
+   If the MCA uses a rougher
+   timeslice framework, the market will be expressed within it. Hence information from
+   sectors with a finer timeslice framework will be lost.
+
+*subsectors*
+
+    Subsectors group together agents into separate groups servicing the demand for
+    different commodities. There should be at least one subsector. And there can be as
+    many as required. For instance, a one-subsector setup would look like:
+
+    .. code-block:: toml
+
+        [sectors.gas.subsectors.all]
+        agents = '{path}/technodata/Agents.csv'
+        existing_capacity = '{path}/technodata/gas/Existing.csv'
+
+    A two-subsector could look like:
+
+    .. code-block:: toml
+
+        [sectors.gas.subsectors.methane_and_ethanol]
+        agents = '{path}/technodata/me_agents.csv'
+        existing_capacity = '{path}/technodata/gas/me_existing.csv'
+        commodities = ["methane", "ethanol"]
+
+        [sectors.gas.subsectors.natural]
+        agents = '{path}/technodata/nat_agents.csv'
+        existing_capacity = '{path}/technodata/gas/nat_existing.csv'
+        commodities = ["refined", "crude"]
+
+    In the case of multiple subsectors, it is important to specify disjoint sets of
+    commodities so that each subsector can service a separate demand.
+    The subsectors accept the following keywords:
+
+    *agents*
+        Path to a csv file describing the agents in the sector.
+        See :ref:`user_guide/inputs/agents:agents`.
+
+    *existing_capacity*
+       Path to a csv file describing the initial capacity of the sector.
+       See :ref:`user_guide/inputs/existing_capacity:existing sectoral capacity`.
+
+    *lpsolver*
+        The solver for linear problems to use when figuring out investments. The solvers
+        are registered via :py:func:`~muse.investments.register_investment`. At time of
+        writing, three are available:
+
+        - an "adhoc" solver: Simple in-house solver that ranks the technologies
+          according to cost and sevice the demand incrementally.
+
+        - "scipy" solver: Formulates investment as a true LP problem and solves it using
+          the `scipy solver`_.
+
+        - "cvxopt" solver: Formulates investment as a true LP problem and solves it
+          using the python package `cvxopt`_. `cvxopt`_ is *not* installed by default.
+          Users can install it with ``pip install cvxopt`` or ``conda install cvxopt``.
+
+    *demand_share*
+        A method used to split the MCA demand into seperate parts to be serviced by
+        specific agents. A basic distinction is between *new* and *retrofit* agents: the
+        former asked to respond to an increase of commodity demand investing in new
+        assets; the latter asked to invest in new asset to balance the decommissined
+        assets.
+
+        There are currently two options:
+
+        - :py:func:`~muse.demand_share.new_and_retro`: the demand is split into a
+          retrofit demand corresponding to demand that used to be serviced by
+          decommisioned assets, and the *new* demand.
+        - :py:func:`~muse.demand_share.market_demand`: simply the consumption for the
+          forecast year.
+
+    *constraints*
+        The list of constraints to apply to the LP problem solved by the sector. By
+        default all of the following are included:
+
+        - :py:func:`~muse.constraints.demand`: a lower-bound of the production decision
+          variables specifying the target demand.
+        - :py:func:`~muse.constraints.max_production`: an upper bound limiting how much
+          can be produced for a given capacity.
+        - :py:func:`~muse.constraints.max_capacity_expansion`: an upper bound limiting
+          how much the capacity can grow during each investment event.
+        - :py:func:`~muse.constraints.search_space`: a binary (on-off) constraint
+          specifying which technologies are considered for investment.
+
+
+*output*
    Outputs are made up of several components. MUSE is designed to allow users to
    mix-and-match both how and what to save.
 
@@ -420,13 +544,13 @@ output
 
    The following attributes are available:
 
-   - quantity: Name of the quantity to save. Currently, only `capacity` exists,
-      refering to :py:func:`muse.outputs.capacity`. However, users can
+   - *quantity*: Name of the quantity to save. Currently, `capacity` exists,
+      referring to :py:func:`muse.outputs.capacity`. However, users can
       customize and create further output quantities by registering with MUSE via
       :py:func:`muse.outputs.register_output_quantity`. See
       :py:mod:`muse.outputs` for more details.
 
-   - sink: the sink is the place (disk, cloud, database, etc...) and format with which
+   - *sink*: the sink is the place (disk, cloud, database, etc...) and format with which
       the computed quantity is saved. Currently only sinks that save to files are
       implemented. The filename can specified via `filename`, as given below. The
       following sinks are available: "csv", "netcfd", "excel". However, more sinks can
@@ -434,7 +558,7 @@ output
       :py:func:`muse.outputs.register_output_sink`. See
       :py:mod:`muse.outputs` for more details.
    
-   - filename: defines the format of the file where to save the data. There are several
+   - *filename*: defines the format of the file where to save the data. There are several
       standard values that are automatically substituted:
 
       - cwd: current working directory, where MUSE was started
@@ -448,38 +572,28 @@ output
 
       Defaults to `{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}`.
 
-   - overwrite: If `False` MUSE will issue an error and abort, instead of
+   - *overwrite*: If `False` MUSE will issue an error and abort, instead of
       overwriting an existing file. Defaults to `False`. This prevents important output files from being overwritten.
+   There is a special output sink for aggregating over years. It can be invoked as
+   follows:
 
-technodata
-   Path to a csv file containing the characterization of the technologies involved in
-   the sector, e.g. lifetime, capital costs, etc... See :ref:`inputs-technodata`.
+   .. code-block:: TOML
 
-timeslice_levels
-   Slices to consider in a level. If absent, defaults to the finest timeslices.  See
-   `Timeslices`_
+      [[sectors.commercial.outputs]]
+      quantity = "capacity"
+      sink.aggregate = 'csv'
 
-commodities_in
-   Path to a csv file describing the inputs of each technology involved in the sector.
-   See :ref:`inputs-iocomms`.
+   Or, if specifying additional output, where ... can be any parameter for the final
+   sink:
 
-commodities_out
-   Path to a csv file describing the outputs of each technology involved in the sector.
-   See :ref:`inputs-iocomms`.
+   .. code-block:: TOML
 
-existing_capacity
-   Path to a csv file describing the initial capacity of the sector.
-   See :ref:`inputs-existing-capacity`.
+      [[sectors.commercial.outputs]]
+      quantity = "capacity"
+      sink.aggregate.name = { ... }
 
-agents
-    Path to a csv file describing the agents in the sector.
-    See :ref:`inputs-agents`.
-
-lpsolver
-   This is the optimisation solver used to make investment decisions. The two options
-   available for this are "adhoc" or "scipy" solvers. The "scipy" solver should be used
-   when introducing minimum constraints and using the trade functionality.
-
+   Note that the aggregate sink always overwrites the final file, since it will
+   overwrite itself.
 
 --------------
 Preset sectors
@@ -512,19 +626,19 @@ function of macro-economic data, i.e. population and gdp.
 
 The following attributes are accepted:
 
-type:
+*type*
    See the attribute in the standard mode, :ref:`type<sector-type>`. *Preset* sectors
    are those with type "presets".
 
-priority
+*priority*
    See the attribute in the standard mode, :ref:`priority<sector-priority>`.
 
-timeslices_levels:
+*timeslices_levels*
    See the attribute in the standard mode, `Timeslices`_.
 
 .. _preset-consumption:
 
-consumption_path:
+*consumption_path*
    CSV output files, one per year. This attribute can include wild cards, i.e. '*',
    which can match anything. For instance: `consumption_path = "{cwd}/Consumtion*.csv"` will match any csv file starting with "Consumption" in the
    current working directory. The file names must include the year for which it defines
@@ -542,48 +656,55 @@ consumption_path:
 
    The index column as well as "RegionName", "ProcessName", and "TimeSlice" must be
    present. Further columns are reserved for commodities. "TimeSlice" refers to the
-   index of the timeslice.
+   index of the timeslice. Timeslices should be defined consistently to the sectoral
+   level timeslices.
+   The column "ProcessName" needs to be present and filled in, in order for the data
+   to be read properly but it does not affect the simulation.
 
 
-supply_path:
+*supply_path*
    CSV file, one per year, indicating the amount of a commodities produced. It follows
    the same format as :ref:`consumption_path <preset-consumption>`.
 
-supply_path:
+*supply_path*
    CSV file, one per year, indicating the amount of a commodities produced. It follows
    the same format as :ref:`consumption_path <preset-consumption>`.
 
-prices_path:
+*prices_path*
    CSV file indicating the amount of a commodities produced. The format of the CSV files
    follows that of :ref:`inputs-projection`.
 
 .. _preset-demand:
 
-demand_path:
+*demand_path*
    Incompatible with :ref:`consumption_path<preset-consumption>` or
    :ref:`macrodrivers_path<preset-macro>`. A CSV file containing the consumption in the
    same format as :ref:`inputs-projection`.
 
 .. _preset-macro:
 
-macrodrivers_path:
+*macrodrivers_path*
    Incompatible with :ref:`consumption_path<preset-consumption>` or
    :ref:`demand_path<preset-demand>`. Path to a CSV file giving the profile of the
    macrodrivers. Also requires :ref:`regression_path<preset-regression>`.
 
 .. _preset-regression:
 
-regression_path:
-   Incompatible with :ref:`consumption_path<preset-consumption>` or
-   :ref:`demand_path<preset-demand>`. Path to a CSV file giving the regression
+*regression_path*
+   Incompatible with :ref:`consumption_path<preset-consumption>`.
+   Path to a CSV file giving the regression
    parameters with respect to the macrodrivers.
    Also requires :ref:`macrodrivers_path<preset-macro>`.
 
-timeslice_shares_path
-   Optional csv file giving shares per timeslice. Requires
+*timeslice_shares_path*
+   Incompatible with :ref:`consumption_path<preset-consumption>` or
+   :ref:`demand_path<preset-demand>`. Optional csv file giving shares per timeslice. 
+   The timeslice share definition needs to have a consistent number of timeslices as the
+   sectoral level time slices.
+   Requires
    :ref:`macrodrivers_path<preset-consumption>`.
 
-filters:
+*filters*
    Optional dictionary of entries by which to filter the consumption.  Requires
    :ref:`macrodrivers_path<preset-consumption>`. For instance,
 
@@ -625,24 +746,24 @@ The can be defined in the TOML file as follows:
 For historical reasons, the three `global_input_files` above are required. The sector
 itself can use the following attributes.
 
-type:
+*type*
    See the attribute in the standard mode, :ref:`type<sector-type>`. *Legacy* sectors
    are those with type "legacy".
 
-priority
+*priority*
    See the attribute in the standard mode, :ref:`priority<sector-priority>`.
 
-agregation_level:
+*agregation_level*
    Information relevant to the sector's timeslice.
 
-excess:
+*excess*
    Excess factor used to model early obsolescence.
 
-userdata_path:
+*userdata_path*
    Path to a directory with sector-specific data files.
 
-technodata_path:
+*technodata_path*
    Path to a technodata CSV file. See. :ref:`inputs-technodata`.
 
-output_path:
+*output_path*
    Path to a diretory where the sector will write output files.
