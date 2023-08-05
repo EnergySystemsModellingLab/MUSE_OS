@@ -2,6 +2,7 @@
 
 ## Features
 
+- Add descripion to bisection method ([#149](https://github.com/SGIModel/MUSE_OS/pull/149))
 - Add descripion to demo cases ([#139](https://github.com/SGIModel/MUSE_OS/pull/139))
 - Run link-checker only once a week ([#148](https://github.com/SGIModel/MUSE_OS/pull/148))
 - Update documentation for installing MUSE ([#138](https://github.com/SGIModel/MUSE_OS/pull/138))
