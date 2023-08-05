@@ -336,14 +336,30 @@ def bisection(
     price_too_high_threshold: float = 10,
     fitter: Text = "slinear",
 ) -> float:
-    # to be set as moving value in superloop before emissions start increasing
+    """Applies bisection algorithm to escalate carbon price and meet the budget.
+
+    Arguments:
+        market: Market, with the prices, supply, consumption and demand.
+        sectors: List of sectors,
+        equilibrium: Method for searching maerket equilibrium.
+        carbon_budget: DataArray with the carbon budget.
+        carbon_price: DataArray with the carbon price.
+        commodities: List of carbon-related commodities.
+        sample_size: Number of iterations for bisection.
+        refine_price: Boolean to decide on whether carbon price should be refined.
+        price_too_high_threshold: Threshold to decide what is a price too high.
+        fitter: Interpolation method.
+
+    Returns:
+        Value of global carbon price
+    """
+    # We estimate carbon price, and emission threshold in forecast year
     current = carbon_price.year.min() + sectors[-1].forecast
     future = market.year[-1]
     threshold = carbon_budget.sel(year=future).values
     price = market.prices.sel(year=future, commodity=commodities).mean().values
 
-    niter = sample_size
-    # We create a sample of prices at which we want to calculate emissions
+    # We create a 2-price sample being lower and upper bound of bisection
     time_exp = max(0, (int(future - current)))
     small = round((1 + 0.01) ** time_exp, 4)
     large = round((1 + 0.02) ** time_exp, 4)
@@ -352,11 +368,16 @@ def bisection(
 
     low0 = round(min(sample_prices), 7)
     up0 = round(max(sample_prices), 7)
+
+    # We create a 2-price sample being lower and upper bound of bisection
     lb = bisect_loop(market, sectors, equilibrium, commodities, up0)
     ub = bisect_loop(market, sectors, equilibrium, commodities, low0)
+
+    # Start bisection loop over a number of iterations
+    niter = sample_size
     for n in range(niter):
-        print(n, "iteration bisection")
         if refine_price:
+            # We apply a cap if carbon price beyond threshold
             if max(sample_prices) > price_too_high_threshold:
                 price_too_high_threshold = round(
                     price_too_high_threshold * (1 + 0.1) ** time_exp, 7
@@ -388,18 +409,18 @@ def bisection(
                 commodities,
                 threshold,  # type: ignore
             )
+            # Exit loop if low and upper bound on emissions are close
             if abs(low - up) <= 0.001:
                 new_price = round((low + up) / 2.0, 7)
-
                 break
+            # Exit loop if low and upper bound on emissions are close to threshold
             elif abs(ub - threshold) <= abs(0.1 * threshold):
                 new_price = low
-
                 break
             elif abs(lb - threshold) <= abs(0.1 * threshold):
                 new_price = up
-
                 break
+            # Call bisect_loop function and update up and lb prices
             if low != low0:
                 low0 = low
                 ub = bisect_loop(market, sectors, equilibrium, commodities, low)
@@ -407,10 +428,10 @@ def bisection(
                 up0 = up
                 lb = bisect_loop(market, sectors, equilibrium, commodities, up)
             new_price = round((low + up) / 2.0, 7)
-
+    # We apply a minimum value greater than zero with a negative carbon price
     if new_price <= 0:
         new_price = 1e-2
-    print(new_price, low0, up0, "new_price")
+
     return new_price
 
 
@@ -427,6 +448,24 @@ def min_max_bisect(
     commodities: list,
     threshold: float,
 ):
+    """Applies bisection algorithm to escalate carbon price and meet the budget.
+
+    Arguments:
+        low: Value of carbon price at lower bound.
+        lb: Value of emissions at lower bound.
+        up: Value of carbon price at upper bound.
+        ub: Value of emissions at upper bound.
+        market: Market, with the prices, supply, consumption and demand.
+        sectors: List of sectors,
+        equilibrium: Method for searching maerket equilibrium.
+        commodities: List of carbon-related commodities.
+        sample_size: Number of iterations for bisection.
+        refine_price: Boolean to decide on whether carbon price should be refined.
+        threshold: Threshold to decide what is a price too high.
+
+    Returns:
+        Value of lower  and upper global carbon price
+    """
     denominator = threshold if threshold != 0.0 else 1e-3
     if lb < threshold and ub < threshold:
         # ub too small -> decrease low
@@ -437,7 +476,6 @@ def min_max_bisect(
         up = low if ub > lb else up
         low = low * np.exp(pow)
         low = low if low > 0.0 else 1e-3
-        print("1")
 
     if ub > threshold and lb > threshold:
         # lb too big -> increase up
@@ -448,7 +486,6 @@ def min_max_bisect(
         low = up if lb < ub else low
         up = up * np.exp(pow)
         up = up if up > 0.0 else 1e-3
-        print("2")
 
     if ub > threshold and lb < threshold:
         midpoint = round((low + up) / 2.0, 7)
@@ -457,12 +494,11 @@ def min_max_bisect(
             # midpoint is smaller than lb
             # lb is a function of up price
             up = midpoint
-            print("3a")
+
         else:
             # midpoint is smaller than ub
             # ub is a function of low price
             low = midpoint
-            print("4a")
 
     if ub < threshold and lb > threshold:
         "Inverted bounds"
@@ -473,12 +509,11 @@ def min_max_bisect(
             # midpoint is smaller than lb
             # lb is a function of up price
             up = midpoint
-            print("3b")
+
         else:
             # midpoint is smaller than ub
             # ub is a function of low price
             low = midpoint
-            print("4b")
 
     return low, up
 
@@ -492,6 +527,18 @@ def bisect_loop(
     commodities: list,
     new_price: float,
 ) -> float:
+    """Calls market euilibrium iteration.
+
+    Arguments:
+        market: Market, with the prices, supply, consumption and demand.
+        sectors: List of sectors,
+        equilibrium: Method for searching maerket equilibrium.
+        commodities: List of carbon-related commodities.
+        new_price: New carbon price from bisection.
+
+    Returns:
+        Emissions estimated at the new carbon price.
+    """
     future = market.year[-1]
     new_market = market.copy(deep=True)
     # Assign new carbon price
