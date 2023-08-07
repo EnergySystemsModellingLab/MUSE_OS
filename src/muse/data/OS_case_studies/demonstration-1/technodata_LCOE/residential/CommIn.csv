@@ -1,4 +1,0 @@
-ProcessName,RegionName,Time,Level,electricity,gas,heat,CO2f
-Unit,-,Year,-,PJ/PJ,PJ/PJ,PJ/PJ,kt/PJ
-gasboiler,R1,2020,fixed,0,1.16,0,0
-heatpump,R1,2020,fixed,0.4,0,0,0

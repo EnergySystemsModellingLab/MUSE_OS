@@ -2,6 +2,8 @@
 
 ## Features
 
+- Add descripion to demo cases ([#139](https://github.com/SGIModel/MUSE_OS/pull/139))
+- Run link-checker only once a week ([#148](https://github.com/SGIModel/MUSE_OS/pull/148))
 - Update documentation for installing MUSE ([#138](https://github.com/SGIModel/MUSE_OS/pull/138))
 - Updating pyproject.toml with valid python versions ([#121](https://github.com/SGIModel/MUSE_OS/pull/121))
 - Expand CI workflow ([#119](https://github.com/SGIModel/MUSE_OS/pull/119))
@@ -44,6 +46,7 @@
 
 ## Bug fixes
 
+- Solves missing subsectors in documentation ([#146](https://github.com/SGIModel/MUSE_OS/pull/146))
 - Solves broken links in the documentation ([#137](https://github.com/SGIModel/MUSE_OS/pull/137))
 - NPV fails to align timeslices ([#135]https://github.com/SGIModel/MUSE_OS/pull/135)
 - OS case studies had obsolete output function removed ([#101]https://github.com/SGIModel/MUSE_OS/pull/101)

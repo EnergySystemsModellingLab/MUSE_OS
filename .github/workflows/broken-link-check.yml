@@ -1,12 +1,8 @@
 on:
   schedule:
-    - cron: 0 0 1 * * # run monthly
+    - cron: 0 0 * * 0 # At 12:00 AM, only on Sunday
   repository_dispatch: # run manually
     types: [check-link]
-  push:
-    branches: [main, develop]
-  pull_request:
-      types: [opened, synchronize, reopened]
 
 name: Broken Link Check
 jobs:
