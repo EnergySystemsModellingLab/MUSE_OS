@@ -58,7 +58,7 @@ intersphinx_mapping = {
 bibtex_bibfiles: List[str] = []
 
 # -- GraphViz configuration ----------------------------------
-graphviz_output_format = 'svg'
+graphviz_output_format = "svg"
 
 # -- Options for HTML output -------------------------------------------------
 
