@@ -410,7 +410,7 @@ The documentation can be built with Sphinx:
 
     python -m sphinx -b html docs docs/build
 
-This command will use ``pandoc`` under the hood, which might not be available in your system. If that were the case, install it `following the instructions in the official webpage <https://pandoc.org/installing.html>`_.
+This command will use ``pandoc`` under the hood, which might not be available in your system. If that were the case, install it `following the instructions in the official webpage <https://pandoc.org/installing.html>`_. It will also build the graphs and flow diagrams with ``graphviz``, which also needs to be installed separately from the `official webpage <https://graphviz.org/download/>`_.
 
 The main page for the documentation can then be found at ``docs/build/html/index.html`` and the file can viewed from any web browser.
 
