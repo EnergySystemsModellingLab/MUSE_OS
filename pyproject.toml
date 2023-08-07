@@ -50,6 +50,8 @@ dev = [
     "numpy>=1.17",
     "pytest-xdist",
     "bump2version",
+    "pyinstaller",
+    "pre-commit"
 ]
 doc = [
     "sphinx",
