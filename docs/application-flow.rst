@@ -260,7 +260,9 @@ The sequence of steps related to the carbon budget control are as follows:
             new_price -> end
         }
 
-The **method used to calculate the new carbon price** can be selected by the user. The only option built-in in MUSE at the moment is ``fitting``, however this can be expanded by the user with the ``@register_carbon_budget_method`` hook in ``muse.carbon_budget``. The ``fitting`` method is based in the following algorithm:
+The **method used to calculate the new carbon price** can be selected by the user. There are currently only two options for this method, ``fitting`` and ``bisection``, however this can be expanded by the user with the ``@register_carbon_budget_method`` hook in ``muse.carbon_budget``.
+
+The ``fitting`` method is based in the following algorithm:
 
 .. graphviz::
     :align: center
@@ -288,7 +290,9 @@ The **method used to calculate the new carbon price** can be selected by the use
             fit -> refine -> end
         }
 
-As it can be seen, this method will run the ``Find market equilibrium`` algorithm multiple times and, as a result, the simulation will take significantly longer to complete.
+The ``bisection`` method is a custom implementation of the `well known bisection algorithm <https://en.wikipedia.org/wiki/Bisection_method>`_ on the carbon price to minimize the difference between the carbon budget and the carbon emissions.
+
+Both methods will run the ``Find market equilibrium`` algorithm multiple times and, as a result, the simulation will take significantly longer to complete than if no carbon budget is considered.
 
 .. _find-equilibrium:
 
@@ -339,7 +343,7 @@ Single year iteration
 
 Both in the carbon budget and in the equilibrium calculation, a single year iteration step is involved. It is in this step where MUSE will go through each sector and use the agents to appropriately invest in different technologies, aiming to match these two factors.
 
-**As sectors have different priorities, sectors with lower priorities will run last and see a market updated by the higher priority sectors**. In general, demand sectors should run before conversion sectors and these before supply sectors, such that the later can see the real demand. As these investment in the supply sectors will change the prices of their commodities, the demand of those commodities will change. Balancing that is the purpose of the :ref:`find-equilibrium` loop described above.
+**As sectors have different priorities, sectors with lower priorities will run last and see a market updated by the higher priority sectors**. In general, demand sectors should run before conversion sectors and these before supply sectors, such that the later can see the real demand. Running each sector will update their commodities consumption and production. Balancing them is the purpose of the :ref:`find-equilibrium` loop described above, where the prices of the commodities are updated due to the change in their demand occurring during the single year iteration.
 
 A chart summarising this process is depicted below:
 
