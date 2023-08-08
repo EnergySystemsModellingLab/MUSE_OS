@@ -31,7 +31,8 @@ dependencies = [
     "xlrd==1.2.0",
     "mypy-extensions",
     "pypubsub",
-    "gooey"
+    "gooey",
+    "colored==1.4.4"
 ]
 dynamic = ["version"]
 

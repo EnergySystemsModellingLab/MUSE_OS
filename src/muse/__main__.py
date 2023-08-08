@@ -90,6 +90,7 @@ menu = [
     program_name=f"MUSE - v{VERSION}",
     program_description="ModUlar energy system Simulation Environment",
     menu=menu,
+    richtext_controls=True,
 )
 def run():
     args = parser.parse_args()
