@@ -52,5 +52,5 @@ __all__ = [
     "outputs",
     "sectors",
     "legacy_sectors",
-    VERSION
+    VERSION,
 ]

@@ -1,6 +1,8 @@
 """Makes MUSE executable."""
 import pathlib
-from gooey import GooeyParser, Gooey
+
+from gooey import Gooey, GooeyParser
+
 from muse import VERSION
 
 parser = GooeyParser(description="Run a MUSE simulation")
