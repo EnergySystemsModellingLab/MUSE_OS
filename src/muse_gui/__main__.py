@@ -72,6 +72,8 @@ menu = [
     program_name=f"MUSE - v{VERSION}",
     program_description="ModUlar energy system Simulation Environment",
     menu=menu,
+    progress_regex=r"^Finish simulation year \d+ \((?P<current>\d+)/(?P<total>\d+)\)!$",
+    progress_expr="current / total * 100",
 )
 def run():
     args = parser.parse_args()
