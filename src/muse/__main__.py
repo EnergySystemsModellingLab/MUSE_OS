@@ -43,7 +43,8 @@ def muse_main(settings, model, copy):
     from muse.readers.toml import read_settings
 
     if (not model) and not Path(settings).exists():
-        raise Exception(f"Invalid or missing input: file {settings} does not exist.")
+        full_path = str(Path(settings).absolute())
+        raise Exception(f"Invalid or missing input: file {full_path} does not exist.")
 
     if copy:
         examples.copy_model(name=model if model else "default", path=copy)
