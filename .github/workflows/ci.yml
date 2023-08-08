@@ -145,3 +145,36 @@ jobs:
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  build-standalone:
+    # needs: [regression-tests, unit-tests]
+    name: Build standalone executables
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        python-version: [ "3.9" ]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller
+
+      - name: Build directory-based standalone
+        run: pyinstaller muse-dir.spec --distpath standalone/${{ matrix.platform }}
+
+      - name: Build file-based standalone
+        run: pyinstaller muse-file.spec --distpath standalone/${{ matrix.platform }}
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: standalone/*
