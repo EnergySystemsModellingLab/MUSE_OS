@@ -60,6 +60,16 @@ menu = [
         "name": "Help",
         "items": [
             {
+                "type": "Link",
+                "menuTitle": "Join the mailing list",
+                "url": "https://groups.google.com/g/muse-model",
+            },
+            {
+                "type": "Link",
+                "menuTitle": "Log a question in GitHub",
+                "url": "https://github.com/SGIModel/MUSE_OS/issues/new/choose",
+            },
+            {
                 "type": "AboutDialog",
                 "menuTitle": "About MUSE",
                 "name": "MUSE",
@@ -69,14 +79,14 @@ menu = [
                 "website": "https://www.imperial.ac.uk/muse-energy/",
                 "developer": "https://www.imperial.ac.uk/muse-energy/muser-group/",
                 "license": "BSD-3",
-            }
+            },
         ],
     }
 ]
 
 
 @Gooey(
-    program_name="MUSE",
+    program_name=f"MUSE - v{VERSION}",
     program_description="ModUlar energy system Simulation Environment",
     menu=menu,
 )
