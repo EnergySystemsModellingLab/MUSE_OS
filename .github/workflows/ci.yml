@@ -170,11 +170,11 @@ jobs:
           python -m pip install pyinstaller
           python -m pip install -e .[dev,gui]
 
-#      - name: Build directory-based standalone
-#        run: pyinstaller muse_dir.spec --distpath standalone
+      - name: Build directory-based standalone
+        run: pyinstaller muse_dir.spec --distpath standalone
 
-      - name: Build file-based standalone
-        run: pyinstaller muse_file.spec --distpath standalone
+#      - name: Build file-based standalone
+#        run: pyinstaller muse_file.spec --distpath standalone
 
       - uses: actions/upload-artifact@v3
         with:
