@@ -8,7 +8,7 @@ added_files = [
          ]
 
 a = Analysis(
-    ['src/muse/__main__.py'],
+    ['src/muse_gui/__main__.py'],
     pathex=[],
     binaries=[],
     datas=added_files,

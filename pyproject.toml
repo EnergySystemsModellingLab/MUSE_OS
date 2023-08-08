@@ -31,8 +31,6 @@ dependencies = [
     "xlrd==1.2.0",
     "mypy-extensions",
     "pypubsub",
-    "gooey",
-    "colored==1.4.4"
 ]
 dynamic = ["version"]
 
@@ -64,12 +62,16 @@ doc = [
     "pandoc",
 ]
 excel = ["openpyxl"]
+gui = [
+    "gooey",
+]
 
 [project.urls]
 Homepage = "http://www.sustainablegasinstitute.org/home/muse-energy-model/"
 
 [project.scripts]
-muse = "muse.__main__:muse_main"
+muse = "muse.__main__:run"
+muse_gui = "muse_gui.__main__:run"
 
 [tool.setuptools]
 license-files = ["LICENSE"]
