@@ -168,7 +168,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install pyinstaller
-          python -m pip install .
+          python -m pip install -e .[dev]
 
 #      - name: Build directory-based standalone
 #        run: pyinstaller muse_dir.spec --distpath standalone/${{ matrix.platform }}
@@ -179,4 +179,4 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           path: standalone/MUSE*
-          name: muse_${{ matrix.platform }}
+          name: standalone
