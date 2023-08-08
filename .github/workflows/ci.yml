@@ -170,12 +170,13 @@ jobs:
           python -m pip install pyinstaller
           python -m pip install .
 
-      - name: Build directory-based standalone
-        run: pyinstaller muse_dir.spec --distpath standalone/${{ matrix.platform }}
+#      - name: Build directory-based standalone
+#        run: pyinstaller muse_dir.spec --distpath standalone/${{ matrix.platform }}
 
       - name: Build file-based standalone
-        run: pyinstaller muse_file.spec --distpath standalone/${{ matrix.platform }}
+        run: pyinstaller muse_file.spec --distpath standalone
 
       - uses: actions/upload-artifact@v3
         with:
-          path: standalone/*
+          path: standalone/MUSE*
+          name: muse_${{ matrix.platform }}
