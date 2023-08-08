@@ -1,6 +1,7 @@
 """Makes MUSE executable."""
 import pathlib
 from gooey import GooeyParser, Gooey
+from muse import VERSION
 
 parser = GooeyParser(description="Run a MUSE simulation")
 parser.add_argument(
@@ -42,8 +43,7 @@ def muse_main(settings, model, copy):
     from muse.readers.toml import read_settings
 
     if (not model) and not Path(settings).exists():
-        print(f"Invalid or missing input: file {settings} does not exist.")
-        return
+        raise Exception(f"Invalid or missing input: file {settings} does not exist.")
 
     if copy:
         examples.copy_model(name=model if model else "default", path=copy)
@@ -55,9 +55,30 @@ def muse_main(settings, model, copy):
         MCA.factory(settings).run()
 
 
+menu = [
+    {
+        "name": "Help",
+        "items": [
+            {
+                "type": "AboutDialog",
+                "menuTitle": "About MUSE",
+                "name": "MUSE",
+                "description": "ModUlar energy system Simulation Environment",
+                "version": VERSION,
+                "copyright": "2023",
+                "website": "https://www.imperial.ac.uk/muse-energy/",
+                "developer": "https://www.imperial.ac.uk/muse-energy/muser-group/",
+                "license": "BSD-3",
+            }
+        ],
+    }
+]
+
+
 @Gooey(
     program_name="MUSE",
     program_description="ModUlar energy system Simulation Environment",
+    menu=menu,
 )
 def run():
     args = parser.parse_args()
