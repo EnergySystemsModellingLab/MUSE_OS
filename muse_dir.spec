@@ -1,6 +1,4 @@
 # -*- mode: python ; coding: utf-8 -*-
-import sys
-from muse import VERSION
 
 block_cipher = None
 added_files = [
@@ -29,7 +27,7 @@ exe_gui = EXE(
     a_gui.scripts,
     [],
     exclude_binaries=True,
-    name=f'MUSE_GUI_{VERSION}',
+    name='muse_gui',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -64,7 +62,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name=f'MUSE_{VERSION}',
+    name='muse',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -89,5 +87,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name=f'MUSE_{VERSION}',
+    name='MUSE',
 )

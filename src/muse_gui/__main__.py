@@ -36,6 +36,13 @@ parser.add_argument(
     "data. Exits without running the model.",
     widget="DirChooser",
 )
+parser.add_argument(
+    "--working-directory",
+    default=str(pathlib.Path.home()),
+    type=pathlib.Path,
+    help="Sets the working directory.",
+    widget="DirChooser",
+)
 
 
 menu = [
@@ -72,11 +79,17 @@ menu = [
     program_name=f"MUSE - v{VERSION}",
     program_description="ModUlar energy system Simulation Environment",
     menu=menu,
+    default_size=(600, 650),
     progress_regex=r"^Finish simulation year \d+ \((?P<current>\d+)/(?P<total>\d+)\)!$",
     progress_expr="current / total * 100",
+    timing_options={
+        "show_time_remaining": True,
+        "hide_time_remaining_on_complete": True,
+    },
 )
 def run():
     args = parser.parse_args()
+    os.chdir(args.working_directory)
     muse_main(args.settings, args.model, args.copy)
 
 
