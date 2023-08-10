@@ -107,7 +107,7 @@ Example
    carbon market feature is disabled. Defaults to an empty list.
 
 *method*
-   Method used to equilibrate the carbon market. Available options are `fitting` and `bisection`, however this can be expanded with the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
+   Method used to equilibrate the carbon market. Available options are `fitting` and `bisection`, however this can be expanded with the `@register_carbon_budget_method` hook in `muse.carbon_budget`.
 
    The market-clearing algortihm iterates over the sectors until the market reaches an equilibrium in the foresight period (the period next to the one analysed). This is represented by a stable variation of a commodity demand (or price) between iterations below a defined tolerance. The market-clearing algorithm samples a user-defined set of carbon prices and estimates a regression model of the global emissions as a function of the carbon price. The regression model is set by the user. The new carbon price is estimated as a root of the regression model estimated at the value of the emission equal to the user-defined emission cap in the foresight period.
 
@@ -284,7 +284,7 @@ A sector accepts these atributes:
 
 *priority*
    An integer denoting which sectors runs when. Lower values imply the sector will run
-   earlier. If two sectors share the same priority. Later sectors can depend on earlier
+   earlier. Later sectors can depend on earlier
    sectors for the their input. If two sectors share the same priority, then their
    order is not defined. Indeed, it should indicate that they can run in parallel.
    For simplicity, the keyword also accepts standard values:
