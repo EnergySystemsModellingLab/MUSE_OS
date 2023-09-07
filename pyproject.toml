@@ -60,6 +60,7 @@ doc = [
     "sphinxcontrib-bibtex",
     "ipython",
     "pandoc",
+    "seaborn"
 ]
 excel = ["openpyxl"]
 gui = [
