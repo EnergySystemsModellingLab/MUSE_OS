@@ -1,11 +1,7 @@
+.. _normal-installation:
 
-.. contents::
-
-Installing MUSE
-===============
-
-Recommended installation
-------------------------
+Normal installation
+-------------------
 
 To help you installing MUSE in your system we will follow these steps:
 
@@ -14,7 +10,7 @@ To help you installing MUSE in your system we will follow these steps:
 - `Installing pipx`_: A Python application manager that facilitates installing, keeping applications updated and run them in their own isolated environments.
 - `Installing MUSE itself`_
 
-In the following sections, we will guide you step by step in configuring your system so it can run MUSE. At the end, we include alternative ways of installing MUSE if this method does not work for any reason, for advanced users and for developers of MUSE.
+In the following sections, we will guide you step by step in configuring your system so it can run MUSE. At the end, we include alternative ways of installing MUSE if this method does not work for any reason and for advanced users.
 
 .. note::
 
@@ -33,8 +29,6 @@ In the following sections, we will guide you step by step in configuring your sy
             python -m pipx install muse-os
 
     - After this, MUSE will be available to use system wide simply by invoking ``muse`` in the terminal, for example ``muse --model default``.
-
-
 
 Launching a terminal
 ~~~~~~~~~~~~~~~~~~~~
@@ -84,7 +78,7 @@ MUSE needs Python to run but, for now, it only works with versions 3.8 and 3.9, 
 
 .. note::
 
-    If you already have a Python version installed from the Microsoft Store, you might have a ``py`` command that will launch Python in the terminal. That Python Launcher will use a Microsoft Stored-installed version of Python. Unless any of those versions, under the control of Microsoft and their autoupdating schedule, happen to be compatible with MUSE, we advise against using the launcher and follow the instructions below, which will give you more control on what is exactly being run and how MUSE is being installed. 
+    If you already have a Python version installed from the Microsoft Store, you might have a ``py`` command that will launch Python in the terminal. That Python Launcher will use a Microsoft Stored-installed version of Python. Unless any of those versions, under the control of Microsoft and their autoupdating schedule, happen to be compatible with MUSE, we advise against using the launcher and follow the instructions below, which will give you more control on what is exactly being run and how MUSE is being installed.
 
 The first thing will be to check if you already have a suitable python version installed. Open a terminal and run:
 
@@ -92,7 +86,7 @@ The first thing will be to check if you already have a suitable python version i
 
     python --version
 
-If the output is ``Python 3.8.X`` or ``Python 3.9.X``, where ``X`` is any number, then you have a version of Python compatible with MUSE and you can skip this section altogether. Move to `Installing pipx`_. In any other case, keep reading.
+If the output is ``Python 3.8.X`` or ``Python 3.9.X``, where ``X`` is any number, then **you have a version of Python compatible with MUSE and you can skip this section altogether**. Move to `Installing pipx`_. In any other case, keep reading.
 
 There are multiple ways of installing Python, as well as multiple distributions. Here we have opted for the one that we believe is simplest, requires the smallest downloads and gives the maximum flexibility: using ``pyenv``.
 
@@ -232,189 +226,27 @@ This will run a default, example model, completing after reaching year 2050. The
     ...
     -- 2023-08-02 09:11:50 - muse.sectors.sector - INFO
     Running gas for year 2050
-    
+
     -- 2023-08-02 09:11:50 - muse.interactions - INFO
     Net new_to_retro of 1 interactions interacting via transfer
-    
+
     -- 2023-08-02 09:11:50 - muse.hooks - INFO
     Computing initial_asset_transform: default
-    
+
     -- 2023-08-02 09:11:50 - muse.hooks - INFO
     Computing initial_asset_transform: clean
-    
+
     -- 2023-08-02 09:11:50 - muse.demand_share - INFO
     Computing demand_share: default
-    
+
     -- 2023-08-02 09:11:51 - muse.production - INFO
     Computing production: max
-    
+
     -- 2023-08-02 09:11:51 - muse.production - INFO
     Computing production: max
-    
+
     -- 2023-08-02 09:11:51 - muse.production - INFO
     Computing production: share
-    
+
     -- 2023-08-02 09:11:51 - muse.mca - INFO
     Finish simulation year 2050!
-
-
-Alternative installation instructions
--------------------------------------
-
-If you don't want to use ``pyenv`` or ``pipx``, or if you are having trouble with those tools, there are a couple of alternatives.
-
-Installing Anaconda Python
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We have chosen ``pyenv`` above because it is extremely lightweight and unobtrusive with your operative system. However, you might want to consider a more fully fledged Python distribution like Anaconda, specially if your work involved non-python packages or a lot of data science and machine learning tools.
-
-Regardless of the reason, if you want to follow this route just go to the official `Anaconda webpage <https://www.anaconda.com/>`_ and download and install a version appropriate for your operative system. Do not worry about the Python version as ``conda`` will let you choose that when creating a virtual environment.
-
-The installer should guide you step by step on the process of installing Anaconda and configuring your system to use it as your Python installation.
-
-Creating virtual environments
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Although not strictly necessary, **creating a virtual environment is highly recommended** regardless of how you installed Python. It will isolate users and developers from changes occurring on their operating system, and from conflicts between python packages and it ensures reproducibility from day to day.
-
-Using ``pipx`` ensures that each application it installs has its own virtual environment, running it under the hood. However, you can explicitly create and manage the virtual environment if you prefer.
-
-Creating a ``conda`` virtual environment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-This option is available only if you installed Anaconda Python. Depending on the settings you used when installing Anaconda and your operative system, you might have ``conda`` available in your normal terminal or you might need to use the Anaconda Prompt.
-
-``conda`` not only lets you create a virtual environment but also selecting which python version to use within, independently of the version of Anaconda Python installed, which means it can be an alternative to ``pyenv`` if it happens that you already have Anaconda installed in your system.
-
-To create an environment called ``muse_env`` run:
-
-.. code-block:: bash
-
-    conda create -n muse_env python=3.9
-
-Now, you can activate the environment with:
-
-.. code-block:: bash
-
-    conda activate muse_env
-
-Later, to recover the system-wide "normal" python, deactivate the environment with:
-
-.. code-block:: bash
-
-    conda deactivate
-
-Creating a virtual environment with ``venv``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Modern Python versions, regardless of their origin, come with a built in tool to create virtual environments, ``venv``. However, contrary to ``conda`` it does not let you select the version of Python that will be used - it will be the same one you are using to create the environment. Therefore, you still need to make sure your version of Python is compatible with MUSE. You can check it with ``python --version``.
-
-Another caveat is that the virtual environment will be created in a specific folder, so whenever you want to use it in the future, you will need to remember in what folder it was created and activate the environment from there.
-
-You can create a virtual environment with:
-
-.. code-block:: bash
-
-    python -m venv venv
-
-And then you activate the environment with:
-
-- Linux:
-
-    .. code-block:: bash
-
-        source venv/bin/activate
-
-- MacOS:
-
-    .. code-block:: zsh
-
-        . venv/bin/activate
-
-- Windows:
-
-    .. code-block:: powershell
-
-        venv\Scripts\Activate.ps1
-
-Later, to recover the system-wide "normal" python, deactivate the environment with:
-
-.. code-block:: bash
-
-    deactivate
-
-Installing MUSE in a virtual environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Regardless of the method used, **once it has been created and activated**, you can install ``MUSE`` within using:
-
-.. code-block:: bash
-
-    python -m pip install muse-os
-
-And then use it by invoking ``muse`` with the relevant input arguments. Keep in mind that, contrary to using ``pipx``, in this case **you will need to manually activate the environment every time you want to use MUSE**.
-
-Instructions for development
-----------------------------
-
-Developers of MUSE will need to have the version control tool ``git`` installed in their system and be familiar with its usage. The `Introduction to Git and GitHub for software development <https://imperialcollegelondon.github.io/introductory_grad_school_git_course/>`_ course created by `Imperial RSE Team <https://www.imperial.ac.uk/admin-services/ict/self-service/research-support/rcs/service-offering/research-software-engineering/>`_ can be a good place to start.
-
-Installing MUSE source code in editable mode
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Once you have ``git`` in your system, clone MUSE repository with:
-
-.. code-block:: bash
-
-    git clone https://github.com/SGIModel/MUSE_OS.git
-
-Then, we will create a virtual environment, either using ``conda`` or using ``venv`` as explained above, and install MUSE within the environment:
-
-.. code-block:: bash
-
-    cd MUSE_OS
-    # 1- Create virtual environment
-    # 2- Activate virtual environment
-    # 3- Finally, install MUSE in editable mode with:
-    python -m pip install -e .[dev,doc]
-
-Depending on your system, you might need to add quotation marks around ``[dev,doc]`` as in ``"[dev,doc]"``. This will install MUSE and all the dependencies required for its development. The downloaded code can be modified and the changes will be automatically reflected in the environment.
-
-Installing pre-commit hooks
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To ensure the consistency of the code with other developers, install the pre-commit hooks, which will run a series of checks whenever there is a new commit:
-
-.. code-block:: bash
-
-    python -m pip install pre-commit
-    pre-commit install
-
-Running tests
-~~~~~~~~~~~~~
-
-In the developing phase, MUSE can also be used to run test cases to check that the model would reproduce expected results from a defined set of input data. Tests can be run with the command [pytest](https://docs.pytest.org/en/latest/), from the testing framework of the same name.
-
-Within the ``MUSE-OS`` directory, just run:
-
-.. code-block:: bash
-
-    python -m pytest
-
-Building the documentation
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The documentation can be built with Sphinx:
-
-.. code-block:: bash
-
-    python -m sphinx -b html docs docs/build
-
-This command will use ``pandoc`` under the hood, which might not be available in your system. If that were the case, install it `following the instructions in the official webpage <https://pandoc.org/installing.html>`_. It will also build the graphs and flow diagrams with ``graphviz``, which also needs to be installed separately from the `official webpage <https://graphviz.org/download/>`_.
-
-The main page for the documentation can then be found at ``docs/build/html/index.html`` and the file can viewed from any web browser.
-
-Configuring VSCode
-~~~~~~~~~~~~~~~~~~
-
-`VSCode <https://code.visualstudio.com/>`_ users will find that the repository is setup with default settings file.  Users will still need to `choose the virtual environment <https://code.visualstudio.com/docs/python/environments#_select-and-activate-an-environment>`_, or conda environment where to run the code. This will change the ``.vscode/settings.json`` file and add a user-specific path to it. Users should try and avoid committing changes to ``.vscode/settings.json`` indiscriminately.
