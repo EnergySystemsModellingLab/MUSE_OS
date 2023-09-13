@@ -1,5 +1,5 @@
-Alternative installation instructions
--------------------------------------
+Alternative installation
+------------------------
 
 If the :ref:`normal-installation` does not work for you, you don't want to use ``pyenv`` or ``pipx``, or if you are having trouble with those tools, there are a couple of alternatives.
 
@@ -20,6 +20,8 @@ Creating virtual environments
 Although not strictly necessary, **creating a virtual environment is highly recommended** regardless of how you installed Python. It will isolate users and developers from changes occurring on their operating system, and from conflicts between python packages and it ensures reproducibility from day to day.
 
 Using ``pipx`` ensures that each application it installs has its own virtual environment, running it under the hood. However, you can explicitly create and manage the virtual environment if you prefer.
+
+.. _conda-venvs:
 
 Creating a ``conda`` virtual environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

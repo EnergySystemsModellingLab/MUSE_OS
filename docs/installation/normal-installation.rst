@@ -39,7 +39,7 @@ All operative systems have a Terminal application that let you run commands. You
 - **MacOS**: Press ``Super key + Space`` to open the search box. There, type ``Terminal`` and press ``Enter``.
 - **Windows**: Windows comes with a couple of options. We will be using ``Windows PowerShell``. Press the ``Windows key`` and start typing ``PowerShell``. When the application shows up, click to on it.
 
-    .. image:: figures/launch_power_shell.png
+    .. image:: ../figures/launch_power_shell.png
        :width: 500
        :align: center
        :alt: Launching Windows PowerShell from the menu
@@ -71,7 +71,7 @@ MUSE needs Python to run but, for now, it only works with versions 3.8 and 3.9, 
 
     Windows users should disable the alias for Python that comes by default with Windows and that will try to install Python from the Microsoft Store everytime we write ``python`` in the terminal. To do so, press the ``Windows key`` and start typing ``alias``, when it shows up, click in ``Manage app execution aliases``. In the window that opens, disable all the entries related to Python, like in the image.
 
-    .. image:: figures/disable_python_alias.png
+    .. image:: ../figures/disable_python_alias.png
         :width: 400
         :align: center
         :alt: Screen to disable the Python aliases defined by Windows.
@@ -92,7 +92,7 @@ There are multiple ways of installing Python, as well as multiple distributions.
 
 .. note::
 
-    If you have Anaconda Python installed, then you can use it instead of ``pyenv`` to create an environment with a suitable Python version. Go to section `Creating a conda virtual environment`_ and jump to `Installing pipx`_ when it is completed.
+    If you have Anaconda Python installed, then you can use it instead of ``pyenv`` to create an environment with a suitable Python version. Go to section :ref:`conda-venvs` and jump to `Installing pipx`_ when it is completed.
 
 Installing ``pyenv``
 ^^^^^^^^^^^^^^^^^^^^
