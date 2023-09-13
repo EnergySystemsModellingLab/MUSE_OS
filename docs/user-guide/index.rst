@@ -1,3 +1,4 @@
+.. _customising-muse:
 
 Customising MUSE Tutorials
 ==========================
