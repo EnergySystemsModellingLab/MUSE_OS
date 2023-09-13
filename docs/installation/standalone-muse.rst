@@ -3,7 +3,7 @@
 Standalone MUSE
 ---------------
 
-MUSE is also available as a standalone application for Windows that bundles together Python itself and all its dependencies. There is nothing to install upfront, just downloading the bundle and putting it in a known location in your hard drive, so you can access the executables. This approach has the advantage that it comes with no extra effort of configuring your system with a Python version compatible with MUSE (see :ref:`normal-installation`), but it gives you the least flexibility when new versions of MUSE are release, as you need to download the whole bundle again and manually replace the previous one.
+MUSE is available as a standalone application for Windows that bundles together Python itself and all its dependencies. There is nothing to install upfront, just downloading the bundle and putting it in a known location in your hard drive, so you can access the executables. This approach has the advantage that it comes with no extra effort of configuring your system with a Python version compatible with MUSE (see :ref:`normal-installation`), but it gives you the least flexibility when new versions of MUSE are release, as you need to download the whole bundle again and manually replace the previous one.
 
 To get and install the standalone version of MUSE simply:
 
@@ -37,7 +37,7 @@ You can do all of the above by doing right click in ``muse_gui.exe`` and choosin
 Running MUSE from the terminal
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To run ``muse.exe`` from the terminal, you will need first to navigate (in the terminal) to the folder where you unzip the bundle, which is certainly inconvenient. To avoid having to do that, you can add that folder to the PATH, so it is accessible anywhere in your system. To do that, follow these steps:
+To run ``muse.exe`` from the terminal (see the section on :ref:`launch-terminal`), you will need first to navigate (in the terminal) to the folder where you unzip the bundle, which is certainly inconvenient. To avoid having to do that, you can add that folder to the PATH, so it is accessible anywhere in your system. To do that, follow these steps:
 
 1. Launch the "Edit the system environment variables" tool. You can search for it in the Start menu.
 

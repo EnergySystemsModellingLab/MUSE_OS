@@ -1,7 +1,7 @@
 .. _normal-installation:
 
-Normal installation
--------------------
+Normal installation (``pipx`` based)
+------------------------------------
 
 To help you installing MUSE in your system we will follow these steps:
 
@@ -29,6 +29,8 @@ In the following sections, we will guide you step by step in configuring your sy
             python -m pipx install muse-os
 
     - After this, MUSE will be available to use system wide simply by invoking ``muse`` in the terminal, for example ``muse --model default``.
+
+.. _launch-terminal:
 
 Launching a terminal
 ~~~~~~~~~~~~~~~~~~~~

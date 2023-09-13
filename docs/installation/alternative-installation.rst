@@ -1,5 +1,7 @@
-Alternative installation
-------------------------
+.. _alternative-installation:
+
+Alternative installation (Virtual environment + ``pip`` based)
+--------------------------------------------------------------
 
 If the :ref:`normal-installation` does not work for you, you don't want to use ``pyenv`` or ``pipx``, or if you are having trouble with those tools, there are a couple of alternatives.
 

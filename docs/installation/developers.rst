@@ -1,5 +1,7 @@
-Instructions for development
-----------------------------
+.. _developers:
+
+Developers
+----------
 
 Developers of MUSE will need to have the version control tool ``git`` installed in their system and be familiar with its usage. The `Introduction to Git and GitHub for software development <https://imperialcollegelondon.github.io/introductory_grad_school_git_course/>`_ course created by `Imperial RSE Team <https://www.imperial.ac.uk/admin-services/ict/self-service/research-support/rcs/service-offering/research-software-engineering/>`_ can be a good place to start.
 
