@@ -365,7 +365,9 @@ class MCA(object):
                 self.market, self.sectors, year=self.time_framework[year_idx]
             )  # type: ignore
             self.outputs_cache.consolidate_cache(year=self.time_framework[year_idx])
-            getLogger(__name__).info(f"Finish simulation year {years[0]}!")
+            getLogger(__name__).info(
+                f"Finish simulation year {years[0]} ({year_idx+1}/{nyear})!"
+            )
 
     def calibrate_legacy_sectors(self):
         """Run a calibration step in the lagacy sectors

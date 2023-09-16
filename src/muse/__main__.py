@@ -1,29 +1,32 @@
 """Makes MUSE executable."""
-import click
+import pathlib
+from argparse import ArgumentParser
 
-INPUT_PATH = click.Path(exists=False, file_okay=True, resolve_path=True)
-MODEL_PATH = click.Path(file_okay=False, resolve_path=True)
-MODELS = click.Choice(
-    ["default", "multiple-agents", "medium", "minimum-service", "trade"]
+parser = ArgumentParser(description="Run a MUSE simulation")
+parser.add_argument(
+    "settings",
+    nargs="?",
+    default="settings.toml",
+    type=pathlib.Path,
+    help="Path to the TOML file with the simulation settings.",
 )
-
-
-@click.command(context_settings=dict(help_option_names=["-h", "--help"]))
-@click.argument("settings", default="settings.toml", type=INPUT_PATH)
-@click.option(
+parser.add_argument(
     "--model",
-    type=MODELS,
-    help="Runs a model distributed with MUSE. SETTINGS is ignored.",
+    default=None,
+    choices=["default", "multiple-agents", "medium", "minimum-service", "trade"],
+    help="Runs a model distributed with MUSE. "
+    "If provided, the 'settings' input is ignored.",
 )
-@click.option(
+parser.add_argument(
     "--copy",
-    type=MODEL_PATH,
-    help=(
-        "Folder where to copy the model specified by the '--model' option. "
-        "The folder must not exist: this command will refuse to overwrite existing "
-        "data. Exits without running the model."
-    ),
+    default=None,
+    type=pathlib.Path,
+    help="Folder where to copy the model specified by the 'model' option. "
+    "The folder must not exist: this command will refuse to overwrite existing "
+    "data. Exits without running the model.",
 )
+
+
 def muse_main(settings, model, copy):
     """Runs a MUSE simulation.
 
@@ -37,8 +40,8 @@ def muse_main(settings, model, copy):
     from muse.readers.toml import read_settings
 
     if (not model) and not Path(settings).exists():
-        print(f"Invalid or missing input: file {settings} does not exist.")
-        return
+        full_path = str(Path(settings).absolute())
+        raise Exception(f"Invalid or missing input: file {full_path} does not exist.")
 
     if copy:
         examples.copy_model(name=model if model else "default", path=copy)
@@ -50,8 +53,10 @@ def muse_main(settings, model, copy):
         MCA.factory(settings).run()
 
 
-if "__main__" == __name__:
-    from sys import argv, executable
+def run():
+    args = parser.parse_args()
+    muse_main(args.settings, args.model, args.copy)
 
-    argv[0] = "%s -m muse" % executable
-    muse_main()
+
+if "__main__" == __name__:
+    run()

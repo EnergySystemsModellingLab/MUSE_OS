@@ -29,6 +29,7 @@ extensions = [
     "sphinxcontrib.bibtex",
     "IPython.sphinxext.ipython_console_highlighting",
     "IPython.sphinxext.ipython_directive",
+    "sphinx.ext.graphviz",
 ]
 source_suffix = {".rst": "restructuredtext", ".txt": "markdown", ".md": "markdown"}
 templates_path = ["_templates"]
@@ -55,6 +56,9 @@ intersphinx_mapping = {
 }
 
 bibtex_bibfiles: List[str] = []
+
+# -- GraphViz configuration ----------------------------------
+graphviz_output_format = "svg"
 
 # -- Options for HTML output -------------------------------------------------
 

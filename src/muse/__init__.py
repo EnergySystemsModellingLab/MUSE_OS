@@ -1,8 +1,10 @@
 """MUSE model"""
+import os
+
 VERSION = "1.0.2"
 
 
-def _create_logger():
+def _create_logger(color: bool = True):
     """Creates the main logger.
 
     Mainly a convenience function, so logging configuration can happen in one place.
@@ -12,11 +14,16 @@ def _create_logger():
     logger = logging.getLogger(name=__name__)
     formatter = "-- %(asctime)s - %(name)s - %(levelname)s\n%(message)s\n"
 
-    try:
-        import coloredlogs
+    if color:
+        try:
+            import coloredlogs
 
-        coloredlogs.install(logger=logger, fmt=formatter)
-    except ImportError:
+            coloredlogs.install(logger=logger, fmt=formatter)
+        except ImportError:
+            console = logging.StreamHandler()
+            console.setFormatter(logging.Formatter(formatter, datefmt="%d-%m-%y %H:%M"))
+            logger.addHandler(console)
+    else:
         console = logging.StreamHandler()
         console.setFormatter(logging.Formatter(formatter, datefmt="%d-%m-%y %H:%M"))
         logger.addHandler(console)
@@ -26,7 +33,7 @@ def _create_logger():
     return logger
 
 
-logger = _create_logger()
+logger = _create_logger(os.environ.get("MUSE_COLOR_LOG") != "False")
 """ Main logger """
 
 __all__ = [
@@ -52,4 +59,5 @@ __all__ = [
     "outputs",
     "sectors",
     "legacy_sectors",
+    VERSION,
 ]
