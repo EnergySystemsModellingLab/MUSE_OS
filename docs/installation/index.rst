@@ -6,7 +6,7 @@ There are several ways of installing MUSE depending on your level of proficiency
 The following table summarises the different options to help you decide on the best one for you:
 
 +-----------------------------+--------------------------+------------------------+-------------------------+-----------------------+
-|                             | **Standalone**           | **pipx**               | **Virtual env. + pip**  | **Developers**        |
+|                             | **Standalone**           | **pipx-based**         | **Virtual env. based**  | **Developers**        |
 +=============================+==========================+========================+=========================+=======================+
 | **Installation complexity** | Easy                     | Medium                 | High                    | Highest               |
 +-----------------------------+--------------------------+------------------------+-------------------------+-----------------------+
@@ -23,9 +23,9 @@ The following table summarises the different options to help you decide on the b
 | **Operative system**        | Windows only             | Win, Linux, MacOS      | Win, Linux, MacOS       | Win, Linux, MacOS     |
 +-----------------------------+--------------------------+------------------------+-------------------------+-----------------------+
 
-The :ref:`standalone-muse` and :ref:`normal-installation` installation methods should be the preferred ones for most users who just want to use MUSE *as is* or using custom plugins that only need dependencies already used by MUSE (eg. ``pandas``).
+The :ref:`standalone-muse` and :ref:`pipx-based` installation methods should be the preferred ones for most users who just want to use MUSE *as is* or using custom plugins that only need dependencies already used by MUSE (eg. ``pandas``).
 
-The :ref:`alternative-installation` gives your more flexibility in using and expanding MUSE, enable its use programmatically, i.e. within a python script or Jupyter notebook, as well as creating plugins with arbitrary complexity and dependencies. This comes at the cost of a more complex installation and running process that requires creating and activating a virtual environment manually.
+The :ref:`virtual-env-based` gives your more flexibility in using and expanding MUSE, enable its use programmatically, i.e. within a python script or Jupyter notebook, as well as creating plugins with arbitrary complexity and dependencies. This comes at the cost of a more complex installation and running process that requires creating and activating a virtual environment manually.
 
 The :ref:`developers` method should only by used by developers, i.e. those who want to actively contribute to the MUSE code base. It involves the installation of other tools, like git or pandoc, as well as the need to follow some instructions on how the new code is formatted, the documentation created, etc.
 
@@ -33,6 +33,6 @@ The :ref:`developers` method should only by used by developers, i.e. those who w
    :maxdepth: 1
 
    standalone-muse
-   normal-installation
-   alternative-installation
+   pipx-based
+   virtual-env-based
    developers

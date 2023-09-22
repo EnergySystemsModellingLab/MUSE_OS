@@ -3,7 +3,7 @@
 Standalone MUSE
 ---------------
 
-MUSE is available as a standalone application for Windows that bundles together Python itself and all its dependencies. There is nothing to install upfront, just downloading the bundle and putting it in a known location in your hard drive, so you can access the executables. This approach has the advantage that it comes with no extra effort of configuring your system with a Python version compatible with MUSE (see :ref:`normal-installation`), but it gives you the least flexibility when new versions of MUSE are release, as you need to download the whole bundle again and manually replace the previous one.
+MUSE is available as a standalone application for Windows that bundles together Python itself and all its dependencies. There is nothing to install upfront, just downloading the bundle and putting it in a known location in your hard drive, so you can access the executables. This approach has the advantage that it comes with no extra effort of configuring your system with a Python version compatible with MUSE (see :ref:`pipx-based`), but it gives you the least flexibility when new versions of MUSE are release, as you need to download the whole bundle again and manually replace the previous one.
 
 To get and install the standalone version of MUSE simply:
 
@@ -18,8 +18,8 @@ Inside the resulting directory you will see many files and documents related to 
        :alt: Window of the GUI version of MUSE
 
 
-Making MUSE more accessible
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Access MUSE from the desktop
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 While the above works totally fine and you do not need anything else, navigating to the appropriate folder to run MUSE every time can be tiresome. To avoid that, you could:
 

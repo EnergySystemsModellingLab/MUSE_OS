@@ -1,16 +1,14 @@
-.. _alternative-installation:
+.. _virtual-env-based:
 
-Alternative installation (Virtual environment + ``pip`` based)
---------------------------------------------------------------
+Virtual environment-based installation
+--------------------------------------
 
-If the :ref:`normal-installation` does not work for you, you don't want to use ``pyenv`` or ``pipx``, or if you are having trouble with those tools, there are a couple of alternatives.
+If the :ref:`pipx-based` does not work for you, you don't want to use ``pyenv`` or ``pipx``, or if you are having trouble with those tools, there are a couple of alternatives.
 
 Installing Anaconda Python
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We have chosen ``pyenv`` above because it is extremely lightweight and unobtrusive with your operative system. However, you might want to consider a more fully fledged Python distribution like Anaconda, specially if your work involved non-python packages or a lot of data science and machine learning tools.
-
-Regardless of the reason, if you want to follow this route just go to the official `Anaconda webpage <https://www.anaconda.com/>`_ and download and install a version appropriate for your operative system. Do not worry about the Python version as ``conda`` will let you choose that when creating a virtual environment.
+To install Anaconda, just go to the official `Anaconda webpage <https://www.anaconda.com/>`_ and download and install a version appropriate for your operative system. Do not worry about the Python version as ``conda`` will let you choose that when creating a virtual environment.
 
 The installer should guide you step by step on the process of installing Anaconda and configuring your system to use it as your Python installation.
 

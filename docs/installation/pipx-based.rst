@@ -1,7 +1,7 @@
-.. _normal-installation:
+.. _pipx-based:
 
-Normal installation (``pipx`` based)
-------------------------------------
+pipx-based installation
+-----------------------
 
 To help you installing MUSE in your system we will follow these steps:
 
@@ -99,9 +99,9 @@ There are multiple ways of installing Python, as well as multiple distributions.
 Installing ``pyenv``
 ^^^^^^^^^^^^^^^^^^^^
 
-`pyenv <https://github.com/pyenv/pyenv>`_ (`pyenv-win <https://pyenv-win.github.io/pyenv-win/>`_ for Windows) is a tool that lets you install and manage different python versions. It is small, unobtrusive and self-contained, and it is available for the three operative systems.
+`pyenv <https://github.com/pyenv/pyenv>`_ (`pyenv-win <https://pyenv-win.github.io/pyenv-win/>`_ for Windows) is a tool that lets you install and manage different python versions. It is small, unobtrusive and self-contained, and it is available for the three operative systems. However, you might want to consider a more fully fledged Python distribution like Anaconda, specially if your work involved non-python packages or a lot of data science and machine learning tools. If that is the case, go to the :ref:`virtual-env-based` section.
 
-To install it, follow these steps:
+To install ``pyenv``, follow these steps:
 
 - **Linux**: In this case, you will need to clone the GitHub repository using ``git``. Most Linux distributions come with ``git`` installed, so this should work out of the box:
 
