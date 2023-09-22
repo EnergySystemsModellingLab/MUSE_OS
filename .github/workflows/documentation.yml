@@ -9,7 +9,7 @@ jobs:
   html_docs:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: ammaraskar/sphinx-action@master
       with:
         docs-folder: "docs/"
@@ -33,7 +33,7 @@ jobs:
   pdf_docs:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: ammaraskar/sphinx-action@master
       with:
         docs-folder: "docs/"
