@@ -37,12 +37,14 @@ __all__ = ["model", "technodata"]
 
 
 def example_data_dir() -> Path:
+    """Gets the examples folder"""
     import muse
 
     return Path(muse.__file__).parent / "data" / "example"
 
 
 def available_examples() -> list[str]:
+    """List examples available in the examples folder"""
     return [d.stem for d in example_data_dir().iterdir() if d.is_dir()]
 
 
