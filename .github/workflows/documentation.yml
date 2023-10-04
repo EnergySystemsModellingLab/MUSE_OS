@@ -6,7 +6,7 @@ on:
         branches: ["main"]
 
 jobs:
-  html_docs:
+  docs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -17,46 +17,31 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update -y 
-        sudo apt install -y pandoc graphviz
+        sudo apt install -y pandoc graphviz latexmk texlive-latex-recommended \
+                texlive-latex-extra texlive-fonts-recommended
         python -m pip install --upgrade pip
         python -m pip install --upgrade setuptools==62.6.0 wheel
         python -m pip install -e .[doc]
-    - name: Build documentation
-      run: python -m sphinx -b html docs docs/build
-    - uses: actions/upload-artifact@v3
+    - name: Build HTML documentation
+      run: python -m sphinx -b html docs docs/build/html
+    - name: Build PDF documentation
+      run: |
+        python -m sphinx -b latex docs docs/build/latex
+        cd docs/build/latex
+        latexmk -interaction=nonstopmode -pdf muse
+    - name: Upload HTML
+      uses: actions/upload-artifact@v3
       with:
         name: DocumentationHTML
-        path: docs/build
+        path: docs/build/html
+    - name: Upload PDF
+      uses: actions/upload-artifact@v3
+      with:
+        name: DocumentationPDF
+        path: docs/build/latex/muse.pdf
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       if: github.ref == 'refs/heads/master'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: docs/build
-
-  pdf_docs:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: ammaraskar/sphinx-action@master
-      with:
-        docs-folder: "docs/"
-        pre-build-command: |
-            apt update -y 
-            apt install -y pandoc
-            python -m pip install --upgrade pip
-            python -m pip install -e .
-            python -m pip install --upgrade -r docs/requirements.txt
-        build-command: sphinx-build -n -b latex . ../build/latex
-    - name: build latex
-      run: |
-        sudo apt update -y 
-        sudo apt install -y latexmk texlive-latex-recommended \
-                texlive-latex-extra texlive-fonts-recommended
-        sudo chown -R $(whoami) build
-        cd build/latex
-        latexmk -interaction=nonstopmode -pdf muse
-    - uses: actions/upload-artifact@v3
-      with:
-        name: DocumentationPDF
-        path: build/latex/muse.pdf
+        publish_dir: docs/build/html
