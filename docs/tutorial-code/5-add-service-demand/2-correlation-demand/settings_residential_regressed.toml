@@ -1,0 +1,77 @@
+# Global settings - most REQUIRED
+time_framework = [ 2020, 2025, 2030]
+foresight = 5   # Has to be a multiple of the minimum separation between the years in time framework
+regions = ["R1"]
+interest_rate = 0.1
+interpolation_mode = 'Active'
+log_level = 'info'
+
+# Convergence parameters
+equilibrium = false
+equilibrium_variable = 'demand'
+maximum_iterations = 3
+tolerance = 0.1
+tolerance_unmet_demand = -0.1
+
+# Carbon budget control
+[carbon_budget_control]
+budget = []         
+
+# Global input files contain data that are NOT sector specific - DEFAULTS ALL
+# All paths and filenames will have a default value (those indicated below) so only need to be included
+# if any of those names are different. This whole section is optional.
+[global_input_files]
+path = '{path}/input'
+projections = '{path}/Projections.csv'
+global_commodities = '{path}/MUSEGlobalCommodities.csv'
+base_year_export = "{path}/BaseYearExport.csv"
+base_year_import = "{path}/BaseYearImport.csv"
+regions = '{path}/Regions.csv'
+#regression_parameters = '{muse_sectors}/regressionparameters.csv'
+
+[sectors.presets]
+type = 'presets'
+#consumption_path= "{path}/technodata/preset/*Demand.csv"
+priority = 0
+path = '{path}/technodata/preset'
+timeslices_path = '{path}/timeslices.csv'
+timeslice_shares_path = '{path}/TimesliceSharepreset.csv'
+macrodrivers_path = '{path}/Macrodrivers.csv'
+regression_path = '{path}/regressionparameters.csv'
+forecast = 5
+filters = {sector="residential", region=["R1"]}
+
+# Definition of the sector-specific options -  REQUIRED at least one
+# All paths and filenames will have a default value for each sector (those indicated below) so only need to be included
+# if any of those names are different.
+# As the number os sectors included in MUSE grow, it will be necessary to add another [sectors.whatever] section with the
+# corresponding information.
+[sectors.residential]
+type = 'default'
+priority = 'demand'
+
+path = '{path}/technodata/residential'
+agents = '{path}/BuildingAgent.csv'
+technodata = '{path}/technodataresidential.csv'
+commodities_in = '{path}/commINtechnodataResidential.csv'
+commodities_out = '{path}/commOUTtechnodataResidential.csv'
+existing_capacity = '{path}/existingResidential.csv'
+
+[[sectors.residential.interactions]] 
+net = 'new_to_retro'
+interaction = 'transfer'
+
+
+[[sectors.residential.outputs]]
+filename = '{path}/output/{Sector}/{Quantity}/{year}{suffix}'
+quantity.name = "capacity"
+sink = 'csv'
+overwrite = true
+
+[[sectors.residential.outputs]]
+filename = '{path}/output/{Sector}/{Quantity}/{year}{suffix}'
+quantity.name = "supply"
+quantity.sum_over = "timeslice"
+quantity.drop = ["comm_usage", "units_prices","installed"]
+sink = 'csv'
+overwrite = true
