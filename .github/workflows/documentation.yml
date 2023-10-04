@@ -16,8 +16,8 @@ jobs:
         python-version: 3.9
     - name: Install dependencies
       run: |
-        apt update -y 
-        apt install -y pandoc graphviz
+        sudo apt update -y 
+        sudo apt install -y pandoc graphviz
         python -m pip install --upgrade pip
         python -m pip install --upgrade setuptools==62.6.0 wheel
         python -m pip install -e .[doc]
