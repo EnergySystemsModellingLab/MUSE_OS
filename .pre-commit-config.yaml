@@ -15,6 +15,7 @@ repos:
     rev: "23.9.1"
     hooks:
       - id: black
+        exclude: docs/
   - repo: https://github.com/PyCQA/flake8
     rev: 6.1.0
     hooks:
