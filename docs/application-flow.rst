@@ -343,7 +343,7 @@ Single year iteration
 
 Both in the carbon budget and in the equilibrium calculation, a single year iteration step is involved. It is in this step where MUSE will go through each sector and use the agents to appropriately invest in different technologies, aiming to match these two factors.
 
-**As sectors have different priorities, sectors with lower priorities will run last and see a market updated by the higher priority sectors**. In general, demand sectors should run before conversion sectors and these before supply sectors, such that the later can see the real demand. Running each sector will update their commodities consumption and production. Balancing them is the purpose of the :ref:`find-equilibrium` loop described above, where the prices of the commodities are updated due to the change in their demand occurring during the single year iteration.
+**As sectors have different priorities, sectors with lower priorities will run last and see a market updated by the higher priority sectors**. In general, demand sectors should run before conversion sectors and these before supply sectors, such that the later can see the real demand. Running each sector will update their commodities, consumption and production. Balancing them is the purpose of the :ref:`find-equilibrium` loop described above, where the prices of the commodities are updated due to the change in their demand occurring during the single year iteration.
 
 A chart summarising this process is depicted below:
 
@@ -390,17 +390,66 @@ With the run of each sector involving the following steps:
             {node [shape=""]; start; end;}
             next [label="Next\nsub-sector", shape=""]
             interactions [label="Run agents\ninteractions"]
-            invest [label="Invest"]
+            invest [label="Invest", fillcolor="lightgrey", style="rounded,filled"]
             update_agents [label="Update agents'\nassets"]
             all_subsectors [label="Sub-sectors done?", shape=diamond, style=""]
+            dispatch [label="Dispatch", fillcolor="lightgrey", style="rounded,filled"]
 
             subgraph cluster {
                 label="Run sector"
                 interactions -> next -> invest -> update_agents -> all_subsectors
                 all_subsectors -> next [label="No", constraint=false]
-
             }
 
             start -> interactions
-            all_subsectors -> end [label="Yes"]
+            all_subsectors -> dispatch [label="Yes"]
+            dispatch -> end
         }
+
+This deeper level of the process is where most of the input options of MUSE are put in use to decide how the agents behave, in what sort of technologies they invest, what metrics are used to make these decisions and how the dispatch of commodities takes place in order to fulfil the demand.
+
+Dispatch
+~~~~~~~~
+
+The dispatch stage when running a sector can be described by the following graph:
+
+.. graphviz::
+    :align: center
+    :alt: Dispatch stage of a sector calculation
+
+    digraph dispatch {
+            fontname="Helvetica,Arial,sans-serif"
+            node [fontname="Helvetica,Arial,sans-serif", shape=box, style=rounded]
+            edge [fontname="Helvetica,Arial,sans-serif"]
+            rankdir=LR
+            clusterrank=local
+            newrank=true
+
+            {node [shape=""]; start; end;}
+            capacity [label="Aggregate capacity\nfrom all agents"]
+            supply [label="Calculate supply"];
+            consumption [label="Calculate consumption"];
+            cost [label="Calculate cost"];
+            market [label="Create sector\nmarket"]
+            dispatch[label="Dispatch production\nmethod", fillcolor="#ffb3b3", style="rounded,filled"]
+
+
+            start ->  capacity -> supply -> consumption -> cost -> market -> end
+            dispatch -> supply
+        }
+
+After the investment stage is completed, then the new capacity of the sector is obtained by aggregating the assets of all agents of the sector. Then, the supply of commodities is calculated as requested by the ``dispatch_production`` argument defined for each sector in the ``settings.toml`` file.
+
+The typical choice used in most examples in MUSE is ``share``, where the utilization across similar assets is the same in percentage. However, there are other options available, like
+
+- ``costed``: assets are ranked by cost and the cheaper ones are allowed to service the demand first up to their maximum production.
+- ``maximum``: all the assets dispatch their maximum production, regardless of the demand.
+- ``match``: supply matches the demand within the constrains on how much an asset can produce while minimizing the overall associated costs. See :py:mod:`muse.demand_matching` for the mathematical details.
+
+Once the supply is obtained, the consumed commodities required to achieve that production level are calculated. The cheapest fuel for flexible technologies is used.
+
+Finally, the cost associated with that supply is calculated as the weighted average *annual LCOE* over assets, where the weights are the supply. This is later used to set the new prices.
+
+
+
+
