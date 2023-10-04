@@ -16,6 +16,7 @@ jobs:
         pre-build-command: |
             apt update -y 
             apt install -y pandoc
+            python -m pip install --upgrade pip
             python -m pip install -e .
             python -m pip install --upgrade -r docs/requirements.txt
         build-command: sphinx-build -n -b html . ../build/html
@@ -40,6 +41,7 @@ jobs:
         pre-build-command: |
             apt update -y 
             apt install -y pandoc
+            python -m pip install --upgrade pip
             python -m pip install -e .
             python -m pip install --upgrade -r docs/requirements.txt
         build-command: sphinx-build -n -b latex . ../build/latex
