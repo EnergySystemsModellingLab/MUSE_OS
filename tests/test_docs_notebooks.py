@@ -1,11 +1,12 @@
 from pathlib import Path
+from typing import List
 
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 from pytest import mark
 
 
-def available_notebooks() -> list[Path]:
+def available_notebooks() -> List[Path]:
     """Locate the available notebooks in the docs."""
     base_path = Path(__file__).parent.parent / "docs"
     return [p for p in base_path.rglob("*.ipynb") if "build" not in str(p)]
