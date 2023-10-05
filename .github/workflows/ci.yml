@@ -48,7 +48,11 @@ jobs:
         pytest -m "not regression and not notebook" --junitxml=junit/pytest.xml \
             --cov=muse \
             --cov-branch \
-            --cov-report=xml:coverage/coverage.xml
+            --cov-report=xml
+
+    - name: Upload coverage to Codecov
+      if: success() && (runner.os == 'Linux' && matrix.python-version == 3.9)
+      uses: codecov/codecov-action@v3
 
     - name: Unit tests (not linux)
       if: (runner.os != 'Linux')
