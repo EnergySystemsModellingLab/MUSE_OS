@@ -21,7 +21,9 @@ jobs:
                 texlive-latex-extra texlive-fonts-recommended
         python -m pip install --upgrade pip
         python -m pip install --upgrade setuptools==62.6.0 wheel
-        python -m pip install -e .[doc]
+        python -m pip install -e .[doc,dev]
+    - name: Test notebooks and tutorials
+      run: pytest -m "notebook"
     - name: Build HTML documentation
       run: python -m sphinx -b html docs docs/build/html
     - name: Build PDF documentation
