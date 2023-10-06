@@ -22,7 +22,6 @@ extensions = [
     "sphinx.ext.napoleon",
     "nbsphinx",
     "myst_parser",
-    "ipykernel",
     "sphinx.ext.mathjax",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.viewcode",
@@ -63,4 +62,3 @@ graphviz_output_format = "svg"
 # -- Options for HTML output -------------------------------------------------
 
 html_theme = "classic"
-html_static_path = ["_static"]
