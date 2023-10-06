@@ -26,7 +26,6 @@ projections = '{path}/Projections.csv'
 global_commodities = '{path}/MUSEGlobalCommodities.csv'
 base_year_export = "{path}/BaseYearExport.csv"
 base_year_import = "{path}/BaseYearImport.csv"
-regions = '{path}/Regions.csv'
 #regression_parameters = '{muse_sectors}/regressionparameters.csv'
 
 [sectors.presets]
