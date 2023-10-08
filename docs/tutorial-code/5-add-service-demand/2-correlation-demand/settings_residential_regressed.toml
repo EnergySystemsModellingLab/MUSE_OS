@@ -180,9 +180,3 @@ all-year.all-week.evening = 1095
 all-year.all-week.early-morning = 1095
 all-year.all-week.late-afternoon = 1095
 level_names = ["month", "day", "hour"]
-
-
-
-
-
-
