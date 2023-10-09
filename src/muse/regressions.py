@@ -416,7 +416,7 @@ def Loglog(self, gdp: DataArray, population: DataArray, *args, **kwargs) -> Data
 
 @register_regression
 @regression_functor(
-    {"a": "scale", "b0": "GDPscaleLess", "b1": "GDPscaleGreater", "c": "GDPexp"}
+    {"a": "constant", "b0": "GDPscaleLess", "b1": "GDPscaleGreater", "c": "GDPexp"}
 )
 def LogisticSigmoid(
     self,
@@ -429,10 +429,13 @@ def LogisticSigmoid(
     """0.001 * (constant * pop + gdp * c / sqrt(1 + (gdp * scale / pop)^2)"""
     from numpy import power
 
+    constant = self.coeffs.a
+    c = self.coeffs.c
     if year is None:
         year = self.base_year
     if isinstance(year, int):
-        constant = self.coeffs.b0 if year < 2015 else self.coeffs.b1
+        scale = self.coeffs.b0 if year < 2015 else self.coeffs.b1
+
     elif year is not None and "year" in gdp.dims:
         # fmt: disable
         years = (
@@ -441,13 +444,12 @@ def LogisticSigmoid(
             else DataArray(year, coords={"year": year}, dims="year")
         )
         # fmt: enable
-        constant = self.coeffs.b0.where(years < 2015, self.coeffs.b1)
+        scale = self.coeffs.b0.where(years < 2015, self.coeffs.b1)
     else:
-        constant = 1
+        scale = 1
 
-    p = power(1 + power(gdp * self.coeffs.a / population, 2), 0.5)
-
-    return 0.001 * (constant * population + gdp * self.coeffs.c / p)
+    p = power(1 + power(gdp * scale / population, 2), 0.5)
+    return 0.001 * (constant * population + gdp * c / p)
 
 
 @register_regression
