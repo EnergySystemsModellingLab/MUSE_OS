@@ -43,7 +43,7 @@ def example_data_dir() -> Path:
     return Path(muse.__file__).parent / "data" / "example"
 
 
-def available_examples() -> list[str]:
+def available_examples() -> List[str]:
     """List examples available in the examples folder"""
     return [d.stem for d in example_data_dir().iterdir() if d.is_dir()]
 
