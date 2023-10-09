@@ -408,6 +408,67 @@ With the run of each sector involving the following steps:
 
 This deeper level of the process is where most of the input options of MUSE are put in use to decide how the agents behave, in what sort of technologies they invest, what metrics are used to make these decisions and how the dispatch of commodities takes place in order to fulfil the demand.
 
+
+Investment
+~~~~~~~~~~
+
+In the investment step is where new capacity is added to the different assets managed by the agents. This investment might be needed to cover an increase in demand (now and forecast) or to match decommissioned assets, typically to do both.
+
+The following graph summarises the process.
+
+.. graphviz::
+    :align: center
+    :alt: Investment stage of a subsector calculation
+
+    digraph dispatch {
+            fontname="Helvetica,Arial,sans-serif"
+            node [fontname="Helvetica,Arial,sans-serif", shape=box, style=rounded]
+            edge [fontname="Helvetica,Arial,sans-serif"]
+            rankdir=LR
+            clusterrank=local
+            newrank=true
+
+            {node [shape=""]; start; end;}
+            demand_share [label="Calculate\ndemand share"]
+            search [label="Find technology\nsearch space"];
+            objectives [label="Calculate\nobjectives"];
+            decision [label="Calculate\ndecision"];
+            constrains [label="Calculate\nconstrains"]
+            invest [label="Solve\ninvestment"]
+            input_demand[label="demand_share\nmethod", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_search[label="Search rules", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_objectives[label="Objectives", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_decision[label="Decision", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_constrains[label="Constrains", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_solver[label="Solver", fillcolor="#ffb3b3", style="rounded,filled"]
+
+            start ->  demand_share -> search -> objectives -> decision -> constrains -> invest -> end
+            input_demand -> demand_share
+            input_search -> search
+            input_objectives -> objectives
+            input_decision -> decision
+            input_constrains -> constrains
+            input_solver -> invest
+        }
+
+First the demand is distributed among the available agents as requested byt the ``demand_share`` argument of each ``subsector`` in the ``settings.toml`` file. This distribution can be done based on any attribute or property of the agents, as included in the ``Agents.csv`` file. The two built-in options in MUSE are:
+
+- `new_and_reto` (`default`): The input demand is split amongst both *new* and *retro* agents. *New* agents get a share of the increase in demand for the forecast year, whereas *retrofit* agents are assigned a share of the demand that occurs from decommissioned assets.
+- `standard_demand`: The demand is split only amongst *new* agents (indeed there will be an error if a *retro* agent is found for this subsector). *New* agents get a share of the increase in demand for the forecast years well as the demand that occurs from decommissioned assets.
+
+Then, each agent select the technologies it can invest in based on what is needed and the search rules defined for it in the ``Agents.csv`` file. The possible search rules are described in :py:mod:`muse.filters`. These determine the search rules for each replacement technology.
+
+For those selected replacement technologies, an objective function is computed. This value is a well defined economic concept, like LCOE or NPV, or a combination of them, and will be used to prioritise the investment of some technologies over others. As above, these objectives are defined in the ``Agents.csv`` file for each of the agents. Available objectives are described in :py:mod:`muse.objectives`.
+
+Then, a decision is computed. Decision methods reduce multiple objectives into a single scalar objective per replacement technology. The decision method to use is selected in the ``Agents.csv`` file. They allow combining several objectives into a single metric through which replacement technologies can be ranked. See :py:mod:`muse.decisions`.
+
+The final step of preparing the investment process is to compute the constrains, e.g. factors that will determine how much a technology could be invested in and include things like matching the demand, the search rules calculated above, the maximum production of a technology for a given capacity or the maximum capacity expansion for a given time period. Available constrains are set in the subsector section of the ``settings.toml`` file and described in :py:mod:`muse.constrains`. By default, all of them are applied. Note that these constrains might result in unfeasible situations if they do not allow the production to grow enough to match the demand. This is one of the common reasons for a MUSE simulation not converging.
+
+With all this information, the investment process can proceed. This is done per sector using the method described by the ``lpsolver`` in the ``settings.toml`` file. Available solvers are described in :py:mod:`muse.investments`
+
+If the investment succeeds, the new installed capacity will become part of the agents' assets.
+
+
 Dispatch
 ~~~~~~~~
 
