@@ -343,7 +343,7 @@ Single year iteration
 
 Both in the carbon budget and in the equilibrium calculation, a single year iteration step is involved. It is in this step where MUSE will go through each sector and use the agents to appropriately invest in different technologies, aiming to match these two factors.
 
-**As sectors have different priorities, sectors with lower priorities will run last and see a market updated by the higher priority sectors**. In general, demand sectors should run before conversion sectors and these before supply sectors, such that the later can see the real demand. Running each sector will update their commodities, consumption and production. Balancing them is the purpose of the :ref:`find-equilibrium` loop described above, where the prices of the commodities are updated due to the change in their demand occurring during the single year iteration.
+**As sectors have different priorities, sectors with lower priorities (larger numbers) will run last and see a market updated by the higher priority sectors**. In general, demand sectors should run before conversion sectors and these before supply sectors, such that the later can see the real demand. Running each sector will update their commodities, consumption and production. Balancing them is the purpose of the :ref:`find-equilibrium` loop described above, where the prices of the commodities are updated due to the change in their demand occurring during the single year iteration.
 
 A chart summarising this process is depicted below:
 
@@ -390,18 +390,21 @@ With the run of each sector involving the following steps:
             {node [shape=""]; start; end;}
             next [label="Next\nsub-sector", shape=""]
             interactions [label="Run agents\ninteractions"]
-            invest [label="Invest", fillcolor="lightgrey", style="rounded,filled"]
+            invest [label="Investment", fillcolor="lightgrey", style="rounded,filled"]
             update_agents [label="Update agents'\nassets"]
-            all_subsectors [label="Sub-sectors done?", shape=diamond, style=""]
+            all_subsectors [label="Sub-sectors\ndone?", shape=diamond, style=""]
             dispatch [label="Dispatch", fillcolor="lightgrey", style="rounded,filled"]
+            input_net[label="net\n(settings.toml)", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_interaction[label="interaction\n(settings.toml)", fillcolor="#ffb3b3", style="rounded,filled"]
 
             subgraph cluster {
-                label="Run sector"
-                interactions -> next -> invest -> update_agents -> all_subsectors
-                all_subsectors -> next [label="No", constraint=false]
+
             }
 
-            start -> interactions
+            start  -> interactions -> next -> invest -> update_agents -> all_subsectors
+            all_subsectors -> next [label="No", constraint=false]
+            input_net -> interactions [constraint=false]
+            input_interaction -> interactions [constraint=false]
             all_subsectors -> dispatch [label="Yes"]
             dispatch -> end
         }
@@ -435,12 +438,12 @@ The following graph summarises the process.
             decision [label="Calculate\ndecision"];
             constrains [label="Calculate\nconstrains"]
             invest [label="Solve\ninvestment"]
-            input_demand[label="demand_share\nmethod", fillcolor="#ffb3b3", style="rounded,filled"]
-            input_search[label="Search rules", fillcolor="#ffb3b3", style="rounded,filled"]
-            input_objectives[label="Objectives", fillcolor="#ffb3b3", style="rounded,filled"]
-            input_decision[label="Decision", fillcolor="#ffb3b3", style="rounded,filled"]
-            input_constrains[label="Constrains", fillcolor="#ffb3b3", style="rounded,filled"]
-            input_solver[label="Solver", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_demand[label="demand_share\n(settings.toml)", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_search[label="SearchRule\n(Agents.csv)", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_objectives[label="Objective\n(Agents.csv)s", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_decision[label="DecisionMethod\n(Agents.csv)", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_constrains[label="Constrains\n(settings.toml)", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_solver[label="lpsolver\n(settings.toml)", fillcolor="#ffb3b3", style="rounded,filled"]
 
             start ->  demand_share -> search -> objectives -> decision -> constrains -> invest -> end
             input_demand -> demand_share
@@ -456,7 +459,7 @@ First the demand is distributed among the available agents as requested byt the 
 - `new_and_reto` (`default`): The input demand is split amongst both *new* and *retro* agents. *New* agents get a share of the increase in demand for the forecast year, whereas *retrofit* agents are assigned a share of the demand that occurs from decommissioned assets.
 - `standard_demand`: The demand is split only amongst *new* agents (indeed there will be an error if a *retro* agent is found for this subsector). *New* agents get a share of the increase in demand for the forecast years well as the demand that occurs from decommissioned assets.
 
-Then, each agent select the technologies it can invest in based on what is needed and the search rules defined for it in the ``Agents.csv`` file. The possible search rules are described in :py:mod:`muse.filters`. These determine the search rules for each replacement technology.
+Then, each agent select the technologies it can invest in based on what is needed and the **search rules** defined for it in the ``Agents.csv`` file. The possible search rules are described in :py:mod:`muse.filters`. These determine the search rules for each replacement technology.
 
 For those selected replacement technologies, an objective function is computed. This value is a well defined economic concept, like LCOE or NPV, or a combination of them, and will be used to prioritise the investment of some technologies over others. As above, these objectives are defined in the ``Agents.csv`` file for each of the agents. Available objectives are described in :py:mod:`muse.objectives`.
 
@@ -492,7 +495,7 @@ The dispatch stage when running a sector can be described by the following graph
             consumption [label="Calculate consumption"];
             cost [label="Calculate cost"];
             market [label="Create sector\nmarket"]
-            dispatch[label="Dispatch production\nmethod", fillcolor="#ffb3b3", style="rounded,filled"]
+            dispatch[label="dispatch_production\n(settings.toml)", fillcolor="#ffb3b3", style="rounded,filled"]
 
 
             start ->  capacity -> supply -> consumption -> cost -> market -> end
