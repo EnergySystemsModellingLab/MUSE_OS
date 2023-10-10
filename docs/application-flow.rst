@@ -365,10 +365,9 @@ A chart summarising this process is depicted below:
             consumption [label="Update market\nconsumption"];
             supply [label="Update market\nsupply"];
             all_done [label="All sectors\ndone?", shape=diamond, style=""]
-            prices [label="Update prices"]
 
 
-            start -> next -> run_sector -> consumption -> supply -> prices -> all_done
+            start -> next -> run_sector -> consumption -> supply -> all_done
             all_done -> end [label="Yes"]
             all_done -> next [label="No", constraint=false]
         }
