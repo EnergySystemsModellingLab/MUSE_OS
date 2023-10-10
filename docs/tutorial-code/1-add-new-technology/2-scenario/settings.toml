@@ -5,6 +5,7 @@ regions = ["R1"]
 interest_rate = 0.1
 interpolation_mode = 'Active'
 log_level = 'info'
+excluded_commodities = ["wind", "solar"]
 
 # Convergence parameters
 equilibrium_variable = 'demand'
