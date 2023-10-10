@@ -2,6 +2,8 @@
 import pathlib
 from argparse import ArgumentParser
 
+from muse import examples
+
 parser = ArgumentParser(description="Run a MUSE simulation")
 parser.add_argument(
     "settings",
@@ -13,7 +15,7 @@ parser.add_argument(
 parser.add_argument(
     "--model",
     default=None,
-    choices=["default", "multiple-agents", "medium", "minimum-service", "trade"],
+    choices=examples.available_examples(),
     help="Runs a model distributed with MUSE. "
     "If provided, the 'settings' input is ignored.",
 )
