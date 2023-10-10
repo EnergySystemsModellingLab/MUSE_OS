@@ -1,4 +1,7 @@
-asset,year,region,installed,technology,capacity
-3,2035,R1,2030,heatpump,50.61430000000
-3,2040,R1,2030,heatpump,50.61430000000
-3,2044,R1,2030,heatpump,50.61430000000
+,asset,year,region,installed,technology,capacity
+9,1,2035,R1,2030,gasboiler,3.60000000000
+10,1,2040,R1,2030,gasboiler,3.60000000000
+11,1,2044,R1,2030,gasboiler,3.60000000000
+16,2,2035,R1,2030,heatpump,114.40000000000
+17,2,2040,R1,2030,heatpump,114.40000000000
+18,2,2044,R1,2030,heatpump,114.40000000000
