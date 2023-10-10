@@ -37,9 +37,15 @@ __all__ = ["model", "technodata"]
 
 
 def example_data_dir() -> Path:
+    """Gets the examples folder"""
     import muse
 
     return Path(muse.__file__).parent / "data" / "example"
+
+
+def available_examples() -> List[str]:
+    """List examples available in the examples folder"""
+    return [d.stem for d in example_data_dir().iterdir() if d.is_dir()]
 
 
 def model(name: Text = "default") -> MCA:
@@ -70,14 +76,7 @@ def copy_model(
     """
     from shutil import rmtree
 
-    if name.lower() not in {
-        "default_timeslice",
-        "default",
-        "multiple-agents",
-        "medium",
-        "minimum-service",
-        "trade",
-    }:
+    if name.lower() not in available_examples():
         raise ValueError(f"Unknown model {name}")
 
     path = Path() if path is None else Path(path)
@@ -99,9 +98,9 @@ def copy_model(
         _copy_default_timeslice(path)
     elif name.lower() == "medium":
         _copy_medium(path)
-    elif name.lower() == "multiple-agents":
+    elif name.lower() == "multiple_agents":
         _copy_multiple_agents(path)
-    elif name.lower() == "minimum-service":
+    elif name.lower() == "minimum_service":
         _copy_minimum_service(path)
     elif name.lower() == "trade":
         _copy_trade(path)
