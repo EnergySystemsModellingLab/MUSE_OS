@@ -1,11 +1,11 @@
 # Global settings - most REQUIRED
 time_framework = [2020, 2022, 2024, 2026, 2028, 2030, 2032, 2034, 2036, 2038, 2040]
-# time_framework = [2020, 2024, 2028, 2032, 2036, 2040]
-foresight = 4   # Has to be a multiple of the minimum separation between the years in time
+foresight = 2   # Has to be a multiple of the minimum separation between the years in time framework
 regions = ["R1", "R2"]
 interest_rate = 0.1
 interpolation_mode = 'Active'
 log_level = 'info'
+excluded_commodities = ["wind", "solar"]
 
 # Convergence parameters
 equilibrium_variable = 'demand'
@@ -42,7 +42,7 @@ commodities_in = '{path}/technodata/residential/CommIn.csv'
 commodities_out = '{path}/technodata/residential/CommOut.csv'
 
 [sectors.residential.subsectors.retro_and_new]
-agents = '{path}/technodata/Agents.csv'
+agents = '{path}/technodata/residential/Agents.csv'
 existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
 lpsolver = "scipy"  # Optional, defaults to "adhoc" 
 constraints = [  # Optional, defaults to the constraints below
@@ -52,7 +52,7 @@ constraints = [  # Optional, defaults to the constraints below
     "search_space",
 ]
 demand_share = "new_and_retro"  # Optional, default to new_and_retro
-forecast = 5  # Optional, defaults to 5 
+forecast = 2  # Optional, defaults to 5 
 
 [[sectors.residential.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
@@ -73,7 +73,6 @@ net = 'new_to_retro'
 interaction = 'transfer'
 
 
-
 [sectors.power]
 type = 'default'
 priority = 2
@@ -87,6 +86,7 @@ commodities_out = '{path}/technodata/power/CommOut.csv'
 agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
 lpsolver = "scipy"
+forecast = 2  # Optional, defaults to 5 
 
 [[sectors.power.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
@@ -112,7 +112,7 @@ commodities_out = '{path}/technodata/gas/CommOut.csv'
 agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/gas/ExistingCapacity.csv'
 lpsolver = "scipy"
-
+forecast = 2  # Optional, defaults to 5 
 
 [[sectors.gas.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
