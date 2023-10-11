@@ -5,6 +5,7 @@ regions = ["R1", "R2"]
 interest_rate = 0.1
 interpolation_mode = 'Active'
 log_level = 'info'
+excluded_commodities = ["wind", "solar"]
 
 # Convergence parameters
 equilibrium_variable = 'demand'
@@ -41,7 +42,7 @@ commodities_in = '{path}/technodata/residential/CommIn.csv'
 commodities_out = '{path}/technodata/residential/CommOut.csv'
 
 [sectors.residential.subsectors.retro_and_new]
-agents = '{path}/technodata/Agents.csv'
+agents = '{path}/technodata/residential/Agents.csv'
 existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
 lpsolver = "scipy"  # Optional, defaults to "adhoc" 
 constraints = [  # Optional, defaults to the constraints below
