@@ -128,6 +128,7 @@ interaction = 'transfer'
 [sectors.residential_presets]
 type = 'presets'
 priority = 0
+forecast = 2  # Optional, defaults to 5 
 consumption_path= "{path}/technodata/preset/*Consumption.csv"
 
 
