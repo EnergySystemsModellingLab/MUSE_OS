@@ -15,13 +15,13 @@
             ]
         },
         {
-            "name": "Model: multiple-agents",
+            "name": "Model: multiple_agents",
             "type": "python",
             "request": "launch",
             "module": "muse",
             "args": [
                 "--model",
-                "multiple-agents"
+                "multiple_agents"
             ]
         },
         {
@@ -34,22 +34,13 @@
             ]
         },
         {
-            "name": "Model: minimum-service",
+            "name": "Model: minimum_service",
             "type": "python",
             "request": "launch",
             "module": "muse",
             "args": [
                 "--model",
-                "minimum-service"
-            ]
-        },
-        {
-            "name": "No retro",
-            "type": "python",
-            "request": "launch",
-            "module": "muse",
-            "args": [
-                "/Users/dalonsoa/Documents/Projects/scratch/MUSE/run/example/default_sara/settings.toml",
+                "minimum_service"
             ]
         },
     ]

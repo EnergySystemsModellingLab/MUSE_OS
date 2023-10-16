@@ -1,0 +1,5 @@
+SectorName,FunctionType,Coeff,RegionName,electricity,gas,heat,CO2f
+Residential,logistic-sigmoid,GDPexp,R1,0,0,9.94E-02,0
+Residential,logistic-sigmoid,constant,R1,0,0,1.01039E-05,0
+Residential,logistic-sigmoid,GDPscaleLess,R1,0,0,753.1068725,0
+Residential,logistic-sigmoid,GDPscaleGreater,R1,0,0,672.9316672,0

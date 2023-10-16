@@ -14,7 +14,8 @@ ModUlar energy system Simulation Environment: MUSE
    :titlesonly:
 
    Glossary <glossary>
-   Installing MUSE <installation>
+   Getting Help <getting-help>
+   installation/index
    Running MUSE <running-muse-example>
    MUSE Overview <overview>
    Application Flow <application-flow>
