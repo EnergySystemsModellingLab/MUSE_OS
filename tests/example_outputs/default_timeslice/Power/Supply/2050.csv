@@ -1,0 +1,13 @@
+region,timeslice,year,commodity,month,day,hour,supply
+R1,0,2050,electricity,all-year,all-week,night,9.70720000000
+R1,0,2055,electricity,all-year,all-week,night,10.40320000000
+R1,1,2050,electricity,all-year,all-week,morning,9.70720000000
+R1,1,2055,electricity,all-year,all-week,morning,10.40320000000
+R1,2,2050,electricity,all-year,all-week,afternoon,9.70720000000
+R1,2,2055,electricity,all-year,all-week,afternoon,10.40320000000
+R1,3,2050,electricity,all-year,all-week,early-peak,9.70720000000
+R1,3,2055,electricity,all-year,all-week,early-peak,10.40320000000
+R1,4,2050,electricity,all-year,all-week,late-peak,9.70720000000
+R1,4,2055,electricity,all-year,all-week,late-peak,10.40320000000
+R1,5,2050,electricity,all-year,all-week,evening,9.70720000000
+R1,5,2055,electricity,all-year,all-week,evening,10.40320000000
