@@ -41,7 +41,7 @@ Any MUSE simulation follows the steps outlined in the following graph:
 
             subgraph cluster_1 {
                 settings -> market -> sectors -> mca
-                label="Initialization"
+                label="initialisation"
                 color=lightgrey
             }
 
@@ -66,10 +66,10 @@ Any MUSE simulation follows the steps outlined in the following graph:
 
 It has two main components, the **Initialisation** phase when the input settings file is read and, based on it, all the components needed for the simulation are created, and the **Run** phase when the actual simulation takes place and intermediate outputs are produced along the way.
 
-Initialization
+initialisation
 --------------
 
-The initialization phase is where all the parameters of the simulation are pulled from the :ref:`input-files` and the relevant objects required to run the simulation are created. If there is any configuration that does not make sense, it should be spotted during this phase and the execution of MUSE interrupted (with a meaningful error message) so no time is wasted in running a simulation that is wrong.
+The initialisation phase is where all the parameters of the simulation are pulled from the :ref:`input-files` and the relevant objects required to run the simulation are created. If there is any configuration that does not make sense, it should be spotted during this phase and the execution of MUSE interrupted (with a meaningful error message) so no time is wasted in running a simulation that is wrong.
 
 Each of the steps above can be further split into smaller steps, described individually in the following sections:
 
@@ -197,7 +197,7 @@ During the initialisation step, all input files relevant to a sector are loaded,
 Create the MCA
 ~~~~~~~~~~~~~~
 
-The last step of the initialization is also the simplest one. The MCA (market clearing algorithm) is initialized with all the objects created in the previous sections and, specifically, the global simulation parameters, the handling of the carbon budget and the global outputs. Once the MCA is initialized, the simulation is ready to run!
+The last step of the initialisation is also the simplest one. The MCA (market clearing algorithm) is initialized with all the objects created in the previous sections and, specifically, the global simulation parameters, the handling of the carbon budget and the global outputs. Once the MCA is initialized, the simulation is ready to run!
 
 .. graphviz::
     :align: center
@@ -221,7 +221,7 @@ The last step of the initialization is also the simplest one. The MCA (market cl
 Simulation run
 --------------
 
-If the initialization is successful, the execution of the simulation will start. Depending on the configuration of the carbon budget and what to do with it, the steps will be slightly different, but in all cases the main part will be the steps for reaching the equilibrium between the demand and the supply based on the investment.
+If the initialisation is successful, the execution of the simulation will start. Depending on the configuration of the carbon budget and what to do with it, the steps will be slightly different, but in all cases the main part will be the steps for reaching the equilibrium between the demand and the supply based on the investment.
 
 Update carbon prices
 ~~~~~~~~~~~~~~~~~~~~
@@ -343,7 +343,7 @@ Single year iteration
 
 Both in the carbon budget and in the equilibrium calculation, a single year iteration step is involved. It is in this step where MUSE will go through each sector and use the agents to appropriately invest in different technologies, aiming to match these two factors.
 
-**As sectors have different priorities, sectors with lower priorities will run last and see a market updated by the higher priority sectors**. In general, demand sectors should run before conversion sectors and these before supply sectors, such that the later can see the real demand. Running each sector will update their commodities consumption and production. Balancing them is the purpose of the :ref:`find-equilibrium` loop described above, where the prices of the commodities are updated due to the change in their demand occurring during the single year iteration.
+**As sectors have different priorities, sectors with lower priorities (larger numbers) will run last and see a market updated by the higher priority sectors**. In general, demand sectors should run before conversion sectors and these before supply sectors, such that the later can see the real demand. Running each sector will update their commodities, consumption and production. Balancing them is the purpose of the :ref:`find-equilibrium` loop described above, where the prices of the commodities are updated due to the change in their demand occurring during the single year iteration.
 
 A chart summarising this process is depicted below:
 
@@ -365,10 +365,9 @@ A chart summarising this process is depicted below:
             consumption [label="Update market\nconsumption"];
             supply [label="Update market\nsupply"];
             all_done [label="All sectors\ndone?", shape=diamond, style=""]
-            prices [label="Update prices"]
 
 
-            start -> next -> run_sector -> consumption -> supply -> prices -> all_done
+            start -> next -> run_sector -> consumption -> supply -> all_done
             all_done -> end [label="Yes"]
             all_done -> next [label="No", constraint=false]
         }
@@ -390,17 +389,130 @@ With the run of each sector involving the following steps:
             {node [shape=""]; start; end;}
             next [label="Next\nsub-sector", shape=""]
             interactions [label="Run agents\ninteractions"]
-            invest [label="Invest"]
+            invest [label="Investment", fillcolor="lightgrey", style="rounded,filled"]
             update_agents [label="Update agents'\nassets"]
-            all_subsectors [label="Sub-sectors done?", shape=diamond, style=""]
+            all_subsectors [label="Sub-sectors\ndone?", shape=diamond, style=""]
+            dispatch [label="Dispatch", fillcolor="lightgrey", style="rounded,filled"]
+            input_net[label="net\n(settings.toml)", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_interaction[label="interaction\n(settings.toml)", fillcolor="#ffb3b3", style="rounded,filled"]
 
             subgraph cluster {
-                label="Run sector"
-                interactions -> next -> invest -> update_agents -> all_subsectors
-                all_subsectors -> next [label="No", constraint=false]
 
             }
 
-            start -> interactions
-            all_subsectors -> end [label="Yes"]
+            start  -> interactions -> next -> invest -> update_agents -> all_subsectors
+            all_subsectors -> next [label="No", constraint=false]
+            input_net -> interactions [constraint=false]
+            input_interaction -> interactions [constraint=false]
+            all_subsectors -> dispatch [label="Yes"]
+            dispatch -> end
         }
+
+This deeper level of the process is where most of the input options of MUSE are put in use to decide how the agents behave, in what sort of technologies they invest, what metrics are used to make these decisions and how the dispatch of commodities takes place in order to fulfil the demand.
+
+
+Investment
+~~~~~~~~~~
+
+In the investment step is where new capacity is added to the different assets managed by the agents. This investment might be needed to cover an increase in demand (between now and forecast) or to match decommissioned assets, typically to do both.
+
+The following graph summarises the process.
+
+.. graphviz::
+    :align: center
+    :alt: Investment stage of a subsector calculation
+
+    digraph dispatch {
+            fontname="Helvetica,Arial,sans-serif"
+            node [fontname="Helvetica,Arial,sans-serif", shape=box, style=rounded]
+            edge [fontname="Helvetica,Arial,sans-serif"]
+            rankdir=LR
+            clusterrank=local
+            newrank=true
+
+            {node [shape=""]; start; end;}
+            demand_share [label="Calculate\ndemand share"]
+            search [label="Find technology\nsearch space"];
+            objectives [label="Calculate\nobjectives"];
+            decision [label="Calculate\ndecision"];
+            constrains [label="Calculate\nconstrains"]
+            invest [label="Solve\ninvestment"]
+            input_demand[label="demand_share\n(settings.toml)", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_search[label="SearchRule\n(Agents.csv)", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_objectives[label="Objective\n(Agents.csv)s", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_decision[label="DecisionMethod\n(Agents.csv)", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_constrains[label="Constrains\n(settings.toml)", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_solver[label="lpsolver\n(settings.toml)", fillcolor="#ffb3b3", style="rounded,filled"]
+
+            start ->  demand_share -> search -> objectives -> decision -> constrains -> invest -> end
+            input_demand -> demand_share
+            input_search -> search
+            input_objectives -> objectives
+            input_decision -> decision
+            input_constrains -> constrains
+            input_solver -> invest
+        }
+
+First the demand is distributed among the available agents as requested by the ``demand_share`` argument of each ``subsector`` in the ``settings.toml`` file. This distribution can be done based on any attribute or property of the agents, as included in the ``Agents.csv`` file. Demand can also be shared across multiple agents, depending on the "quantity" attribute (defined in ``Agents.csv``). The two built-in options in MUSE are:
+
+- `new_and_retro` (`default`): The input demand is split amongst both *new* and *retro* agents. *New* agents get a share of the increase in demand for the forecast year, whereas *retrofit* agents are assigned a share of the demand that occurs from decommissioned assets.
+- `standard_demand`: The demand is split only amongst *new* agents (indeed there will be an error if a *retro* agent is found for this subsector). *New* agents get a share of the increase in demand for the forecast years well as the demand that occurs from decommissioned assets.
+
+Then, each agent select the technologies it can invest in based on what is needed and the **search rules** defined for it in the ``Agents.csv`` file. The possible search rules are described in :py:mod:`muse.filters`. These determine the search rules for each replacement technology.
+
+For those selected replacement technologies, an objective function is computed. This value is a well defined economic concept, like LCOE or NPV, or a combination of them, and will be used to prioritise the investment of some technologies over others. As above, these objectives are defined in the ``Agents.csv`` file for each of the agents. Available objectives are described in :py:mod:`muse.objectives`.
+
+Then, a decision is computed. Decision methods reduce multiple objectives into a single scalar objective per replacement technology. The decision method to use is selected in the ``Agents.csv`` file. They allow combining several objectives into a single metric through which replacement technologies can be ranked. See :py:mod:`muse.decisions`.
+
+The final step of preparing the investment process is to compute the constrains, e.g. factors that will determine how much a technology could be invested in and include things like matching the demand, the search rules calculated above, the maximum production of a technology for a given capacity or the maximum capacity expansion for a given time period. Available constrains are set in the subsector section of the ``settings.toml`` file and described in :py:mod:`muse.constrains`. By default, all of them are applied. Note that these constrains might result in unfeasible situations if they do not allow the production to grow enough to match the demand. This is one of the common reasons for a MUSE simulation not converging.
+
+With all this information, the investment process can proceed. This is done per sector using the method described by the ``lpsolver`` in the ``settings.toml`` file. Available solvers are described in :py:mod:`muse.investments`
+
+If the investment succeeds, the new installed capacity will become part of the agents' assets.
+
+
+Dispatch
+~~~~~~~~
+
+The dispatch stage when running a sector can be described by the following graph:
+
+.. graphviz::
+    :align: center
+    :alt: Dispatch stage of a sector calculation
+
+    digraph dispatch {
+            fontname="Helvetica,Arial,sans-serif"
+            node [fontname="Helvetica,Arial,sans-serif", shape=box, style=rounded]
+            edge [fontname="Helvetica,Arial,sans-serif"]
+            rankdir=LR
+            clusterrank=local
+            newrank=true
+
+            {node [shape=""]; start; end;}
+            capacity [label="Aggregate capacity\nfrom all agents"]
+            supply [label="Calculate supply"];
+            consumption [label="Calculate consumption"];
+            cost [label="Calculate cost"];
+            market [label="Create sector\nmarket"]
+            dispatch[label="dispatch_production\n(settings.toml)", fillcolor="#ffb3b3", style="rounded,filled"]
+
+
+            start ->  capacity -> supply -> consumption -> cost -> market -> end
+            dispatch -> supply
+        }
+
+After the investment stage is completed, then the new capacity of the sector is obtained by aggregating the assets of all agents of the sector. Then, the supply of commodities is calculated as requested by the ``dispatch_production`` argument defined for each sector in the ``settings.toml`` file.
+
+The typical choice used in most examples in MUSE is ``share``, where the utilization across similar assets is the same in percentage. However, there are other options available, like
+
+- ``costed``: assets are ranked by their levelised costs and the cheaper ones are allowed to service the demand first up to their maximum production. Minimum service can be imposed if present.
+- ``maximum``: all the assets dispatch their maximum production, regardless of the demand.
+- ``match``: supply matches the demand within the constrains on how much an asset can produce while minimizing the overall associated costs. ``match`` allows the choice between different metrics to rank assets, such as levelised costs and gross margin. See :py:mod:`muse.demand_matching` for the mathematical details.
+
+Once the supply is obtained, the consumed commodities required to achieve that production level are calculated. The cheapest fuel for flexible technologies is used.
+
+Finally, the cost associated with that supply is calculated as the weighted average *annual LCOE* over assets, where the weights are the supply. This is later used to set the new prices.
+
+
+
+
