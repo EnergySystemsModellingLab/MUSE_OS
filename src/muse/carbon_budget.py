@@ -44,7 +44,7 @@ def update_carbon_budget(
     under: bool = True,
 ) -> float:
     """Adjust the carbon budget in the far future if emissions too high or low.
-    This feature can allow to simulate overshoot shifing. 
+    This feature can allow to simulate overshoot shifing.
     Arguments:
         carbon_budget: budget for future year,
         emissions: emission for future year,
@@ -84,9 +84,9 @@ def fitting(
     Used to solve the carbon market: given the
     emission of a period, adjusts carbon price to meet the budget.
     A carbon market is meant as a pool of emissions for all
-    the modelled regions; therefore, the carbon price applies 
+    the modelled regions; therefore, the carbon price applies
     to all modelled regions.
-    The method solves an equation applying 
+    The method solves an equation applying
     a fitting of the emission-carbon price relation
     Arguments:
         market: Market, with the prices, supply, and consumption,
@@ -372,7 +372,8 @@ def bisection(
     price_too_high_threshold: float = 10,
     fitter: Text = "slinear",
 ) -> float:
-    """Applies bisection algorithm to escalate carbon price and
+    """
+    Applies bisection algorithm to escalate carbon price and
     meet the budget. A carbon market is meant as a pool of emissions for all
     the modelled regions; therefore, the carbon price applies to all modelled regions.
     Bisection applies an iterative estimations of the emissions
@@ -418,7 +419,7 @@ def bisection(
     ub = bisect_loop(market, sectors, equilibrium, commodities, low0)
 
     # Start bisection loop over a number of iterations
-    # sample_size is in this method used to determine 
+    # sample_size is in this method used to determine
     # the number of iterations
     niter = sample_size
     for n in range(niter):
