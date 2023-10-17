@@ -161,13 +161,13 @@ def refine_new_price(
     """Refine the value of the carbon price to ensure it is not too high or low
     compared to heuristics values
     Arguments:
-        market: Market, with prices, supply, and consumption
-        historic_price: DataArray with the historic carbon prices
-        carbon_budget: DataArray with the carbon budget
-        sample: Sample carbon price points
-        price: Current carbon price, to be refined
-        commodities: List of carbon-related commodities
-        price_too_high_threshold: Threshold to decide what is a price too high
+        market: Market, with prices, supply, and consumption,
+        historic_price: DataArray with the historic carbon prices,
+        carbon_budget: DataArray with the carbon budget,
+        sample: Sample carbon price points,
+        price: Current carbon price, to be refined,
+        commodities: List of carbon-related commodities,
+        price_too_high_threshold: Threshold to decide what is a price too high.
 
     Returns:
         A refined carbon price.
@@ -216,10 +216,10 @@ def create_sample(carbon_price, current_emissions, budget, size=4):
     be estimated.
 
     Arguments:
-        carbon_price: Current carbon price
-        current_emissions: Current emissions
-        budget: Carbon budget
-        size: Number of points in the sample
+        carbon_price: Current carbon price,
+        current_emissions: Current emissions,
+        budget: Carbon budget,
+        size: Number of points in the sample.
 
     Returns:
         An array with the sample prices.
@@ -239,9 +239,9 @@ def linear(prices: np.ndarray, emissions: np.ndarray, budget: int) -> float:
     Once that is done, an optimal carbon price is estimated
 
     Arguments:
-        prices: An array with the sample carbon prices
-        emissions: An array with the corresponding emissions
-        budget: The carbon budget for the time period
+        prices: An array with the sample carbon prices,
+        emissions: An array with the corresponding emissions,
+        budget: The carbon budget for the time period.
 
     Returns:
         The optimal carbon price.
@@ -266,9 +266,9 @@ def linear_guess_and_weights(
     have the highest weight.
 
     Arguments:
-        prices: An array with the sample carbon prices
-        emissions: An array with the corresponding emissions
-        budget: The carbon budget for the time period
+        prices: An array with the sample carbon prices,
+        emissions: An array with the corresponding emissions,
+        budget: The carbon budget for the time period.
 
     Returns:
         The initial guess and weights
@@ -300,9 +300,9 @@ def exponential(prices: np.ndarray, emissions: np.ndarray, budget: int) -> float
     Once that is done, an optimal carbon price is estimated
 
     Arguments:
-        prices: An array with the sample carbon prices
-        emissions: An array with the corresponding emissions
-        budget: The carbon budget for the time period
+        prices: An array with the sample carbon prices,
+        emissions: An array with the corresponding emissions,
+        budget: The carbon budget for the time period.
 
     Returns:
         The optimal carbon price.
@@ -328,9 +328,9 @@ def exp_guess_and_weights(
     have the highest weight.
 
     Arguments:
-        prices: An array with the sample carbon prices
-        emissions: An array with the corresponding emissions
-        budget: The carbon budget for the time period
+        prices: An array with the sample carbon prices,
+        emissions: An array with the corresponding emissions,
+        budget: The carbon budget for the time period.
 
     Returns:
         The initial guess and weights
