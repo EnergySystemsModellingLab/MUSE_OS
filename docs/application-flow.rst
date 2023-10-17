@@ -41,7 +41,7 @@ Any MUSE simulation follows the steps outlined in the following graph:
 
             subgraph cluster_1 {
                 settings -> market -> sectors -> mca
-                label="Initialization"
+                label="initialisation"
                 color=lightgrey
             }
 
@@ -66,10 +66,10 @@ Any MUSE simulation follows the steps outlined in the following graph:
 
 It has two main components, the **Initialisation** phase when the input settings file is read and, based on it, all the components needed for the simulation are created, and the **Run** phase when the actual simulation takes place and intermediate outputs are produced along the way.
 
-Initialization
+initialisation
 --------------
 
-The initialization phase is where all the parameters of the simulation are pulled from the :ref:`input-files` and the relevant objects required to run the simulation are created. If there is any configuration that does not make sense, it should be spotted during this phase and the execution of MUSE interrupted (with a meaningful error message) so no time is wasted in running a simulation that is wrong.
+The initialisation phase is where all the parameters of the simulation are pulled from the :ref:`input-files` and the relevant objects required to run the simulation are created. If there is any configuration that does not make sense, it should be spotted during this phase and the execution of MUSE interrupted (with a meaningful error message) so no time is wasted in running a simulation that is wrong.
 
 Each of the steps above can be further split into smaller steps, described individually in the following sections:
 
@@ -197,7 +197,7 @@ During the initialisation step, all input files relevant to a sector are loaded,
 Create the MCA
 ~~~~~~~~~~~~~~
 
-The last step of the initialization is also the simplest one. The MCA (market clearing algorithm) is initialized with all the objects created in the previous sections and, specifically, the global simulation parameters, the handling of the carbon budget and the global outputs. Once the MCA is initialized, the simulation is ready to run!
+The last step of the initialisation is also the simplest one. The MCA (market clearing algorithm) is initialized with all the objects created in the previous sections and, specifically, the global simulation parameters, the handling of the carbon budget and the global outputs. Once the MCA is initialized, the simulation is ready to run!
 
 .. graphviz::
     :align: center
@@ -221,7 +221,7 @@ The last step of the initialization is also the simplest one. The MCA (market cl
 Simulation run
 --------------
 
-If the initialization is successful, the execution of the simulation will start. Depending on the configuration of the carbon budget and what to do with it, the steps will be slightly different, but in all cases the main part will be the steps for reaching the equilibrium between the demand and the supply based on the investment.
+If the initialisation is successful, the execution of the simulation will start. Depending on the configuration of the carbon budget and what to do with it, the steps will be slightly different, but in all cases the main part will be the steps for reaching the equilibrium between the demand and the supply based on the investment.
 
 Update carbon prices
 ~~~~~~~~~~~~~~~~~~~~
