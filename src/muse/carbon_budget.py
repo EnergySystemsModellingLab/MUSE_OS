@@ -372,11 +372,11 @@ def bisection(
     price_too_high_threshold: float = 10,
     fitter: Text = "slinear",
 ) -> float:
-    """Applies bisection algorithm to escalate carbon price and 
+    """Applies bisection algorithm to escalate carbon price and
     meet the budget. A carbon market is meant as a pool of emissions for all
     the modelled regions; therefore, the carbon price applies to all modelled regions.
     Bisection applies an iterative estimations of the emissions
-    varying the carbon price until convergence or stop criteria 
+    varying the carbon price until convergence or stop criteria
     are met.
     Builds on 'register_carbon_budget_method'.
 
@@ -407,8 +407,8 @@ def bisection(
     large = round((1 + 0.02) ** time_exp, 4)
 
     sample_prices = price * np.linspace(small, large, 2, endpoint=True)
-    # The function builds on the register_carbon_budget_method
-    # Out of the sample_size, we apply bisection on max and min
+
+    # Out of the sample_prices, we apply bisection on max and min
     # carbon prices estimated
     low0 = round(min(sample_prices), 7)
     up0 = round(max(sample_prices), 7)
