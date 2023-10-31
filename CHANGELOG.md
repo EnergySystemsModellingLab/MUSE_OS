@@ -47,6 +47,7 @@
 
 ## Bug fixes
 
+- Solves missing forecast update in agents ([#212](https://github.com/SGIModel/MUSE_OS/pull/212))
 - Solves missing file in tutorial 5 ([#182](https://github.com/SGIModel/MUSE_OS/pull/182))
 - Solves missing subsectors in documentation ([#146](https://github.com/SGIModel/MUSE_OS/pull/146))
 - Solves broken links in the documentation ([#137](https://github.com/SGIModel/MUSE_OS/pull/137))
