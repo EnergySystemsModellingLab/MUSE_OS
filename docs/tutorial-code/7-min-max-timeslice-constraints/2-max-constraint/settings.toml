@@ -105,12 +105,36 @@ filename = '{path}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "supply_timeslice"
 sink = "csv"
 overwrite = true
+index=false
+keep_columns = [ "timeslice",
+                 "asset",
+                 "year",
+                 "commodity",
+                 "region",
+                 "installed",
+                 "technology",
+                 "month",
+                 "day",
+                 "hour"]
+
 
 [[sectors.power.outputs]]
 filename = '{path}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "consumption_timeslice"
 sink = "csv"
 overwrite = true
+index=false
+keep_columns = [ "timeslice",
+                 "asset",
+                 "year",
+                 "commodity",
+                 "region",
+                 "installed",
+                 "technology",
+                 "month",
+                 "day",
+                 "hour",
+                 "consumption"]
 
 [[sectors.power.interactions]] 
 net = 'new_to_retro'
