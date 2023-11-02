@@ -195,6 +195,9 @@ class Sector(AbstractSector):  # type: ignore
         """
         from logging import getLogger
 
+        def group_assets(x: xr.DataArray) -> xr.DataArray:
+            return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
+
         if time_period is None:
             time_period = int(mca_market.year.max() - mca_market.year.min())
         if current_year is None:
@@ -235,7 +238,27 @@ class Sector(AbstractSector):  # type: ignore
             )
 
         # > output to mca
-        output_data = self.market_variables(market, technologies)
+        supply, consume, costs = self.market_variables(market, technologies)
+
+        if len(supply.region.dims) == 0:
+            output_data = xr.Dataset(
+                dict(
+                    supply=supply,
+                    consumption=consume,
+                    costs=costs,
+                )
+            )
+            output_data = output_data.sum("asset")
+            output_data = output_data.expand_dims(region=[output_data.region.values])
+        else:
+            output_data = xr.Dataset(
+                dict(
+                    supply=group_assets(supply),
+                    consumption=group_assets(consume),
+                    costs=costs,
+                )
+            )
+
         # < output to mca
         self.outputs(output_data, self.capacity, technologies)
         # > to mca timeslices
@@ -276,9 +299,7 @@ class Sector(AbstractSector):  # type: ignore
         # < to mca timeslices
         return result
 
-    def market_variables(
-        self, market: xr.Dataset, technologies: xr.Dataset
-    ) -> xr.Dataset:
+    def market_variables(self, market: xr.Dataset, technologies: xr.Dataset) -> Any:
         """Computes resulting market: production, consumption, and costs."""
         from muse.commodities import is_pollutant
         from muse.quantities import (
@@ -289,12 +310,9 @@ class Sector(AbstractSector):  # type: ignore
         from muse.timeslices import QuantityType, convert_timeslice
         from muse.utilities import broadcast_techs
 
-        def group_assets(x: xr.DataArray) -> xr.DataArray:
-            return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
-
         years = market.year.values
         capacity = self.capacity.interp(year=years, **self.interpolation)
-        result = xr.Dataset()
+
         supply = self.supply_prod(
             market=market, capacity=capacity, technologies=technologies
         )
@@ -313,25 +331,7 @@ class Sector(AbstractSector):  # type: ignore
             asset_dim="asset",
         )
 
-        if len(supply.region.dims) == 0:
-            result = xr.Dataset(
-                dict(
-                    supply=supply,
-                    consumption=consume,
-                    costs=costs,
-                )
-            )
-            result = result.sum("asset")
-            result = result.expand_dims(region=[result.region.values])
-        else:
-            result = xr.Dataset(
-                dict(
-                    supply=group_assets(supply),
-                    consumption=group_assets(consume),
-                    costs=costs,
-                )
-            )
-        return result
+        return supply, consume, costs
 
     @property
     def capacity(self) -> xr.DataArray:
