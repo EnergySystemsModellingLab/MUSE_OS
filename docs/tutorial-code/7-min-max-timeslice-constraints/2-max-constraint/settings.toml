@@ -7,6 +7,7 @@ regions = ["R1"]
 interest_rate = 0.1
 interpolation_mode = 'Active'
 log_level = 'info'
+excluded_commodities=["solar", "wind"]
 
 # Convergence parameters
 equilibrium_variable = 'demand'
@@ -17,12 +18,12 @@ tolerance_unmet_demand = -0.1
 [[outputs]]
 quantity = "prices"
 sink = "aggregate"
-filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
 quantity = "capacity"
 sink = "aggregate"
-filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
 index = false
 
 # Carbon budget control
@@ -57,14 +58,14 @@ demand_share = "new_and_retro"  # Optional, default to new_and_retro
 forecast = 5  # Optional, defaults to 5 
 
 [[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{path}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "capacity"
 sink = 'csv'
 overwrite = true
 index = false
 
 [[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{path}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity.name = "supply"
 quantity.sum_over = "timeslice"
 quantity.drop = ["comm_usage", "units_prices"]
@@ -93,23 +94,47 @@ existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
 lpsolver = "scipy"
 
 [[sectors.power.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{path}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "capacity"
 sink = 'csv'
 overwrite = true
 index = false
 
 [[sectors.power.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{path}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "supply_timeslice"
 sink = "csv"
 overwrite = true
+index=false
+keep_columns = [ "timeslice",
+                 "asset",
+                 "year",
+                 "commodity",
+                 "region",
+                 "installed",
+                 "technology",
+                 "month",
+                 "day",
+                 "hour"]
+
 
 [[sectors.power.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{path}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "consumption_timeslice"
 sink = "csv"
 overwrite = true
+index=false
+keep_columns = [ "timeslice",
+                 "asset",
+                 "year",
+                 "commodity",
+                 "region",
+                 "installed",
+                 "technology",
+                 "month",
+                 "day",
+                 "hour",
+                 "consumption"]
 
 [[sectors.power.interactions]] 
 net = 'new_to_retro'
@@ -132,7 +157,7 @@ lpsolver = "scipy"
 
 
 [[sectors.gas.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{path}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "capacity"
 sink = 'csv'
 overwrite = true

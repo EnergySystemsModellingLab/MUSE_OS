@@ -109,7 +109,26 @@ Example
 *method*
    Method used to equilibrate the carbon market. Available options are `fitting` and `bisection`, however this can be expanded with the `@register_carbon_budget_method` hook in `muse.carbon_budget`.
 
-   The market-clearing algortihm iterates over the sectors until the market reaches an equilibrium in the foresight period (the period next to the one analysed). This is represented by a stable variation of a commodity demand (or price) between iterations below a defined tolerance. The market-clearing algorithm samples a user-defined set of carbon prices and estimates a regression model of the global emissions as a function of the carbon price. The regression model is set by the user. The new carbon price is estimated as a root of the regression model estimated at the value of the emission equal to the user-defined emission cap in the foresight period.
+   The market-clearing algortihm iterates over the sectors until the market reaches an equilibrium in the foresight period (the period next to the one analysed). 
+   This is represented by a stable variation of a commodity demand (or price) between iterations below a defined tolerance. 
+   The market-clearing algorithm samples a user-defined set of carbon prices.
+
+   When the `fitting` method is selected, this command builds a regression model of the emissions as a function of the carbon price. 
+   It applies to a pool of emissions for all the modelled regions. Therefore, the estimated carbon price applies to all the modelled regions.
+   The regression model, the method calculates iteratively the emissions at pre-defined carbon price sample values.
+   The emissions-carbon price couples are used to used to fit the emission-carbon price relation, is uer-defined (ie. linear or exponential fitter).
+   The new carbon price is estimated as a root of the regression model estimated at the value of the emission equal to the user-defined emission cap in the foresight period.
+   Alongside the selection of the method, the user can define a `sample_size`, representing the magnitude of the sample for the fitter.
+
+   When the `bisection` method is selected, this command applies a bisection method to solve the carbon market.
+   Similarly to the `fitting` method, the carbon market includes a pool of all the modelled regions. The obtained carbon price
+   applies to all the regions, as above. This method solves as a typical bisection algorithm.
+   It is coded independently to use the internal signature of the `register_carbon_budget_method`. The algorithm aims to find a root of 
+   the function emissions-carbon price, as for the carbon price at which the carbon budget is met. 
+   The algorithm iteratively modifies the carbon price and estimates the corresponding emissions.
+   It stops when the convergence or stop criteria are met. 
+   This happens for example either when the carbon budget or the maximum number of iterations are met.
+   Alongside the selection of the method, the user can define a `sample_size`, representing the number of iterations of the bisection method.
 
 *commodities*
    Commodities that make up the carbon market. Defaults to an empty list.
@@ -121,7 +140,9 @@ Example
    Whether to control carbon budget overshoots. If the amount of carbon emitted is above the carbon budget, this parameter specifies whether this deficit is carried over to the next year. Defaults to True.
 
 *method_options*
-   Additional options for the specific carbon method.
+   Additional options for the specific carbon method. In particular, the `refine_price` activate a sanity check on the adjusted carbon price.
+   The sanity check applies an upper limit on the carbon price obtained from the algorithm (either `fitting` or `bisection`), called 
+   `price_too_high_threshold`, a user-defined threshold based on heuristics on the values of the carbon price, reflecting typical historical trends.
 
 *fitter*
    `fitter` specifies the regression model fit. The regresion approximates the model emissions. Predefined options are `linear` and `exponential`. Further options can be defined using the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.

@@ -472,7 +472,7 @@ def test_max_capacity_expansion(max_capacity_expansion):
     assert max_capacity_expansion.production == 0
     assert max_capacity_expansion.b.dims == ("replacement",)
     assert max_capacity_expansion.b.shape == (4,)
-    assert max_capacity_expansion.b.values == approx([50, 6, 6, 50])
+    assert max_capacity_expansion.b.values == approx([50, 3, 3, 50])
     assert (
         max_capacity_expansion.replacement
         == ["estove", "gasboiler", "gasstove", "heatpump"]

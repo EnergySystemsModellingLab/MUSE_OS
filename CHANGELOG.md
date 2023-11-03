@@ -2,6 +2,8 @@
 
 ## Features
 
+- Add technology-granularity to sectoral outputs ([#214](https://github.com/SGIModel/MUSE_OS/pull/214))
+- Add descripion to bisection method ([#149](https://github.com/SGIModel/MUSE_OS/pull/149))
 - Add descripion to demo cases ([#139](https://github.com/SGIModel/MUSE_OS/pull/139))
 - Run link-checker only once a week ([#148](https://github.com/SGIModel/MUSE_OS/pull/148))
 - Update documentation for installing MUSE ([#138](https://github.com/SGIModel/MUSE_OS/pull/138))
@@ -46,6 +48,7 @@
 
 ## Bug fixes
 
+- Solves missing forecast update in agents ([#212](https://github.com/SGIModel/MUSE_OS/pull/212))
 - Solves missing file in tutorial 5 ([#182](https://github.com/SGIModel/MUSE_OS/pull/182))
 - Solves missing subsectors in documentation ([#146](https://github.com/SGIModel/MUSE_OS/pull/146))
 - Solves broken links in the documentation ([#137](https://github.com/SGIModel/MUSE_OS/pull/137))

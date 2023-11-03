@@ -190,6 +190,7 @@ class Subsector:
             asset_threshhold=getattr(settings, "asset_threshhold", 1e-12),
             # only used by self-investing agents
             investment=getattr(settings, "lpsolver", "adhoc"),
+            forecast=getattr(settings, "forecast", 5),
         )
         # technologies can have nans where a commodity
         # does not apply to a technology at all
