@@ -240,6 +240,17 @@ class Sector(AbstractSector):  # type: ignore
         # > output to mca
         supply, consume, costs = self.market_variables(market, technologies)
 
+        output_data = xr.Dataset(
+            dict(
+                supply=supply,
+                consumption=consume,
+                costs=costs,
+            )
+        )
+
+        # < output to mca
+        self.outputs(output_data, self.capacity, technologies)
+
         if len(supply.region.dims) == 0:
             output_data = xr.Dataset(
                 dict(
@@ -259,10 +270,7 @@ class Sector(AbstractSector):  # type: ignore
                 )
             )
 
-        # < output to mca
-        self.outputs(output_data, self.capacity, technologies)
         # > to mca timeslices
-
         result = output_data.copy(deep=True)
 
         if "dst_region" in result:
