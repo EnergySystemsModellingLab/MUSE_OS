@@ -27,4 +27,4 @@ jobs:
           pip install -e .[all]
 
       - name: Regression tests
-        run: pytest -m "regression"
+        run: pytest pytest tests/test_fullsim_regression.py
