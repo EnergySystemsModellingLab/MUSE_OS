@@ -83,7 +83,7 @@ jobs:
 
       # The regression tests (with non coverage)
       - name: Regression tests
-        run: pytest -m "regression"
+        run: pytest tests/test_fullsim_regression.py
 
   # If all tests pass, we try to build a wheel
   build-wheel:
