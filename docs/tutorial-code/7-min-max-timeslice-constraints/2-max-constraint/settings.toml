@@ -115,7 +115,8 @@ keep_columns = [ "timeslice",
                  "technology",
                  "month",
                  "day",
-                 "hour"]
+                 "hour",
+                 "supply"]
 
 
 [[sectors.power.outputs]]
