@@ -1,5 +1,10 @@
-sphinx>=1.4
+setuptools
+wheel
+pip 
+sphinx==5.0.2
 ipykernel
 nbsphinx
-myst_parser
+myst-parser
 sphinxcontrib-bibtex
+ipython
+pandoc

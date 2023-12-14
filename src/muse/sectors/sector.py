@@ -195,6 +195,9 @@ class Sector(AbstractSector):  # type: ignore
         """
         from logging import getLogger
 
+        def group_assets(x: xr.DataArray) -> xr.DataArray:
+            return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
+
         if time_period is None:
             time_period = int(mca_market.year.max() - mca_market.year.min())
         if current_year is None:
@@ -228,24 +231,73 @@ class Sector(AbstractSector):  # type: ignore
             )
         )
         technologies = self.technologies.interp(year=years, **self.interpolation)
+
         for subsector in self.subsectors:
             subsector.invest(
                 technologies, market, time_period=time_period, current_year=current_year
             )
+
         # > output to mca
-        output_data = self.market_variables(market, technologies)
+        supply, consume, costs = self.market_variables(market, technologies)
+
+        output_data = xr.Dataset(
+            dict(
+                supply=supply,
+                consumption=consume,
+                costs=costs,
+            )
+        )
+
         # < output to mca
         self.outputs(output_data, self.capacity, technologies)
-        # > to mca timeslices
-        if len(output_data.region.dims) == 0:
-            result = output_data.sum("asset")
-            result = result.expand_dims(region=[result.region.values])
+
+        if len(supply.region.dims) == 0:
+            output_data = xr.Dataset(
+                dict(
+                    supply=supply,
+                    consumption=consume,
+                    costs=costs,
+                )
+            )
+            output_data = output_data.sum("asset")
+            output_data = output_data.expand_dims(region=[output_data.region.values])
         else:
-            result = output_data.groupby("region").sum("asset")
+            output_data = xr.Dataset(
+                dict(
+                    supply=group_assets(supply),
+                    consumption=group_assets(consume),
+                    costs=costs,
+                )
+            )
+
+        # > to mca timeslices
+        result = output_data.copy(deep=True)
+
         if "dst_region" in result:
+            exclude = ["dst_region", "commodity", "year", "timeslice"]
+            prices = market.prices.expand_dims(dst_region=market.prices.region.values)
+            sup, prices = xr.broadcast(result.supply, prices)
+            sup = sup.fillna(0.0)
+            con, prices = xr.broadcast(result.consumption, prices)
+            con = con.fillna(0.0)
             supply = result.supply.sum("region").rename(dst_region="region")
-            consumption = result.consumption.sum("dst_region")
-            costs = result.costs.sum("dst_region")
+            consumption = con.sum("dst_region")
+            assert len(supply.region) == len(consumption.region)
+
+            # Need to reindex costs to avoid nans for non-producing regions
+            costs0, prices = xr.broadcast(result.costs, prices, exclude=exclude)
+            # Fulfil nans with price values
+            costs0 = costs0.reindex_like(prices).fillna(prices)
+            costs0 = costs0.where(costs0 > 0, prices)
+            # Find where sup >0 (exporter)
+            # Importers have nans and average over exporting price
+            costs = ((costs0 * sup) / sup.sum("dst_region")).fillna(
+                costs0.mean("region")
+            )
+
+            # Take average over dst regions
+            costs = costs.where(costs > 0, prices).mean("dst_region")
+
             result = xr.Dataset(
                 dict(supply=supply, consumption=consumption, costs=costs)
             )
@@ -255,9 +307,7 @@ class Sector(AbstractSector):  # type: ignore
         # < to mca timeslices
         return result
 
-    def market_variables(
-        self, market: xr.Dataset, technologies: xr.Dataset
-    ) -> xr.Dataset:
+    def market_variables(self, market: xr.Dataset, technologies: xr.Dataset) -> Any:
         """Computes resulting market: production, consumption, and costs."""
         from muse.commodities import is_pollutant
         from muse.quantities import (
@@ -268,33 +318,28 @@ class Sector(AbstractSector):  # type: ignore
         from muse.timeslices import QuantityType, convert_timeslice
         from muse.utilities import broadcast_techs
 
-        # from logging import getLogger
-        # import numpy as np
-
         years = market.year.values
         capacity = self.capacity.interp(year=years, **self.interpolation)
-        result = xr.Dataset()
-        result["supply"] = self.supply_prod(
+
+        supply = self.supply_prod(
             market=market, capacity=capacity, technologies=technologies
         )
 
-        if (
-            "timeslice" in market.prices.dims
-            and "timeslice" not in result["supply"].dims
-        ):
-            result["supply"] = convert_timeslice(
-                result["supply"], market.timeslice, QuantityType.EXTENSIVE
-            )
-        result["consumption"] = consumption(technologies, result.supply, market.prices)
-        technodata = cast(xr.Dataset, broadcast_techs(technologies, result.supply))
-        result["costs"] = supply_cost(
-            result.supply.where(~is_pollutant(result.comm_usage), 0),
+        if "timeslice" in market.prices.dims and "timeslice" not in supply.dims:
+            supply = convert_timeslice(supply, market.timeslice, QuantityType.EXTENSIVE)
+
+        consume = consumption(technologies, supply, market.prices)
+
+        technodata = cast(xr.Dataset, broadcast_techs(technologies, supply))
+        costs = supply_cost(
+            supply.where(~is_pollutant(supply.comm_usage), 0),
             annual_levelized_cost_of_energy(
-                market.prices.sel(region=result.region), technodata
+                market.prices.sel(region=supply.region), technodata
             ),
             asset_dim="asset",
         )
-        return result
+
+        return supply, consume, costs
 
     @property
     def capacity(self) -> xr.DataArray:

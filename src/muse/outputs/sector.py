@@ -100,7 +100,6 @@ def _factory(
     sinks = [sink_factory(param, sector_name=sector_name) for param in params]
 
     def save_multiple_outputs(market, *args, year: Optional[int] = None) -> List[Any]:
-
         if year is None:
             year = int(market.year.min())
 

@@ -1,14 +1,15 @@
 # Global settings - most REQUIRED
 time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
-foresight = 5   # Has to be a multiple of the minimum separation between the years in time framework
+foresight = 5                                               # Has to be a multiple of the minimum separation between the years in time framework
 regions = ["R1"]
 interest_rate = 0.1
 interpolation_mode = 'Active'
 log_level = 'info'
+excluded_commodities = ["wind"]
 
 # Convergence parameters
 equilibrium_variable = 'demand'
-maximum_iterations = 100
+maximum_iterations = 1
 tolerance = 0.1
 tolerance_unmet_demand = -0.1
 
@@ -22,7 +23,16 @@ quantity = "capacity"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 index = false
-keep_columns = ['technology', 'dst_region', 'region', 'agent', 'sector', 'type', 'year', 'capacity']
+keep_columns = [
+    'technology',
+    'dst_region',
+    'region',
+    'agent',
+    'sector',
+    'type',
+    'year',
+    'capacity',
+]
 
 # Carbon budget control
 [carbon_budget_control]
@@ -45,15 +55,15 @@ commodities_out = '{path}/technodata/residential/CommOut.csv'
 [sectors.residential.subsectors.retro_and_new]
 agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
-lpsolver = "scipy"  # Optional, defaults to "adhoc" 
-constraints = [  # Optional, defaults to the constraints below
+lpsolver = "scipy" # Optional, defaults to "adhoc" 
+constraints = [ # Optional, defaults to the constraints below
     "max_production",
     "max_capacity_expansion",
     "demand",
     "search_space",
 ]
-demand_share = "new_and_retro"  # Optional, default to new_and_retro
-forecast = 5  # Optional, defaults to 5 
+demand_share = "new_and_retro" # Optional, default to new_and_retro
+forecast = 5 # Optional, defaults to 5 
 
 [[sectors.residential.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
@@ -71,10 +81,9 @@ sink = 'csv'
 overwrite = true
 
 
-[[sectors.residential.interactions]] 
+[[sectors.residential.interactions]]
 net = 'new_to_retro'
 interaction = 'transfer'
-
 
 
 [sectors.power]
@@ -98,7 +107,7 @@ sink = 'csv'
 overwrite = true
 index = false
 
-[[sectors.power.interactions]] 
+[[sectors.power.interactions]]
 net = 'new_to_retro'
 interaction = 'transfer'
 
@@ -125,7 +134,7 @@ sink = 'csv'
 overwrite = true
 index = false
 
-[[sectors.gas.interactions]] 
+[[sectors.gas.interactions]]
 net = 'new_to_retro'
 interaction = 'transfer'
 
@@ -133,7 +142,7 @@ interaction = 'transfer'
 [sectors.residential_presets]
 type = 'presets'
 priority = 0
-consumption_path= "{path}/technodata/preset/*Consumption.csv"
+consumption_path = "{path}/technodata/preset/*Consumption.csv"
 
 
 [timeslices]

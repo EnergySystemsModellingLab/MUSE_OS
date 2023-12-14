@@ -395,14 +395,30 @@ def merge_assets(
     years = sorted(set(capa_a.year.values).union(capa_b.year.values))
 
     levels = (coord for coord in capa_a.coords if capa_a[coord].dims == (dimension,))
-
-    result = xr.concat(
-        (
-            capa_a.interp(year=years, method=interpolation).fillna(0),
-            capa_b.interp(year=years, method=interpolation).fillna(0),
-        ),
-        dim=dimension,
-    )
+    if len(capa_a.year) == 1:
+        result = xr.concat(
+            (
+                capa_a,
+                capa_b.interp(year=years, method=interpolation).fillna(0),
+            ),
+            dim=dimension,
+        ).fillna(0)
+    elif len(capa_b.year) == 1:
+        result = xr.concat(
+            (
+                capa_a.interp(year=years, method=interpolation).fillna(0),
+                capa_b,
+            ),
+            dim=dimension,
+        ).fillna(0)
+    else:
+        result = xr.concat(
+            (
+                capa_a.interp(year=years, method=interpolation).fillna(0),
+                capa_b.interp(year=years, method=interpolation).fillna(0),
+            ),
+            dim=dimension,
+        )
     forgroup = result.pipe(coords_to_multiindex, dimension=dimension)
     if len(forgroup[dimension]) != len(set(forgroup[dimension].values)):
         result = (
@@ -574,11 +590,23 @@ def agent_concatenation(
         from all agents. Missing values for the "year" dimension are forward filled (and
         backfilled with zeros). Others are left with "NaN".
     """
+    from itertools import repeat
+
     data = {k: v.copy() for k, v in data.items()}
     for key, datum in data.items():
         if name in datum.coords:
             raise ValueError(f"Coordinate {name} already exists")
-        datum[name] = key
+        if len(data) == 1 and isinstance(datum, xr.DataArray):
+            data[key] = datum.assign_coords(
+                {
+                    name: (
+                        dim,
+                        list(repeat(key, datum.sizes[dim])),
+                    )
+                }
+            )
+        else:
+            datum[name] = key
     result = xr.concat(data.values(), dim=dim)
     if isinstance(result, xr.Dataset):
         result = result.set_coords("agent")

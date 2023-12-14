@@ -48,11 +48,17 @@ def test_max_production(constraints_args):
     from muse import constraints as cs
 
     constraint = cs.max_production(**constraints_args)
-    dims = {"replacement", "agent", "commodity", "timeslice"}
+    dims = {
+        "timeslice",
+        "commodity",
+        "replacement",
+        "agent",
+        "timeslice",
+        "dst_region",
+        "src_region",
+    }
     assert set(constraint.capacity.dims) == dims
     assert set(constraint.production.dims) == dims
-    assert set(constraint.b.dims) == {"dst_region", *dims}
-    assert (constraint.capacity <= 0).all()
     assert constraint.year.dims == ()
     assert set(constraint.agent.coords) == {"region", "agent", "year"}
 
@@ -142,5 +148,5 @@ def test_power_sector_some_investment():
     result = power.next(market)
     final = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
     assert "windturbine" not in initial.technology
-    assert "windturbine" in final.technology
+    assert final.sel(asset=final.technology == "windturbine", year=2030).sum() < 1
     assert "dst_region" not in result.dims

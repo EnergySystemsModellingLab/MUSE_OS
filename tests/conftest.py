@@ -93,7 +93,7 @@ def compare_dirs() -> Callable:
         from pandas import read_csv
 
         compared_something = False
-        for (dirpath, _, filenames) in walk(expected_dir):
+        for dirpath, _, filenames in walk(expected_dir):
             subdir = Path(actual_dir) / Path(dirpath).relative_to(expected_dir)
             for filename in filenames:
                 compared_something = True

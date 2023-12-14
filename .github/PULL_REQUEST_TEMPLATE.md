@@ -20,7 +20,7 @@ document the change (include PR #) - note reverse order of PR #s.
 ## Key checklist
 
 - [ ] All tests pass: `$ python -m pytest`
-- [ ] The documentation builds and looks OK: `$ python setup.py build_sphinx`
+- [ ] The documentation builds and looks OK: `$ python -m sphinx -b html docs docs/build`
 
 ## Further checks
 

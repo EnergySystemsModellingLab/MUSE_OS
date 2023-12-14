@@ -6,7 +6,6 @@ from pytest import approx, mark
 
 
 def make_array(array):
-
     data = np.random.randint(1, 5, len(array)) * (
         np.random.randint(0, 10, len(array)) > 8
     )

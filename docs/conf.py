@@ -9,7 +9,7 @@ from typing import List
 project = "MUSE"
 copyright = "2022, Sustainable Gas Institute"
 author = "Imperial College London"
-release = "1.0.0"
+release = "1.0.2"
 version = ".".join(release.split(".")[:2])
 
 # -- General configuration ---------------------------------------------------
@@ -22,13 +22,13 @@ extensions = [
     "sphinx.ext.napoleon",
     "nbsphinx",
     "myst_parser",
-    "ipykernel",
     "sphinx.ext.mathjax",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.viewcode",
     "sphinxcontrib.bibtex",
     "IPython.sphinxext.ipython_console_highlighting",
     "IPython.sphinxext.ipython_directive",
+    "sphinx.ext.graphviz",
 ]
 source_suffix = {".rst": "restructuredtext", ".txt": "markdown", ".md": "markdown"}
 templates_path = ["_templates"]
@@ -56,7 +56,9 @@ intersphinx_mapping = {
 
 bibtex_bibfiles: List[str] = []
 
+# -- GraphViz configuration ----------------------------------
+graphviz_output_format = "svg"
+
 # -- Options for HTML output -------------------------------------------------
 
 html_theme = "classic"
-html_static_path = ["_static"]

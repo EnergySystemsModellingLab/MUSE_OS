@@ -88,7 +88,6 @@ def test_linear(regression_params, drivers):
 
 
 if __name__ == "__main__":
-
     from pytest import approx  # noqa
 
     from muse import DEFAULT_SECTORS_DIRECTORY

@@ -73,16 +73,13 @@ def market_demand(assets, technologies, market):
     from muse.quantities import maximum_production
     from muse.timeslices import convert_timeslice
 
-    return (
-        0.8
-        * maximum_production(
-            technologies.interp(year=2025),
-            convert_timeslice(
-                assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
-                market,
-            ),
-        ).rename(technology="asset")
-    )
+    return 0.8 * maximum_production(
+        technologies.interp(year=2025),
+        convert_timeslice(
+            assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
+            market,
+        ),
+    ).rename(technology="asset")
 
 
 @fixture
@@ -475,7 +472,7 @@ def test_max_capacity_expansion(max_capacity_expansion):
     assert max_capacity_expansion.production == 0
     assert max_capacity_expansion.b.dims == ("replacement",)
     assert max_capacity_expansion.b.shape == (4,)
-    assert max_capacity_expansion.b.values == approx([500, 55, 55, 500])
+    assert max_capacity_expansion.b.values == approx([50, 3, 3, 50])
     assert (
         max_capacity_expansion.replacement
         == ["estove", "gasboiler", "gasstove", "heatpump"]

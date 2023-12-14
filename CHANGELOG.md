@@ -2,9 +2,33 @@
 
 ## Features
 
+- Update main branch ([#225](https://github.com/EnergySystemsModellingLab/MUSE_OS/pull/225))
+- Notebooks in the documentation are run as tests ([#178](https://github.com/SGIModel/MUSE_OS/pull/178))
+- Tutorials in the documentation are run as tests ([#177](https://github.com/SGIModel/MUSE_OS/pull/177))
+- Clean notebooks before running them as tests in the documentaition ([#173](https://github.com/EnergySystemsModellingLab/MUSE_OS/pull/173))
+- Add technology-granularity to sectoral outputs ([#214](https://github.com/SGIModel/MUSE_OS/pull/214))
+- Add descripion to bisection method ([#149](https://github.com/SGIModel/MUSE_OS/pull/149))
+- Add descripion to demo cases ([#139](https://github.com/SGIModel/MUSE_OS/pull/139))
+- Run link-checker only once a week ([#148](https://github.com/SGIModel/MUSE_OS/pull/148))
+- Update documentation for installing MUSE ([#138](https://github.com/SGIModel/MUSE_OS/pull/138))
+- Updating pyproject.toml with valid python versions ([#121](https://github.com/SGIModel/MUSE_OS/pull/121))
+- Expand CI workflow ([#119](https://github.com/SGIModel/MUSE_OS/pull/119))
+- Convert setup.cfg to pyproject.toml and add entrypoint ([#118](https://github.com/SGIModel/MUSE_OS/pull/118))
+- Add GitHub action to check for broken links ([#115](https://github.com/SGIModel/MUSE_OS/pull/115))
+- Inconsistent trade case study ([#58](https://github.com/SGIModel/MUSE_OS/pull/58))
+- Update README.txt in installation path ([#57](https://github.com/SGIModel/MUSE_OS/pull/57))
+- Add tests to check the case of not using retrofit agents ([#53](https://github.com/SGIModel/MUSE_OS/pull/53))
+- Add a tutorial for caching quantities and fix a bug in the caching pipeline ([#52](https://github.com/SGIModel/MUSE_OS/pull/52))
+- Update documentation about not using retrofit ([51](https://github.com/SGIModel/MUSE_OS/pull/51))
+- Add error about not finding interaction network ([50](https://github.com/SGIModel/MUSE_OS/pull/50))
+- Add option for `standard_demand` and remove retro agents ([#35](https://github.com/SGIModel/MUSE_OS/pull/35))
+- Update main version ([#28](https://github.com/SGIModel/MUSE_OS/pull/28))
 - Update main version ([#26](https://github.com/SGIModel/MUSE_OS/pull/26))
 - Adds version numbering ([#21](https://github.com/SGIModel/MUSE_OS/pull/21))
 - Adds trade tutorial to the documentation ([#16](https://github.com/SGIModel/MUSE_OS/pull/16))
+- Adds error messages ([#42](https://github.com/SGIModel/MUSE_OS/pull/42))
+- Adds cache of quantities ([#15](https://github.com/SGIModel/MUSE_OS/pull/15))
+- Adds trade tutorial to the documentation
 - Updated branch names on pipelines ([#9](https://github.com/SGIModel/MUSE_OS/issues/9))
 - Edited default package name from StarMUSE to MUSE ([#4](https://github.com/SGIModel/MUSE_OS/issues/4))
 - Added new cases studies with multiple agents and spend limit ([#1](https://github.com/SGIModel/MUSE_OS/pull/1))
@@ -17,7 +41,7 @@
 - Updates the documentation to provide information on adhoc and scipy solvers as well as correctly defines ObjSort direction for minimisation/maximisation ([#949](https://github.com/SGIModel/StarMuse/pull/949))
 - Introduces a check on the type of the data defining the objectives (string for Objective, float/int for ObjData, and Boolean for Objsort) ([#945](https://github.com/SGIModel/StarMuse/issues/945]))
 - Updates the documentation to use the most recent version of MUSE ([#922](https://github.com/SGIModel/StarMuse/pull/922))
-- - Improves the CI system, with a more thorough pre-commit hooks and QA
+- Improves the CI system, with a more thorough pre-commit hooks and QA
   ([#917](https://github.com/SGIModel/StarMuse/pull/917))
 - Introduces the CHANGELOG file and PR template
   ([#916](https://github.com/SGIModel/StarMuse/pull/916))
@@ -28,6 +52,20 @@
 
 ## Bug fixes
 
+- Solves missing forecast update in agents ([#212](https://github.com/SGIModel/MUSE_OS/pull/212))
+- Solves missing file in tutorial 5 ([#182](https://github.com/SGIModel/MUSE_OS/pull/182))
+- Solves missing subsectors in documentation ([#146](https://github.com/SGIModel/MUSE_OS/pull/146))
+- Solves broken links in the documentation ([#137](https://github.com/SGIModel/MUSE_OS/pull/137))
+- NPV fails to align timeslices ([#135]https://github.com/SGIModel/MUSE_OS/pull/135)
+- OS case studies had obsolete output function removed ([#101]https://github.com/SGIModel/MUSE_OS/pull/101)
+- Growth constraints with destination and source region ([#96](https://github.com/SGIModel/MUSE_OS/pull/96))
+- Harmonise time dimension for asset interpolation before merging them ([#94](https://github.com/SGIModel/MUSE_OS/pull/94))
+- Error in costs reporting ([#92](https://github.com/SGIModel/MUSE_OS/pull/92))
+- Error in supply/consumption reporting ([#70](https://github.com/SGIModel/MUSE_OS/pull/70))
+- Added destination region in output ([#64](https://github.com/SGIModel/MUSE_OS/pull/64))
+- Consistency in packages use ([#38](https://github.com/SGIModel/MUSE_OS/pull/56))
+- Raise error for inconsistent commodities ([#38](https://github.com/SGIModel/MUSE_OS/issues/38))
+- Fix error in black ([#32](https://github.com/SGIModel/MUSE_OS/pull/32))
 - Fixes the dead links in the documentation now that the repository is open-sourced ([#3](https://github.com/SGIModel/MUSE_OS/issues/3))
 - Ensures that the adhoc and scipy solvers require the same input in the agents file to minimise and maximise. Specifically, both solvers now require TRUE for minimisation and FALSE for maximisation ([#845](https://github.com/SGIModel/StarMuse/issues/845))
 - Update the documentation to include a tutorial for implementing trade.
@@ -47,4 +85,4 @@
 
 ## Breaking changes
 
-- None
+- Flake8 update on yaml ([#985](https://github.com/SGIModel/StarMuse/pull/985))

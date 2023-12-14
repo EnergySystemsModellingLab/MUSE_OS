@@ -1,5 +1,6 @@
 from typing import List, Optional, Text
 
+import pandas as pd
 import xarray as xr
 
 from muse.outputs.sector import market_quantity, register_output_quantity
@@ -22,7 +23,7 @@ def supply_timeslice(
         .to_dataframe()
         .round(rounding)
     )
-    return result[result.supply != 0]
+    return pd.DataFrame(result[result.supply != 0]).reset_index()
 
 
 @register_output_quantity
@@ -42,4 +43,4 @@ def consumption_timeslice(
         .to_dataframe()
         .round(rounding)
     )
-    return result[result.consumption != 0]
+    return pd.DataFrame(result[result.consumption != 0]).reset_index()

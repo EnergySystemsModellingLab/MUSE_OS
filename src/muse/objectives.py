@@ -77,6 +77,7 @@ import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.agents import Agent
+from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
 
 OBJECTIVE_SIGNATURE = Callable[
@@ -184,6 +185,7 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
         if "technology" in result.coords:
             raise RuntimeError("Objective should not return a coordinate 'technology'")
         result.name = function.__name__
+        cache_quantity(**{result.name: result})
         return result
 
     return decorated_objective
@@ -298,7 +300,7 @@ def fixed_costs(
         year=agent.forecast_year,
     ).drop_vars("technology")
     result = convert_timeslice(
-        data.fix_par * (cfd ** data.fix_exp),
+        data.fix_par * (cfd**data.fix_exp),
         demand.timeslice,
         QuantityType.EXTENSIVE,
     )
@@ -329,7 +331,7 @@ def capital_costs(
         year=agent.forecast_year,
     ).drop_vars("technology")
     result = convert_timeslice(
-        data.cap_par * (data.scaling_size ** data.cap_exp),
+        data.cap_par * (data.scaling_size**data.cap_exp),
         demand.timeslice,
         QuantityType.EXTENSIVE,
     )
@@ -611,15 +613,11 @@ def lifetime_levelized_cost_of_energy(
         years <= agent.forecast_year + nyears,
     )
     production = capacity * fixed_outputs * utilization_factor
-    production = convert_timeslice(
-        production,
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
-    )
+    production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
     # raw costs --> make the NPV more negative
     # Cost of installed capacity
     installed_capacity_costs = convert_timeslice(
-        cap_par * (capacity ** cap_exp),
+        cap_par * (capacity**cap_exp),
         demand.timeslice,
         QuantityType.EXTENSIVE,
     )
@@ -648,7 +646,7 @@ def lifetime_levelized_cost_of_energy(
 
     # Fixed and Variable costs
     fixed_costs = convert_timeslice(
-        fix_par * (capacity ** fix_exp),
+        fix_par * (capacity**fix_exp),
         demand.timeslice,
         QuantityType.EXTENSIVE,
     )
@@ -684,8 +682,7 @@ def net_present_value(
     a Component earns over its lifetime minus all the costs of installing and operating
     it. Follows the definition of the `net present cost`_ given by HOMER Energy.
     Metrics are calculated
-    .. _net present cost:
-        https://www.homerenergy.com/products/pro/docs/3.11/net_present_cost.html
+    .. _net present cost: https://www.homerenergy.com/products/pro/docs/3.11/net_present_cost.html # noqa
 
     - energy commodities INPUTS are related to fuel costs
     - environmental commodities OUTPUTS are related to environmental costs
@@ -778,18 +775,14 @@ def net_present_value(
     ).ffill("year")
 
     production = capacity * fixed_outputs * utilization_factor
-    production = convert_timeslice(
-        production,
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
-    )
+    production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
     raw_revenues = (production * prices_non_env * rates).sum(("commodity", "year"))
 
     # raw costs --> make the NPV more negative
     # Cost of installed capacity
     installed_capacity_costs = convert_timeslice(
-        cap_par * (capacity ** cap_exp),
+        cap_par * (capacity**cap_exp),
         demand.timeslice,
         QuantityType.EXTENSIVE,
     )
@@ -820,7 +813,7 @@ def net_present_value(
 
     # Fixed and Variable costs
     fixed_costs = convert_timeslice(
-        fix_par * (capacity ** fix_exp),
+        fix_par * (capacity**fix_exp),
         demand.timeslice,
         QuantityType.EXTENSIVE,
     )
@@ -835,11 +828,14 @@ def net_present_value(
     assert set(raw_revenues.dims) == set(fuel_costs.dims)
     assert set(raw_revenues.dims) == set(material_costs.dims)
     assert set(raw_revenues.dims) == set(fixed_and_variable_costs.dims)
-    results = raw_revenues - installed_capacity_costs
-    results -= environmental_costs
-    results -= material_costs
-    results -= fixed_and_variable_costs
-    results -= fuel_costs
+
+    results = raw_revenues - (
+        +installed_capacity_costs
+        + environmental_costs
+        + material_costs
+        + fixed_and_variable_costs
+        + fuel_costs
+    )
 
     return results
 

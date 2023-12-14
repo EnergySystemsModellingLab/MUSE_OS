@@ -56,9 +56,9 @@ The search for new technologies can depend on several factors such as agents' bu
 
 Examples of the questions MUSE can answer include:
 
-- `How may India's steel industry decarbonise? <https://www.sciencedirect.com/science/article/pii/S0306261920308072>`_
+- `How may India's steel industry decarbonise? <https://doi.org/10.1016/j.apenergy.2020.115295>`_
 
-- `How might residential consumers change their investment decisions over time? <https://www.sciencedirect.com/science/article/pii/S036054421930177X>`_
+- `How might residential consumers change their investment decisions over time? <https://doi.org/10.1016/j.energy.2019.01.161>`_
 
 - How might a carbon tax impact investments made in the power sector?
 
@@ -134,7 +134,28 @@ The figure below details how MUSE runs. Firstly, the initial capacity, price tra
 
 This whole process repeats itself at every timestep until the specified number of milestone years have run.
 
-.. image:: figures/time-horizon.pdf
-    :width: 97%
+.. graphviz::
     :align: center
-    :alt: MUSE foresight.
+
+    digraph foo {
+        node [fontname="Helvetica,Arial,sans-serif", shape=box]
+        edge [fontname="Helvetica,Arial,sans-serif"]
+
+        inputs [label="Initial capacity,\nprice trajectory &\ndemand trajectory", style=rounded];
+        first [label="MUSE module\nt=1", fontsize=20, style=filled, color=lightgrey];
+        second [label="MUSE module\nt=2", fontsize=20, style=filled, color=lightgrey];
+        repeat [label="... repeat ...", fontsize=20, color=white];
+        end [label="Simulated\ntime horizon", style=rounded];
+        {node [label="MCA convergence"] mca1; mca2;}
+        invFirst [label="Investment based on\ntechnology techno-\neconomics of t=2", color=white]
+        invSecond [label="Investment based on\ntechnology techno-\neconomics of t=3", color=white]
+
+        rank=same {inputs -> first -> second -> repeat -> end [penwidth=5]};
+        first -> mca1 [label="Marginal cost\n& supply", color=red, fontcolor=red, constraint=false];
+        mca1 -> first [label="Price &\n demand", color=blue, fontcolor=blue];
+        second -> mca2 [label="Marginal cost\n& supply", color=red, fontcolor=red, constraint=false];
+        mca2 -> second [label="Price &\n demand", color=blue, fontcolor=blue];
+        first -> invFirst [style=invis]
+        second -> invSecond [style=invis]
+    }
+

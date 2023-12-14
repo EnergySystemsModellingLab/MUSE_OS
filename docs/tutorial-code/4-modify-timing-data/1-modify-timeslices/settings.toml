@@ -1,10 +1,11 @@
 # Global settings - most REQUIRED
 time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
-foresight = 5   # Has to be a multiple of the minimum separation between the years in time
+foresight = 5   # Has to be a multiple of the minimum separation between the years in time framework
 regions = ["R1", "R2"]
 interest_rate = 0.1
 interpolation_mode = 'Active'
 log_level = 'info'
+excluded_commodities = ["wind", "solar"]
 
 # Convergence parameters
 equilibrium_variable = 'demand'
@@ -15,12 +16,23 @@ tolerance_unmet_demand = -0.1
 [[outputs]]
 quantity = "prices"
 sink = "aggregate"
-filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
 quantity = "capacity"
 sink = "aggregate"
-filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
+
+[[outputs]]
+quantity = "timeslice_consumption"
+sink = "aggregate"
+filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
+
+[[outputs]]
+quantity = "timeslice_supply"
+sink = "aggregate"
+filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
+
 
 # Carbon budget control
 [carbon_budget_control]
@@ -41,7 +53,7 @@ commodities_in = '{path}/technodata/residential/CommIn.csv'
 commodities_out = '{path}/technodata/residential/CommOut.csv'
 
 [sectors.residential.subsectors.retro_and_new]
-agents = '{path}/technodata/Agents.csv'
+agents = '{path}/technodata/residential/Agents.csv'
 existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
 lpsolver = "scipy"  # Optional, defaults to "adhoc" 
 constraints = [  # Optional, defaults to the constraints below
@@ -53,19 +65,6 @@ constraints = [  # Optional, defaults to the constraints below
 demand_share = "new_and_retro"  # Optional, default to new_and_retro
 forecast = 5  # Optional, defaults to 5 
 
-[[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "capacity"
-sink = 'csv'
-overwrite = true
-
-[[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-quantity.name = "supply"
-quantity.sum_over = "timeslice"
-quantity.drop = ["comm_usage", "units_prices"]
-sink = 'csv'
-overwrite = true
 
 [[sectors.residential.interactions]] 
 net = 'new_to_retro'
@@ -87,11 +86,6 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
 lpsolver = "scipy"
 
-[[sectors.power.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "capacity"
-sink = 'csv'
-overwrite = true
 
 [[sectors.power.interactions]] 
 net = 'new_to_retro'
@@ -112,12 +106,6 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/gas/ExistingCapacity.csv'
 lpsolver = "scipy"
 
-
-[[sectors.gas.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "capacity"
-sink = 'csv'
-overwrite = true
 
 [[sectors.gas.interactions]] 
 net = 'new_to_retro'

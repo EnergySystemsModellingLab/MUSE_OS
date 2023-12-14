@@ -244,7 +244,6 @@ class LegacySector(AbstractSector):  # type: ignore
         return result
 
     def runprocessmodule(self, consumption, supplycost, supply, t):
-
         params = [
             consumption,
             supplycost,

@@ -63,10 +63,13 @@ import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.constraints import Constraint
+from muse.errors import GrowthOfCapacityTooConstrained
+from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
 
 INVESTMENT_SIGNATURE = Callable[
-    [xr.DataArray, xr.DataArray, xr.Dataset, List[Constraint], KwArg(Any)], xr.DataArray
+    [xr.DataArray, xr.DataArray, xr.Dataset, List[Constraint], KwArg(Any)],
+    Union[xr.DataArray, xr.Dataset],
 ]
 """Investment signature. """
 
@@ -76,7 +79,13 @@ INVESTMENTS: MutableMapping[Text, INVESTMENT_SIGNATURE] = {}
 
 @registrator(registry=INVESTMENTS, loglevel="info")
 def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
-    """Decorator to register a function as an investment."""
+    """Decorator to register a function as an investment.
+
+    The output of the function can be a DataArray, with the invested capacity, or a
+    Dataset. In this case, it must contain a DataArray named "capacity" and, optionally,
+    a DataArray named "production". Only the invested capacity DataArray is returned to
+    the calling function.
+    """
     from functools import wraps
 
     @wraps(function)
@@ -88,7 +97,17 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
         **kwargs,
     ) -> xr.DataArray:
         result = function(costs, search_space, technologies, constraints, **kwargs)
-        return result.rename("investment")
+
+        if isinstance(result, xr.Dataset):
+            investment = result["capacity"].rename("investment")
+            if "production" in result:
+                cache_quantity(production=result["production"])
+        else:
+            investment = result.rename("investment")
+
+        cache_quantity(capacity=investment)
+
+        return investment
 
     return decorated
 
@@ -255,16 +274,19 @@ def adhoc_match_demand(
 
     # Push disabled techs to last rank.
     # Any production assigned to them by the demand-matching algorithm will be removed.
-    minobj = costs.min()
-    maxobj = costs.where(search_space, minobj).max("replacement") + 1
 
     if "timeslice" in costs.dims and timeslice_op is not None:
-        costs = timeslice_op(costs)
+        costs = costs.mean("timeslice").mean("asset")  # timeslice_op(costs)
+
+    minobj = costs.min()
+    maxobj = costs.where(search_space, minobj).max("replacement") + 1
 
     decision = costs.where(search_space, maxobj)
 
     production = demand_matching(
-        demand.sel(asset=demand.asset.isin(search_space.asset)), decision, max_prod
+        demand.sel(asset=demand.asset.isin(search_space.asset)),
+        decision,
+        max_prod,
     ).where(search_space, 0)
 
     capacity = capacity_in_use(
@@ -273,7 +295,8 @@ def adhoc_match_demand(
     if "timeslice" in capacity.dims and timeslice_op is not None:
         capacity = timeslice_op(capacity)
 
-    return capacity.rename("investment")
+    result = xr.Dataset({"capacity": capacity, "production": production})
+    return result
 
 
 @register_investment(name=["scipy", "match_demand"])
@@ -292,6 +315,8 @@ def scipy_match_demand(
 
     from muse.constraints import ScipyAdapter
 
+    df_technologies = technologies.to_dataframe().reset_index()
+
     if "timeslice" in costs.dims and timeslice_op is not None:
         costs = timeslice_op(costs)
     if "year" in technologies.dims and year is None:
@@ -301,16 +326,30 @@ def scipy_match_demand(
     else:
         techs = technologies
     timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
+
     adapter = ScipyAdapter.factory(
         techs, cast(np.ndarray, costs), timeslice, *constraints
     )
     res = linprog(**adapter.kwargs, method="highs")
-    if not res.success:
-        getLogger(__name__).critical(res.message)
-        raise LinearProblemError("LP system could not be solved", res)
+    if not res.success and (res.status != 0):
+        res = linprog(
+            **adapter.kwargs,
+            method="highs-ipm",
+            options={
+                "disp": True,
+                "presolve": False,
+                "dual_feasibility_tolerance": 1e-2,
+                "primal_feasibility_tolerance": 1e-2,
+                "ipm_optimality_tolerance": 1e-2,
+            },
+        )
+        if not res.success:
+            getLogger(__name__).critical(res.message)
+            print(f"in sector containing {df_technologies.technology[0]}")
+            raise GrowthOfCapacityTooConstrained
 
     solution = cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(res.x)
-    return solution.capacity
+    return solution
 
 
 @register_investment(name=["cvxopt"])
@@ -377,4 +416,4 @@ def cvxopt_match_demand(
         raise LinearProblemError("Infeasible system", res)
 
     solution = cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(list(res["x"]))
-    return solution.capacity
+    return solution

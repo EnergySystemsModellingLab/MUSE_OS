@@ -1,5 +1,116 @@
 [build-system]
-requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
+requires = ["setuptools>=61", "wheel", "setuptools_scm>=6.2"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "MUSE_OS"
+authors = [
+    {name = "Sustainable Gas Institute", email = "sgi@imperial.ac.uk"},
+]
+description = "Energy System Model"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">= 3.8, <3.10"
+keywords = ["energy", "modelling"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Other Audience",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+]
+dependencies = [
+    "numpy==1.23.0",
+    "scipy",
+    "pandas<=1.3",
+    "xarray==2022.3.0",
+    "bottleneck",
+    "coloredlogs",
+    "toml",
+    "xlrd==1.2.0",
+    "mypy-extensions",
+    "pypubsub",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+all = ["MUSE_OS[dev,doc,excel]"]
+dev = [
+    "pytest>4.0.2",
+    "flake8!=3.8.1,!=3.8.0,<4.0.0",
+    "black",
+    "pytest-flake8",
+    "IPython",
+    "jupyter",
+    "nbconvert",
+    "nbformat",
+    "mypy",
+    "numpy>=1.17",
+    "pytest-xdist",
+    "bump2version",
+    "pyinstaller",
+    "pre-commit"
+]
+doc = [
+    "sphinx",
+    "ipykernel",
+    "nbsphinx",
+    "myst-parser",
+    "sphinxcontrib-bibtex",
+    "ipython",
+    "pandoc",
+    "seaborn"
+]
+excel = ["openpyxl"]
+gui = [
+    "gooey",
+]
+
+[project.urls]
+Homepage = "http://www.sustainablegasinstitute.org/home/muse-energy-model/"
+
+[project.scripts]
+muse = "muse.__main__:run"
+muse_gui = "muse_gui.__main__:run"
+
+[tool.setuptools]
+license-files = ["LICENSE"]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["*"]
+namespaces = true
+
+[tool.setuptools.dynamic]
+version = {attr = "muse.VERSION"}
+
 [tool.setuptools_scm]
+
+[tool.pyls]
+configurationsources = ["flake8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "src/muse"]
+addopts = "--doctest-modules --flake8 -rfE -n auto --dist=loadscope"
+markers = [
+    "sgidata: test that require legacy data",
+    "legacy: test that require legacy modules",
+    "regression: a regression test",
+    "notebook: a test which consist in running a jupyter notebook",
+]
+
+[tool.mypy]
+ignore_missing_imports = true
+strict_optional = true
+files = ["src/**/*.py", "tests/**/*.py"]
+
+[[tool.mypy.overrides]]
+module = ["setup"]
+ignore_errors = true
+
+[tool.isort]
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true

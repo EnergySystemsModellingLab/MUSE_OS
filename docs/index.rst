@@ -10,12 +10,15 @@ ModUlar energy system Simulation Environment: MUSE
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   :numbered:
    :titlesonly:
 
    Glossary <glossary>
-   Installing MUSE <installing-muse>
+   Getting Help <getting-help>
+   installation/index
    Running MUSE <running-muse-example>
    MUSE Overview <overview>
+   Application Flow <application-flow>
    Key MUSE Components <muse-components>
    user-guide/index
    inputs/index

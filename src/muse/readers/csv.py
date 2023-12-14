@@ -23,6 +23,7 @@ import pandas as pd
 import xarray as xr
 
 from muse.defaults import DEFAULT_SECTORS_DIRECTORY
+from muse.errors import UnitsConflictInCommodities
 
 
 def find_sectors_file(
@@ -71,6 +72,7 @@ def read_technodictionary(filename: Union[Text, Path]) -> xr.Dataset:
         .rename(columns={"end_use": "enduse", "availabiliy year": "availability"})
     )
     data = csv[csv.process_name != "Unit"]
+
     ts = pd.MultiIndex.from_arrays(
         [data.process_name, data.region_name, [int(u) for u in data.time]],
         names=("technology", "region", "year"),
@@ -335,7 +337,10 @@ def read_technologies(
         if all(len(ins[d]) > 1 for d in ins.dims if ins[d].dtype.kind in "uifc"):
             ins = ins.interp(year=result.year)
 
-    result = result.merge(outs).merge(ins)
+    try:
+        result = result.merge(outs).merge(ins)
+    except xr.core.merge.MergeError:
+        raise UnitsConflictInCommodities
 
     if isinstance(ttpath, (Text, Path)):
         technodata_timeslice = read_technodata_timeslices(ttpath)
@@ -354,8 +359,11 @@ def read_technologies(
     if isinstance(commodities, xr.Dataset):
         if result.commodity.isin(commodities.commodity).all():
             result = result.merge(commodities.sel(commodity=result.commodity))
+
         else:
-            logger.warn("Commodities missing in global commodities file.")
+            raise IOError(
+                "Commodities not found in global commodities file: check spelling."
+            )
 
     result["comm_usage"] = (
         "commodity",
@@ -551,8 +559,8 @@ def read_csv_agent_parameters(filename) -> List:
             data["maturity_threshhold"] = row.MaturityThreshold
         if hasattr(row, "SpendLimit"):
             data["spend_limit"] = row.SpendLimit
-        if agent_type != "newcapa":
-            data["share"] = sub(r"Agent(\d)", r"agent_share_\1", row.AgentShare)
+        # if agent_type != "newcapa":
+        data["share"] = sub(r"Agent(\d)", r"agent_share_\1", row.AgentShare)
         if agent_type == "retrofit" and data["decision"] == "lexo":
             data["decision"] = "retro_lexo"
         result.append(data)
@@ -860,6 +868,7 @@ def read_trade(
                 values="value", columns=parameters, index=indices + [col_region]
             ).rename(columns=camel_to_snake)
         )
+
     return result.rename(src_region="region")
 
 
@@ -883,7 +892,6 @@ def read_finite_resources(path: Union[Text, Path]) -> xr.DataArray:
             [data[u] for u in ts_levels], names=ts_levels
         )
         timeslice = pd.DataFrame(timeslice, columns=["timeslice"])
-        print(timeslice)
         data = pd.concat((data, timeslice), axis=1)
         data.drop(columns=ts_levels, inplace=True)
     indices = list({"year", "region", "timeslice"}.intersection(data.columns))
@@ -893,11 +901,10 @@ def read_finite_resources(path: Union[Text, Path]) -> xr.DataArray:
 
 
 def check_utilization_not_all_zero(data, filename):
-
     if "utilization_factor" not in data.columns:
         raise ValueError(
-            """A technology needs to have a utilization factor defined for every timeslice.
-            Please check file {}.""".format(
+            """A technology needs to have a utilization factor defined for every
+             timeslice. Please check file {}.""".format(
                 filename
             )
         )
@@ -910,8 +917,8 @@ def check_utilization_not_all_zero(data, filename):
                 data.loc[data.utilization_factor == 0, "utilization_factor"] + 0.01
             )
             raise ValueError(
-                """A technology can not have a utilization factor of 0 for every timeslice.
-                Please check file {}.""".format(
+                """A technology can not have a utilization factor of 0 for every
+                 timeslice. Please check file {}.""".format(
                     filename
                 )
             )

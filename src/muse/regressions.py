@@ -102,7 +102,6 @@ class Regression(Callable):
     def _to_dataset(
         first: Union[DataArray, Dataset], population: Optional[DataArray]
     ) -> Dataset:
-
         data = first if isinstance(first, Dataset) else Dataset({"gdp": first})
         if population is not None:
             data["population"] = population
@@ -295,7 +294,7 @@ def regression_functor(
                 )
 
             if forecast is not None and years is not None:
-                years = years + forecast
+                years = years
 
             data = data.sel(filters)
             if years is not None:
@@ -366,7 +365,7 @@ def Exponential(
 
 
 @register_regression
-@regression_functor({"a": "constant", "b": "GDPexp", "w": "ConstantAdjDem"})
+@regression_functor({"a": "constant", "b": "GDPexp", "w": "timeEff"})
 def ExponentialAdj(
     self,
     gdp: DataArray,
@@ -374,7 +373,7 @@ def ExponentialAdj(
     *args,
     year: Optional[Union[int, Sequence[int]]] = None,
     forecast: int = 5,
-    n: int = 2,
+    n: int = 6,
     **kwargs,
 ) -> DataArray:
     from numpy import exp, power
@@ -427,13 +426,16 @@ def LogisticSigmoid(
     year: Optional[Union[int, Sequence[int]]] = None,
     **kwargs,
 ) -> DataArray:
-    """1e6 * (a * pop + gdp * c / sqrt(1 + (gdp * scale / pop)^2)"""
+    """0.001 * (constant * pop + gdp * c / sqrt(1 + (gdp * scale / pop)^2)"""
     from numpy import power
 
+    constant = self.coeffs.a
+    c = self.coeffs.c
     if year is None:
         year = self.base_year
     if isinstance(year, int):
         scale = self.coeffs.b0 if year < 2015 else self.coeffs.b1
+
     elif year is not None and "year" in gdp.dims:
         # fmt: disable
         years = (
@@ -447,7 +449,7 @@ def LogisticSigmoid(
         scale = 1
 
     p = power(1 + power(gdp * scale / population, 2), 0.5)
-    return 1e6 * (population * self.coeffs.a + gdp * self.coeffs.c / p)
+    return 0.001 * (constant * population + gdp * c / p)
 
 
 @register_regression
