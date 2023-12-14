@@ -45,7 +45,7 @@ jobs:
       if: (runner.os == 'Linux')
       run: |
         pip install pytest-cov
-        pytest -m "not regression" --junitxml=junit/pytest.xml \
+        pytest -m "not regression and not notebook" --junitxml=junit/pytest.xml \
             --cov=muse \
             --cov-branch \
             --cov-report=xml
@@ -56,7 +56,7 @@ jobs:
 
     - name: Unit tests (not linux)
       if: (runner.os != 'Linux')
-      run: pytest -m "not regression"
+      run: pytest -m "not regression and not notebook"
 
   regression-tests:
     needs: qa
@@ -83,7 +83,7 @@ jobs:
 
       # The regression tests (with non coverage)
       - name: Regression tests
-        run: pytest -m "regression"
+        run: pytest tests/test_fullsim_regression.py
 
   # If all tests pass, we try to build a wheel
   build-wheel:

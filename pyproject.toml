@@ -93,7 +93,7 @@ configurationsources = ["flake8"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "src/muse"]
-addopts = "--doctest-modules --flake8 -rfE -n auto"
+addopts = "--doctest-modules --flake8 -rfE -n auto --dist=loadscope"
 markers = [
     "sgidata: test that require legacy data",
     "legacy: test that require legacy modules",
