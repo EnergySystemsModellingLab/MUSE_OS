@@ -2,6 +2,10 @@
 
 ## Features
 
+- Update main branch ([#225](https://github.com/EnergySystemsModellingLab/MUSE_OS/pull/225))
+- Notebooks in the documentation are run as tests ([#178](https://github.com/SGIModel/MUSE_OS/pull/178))
+- Tutorials in the documentation are run as tests ([#177](https://github.com/SGIModel/MUSE_OS/pull/177))
+- Clean notebooks before running them as tests in the documentaition ([#173](https://github.com/EnergySystemsModellingLab/MUSE_OS/pull/173))
 - Add technology-granularity to sectoral outputs ([#214](https://github.com/SGIModel/MUSE_OS/pull/214))
 - Add descripion to bisection method ([#149](https://github.com/SGIModel/MUSE_OS/pull/149))
 - Add descripion to demo cases ([#139](https://github.com/SGIModel/MUSE_OS/pull/139))
