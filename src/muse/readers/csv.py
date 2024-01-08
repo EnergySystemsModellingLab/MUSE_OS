@@ -178,10 +178,7 @@ def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
     data.index = ts
     data.columns.name = "commodity"
     data.index.name = "technology"
-    print("====")
-    print(data, "first")
     data = data.rename(columns=camel_to_snake)
-    print(data, "after")
     data = data.apply(partial(pd.to_numeric, errors="ignore"), axis=0)
 
     fixed_set = xr.Dataset.from_dataframe(data[data.level == "fixed"]).drop_vars(
