@@ -1,6 +1,8 @@
 # Version - Development
 
 ## Features
+
+- Formatting commodity names in technodata enduse ([#237](https://github.com/EnergySystemsModellingLab/MUSE_OS/pull/237))
 - Separate publish workflow and add upload of executable to release ([#231](https://github.com/EnergySystemsModellingLab/MUSE_OS/pull/231))
 - Update main branch ([#225](https://github.com/EnergySystemsModellingLab/MUSE_OS/pull/225))
 - Notebooks in the documentation are run as tests ([#178](https://github.com/SGIModel/MUSE_OS/pull/178))
