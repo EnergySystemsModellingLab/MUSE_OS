@@ -87,10 +87,17 @@ def read_technodictionary(filename: Union[Text, Path]) -> xr.Dataset:
     result = xr.Dataset.from_dataframe(data.sort_index())
     if "fuel" in result.variables:
         result["fuel"] = result.fuel.isel(region=0, year=0)
+        result["fuel"].values = [camel_to_snake(name) for name in result["fuel"].values]
     if "type" in result.variables:
         result["tech_type"] = result.type.isel(region=0, year=0)
+        result["tech_type"].values = [
+            camel_to_snake(name) for name in result["tech_type"].values
+        ]
     if "enduse" in result.variables:
         result["enduse"] = result.enduse.isel(region=0, year=0)
+        result["enduse"].values = [
+            camel_to_snake(name) for name in result["enduse"].values
+        ]
 
     units = csv[csv.process_name == "Unit"].drop(
         ["process_name", "region_name", "time", "level"], axis=1
@@ -171,7 +178,6 @@ def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
     data.index = ts
     data.columns.name = "commodity"
     data.index.name = "technology"
-
     data = data.rename(columns=camel_to_snake)
     data = data.apply(partial(pd.to_numeric, errors="ignore"), axis=0)
 
