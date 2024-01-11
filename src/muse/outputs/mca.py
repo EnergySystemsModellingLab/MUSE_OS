@@ -359,15 +359,6 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             technologies = a.filter_input(techs, year=output_year).fillna(0.0)
             agent_market = market.sel(year=output_year).copy()
             agent_market["consumption"] = agent_market.consumption * a.quantity
-            included = [
-                i
-                for i in agent_market["commodity"].values
-                if i in technologies.enduse.values
-            ]
-            excluded = [
-                i for i in agent_market["commodity"].values if i not in included
-            ]
-            agent_market.loc[dict(commodity=excluded)] = 0
 
             result = convert_timeslice(
                 supply(
@@ -523,15 +514,6 @@ def sectory_supply(
                 technologies = techs.sel(year=output_year, region=agent.region)
                 agent_market = market.sel(year=output_year).copy()
                 agent_market["consumption"] = agent_market.consumption * agent.quantity
-                included = [
-                    i
-                    for i in agent_market["commodity"].values
-                    if i in technologies.enduse.values
-                ]
-                excluded = [
-                    i for i in agent_market["commodity"].values if i not in included
-                ]
-                agent_market.loc[dict(commodity=excluded)] = 0
 
                 result = supply(
                     agent_market,
@@ -593,15 +575,6 @@ def sector_consumption(
             technologies = a.filter_input(techs, year=output_year).fillna(0.0)
             agent_market = market.sel(year=output_year).copy()
             agent_market["consumption"] = agent_market.consumption * a.quantity
-            included = [
-                i
-                for i in agent_market["commodity"].values
-                if i in technologies.enduse.values
-            ]
-            excluded = [
-                i for i in agent_market["commodity"].values if i not in included
-            ]
-            agent_market.loc[dict(commodity=excluded)] = 0
 
             production = convert_timeslice(
                 supply(
@@ -668,15 +641,6 @@ def sectory_consumption(
             technologies = a.filter_input(techs, year=output_year).fillna(0.0)
             agent_market = market.sel(year=output_year).copy()
             agent_market["consumption"] = agent_market.consumption * a.quantity
-            included = [
-                i
-                for i in agent_market["commodity"].values
-                if i in technologies.enduse.values
-            ]
-            excluded = [
-                i for i in agent_market["commodity"].values if i not in included
-            ]
-            agent_market.loc[dict(commodity=excluded)] = 0
 
             production = supply(
                 agent_market,
@@ -1011,6 +975,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             e = np.where(fuels)
             fuels = fuels[e].commodity.values
             # Capacity
+
             demand = agent_market.consumption.sel(commodity=included)
             capacity = capacity_to_service_demand(demand, tech)
 

@@ -431,7 +431,7 @@ def consumption(
     )
     prices = agent.filter_input(market.prices, year=agent.forecast_year)
     demand = demand.where(search_space, 0).rename(replacement="technology")
-    result = consumption(technologies=params, prices=prices, production=demand)
+    result = consumption(technologies=params, production=demand, prices=prices)  # noqa
     return result.sum("commodity").rename(technology="replacement")
 
 
@@ -457,7 +457,7 @@ def fuel_consumption_cost(
     )
     prices = agent.filter_input(market.prices, year=agent.forecast_year)
     demand = demand.where(search_space, 0).rename(replacement="technology")
-    fcons = consumption(technologies=params, prices=prices, production=demand)
+    fcons = consumption(technologies=params, production=demand, prices=prices)  # noqa
 
     return (
         (fcons * prices)
@@ -572,6 +572,8 @@ def lifetime_levelized_cost_of_energy(
                 "fixed_inputs",
                 "flexible_inputs",
                 "utilization_factor",
+                "comm_type",
+                "enduse",
             ]
         ],
         technology=search_space.replacement,
@@ -650,6 +652,7 @@ def lifetime_levelized_cost_of_energy(
         demand.timeslice,
         QuantityType.EXTENSIVE,
     )
+
     variable_costs = (var_par * production.sel(commodity=products) ** var_exp).sum(
         "commodity"
     )
@@ -802,7 +805,7 @@ def net_present_value(
     prices = agent.filter_input(market.prices, year=years.values).ffill("year")
     fuel = consumption(technologies=tech, production=production, prices=prices).sel(
         commodity=fuels
-    )
+    )  # noqa
     fuel_costs = (fuel * prices_fuel * rates).sum(("commodity", "year"))
 
     # Cost related to material other than fuel/energy and environmentals

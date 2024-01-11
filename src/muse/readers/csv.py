@@ -376,8 +376,8 @@ def read_technologies(
         CommodityUsage.from_technologies(result).values,
     )
     result = result.set_coords("comm_usage")
-    if "comm_type" in result.data_vars or "comm_type" in result.coords:
-        result = result.drop_vars("comm_type")
+    # if "comm_type" in result.data_vars or "comm_type" in result.coords:
+    #     result = result.drop_vars("comm_type")
 
     return result
 

@@ -89,6 +89,7 @@ class CommodityUsage(IntFlag):
                 CommodityUsage.ENERGY if u else CommodityUsage.OTHER
                 for u in (technologies.comm_type == "energy")
             ]
+
         else:
             envs = [CommodityUsage.OTHER for u in consumables]
             nrgs = [CommodityUsage.OTHER for u in consumables]
@@ -333,3 +334,45 @@ def is_other(data: Sequence[CommodityUsage]) -> ndarray:
         [True, False, False]
     """
     return check_usage(data, CommodityUsage.OTHER, match="exact")
+
+
+def mainenduses(enduses: ndarray, technologies: Union[Dataset, DataArray]) -> ndarray:
+    """
+    Calculates a data array to show commodities enduses byproducts
+
+    Receives:
+    enduses: DataArray with all non-environmental output commodities
+    technologies: Dataset with technological features
+
+    Returns:
+    DataArray with commodities which are produced as main output
+    """
+    vals = enduses.commodity.values
+
+    vals_dict = technologies.comm_type
+    if len(vals) > 1:
+        included = [c for c in vals if vals_dict.loc[dict(commodity=c)] != "byproduct"]
+    else:
+        included = [c for c in vals if c in technologies.enduse]
+    return enduses.commodity.isin(included)
+
+
+def bpenduses(enduses: ndarray, technologies: Union[Dataset, DataArray]) -> ndarray:
+    """
+    Calculates a data array to show commodities enduses byproducts
+
+    Receives:
+    enduses: DataArray with all non-environmental output commodities
+    technologies: Dataset with technological features
+
+    Returns:
+    DataArray with commodities which are produced as byproduct output
+    """
+    vals = enduses.commodity.values
+
+    vals_dict = technologies.comm_type
+    if len(vals) > 1:
+        included = [c for c in vals if vals_dict.loc[dict(commodity=c)] == "byproduct"]
+    else:
+        included = []
+    return enduses.commodity.isin(included)
