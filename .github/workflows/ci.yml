@@ -52,7 +52,7 @@ jobs:
 
     - name: Upload coverage to Codecov
       if: success() && (runner.os == 'Linux' && matrix.python-version == 3.9)
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
 
     - name: Unit tests (not linux)
       if: (runner.os != 'Linux')
