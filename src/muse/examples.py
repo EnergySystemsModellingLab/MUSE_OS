@@ -58,7 +58,9 @@ def model(name: Text = "default") -> MCA:
     # That way, there is only one function to get a model.
     with TemporaryDirectory() as tmpdir:
         path = copy_model(name, tmpdir)
-        return MCA.factory(read_settings(path / "settings.toml"))
+        settings = read_settings(path / "settings.toml")
+        getLogger("muse").setLevel(settings.log_level)
+        return MCA.factory(settings)
 
 
 def copy_model(
