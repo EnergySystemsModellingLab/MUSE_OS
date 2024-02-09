@@ -24,6 +24,7 @@ The same models can be instanciated in a python script as follows:
     model = example.model("default")
     model.run()
 """
+from logging import getLogger
 from pathlib import Path
 from typing import List, Optional, Text, Union, cast
 
