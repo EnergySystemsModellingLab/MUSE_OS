@@ -38,9 +38,8 @@ dynamic = ["version"]
 all = ["MUSE_OS[dev,doc,excel]"]
 dev = [
     "pytest>4.0.2",
-    "flake8!=3.8.1,!=3.8.0,<4.0.0",
+    "flake8",
     "black",
-    "pytest-flake8",
     "IPython",
     "jupyter",
     "nbconvert",
@@ -93,7 +92,7 @@ configurationsources = ["flake8"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "src/muse"]
-addopts = "--doctest-modules --flake8 -rfE -n auto --dist=loadscope"
+addopts = "--doctest-modules -rfE -n auto --dist=loadscope"
 markers = [
     "sgidata: test that require legacy data",
     "legacy: test that require legacy modules",
