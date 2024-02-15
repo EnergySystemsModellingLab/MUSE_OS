@@ -24,6 +24,7 @@ The same models can be instanciated in a python script as follows:
     model = example.model("default")
     model.run()
 """
+from logging import getLogger
 from pathlib import Path
 from typing import List, Optional, Text, Union, cast
 
@@ -58,7 +59,9 @@ def model(name: Text = "default") -> MCA:
     # That way, there is only one function to get a model.
     with TemporaryDirectory() as tmpdir:
         path = copy_model(name, tmpdir)
-        return MCA.factory(read_settings(path / "settings.toml"))
+        settings = read_settings(path / "settings.toml")
+        getLogger("muse").setLevel(settings.log_level)
+        return MCA.factory(settings)
 
 
 def copy_model(
