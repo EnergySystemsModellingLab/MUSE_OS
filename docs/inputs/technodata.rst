@@ -63,18 +63,19 @@ fix_par, fix_exp
    .. math::
 
       \text{fix$\_$par} = \left(
-         \frac{\text{FOMref}}{\text{Capref}}
+         \text{FOMref}
+         \frac{1}{\text{Capref}}
       \right)^{\text{fix$\_$exp}}
 
    Capref is a reference size for the cost estimate decided by the modeller before filling the input data files.
 
 var_par, var_exp
-   are used in the variable costs estimation. These variable costs are capacity
+   are used in the variable costs estimation. These variable costs are production
    dependent Variable costs are calculated as:
 
    .. math::
    
-      \text{VAREX} = \text{cap$\_$par} * \text{(Capacity)}^{\text{cap$\_$exp}}
+      \text{VAREX} = \text{var$\_$par} * \text{(Production)}^{\text{var$\_$exp}}
 
    where the parameter var_par is estimated at a selected reference size (i.e. Capref),
    such as:
@@ -82,10 +83,11 @@ var_par, var_exp
    .. math::
 
       \text{var$\_$par} = \left(
-         \frac{\text{VARref}}{\text{Capref}}
+         \text{VARref} *
+         \frac{1}{\text{Productionref}}
       \right)^{\text{var$\_$exp}}
 
-   Capref is a reference size for the cost estimate decided by the modeller before filling the input data files.
+   Productionref is the production for a reference size for the cost estimate decided by the modeller before filling the input data files.
 
 Growith constraints
    MaxCapacityAddition
