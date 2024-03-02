@@ -165,16 +165,18 @@ def gross_margin(
     fixed_outputs = tech.fixed_outputs
     fixed_inputs = tech.fixed_inputs
 
-    # Hours ratio
-    variable_costs = convert_timeslice(
-        var_par * capacity**var_exp, prices.timeslice, QuantityType.EXTENSIVE
-    )
-
     prices = prices.sel(region=capacity.region).interp(year=capacity.year)
 
     # Filters
     environmentals = is_pollutant(technologies.comm_usage)
     enduses = is_enduse(technologies.comm_usage)
+
+    # Hours ratio
+    variable_costs = convert_timeslice(
+        var_par * ((fixed_outputs.sel(commodity=enduses)).sum("commodity")) ** var_exp,
+        prices.timeslice,
+        QuantityType.EXTENSIVE,
+    )
 
     # The individual prices
     consumption_costs = (prices * fixed_inputs).sum("commodity")
