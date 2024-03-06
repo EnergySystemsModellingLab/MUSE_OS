@@ -62,10 +62,10 @@ fix_par, fix_exp
 
    .. math::
 
-      \text{fix$\_$par} = \left(
+      \text{fix$\_$par} = 
          \text{FOMref} *
-         \frac{1}{\text{Capref}}
-      \right)^{\text{fix$\_$exp}}
+         \left(\text{Capref}}
+      \right)^{\text{-fix$\_$exp}}
 
    Capref is a reference size for the cost estimate decided by the modeller before filling the input data files.
 
