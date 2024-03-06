@@ -57,6 +57,7 @@ fix_par, fix_exp
    
       \text{FOM} = \text{fix$\_$par} * (\text{Capacity})^\text{fix$\_$exp}
 
+
    where the parameter fix_par is estimated at a selected reference size (i.e. Capref),
    such as:
 
@@ -64,6 +65,10 @@ fix_par, fix_exp
 
       \text{fix$\_$par} = 
          \text{FOMref} * \text{Capref}^{\text{ -fix$\_$exp}}
+
+   .. math::
+   
+      \text{fix$\_$par}= \frac{\text{fix$\_$par}}{(\text{Capacity})^\text{fix$\_$exp}}
 
    Capref is a reference size for the cost estimate decided by the modeller before filling the input data files.
 
@@ -74,7 +79,7 @@ var_par, var_exp
    .. math::
    
       \text{VAREX} = \text{var$\_$par} * \text{(Production)}^{\text{var$\_$exp}}
-            \text{FOMref} * \text{Capref}^{\text{-fix$\_$exp}}
+           
    where the parameter var_par is estimated at a selected reference size (i.e. Capref),
    such as:
    
