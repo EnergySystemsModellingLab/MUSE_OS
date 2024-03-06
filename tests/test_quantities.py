@@ -88,7 +88,10 @@ def test_gross_margin(technologies, capacity, market):
     from muse.quantities import gross_margin
 
     # we modify the variables to have just the values we want for the testing
-    technologies = technologies.sel(technology=technologies.technology == "soda_shaker")
+    selected = capacity.technology.values[0]
+
+    technologies = technologies.sel(technology=technologies.technology == selected)
+    capa = capacity.where(capacity.technology == selected, drop=True)
 
     # This will leave 2 environmental outputs and 4 fuel inputs.
     usage = technologies.comm_usage
@@ -102,7 +105,7 @@ def test_gross_margin(technologies, capacity, market):
     market.prices[:] = prices = 3
     market.prices[{"commodity": is_pollutant(usage)}] = env_prices = 6
     # We expect a xr.DataArray with 1 replacement technology
-    actual = gross_margin(technologies, capacity, market.prices)
+    actual = gross_margin(technologies, capa, market.prices)
 
     revenues = prices * prod * sum(is_enduse(usage))
     env_costs = env_prices * envs * sum(is_pollutant(usage))
@@ -113,6 +116,7 @@ def test_gross_margin(technologies, capacity, market):
         * market.represent_hours
         / sum(market.represent_hours)
     )
+    print(var_costs, "varcosts")
     expected = revenues - env_costs - cons_costs - var_costs
 
     expected, actual = xr.broadcast(expected, actual)

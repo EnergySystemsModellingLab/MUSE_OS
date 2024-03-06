@@ -164,8 +164,13 @@ def gross_margin(
     var_exp = tech.var_exp
     fixed_outputs = tech.fixed_outputs
     fixed_inputs = tech.fixed_inputs
-
-    prices = prices.sel(region=capacity.region).interp(year=capacity.year)
+    # We separate the case where we have one or more regions
+    caparegions = np.array(capacity.region.values).reshape(-1)
+    if len(caparegions) > 1:
+        prices.sel(region=capacity.region)
+    else:
+        prices = prices.where(prices.region == capacity.region, drop=True)
+    prices = prices.interp(year=capacity.year.values)
 
     # Filters
     environmentals = is_pollutant(technologies.comm_usage)
