@@ -63,7 +63,7 @@ fix_par, fix_exp
    .. math::
 
       \text{fix$\_$par} = \left(
-         \text{FOMref}
+         \text{FOMref} *
          \frac{1}{\text{Capref}}
       \right)^{\text{fix$\_$exp}}
 
