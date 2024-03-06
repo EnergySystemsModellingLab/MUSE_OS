@@ -63,8 +63,7 @@ fix_par, fix_exp
    .. math::
 
       \text{fix$\_$par} = 
-         \left(\text{FOMref}) *
-         \right(\text{Capref}})^{\text{-fix$\_$exp}}
+         \text{FOMref} * \text{Capref}^{\text{-fix$\_$exp}}
 
    Capref is a reference size for the cost estimate decided by the modeller before filling the input data files.
 
@@ -75,16 +74,13 @@ var_par, var_exp
    .. math::
    
       \text{VAREX} = \text{var$\_$par} * \text{(Production)}^{\text{var$\_$exp}}
-
+            \text{FOMref} * \text{Capref}^{\text{-fix$\_$exp}}
    where the parameter var_par is estimated at a selected reference size (i.e. Capref),
    such as:
    
    .. math::
 
-      \text{var$\_$par} = \left(
-         \text{VARref} *
-         \frac{1}{\text{Productionref}}
-      \right)^{\text{var$\_$exp}}
+      \text{var$\_$par} = \text{VARref} * \text{Productionref}^{\text{var$\_$exp}}
 
    Productionref is the production for a reference size for the cost estimate decided by the modeller before filling the input data files.
 
