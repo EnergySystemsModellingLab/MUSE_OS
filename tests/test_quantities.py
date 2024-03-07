@@ -87,13 +87,18 @@ def test_gross_margin(technologies, capacity, market):
     from muse.commodities import is_enduse, is_fuel, is_pollutant
     from muse.quantities import gross_margin
 
+    """
+    Gross margin refers to the calculation
+    .. _here:
+    https://www.investopedia.com/terms/g/grossmargin.asp
+    """
     # we modify the variables to have just the values we want for the testing
     selected = capacity.technology.values[0]
 
     technologies = technologies.sel(technology=technologies.technology == selected)
     capa = capacity.where(capacity.technology == selected, drop=True)
 
-    # This will leave 2 environmental outputs and 4 fuel inputs.
+    # Filtering commodity outputs
     usage = technologies.comm_usage
 
     technologies.var_par[:] = vp = 2
@@ -116,8 +121,9 @@ def test_gross_margin(technologies, capacity, market):
         * market.represent_hours
         / sum(market.represent_hours)
     )
-    print(var_costs, "varcosts")
+
     expected = revenues - env_costs - cons_costs - var_costs
+    expected *= 100 / revenues
 
     expected, actual = xr.broadcast(expected, actual)
     assert actual.values == approx(expected.values)
