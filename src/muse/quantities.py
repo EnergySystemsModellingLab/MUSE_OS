@@ -132,8 +132,11 @@ def emission(production: xr.DataArray, fixed_outputs: xr.DataArray):
 def gross_margin(
     technologies: xr.Dataset, capacity: xr.DataArray, prices: xr.Dataset
 ) -> xr.DataArray:
-    """profit of increasing the production by one unit.
-
+    """The percentage of revenue after direct expenses have been subtracted
+    .. _reference:
+    https://www.investopedia.com/terms/g/grossmargin.asp
+    We first calculate the revenues, which depend on prices
+    We then deduct the direct expenses
     - energy commodities INPUTS are related to fuel costs
     - environmental commodities OUTPUTS are related to environmental costs
     - variable costs is given as technodata inputs
@@ -164,28 +167,41 @@ def gross_margin(
     var_exp = tech.var_exp
     fixed_outputs = tech.fixed_outputs
     fixed_inputs = tech.fixed_inputs
+    # We separate the case where we have one or more regions
+    caparegions = np.array(capacity.region.values).reshape(-1)
+    if len(caparegions) > 1:
+        prices.sel(region=capacity.region)
+    else:
+        prices = prices.where(prices.region == capacity.region, drop=True)
+    prices = prices.interp(year=capacity.year.values)
 
-    # Hours ratio
-    variable_costs = convert_timeslice(
-        var_par * capacity**var_exp, prices.timeslice, QuantityType.EXTENSIVE
-    )
-
-    prices = prices.sel(region=capacity.region).interp(year=capacity.year)
-
-    # Filters
+    # Filters for pollutants and output commodities
     environmentals = is_pollutant(technologies.comm_usage)
     enduses = is_enduse(technologies.comm_usage)
 
-    # The individual prices
+    # Variable costs depend on factors such as labour
+    variable_costs = convert_timeslice(
+        var_par * ((fixed_outputs.sel(commodity=enduses)).sum("commodity")) ** var_exp,
+        prices.timeslice,
+        QuantityType.EXTENSIVE,
+    )
+
+    # The individual prices are selected
+    # costs due to consumables, direct inputs
     consumption_costs = (prices * fixed_inputs).sum("commodity")
+    # costs due to pollutants
     production_costs = prices * fixed_outputs
     environmental_costs = (production_costs.sel(commodity=environmentals)).sum(
         ("commodity")
     )
-
+    # revenues due to product sales
     revenues = (production_costs.sel(commodity=enduses)).sum("commodity")
 
+    # Gross margin is the net between revenues and all costs
     result = revenues - environmental_costs - variable_costs - consumption_costs
+
+    # Gross margin is defined as a ratio on revenues and as a percentage
+    result *= 100 / revenues
     return result
 
 

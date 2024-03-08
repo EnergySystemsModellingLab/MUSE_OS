@@ -54,6 +54,7 @@
 
 ## Bug fixes
 
+- Update variable costs definition ([#247](https://github.com/SGIModel/MUSE_OS/pull/247))
 - Solves missing forecast update in agents ([#212](https://github.com/SGIModel/MUSE_OS/pull/212))
 - Solves missing file in tutorial 5 ([#182](https://github.com/SGIModel/MUSE_OS/pull/182))
 - Solves missing subsectors in documentation ([#146](https://github.com/SGIModel/MUSE_OS/pull/146))
