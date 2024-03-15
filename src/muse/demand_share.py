@@ -472,12 +472,12 @@ def _inner_split(
         for key, capacity in assets.items()
     }
     try:
-        total = sum(shares.values()).sum("asset")  # type: ignore
+        total = xr.concat(shares.values(), dim='concat_dim').sum('concat_dim').sum("asset")  # type: ignore
     except AttributeError:
         raise AgentWithNoAssetsInDemandShare()
 
     unassigned = (
-        demand / (len(shares) * len(cast(xr.DataArray, sum(shares.values())).asset))
+        demand / (len(shares) * len(cast(xr.DataArray, xr.concat(shares.values(), dim='concat_dim').sum('concat_dim')).asset))
     ).where(logical_and(demand > 1e-12, total <= 1e-12), 0)
 
     totals = {
