@@ -472,16 +472,23 @@ def _inner_split(
         for key, capacity in assets.items()
     }
     try:
-        # calculates the total demand assigned in the previous step with the "method" function across agents and assets. 
-        # The previous version of this calculation only calculated the sum of assets present in all "shares.values()" (which contain agents). 
-        total = xr.concat(shares.values(), dim='concat_dim').sum('concat_dim').sum("asset")  # type: ignore
+        # calculates the total demand assigned in the previous step with the "method" function 
+        # across agents and assets. The previous version of this calculation only calculated 
+        # the sum of assets present in all "shares.values()" (which contain agents). 
+        total = xr.concat(shares.values(), dim='concat_dim').sum('concat_dim').sum("asset")  
+        # type: ignore
     except AttributeError:
         raise AgentWithNoAssetsInDemandShare()
 
-    # calculates the demand divided by the number of assets times the number of agents if the demand is bigger than zero and the total demand assigned with the "method" function is zero. 
-    # In the previous version, the demand was divided by the number of agents times the number of assets present in all "shares.values()" (which represent agents) and thus could become inf if all agents owned different assets.
+    # calculates the demand divided by the number of assets times the number of agents if 
+    # the demand is bigger than zero and the total demand assigned with the "method" 
+    # function is zero. In the previous version, the demand was divided by the number of 
+    # agents times the number of assets present in all "shares.values()" 
+    # (which represent agents) and thus could become inf if all agents owned different assets.
     unassigned = (
-        demand / (len(shares) * len(cast(xr.DataArray, xr.concat(shares.values(), dim='concat_dim').sum('concat_dim')).asset))
+        demand / (len(shares) * 
+                  len(cast(xr.DataArray, xr.concat(shares.values(), dim='concat_dim')
+                                         .sum('concat_dim')).asset))
     ).where(logical_and(demand > 1e-12, total <= 1e-12), 0)
 
     totals = {
