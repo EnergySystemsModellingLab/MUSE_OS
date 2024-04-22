@@ -25,8 +25,7 @@ repos:
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.38.0
     hooks:
-      - id: markdownlint
-        args: ["--disable", "MD013"]
+      - id: markdownlint-fix
   - repo: https://github.com/kynan/nbstripout
     rev: 0.6.1
     hooks:
