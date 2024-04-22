@@ -128,18 +128,18 @@ ObjData3
 .. _Objsort1:
 
 Objsort1
-   Sets whether :ref:`first objective <Objective1>` is maximized or minimized. For both 
-   "adhoc" and "scipy" solvers this should be set to "True" for minimization and 
+   Sets whether :ref:`first objective <Objective1>` is maximized or minimized. For both
+   "adhoc" and "scipy" solvers this should be set to "True" for minimization and
    "False" for maximisation.
 
 Objsort2
-   Sets whether :ref:`second objective <Objective2>` is maximized or minimized. For both 
-   "adhoc" and "scipy" solvers this should be set to "True" for minimization and 
+   Sets whether :ref:`second objective <Objective2>` is maximized or minimized. For both
+   "adhoc" and "scipy" solvers this should be set to "True" for minimization and
    "False" for maximisation.
 
 Objsort3
-   Sets whether :ref:`third objective <Objective3>` is maximized or minimized. For both 
-   "adhoc" and "scipy" solvers this should be set to "True" for minimization and 
+   Sets whether :ref:`third objective <Objective3>` is maximized or minimized. For both
+   "adhoc" and "scipy" solvers this should be set to "True" for minimization and
    "False" for maximisation.
 
 .. py:currentmodule:: muse.filters

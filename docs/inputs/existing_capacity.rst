@@ -15,7 +15,7 @@ follow the structure reported in the table.
    :header: ProcessName, RegionName, Unit, 2010, 2020, 2030, 2040, 2050
 
    resBoilerElectric, region1, PJ/y, 5, 0.5, 0, 0, 0
-   resBoilerElectric, region2, PJ/y, 39, 3.5, 1, 0.3, 0       
+   resBoilerElectric, region2, PJ/y, 39, 3.5, 1, 0.3, 0
 
 
 ProcessName

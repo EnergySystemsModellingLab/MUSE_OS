@@ -1,5 +1,5 @@
 # Demo examples
-    
+
 ## default
 This is a 3-sector one-region model.
 It contains a residential, conversion, and gas supply sectors.
@@ -7,11 +7,11 @@ The time framework covers 2020-2050.
 It uses 6 timeslices.
 
 ## default_timeslice
-This is developed from the default model. 
+This is developed from the default model.
 Timesliced technodata are given for the power sector.
 
 ## medium
-This is developed from the default model. 
+This is developed from the default model.
 Demand for cooking is added in the residential sector.
 
 ## multiple_agents
@@ -30,6 +30,3 @@ It contains a residential, conversion, and gas supply sectors.
 The regions can trade gas and electricity.
 The time framework covers 2020-2035.
 It uses 6 timeslices.
-
-
-

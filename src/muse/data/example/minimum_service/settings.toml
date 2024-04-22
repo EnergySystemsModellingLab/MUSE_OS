@@ -63,7 +63,7 @@ constraints = [ # Optional, defaults to the constraints below
     "minimum_service",
 ]
 demand_share = "new_and_retro" # Optional, default to new_and_retro
-forecast = 5 # Optional, defaults to 5 
+forecast = 5 # Optional, defaults to 5
 
 [[sectors.industry.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'

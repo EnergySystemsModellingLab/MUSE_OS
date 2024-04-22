@@ -109,11 +109,11 @@ Example
 *method*
    Method used to equilibrate the carbon market. Available options are `fitting` and `bisection`, however this can be expanded with the `@register_carbon_budget_method` hook in `muse.carbon_budget`.
 
-   The market-clearing algortihm iterates over the sectors until the market reaches an equilibrium in the foresight period (the period next to the one analysed). 
-   This is represented by a stable variation of a commodity demand (or price) between iterations below a defined tolerance. 
+   The market-clearing algortihm iterates over the sectors until the market reaches an equilibrium in the foresight period (the period next to the one analysed).
+   This is represented by a stable variation of a commodity demand (or price) between iterations below a defined tolerance.
    The market-clearing algorithm samples a user-defined set of carbon prices.
 
-   When the `fitting` method is selected, this command builds a regression model of the emissions as a function of the carbon price. 
+   When the `fitting` method is selected, this command builds a regression model of the emissions as a function of the carbon price.
    It applies to a pool of emissions for all the modelled regions. Therefore, the estimated carbon price applies to all the modelled regions.
    The regression model, the method calculates iteratively the emissions at pre-defined carbon price sample values.
    The emissions-carbon price couples are used to used to fit the emission-carbon price relation, is uer-defined (ie. linear or exponential fitter).
@@ -123,10 +123,10 @@ Example
    When the `bisection` method is selected, this command applies a bisection method to solve the carbon market.
    Similarly to the `fitting` method, the carbon market includes a pool of all the modelled regions. The obtained carbon price
    applies to all the regions, as above. This method solves as a typical bisection algorithm.
-   It is coded independently to use the internal signature of the `register_carbon_budget_method`. The algorithm aims to find a root of 
-   the function emissions-carbon price, as for the carbon price at which the carbon budget is met. 
+   It is coded independently to use the internal signature of the `register_carbon_budget_method`. The algorithm aims to find a root of
+   the function emissions-carbon price, as for the carbon price at which the carbon budget is met.
    The algorithm iteratively modifies the carbon price and estimates the corresponding emissions.
-   It stops when the convergence or stop criteria are met. 
+   It stops when the convergence or stop criteria are met.
    This happens for example either when the carbon budget or the maximum number of iterations are met.
    Alongside the selection of the method, the user can define a `sample_size`, representing the number of iterations of the bisection method.
 
@@ -141,7 +141,7 @@ Example
 
 *method_options*
    Additional options for the specific carbon method. In particular, the `refine_price` activate a sanity check on the adjusted carbon price.
-   The sanity check applies an upper limit on the carbon price obtained from the algorithm (either `fitting` or `bisection`), called 
+   The sanity check applies an upper limit on the carbon price obtained from the algorithm (either `fitting` or `bisection`), called
    `price_too_high_threshold`, a user-defined threshold based on heuristics on the values of the carbon price, reflecting typical historical trends.
 
 *fitter*
@@ -253,7 +253,7 @@ aggregates such as:
     nightlife = ["evening", "night"]
 
  It is possible to specify a timeslice level for the mca by adding an
-`mca.timeslice_levels` section, using an inline table format. 
+`mca.timeslice_levels` section, using an inline table format.
 See section on `Timeslices_`.
 
 *outputs_cache*
@@ -315,13 +315,13 @@ A sector accepts these atributes:
    - "conversion": 20
    - "supply": 30
    - "last": 100
-   
+
    Defaults to "last".
 
 *interpolation*
    Interpolation method user when filling in missing values. Available interpolation
    methods depend on the underlying `scipy method's kind attribute`_.
-   
+
    .. _scipy method's kind attribute: https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
 
 *investment_production*
@@ -338,7 +338,7 @@ A sector accepts these atributes:
       costing = "prices"
 
    MUSE provides two methods in :py:mod:`muse.production`:
-   
+
    - share: the production is the maximum production for the existing capacity and
       the technology's utilization factor.
       See :py:func:`muse.production.maximum_production`.
@@ -371,7 +371,7 @@ Sectors contain a number of subsections:
 
    *interactions* are specified as a :ref:`TOML array<toml-array>`, e.g. with double
    brackets. Each sector can specify an arbitrary number of interactaction, simply by
-   adding an extra interaction row.    
+   adding an extra interaction row.
 
    There are two orthogonal concepts to interactions:
 
@@ -446,7 +446,7 @@ to define the timeslice simply by refering to the slices it will use at each lev
 .. _sector-timeslices:
 
 *timeslice_levels*
-   Optional. These define the timeslices of a sector. If not specified, the finest timeslice levels will be used 
+   Optional. These define the timeslices of a sector. If not specified, the finest timeslice levels will be used
    (See `Timeslices`_).
    It can be implemented with the following rows:
 
@@ -578,7 +578,7 @@ to define the timeslice simply by refering to the slices it will use at each lev
       be added by interested users, and registered with MUSE via
       :py:func:`muse.outputs.register_output_sink`. See
       :py:mod:`muse.outputs` for more details.
-   
+
    - *filename*: defines the format of the file where to save the data. There are several
       standard values that are automatically substituted:
 
@@ -622,7 +622,7 @@ Preset sectors
 
 The commodity production, commodity consumption and product prices of preset sectors are determined
 exogeneously. They are know from the start of the simulation and are not affected by the
-simulation. 
+simulation.
 
 Preset sectors are defined in :py:class:`~muse.sectors.PresetSector`.
 
@@ -719,7 +719,7 @@ The following attributes are accepted:
 
 *timeslice_shares_path*
    Incompatible with :ref:`consumption_path<preset-consumption>` or
-   :ref:`demand_path<preset-demand>`. Optional csv file giving shares per timeslice. 
+   :ref:`demand_path<preset-demand>`. Optional csv file giving shares per timeslice.
    The timeslice share definition needs to have a consistent number of timeslices as the
    sectoral level time slices.
    Requires
@@ -740,7 +740,7 @@ Legacy Sectors
 --------------
 
 Legacy sectors wrap sectors developed for a previous version of MUSE to the open-source
-version. 
+version.
 
 Preset sectors are defined in :py:class:`~muse.sectors.PresetSector`.
 

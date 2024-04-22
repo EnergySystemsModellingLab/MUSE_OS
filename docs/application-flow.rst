@@ -512,7 +512,3 @@ The typical choice used in most examples in MUSE is ``share``, where the utiliza
 Once the supply is obtained, the consumed commodities required to achieve that production level are calculated. The cheapest fuel for flexible technologies is used.
 
 Finally, the cost associated with that supply is calculated as the weighted average *annual LCOE* over assets, where the weights are the supply. This is later used to set the new prices.
-
-
-
-

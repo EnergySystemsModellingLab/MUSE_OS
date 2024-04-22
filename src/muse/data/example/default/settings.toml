@@ -55,7 +55,7 @@ commodities_out = '{path}/technodata/residential/CommOut.csv'
 [sectors.residential.subsectors.retro_and_new]
 agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
-lpsolver = "scipy" # Optional, defaults to "adhoc" 
+lpsolver = "scipy" # Optional, defaults to "adhoc"
 constraints = [ # Optional, defaults to the constraints below
     "max_production",
     "max_capacity_expansion",
@@ -63,7 +63,7 @@ constraints = [ # Optional, defaults to the constraints below
     "search_space",
 ]
 demand_share = "new_and_retro" # Optional, default to new_and_retro
-forecast = 5 # Optional, defaults to 5 
+forecast = 5 # Optional, defaults to 5
 
 [[sectors.residential.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
