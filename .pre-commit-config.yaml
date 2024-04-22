@@ -6,6 +6,8 @@ repos:
     hooks:
       - id: check-merge-conflict
       - id: debug-statements
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
   - repo: https://github.com/timothycrosley/isort
     rev: "5.13.2"
     hooks:
