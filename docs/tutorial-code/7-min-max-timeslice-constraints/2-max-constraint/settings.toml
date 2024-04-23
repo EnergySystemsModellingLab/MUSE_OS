@@ -1,14 +1,12 @@
 plugins = "{path}/output.py"
-
 # Global settings - most REQUIRED
 time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
-foresight = 5   # Has to be a multiple of the minimum separation between the years in time framework
+foresight = 5  # Has to be a multiple of the minimum separation between the years in time framework
 regions = ["R1"]
 interest_rate = 0.1
 interpolation_mode = 'Active'
 log_level = 'info'
-excluded_commodities=["solar", "wind"]
-
+excluded_commodities = ["solar", "wind"]
 # Convergence parameters
 equilibrium_variable = 'demand'
 maximum_iterations = 100
@@ -34,12 +32,10 @@ budget = []
 projections = '{path}/input/Projections.csv'
 global_commodities = '{path}/input/GlobalCommodities.csv'
 
-
 [sectors.residential]
 type = 'default'
 priority = 1
 dispatch_production = 'share'
-
 technodata = '{path}/technodata/residential/Technodata.csv'
 commodities_in = '{path}/technodata/residential/CommIn.csv'
 commodities_out = '{path}/technodata/residential/CommOut.csv'
@@ -48,11 +44,12 @@ commodities_out = '{path}/technodata/residential/CommOut.csv'
 agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
 lpsolver = "scipy"  # Optional, defaults to "adhoc"
-constraints = [  # Optional, defaults to the constraints below
+constraints = [
+    # Optional, defaults to the constraints below
     "max_production",
     "max_capacity_expansion",
     "demand",
-    "search_space",
+    "search_space"
 ]
 demand_share = "new_and_retro"  # Optional, default to new_and_retro
 forecast = 5  # Optional, defaults to 5
@@ -66,23 +63,20 @@ index = false
 
 [[sectors.residential.outputs]]
 filename = '{path}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+sink = 'csv'
+overwrite = true
 quantity.name = "supply"
 quantity.sum_over = "timeslice"
 quantity.drop = ["comm_usage", "units_prices"]
-sink = 'csv'
-overwrite = true
-
 
 [[sectors.residential.interactions]]
 net = 'new_to_retro'
 interaction = 'transfer'
 
-
 [sectors.power]
 type = 'default'
 priority = 2
 dispatch_production = 'costed'
-
 technodata = '{path}/technodata/power/Technodata.csv'
 technodata_timeslices = '{path}/technodata/power/TechnodataTimeslices.csv'
 commodities_in = '{path}/technodata/power/CommIn.csv'
@@ -105,48 +99,49 @@ filename = '{path}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "supply_timeslice"
 sink = "csv"
 overwrite = true
-index=false
-keep_columns = [ "timeslice",
-                 "asset",
-                 "year",
-                 "commodity",
-                 "region",
-                 "installed",
-                 "technology",
-                 "month",
-                 "day",
-                 "hour",
-                 "supply"]
-
+index = false
+keep_columns = [
+    "timeslice",
+    "asset",
+    "year",
+    "commodity",
+    "region",
+    "installed",
+    "technology",
+    "month",
+    "day",
+    "hour",
+    "supply"
+]
 
 [[sectors.power.outputs]]
 filename = '{path}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "consumption_timeslice"
 sink = "csv"
 overwrite = true
-index=false
-keep_columns = [ "timeslice",
-                 "asset",
-                 "year",
-                 "commodity",
-                 "region",
-                 "installed",
-                 "technology",
-                 "month",
-                 "day",
-                 "hour",
-                 "consumption"]
+index = false
+keep_columns = [
+    "timeslice",
+    "asset",
+    "year",
+    "commodity",
+    "region",
+    "installed",
+    "technology",
+    "month",
+    "day",
+    "hour",
+    "consumption"
+]
 
 [[sectors.power.interactions]]
 net = 'new_to_retro'
 interaction = 'transfer'
 
-
 [sectors.gas]
 type = 'default'
 priority = 3
 dispatch_production = 'share'
-
 technodata = '{path}/technodata/gas/Technodata.csv'
 commodities_in = '{path}/technodata/gas/CommIn.csv'
 commodities_out = '{path}/technodata/gas/CommOut.csv'
@@ -155,7 +150,6 @@ commodities_out = '{path}/technodata/gas/CommOut.csv'
 agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/gas/ExistingCapacity.csv'
 lpsolver = "scipy"
-
 
 [[sectors.gas.outputs]]
 filename = '{path}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
@@ -168,18 +162,16 @@ index = false
 net = 'new_to_retro'
 interaction = 'transfer'
 
-
 [sectors.residential_presets]
 type = 'presets'
 priority = 0
-consumption_path= "{path}/technodata/preset/*Consumption.csv"
-
+consumption_path = "{path}/technodata/preset/*Consumption.csv"
 
 [timeslices]
+level_names = ["month", "day", "hour"]
 all-year.all-week.night = 1460
 all-year.all-week.morning = 1460
 all-year.all-week.afternoon = 1460
 all-year.all-week.early-peak = 1460
 all-year.all-week.late-peak = 1460
 all-year.all-week.evening = 1460
-level_names = ["month", "day", "hour"]
