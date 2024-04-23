@@ -16,7 +16,7 @@ jobs:
         python-version: 3.9
     - name: Install dependencies
       run: |
-        sudo apt update -y 
+        sudo apt update -y
         sudo apt install -y pandoc graphviz latexmk texlive-latex-recommended \
                 texlive-latex-extra texlive-fonts-recommended
         python -m pip install --upgrade pip

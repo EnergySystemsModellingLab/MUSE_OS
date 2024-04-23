@@ -35,7 +35,7 @@ The forward price trajectory should follow the structure reported in the table b
 
 .. csv-table:: Initial market projections
    :header: RegionName, Attribute, Time, com1, com2, com3
-                     
+
 
    Unit, -, Year, MUS$2010/PJ, MUS$2010/PJ, MUS$2010/PJ
    region1, CommodityPrice, 2010, 20, 1.9583, 2
