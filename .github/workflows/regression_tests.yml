@@ -3,7 +3,6 @@ on:
     - cron: 0 0 * * 0 # At 12:00 AM, only on Sunday
 
 jobs:
-
   regression-tests:
     runs-on: ${{ matrix.os }}
 
