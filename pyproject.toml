@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "MUSE_OS"
 authors = [
-    {name = "Sustainable Gas Institute", email = "sgi@imperial.ac.uk"},
+    {name = "Sustainable Gas Institute", email = "sgi@imperial.ac.uk"}
 ]
 description = "Energy System Model"
 readme = "README.md"
@@ -18,7 +18,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Other Audience",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
 ]
 dependencies = [
     "numpy==1.23.0",
@@ -30,7 +30,7 @@ dependencies = [
     "toml",
     "xlrd==1.2.0",
     "mypy-extensions",
-    "pypubsub",
+    "pypubsub"
 ]
 dynamic = ["version"]
 
@@ -63,7 +63,7 @@ doc = [
 ]
 excel = ["openpyxl"]
 gui = [
-    "gooey",
+    "gooey"
 ]
 
 [project.urls]
@@ -97,7 +97,7 @@ markers = [
     "sgidata: test that require legacy data",
     "legacy: test that require legacy modules",
     "regression: a regression test",
-    "notebook: a test which consist in running a jupyter notebook",
+    "notebook: a test which consist in running a jupyter notebook"
 ]
 
 [tool.mypy]
