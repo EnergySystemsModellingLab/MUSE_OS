@@ -2,12 +2,12 @@ cff-version: 1.1.0
 message: "If you use this software, please cite it as below."
 authors:
   - family-names: Giarola
-	given-names: Sara
+    given-names: Sara
   - family-names: Kell
-	given-names: Alexander
+    given-names: Alexander
   - family-names: Hawkes
-	given-names: Adam
+    given-names: Adam
 
-title: SGIModel/MUSE_OS: v1.0.1
+title: SGIModel/MUSE_OS
 version: v1.0.1
 date-released: 2022-03-25
