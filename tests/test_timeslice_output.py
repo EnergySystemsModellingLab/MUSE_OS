@@ -25,7 +25,6 @@ def test_fullsim_timeslices(tmpdir, utilization_factors, process_name):
     from operator import ge, le
 
     import pandas as pd
-
     from muse import examples
     from muse.mca import MCA
 
@@ -85,7 +84,6 @@ def test_zero_utilization_factor_supply_timeslice(
     tmpdir, utilization_factors, process_name, output
 ):
     import pandas as pd
-
     from muse import examples
     from muse.mca import MCA
 

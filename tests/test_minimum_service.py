@@ -27,7 +27,6 @@ def modify_minimum_service_factors(
 )
 def test_minimum_service_factor(tmpdir, minimum_service_factor, process_name):
     import pandas as pd
-
     from muse import examples
     from muse.mca import MCA
 

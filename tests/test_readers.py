@@ -227,9 +227,8 @@ def test_format_paths_path():
 
 
 def test_split_toml_one_down(tmpdir):
-    from toml import dumps
-
     from muse.readers.toml import read_split_toml
+    from toml import dumps
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -252,9 +251,8 @@ def test_split_toml_one_down(tmpdir):
 
 
 def test_split_toml_nested(tmpdir):
-    from toml import dumps
-
     from muse.readers.toml import read_split_toml
+    from toml import dumps
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -278,10 +276,9 @@ def test_split_toml_nested(tmpdir):
 
 
 def test_split_toml_too_manyops_in_outer(tmpdir):
+    from muse.readers.toml import IncorrectSettings, read_split_toml
     from pytest import raises
     from toml import dumps
-
-    from muse.readers.toml import IncorrectSettings, read_split_toml
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -302,10 +299,9 @@ def test_split_toml_too_manyops_in_outer(tmpdir):
 
 
 def test_split_toml_too_manyops_in_inner(tmpdir):
+    from muse.readers.toml import IncorrectSettings, read_split_toml
     from pytest import raises
     from toml import dumps
-
-    from muse.readers.toml import IncorrectSettings, read_split_toml
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -326,10 +322,9 @@ def test_split_toml_too_manyops_in_inner(tmpdir):
 
 
 def test_split_toml_incorrect_inner_name(tmpdir):
+    from muse.readers.toml import MissingSettings, read_split_toml
     from pytest import raises
     from toml import dumps
-
-    from muse.readers.toml import MissingSettings, read_split_toml
 
     (tmpdir / "outer.toml").write(
         dumps(

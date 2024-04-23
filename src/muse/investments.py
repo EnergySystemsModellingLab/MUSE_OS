@@ -40,6 +40,7 @@ Returns:
     A data array with dimensions `asset` and `technology` specifying the amount
     of newly invested capacity.
 """
+
 __all__ = [
     "adhoc_match_demand",
     "cliff_retirement_profile",

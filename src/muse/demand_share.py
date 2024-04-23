@@ -36,6 +36,7 @@ Returns:
     the :py:attr:`~muse.agents.agent.AbstractAgent.uuid` of the agent, then agents will
     only service that par of the demand.
 """
+
 __all__ = [
     "new_and_retro",
     "factory",
@@ -83,7 +84,7 @@ def register_demand_share(function: DEMAND_SHARE_SIGNATURE):
 
 
 def factory(
-    settings: Optional[Union[Text, Mapping[Text, Any]]] = None
+    settings: Optional[Union[Text, Mapping[Text, Any]]] = None,
 ) -> DEMAND_SHARE_SIGNATURE:
     if settings is None or isinstance(settings, Text):
         name = settings or "new_and_retro"

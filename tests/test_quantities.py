@@ -41,10 +41,9 @@ def make_array(array):
 
 def test_supply_enduse(technologies, capacity, timeslice):
     """End-use part of supply."""
-    from numpy.random import random
-
     from muse.commodities import is_enduse
     from muse.quantities import maximum_production, supply
+    from numpy.random import random
 
     production = maximum_production(technologies, capacity)
     share = xr.DataArray(
@@ -332,10 +331,9 @@ def test_capacity_in_use(production: xr.DataArray, technologies: xr.Dataset):
 
 
 def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
+    from muse.quantities import supply_cost
     from numpy import average
     from numpy.random import random
-
-    from muse.quantities import supply_cost
 
     timeslice = timeslice.timeslice
     production = production.sel(year=production.year.min(), drop=True)
@@ -372,9 +370,8 @@ def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
 
 
 def test_supply_cost_zero_prod(production: xr.DataArray, timeslice: xr.Dataset):
-    from numpy.random import randn
-
     from muse.quantities import supply_cost
+    from numpy.random import randn
 
     timeslice = timeslice.timeslice
     production = production.sel(year=production.year.min(), drop=True)

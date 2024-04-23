@@ -25,6 +25,7 @@ Arguments:
 Returns:
     A data array with ranked replacement technologies.
 """
+
 __all__ = [
     "register_decision",
     "mean",

@@ -1,4 +1,5 @@
 """Ensemble of functions to read MUSE data."""
+
 __all__ = ["read_settings"]
 
 import importlib.util as implib
@@ -711,7 +712,7 @@ def check_budget_parameters(settings: Dict) -> None:
     length = len(settings["carbon_budget_control"]["budget"])
     if length > 0:
         msg = "ERROR - budget_check must have the same length that time_framework"
-        if type(settings["time_framework"]) is list:
+        if isinstance(settings["time_framework"], list):
             assert length == len(settings["time_framework"]), msg
             coords = settings["time_framework"]
         else:

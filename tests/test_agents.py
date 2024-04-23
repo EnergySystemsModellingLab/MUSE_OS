@@ -1,15 +1,15 @@
 """Test buildings agents."""
+
 from pytest import fixture
 
 
 @fixture
 def assets():
     """Creates assets with believable capacity profile."""
+    from muse.utilities import avoid_repetitions
     from numpy import ones
     from numpy.random import choice, randint
     from xarray import Dataset  # noqa
-
-    from muse.utilities import avoid_repetitions
 
     result = Dataset()
     result["year"] = "year", range(2010, 2031)
@@ -167,9 +167,8 @@ def test_merge_assets(assets):
 
 
 def test_clean_assets(assets):
-    from numpy.random import choice
-
     from muse.utilities import clean_assets
+    from numpy.random import choice
 
     current_year = choice(range(assets.year.min().values, assets.year.max().values))
     iempties = assets.asset[range(0, len(assets.asset), 3)].asset

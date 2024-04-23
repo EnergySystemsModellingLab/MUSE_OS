@@ -41,10 +41,9 @@ def drivers():
 
 
 def test_exponential(regression_params, drivers):
+    from muse.regressions import Exponential
     from numpy import exp
     from xarray import broadcast
-
-    from muse.regressions import Exponential
 
     rp = regression_params.drop_vars(("c", "w", "b0", "b1"))
     functor = Exponential(**(rp.data_vars))
@@ -60,9 +59,8 @@ def test_exponential(regression_params, drivers):
 
 
 def test_linear(regression_params, drivers):
-    from xarray import DataArray, broadcast
-
     from muse.regressions import Linear
+    from xarray import DataArray, broadcast
 
     rp = regression_params.drop_vars(("c", "w", "b"))
     functor = Linear(**rp.data_vars)

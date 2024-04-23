@@ -1,4 +1,5 @@
 """Collection of functions and stand-alone algorithms."""
+
 from typing import (
     Any,
     Callable,

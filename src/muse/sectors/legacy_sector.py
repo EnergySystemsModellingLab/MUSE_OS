@@ -3,6 +3,7 @@ with the old MUSE sectors.
 
 It can be deleted once accessing those sectors is no longer needed.
 """
+
 from dataclasses import dataclass
 from itertools import chain
 from logging import getLogger

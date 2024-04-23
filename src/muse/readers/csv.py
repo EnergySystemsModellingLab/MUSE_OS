@@ -1,4 +1,5 @@
 """Ensemble of functions to read MUSE data."""
+
 __all__ = [
     "read_technodictionary",
     "read_io_technodata",
@@ -287,7 +288,9 @@ def read_technologies(
         sector = technodata_path_or_sector
         assert sector is None or isinstance(sector, Text)
         tpath = find_sectors_file(
-            f"technodata{sector.title()}.csv", sector, sectors_directory  # type: ignore
+            f"technodata{sector.title()}.csv",
+            sector,
+            sectors_directory,  # type: ignore
         )
         opath = find_sectors_file(
             f"commOUTtechnodata{sector.title()}.csv",  # type: ignore
@@ -910,9 +913,7 @@ def check_utilization_not_all_zero(data, filename):
     if "utilization_factor" not in data.columns:
         raise ValueError(
             """A technology needs to have a utilization factor defined for every
-             timeslice. Please check file {}.""".format(
-                filename
-            )
+             timeslice. Please check file {}.""".format(filename)
         )
     else:
         utilization_sum = data.groupby(["technology", "region", "year"]).sum()
@@ -924,8 +925,6 @@ def check_utilization_not_all_zero(data, filename):
             )
             raise ValueError(
                 """A technology can not have a utilization factor of 0 for every
-                 timeslice. Please check file {}.""".format(
-                    filename
-                )
+                 timeslice. Please check file {}.""".format(filename)
             )
     return data

@@ -55,6 +55,7 @@ Returns:
     Other dimensions can be present, as long as the subsequent decision function nows
     how to reduce them.
 """
+
 __all__ = [
     "register_objective",
     "comfort",
@@ -103,7 +104,7 @@ def objective_factory(settings=Union[Text, Mapping]):
 
 
 def factory(
-    settings: Union[Text, Mapping, Sequence[Union[Text, Mapping]]] = "LCOE"
+    settings: Union[Text, Mapping, Sequence[Union[Text, Mapping]]] = "LCOE",
 ) -> Callable:
     """Creates a function computing multiple objectives.
 
@@ -682,7 +683,8 @@ def net_present_value(
     a Component earns over its lifetime minus all the costs of installing and operating
     it. Follows the definition of the `net present cost`_ given by HOMER Energy.
     Metrics are calculated
-    .. _net present cost: https://www.homerenergy.com/products/pro/docs/3.11/net_present_cost.html # noqa
+    .. _net present cost:
+    ..      https://www.homerenergy.com/products/pro/docs/3.11/net_present_cost.html
 
     - energy commodities INPUTS are related to fuel costs
     - environmental commodities OUTPUTS are related to environmental costs
