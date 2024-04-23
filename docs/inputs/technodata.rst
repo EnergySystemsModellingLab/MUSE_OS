@@ -151,11 +151,11 @@ Agent_0, ..., Agent_N
       resBoilerElectric, region1, 2010, ..., 1
       resBoilerElectric, region1, 2030, ..., 1
 
-   In a two-agent simulation, a new column neeeds to be added for each retrofit agent belonging to the new-retrofit agent pair.
+   In a two-agent simulation, a new column needs to be added for each retrofit agent belonging to the new-retrofit agent pair.
    The column heading refers each retrofit agent "AgentShare" as defined in the agents' definition (see :ref:`inputs-agents`).
    Assuming a split of the initial capacity into 30 \% and 70 \% for each retrofit agent, the model table would be setup as follows.
    The values of the "AgetnShare" needs to reflect the demand split represented by the "Quantity" attribute (see :ref:`inputs-agents`),
-   to make sure that the initial demand is fullfilled with the initial stock.
+   to make sure that the initial demand is fulfilled with the initial stock.
 
    .. csv-table:: Techno-data: AgentShare - 2 agents
       :header: ProcessName, RegionName, Time, ..., Agent_2, Agent_4

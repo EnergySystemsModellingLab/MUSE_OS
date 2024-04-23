@@ -58,13 +58,13 @@ dictionary).
    [[some_table_of_data]]
    a_key = "another value"
 
-.. Since MUSE requires a number of data files, paths to file can be formated quite
+.. Since MUSE requires a number of data files, paths to file can be formatted quite
 .. flexibly. A `path` any key-value where the value ends with `.csv` or `.toml`,
 .. as well any key which ends in `_path`, `_file`, or `_dir`, e.g. `data_path` or
 .. `sector_dir`.  Paths can be formatted with shorthands for specific directories.
 .. Shorth-hands are specified by curly-brackets:
 
-As MUSE requires a number of data file, paths to files can be formated in a flexible manner. Paths can be formatted with shorthands for specific directories and are defined with curly-brackets. For example:
+As MUSE requires a number of data file, paths to files can be formatted in a flexible manner. Paths can be formatted with shorthands for specific directories and are defined with curly-brackets. For example:
 
 
 .. code-block:: TOML

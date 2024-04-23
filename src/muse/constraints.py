@@ -49,7 +49,7 @@ happens as described below.
   reduction or matrix multiplication.
 
 There are two additional rules. However, they are likely to be the result of an
-inefficient defininition of :math:`A_c`, :math:`A_p` and :math:`b`.
+inefficient definition of :math:`A_c`, :math:`A_p` and :math:`b`.
 
 - Any dimension in :math:`A_c` (:math:`A_b`) that is neither in :math:`b` nor in
   :math:`x_c` (:math:`x_p`) is reduced by summation before consideration for the
@@ -139,7 +139,7 @@ Constraint = xr.Dataset
 Where :math:`~` is one of :math:`=,\\leq,\\geq`.
 
 A constraint should contain a data-array `b` corresponding to right-hand-side vector
-of the contraint. It should also contain a data-array `capacity` corresponding to the
+of the constraint. It should also contain a data-array `capacity` corresponding to the
 left-hand-side matrix operator which will be applied to the capacity-related decision
 variables.  It should contain a similar matrix `production` corresponding to
 the left-hand-side matrix operator which will be applied to the production-related
@@ -558,7 +558,7 @@ def lp_costs(
 
     Example:
 
-        We can now construct example inputs to the funtion from the sample model. The
+        We can now construct example inputs to the function from the sample model. The
         costs will be a matrix where each assets has a candidate replacement technology.
 
         >>> from muse import examples
@@ -897,7 +897,7 @@ class ScipyAdapter:
         >>> assert constraint.capacity.data == np.array(1)
         >>> assert len(constraint.capacity.dims) == 0
 
-        And the upperbound is exanded over the replacement technologies,
+        And the upperbound is expanded over the replacement technologies,
         but not over the assets. Hence the assets will be summed over in the final
         constraint:
 
@@ -907,9 +907,9 @@ class ScipyAdapter:
 
         As shown above, it does not bind the production decision variables. Hence,
         production is zero. The matrix operator for the capacity is simply the identity.
-        Hence it can be inputed as the dimensionless scalar 1. The upper bound is simply
-        the maximum for replacement technology (and region, if that particular dimension
-        exists in the problem).
+        Hence it can be inputted as the dimensionless scalar 1. The upper bound is
+        simply the maximum for replacement technology (and region, if that particular
+        dimension exists in the problem).
 
         The lp problem then becomes:
 
@@ -1010,7 +1010,7 @@ class ScipyAdapter:
     def _unified_dataset(
         technologies: xr.Dataset, lpcosts: xr.Dataset, *constraints: Constraint
     ) -> xr.Dataset:
-        """Creates single xr.Dataset from costs and contraints."""
+        """Creates single xr.Dataset from costs and constraints."""
         from xarray import merge
 
         assert "year" not in technologies.dims

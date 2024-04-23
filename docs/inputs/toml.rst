@@ -11,7 +11,7 @@ described in this :ref:`previous section <toml-primer>`. Here, however, we focus
 attributes that are specific to MUSE.
 
 The TOML file can be read using :py:func:`~readers.toml.read_settings`. The resulting
-data is used to construt the market clearing algorithm directly in the :py:meth:`MCA's
+data is used to construct the market clearing algorithm directly in the :py:meth:`MCA's
 factory function <mca.MCA.factory>`.
 
 ------------
@@ -90,7 +90,7 @@ a whole.
 Carbon market
 -------------
 
-This section containts the settings related to the modelling of the carbon market. If omitted, it defaults to not
+This section contains the settings related to the modelling of the carbon market. If omitted, it defaults to not
 including the carbon market in the simulation.
 
 Example
@@ -109,7 +109,7 @@ Example
 *method*
    Method used to equilibrate the carbon market. Available options are `fitting` and `bisection`, however this can be expanded with the `@register_carbon_budget_method` hook in `muse.carbon_budget`.
 
-   The market-clearing algortihm iterates over the sectors until the market reaches an equilibrium in the foresight period (the period next to the one analysed).
+   The market-clearing algorithm iterates over the sectors until the market reaches an equilibrium in the foresight period (the period next to the one analysed).
    This is represented by a stable variation of a commodity demand (or price) between iterations below a defined tolerance.
    The market-clearing algorithm samples a user-defined set of carbon prices.
 
@@ -145,7 +145,7 @@ Example
    `price_too_high_threshold`, a user-defined threshold based on heuristics on the values of the carbon price, reflecting typical historical trends.
 
 *fitter*
-   `fitter` specifies the regression model fit. The regresion approximates the model emissions. Predefined options are `linear` and `exponential`. Further options can be defined using the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
+   `fitter` specifies the regression model fit. The regression approximates the model emissions. Predefined options are `linear` and `exponential`. Further options can be defined using the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
 
 ------------------
 Global input files
@@ -259,7 +259,7 @@ See section on `Timeslices_`.
 *outputs_cache*
    This option behaves exactly like `outputs` for sectors and accepts the same options but
    controls the output of cached quantities instead. This option is NOT available for
-   sectors themselves (i.e using `[[sector.comercial.outputs_cache]]` will have no effect). See
+   sectors themselves (i.e using `[[sector.commercial.outputs_cache]]` will have no effect). See
    :py:mod:`muse.outputs.cache` for more details.
 
    A single row looks like this:
@@ -292,13 +292,13 @@ the user, since it will not affect the model itself.
 
 Sectors are defined in :py:class:`~muse.sectors.Sector`.
 
-A sector accepts these atributes:
+A sector accepts these attributes:
 
 .. _sector-type:
 
 *type*
    Defines the kind of sector this is. *Standard* sectors are those with type
-   "default". This value corresponds to the name with which a sector class is registerd
+   "default". This value corresponds to the name with which a sector class is registered
    with MUSE, via :py:meth:`~muse.sectors.register_sector`. [INSERT OTHER OPTIONS HERE]
 
 .. _sector-priority:
@@ -441,7 +441,7 @@ Sectors contain a number of subsections:
       See :ref:`inputs-iocomms`.
 
    Once the finest timeslice and its aggregates are given, it is  possible for each sector
-to define the timeslice simply by refering to the slices it will use at each level.
+to define the timeslice simply by referring to the slices it will use at each level.
 
 .. _sector-timeslices:
 
@@ -508,7 +508,7 @@ to define the timeslice simply by refering to the slices it will use at each lev
         writing, three are available:
 
         - an "adhoc" solver: Simple in-house solver that ranks the technologies
-          according to cost and sevice the demand incrementally.
+          according to cost and service the demand incrementally.
 
         - "scipy" solver: Formulates investment as a true LP problem and solves it using
           the `scipy solver`_.
@@ -518,7 +518,7 @@ to define the timeslice simply by refering to the slices it will use at each lev
           Users can install it with ``pip install cvxopt`` or ``conda install cvxopt``.
 
     *demand_share*
-        A method used to split the MCA demand into seperate parts to be serviced by
+        A method used to split the MCA demand into separate parts to be serviced by
         specific agents. A basic distinction is between *new* and *retrofit* agents: the
         former asked to respond to an increase of commodity demand investing in new
         assets; the latter asked to invest in new asset to balance the decommissined
@@ -626,7 +626,7 @@ simulation.
 
 Preset sectors are defined in :py:class:`~muse.sectors.PresetSector`.
 
-The three components, production, consumption, and prices, can be set independantly and
+The three components, production, consumption, and prices, can be set independently and
 not all three need to be set. Production and consumption default to zero, and prices
 default to leaving things unchanged.
 
@@ -661,7 +661,7 @@ The following attributes are accepted:
 
 *consumption_path*
    CSV output files, one per year. This attribute can include wild cards, i.e. '*',
-   which can match anything. For instance: `consumption_path = "{cwd}/Consumtion*.csv"` will match any csv file starting with "Consumption" in the
+   which can match anything. For instance: `consumption_path = "{cwd}/Consumption*.csv"` will match any csv file starting with "Consumption" in the
    current working directory. The file names must include the year for which it defines
    the consumption, e.g. `Consumption2015.csv`.
 
@@ -787,4 +787,4 @@ itself can use the following attributes.
    Path to a technodata CSV file. See. :ref:`inputs-technodata`.
 
 *output_path*
-   Path to a diretory where the sector will write output files.
+   Path to a directory where the sector will write output files.
