@@ -8,14 +8,11 @@ repos:
       - id: debug-statements
       - id: trailing-whitespace
       - id: end-of-file-fixer
-  - repo: https://github.com/psf/black
-    rev: "23.12.1"
-    hooks:
-      - id: black
-        exclude: docs/
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.4.1
     hooks:
+      - id: ruff-format
+        types_or: [python, pyi, jupyter]
       - id: ruff
         types_or: [python, pyi, jupyter]
         args: [--fix]

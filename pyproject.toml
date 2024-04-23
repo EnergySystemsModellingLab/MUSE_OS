@@ -36,7 +36,6 @@ dynamic = ["version"]
 all = ["MUSE_OS[dev,doc,excel]"]
 dev = [
     "pytest>4.0.2",
-    "black",
     "IPython",
     "jupyter",
     "nbconvert",
