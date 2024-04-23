@@ -36,3 +36,8 @@ repos:
     hooks:
       - id: prettier
         types_or: [yaml, json]
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.13.0
+    hooks:
+      - id: pretty-format-toml
+        args: [--autofix, --indent, "4", --no-sort]
