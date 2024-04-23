@@ -11,11 +11,9 @@ assignees: ''
 
 (Please, describe in detail what you want to achieve and what parts of the documentation you have checked to do so)
 
-
 ## What you have tried
 
 (If you have already taken some steps, please, describe here what you have tried. Provide any input files you are trying to use).
-
 
 ## Context
 

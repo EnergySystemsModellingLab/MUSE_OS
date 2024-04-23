@@ -18,16 +18,16 @@ There are a huge number of ways that MUSE could be used. The energy field is var
 
 .. #. **Market clearing algorithm** is the algorithm which determines global commodity prices based upon the balancing of supply and demand from each of the sectors. It must be noted, however, that only the conversion and supply sectors are able to modify prices; the demand sectors are price-takers, and so do not modify prices.
 
-.. #. **Equilibrium prices** are the prices determined by the market clearing algorithm and can determine the investments made by agents in various sectors. This allows for the model to project how the system may develop over a time period. 
+.. #. **Equilibrium prices** are the prices determined by the market clearing algorithm and can determine the investments made by agents in various sectors. This allows for the model to project how the system may develop over a time period.
 
 .. These features are described in more detail in the rest of this documentation.
 
 .. What is MUSE?
 .. -------------
 
-MUSE is an open source agent-based modelling environment that can be used to simulate change in an energy system over time. An example of the type of question MUSE can help in answering is: 
+MUSE is an open source agent-based modelling environment that can be used to simulate change in an energy system over time. An example of the type of question MUSE can help in answering is:
 
-- How may a carbon budget affect investments made in the power sector over the next 30 years? 
+- How may a carbon budget affect investments made in the power sector over the next 30 years?
 
 MUSE can incorporate residential, power, industrial and conversion sectors, meaning many questions can be explored using MUSE, as per the wishes of the user.
 
@@ -38,19 +38,19 @@ MUSE is technology rich and can model energy production, conversion and end-use 
 Every sector is a user configurable module. This means that a user can configure any number of sectors, cointaining custom, user-defined technologies and commodities. MUSE is fully data-driven, meaning that the configuration of the model is carried out using a selection of :ref:`input-files`. This means that you are able to customise MUSE to your wishes by modifying these input files. Within a benchmark year, MUSE allows for a user-defined temporal granularity. This allows for the benchmark year to be split into different seasons and times, where energy demand may differ. Thus allowing us to model diurnal peaks in the demand, varying weekly and seasonally.
 
 
-MUSE is highly configurable, but it has been built with medium and long-term scenarios in mind; for the short-term, MUSE can be linked with more detailed models. As the number of time steps and regions increase, the computational time also increases, which is something to keep in mind when building highly complex models. 
+MUSE is highly configurable, but it has been built with medium and long-term scenarios in mind; for the short-term, MUSE can be linked with more detailed models. As the number of time steps and regions increase, the computational time also increases, which is something to keep in mind when building highly complex models.
 
 .. MUSE differs from the vast majority of energy systems models, which are intertemporal optimisation, by allowing agents to have "limited foresight". This enables these agents to invest under uncertainty of the future, as in the real world. In addition, MUSE is a "partial equilibrium" model, in the sense that it balances supply and demand of each energy commodity in the system.
 
 
-Most energy systems models are based on cost optimisation and assume that all actors choose the cheapest available options. MUSE, however, uses a simulation framework which allows for the modelling of each sector according to the specific drivers triggering new investments in the sector. Despite the heterogeneity of these sectors, they interact with each other via the partial equilibrium approach which balances supply and demand of each commodity in the energy system. 
+Most energy systems models are based on cost optimisation and assume that all actors choose the cheapest available options. MUSE, however, uses a simulation framework which allows for the modelling of each sector according to the specific drivers triggering new investments in the sector. Despite the heterogeneity of these sectors, they interact with each other via the partial equilibrium approach which balances supply and demand of each commodity in the energy system.
 
 As opposed to the majority of energy systems models, which assume that investors have full knowledge of future changes in the energy system across decades (intertemporal optimisation), MUSE uses a limited foresight approach. This allows a user to define a configurable number of years over which the investors have knowledge of future commodity prices and demand. This more closely models the real-life case, we believe.
 
 What questions can MUSE answer?
 -------------------------------
 
-MUSE allows for users to investigate how an energy system may evolve over a time period, based upon investors using different decision metrics or objectives such as the `net present value <https://en.wikipedia.org/wiki/Net_present_value>`_, `levelized cost of electricity <https://en.wikipedia.org/wiki/Levelized_cost_of_energy>`_ or a custom-defined function. In addition to this, it can simulate how investors search for technology options, and how different objectives are combined to reach an investment decision. 
+MUSE allows for users to investigate how an energy system may evolve over a time period, based upon investors using different decision metrics or objectives such as the `net present value <https://en.wikipedia.org/wiki/Net_present_value>`_, `levelized cost of electricity <https://en.wikipedia.org/wiki/Levelized_cost_of_energy>`_ or a custom-defined function. In addition to this, it can simulate how investors search for technology options, and how different objectives are combined to reach an investment decision.
 
 The search for new technologies can depend on several factors such as agents' budgets, technology maturity or preferences on the fuel-type. For instance, an investor in the power sector may decide that they want to focus on renewable energy, whereas another may prefer the perceived most profitable option.
 
@@ -62,13 +62,13 @@ Examples of the questions MUSE can answer include:
 
 - How might a carbon tax impact investments made in the power sector?
 
-.. Of course, these are just three examples and the questions that can be answered in the energy field are diverse and varied. 
+.. Of course, these are just three examples and the questions that can be answered in the energy field are diverse and varied.
 
 
 What are MUSE's unique features?
 --------------------------------
 
-MUSE is a generalisable agent-based modelling environment and simulates energy transitions from the point of view of the investor and consumer agents. This means that users can define their own agents based upon their needs. The fact that MUSE is an agent-based model means that each of these agents can have different investment behaviours. 
+MUSE is a generalisable agent-based modelling environment and simulates energy transitions from the point of view of the investor and consumer agents. This means that users can define their own agents based upon their needs. The fact that MUSE is an agent-based model means that each of these agents can have different investment behaviours.
 
 Additionally, agent-based models allow for agents to model imperfect information and limited foresight. An example of limited foresight is the ability to model the uncertainty residential users face when predicting the price of gas over the next 25 years. An example of imperfection information is that the technologies that agents invest in are tailored to represent the agents' attitude towards novel technologies and might not include all the technologies available. This is a unique feature to agent-based models when compared to intertemporal optimisation models and more closely models the real world. Many energy systems models are intertemporal optimisation models, which consider the viewpoint of a single benevolent decision maker, with perfect foresight and knowledge. These models optimise energy system investment and operation.
 
@@ -76,7 +76,7 @@ Whilst such intertemporal optimisation models are certainly useful, MUSE is diff
 
 MUSE is completely open source, and ready for development.
 
-Visualisation of MUSE 
+Visualisation of MUSE
 ---------------------
 
 .. image:: figures/MUSE-diagram-carbon-budget-colour.png
@@ -158,4 +158,3 @@ This whole process repeats itself at every timestep until the specified number o
         first -> invFirst [style=invis]
         second -> invSecond [style=invis]
     }
-

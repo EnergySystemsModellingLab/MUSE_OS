@@ -1,23 +1,23 @@
 Hello, you!
 
                         units_prices                            comm_usage  \
-region year commodity                                                        
-R1     2050 electricity  MUS$2010/PJ      CommodityUsage.ENERGY|CONSUMABLE   
-            gas          MUS$2010/PJ      CommodityUsage.ENERGY|CONSUMABLE   
-            heat         MUS$2010/PJ         CommodityUsage.ENERGY|PRODUCT   
-            CO2f         MUS$2010/kt  CommodityUsage.ENVIRONMENTAL|PRODUCT   
-       2055 electricity  MUS$2010/PJ      CommodityUsage.ENERGY|CONSUMABLE   
-            gas          MUS$2010/PJ      CommodityUsage.ENERGY|CONSUMABLE   
-            heat         MUS$2010/PJ         CommodityUsage.ENERGY|PRODUCT   
-            CO2f         MUS$2010/kt  CommodityUsage.ENVIRONMENTAL|PRODUCT   
+region year commodity
+R1     2050 electricity  MUS$2010/PJ      CommodityUsage.ENERGY|CONSUMABLE
+            gas          MUS$2010/PJ      CommodityUsage.ENERGY|CONSUMABLE
+            heat         MUS$2010/PJ         CommodityUsage.ENERGY|PRODUCT
+            CO2f         MUS$2010/kt  CommodityUsage.ENVIRONMENTAL|PRODUCT
+       2055 electricity  MUS$2010/PJ      CommodityUsage.ENERGY|CONSUMABLE
+            gas          MUS$2010/PJ      CommodityUsage.ENERGY|CONSUMABLE
+            heat         MUS$2010/PJ         CommodityUsage.ENERGY|PRODUCT
+            CO2f         MUS$2010/kt  CommodityUsage.ENVIRONMENTAL|PRODUCT
 
-                         consumption  
-region year commodity                 
-R1     2050 electricity         12.0  
-            gas                  0.0  
-            heat                 0.0  
-            CO2f                 0.0  
-       2055 electricity         12.0  
-            gas                  0.0  
-            heat                 0.0  
-            CO2f                 0.0  
+                         consumption
+region year commodity
+R1     2050 electricity         12.0
+            gas                  0.0
+            heat                 0.0
+            CO2f                 0.0
+       2055 electricity         12.0
+            gas                  0.0
+            heat                 0.0
+            CO2f                 0.0
