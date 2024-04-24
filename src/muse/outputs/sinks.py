@@ -164,7 +164,7 @@ def sink_to_file(suffix: Text):
 
 
 def standardize_quantity(
-    function: Callable[[Union[pd.DataFrame, xr.DataArray], Text], None]
+    function: Callable[[Union[pd.DataFrame, xr.DataArray], Text], None],
 ):
     """Helps standardize how the quantities are specified.
 

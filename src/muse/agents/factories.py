@@ -1,4 +1,5 @@
 """Holds all building agents."""
+
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Text, Union
 

@@ -8,27 +8,30 @@ repos:
       - id: debug-statements
       - id: trailing-whitespace
       - id: end-of-file-fixer
-  - repo: https://github.com/timothycrosley/isort
-    rev: "5.13.2"
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.1
     hooks:
-      - id: isort
-        additional_dependencies: [toml]
-  - repo: https://github.com/psf/black
-    rev: "23.12.1"
-    hooks:
-      - id: black
-        exclude: docs/
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.0.0
-    hooks:
-      - id: flake8
+      - id: ruff-format
+        types_or: [python, pyi, jupyter]
+      - id: ruff
+        types_or: [python, pyi, jupyter]
+        args: [--fix]
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.38.0
     hooks:
-      - id: markdownlint
-        args: ["--disable", "MD013"]
+      - id: markdownlint-fix
   - repo: https://github.com/kynan/nbstripout
     rev: 0.6.1
     hooks:
       - id: nbstripout
         files: ".ipynb"
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: "v3.1.0"
+    hooks:
+      - id: prettier
+        types_or: [yaml, json]
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.13.0
+    hooks:
+      - id: pretty-format-toml
+        args: [--autofix, --indent, "4", --no-sort]

@@ -132,7 +132,9 @@ def fitting(
 
     # Based on these results, we finally adjust the carbon price
     new_price = CARBON_BUDGET_FITTERS[fitter](
-        sample_prices, sample_emissions, threshold  # type: ignore
+        sample_prices,
+        sample_emissions,
+        threshold,  # type: ignore
     )
 
     if refine_price and new_market is not None:

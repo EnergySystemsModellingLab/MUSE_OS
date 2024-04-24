@@ -1,11 +1,10 @@
 from pathlib import Path
 from typing import Callable, Mapping, Optional, Sequence, Text
 
+from muse.agents import Agent
 from pandas import DataFrame
 from pytest import fixture, mark
 from xarray import DataArray, Dataset
-
-from muse.agents import Agent
 
 
 @fixture(autouse=True)
@@ -225,10 +224,9 @@ def agent_args(coords) -> Mapping:
 @fixture
 def technologies(coords) -> Dataset:
     """randomly generated technology characteristics."""
+    from muse.commodities import CommodityUsage
     from numpy import nonzero, sum
     from numpy.random import choice, rand, randint
-
-    from muse.commodities import CommodityUsage
 
     result = Dataset(coords=coords)
 
@@ -353,9 +351,8 @@ def market(coords, technologies, timeslice) -> Dataset:
 
 
 def create_agent(agent_args, technologies, stock, agent_type="retrofit") -> Agent:
-    from numpy.random import choice
-
     from muse.agents.factories import create_agent
+    from numpy.random import choice
 
     agent = create_agent(
         agent_type=agent_type,
@@ -532,7 +529,6 @@ def capacity(technologies: Dataset) -> DataArray:
 def settings(tmpdir) -> dict:
     """Creates a dummy settings dictionary out of the default settings."""
     import toml
-
     from muse.readers import DEFAULT_SETTINGS_PATH
     from muse.readers.toml import format_paths
 

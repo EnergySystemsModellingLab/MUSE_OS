@@ -42,6 +42,7 @@ However, in practice, the problem to solve often contains constraints, e.g. a co
 on production :math:`\sum_d X_{d, i} \leq M_i`. The algorithms in this module try and
 solve these constrained problems one way or another.
 """
+
 __all__ = ["demand_matching"]
 
 

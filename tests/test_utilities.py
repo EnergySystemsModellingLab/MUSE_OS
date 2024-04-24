@@ -217,9 +217,8 @@ def test_lexical_nobin(order):
 
 
 def test_merge_assets():
-    from numpy import arange
-
     from muse.utilities import merge_assets
+    from numpy import arange
 
     def fake(year, order=("installed", "technology")):
         result = xr.Dataset()

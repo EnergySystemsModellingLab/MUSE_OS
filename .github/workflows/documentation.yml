@@ -1,49 +1,49 @@
 name: "Build and publish documentation"
 on:
-    pull_request:
-        types: [opened, synchronize, reopened]
-    push:
-        branches: ["main"]
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: ["main"]
 
 jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: 3.9
-    - name: Install dependencies
-      run: |
-        sudo apt update -y
-        sudo apt install -y pandoc graphviz latexmk texlive-latex-recommended \
-                texlive-latex-extra texlive-fonts-recommended
-        python -m pip install --upgrade pip
-        python -m pip install --upgrade setuptools==62.6.0 wheel
-        python -m pip install -e .[doc,dev]
-    - name: Test notebooks and tutorials
-      run: pytest -m "notebook"
-    - name: Build HTML documentation
-      run: python -m sphinx -b html docs docs/build/html
-    - name: Build PDF documentation
-      run: |
-        python -m sphinx -b latex docs docs/build/latex
-        cd docs/build/latex
-        latexmk -interaction=nonstopmode -pdf muse
-    - name: Upload HTML
-      uses: actions/upload-artifact@v4
-      with:
-        name: DocumentationHTML
-        path: docs/build/html
-    - name: Upload PDF
-      uses: actions/upload-artifact@v4
-      with:
-        name: DocumentationPDF
-        path: docs/build/latex/muse.pdf
-    - name: Deploy
-      uses: peaceiris/actions-gh-pages@v4
-      if: github.ref == 'refs/heads/master'
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: docs/build/html
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: |
+          sudo apt update -y
+          sudo apt install -y pandoc graphviz latexmk texlive-latex-recommended \
+                  texlive-latex-extra texlive-fonts-recommended
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade setuptools==62.6.0 wheel
+          python -m pip install -e .[doc,dev]
+      - name: Test notebooks and tutorials
+        run: pytest -m "notebook"
+      - name: Build HTML documentation
+        run: python -m sphinx -b html docs docs/build/html
+      - name: Build PDF documentation
+        run: |
+          python -m sphinx -b latex docs docs/build/latex
+          cd docs/build/latex
+          latexmk -interaction=nonstopmode -pdf muse
+      - name: Upload HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: DocumentationHTML
+          path: docs/build/html
+      - name: Upload PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: DocumentationPDF
+          path: docs/build/latex/muse.pdf
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v4
+        if: github.ref == 'refs/heads/master'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/build/html

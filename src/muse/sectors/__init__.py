@@ -28,6 +28,7 @@ __ https://www.python-course.eu/python3_abstract_classes.php
 New sectors can be registered with the MUSE input files using
 :func:`muse.sectors.register.register_sector`.
 """
+
 __all__ = [
     "AbstractSector",
     "Sector",

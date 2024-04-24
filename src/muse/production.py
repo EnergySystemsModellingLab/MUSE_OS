@@ -29,6 +29,7 @@ Arguments:
 Returns:
     A `xr.DataArray` with the amount produced for each good from each asset.
 """
+
 __all__ = [
     "demand_matched_production",
     "factory",

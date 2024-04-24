@@ -95,6 +95,7 @@ year:
 ``**kwargs``:
     Any other parameter.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -215,7 +216,7 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
 def factory(
     settings: Optional[
         Union[Text, Mapping, Sequence[Text], Sequence[Union[Text, Mapping]]]
-    ] = None
+    ] = None,
 ) -> Callable:
     """Creates a list of constraints from standard settings.
 
@@ -745,7 +746,8 @@ def lp_constraint_matrix(
          >>> search = examples.search_space("residential", model="medium")
          >>> assets = next(a.assets for a in res.agents if a.category == "retrofit")
          >>> demand = None # not used in max production
-         >>> constraint = cs.max_production(demand, assets, search, market, technologies) # noqa: E501
+         >>> constraint = cs.max_production(demand, assets, search, market,
+         ...                                technologies) # noqa: E501
          >>> lpcosts = cs.lp_costs(
          ...     (
          ...         technologies
@@ -787,7 +789,8 @@ def lp_constraint_matrix(
          ... )
          >>> decision_dims = {f"d({x})" for x in lpcosts.capacity.dims}
          >>> constraint_dims = {
-         ...     f"c({x})" for x in set(lpcosts.production.dims).union(constraint.b.dims) # noqa: E501
+         ...     f"c({x})"
+         ...     for x in set(lpcosts.production.dims).union(constraint.b.dims)
          ... }
          >>> assert set(result.dims) == decision_dims.union(constraint_dims)
 

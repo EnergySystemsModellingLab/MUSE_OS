@@ -37,9 +37,8 @@ def test_aggregate_sector():
 
 def test_aggregate_sectors():
     """Test for aggregate_sectors function."""
-    from pandas import DataFrame, concat
-
     from muse.outputs.mca import _aggregate_sectors
+    from pandas import DataFrame, concat
 
     mca = examples.model("multiple_agents")
     year = [2020, 2025, 2030]
@@ -75,9 +74,8 @@ def test_aggregate_sectors():
 def test_aggregate_sector_manyregions():
     """Test for aggregate_sector function with two regions check colum titles, number of
     agents/region/technologies and assets capacities."""
-    from pandas import DataFrame, concat
-
     from muse.outputs.mca import _aggregate_sectors
+    from pandas import DataFrame, concat
 
     mca = examples.model("multiple_agents")
     residential = next(
