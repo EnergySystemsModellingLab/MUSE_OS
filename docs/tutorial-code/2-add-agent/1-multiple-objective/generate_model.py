@@ -10,9 +10,9 @@ copy_from: 'A1'
 """
 
 # File: technodata/Agents.csv
-# Create new rows for {agent_name} as copy of {copy_from}
-# Copy rows from {copy_from}, changing Name to {agent_name}
-# Rename AgentShare for new rows to {agentshare_new} and {agentshare_retrofit}
+# Copy rows where Name={copy_from}, changing Name to {agent_name}
+# Rename AgentShare for new rows to {agentshare_new} (where Type=New)
+#   and {agentshare_retrofit} (where Type=Retrofit)
 # >>> Change Objective2 to 'EAC'
 # >>> Change ObjData1 and ObjData2 to 0.5
 # >>> Change DecisionMethod to 'weighted_sum'

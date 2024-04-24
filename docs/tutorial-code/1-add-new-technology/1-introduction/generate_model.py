@@ -27,7 +27,7 @@ copy_from: wind
 # >>> No values changed
 
 # File: input/GlobalCommodities.csv
-# Copy row for {copy_from.capitalize()}, changing Commidity to
+# Copy row(s) where Commodity={copy_from.capitalize()}, changing Commidity to
 #     {commodity_name.capitalize()} and CommodityName to {commodity_name}
 # >>> No values changed
 
@@ -48,19 +48,19 @@ copy_from: windturbine
 
 
 # File: technodata/{sector}/CommIn.csv
-# Copy row(s) for {copy_from}, changing ProcessName to {process_name}
+# Copy row(s) where ProcessName={copy_from}, changing ProcessName to {process_name}
 # >>> Change solar value to 1
 # >>> Change wind value to 0
 
 # File: technodata/{sector}/CommOut.csv
-# Copy row(s) for {copy_from}, changing ProcessName to {process_name}
+# Copy row(s) where ProcessName={copy_from}, changing ProcessName to {process_name}
 # >>> No values changed
 
 # File: technodata/{sector}/ExistingCapacity.csv
-# Copy row(s) for {copy_from}, changing ProcessName to {process_name}
+# Copy row(s) where ProcessName={copy_from}, changing ProcessName to {process_name}
 # >>> No values changed
 
 # File: technodata/{sector}/technodata.csv
-# Copy row(s) for {copy_from}, changing ProcessName to {process_name}
+# Copy row(s) where ProcessName={copy_from}, changing ProcessName to {process_name}
 # >>> Change cap_par to 30
 # >>> Change Fuel to 'solar'
