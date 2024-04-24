@@ -1,4 +1,5 @@
 """Holds all building agents."""
+
 from abc import ABC, abstractmethod
 from typing import Callable, Optional, Sequence, Text, Union
 

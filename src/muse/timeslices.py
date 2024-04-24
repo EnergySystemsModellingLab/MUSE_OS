@@ -1,4 +1,5 @@
 """Timeslice utility functions."""
+
 __all__ = [
     "reference_timeslice",
     "aggregate_transforms",

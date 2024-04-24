@@ -24,6 +24,7 @@ The same models can be instanciated in a python script as follows:
     model = example.model("default")
     model.run()
 """
+
 from logging import getLogger
 from pathlib import Path
 from typing import List, Optional, Text, Union, cast
@@ -309,9 +310,9 @@ def _copy_multiple_agents(path: Path):
     copytree(example_data_dir() / "default" / "input", path / "input")
     copytree(example_data_dir() / "default" / "technodata", path / "technodata")
     toml = load(example_data_dir() / "default" / "settings.toml")
-    toml["sectors"]["residential"]["subsectors"]["retro_and_new"][
-        "agents"
-    ] = "{path}/technodata/residential/Agents.csv"
+    toml["sectors"]["residential"]["subsectors"]["retro_and_new"]["agents"] = (
+        "{path}/technodata/residential/Agents.csv"
+    )
     with (path / "settings.toml").open("w") as fileobj:
         dump(toml, fileobj)
     copyfile(

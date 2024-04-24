@@ -1,4 +1,5 @@
 """Registrators that allow pluggable data to logic transforms."""
+
 __all__ = ["registrator"]
 
 from typing import Callable, MutableMapping, Optional, Sequence, Text, Union

@@ -1,8 +1,7 @@
 from typing import Sequence
 
-from xarray import Dataset
-
 from muse.commodities import CommodityUsage
+from xarray import Dataset
 
 
 def test_check_equilibrium(market: Dataset):
@@ -48,10 +47,9 @@ def test_check_demand_fulfillment(market):
 
 def sector_market(market: Dataset, comm_usage: Sequence[CommodityUsage]) -> Dataset:
     """Creates a likely return market from a sector."""
+    from muse.commodities import is_consumable, is_enduse, is_other
     from numpy.random import randint
     from xarray import DataArray
-
-    from muse.commodities import is_consumable, is_enduse, is_other
 
     shape = (
         len(market.year),
@@ -85,12 +83,11 @@ def test_find_equilibrium(market: Dataset):
     from copy import deepcopy
     from unittest.mock import patch
 
+    from muse.commodities import is_enduse, is_other
+    from muse.mca import find_equilibrium
     from numpy.random import choice
     from pytest import approx
     from xarray import broadcast
-
-    from muse.commodities import is_enduse, is_other
-    from muse.mca import find_equilibrium
 
     market = market.interp(year=[2010, 2015])
     a_enduses = choice(market.commodity.values, 5, replace=False).tolist()

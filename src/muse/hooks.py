@@ -1,4 +1,5 @@
 """Pre and post hooks on agents."""
+
 __all__ = [
     "register_initial_asset_transform",
     "register_final_asset_transform",
@@ -77,7 +78,7 @@ def asset_merge_factory(settings: Union[Text, Mapping] = "new") -> Callable:
 
 @registrator(registry=INITIAL_ASSET_TRANSFORM, loglevel="info")
 def register_initial_asset_transform(
-    function: Callable[[Agent, Dataset], Dataset]
+    function: Callable[[Agent, Dataset], Dataset],
 ) -> Callable:
     """Decorator to register a function for cleaning or transforming assets.
 
@@ -91,7 +92,7 @@ def register_initial_asset_transform(
 
 @registrator(registry=FINAL_ASSET_TRANSFORM, loglevel="info")
 def register_final_asset_transform(
-    function: Callable[[Dataset, Dataset], Dataset]
+    function: Callable[[Dataset, Dataset], Dataset],
 ) -> Callable:
     """Decorator to register a function to merge new investments into current assets.
 

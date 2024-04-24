@@ -77,7 +77,6 @@ def test_comfort(search_space, demand_share, technologies, retro_agent):
 
 def test_capital_costs(demand_share, search_space, technologies, retro_agent):
     import numpy as np
-
     from muse.objectives import capital_costs
 
     technologies["cap_par"] = add_var(technologies, "technology", "region", "year")
@@ -136,10 +135,9 @@ def test_capital_costs(demand_share, search_space, technologies, retro_agent):
 def test_emission_cost(
     demand_share, search_space, technologies, retro_agent, agent_market
 ):
-    from xarray import broadcast
-
     from muse.commodities import is_enduse, is_pollutant
     from muse.objectives import emission_cost
+    from xarray import broadcast
 
     fouts = technologies.fixed_outputs.sel(
         commodity=is_pollutant(technologies.comm_usage)
@@ -179,7 +177,6 @@ def test_capacity_fulfilling_demand(
     search_space, demand_share, technologies, retro_agent, agent_market
 ):
     import numpy as np
-
     from muse.objectives import capacity_to_service_demand, fixed_costs
 
     minyear = technologies.year.values.min()
@@ -240,11 +237,10 @@ def test_capacity_fulfilling_demand(
 def test_fuel_consumption(
     demand_share, search_space, technologies, retro_agent, agent_market
 ):
-    from xarray import broadcast
-
     from muse.commodities import is_fuel
     from muse.objectives import fuel_consumption_cost
     from muse.quantities import consumption
+    from xarray import broadcast
 
     actual = fuel_consumption_cost(
         retro_agent, demand_share, search_space, technologies, agent_market
@@ -289,7 +285,6 @@ def test_net_present_value(
     .
     """
     import xarray
-
     from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
     from muse.objectives import (
         capacity_to_service_demand,
@@ -398,7 +393,7 @@ def test_net_present_value(
     non_env_production = production.sel(commodity=is_enduse(tech.comm_usage)).sum(
         "commodity"
     )
-    fix_costs = ((rates * hours_ratio * fix_par * capacity**fix_exp)).sum("year")
+    fix_costs = (rates * hours_ratio * fix_par * capacity**fix_exp).sum("year")
 
     variable_costs = (rates * var_par * (non_env_production**var_exp)).sum("year")
     fixed_and_variable_costs = fix_costs + variable_costs

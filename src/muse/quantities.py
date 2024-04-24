@@ -4,6 +4,7 @@ This module is meant to collect functions computing quantities of interest to th
 e.g. lcoe, maximum production for a given capacity, etc, especially where these
 functions are used in different areas of the model.
 """
+
 from typing import Callable, Optional, Sequence, Text, Tuple, Union, cast
 
 import numpy as np

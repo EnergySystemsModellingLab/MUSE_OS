@@ -14,10 +14,9 @@ def matching_market(technologies, stock, timeslice):
 
 def _matching_market(technologies, stock, timeslice):
     """A market which matches stocks exactly."""
-    from numpy.random import random
-
     from muse.quantities import consumption, maximum_production
     from muse.timeslices import QuantityType, convert_timeslice
+    from numpy.random import random
 
     market = xr.Dataset()
     production = convert_timeslice(

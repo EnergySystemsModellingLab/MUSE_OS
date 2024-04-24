@@ -1,4 +1,5 @@
 """Methods and types around commodities."""
+
 from enum import IntFlag, auto
 from typing import Sequence, Text, Union
 

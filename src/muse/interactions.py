@@ -13,6 +13,7 @@ sequence of nets. It is expected each net of the sequence will be applied the sa
 interaction. The second registrator registers the interaction proper: it takes agents as
 arguments and returns nothing. It is expected to modify the agents in-place.
 """
+
 __all__ = [
     "register_interaction_net",
     "register_agent_interaction",
@@ -85,7 +86,7 @@ def register_agent_interaction(function: AGENT_INTERACTION_SIGNATURE):
 
 
 def factory(
-    inputs: Optional[Sequence[Union[Mapping, Tuple[Text, Text]]]] = None
+    inputs: Optional[Sequence[Union[Mapping, Tuple[Text, Text]]]] = None,
 ) -> Callable[[Sequence[AbstractAgent]], None]:
     """Creates an interaction functor."""
 

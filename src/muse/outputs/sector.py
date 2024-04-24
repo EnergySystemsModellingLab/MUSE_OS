@@ -19,6 +19,7 @@ technologies in the market. It returns a single xr.DataArray object.
 
 The function should never modify it's arguments.
 """
+
 from typing import Any, Callable, List, Mapping, MutableMapping, Optional, Text, Union
 
 import pandas as pd

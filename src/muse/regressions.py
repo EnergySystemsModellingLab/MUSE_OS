@@ -1,4 +1,5 @@
 """Functions and functors to compute macro-drivers."""
+
 from __future__ import annotations
 
 from abc import abstractmethod
@@ -333,9 +334,7 @@ def regression_functor(
         doc = """Regression function: {name}
 
         This functor is a regression function registered with MUSE as '{name}'.
-        """.format(
-            name=name_
-        )
+        """.format(name=name_)
 
         Self = type(
             classname,

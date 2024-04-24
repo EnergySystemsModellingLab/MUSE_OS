@@ -24,6 +24,7 @@ as how to setup the toml input file to cache quantities. Users can customize and
 further output quantities by registering with MUSE via
 :py:func:`muse.outputs.cache.register_cached_quantity`.
 """
+
 from __future__ import annotations
 
 from collections import ChainMap

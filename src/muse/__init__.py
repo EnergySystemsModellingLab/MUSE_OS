@@ -1,4 +1,5 @@
 """MUSE model"""
+
 import os
 
 VERSION = "1.1.0"
