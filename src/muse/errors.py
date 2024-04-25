@@ -17,7 +17,7 @@ class UnitsConflictInCommodities(Exception):
     """Indicates that there is a conflcit in the commodity units between files."""
 
     msg = """The units of “CommIn” “CommOut” and “GlobalCommodities” files must be the
-same, including the casing. Check the consistency of the units across those thre files.
+same, including the casing. Check the consistency of the units across those three files.
 """
 
     def __str__(self):
@@ -71,7 +71,7 @@ demand share method that can handle both new and retro agents."""
 
 class AgentWithNoAssetsInDemandShare(Exception):
     msg = """This error refers to an agent with no assets. To fix this error, check the
-capacity assigment to the agents. One possibility is that you have decided not
+capacity assignment to the agents. One possibility is that you have decided not
 to use "Retrofit" agents, as such you may have already removed them from the
 agent definition file and the file of technodata, the system TOML file should
 change the demand_share to "standard_demand" function in each subsector
@@ -84,7 +84,7 @@ section for each of the selected sectors to model."""
 class NoInteractionsFound(Exception):
     msg = """A network with no interactions has been found. This might be the case if
 there are no retrofit agents and yet a 'new_to_retro' network has been defined for a
-particular sector. Asses the existance of both new and retrofit agents for all sectors
+particular sector. Asses the existence of both new and retrofit agents for all sectors
 and remove the new_to_retro interacton network if it is not needed """
 
     def __str__(self):

@@ -4,6 +4,7 @@ This module is meant to collect functions computing quantities of interest to th
 e.g. lcoe, maximum production for a given capacity, etc, especially where these
 functions are used in different areas of the model.
 """
+
 from typing import Callable, Optional, Sequence, Text, Tuple, Union, cast
 
 import numpy as np
@@ -438,7 +439,7 @@ def maximum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
             shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
         filters: keyword arguments are used to filter down the capacity and
             technologies. Filters not relevant to the quantities of interest, i.e.
-            filters that are not a dimension of `capacity` or `techologies`, are
+            filters that are not a dimension of `capacity` or `technologies`, are
             silently ignored.
     Return:
         `capacity * fixed_outputs * utilization_factor`, whittled down according to the
@@ -510,7 +511,7 @@ def capacity_in_use(
             None, then no reduction is performed.
         filters: keyword arguments are used to filter down the capacity and
             technologies. Filters not relevant to the quantities of interest, i.e.
-            filters that are not a dimension of `capacity` or `techologies`, are
+            filters that are not a dimension of `capacity` or `technologies`, are
             silently ignored.
     Return:
         Capacity-in-use for each technology, whittled down by the filters.
@@ -582,7 +583,7 @@ def costed_production(
 ) -> xr.DataArray:
     """Computes production from ranked assets.
     The assets are ranked according to their cost. The asset with least cost are allowed
-    to service the demand first, up to the maximum production. By default, the mininum
+    to service the demand first, up to the maximum production. By default, the minimum
     service is applied first.
     """
 

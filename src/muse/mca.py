@@ -333,11 +333,11 @@ class MCA(object):
                 if new_price is not None:
                     future_price = DataArray(new_price, coords=dict(year=years[1]))
 
-                    new_market.prices.loc[
-                        dict(commodity=self.carbon_commodities)
-                    ] = future_propagation(
-                        new_market.prices.sel(commodity=self.carbon_commodities),
-                        future_price,
+                    new_market.prices.loc[dict(commodity=self.carbon_commodities)] = (
+                        future_propagation(
+                            new_market.prices.sel(commodity=self.carbon_commodities),
+                            future_price,
+                        )
                     )
                     self.carbon_price = future_propagation(
                         self.carbon_price, future_price
@@ -361,16 +361,14 @@ class MCA(object):
                 self.market.prices.sel(dims), new_market.prices.sel(year=years[1])
             )
 
-            self.outputs(
-                self.market, self.sectors, year=self.time_framework[year_idx]
-            )  # type: ignore
+            self.outputs(self.market, self.sectors, year=self.time_framework[year_idx])  # type: ignore
             self.outputs_cache.consolidate_cache(year=self.time_framework[year_idx])
             getLogger(__name__).info(
                 f"Finish simulation year {years[0]} ({year_idx+1}/{nyear})!"
             )
 
     def calibrate_legacy_sectors(self):
-        """Run a calibration step in the lagacy sectors
+        """Run a calibration step in the legacy sectors
         Run historical years
         """
         from copy import deepcopy

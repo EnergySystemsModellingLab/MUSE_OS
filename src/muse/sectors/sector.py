@@ -148,7 +148,7 @@ class Sector(AbstractSector):  # type: ignore
         self.outputs: Callable = (
             cast(Callable, ofactory()) if outputs is None else outputs
         )
-        """A function for outputing data for post-mortem analysis."""
+        """A function for outputting data for post-mortem analysis."""
         self.supply_prod = (
             supply_prod if supply_prod is not None else maximum_production
         )

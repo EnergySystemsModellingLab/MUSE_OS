@@ -9,39 +9,28 @@
             "type": "python",
             "request": "launch",
             "module": "muse",
-            "args": [
-                "--model",
-                "default"
-            ]
+            "args": ["--model", "default"]
         },
         {
             "name": "Model: multiple_agents",
             "type": "python",
             "request": "launch",
             "module": "muse",
-            "args": [
-                "--model",
-                "multiple_agents"
-            ]
+            "args": ["--model", "multiple_agents"]
         },
         {
             "name": "model/settings.toml",
             "type": "python",
             "request": "launch",
             "module": "muse",
-            "args": [
-                "model/settings.toml",
-            ]
+            "args": ["model/settings.toml"]
         },
         {
             "name": "Model: minimum_service",
             "type": "python",
             "request": "launch",
             "module": "muse",
-            "args": [
-                "--model",
-                "minimum_service"
-            ]
-        },
+            "args": ["--model", "minimum_service"]
+        }
     ]
 }

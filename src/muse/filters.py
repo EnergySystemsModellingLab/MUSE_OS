@@ -72,6 +72,7 @@ Arguments:
 Returns:
     An initial search space
 """
+
 __all__ = [
     "factory",
     "register_filter",

@@ -1,4 +1,5 @@
 """Pre and post hooks on agents."""
+
 __all__ = [
     "register_initial_asset_transform",
     "register_final_asset_transform",
@@ -18,9 +19,9 @@ from muse.agents import Agent
 from muse.registration import registrator
 
 INITIAL_ASSET_TRANSFORM: MutableMapping[Text, Callable] = {}
-""" Tranform at the start of each step. """
+""" Transform at the start of each step. """
 FINAL_ASSET_TRANSFORM: MutableMapping[Text, Callable] = {}
-""" Tranform at the end of each step, including new assets. """
+""" Transform at the end of each step, including new assets. """
 
 
 def housekeeping_factory(settings: Union[Text, Mapping] = "noop") -> Callable:
@@ -77,7 +78,7 @@ def asset_merge_factory(settings: Union[Text, Mapping] = "new") -> Callable:
 
 @registrator(registry=INITIAL_ASSET_TRANSFORM, loglevel="info")
 def register_initial_asset_transform(
-    function: Callable[[Agent, Dataset], Dataset]
+    function: Callable[[Agent, Dataset], Dataset],
 ) -> Callable:
     """Decorator to register a function for cleaning or transforming assets.
 
@@ -91,7 +92,7 @@ def register_initial_asset_transform(
 
 @registrator(registry=FINAL_ASSET_TRANSFORM, loglevel="info")
 def register_final_asset_transform(
-    function: Callable[[Dataset, Dataset], Dataset]
+    function: Callable[[Dataset, Dataset], Dataset],
 ) -> Callable:
     """Decorator to register a function to merge new investments into current assets.
 
@@ -148,7 +149,7 @@ def old_assets_only(old_assets: Dataset, new_assets: Dataset) -> Dataset:
 def merge_assets(old_assets: Dataset, new_assets: Dataset) -> Dataset:
     """Adds new assets to old along asset dimension.
 
-    New assets are assumed to be unequivalent to any old_assets. Indeed,
+    New assets are assumed to be nonequivalent to any old_assets. Indeed,
     it is expected that the asset dimension does not have coordinates (i.e.
     it is a combination of coordinates, such as technology and installation
     year).

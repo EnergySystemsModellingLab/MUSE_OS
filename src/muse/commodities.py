@@ -1,4 +1,5 @@
 """Methods and types around commodities."""
+
 from enum import IntFlag, auto
 from typing import Sequence, Text, Union
 
@@ -11,7 +12,7 @@ class CommodityUsage(IntFlag):
 
     For details on how ``enum``'s work, see `python's documentation`__. In practice,
     :py:class:`CommodityUsage` centralizes in one place the different kinds of
-    commodities that are meaningfull to the generalized sector, e.g. commodities that
+    commodities that are meaningful to the generalized sector, e.g. commodities that
     are consumed by the sector, and commodities that produced by the sectors, as well
     commodities that are, somehow, *environmental*.
 
