@@ -41,7 +41,7 @@ Type
    technologies they can consider (by :ref:`SearchRule <SearchRule>`). "New" agents
    invest on the rest of the demand, and can often consider more general sets of
    technologies. If only "New" agents are included, they will also invest to make up for
-   decomissioned assets, but the end mix might be different than using a specialised
+   decommissioned assets, but the end mix might be different than using a specialised
    "Retrofit" agent for that.
 
 AgentShare

@@ -126,14 +126,14 @@ class Agent(AbstractAgent):
             region: Region where the agent operates, used for cross-referencing
                 external tables.
             search_rules: method used to filter the search space
-            maturity_threshhold: threshhold when filtering replacement
+            maturity_threshhold: threshold when filtering replacement
                 technologies with respect to market share
             year: year the agent is created / current year
             forecast: Number of years the agent will forecast
             housekeeping: transform applied to the assets at the start of
                 iteration. Defaults to doing nothing.
             merge_transform: transform merging current and newly invested assets
-                together. Defaults to replacing old assets completly.
+                together. Defaults to replacing old assets completely.
             demand_threshhold: criteria below which the demand is zero.
             category: optional attribute that could be used to classify
                 different agents together.
@@ -155,7 +155,7 @@ class Agent(AbstractAgent):
         self.year = year
         """ Current year.
 
-        The year is incremented by one everytime next is called.
+        The year is incremented by one every time next is called.
         """
         self.forecast = forecast
         """Number of years to look into the future for forecating purposed."""
@@ -170,9 +170,9 @@ class Agent(AbstractAgent):
         used to filter the search space.
         """
         self.maturity_threshhold = maturity_threshhold
-        """ Market share threshhold.
+        """ Market share threshold.
 
-        Threshhold when and if filtering replacement technologies with respect
+        Threshold when and if filtering replacement technologies with respect
         to market share.
         """
         if kwargs is not None:
@@ -189,7 +189,7 @@ class Agent(AbstractAgent):
         if housekeeping is None:
             housekeeping = housekeeping_factory()
         self._housekeeping = housekeeping
-        """Tranforms applied on the assets at the start of each iteration.
+        """Transforms applied on the assets at the start of each iteration.
 
         It could mean keeping the assets as are, or removing assets with no
         capacity in the current year and beyond, etc...
@@ -199,20 +199,20 @@ class Agent(AbstractAgent):
         if merge_transform is None:
             merge_transform = asset_merge_factory()
         self.merge_transform = merge_transform
-        """Tranforms applied on the old and new assets.
+        """Transforms applied on the old and new assets.
 
         It could mean using only the new assets, or merging old and new, etc...
         It can be any function registered with
         :py:func:`~muse.hooks.register_final_asset_transform`.
         """
         self.demand_threshhold = demand_threshhold
-        """Threshhold below which the demand share is zero.
+        """Threshold below which the demand share is zero.
 
         This criteria avoids fulfilling demand for very small values. If None,
         then the criteria is not applied.
         """
         self.asset_threshhold = asset_threshhold
-        """Threshhold below which assets are not added."""
+        """Threshold below which assets are not added."""
 
     @property
     def forecast_year(self):

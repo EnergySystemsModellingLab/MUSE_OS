@@ -60,7 +60,7 @@ def reduce_assets(
 ) -> Union[xr.DataArray, xr.Dataset]:
     r"""Combine assets along given asset dimension.
 
-    This method simplifies combining assets accross multiple agents, or combining assets
+    This method simplifies combining assets across multiple agents, or combining assets
     across a given dimension. By default, it will sum together assets from the same
     region which have the same technology and the same installation date. In other
     words, assets are identified by the technology, installation year and region. The
@@ -193,10 +193,10 @@ def broadcast_techs(
     capacity, are often flattened out with coordinates 'region', 'installed',
     and 'technology' represented in a single 'asset' dimension. This latter
     representation is sparse if not all combinations of 'region', 'installed',
-    and 'technology' are present, whereas the former represention makes it
+    and 'technology' are present, whereas the former representation makes it
     easier to select a subset of the same.
 
-    This function broadcast the first represention to the shape and coordinates
+    This function broadcast the first representation to the shape and coordinates
     of the second.
 
     Arguments:
@@ -370,7 +370,7 @@ def lexical_comparison(
             no turning to integer.)
 
     Result:
-        An array of tuples which can subsquently be compared lexicographically.
+        An array of tuples which can subsequently be compared lexicographically.
     """
     if order is None:
         order = [u for u in binsize.data_vars]
@@ -466,7 +466,7 @@ def nametuple_to_dict(nametup: Union[Mapping, NamedTuple]) -> Mapping:
 def future_propagation(
     data: xr.DataArray,
     future: xr.DataArray,
-    threshhold: float = 1e-12,
+    threshold: float = 1e-12,
     dim: Text = "year",
 ) -> xr.DataArray:
     """Propagates values into the future.
@@ -491,10 +491,10 @@ def future_propagation(
         ... )
 
         This function propagates into ``data`` values from ``future``, but only if those
-        values differed for the current year beyond a given threshhold:
+        values differed for the current year beyond a given threshold:
 
         >>> from muse.utilities import future_propagation
-        >>> future_propagation(data, future, threshhold=0.1)
+        >>> future_propagation(data, future, threshold=0.1)
         <xarray.DataArray (fuel: 2, year: 4)>
         array([[ 0. ,  1.2,  1.2,  1.2],
                [-5. , -4. , -3. , -2. ]])
@@ -502,20 +502,20 @@ def future_propagation(
           * year     (year) ... 2020 2025 2030 2035
           * fuel     (fuel) <U4 'gas' 'coal'
 
-        Above, the data for coal is not sufficiently different given the threshhold.
+        Above, the data for coal is not sufficiently different given the threshold.
         hence, the future values for coal remain as they where.
 
         The dimensions of ``future`` do not have to match exactly those of ``data``.
         Standard broadcasting is used if they do not match:
 
-        >>> future_propagation(data, future.sel(fuel="gas", drop=True), threshhold=0.1)
+        >>> future_propagation(data, future.sel(fuel="gas", drop=True), threshold=0.1)
         <xarray.DataArray (fuel: 2, year: 4)>
         array([[ 0. ,  1.2,  1.2,  1.2],
                [-5. ,  1.2,  1.2,  1.2]])
         Coordinates:
           * year     (year) ... 2020 2025 2030 2035
           * fuel     (fuel) <U4 'gas' 'coal'
-        >>> future_propagation(data, future.sel(fuel="coal", drop=True), threshhold=0.1)
+        >>> future_propagation(data, future.sel(fuel="coal", drop=True), threshold=0.1)
         <xarray.DataArray (fuel: 2, year: 4)>
         array([[ 0.  , -3.95, -3.95, -3.95],
                [-5.  , -4.  , -3.  , -2.  ]])
@@ -535,7 +535,7 @@ def future_propagation(
     year = future[dim].values
     return data.where(
         np.logical_or(
-            data.year < year, np.abs(data.loc[{dim: year}] - future) < threshhold
+            data.year < year, np.abs(data.loc[{dim: year}] - future) < threshold
         ),
         future,
     )

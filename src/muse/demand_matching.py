@@ -18,7 +18,7 @@ Match demand and supply while minimizing the associated cost.
 
 The basic algorithm proceeds as follows:
 
-#. sort all costs :math:`C_{d, i}` accross both :math:`d` and :math:`i`
+#. sort all costs :math:`C_{d, i}` across both :math:`d` and :math:`i`
 
 #. for each cost :math:`c_0` in order:
 
@@ -57,7 +57,7 @@ def demand_matching(
     *constraints: DataArray,
     protected_dims: Optional[Set] = None,
 ) -> DataArray:
-    r"""Demand matching over heterogenous dimensions.
+    r"""Demand matching over heterogeneous dimensions.
 
     This algorithm enables demand matching while enforcing constraints on how much an
     asset can produce. Any set of dimensions can be matched. The algorithm is general
@@ -86,7 +86,7 @@ def demand_matching(
     constraint. Hence, the solution will depend on the order in which the constraints
     are given.
 
-    #. sort all costs :math:`C_{d, m}` accross both :math:`d` and :math:`m`
+    #. sort all costs :math:`C_{d, m}` across both :math:`d` and :math:`m`
 
     #. for each cost :math:`c_0` in order:
 
@@ -142,7 +142,7 @@ def demand_matching(
             #. Set :math:`\delta X = \max(0, \delta X - \delta X\prime)`
 
 
-    A more complex problem would see independant dimensions for each quantity. In that,
+    A more complex problem would see independent dimensions for each quantity. In that,
     case we can reduce to the original problem as shown here
 
     .. math::
@@ -158,17 +158,17 @@ def demand_matching(
             \frac{M\prime_{r, m}}{M_r} \frac{D\prime_{d, d\prime}}{D_d} X_{d, i}
 
     A dimension could be shared by all quantities, in which case each point along that
-    dimension is treated as independant.
+    dimension is treated as independent.
 
     Similarly, if a dimension is shared only by the demand and a constraint but not by
-    the cost, then the problem can be reduced a set of problems independant along that
+    the cost, then the problem can be reduced a set of problems independent along that
     direction.
 
     Arguments:
         demand: Demand to match with production. It should have the same physical units
             as `max_production`.
-        cost: Cost to minimize while fulfiling the demand.
-        *constraints: each item is a seperate constraint :math:`M_r`.
+        cost: Cost to minimize while fulfilling the demand.
+        *constraints: each item is a separate constraint :math:`M_r`.
 
     Returns:
         An array with the joint dimensionality of `max_production`, `cost`, and
