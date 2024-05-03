@@ -170,6 +170,7 @@ def test_max_production_constraint_diagonal(constraint, lpcosts):
     )
     decision_dims = {f"d({x})" for x in lpcosts.production.dims}
     assert set(result.dims) == decision_dims.union(constraint_dims)
+
     stacked = result.stack(d=sorted(decision_dims), c=sorted(constraint_dims))
     assert stacked.shape[0] == stacked.shape[1]
     assert stacked.values == approx(np.eye(stacked.shape[0]))
@@ -403,8 +404,12 @@ def test_scipy_adapter_back_to_muse(technologies, costs, timeslices, rng):
 def _as_list(data: Union[xr.DataArray, xr.Dataset]) -> Union[xr.DataArray, xr.Dataset]:
     if "timeslice" in data.dims:
         data = data.copy(deep=False)
-        data["timeslice"] = pd.MultiIndex.from_tuples(
+        index = pd.MultiIndex.from_tuples(
             data.get_index("timeslice"), names=("month", "day", "hour")
+        )
+        mindex_coords = xr.Coordinates.from_pandas_multiindex(index, "timeslice")
+        data = data.drop_vars(["timeslice", "month", "day", "hour"]).assign_coords(
+            mindex_coords
         )
     return data
 

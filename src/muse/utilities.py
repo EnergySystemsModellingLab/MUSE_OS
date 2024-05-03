@@ -29,7 +29,7 @@ def multiindex_to_coords(
     assert isinstance(data.indexes[dimension], MultiIndex)
     names = data.indexes[dimension].names
     coords = {n: data[n].values for n in names}
-    result = data.drop_vars(dimension)
+    result = data.drop_vars([dimension] + names)
     for name, coord in coords.items():
         result[name] = dimension, coord
     if isinstance(result, xr.Dataset):
@@ -47,8 +47,8 @@ def coords_to_multiindex(
     assert dimension not in data.indexes
     names = [u for u in data.coords if data[u].dims == (dimension,)]
     index = MultiIndex.from_arrays([data[u].values for u in names], names=names)
-    result = data.drop_vars(names)
-    result[dimension] = index
+    mindex_coords = xr.Coordinates.from_pandas_multiindex(index, dimension)
+    result = data.drop_vars(names).assign_coords(mindex_coords)
     return result
 
 

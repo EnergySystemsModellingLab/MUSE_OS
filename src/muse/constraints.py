@@ -335,8 +335,8 @@ def max_capacity_expansion(
         index = pd.MultiIndex.from_arrays(
             [capacity[u].values for u in names], names=names
         )
-        capacity = capacity.drop_vars(names)
-        capacity["asset"] = index
+        mindex_coords = xr.Coordinates.from_pandas_multiindex(index, "asset")
+        capacity = capacity.drop_vars(names).assign_coords(mindex_coords)
         capacity = capacity.unstack("asset", fill_value=0).rename(
             technology=search_space.replacement.name
         )
@@ -630,6 +630,7 @@ def lp_costs(
     production = zeros_like(ts_costs * fouts)
     for dim in production.dims:
         if isinstance(production.get_index(dim), pd.MultiIndex):
+            production = production.drop_vars(["timeslice", "month", "day", "hour"])
             production[dim] = pd.Index(production.get_index(dim), tupleize_cols=False)
 
     return xr.Dataset(dict(capacity=costs, production=production))
@@ -696,6 +697,7 @@ def lp_constraint(constraint: Constraint, lpcosts: xr.Dataset) -> Constraint:
     constraint = constraint.copy(deep=False)
     for dim in constraint.dims:
         if isinstance(constraint.get_index(dim), pd.MultiIndex):
+            constraint = constraint.drop_vars(["timeslice", "month", "day", "hour"])
             constraint[dim] = pd.Index(constraint.get_index(dim), tupleize_cols=False)
     b = constraint.b.drop_vars(set(constraint.b.coords) - set(constraint.b.dims))
     b = b.rename({k: f"c({k})" for k in b.dims})
@@ -824,10 +826,14 @@ def lp_constraint_matrix(
     if expand == {"timeslice", "asset", "commodity"}:
         expand = ["asset", "timeslice", "commodity"]
 
-    result = result.expand_dims({f"d({k})": lpcosts[k] for k in expand})
+    result = result.expand_dims(
+        {f"d({k})": lpcosts[k].rename({k: f"d({k})"}).set_index() for k in expand}
+    )
     expand = set(b.dims) - set(constraint.dims) - set(lpcosts.dims)
 
-    result = result.expand_dims({f"c({k})": b[k] for k in expand})
+    result = result.expand_dims(
+        {f"c({k})": b[k].rename({k: f"c({k})"}).set_index() for k in expand}
+    )
 
     diag_dims = set(b.dims).intersection(lpcosts.dims)
 
@@ -850,8 +856,10 @@ def lp_constraint_matrix(
             )
             for k in diag_dims
         ]
-
-        result = result * reduce(xr.DataArray.__mul__, diagonal_submats)
+        reduced = reduce(xr.DataArray.__mul__, diagonal_submats)
+        if "d(timeslice)" in reduced.dims:
+            reduced = reduced.drop_vars("d(timeslice)")
+        result = result * reduced
 
     return result
 

@@ -459,7 +459,7 @@ def test_costed_production_exact_match(market, capacity, technologies):
         market,
         QuantityType.EXTENSIVE,
     )
-    market["consumption"] = maxdemand
+    market["consumption"] = maxdemand.drop_vars(["timeslice", "month", "day", "hour"])
     result = costed_production(market.consumption, costs, capacity, technologies)
     assert isinstance(result, xr.DataArray)
     actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
@@ -486,7 +486,9 @@ def test_costed_production_single_region(market, capacity, technologies):
         market,
         QuantityType.EXTENSIVE,
     )
-    market["consumption"] = 0.9 * maxdemand
+    market["consumption"] = (0.9 * maxdemand).drop_vars(
+        ["timeslice", "month", "day", "hour"]
+    )
     technodata = broadcast_techs(technologies, capacity)
     costs = annual_levelized_cost_of_energy(
         market.prices.sel(region=technodata.region), technodata
@@ -519,7 +521,9 @@ def test_costed_production_single_year(market, capacity, technologies):
         market,
         QuantityType.EXTENSIVE,
     )
-    market["consumption"] = 0.9 * maxdemand
+    market["consumption"] = (0.9 * maxdemand).drop_vars(
+        ["timeslice", "month", "day", "hour"]
+    )
     technodata = broadcast_techs(technologies, capacity)
     costs = annual_levelized_cost_of_energy(
         market.prices.sel(region=technodata.region), technodata
@@ -555,7 +559,9 @@ def test_costed_production_over_capacity(market, capacity, technologies):
         market,
         QuantityType.EXTENSIVE,
     )
-    market["consumption"] = maxdemand * 0.9
+    market["consumption"] = (maxdemand * 0.9).drop_vars(
+        ["timeslice", "month", "day", "hour"]
+    )
     technodata = broadcast_techs(technologies, capacity)
     costs = annual_levelized_cost_of_energy(
         market.prices.sel(region=technodata.region), technodata
@@ -591,7 +597,9 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
     )
     minprod = maxprod * broadcast_techs(technologies.minimum_service_factor, maxprod)
     maxdemand = xr.Dataset(dict(mp=minprod)).groupby("region").sum("asset").mp
-    market["consumption"] = maxdemand * 0.9
+    market["consumption"] = (maxdemand * 0.9).drop_vars(
+        ["timeslice", "month", "day", "hour"]
+    )
     technodata = broadcast_techs(technologies, capacity)
     costs = annual_levelized_cost_of_energy(
         market.prices.sel(region=technodata.region), technodata
