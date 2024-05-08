@@ -31,9 +31,9 @@ Depending on your system, you might need to add quotation marks around ``[dev,do
 
 .. note::
 
-    The source-code installation will only be accessible whilst the virtual environment is active, and can be called from the command line using the `muse` command with the relevant input arguments.
+    The source-code installation will only be accessible whilst the virtual environment is active, and can be called from the command line using the ``muse`` command with the relevant input arguments.
 
-    If you have also installed MUSE globally using `pipx`, the global installation will take precedence when outside the virtual environment (using the same `muse` commands).
+    If you have also installed MUSE globally using ``pipx``, this can still be used outside the virtual environment (using the same ``muse`` command), but the source-code installation will take precedence when the virtual environment is active.
 
 
 
