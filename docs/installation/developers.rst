@@ -35,8 +35,6 @@ Depending on your system, you might need to add quotation marks around ``[dev,do
 
     If you have also installed MUSE globally using ``pipx``, this can still be used outside the virtual environment (using the same ``muse`` command), but the source-code installation will take precedence when the virtual environment is active.
 
-
-
 Installing pre-commit hooks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
