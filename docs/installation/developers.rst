@@ -29,6 +29,14 @@ Once you have your environment created, **activate it** and install MUSE within 
 
 Depending on your system, you might need to add quotation marks around ``[dev,doc]`` as in ``"[dev,doc]"``. This will install MUSE and all the dependencies required for its development. The downloaded code can be modified and the changes will be automatically reflected in the environment.
 
+.. note::
+
+    The source-code installation will only be accessible whilst the virtual environment is active, and can be called from the command line using the `muse` command with the relevant input arguments.
+
+    If you have also installed MUSE globally using `pipx`, the global installation will take precedence when outside the virtual environment (using the same `muse` commands).
+
+
+
 Installing pre-commit hooks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
