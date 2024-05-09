@@ -19,7 +19,7 @@ def test_aggregate_sector():
     for ai in agent_list[0]:
         for y in year:
             if y in ai.assets.year:
-                if ai.assets.capacity.sel(year=y).values > 0.0:
+                if ai.assets.capacity.sel(year=y).values[0] > 0.0:
                     data = DataFrame(
                         {
                             "region": ai.region,
@@ -53,7 +53,7 @@ def test_aggregate_sectors():
         for ii in range(0, len(ai)):
             for y in year:
                 if y in ai[ii].assets.year:
-                    if ai[ii].assets.capacity.sel(year=y).values > 0.0:
+                    if ai[ii].assets.capacity.sel(year=y).values[0] > 0.0:
                         data = DataFrame(
                             {
                                 "region": ai[ii].region,
@@ -98,7 +98,7 @@ def test_aggregate_sector_manyregions():
         for ii in range(0, len(ai)):
             for y in year:
                 if y in ai[ii].assets.year:
-                    if ai[ii].assets.capacity.sel(year=y).values > 0.0:
+                    if ai[ii].assets.capacity.sel(year=y).values[0] > 0.0:
                         data = DataFrame(
                             {
                                 "region": ai[ii].region,
