@@ -30,7 +30,8 @@ def create_standard_agent(
         existing = capacity.interp(year=year, method=interpolation) > 0
         existing = existing.any([u for u in existing.dims if u != "asset"])
         years = [capacity.year.min().values, capacity.year.max().values]
-        capacity = xr.zeros_like(capacity.sel(asset=existing.values, year=years))
+        # capacity = xr.zeros_like(capacity.sel(asset=existing.values, year=years))
+        capacity = xr.zeros_like(capacity.sel(year=years))
     assets = xr.Dataset(dict(capacity=capacity))
     kwargs = _standardize_inputs(**kwargs)
 
@@ -118,9 +119,7 @@ def create_newcapa_agent(
 
     assets = xr.Dataset()
     if retrofit_present:
-        assets["capacity"] = xr.zeros_like(
-            capacity.sel(asset=existing.values, year=years)
-        )
+        assets["capacity"] = xr.zeros_like(capacity.sel(year=years))
     else:
         technologies = kwargs["technologies"]
         assets["capacity"] = _shared_capacity(

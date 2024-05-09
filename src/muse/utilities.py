@@ -255,9 +255,7 @@ def clean_assets(assets: xr.Dataset, years: Union[int, Sequence[int]]):
         x = set(assets.year[assets.year >= years].values)
         x.add(years)
         years = sorted(x)
-    result = assets.reindex(year=years, method="backfill").fillna(0)
-    not_asset = [u for u in result.dims if u != "asset"]
-    return result.sel(asset=result.capacity.any(not_asset))
+    return assets.reindex(year=years, method="backfill").fillna(0)
 
 
 def filter_input(
