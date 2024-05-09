@@ -469,13 +469,8 @@ def _inner_split(
     for key, capacity in assets.items():
         method_result = method(capacity=capacity)
         if method_result.asset.size > 0:
-            shares[key] = (
-                method_result.groupby("technology")
-                .sum("asset")
-                .rename(technology="asset")
-            )
-        else:
-            shares[key] = (method_result).rename(technology="asset")
+            method_result = method_result.groupby("technology").sum("asset")
+        shares[key] = method_result.rename(technology="asset")
 
     try:
         total = sum(shares.values()).sum("asset")  # type: ignore
