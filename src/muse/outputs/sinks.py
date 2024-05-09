@@ -320,23 +320,25 @@ class YearlyAggregate:
         self.axis = axis
 
     def __call__(self, data: Union[pd.DataFrame, xr.DataArray], year: int):
-        if data is not None:
-            if isinstance(data, xr.DataArray):
-                dataframe = data.to_dataframe()
-            else:
-                dataframe = data
-            if self.axis in dataframe.columns:
-                dataframe = dataframe[dataframe[self.axis] == year]
-            elif self.axis in getattr(dataframe.index, "names", []):
-                dataframe = dataframe.xs(year, level=self.axis).assign(year=year)
-            if self.aggregate is None:
-                self.aggregate = dataframe
-            else:
-                self.aggregate = pd.concat((self.aggregate, dataframe), sort=True)
-            assert self.aggregate is not None
-            if getattr(data, "name", None) is not None:
-                self.aggregate.name = data.name
-            return self.sink(self.aggregate, year=year)
+        if data is None:
+            return None
+
+        if isinstance(data, xr.DataArray):
+            dataframe = data.to_dataframe()
+        else:
+            dataframe = data
+        if self.axis in dataframe.columns:
+            dataframe = dataframe[dataframe[self.axis] == year]
+        elif self.axis in getattr(dataframe.index, "names", []):
+            dataframe = dataframe.xs(year, level=self.axis).assign(year=year)
+        if self.aggregate is None:
+            self.aggregate = dataframe
+        else:
+            self.aggregate = pd.concat((self.aggregate, dataframe), sort=True)
+        assert self.aggregate is not None
+        if getattr(data, "name", None) is not None:
+            self.aggregate.name = data.name
+        return self.sink(self.aggregate, year=year)
 
 
 class FiniteResourceException(Exception):
