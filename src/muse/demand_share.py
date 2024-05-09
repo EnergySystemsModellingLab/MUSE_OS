@@ -465,13 +465,18 @@ def _inner_split(
     """
     from numpy import logical_and
 
-    shares = {
-        key: method(capacity=capacity)
-        .groupby("technology")
-        .sum("asset")
-        .rename(technology="asset")
-        for key, capacity in assets.items()
-    }
+    shares = {}
+    for key, capacity in assets.items():
+        method_result = method(capacity=capacity)
+        if method_result.asset.size > 0:
+            shares[key] = (
+                method_result.groupby("technology")
+                .sum("asset")
+                .rename(technology="asset")
+            )
+        else:
+            shares[key] = (method_result).rename(technology="asset")
+
     try:
         total = sum(shares.values()).sum("asset")  # type: ignore
     except AttributeError:
@@ -517,12 +522,13 @@ def unmet_demand(
     prod_method = production if callable(production) else prod_factory(production)
     assert callable(prod_method)
     produced = prod_method(market=market, capacity=capacity, technologies=technologies)
-    if "dst_region" in produced.dims:
-        produced = produced.sum("asset").rename(dst_region="region")
-    elif "region" in produced.coords and produced.region.dims:
-        produced = produced.groupby("region").sum("asset")
-    else:
-        produced = produced.sum("asset")
+    if produced.asset.size > 0:
+        if "dst_region" in produced.dims:
+            produced = produced.sum("asset").rename(dst_region="region")
+        elif "region" in produced.coords and produced.region.dims:
+            produced = produced.groupby("region").sum("asset")
+        else:
+            produced = produced.sum("asset")
     return (market.consumption - produced).clip(min=0)
 
 
@@ -618,15 +624,14 @@ def new_and_retro_demands(
     if "year" in new_demand.dims:
         new_demand = new_demand.squeeze("year")
 
-    service = (
-        production_method(
-            smarket.sel(year=current_year + forecast),
-            ts_capa.sel(year=current_year + forecast),
-            technologies,
-        )
-        .groupby("region")
-        .sum("asset")
+    service = production_method(
+        smarket.sel(year=current_year + forecast),
+        ts_capa.sel(year=current_year + forecast),
+        technologies,
     )
+
+    if service.asset.size > 0:
+        service = service.groupby("region").sum("asset")
     # existing asset should not execute beyond demand
     service = minimum(
         service, smarket.consumption.sel(year=current_year + forecast, drop=True)

@@ -217,12 +217,6 @@ class Subsector:
                 [agent.assets for agent in agents], technologies
             )
 
-        # len(commodities) == 0 may happen only if
-        # we run only one region or all regions have no outputs
-        msg = f"Subsector with {techs.technology.values[0]} has no output commodities"
-        if len(commodities) == 0:
-            raise RuntimeError(msg)
-
         demand_share = ds.factory(undo_damage(getattr(settings, "demand_share", None)))
         constraints = cs.factory(getattr(settings, "constraints", None))
         # only used by non-self-investing agents
