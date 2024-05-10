@@ -1,6 +1,23 @@
 import os
 
 import pandas as pd
+import toml
+
+
+def modify_toml(path_to_toml, function):
+    """Apply the specified function to modify a toml file
+
+    Args:
+        path_to_toml: Path to the toml file
+        function: Function to apply to the toml data. Must take a dictionary as a single
+            input.
+
+    """
+    with open(path_to_toml, "r") as file:
+        data = toml.load(file)
+    function(data)
+    with open(path_to_toml, "w") as file:
+        toml.dump(data, file)
 
 
 def get_sectors(model_path: str) -> list[str]:
