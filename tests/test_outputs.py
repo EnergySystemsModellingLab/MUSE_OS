@@ -572,7 +572,7 @@ def test_aggregate_cache():
     from muse.outputs.cache import _aggregate_cache
     from pandas.testing import assert_frame_equal
 
-    quantity = "heigth"
+    quantity = "height"
 
     a = xr.DataArray(np.ones((3, 4, 5)), name=quantity)
     b = a.copy()
@@ -605,7 +605,7 @@ def test_consolidate_quantity(newcapa_agent, retro_agent):
     sector = SimpleNamespace(name="IT", agents=[newcapa_agent, retro_agent])
     agents = extract_agents_internal(sector)
 
-    quantity = "heigth"
+    quantity = "height"
     a = xr.DataArray(
         np.ones((3, 4, 5)),
         dims=("agent", "replacement", "asset"),

@@ -368,7 +368,7 @@ class MCA(object):
             )
 
     def calibrate_legacy_sectors(self):
-        """Run a calibration step in the lagacy sectors
+        """Run a calibration step in the legacy sectors
         Run historical years
         """
         from copy import deepcopy

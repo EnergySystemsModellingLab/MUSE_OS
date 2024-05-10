@@ -15,7 +15,7 @@ Anywhere in the code, you can write:
     cache_quantity(quantity_name=some_data)
 
 If the quantity has been set as something to cache, the data will be stored and,
-eventually, save to disk after - possibly - agregating the data and removing those
+eventually, save to disk after - possibly - aggregating the data and removing those
 entries corresponding to non-convergent investment attempts. This process of cleaning
 and aggregation is quantity specific.
 
@@ -86,7 +86,7 @@ def cache_quantity(
     must be set, or directly called with any number of keyword arguments. In the former
     case, the matching between quantities and values to cached is done by the function
     'match_quantities'. When used in combination with other decorators, care must be
-    taken to decide the order in which they are applied to make sure the approrpriate
+    taken to decide the order in which they are applied to make sure the appropriate
     output is cached.
 
     Note that if the quantity has NOT been selected to be cached when configuring the

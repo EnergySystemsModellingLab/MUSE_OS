@@ -25,10 +25,10 @@ CommodityType
    which are either extracted, transformed from one to another, or used in the energy system.
 
    The "service" type includes commodities such as space heating or hot water which correspond to selected
-   poples' needs whose fulflment requires energy uses.
+   poples' needs whose fulfillment requires energy uses.
 
    The "material" type represent non-energy inputs for energy technologies, such as limestone or oxygen.
-   The "environmental" type refers to non-energy commodities whichare used to quantify an inpact on the environment,
+   The "environmental" type refers to non-energy commodities whichare used to quantify an impact on the environment,
    such as greenhouse gases or CO2. They can be subjected to different types of environmental fees or taxes.
 
 CommodityName

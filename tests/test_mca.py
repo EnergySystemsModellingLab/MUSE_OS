@@ -28,7 +28,7 @@ def test_check_equilibrium(market: Dataset):
 
 
 def test_check_demand_fulfillment(market):
-    """Test for the demand fulfilment function of the MCA."""
+    """Test for the demand fulfillment function of the MCA."""
     from muse.mca import check_demand_fulfillment
 
     tolerance_unmet_demand = -0.1

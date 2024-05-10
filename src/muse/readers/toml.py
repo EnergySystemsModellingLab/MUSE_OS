@@ -117,7 +117,7 @@ def format_paths(
 ):
     """Format paths passed to settings.
 
-    A setting is recongnized as a path if it's name ends in `_path`, `_file`, or `_dir`,
+    A setting is recognized as a path if it's name ends in `_path`, `_file`, or `_dir`,
     or if the associated value is text object and ends with `.csv, as well as settings
     called `path`.
 
@@ -216,7 +216,7 @@ def format_paths(
     }
 
     def format(path: Text) -> Text:
-        if path.lower() in ("optional", "reqired"):
+        if path.lower() in ("optional", "required"):
             return path
         return format_path(path, **patterns)  # type: ignore
 
@@ -412,7 +412,7 @@ def read_ts_multiindex(
 
         The timeslices are read from ``timeslice_levels``. The levels (keyword) and
         slice (list of values) correspond to the level, slices and slice aggregates
-        defined  inthe the ``timeslices`` section.
+        defined  in the the ``timeslices`` section.
 
         >>> toml = \"\"\"
         ...     ["timeslices"]
@@ -505,12 +505,12 @@ def read_timeslices(
         settings: TOML dictionary. It should contain a ``timeslice_levels`` section.
             Otherwise, the timeslices will default to the global (finest) timeslices.
         timeslice: Finest timeslices. Defaults to the global in
-            :py:mod:`~muse.timeslices`. If using the default, then this funtion
+            :py:mod:`~muse.timeslices`. If using the default, then this function
             should be called *after* the timeslice module has been setup with a call to
             :py:func:`~muse.timeslice.setup_module`.
         transforms: Transforms from desired timeslices to the finest timeslice. Defaults
             to the global in :py:mod:`~muse.timeslices`. If using the default,
-            then this funtion should be called *after* the timeslice module has been
+            then this function should be called *after* the timeslice module has been
             setup with a call to :py:func:`~muse.timeslice.setup_module`.
     Returns:
         A xr.Dataset with the timeslice coordinates.

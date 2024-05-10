@@ -60,12 +60,12 @@ class Regression(Callable):
     """ Maps from input names to coefficient names
 
     Maps the coefficients names in the class to their names in the input data
-    tables. This class attribute must be overriden.
+    tables. This class attribute must be overridden.
     """
     __regression__ = ""
     """ Name of the regression function.
 
-    This class attribute must be overriden.
+    This class attribute must be overridden.
     """
 
     def __init__(self, interpolation: Text = "linear", base_year: int = 2010, **kwargs):
@@ -250,7 +250,7 @@ def regression_functor(
         mappings: a dictionary mapping from the functions expected coefficients
             (e.g. a, b, c) to the name in the input csv data tables (.e.g.
             constant, GDPexp, GDPscale).
-        name: name by which the function is refered to in the input data table.
+        name: name by which the function is referred to in the input data table.
     """
     from logging import getLogger
 

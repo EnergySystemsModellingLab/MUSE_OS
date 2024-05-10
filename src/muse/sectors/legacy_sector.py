@@ -257,20 +257,20 @@ class LegacySector(AbstractSector):  # type: ignore
             self.mode,
         ]
 
-        inouts = {"output_dir": self.output_dir, "sectors_dir": self.sectors_dir}
+        inputs = {"output_dir": self.output_dir, "sectors_dir": self.sectors_dir}
 
         if self.name == "Power":
             if self.mode == "Calibration":
                 params += [self.market_iterative]
-                result = self.old_sector.power_calibration(*params, **inouts)
+                result = self.old_sector.power_calibration(*params, **inputs)
                 self.mode = "Iteration"
             else:
                 self.mode = "Iteration"
                 params += [self.old_sector.instance, self.market_iterative, self.excess]
-                result = self.old_sector.runprocessmodule(*params, **inouts)
+                result = self.old_sector.runprocessmodule(*params, **inputs)
         else:
             params += [self.market_iterative, self.excess]
-            result = self.old_sector.runprocessmodule(*params, **inouts)
+            result = self.old_sector.runprocessmodule(*params, **inputs)
 
         self.old_sector.report(result, t[1], self.output_dir)
 
@@ -427,7 +427,7 @@ def xarray_to_ndarray(
 
 
 def commodities_idx(sector, comm: Text) -> Sequence:
-    """Gets the indeces of the commodities involved in the processes of the
+    """Gets the indices of the commodities involved in the processes of the
     sector.
 
     Arguments:

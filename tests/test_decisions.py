@@ -143,7 +143,7 @@ def test_single_objectives(objectives):
     assert actual.values == approx(-objectives.b.values)
 
 
-# when developping/debugging, these few lines help setup the input for the
+# when developing/debugging, these few lines help setup the input for the
 # different tests
 if __name__ == "main":
     # fmt: off
