@@ -229,6 +229,25 @@ def efficiency(
     return result
 
 
+def _represent_hours(market: xr.Dataset, search_space: xr.DataArray) -> xr.DataArray:
+    """Retrieves the appropriate value for represent_hours.
+
+    Args:
+        market: The simulation market.
+        search_space: The search space for new tehcnologies.
+
+    Returns:
+        DataArray with the hours of each timeslice.
+    """
+    from muse.timeslices import represent_hours
+
+    if "represent_hours" in market:
+        return market.represent_hours
+    if "represent_hours" in search_space.coords:
+        return search_space.represent_hours
+    return represent_hours(market.timeslice)
+
+
 @register_objective(name="capacity")
 def capacity_to_service_demand(
     agent: Agent,
@@ -240,7 +259,6 @@ def capacity_to_service_demand(
     **kwargs,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
-    from muse.timeslices import represent_hours
 
     params = agent.filter_input(
         technologies[["utilization_factor", "fixed_outputs"]],
@@ -248,13 +266,7 @@ def capacity_to_service_demand(
         region=agent.region,
         technology=search_space.replacement,
     ).drop_vars("technology")
-    if "represent_hours" in market:
-        hours = market.represent_hours
-    elif "represent_hours" in search_space.coords:
-        hours = search_space.represent_hours
-    else:
-        hours = represent_hours(market.timeslice)
-
+    hours = _represent_hours(market, search_space)
     max_hours = hours.max() / hours.sum()
 
     commodity_output = params.fixed_outputs.sel(commodity=demand.commodity)
@@ -664,6 +676,7 @@ def lifetime_levelized_cost_of_energy(
         + fixed_and_variable_costs
     ) / (denominator.sel(commodity=products).sum("commodity") * rates).sum("year")
 
+    results = results.where(np.isfinite(results)).fillna(0.0)
     return results
 
 
