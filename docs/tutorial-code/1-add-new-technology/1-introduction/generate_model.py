@@ -35,7 +35,6 @@ copy_from: wind
 # Add new column {commodity_name} as copy of {copy_from}
 # >>> No values changed
 
-
 """
 ADD A NEW PROCESS
 
