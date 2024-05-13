@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import getLogger
 from typing import (
     Any,
     Callable,
@@ -18,6 +19,29 @@ import numpy as np
 import xarray as xr
 
 from muse.agents import Agent
+
+
+def _get_asset_threshold(settings: Any) -> float:
+    """Get the asset threshold from settings.
+
+    For backwards compatibility, we also accept the misspelled attribute
+    \"asset_threshhold\" (with a warning).
+    """
+    try:
+        return settings.asset_threshold
+    except AttributeError:
+        pass
+
+    try:
+        threshold = settings.asset_threshhold
+        getLogger(__name__).warn(
+            "Deprecated setting found. "
+            '"asset_threshhold" should be changed to "asset_threshold"'
+        )
+        return threshold
+    except AttributeError:
+        # default value
+        return 1e-12
 
 
 class Subsector:
@@ -187,7 +211,7 @@ class Subsector:
             technologies=technologies,
             regions=regions,
             year=current_year or int(technologies.year.min()),
-            asset_threshhold=getattr(settings, "asset_threshhold", 1e-12),
+            asset_threshold=_get_asset_threshold(settings),
             # only used by self-investing agents
             investment=getattr(settings, "lpsolver", "adhoc"),
             forecast=getattr(settings, "forecast", 5),

@@ -108,13 +108,13 @@ class Agent(AbstractAgent):
         objectives: Optional[Callable] = None,
         decision: Optional[Callable] = None,
         year: int = 2010,
-        maturity_threshhold: float = 0,
+        maturity_threshold: float = 0,
         forecast: int = 5,
         housekeeping: Optional[Callable] = None,
         merge_transform: Optional[Callable] = None,
-        demand_threshhold: Optional[float] = None,
+        demand_threshold: Optional[float] = None,
         category: Optional[Text] = None,
-        asset_threshhold: float = 1e-4,
+        asset_threshold: float = 1e-4,
         quantity: Optional[float] = 1,
         **kwargs,
     ):
@@ -126,7 +126,7 @@ class Agent(AbstractAgent):
             region: Region where the agent operates, used for cross-referencing
                 external tables.
             search_rules: method used to filter the search space
-            maturity_threshhold: threshold when filtering replacement
+            maturity_threshold: threshold when filtering replacement
                 technologies with respect to market share
             year: year the agent is created / current year
             forecast: Number of years the agent will forecast
@@ -134,7 +134,7 @@ class Agent(AbstractAgent):
                 iteration. Defaults to doing nothing.
             merge_transform: transform merging current and newly invested assets
                 together. Defaults to replacing old assets completely.
-            demand_threshhold: criteria below which the demand is zero.
+            demand_threshold: criteria below which the demand is zero.
             category: optional attribute that could be used to classify
                 different agents together.
         """
@@ -169,7 +169,7 @@ class Agent(AbstractAgent):
         function registered via `muse.filters.register_filter` can be
         used to filter the search space.
         """
-        self.maturity_threshhold = maturity_threshhold
+        self.maturity_threshold = maturity_threshold
         """ Market share threshold.
 
         Threshold when and if filtering replacement technologies with respect
@@ -205,13 +205,13 @@ class Agent(AbstractAgent):
         It can be any function registered with
         :py:func:`~muse.hooks.register_final_asset_transform`.
         """
-        self.demand_threshhold = demand_threshhold
+        self.demand_threshold = demand_threshold
         """Threshold below which the demand share is zero.
 
         This criteria avoids fulfilling demand for very small values. If None,
         then the criteria is not applied.
         """
-        self.asset_threshhold = asset_threshhold
+        self.asset_threshold = asset_threshold
         """Threshold below which assets are not added."""
 
     @property
@@ -319,7 +319,7 @@ class Agent(AbstractAgent):
         if "agent" in investments.dims:
             investments = investments.squeeze("agent", drop=True)
         investments = investments.sel(
-            replacement=(investments > self.asset_threshhold).any(
+            replacement=(investments > self.asset_threshold).any(
                 [d for d in investments.dims if d != "replacement"]
             )
         )

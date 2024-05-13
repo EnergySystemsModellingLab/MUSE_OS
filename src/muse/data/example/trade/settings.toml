@@ -75,7 +75,7 @@ constraints = [
 ]
 demand_share = "new_and_retro"
 forecast = 5
-asset_threshhold = 1e-4
+asset_threshold = 1e-4
 
 [[sectors.residential.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
@@ -112,7 +112,7 @@ constraints = [
 ]
 demand_share = "unmet_forecasted_demand"
 forecast = 5
-asset_threshhold = 1e-4
+asset_threshold = 1e-4
 
 [[sectors.power.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
@@ -153,7 +153,7 @@ constraints = [
 ]
 demand_share = "unmet_forecasted_demand"
 forecast = 5
-asset_threshhold = 1e-4
+asset_threshold = 1e-4
 
 [[sectors.gas.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
