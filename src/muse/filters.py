@@ -349,13 +349,13 @@ def maturity(
     techs = (
         condition.technology.where(condition, drop=True).drop_vars("technology").values
     )
-    
+
     # Generate a boolean mask where 'True' corresponds to entries in 'search_space.replacement' that are in 'techs'
     mask = search_space.replacement.isin(techs)
 
     # Apply this mask to 'search_space', turning all fields where the condition is not met to False
     replacement = search_space.where(mask, False)
-    
+
     return search_space & replacement
 
 
@@ -378,13 +378,13 @@ def spend_limit(
     techs = (
         condition.technology.where(condition, drop=True).drop_vars("technology").values
     )
-    
+
     # Generate a boolean mask where 'True' corresponds to entries in 'search_space.replacement' that are in 'techs'
     mask = search_space.replacement.isin(techs)
 
     # Apply this mask to 'search_space', turning all fields where the condition is not met to False
     replacement = search_space.where(mask, False)
-    
+
     return search_space & replacement
 
 
