@@ -207,7 +207,7 @@ def coords() -> Mapping:
 
 @fixture
 def agent_args(coords) -> Mapping:
-    """some standard arguments defining an agent."""
+    """Some standard arguments defining an agent."""
     from numpy.random import choice, rand, randint
 
     return {
@@ -223,7 +223,7 @@ def agent_args(coords) -> Mapping:
 
 @fixture
 def technologies(coords) -> Dataset:
-    """randomly generated technology characteristics."""
+    """Randomly generated technology characteristics."""
     from muse.commodities import CommodityUsage
     from numpy import nonzero, sum
     from numpy.random import choice, rand, randint

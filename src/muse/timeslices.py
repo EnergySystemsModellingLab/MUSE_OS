@@ -71,7 +71,7 @@ def reference_timeslice(
     level_names: Sequence[Text] = ("month", "day", "hour"),
     name: Text = "timeslice",
 ) -> DataArray:
-    """Reads reference timeslice from toml like input.
+    r"""Reads reference timeslice from toml like input.
 
     Arguments:
         settings: A dictionary of nested dictionaries or a string that toml will
@@ -89,7 +89,6 @@ def reference_timeslice(
         weight of each timeslice.
 
     Example:
-
         >>> from muse.timeslices import reference_timeslice
         >>> reference_timeslice(
         ...     \"\"\"
@@ -150,7 +149,7 @@ def aggregate_transforms(
     settings: Optional[Union[Mapping, Text]] = None,
     timeslice: Optional[DataArray] = None,
 ) -> Dict[Tuple, ndarray]:
-    """Creates dictionary of transforms for aggregate levels.
+    r"""Creates dictionary of transforms for aggregate levels.
 
     The transforms are used to create the projectors towards the finest timeslice.
 
@@ -165,7 +164,6 @@ def aggregate_transforms(
         timeslices.
 
     Example:
-
         >>> toml = \"\"\"
         ...     [timeslices]
         ...     spring.weekday = 5
@@ -251,14 +249,13 @@ def timeslice_projector(
     finest: Optional[DataArray] = None,
     transforms: Optional[Dict[Tuple, ndarray]] = None,
 ) -> DataArray:
-    """Project time-slice to standardized finest time-slices.
+    r"""Project time-slice to standardized finest time-slices.
 
     Returns a matrix from the input timeslice ``x`` to the ``finest`` timeslice, using
     the input ``transforms``. The latter are a set of transforms that map indices from
     one timeslice to indices in another.
 
     Example:
-
         Lets define the following timeslices and aggregates:
 
         >>> toml = \"\"\"
@@ -405,7 +402,7 @@ def convert_timeslice(
     finest: Optional[DataArray] = None,
     transforms: Optional[Dict[Tuple, ndarray]] = None,
 ) -> Union[DataArray, Dataset]:
-    """Adjusts the timeslice of x to match that of ts.
+    r"""Adjusts the timeslice of x to match that of ts.
 
     The conversion can be done in on of two ways, depending on whether the
     quantity is extensive or intensive. See `QuantityType`.
@@ -564,7 +561,6 @@ def new_to_old_timeslice(ts: DataArray, ag_level="Month") -> dict:
     This function is used in the LegacySector class to adapt the new MCA timeslices to
     the format required by the old sectors.
     """
-
     length = len(ts.month.values)
     converted_ts = {
         "Month": [kebab_to_camel(w) for w in ts.month.values],

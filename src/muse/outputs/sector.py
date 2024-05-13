@@ -202,7 +202,6 @@ def supply(
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current supply."""
-
     moutput = market.copy(deep=True).reset_index("timeslice")
     result = (
         market_quantity(moutput.supply, sum_over=sum_over, drop=drop)

@@ -210,7 +210,6 @@ def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
 
 def read_initial_assets(filename: Union[Text, Path]) -> xr.DataArray:
     """Reads and formats data about initial capacity into a dataframe."""
-
     data = pd.read_csv(filename, float_precision="high", low_memory=False)
     if "Time" in data.columns:
         result = cast(
@@ -883,7 +882,6 @@ def read_trade(
 
 def read_finite_resources(path: Union[Text, Path]) -> xr.DataArray:
     """Reads finite resources from csv file.
-
 
     The CSV file is made up of columns "Region", "Year", as well
     as three timeslice columns ("Month", "Day", "Hour"). All three sets of columns are

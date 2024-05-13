@@ -200,6 +200,8 @@ class MCA(object):
 
         Arguments:
             market: Commodities market, with the prices, supply, consumption and demand.
+            sectors: A list of the sectors participating in the simulation.
+            maxiter: Maximum number of iterations.
 
         Returns:
             A tuple with the updated market (prices, supply, consumption and demand) and
@@ -368,8 +370,9 @@ class MCA(object):
             )
 
     def calibrate_legacy_sectors(self):
-        """Run a calibration step in the legacy sectors
-        Run historical years
+        """Run a calibration step in the legacy sectors.
+
+        Run historical years.
         """
         from copy import deepcopy
         from logging import getLogger

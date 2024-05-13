@@ -34,7 +34,6 @@ class Regression(Callable):
     All regression functors are derived from this object.
 
     Examples:
-
     Creating a regression function can be done via it's constructor, or
     through a input csv file. This file is a
 
@@ -391,7 +390,7 @@ def ExponentialAdj(
 def Logistic(
     self, gdp: DataArray, population: DataArray, forecast: int = 5, n: int = 4, **kwargs
 ) -> DataArray:
-    """(1 + t * f^n) / (1 + f^n) * a * pop / (1 + b * e^(gpd * c / pop))
+    """(1 + t * f^n) / (1 + f^n) * a * pop / (1 + b * e^(gpd * c / pop)).
 
     With f the number of forecast years.
     """
@@ -406,7 +405,7 @@ def Logistic(
 @register_regression(name="log-log")
 @regression_functor({"a": "constant", "b": "GDPexp"})
 def Loglog(self, gdp: DataArray, population: DataArray, *args, **kwargs) -> DataArray:
-    """1e6 * e^a * population * (gpd/population)^b"""
+    """1e6 * e^a * population * (gpd/population)^b."""
     from numpy import exp, power
 
     factor = 1e6 * exp(self.coeffs.a) * population
@@ -425,7 +424,7 @@ def LogisticSigmoid(
     year: Optional[Union[int, Sequence[int]]] = None,
     **kwargs,
 ) -> DataArray:
-    """0.001 * (constant * pop + gdp * c / sqrt(1 + (gdp * scale / pop)^2)"""
+    """0.001 * (constant * pop + gdp * c / sqrt(1 + (gdp * scale / pop)^2)."""
     from numpy import power
 
     constant = self.coeffs.a
@@ -453,7 +452,7 @@ def LogisticSigmoid(
 
 @register_regression
 class Linear(Regression):
-    """a * population + b * (gdp - gdp[2010]/population[2010] * population)"""
+    """a * population + b * (gdp - gdp[2010]/population[2010] * population)."""
 
     __mappings__ = {"a": "constant", "b0": "GDPscaleLess", "b1": "GDPscaleGreater"}
 

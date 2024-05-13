@@ -102,8 +102,12 @@ ignore_errors = true
 
 [tool.ruff.lint]
 select = [
+    "D",  # pydocstyle
     "E",  # pycodestyle
     "F",  # Pyflakes
     "I"  # isort
 ]
-ignore = []
+ignore = [
+    "D1"  # missing docstring checks
+]
+pydocstyle.convention = "google"
