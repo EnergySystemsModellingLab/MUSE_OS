@@ -1,4 +1,5 @@
 """Registrators that allow pluggable data to logic transforms."""
+
 __all__ = ["registrator"]
 
 from typing import Callable, MutableMapping, Optional, Sequence, Text, Union
@@ -54,7 +55,7 @@ def registrator(
     this function) will emit a standardized log-call.
 
     Example:
-        At it's simplest, creating a registrator and registrating happens by
+        At it's simplest, creating a registrator and registering happens by
         first declaring a registry.
 
         >>> REGISTRY = {}

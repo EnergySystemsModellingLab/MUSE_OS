@@ -15,6 +15,7 @@ same signature:
 The function should never modify it's arguments. It can return either a pandas dataframe
 or an xarray xr.DataArray.
 """
+
 from operator import attrgetter
 from pathlib import Path
 from typing import (

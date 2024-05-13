@@ -1,4 +1,5 @@
 """Ensemble of functions to read MUSE data."""
+
 __all__ = [
     "read_technodictionary",
     "read_io_technodata",
@@ -155,7 +156,7 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
 
 
 def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
-    """Reads process inputs or ouputs.
+    """Reads process inputs or outputs.
 
     There are four axes: (technology, region, year, commodity)
     """
@@ -287,7 +288,9 @@ def read_technologies(
         sector = technodata_path_or_sector
         assert sector is None or isinstance(sector, Text)
         tpath = find_sectors_file(
-            f"technodata{sector.title()}.csv", sector, sectors_directory  # type: ignore
+            f"technodata{sector.title()}.csv",
+            sector,
+            sectors_directory,  # type: ignore
         )
         opath = find_sectors_file(
             f"commOUTtechnodata{sector.title()}.csv",  # type: ignore
@@ -449,7 +452,7 @@ def read_timeslice_shares(
 ) -> xr.Dataset:
     """Reads sliceshare information into a xr.Dataset.
 
-    Additionaly, this function will try and recover the timeslice multi- index from a
+    Additionally, this function will try and recover the timeslice multi- index from a
     import file "Timeslices{sector}.csv" in the same directory as the timeslice shares.
     Pass `None` if this behaviour is not required.
     """
@@ -710,7 +713,7 @@ def read_regression_parameters(path: Union[Text, Path]) -> xr.Dataset:
     getLogger(__name__).info(f"Reading regression parameters from {path}.")
     table = pd.read_csv(path, float_precision="high", low_memory=False)
 
-    # Normalize clumn names
+    # Normalize column names
     table.columns.name = "commodity"
     table = table.rename(
         columns={
@@ -910,9 +913,7 @@ def check_utilization_not_all_zero(data, filename):
     if "utilization_factor" not in data.columns:
         raise ValueError(
             """A technology needs to have a utilization factor defined for every
-             timeslice. Please check file {}.""".format(
-                filename
-            )
+             timeslice. Please check file {}.""".format(filename)
         )
     else:
         utilization_sum = data.groupby(["technology", "region", "year"]).sum()
@@ -924,8 +925,6 @@ def check_utilization_not_all_zero(data, filename):
             )
             raise ValueError(
                 """A technology can not have a utilization factor of 0 for every
-                 timeslice. Please check file {}.""".format(
-                    filename
-                )
+                 timeslice. Please check file {}.""".format(filename)
             )
     return data

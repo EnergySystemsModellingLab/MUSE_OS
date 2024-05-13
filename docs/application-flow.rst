@@ -318,7 +318,7 @@ An overall picture of this process can be seen in the following chart, but there
             {node [shape=""]; start; end;}
             exclude [label="Exclude\ncommodities\nfrom market"];
             single_year [label="Single year\niteration", fillcolor="lightgrey", style="rounded,filled"]
-            maxiter [label="Maxium iter?", shape=diamond, style=""]
+            maxiter [label="Maximum iter?", shape=diamond, style=""]
             converged [label="Converged?", shape=diamond, style=""]
             prices [label="Update with\nconverged prices"]
             {node [label="Update with not\nconverged prices"]; prices1; prices2;}
@@ -512,7 +512,3 @@ The typical choice used in most examples in MUSE is ``share``, where the utiliza
 Once the supply is obtained, the consumed commodities required to achieve that production level are calculated. The cheapest fuel for flexible technologies is used.
 
 Finally, the cost associated with that supply is calculated as the weighted average *annual LCOE* over assets, where the weights are the supply. This is later used to set the new prices.
-
-
-
-
