@@ -1,4 +1,5 @@
 """Default global values used in keyword arguments."""
+
 from pathlib import Path
 
 try:
