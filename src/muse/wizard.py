@@ -1,7 +1,7 @@
 import os
 
 import pandas as pd
-import toml
+from tomlkit import dumps, parse
 
 
 def modify_toml(path_to_toml, function):
@@ -14,10 +14,11 @@ def modify_toml(path_to_toml, function):
 
     """
     with open(path_to_toml, "r") as file:
-        data = toml.load(file)
+        lines = file.readlines()
+        data = parse("".join(lines))
     function(data)
     with open(path_to_toml, "w") as file:
-        toml.dump(data, file)
+        file.write(dumps(data))
 
 
 def get_sectors(model_path: str) -> list[str]:
@@ -205,5 +206,30 @@ def add_region(model_path, region_name, copy_from) -> None:
         df = pd.read_csv(file_path)
         new_rows = df[df["RegionName"] == copy_from].copy()
         new_rows["RegionName"] = region_name
+        df = pd.concat([df, new_rows])
+        df.to_csv(file_path, index=False)
+
+
+def add_timeslice(model_path, timeslice_name, timeslice_number, copy_from):
+    ## WORK IN PROGRESS
+
+    # Append timeslice_name to timeslices in settings.toml
+    settings_file = os.path.join(model_path, "settings.toml")
+    modify_toml(
+        settings_file,
+        lambda x: x["timeslices"]["all-year"]["all-week"].append(timeslice_name),
+    )
+
+    # Get all preset file paths
+    preset_files = [
+        os.path.join(model_path, "technodata", "preset", file)
+        for file in os.listdir(os.path.join(model_path, "technodata", "preset"))
+    ]
+
+    # Loop through all preset files
+    for file_path in preset_files:
+        df = pd.read_csv(file_path)
+        new_rows = df[df["Timeslice"] == copy_from].copy()
+        new_rows["Timeslice"] = timeslice_number
         df = pd.concat([df, new_rows])
         df.to_csv(file_path, index=False)
