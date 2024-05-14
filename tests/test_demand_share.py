@@ -14,10 +14,9 @@ def matching_market(technologies, stock, timeslice):
 
 def _matching_market(technologies, stock, timeslice):
     """A market which matches stocks exactly."""
-    from numpy.random import random
-
     from muse.quantities import consumption, maximum_production
     from muse.timeslices import QuantityType, convert_timeslice
+    from numpy.random import random
 
     market = xr.Dataset()
     production = convert_timeslice(
@@ -371,7 +370,7 @@ def test_unmet_forecast_demand(technologies, coords, timeslice, stock_factory):
     assert set(result.dims) == set(market.consumption.dims) - {"year"}
     assert result.values == approx(0)
 
-    # Then try too litte capacity
+    # Then try too little capacity
     agents = [
         Agent(0.5 * usa_stock.squeeze("region")),
         Agent(0.5 * asia_stock.squeeze("region")),

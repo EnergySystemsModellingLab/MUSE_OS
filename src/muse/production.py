@@ -1,7 +1,7 @@
 """Various ways and means to compute production.
 
 Production is the amount of commodities produced by an asset. However, depending on the
-context, it could be computed several ways. For  instace, it can be obtained straight
+context, it could be computed several ways. For  instance, it can be obtained straight
 from the capacity of the asset. Or it can be obtained by matching for the same
 commodities with a set of assets.
 
@@ -29,6 +29,7 @@ Arguments:
 Returns:
     A `xr.DataArray` with the amount produced for each good from each asset.
 """
+
 __all__ = [
     "demand_matched_production",
     "factory",
@@ -101,7 +102,7 @@ def maximum_production(
 ) -> xr.DataArray:
     """Production when running at full capacity.
 
-    *Full capacity* is limited by the utilitization factor. For more details, see
+    *Full capacity* is limited by the utilization factor. For more details, see
     :py:func:`muse.quantities.maximum_production`.
     """
     from muse.quantities import maximum_production
@@ -167,7 +168,7 @@ def costed_production(
     The assets are ranked according to their cost. The cost can be provided as an
     xarray, a callable creating an xarray, or as "alcoe". The asset with least cost are
     allowed to service the demand first, up to the maximum production. By default, the
-    mininum service is applied first.
+    minimum service is applied first.
     """
 
     from muse.commodities import CommodityUsage, check_usage, is_pollutant

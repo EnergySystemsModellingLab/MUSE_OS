@@ -17,7 +17,7 @@ Output commodities are the commodities produced by each
 technology.  They are defined in a csv file which describes the commodity outputs from
 each technology, defined per unit of technology activity. Emissions, such as CO2
 (produced from fuel combustion and reactions), CH4, N2O, F-gases, can also be accounted
-for in this file. 
+for in this file.
 
 
 General features
@@ -44,7 +44,7 @@ heater.
 
 .. csv-table:: Commodities used as consumables - Input commodities
    :header: ProcessName, RegionName, Time, Level, electricity
-       
+
    Unit, -, Year, -, GWh/PJ
    resBoilerElectric, region1, 2010, fixed, 300
    resBoilerElectric, region1, 2030, fixed, 290
@@ -70,7 +70,7 @@ Unit
 
 The input data has to be provided for the base year. Additional years within the time
 framework of the overall simulation can be defined. In this case, MUSE would interpolate
-the values between the provided periods and assume a constant value afterwards. The additional 
+the values between the provided periods and assume a constant value afterwards. The additional
 years at which input data for input/output commodities, are defined needs to equal for :ref:`inputs-technodata` and :ref:`inputs-technodata-ts`.
 
 Interpolation is activated only if the feature *interpolation_mode = 'Active'* is defined in the TOML file.

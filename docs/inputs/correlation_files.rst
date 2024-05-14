@@ -44,7 +44,7 @@ An example of a shortened macrodriver file is shown below. This file contains th
 Variable
     This is the variable that you would like to use in the regression for the service demand.
 
-RegionName 
+RegionName
     This is the region that the data applies to. This must correlate with the regions set in the rest of your input files, as well as the toml file.
 
 Unit
@@ -63,7 +63,7 @@ An example file is shown below:
 
 .. csv-table:: Regression Parameters File
    :header: SectorName,FunctionType,Coeff,RegionName,electricity,gas,heat,CO2f
-        
+
    Residential,logistic-sigmoid,GDPexp,R1,0,0,9.94E-02,0
    Residential,logistic-sigmoid,constant,R1,0,0,0.0000434,0
    Residential,logistic-sigmoid,GDPscaleLess,R1,0,0,753.1068725,0
@@ -81,7 +81,7 @@ FunctionType
         - Loglog
         - LogisticSigmoid
         - Linear
-        - endogenous_demand 
+        - endogenous_demand
 
     Your own functions can be created using the `@register_regression` hook, from the `regressions.py` file.
 
@@ -98,13 +98,13 @@ Energy service (electricity, gas, heat, CO2f)
 Timeslice share
 ---------------
 
-In this file, you are able to split the energy service proportionally by timeslice. 
+In this file, you are able to split the energy service proportionally by timeslice.
 
 An example file is shown below:
 
 .. csv-table:: Timeslice share
    :header: SN,RegionName,electricity,gas,heat,CO2f,wind
-        
+
     1,R1,0,0,0.034835,0,0
     2,R1,0,0,0.064546,0,0
     3,R1,0,0,0.044569,0,0

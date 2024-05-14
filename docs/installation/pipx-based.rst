@@ -71,7 +71,11 @@ MUSE needs Python to run but, for now, it only works with versions 3.8 and 3.9, 
 
 .. note::
 
-    Windows users should disable the alias for Python that comes by default with Windows and that will try to install Python from the Microsoft Store everytime we write ``python`` in the terminal. To do so, press the ``Windows key`` and start typing ``alias``, when it shows up, click in ``Manage app execution aliases``. In the window that opens, disable all the entries related to Python, like in the image.
+    Windows users should disable the alias for Python that comes by default with Windows
+    and that will try to install Python from the Microsoft Store every time we write
+    ``python`` in the terminal. To do so, press the ``Windows key`` and start typing
+    ``alias``, when it shows up, click in ``Manage app execution aliases``. In the
+    window that opens, disable all the entries related to Python, like in the image.
 
     .. image:: ../figures/disable_python_alias.png
         :width: 400

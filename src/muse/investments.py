@@ -40,6 +40,7 @@ Returns:
     A data array with dimensions `asset` and `technology` specifying the amount
     of newly invested capacity.
 """
+
 __all__ = [
     "adhoc_match_demand",
     "cliff_retirement_profile",
@@ -194,7 +195,7 @@ def cliff_retirement_profile(
     rewritten as ``technical_life * n`` with ``n = int(protected // technical_life) +
     1``.
 
-    We could just return an array where each year is repesented. Instead, to save
+    We could just return an array where each year is represented. Instead, to save
     memory, we return a compact view of the same where years where no change happens are
     removed.
 

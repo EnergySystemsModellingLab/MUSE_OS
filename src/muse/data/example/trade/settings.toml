@@ -1,12 +1,12 @@
 # Global settings - most REQUIRED
+
 time_framework = [2020, 2025, 2030, 2035]
-foresight = 5                             # Has to be a multiple of the minimum separation between the years in time framework
+foresight = 5  # Has to be a multiple of the minimum separation between the years in time framework
 regions = ["R1", "R2"]
 interest_rate = 0.1
 interpolation_mode = 'Active'
 log_level = 'info'
 excluded_commodities = ["wind"]
-
 # Convergence parameters
 equilibrium_variable = 'demand'
 maximum_iterations = 100
@@ -15,19 +15,20 @@ tolerance_unmet_demand = -0.1
 
 [[outputs]]
 quantity = "prices"
+filename = "{cwd}/Results/Prices.csv"
 sink.name = "aggregate"
 sink.sink.name = "csv"
 sink.sink.set_index = ["region", "commodity", "year", "timeslice"]
 sink.sink.sort_index = true
 sink.sink.keep_columns = ["prices"]
-filename = "{cwd}/Results/Prices.csv"
 
 [[outputs]]
 quantity = "capacity"
+index = false
+filename = "{cwd}/Results/Capacities.csv"
 sink.name = "aggregate"
 sink.sink.name = "csv"
 sink.sink.sort_index = true
-index = false
 sink.sink.keep_columns = [
     'technology',
     'dst_region',
@@ -36,9 +37,8 @@ sink.sink.keep_columns = [
     'sector',
     'type',
     'year',
-    'capacity',
+    'capacity'
 ]
-filename = "{cwd}/Results/Capacities.csv"
 
 [carbon_budget_control]
 budget = []
@@ -71,12 +71,11 @@ constraints = [
     "max_capacity_expansion",
     "minimum_service",
     "demand",
-    "search_space",
+    "search_space"
 ]
 demand_share = "new_and_retro"
 forecast = 5
 asset_threshhold = 1e-4
-
 
 [[sectors.residential.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
@@ -109,7 +108,7 @@ constraints = [
     "max_production",
     "max_capacity_expansion",
     "demand",
-    "search_space",
+    "search_space"
 ]
 demand_share = "unmet_forecasted_demand"
 forecast = 5
@@ -127,7 +126,7 @@ columns = [
     "region",
     "technology",
     "installed",
-    "capacity",
+    "capacity"
 ]
 index = false
 
@@ -150,7 +149,7 @@ constraints = [
     "max_production",
     "max_capacity_expansion",
     "demand",
-    "search_space",
+    "search_space"
 ]
 demand_share = "unmet_forecasted_demand"
 forecast = 5
@@ -168,16 +167,15 @@ columns = [
     "region",
     "technology",
     "installed",
-    "capacity",
+    "capacity"
 ]
 index = false
 
-
 [timeslices]
+level_names = ["month", "day", "hour"]
 all-year.all-week.night = 1460
 all-year.all-week.morning = 1460
 all-year.all-week.afternoon = 1460
 all-year.all-week.early-peak = 1460
 all-year.all-week.late-peak = 1460
 all-year.all-week.evening = 1460
-level_names = ["month", "day", "hour"]

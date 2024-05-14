@@ -84,7 +84,7 @@ def register_demand_share(function: DEMAND_SHARE_SIGNATURE):
 
 
 def factory(
-    settings: Optional[Union[Text, Mapping[Text, Any]]] = None
+    settings: Optional[Union[Text, Mapping[Text, Any]]] = None,
 ) -> DEMAND_SHARE_SIGNATURE:
     if settings is None or isinstance(settings, Text):
         name = settings or "new_and_retro"
@@ -555,7 +555,7 @@ def new_consumption(
 ) -> xr.DataArray:
     r"""Computes share of the demand attributed to new agents.
 
-    The new agents service the demand that can be attributed specificaly to growth and
+    The new agents service the demand that can be attributed specifically to growth and
     that cannot be serviced by existing assets. In other words:
 
     .. math::
