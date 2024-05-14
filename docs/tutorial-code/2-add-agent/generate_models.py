@@ -46,7 +46,7 @@ def generate_model_2():
     # Split capacity equally between the two agents
     for sector in get_sectors(model_path):
         technodata_file = os.path.join(
-            model_path, f"technodata/{sector}/technodata.csv"
+            model_path, f"technodata/{sector}/Technodata.csv"
         )
         df = pd.read_csv(technodata_file)
         df.loc[1:, "Agent2"] = 0.5

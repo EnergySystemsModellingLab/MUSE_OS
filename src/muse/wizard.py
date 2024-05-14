@@ -170,3 +170,40 @@ def add_agent(
         if copy_from_new in df.columns:
             df[agentshare_new] = df[copy_from_new]
         df.to_csv(technodata_file, index=False)
+
+
+def add_region(model_path, region_name, copy_from) -> None:
+    # Append region to settings.toml
+    settings_file = os.path.join(model_path, "settings.toml")
+    modify_toml(settings_file, lambda x: x["regions"].append(region_name))
+
+    # Modify csv files
+    sector_files = [
+        os.path.join(model_path, "technodata", sector, file)
+        for sector in get_sectors(model_path)
+        for file in [
+            "technodata.csv",
+            "CommIn.csv",
+            "CommOut.csv",
+            "ExistingCapacity.csv",
+        ]
+    ]
+    preset_files = [
+        os.path.join(model_path, "technodata", "preset", file)
+        for file in os.listdir(os.path.join(model_path, "technodata", "preset"))
+    ]
+    global_files = [
+        os.path.join(model_path, file)
+        for file in [
+            "technodata/Agents.csv",
+            "input/BaseYearImport.csv",
+            "input/BaseYearExport.csv",
+            "input/Projections.csv",
+        ]
+    ]
+    for file_path in sector_files + preset_files + global_files:
+        df = pd.read_csv(file_path)
+        new_rows = df[df["RegionName"] == copy_from].copy()
+        new_rows["RegionName"] = region_name
+        df = pd.concat([df, new_rows])
+        df.to_csv(file_path, index=False)
