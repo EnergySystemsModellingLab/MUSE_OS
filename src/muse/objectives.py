@@ -554,7 +554,9 @@ def lifetime_levelized_cost_of_energy(
 ):
     """Levelized cost of energy (LCOE) of technologies over their lifetime.
 
-    It follows the `simpified LCOE` given by NREL.
+    It follows the `simpified LCOE` given by NREL. The LCOE is set to zero for those
+    timeslices where the production is zero, normally due to a zero utilisation
+    factor.
 
     Arguments:
         agent: The agent of interest
