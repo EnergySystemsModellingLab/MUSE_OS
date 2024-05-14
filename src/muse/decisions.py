@@ -12,7 +12,7 @@ the input, functions implementing decision methods should follow a specific sign
 
 Arguments:
     objectives: An dataset where each array is a separate objective
-    parameters: parameters, such as weigths, whether to minimize or maximize, the names
+    parameters: parameters, such as weights, whether to minimize or maximize, the names
         of objectives to consider, etc.
     kwargs: Extra input parameters. These parameters are expected to be set from the
         input file.
@@ -183,7 +183,7 @@ def lexical_comparison(
     Finally, the objectives are ranked lexographically, in the order given by the
     parameters.
 
-    The result is an array of tuples which can subsquently be compared
+    The result is an array of tuples which can subsequently be compared
     lexicographically.
     """
     from muse.utilities import lexical_comparison
@@ -211,7 +211,7 @@ def retro_lexical_comparison(
     largest constraint.  Finally, the objectives are ranked lexographically, in
     the order given by the parameters.
 
-    The result is an array of tuples which can subsquently be compared
+    The result is an array of tuples which can subsequently be compared
     lexicographically.
     """
     from muse.utilities import lexical_comparison
@@ -252,7 +252,7 @@ def epsilon_constraints(
     r"""Minimizes first objective subject to constraints on other objectives.
 
     The parameters are a sequence of tuples `(name, minimize, epsilon)`, where
-    `name` is the name of the objective, `minimze` is `True` if minimizing and
+    `name` is the name of the objective, `minimize` is `True` if minimizing and
     false if maximizing that objective, and `epsilon` is the constraint. The
     first objective is the one that will be minimized according to:
 

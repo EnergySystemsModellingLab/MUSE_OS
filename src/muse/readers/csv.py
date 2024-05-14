@@ -156,7 +156,7 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
 
 
 def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
-    """Reads process inputs or ouputs.
+    """Reads process inputs or outputs.
 
     There are four axes: (technology, region, year, commodity)
     """
@@ -452,7 +452,7 @@ def read_timeslice_shares(
 ) -> xr.Dataset:
     """Reads sliceshare information into a xr.Dataset.
 
-    Additionaly, this function will try and recover the timeslice multi- index from a
+    Additionally, this function will try and recover the timeslice multi- index from a
     import file "Timeslices{sector}.csv" in the same directory as the timeslice shares.
     Pass `None` if this behaviour is not required.
     """
@@ -713,7 +713,7 @@ def read_regression_parameters(path: Union[Text, Path]) -> xr.Dataset:
     getLogger(__name__).info(f"Reading regression parameters from {path}.")
     table = pd.read_csv(path, float_precision="high", low_memory=False)
 
-    # Normalize clumn names
+    # Normalize column names
     table.columns.name = "commodity"
     table = table.rename(
         columns={

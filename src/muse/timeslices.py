@@ -150,7 +150,7 @@ def aggregate_transforms(
     settings: Optional[Union[Mapping, Text]] = None,
     timeslice: Optional[DataArray] = None,
 ) -> Dict[Tuple, ndarray]:
-    """Creates dictionay of transforms for aggregate levels.
+    """Creates dictionary of transforms for aggregate levels.
 
     The transforms are used to create the projectors towards the finest timeslice.
 

@@ -16,7 +16,7 @@ Other models may be available. Check the command-line help:
 
     python -m muse --help
 
-The same models can be instanciated in a python script as follows:
+The same models can be instantiated in a python script as follows:
 
 .. code-block:: Python
 

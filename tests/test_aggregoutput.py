@@ -3,7 +3,7 @@ from muse.outputs.mca import sector_capacity
 
 
 def test_aggregate_sector():
-    """Test for aggregate_sector function check colum titles, number of
+    """Test for aggregate_sector function check column titles, number of
     agents/region/technologies and assets capacities."""
     from pandas import DataFrame, concat
 
@@ -72,8 +72,8 @@ def test_aggregate_sectors():
 
 
 def test_aggregate_sector_manyregions():
-    """Test for aggregate_sector function with two regions check colum titles, number of
-    agents/region/technologies and assets capacities."""
+    """Test for aggregate_sector function with two regions check column titles, number
+    of agents/region/technologies and assets capacities."""
     from muse.outputs.mca import _aggregate_sectors
     from pandas import DataFrame, concat
 

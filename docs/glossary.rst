@@ -39,7 +39,7 @@ Here we provide a glossary for some of the frequently used terms in this documen
         This is where an agent does not know everything needed to make a perfect decision.
 
     Levelised cost of electricity
-        The levelised cost of electricty is a measure of the average net present cost of electricity generation for a generating plant over its lifetime.
+        The levelised cost of electricity is a measure of the average net present cost of electricity generation for a generating plant over its lifetime.
 
     Limited foresight
         Limited foresight is the condition that an agent is unable to predict the entire future perfectly. The agent is only able to predict the future either imperfectly, or a limited time ahead.

@@ -318,7 +318,7 @@ An overall picture of this process can be seen in the following chart, but there
             {node [shape=""]; start; end;}
             exclude [label="Exclude\ncommodities\nfrom market"];
             single_year [label="Single year\niteration", fillcolor="lightgrey", style="rounded,filled"]
-            maxiter [label="Maxium iter?", shape=diamond, style=""]
+            maxiter [label="Maximum iter?", shape=diamond, style=""]
             converged [label="Converged?", shape=diamond, style=""]
             prices [label="Update with\nconverged prices"]
             {node [label="Update with not\nconverged prices"]; prices1; prices2;}

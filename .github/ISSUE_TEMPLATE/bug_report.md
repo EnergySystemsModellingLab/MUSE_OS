@@ -13,7 +13,7 @@ A clear and concise description of what the bug is, including error messages.
 
 ## To Reproduce
 
-Steps to reproduce the behavior. Attache any input file that might be required.
+Steps to reproduce the behavior. Attach any input file that might be required.
 
 ## Expected behavior
 

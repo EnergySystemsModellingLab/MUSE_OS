@@ -493,7 +493,7 @@ def annual_levelized_cost_of_energy(
     """Annual cost of energy (LCOE) of technologies - not dependent on production.
     It needs to be used for trade agents where the actual service is unknown
 
-    It follows the `simpified LCOE` given by NREL.
+    It follows the `simplified LCOE` given by NREL.
 
     Arguments:
         agent: The agent of interest

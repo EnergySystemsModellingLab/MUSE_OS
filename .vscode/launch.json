@@ -6,14 +6,14 @@
     "configurations": [
         {
             "name": "Model: default",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "muse",
             "args": ["--model", "default"]
         },
         {
             "name": "Model: multiple_agents",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "muse",
             "args": ["--model", "multiple_agents"]
@@ -27,14 +27,14 @@
         },
         {
             "name": "model/settings.toml",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "muse",
             "args": ["model/settings.toml"]
         },
         {
             "name": "Model: minimum_service",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "muse",
             "args": ["--model", "minimum_service"]

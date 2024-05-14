@@ -46,7 +46,7 @@ class Subsector:
         self.forecast = forecast
         self.name = name
         self.expand_market_prices = expand_market_prices
-        """Wether to expand prices to include destination region.
+        """Whether to expand prices to include destination region.
 
         If ``True``, the input market prices are expanded of the missing "dst_region"
         dimension by setting them to the maximum between the source and destination

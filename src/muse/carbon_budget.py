@@ -44,7 +44,7 @@ def update_carbon_budget(
     under: bool = True,
 ) -> float:
     """Adjust the carbon budget in the far future if emissions too high or low.
-    This feature can allow to simulate overshoot shifing.
+    This feature can allow to simulate overshoot shifting.
     Arguments:
         carbon_budget: budget for future year,
         emissions: emission for future year,
@@ -498,7 +498,7 @@ def min_max_bisect(
     threshold: float,
 ):
     """Refines bisection algorithm to escalate carbon price and meet the budget.
-    As emissions can be a discontinuous fucntion of the carbon price,
+    As emissions can be a discontinuous function of the carbon price,
     this method is used to improve the solution search when discountinuities
     are met, improving the bounds search.
 

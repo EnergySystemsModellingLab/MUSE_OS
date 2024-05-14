@@ -53,7 +53,7 @@ Technologies, and their parameters are defined in the Technodata.csv file. For a
 Sectors
 -------
 
-Sectors typically group areas of economic activity together, such as the residential sector, which might include all energy conusming activies of households. Possible examples of sectors are:
+Sectors typically group areas of economic activity together, such as the residential sector, which might include all energy conusming activities of households. Possible examples of sectors are:
 
 - Gas sector
 
@@ -70,7 +70,7 @@ Each of the technologies, which consume a commodity, also output a different com
 Agents
 ------
 
-Agents represent the investment decision makers in an energy system, for example consumers or companies. They invest in technologies that meet service demands, like heating, or produce other needed energy commodities, like electricity. These agents can be heterogenous, meaning that their investment priorities have the ability to differ.
+Agents represent the investment decision makers in an energy system, for example consumers or companies. They invest in technologies that meet service demands, like heating, or produce other needed energy commodities, like electricity. These agents can be heterogeneous, meaning that their investment priorities have the ability to differ.
 
 As an example, a generation company could compare potential power generators based on their levelized cost of electricity, their net present value, by minimising the total capital cost, a mixture of these and/or any user-defined approach. This approach more closely matches the behaviour of real-life agents in the energy market, where companies, or people, have different priorities and constraints.
 
