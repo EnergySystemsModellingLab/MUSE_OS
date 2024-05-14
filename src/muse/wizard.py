@@ -160,26 +160,13 @@ def add_agent(
         (df["Name"] == copy_from) & (df["Type"] == "Retrofit"), "AgentShare"
     ].values[0]
 
-    add_agent_allocation(model_path, agentshare_retrofit, copy_from_retrofit)
-    add_agent_allocation(model_path, agentshare_new, copy_from_new)
-
-
-def add_agent_allocation(
-    model_path: str,
-    agentshare_name: str,
-    copy_from: str,
-) -> None:
-    """Add an agent allocation to technodata files by copying from an existing one.
-
-    Args:
-        model_path: Path to the model folder.
-        agentshare_name: Name of the agent share to add.
-        copy_from: Name of the agent share to copy from.
-    """
     for sector in get_sectors(model_path):
         technodata_file = os.path.join(
             model_path, f"technodata/{sector}/technodata.csv"
         )
         df = pd.read_csv(technodata_file)
-        df[agentshare_name] = df[copy_from]
+        if copy_from_retrofit in df.columns:
+            df[agentshare_retrofit] = df[copy_from_retrofit]
+        if copy_from_new in df.columns:
+            df[agentshare_new] = df[copy_from_new]
         df.to_csv(technodata_file, index=False)
