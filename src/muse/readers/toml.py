@@ -406,14 +406,14 @@ def read_ts_multiindex(
     timeslice: Optional[xr.DataArray] = None,
     transforms: Optional[Dict[Tuple, np.ndarray]] = None,
 ) -> pd.MultiIndex:
-    r"""Read multiindex for a timeslice from TOML.
+    '''Read multiindex for a timeslice from TOML.
 
     Example:
         The timeslices are read from ``timeslice_levels``. The levels (keyword) and
         slice (list of values) correspond to the level, slices and slice aggregates
         defined  in the the ``timeslices`` section.
 
-        >>> toml = \"\"\"
+        >>> toml = """
         ...     ["timeslices"]
         ...     winter.weekday.day = 5
         ...     winter.weekday.night = 5
@@ -429,7 +429,7 @@ def read_ts_multiindex(
         ...     aggregates.allday = ["day", "night"]
         ...     [timeslice_levels]
         ...     day = ["dusk", "allday"]
-        ... \"\"\"
+        ... """
         >>> from muse.timeslices import (
         ...     reference_timeslice,  aggregate_transforms
         ... )
@@ -455,7 +455,7 @@ def read_ts_multiindex(
         Traceback (most recent call last):
         ...
         muse.readers.toml.IncorrectSettings: Unexpected slice(s): ...
-    """
+    '''
     from itertools import product
 
     from toml import loads
@@ -498,7 +498,7 @@ def read_timeslices(
     timeslice: Optional[xr.DataArray] = None,
     transforms: Optional[Dict[Tuple, np.ndarray]] = None,
 ) -> xr.Dataset:
-    r"""Reads timeslice levels and create resulting timeslice coordinate.
+    '''Reads timeslice levels and create resulting timeslice coordinate.
 
     Args:
         settings: TOML dictionary. It should contain a ``timeslice_levels`` section.
@@ -516,7 +516,7 @@ def read_timeslices(
         A xr.Dataset with the timeslice coordinates.
 
     Example:
-        >>> toml = \"\"\"
+        >>> toml = """
         ...     ["timeslices"]
         ...     winter.weekday.day = 5
         ...     winter.weekday.night = 5
@@ -532,7 +532,7 @@ def read_timeslices(
         ...     aggregates.allday = ["day", "night"]
         ...     [timeslice_levels]
         ...     day = ["dusk", "allday"]
-        ... \"\"\"
+        ... """
         >>> from muse.timeslices import (
         ...     reference_timeslice,  aggregate_transforms
         ... )
@@ -550,7 +550,7 @@ def read_timeslices(
             represent_hours  (timeslice) ... 10 1 4 10 1 4
         Data variables:
             *empty*
-    """
+    '''
     from muse.timeslices import TIMESLICE, timeslice_projector
 
     if timeslice is None:
