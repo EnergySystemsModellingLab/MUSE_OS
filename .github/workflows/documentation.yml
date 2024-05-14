@@ -22,6 +22,13 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --upgrade setuptools==62.6.0 wheel
           python -m pip install -e .[doc,dev]
+      - name: Generate results for default model
+        run: |
+          muse --model default
+
+          # Create a symlink in the docs folder as running-muse-example.ipynb assumes
+          # they will be there
+          ln -s ../Results docs/
       - name: Test notebooks and tutorials
         run: pytest -m "notebook"
       - name: Build HTML documentation
