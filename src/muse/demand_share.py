@@ -473,21 +473,17 @@ def _inner_split(
         for key, capacity in assets.items()
     }
     try:
-        # calculates the total demand assigned in the previous step with the "method" function  # noqa: E501
-        # across agents and assets. The previous version of this calculation only calculated  # noqa: E501
-        # the sum of assets present in all "shares.values()" (which contain agents).
+        # Calculates the total demand assigned in the previous step with the "method"
+        # function across agents and assets.
         total = (
             xr.concat(shares.values(), dim="concat_dim").sum("concat_dim").sum("asset")
         )
-        # type: ignore
     except AttributeError:
         raise AgentWithNoAssetsInDemandShare()
 
-    # calculates the demand divided by the number of assets times the number of agents if  # noqa: E501
-    # the demand is bigger than zero and the total demand assigned with the "method"
-    # function is zero. In the previous version, the demand was divided by the number of
-    # agents times the number of assets present in all "shares.values()"
-    # (which represent agents) and thus could become inf if all agents owned different assets.  # noqa: E501
+    # Calculates the demand divided by the number of assets times the number of agents
+    # if the demand is bigger than zero and the total demand assigned with the "method"
+    # function is zero.
     unassigned = (
         demand
         / (
