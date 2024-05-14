@@ -14,8 +14,7 @@ def modify_toml(path_to_toml, function):
 
     """
     with open(path_to_toml, "r") as file:
-        lines = file.readlines()
-        data = parse("".join(lines))
+        data = parse(file.read())
     function(data)
     with open(path_to_toml, "w") as file:
         file.write(dumps(data))
@@ -210,26 +209,24 @@ def add_region(model_path, region_name, copy_from) -> None:
         df.to_csv(file_path, index=False)
 
 
-def add_timeslice(model_path, timeslice_name, timeslice_number, copy_from):
-    ## WORK IN PROGRESS
-
-    # Append timeslice_name to timeslices in settings.toml
+def add_timeslice(model_path, timeslice_name, copy_from):
+    # Append timeslice to timeslices in settings.toml
     settings_file = os.path.join(model_path, "settings.toml")
-    modify_toml(
-        settings_file,
-        lambda x: x["timeslices"]["all-year"]["all-week"].append(timeslice_name),
-    )
-
-    # Get all preset file paths
-    preset_files = [
-        os.path.join(model_path, "technodata", "preset", file)
-        for file in os.listdir(os.path.join(model_path, "technodata", "preset"))
-    ]
+    with open(settings_file, "r") as file:
+        settings = parse(file.read())
+    timeslices = settings["timeslices"]["all-year"]["all-week"]
+    copy_from_number = list(timeslices).index(copy_from) + 1
+    timeslices[timeslice_name] = timeslices[copy_from]
+    with open(settings_file, "w") as file:
+        file.write(dumps(settings))
 
     # Loop through all preset files
-    for file_path in preset_files:
+    preset_dir = os.path.join(model_path, "technodata", "preset")
+    for file_name in os.listdir(preset_dir):
+        file_path = os.path.join(preset_dir, file_name)
         df = pd.read_csv(file_path)
-        new_rows = df[df["Timeslice"] == copy_from].copy()
-        new_rows["Timeslice"] = timeslice_number
+        new_rows = df[df["Timeslice"] == copy_from_number].copy()
+        new_rows["Timeslice"] = len(timeslices)
         df = pd.concat([df, new_rows])
+        df = df.sort_values(by=["RegionName", "Timeslice"]).reset_index(drop=True)
         df.to_csv(file_path, index=False)
