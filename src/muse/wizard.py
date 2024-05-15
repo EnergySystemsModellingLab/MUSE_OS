@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Callable
+from typing import Callable, List
 
 import pandas as pd
 from tomlkit import dumps, parse
@@ -12,17 +12,15 @@ def modify_toml(path_to_toml: Path, function: Callable):
     Args:
         path_to_toml: Path to the toml file
         function: Function to apply to the toml data. Must take a dictionary as a single
-            input.
+            input and modify it in place.
 
     """
-    with open(path_to_toml, "r") as file:
-        data = parse(file.read())
+    data = parse(path_to_toml.read_text())
     function(data)
-    with open(path_to_toml, "w") as file:
-        file.write(dumps(data))
+    path_to_toml.write_text(dumps(data))
 
 
-def get_sectors(model_path: Path) -> list[str]:
+def get_sectors(model_path: Path) -> List[str]:
     """Get a list of sector names for a model.
 
     Args:
@@ -67,18 +65,17 @@ def add_new_commodity(
 
     global_commodities_file = model_path / "input/GlobalCommodities.csv"
     df = pd.read_csv(global_commodities_file)
-    new_rows = df[df["Commodity"] == copy_from.capitalize()].copy()
-    new_rows["Commodity"] = commodity_name.capitalize()
-    new_rows["CommodityName"] = commodity_name
+    new_rows = df[df["Commodity"] == copy_from.capitalize()].assign(
+        Commodity=commodity_name.capitalize(), CommodityName=commodity_name
+    )
     df = pd.concat([df, new_rows])
     df.to_csv(global_commodities_file, index=False)
 
     # Add to projections
-    projections_files = os.listdir(model_path / "technodata/preset")
-    for file in projections_files:
-        df = pd.read_csv(model_path / "technodata/preset" / file)
+    for file in (model_path / "technodata/preset").glob("*"):
+        df = pd.read_csv(file)
         df[commodity_name] = df[copy_from]
-        df.to_csv(model_path / "technodata/preset" / file, index=False)
+        df.to_csv(file, index=False)
 
 
 def add_new_process(
@@ -155,19 +152,19 @@ def add_agent(
     """
     agents_file = model_path / "technodata/Agents.csv"
     df = pd.read_csv(agents_file)
-    new_rows = df[df["Name"] == copy_from].copy()
-    new_rows["Name"] = agent_name
-    new_rows.loc[new_rows["Type"] == "New", "AgentShare"] = agentshare_new
-    new_rows.loc[new_rows["Type"] == "Retrofit", "AgentShare"] = agentshare_retrofit
-    df = pd.concat([df, new_rows])
-    df.to_csv(agents_file, index=False)
-
     copy_from_new = df.loc[
         (df["Name"] == copy_from) & (df["Type"] == "New"), "AgentShare"
     ].values[0]
     copy_from_retrofit = df.loc[
         (df["Name"] == copy_from) & (df["Type"] == "Retrofit"), "AgentShare"
     ].values[0]
+
+    new_rows = df[df["Name"] == copy_from].copy()
+    new_rows["Name"] = agent_name
+    new_rows.loc[new_rows["Type"] == "New", "AgentShare"] = agentshare_new
+    new_rows.loc[new_rows["Type"] == "Retrofit", "AgentShare"] = agentshare_retrofit
+    df = pd.concat([df, new_rows])
+    df.to_csv(agents_file, index=False)
 
     for sector in get_sectors(model_path):
         technodata_file = model_path / f"technodata/{sector}/technodata.csv"
@@ -179,7 +176,15 @@ def add_agent(
         df.to_csv(technodata_file, index=False)
 
 
-def add_region(model_path: Path, region_name, copy_from) -> None:
+def add_region(model_path: Path, region_name: str, copy_from: str) -> None:
+    """
+    Add a new region to the MUSE model.
+
+    Args:
+        model_path: The path to the MUSE model directory.
+        region_name: The name of the new region to be added.
+        copy_from: The name of the region to copy data from.
+    """
     # Append region to settings.toml
     settings_file = model_path / "settings.toml"
     modify_toml(settings_file, lambda x: x["regions"].append(region_name))
@@ -216,16 +221,22 @@ def add_region(model_path: Path, region_name, copy_from) -> None:
         df.to_csv(file_path, index=False)
 
 
-def add_timeslice(model_path, timeslice_name, copy_from):
+def add_timeslice(model_path: Path, timeslice_name: str, copy_from: str) -> None:
+    """
+    Add a new timeslice to the model.
+
+    Args:
+        model_path: The path to the model directory.
+        timeslice_name: The name of the new timeslice.
+        copy_from: The name of the timeslice to copy from.
+    """
     # Append timeslice to timeslices in settings.toml
     settings_file = model_path / "settings.toml"
-    with open(settings_file, "r") as file:
-        settings = parse(file.read())
+    settings = parse(settings_file.read_text())
     timeslices = settings["timeslices"]["all-year"]["all-week"]
     copy_from_number = list(timeslices).index(copy_from) + 1
     timeslices[timeslice_name] = timeslices[copy_from]
-    with open(settings_file, "w") as file:
-        file.write(dumps(settings))
+    settings_file.write_text(dumps(settings))
 
     # Loop through all preset files
     preset_dir = model_path / "technodata" / "preset"
