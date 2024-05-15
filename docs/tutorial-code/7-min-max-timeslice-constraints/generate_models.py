@@ -1,0 +1,60 @@
+import os
+import shutil
+import sys
+
+import pandas as pd
+from muse import examples
+
+"""
+Model 1 - Min constraint
+
+"""
+
+
+def generate_model_1() -> None:
+    """
+    Code to generate model 1-min-constraint.
+
+    """
+    model_name = "1-min-constraint"
+    parent_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+    model_path = os.path.join(parent_path, model_name)
+    if os.path.exists(model_path):
+        shutil.rmtree(model_path)
+
+    # Starting point: copy default model
+    examples.copy_model(name="default_timeslice", path=parent_path, overwrite=True)
+    os.rename(os.path.join(parent_path, "model"), model_path)
+
+
+def generate_model_2() -> None:
+    """
+    Code to generate model 2-max-constraint.
+
+    """
+    model_name = "2-max-constraint"
+    parent_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+    model_path = os.path.join(parent_path, model_name)
+    if os.path.exists(model_path):
+        shutil.rmtree(model_path)
+
+    # Starting point: copy model from 1-introduction
+    shutil.copytree(os.path.join(parent_path, "1-min-constraint"), model_path)
+
+    # Modify UtilizationFactor and MinimumServiceFactor for windturbine
+    timeslices_file = os.path.join(
+        model_path, "technodata/power/TechnodataTimeslices.csv"
+    )
+    df = pd.read_csv(timeslices_file)
+    df.loc[df["ProcessName"] == "windturbine", "MinimumServiceFactor"] = 0
+    df.loc[
+        (df["ProcessName"] == "windturbine")
+        & (df["hour"].isin(["morning", "afternoon"])),
+        "UtilizationFactor",
+    ] = 0.5
+    df.to_csv(timeslices_file, index=False)
+
+
+if __name__ == "__main__":
+    generate_model_1()
+    generate_model_2()
