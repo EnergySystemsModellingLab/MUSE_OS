@@ -1,7 +1,0 @@
-technology,dst_region,region,agent,sector,type,year,capacity
-gasboiler,R1,R1,A1,residential,retrofit,2020,10.00000000000
-gasboiler,R2,R2,A1,residential,retrofit,2020,10.00000000000
-gasCCGT,R1,R1,A1,power,retrofit,2020,1.00000000000
-gasCCGT,R2,R2,A1,power,retrofit,2020,1.00000000000
-gassupply1,R1,R1,A1,gas,retrofit,2020,15.00000000000
-gassupply1,R2,R2,A1,gas,retrofit,2020,15.00000000000
