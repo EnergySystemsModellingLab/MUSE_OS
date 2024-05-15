@@ -54,8 +54,6 @@ def generate_model_1() -> None:
         ),
     )
 
-    ### Tutorial
-
     # Copy wind commodity in power sector -> solar
     add_new_commodity(model_path, "solar", "power", "wind")
 
