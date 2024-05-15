@@ -71,6 +71,13 @@ def add_new_commodity(
     df = pd.concat([df, new_rows])
     df.to_csv(global_commodities_file, index=False)
 
+    # Add to projections
+    projections_files = os.listdir(os.path.join(model_path, "technodata/preset"))
+    for file in projections_files:
+        df = pd.read_csv(os.path.join(model_path, "technodata/preset", file))
+        df[commodity_name] = df[copy_from]
+        df.to_csv(os.path.join(model_path, "technodata/preset", file), index=False)
+
 
 def add_new_process(
     model_path: str, process_name: str, sector: str, copy_from: str
