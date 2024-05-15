@@ -247,7 +247,6 @@ def _aggregate_sectors(
     sectors: List[AbstractSector], *args, op: Callable
 ) -> pd.DataFrame:
     """Aggregate outputs from all sectors."""
-
     alldata = [op(sector, *args) for sector in sectors]
 
     if len(alldata) == 0:
@@ -794,7 +793,6 @@ def sector_capital_costs(
     sector: AbstractSector, market: xr.Dataset, **kwargs
 ) -> pd.DataFrame:
     """Sector capital costs with agent annotations."""
-
     data_sector: List[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
@@ -912,7 +910,6 @@ def metric_lcoe(
 
 def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Levelized cost of energy () of technologies over their lifetime."""
-
     from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
     from muse.objectives import discount_factor
     from muse.quantities import consumption
@@ -1115,7 +1112,6 @@ def metric_eac(
 
 def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Net Present Value of technologies over their lifetime."""
-
     from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
     from muse.objectives import discount_factor
     from muse.quantities import consumption

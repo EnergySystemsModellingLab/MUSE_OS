@@ -135,6 +135,9 @@ def new_and_retro(
             to the production method. The ``consumption`` reflects the demand for the
             commodities produced by the current sector.
         technologies: quantities describing the technologies.
+        production: Production method
+        current_year: Current year of simulation
+        forecast: How many years to forecast ahead
 
     Pseudo-code:
 
@@ -343,6 +346,9 @@ def standard_demand(
             to the production method. The ``consumption`` reflects the demand for the
             commodities produced by the current sector.
         technologies: quantities describing the technologies.
+        production: Production method
+        current_year: Current year of simulation
+        forecast: How many years to forecast ahead
 
     """
     from functools import partial

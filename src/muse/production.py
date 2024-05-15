@@ -71,7 +71,7 @@ def factory(
     actual functor usable within the model, i.e. it converts data into logic.
 
     Arguments:
-        name: Registered production method to create. The name is resolved when the
+        settings: Registered production method to create. The name is resolved when the
             function returned by the factory is called. Hence, it could refer to a
             function yet to be registered when this factory method is called.
         **kwargs: any keyword argument the production method accepts.
@@ -165,12 +165,12 @@ def costed_production(
     with_emission: bool = True,
 ) -> xr.DataArray:
     """Computes production from ranked assets.
+
     The assets are ranked according to their cost. The cost can be provided as an
     xarray, a callable creating an xarray, or as "alcoe". The asset with least cost are
     allowed to service the demand first, up to the maximum production. By default, the
     minimum service is applied first.
     """
-
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
     from muse.quantities import (
         annual_levelized_cost_of_energy,

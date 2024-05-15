@@ -36,7 +36,7 @@ and/or the MaxCapacityGrowth in the technodata."""
 
 
 class TechnologyNotDefined(Exception):
-    """Indicates that the initialisation fails because a technology is not found"""
+    """Indicates that the initialisation fails because a technology is not found."""
 
     msg = """Error during the initialisation of a sector.
 The model tries to assign a share of the total capacity to an agent but it
@@ -48,7 +48,7 @@ Check the spelling of the technology names."""
 
 
 class FailedInterpolation(Exception):
-    """Indicates that the initialisation fails due to interpolation"""
+    """Indicates that the initialisation fails due to interpolation."""
 
     msg = """Error during the initialisation of a sector.
 The model tries to interpolate values in time of the technologies.
