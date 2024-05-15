@@ -915,12 +915,12 @@ def check_utilization_not_all_zero(data, filename):
             """A technology needs to have a utilization factor defined for every
              timeslice. Please check file {}.""".format(filename)
         )
-    else:
-        utilization_sum = data.groupby(["technology", "region", "year"]).sum()
 
-        if (utilization_sum.utilization_factor == 0).any():
-            raise ValueError(
-                """A technology can not have a utilization factor of 0 for every
-                 timeslice. Please check file {}.""".format(filename)
-            )
+    utilization_sum = data.groupby(["technology", "region", "year"]).sum()
+
+    if (utilization_sum.utilization_factor == 0).any():
+        raise ValueError(
+            """A technology can not have a utilization factor of 0 for every
+                timeslice. Please check file {}.""".format(filename)
+        )
     return data

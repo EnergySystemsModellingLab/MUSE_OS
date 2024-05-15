@@ -259,7 +259,6 @@ def capacity_to_service_demand(
     **kwargs,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
-
     params = agent.filter_input(
         technologies[["utilization_factor", "fixed_outputs"]],
         year=agent.forecast_year,
@@ -678,8 +677,7 @@ def lifetime_levelized_cost_of_energy(
         + fixed_and_variable_costs
     ) / (denominator.sel(commodity=products).sum("commodity") * rates).sum("year")
 
-    results = results.where(np.isfinite(results)).fillna(0.0)
-    return results
+    return results.where(np.isfinite(results)).fillna(0.0)
 
 
 @register_objective(name="NPV")
