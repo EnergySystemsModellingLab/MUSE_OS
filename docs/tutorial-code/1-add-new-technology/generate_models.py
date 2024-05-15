@@ -27,7 +27,7 @@ def generate_model_1() -> None:
     """
     model_name = "1-introduction"
     model_path = parent_path / model_name
-    if os.path.exists(model_path):
+    if model_path.exists():
         shutil.rmtree(model_path)
 
     # Starting point: copy default model
@@ -91,7 +91,7 @@ def generate_model_2() -> None:
     """
     model_name = "2-scenario"
     model_path = parent_path / model_name
-    if os.path.exists(model_path):
+    if model_path.exists():
         shutil.rmtree(model_path)
 
     # Starting point: copy model from 1-introduction

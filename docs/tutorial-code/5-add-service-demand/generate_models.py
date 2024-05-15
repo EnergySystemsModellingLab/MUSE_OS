@@ -1,4 +1,3 @@
-import os
 import shutil
 from pathlib import Path
 
@@ -19,7 +18,7 @@ def generate_model_1():
 
     # Starting point: copy model from tutorial 4
     model_path = parent_path / model_name
-    if os.path.exists(model_path):
+    if model_path.exists():
         shutil.rmtree(model_path)
     shutil.copytree(
         parent_path / "../4-modify-timing-data/1-modify-timeslices",

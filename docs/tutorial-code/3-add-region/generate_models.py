@@ -1,4 +1,3 @@
-import os
 import shutil
 from pathlib import Path
 
@@ -19,7 +18,7 @@ def generate_model_1():
 
     # Starting point: copy model from tutorial 1
     model_path = parent_path / model_name
-    if os.path.exists(model_path):
+    if model_path.exists():
         shutil.rmtree(model_path)
     shutil.copytree(parent_path / "../1-add-new-technology/2-scenario", model_path)
 

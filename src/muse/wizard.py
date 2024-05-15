@@ -32,9 +32,9 @@ def get_sectors(model_path: Path) -> list[str]:
         List of sector names
     """
     return [
-        s
-        for s in os.listdir(model_path / "technodata")
-        if os.path.isfile(model_path / "technodata" / s / "technodata.csv")
+        s.name
+        for s in (model_path / "technodata").iterdir()
+        if (s / "technodata.csv").is_file()
     ]
 
 

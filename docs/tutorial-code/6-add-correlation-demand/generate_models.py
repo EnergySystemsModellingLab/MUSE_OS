@@ -22,7 +22,7 @@ def generate_model_1() -> None:
     """
     model_name = "1-correlation"
     model_path = parent_path / model_name
-    if os.path.exists(model_path):
+    if model_path.exists():
         shutil.rmtree(model_path)
 
     # Starting point: copy default model
