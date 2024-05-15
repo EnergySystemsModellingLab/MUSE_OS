@@ -1,11 +1,11 @@
 import os
 import shutil
-import sys
+from pathlib import Path
 
 import pandas as pd
 from muse.wizard import add_region
 
-parent_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+parent_path = Path(__file__).parent
 
 
 """
@@ -18,18 +18,16 @@ def generate_model_1():
     model_name = "1-new-region"
 
     # Starting point: copy model from tutorial 1
-    model_path = os.path.join(parent_path, model_name)
+    model_path = parent_path / model_name
     if os.path.exists(model_path):
         shutil.rmtree(model_path)
-    shutil.copytree(
-        os.path.join(parent_path, "../1-add-new-technology/2-scenario"), model_path
-    )
+    shutil.copytree(parent_path / "../1-add-new-technology/2-scenario", model_path)
 
     # Add region R2
     add_region(model_path, region_name="R2", copy_from="R1")
 
     # Special handling for power/Technodata.csv
-    technodata_file = os.path.join(model_path, "technodata/power/Technodata.csv")
+    technodata_file = model_path / "technodata/power/Technodata.csv"
     df = pd.read_csv(technodata_file)
     mask = (df["RegionName"] == "R2") & (df["ProcessName"] == "windturbine")
     df.loc[mask, "MaxCapacityAddition"] = 5

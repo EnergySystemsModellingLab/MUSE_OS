@@ -1,12 +1,12 @@
 import os
 import shutil
-import sys
+from pathlib import Path
 
 import pandas as pd
 from muse.wizard import add_timeslice, modify_toml
 from tomlkit import dumps, parse
 
-parent_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+parent_path = Path(__file__).parent
 
 
 """
@@ -19,15 +19,13 @@ def generate_model_1():
     model_name = "1-modify-timeslices"
 
     # Starting point: copy model from tutorial 3
-    model_path = os.path.join(parent_path, model_name)
+    model_path = parent_path / model_name
     if os.path.exists(model_path):
         shutil.rmtree(model_path)
-    shutil.copytree(
-        os.path.join(parent_path, "../3-add-region/1-new-region"), model_path
-    )
+    shutil.copytree(parent_path / "../3-add-region/1-new-region", model_path)
 
     # Modify MaxCapacityGrowth (Undocumented)
-    technodata_file = os.path.join(model_path, "technodata/residential/Technodata.csv")
+    technodata_file = model_path / "technodata/residential/Technodata.csv"
     df = pd.read_csv(technodata_file)
     df.loc[1:, "MaxCapacityGrowth"] = 0.04
     df.to_csv(technodata_file, index=False)
@@ -37,7 +35,7 @@ def generate_model_1():
     add_timeslice(model_path, timeslice_name="late-afternoon", copy_from="evening")
 
     # Modify timeslices
-    settings_file = os.path.join(model_path, "settings.toml")
+    settings_file = model_path / "settings.toml"
     with open(settings_file, "r") as file:
         settings = parse(file.read())
     timeslices = settings["timeslices"]["all-year"]["all-week"]
@@ -70,9 +68,7 @@ def generate_model_1():
         1.429,
     ]
     for year, multiplier in zip([2020, 2050], [1, 3]):
-        file = os.path.join(
-            model_path, f"technodata/preset/Residential{year}Consumption.csv"
-        )
+        file = model_path / f"technodata/preset/Residential{year}Consumption.csv"
         df = pd.read_csv(file)
         df["heat"] = [i * multiplier for i in consumption_values]
         df.to_csv(file, index=False)
@@ -82,13 +78,13 @@ def generate_model_2():
     model_name = "2-modify-time-framework"
 
     # Starting point: copy previous model
-    model_path = os.path.join(parent_path, model_name)
+    model_path = parent_path / model_name
     if os.path.exists(model_path):
         shutil.rmtree(model_path)
-    shutil.copytree(os.path.join(parent_path, "1-modify-timeslices"), model_path)
+    shutil.copytree(parent_path / "1-modify-timeslices", model_path)
 
     # Modify time framework
-    settings_file = os.path.join(model_path, "settings.toml")
+    settings_file = model_path / "settings.toml"
     time_framework = [2020, 2022, 2024, 2026, 2028, 2030, 2032, 2034, 2036, 2038, 2040]
     modify_toml(settings_file, lambda x: x.update({"time_framework": time_framework}))
     modify_toml(settings_file, lambda x: x.update({"foresight": 2}))
@@ -100,7 +96,7 @@ def generate_model_2():
     )
 
     # Double MaxCapacityAddition in power sector
-    technodata_file = os.path.join(model_path, "technodata/power/Technodata.csv")
+    technodata_file = model_path / "technodata/power/Technodata.csv"
     df = pd.read_csv(technodata_file)
     df.loc[1:, "MaxCapacityAddition"] = pd.to_numeric(df.loc[1:, "MaxCapacityAddition"])
     df.loc[1:, "MaxCapacityAddition"] *= 20

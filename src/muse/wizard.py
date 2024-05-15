@@ -1,10 +1,12 @@
 import os
+from pathlib import Path
+from typing import Callable
 
 import pandas as pd
 from tomlkit import dumps, parse
 
 
-def modify_toml(path_to_toml, function):
+def modify_toml(path_to_toml: Path, function: Callable):
     """Apply the specified function to modify a toml file
 
     Args:
@@ -20,7 +22,7 @@ def modify_toml(path_to_toml, function):
         file.write(dumps(data))
 
 
-def get_sectors(model_path: str) -> list[str]:
+def get_sectors(model_path: Path) -> list[str]:
     """Get a list of sector names for a model.
 
     Args:
@@ -31,13 +33,13 @@ def get_sectors(model_path: str) -> list[str]:
     """
     return [
         s
-        for s in os.listdir(os.path.join(model_path, "technodata"))
-        if os.path.isfile(os.path.join(model_path, "technodata", s, "technodata.csv"))
+        for s in os.listdir(model_path / "technodata")
+        if os.path.isfile(model_path / "technodata" / s / "technodata.csv")
     ]
 
 
 def add_new_commodity(
-    model_path: str, commodity_name: str, sector: str, copy_from: str
+    model_path: Path, commodity_name: str, sector: str, copy_from: str
 ) -> None:
     """Add a new commodity to a sector by copying an existing one.
 
@@ -48,7 +50,7 @@ def add_new_commodity(
         copy_from: Name of the commodity to copy from.
     """
     files_to_update = [
-        os.path.join(model_path, file)
+        model_path / file
         for file in [
             f"technodata/{sector}/CommIn.csv",
             f"technodata/{sector}/CommOut.csv",
@@ -63,7 +65,7 @@ def add_new_commodity(
         df[commodity_name] = df[copy_from]
         df.to_csv(file, index=False)
 
-    global_commodities_file = os.path.join(model_path, "input/GlobalCommodities.csv")
+    global_commodities_file = model_path / "input/GlobalCommodities.csv"
     df = pd.read_csv(global_commodities_file)
     new_rows = df[df["Commodity"] == copy_from.capitalize()].copy()
     new_rows["Commodity"] = commodity_name.capitalize()
@@ -72,15 +74,15 @@ def add_new_commodity(
     df.to_csv(global_commodities_file, index=False)
 
     # Add to projections
-    projections_files = os.listdir(os.path.join(model_path, "technodata/preset"))
+    projections_files = os.listdir(model_path / "technodata/preset")
     for file in projections_files:
-        df = pd.read_csv(os.path.join(model_path, "technodata/preset", file))
+        df = pd.read_csv(model_path / "technodata/preset" / file)
         df[commodity_name] = df[copy_from]
-        df.to_csv(os.path.join(model_path, "technodata/preset", file), index=False)
+        df.to_csv(model_path / "technodata/preset" / file, index=False)
 
 
 def add_new_process(
-    model_path: str, process_name: str, sector: str, copy_from: str
+    model_path: Path, process_name: str, sector: str, copy_from: str
 ) -> None:
     """Add a new process to a sector by copying an existing one.
 
@@ -91,7 +93,7 @@ def add_new_process(
         copy_from: Name of the process to copy from.
     """
     files_to_update = [
-        os.path.join(model_path, file)
+        model_path / file
         for file in [
             f"technodata/{sector}/CommIn.csv",
             f"technodata/{sector}/CommOut.csv",
@@ -109,7 +111,7 @@ def add_new_process(
 
 
 def add_price_data_for_new_year(
-    model_path: str, year: str, sector: str, copy_from: str
+    model_path: Path, year: str, sector: str, copy_from: str
 ) -> None:
     """Add price data for a new year by copying from an existing year.
 
@@ -120,7 +122,7 @@ def add_price_data_for_new_year(
         copy_from: Year to copy the price data from.
     """
     files_to_update = [
-        os.path.join(model_path, f"technodata/{sector}/{file}")
+        model_path / f"technodata/{sector}/{file}"
         for file in ["technodata.csv", "CommIn.csv", "CommOut.csv"]
     ]
 
@@ -136,7 +138,7 @@ def add_price_data_for_new_year(
 
 
 def add_agent(
-    model_path: str,
+    model_path: Path,
     agent_name: str,
     copy_from: str,
     agentshare_new: str,
@@ -151,7 +153,7 @@ def add_agent(
         agentshare_new: Name of the new agent share for new agent.
         agentshare_retrofit: Name of the retrofit agent share for new agent.
     """
-    agents_file = os.path.join(model_path, "technodata/Agents.csv")
+    agents_file = model_path / "technodata/Agents.csv"
     df = pd.read_csv(agents_file)
     new_rows = df[df["Name"] == copy_from].copy()
     new_rows["Name"] = agent_name
@@ -168,9 +170,7 @@ def add_agent(
     ].values[0]
 
     for sector in get_sectors(model_path):
-        technodata_file = os.path.join(
-            model_path, f"technodata/{sector}/technodata.csv"
-        )
+        technodata_file = model_path / f"technodata/{sector}/technodata.csv"
         df = pd.read_csv(technodata_file)
         if copy_from_retrofit in df.columns:
             df[agentshare_retrofit] = df[copy_from_retrofit]
@@ -179,14 +179,14 @@ def add_agent(
         df.to_csv(technodata_file, index=False)
 
 
-def add_region(model_path, region_name, copy_from) -> None:
+def add_region(model_path: Path, region_name, copy_from) -> None:
     # Append region to settings.toml
-    settings_file = os.path.join(model_path, "settings.toml")
+    settings_file = model_path / "settings.toml"
     modify_toml(settings_file, lambda x: x["regions"].append(region_name))
 
     # Modify csv files
     sector_files = [
-        os.path.join(model_path, "technodata", sector, file)
+        model_path / "technodata" / sector / file
         for sector in get_sectors(model_path)
         for file in [
             "technodata.csv",
@@ -196,11 +196,11 @@ def add_region(model_path, region_name, copy_from) -> None:
         ]
     ]
     preset_files = [
-        os.path.join(model_path, "technodata", "preset", file)
-        for file in os.listdir(os.path.join(model_path, "technodata", "preset"))
+        model_path / "technodata" / "preset" / file
+        for file in os.listdir(model_path / "technodata" / "preset")
     ]
     global_files = [
-        os.path.join(model_path, file)
+        model_path / file
         for file in [
             "technodata/Agents.csv",
             "input/BaseYearImport.csv",
@@ -218,7 +218,7 @@ def add_region(model_path, region_name, copy_from) -> None:
 
 def add_timeslice(model_path, timeslice_name, copy_from):
     # Append timeslice to timeslices in settings.toml
-    settings_file = os.path.join(model_path, "settings.toml")
+    settings_file = model_path / "settings.toml"
     with open(settings_file, "r") as file:
         settings = parse(file.read())
     timeslices = settings["timeslices"]["all-year"]["all-week"]
@@ -228,9 +228,9 @@ def add_timeslice(model_path, timeslice_name, copy_from):
         file.write(dumps(settings))
 
     # Loop through all preset files
-    preset_dir = os.path.join(model_path, "technodata", "preset")
+    preset_dir = model_path / "technodata" / "preset"
     for file_name in os.listdir(preset_dir):
-        file_path = os.path.join(preset_dir, file_name)
+        file_path = preset_dir / file_name
         df = pd.read_csv(file_path)
         new_rows = df[df["Timeslice"] == copy_from_number].copy()
         new_rows["Timeslice"] = len(timeslices)

@@ -1,11 +1,13 @@
 import os
 import shutil
-import sys
+from pathlib import Path
 
 from muse import examples
 from muse.wizard import (
     modify_toml,
 )
+
+parent_path = Path(__file__).parent
 
 """
 Model 1 - Introduction
@@ -19,32 +21,31 @@ def generate_model_1() -> None:
 
     """
     model_name = "1-correlation"
-    parent_path = os.path.dirname(os.path.abspath(sys.argv[0]))
-    model_path = os.path.join(parent_path, model_name)
+    model_path = parent_path / model_name
     if os.path.exists(model_path):
         shutil.rmtree(model_path)
 
     # Starting point: copy default model
     examples.copy_model(name="default", path=parent_path, overwrite=True)
-    os.rename(os.path.join(parent_path, "model"), model_path)
+    os.rename(parent_path / "model", model_path)
 
     # Delete presets
-    shutil.rmtree(os.path.join(model_path, "technodata/preset"))
+    shutil.rmtree(model_path / "technodata/preset")
 
     # Copy regression files
-    os.mkdir(os.path.join(model_path, "technodata/preset"))
+    os.mkdir(model_path / "technodata/preset")
     for file in [
         "Macrodrivers.csv",
         "regressionparameters.csv",
         "TimesliceSharepreset.csv",
     ]:
         shutil.copy(
-            os.path.join(parent_path, file),
-            os.path.join(model_path, "technodata/preset", file),
+            parent_path / file,
+            model_path / "technodata/preset" / file,
         )
 
     # Modify toml file to point to new presets
-    settings_file = os.path.join(model_path, "settings.toml")
+    settings_file = model_path / "settings.toml"
     path_prefix = "{path}/technodata/preset/"
     modify_toml(
         settings_file,
