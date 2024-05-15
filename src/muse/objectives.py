@@ -485,7 +485,7 @@ def annual_levelized_cost_of_energy(
 
     Arguments:
         agent: The agent of interest
-        demand: Demand for technology
+        demand: Demand for commodities
         search_space: The search space space for replacement technologies
         technologies: All the technologies
         market: The market parameters
@@ -548,7 +548,7 @@ def lifetime_levelized_cost_of_energy(
 
     Arguments:
         agent: The agent of interest
-        demand: Demand for technology
+        demand: Demand for commodities
         search_space: The search space space for replacement technologies
         technologies: All the technologies
         market: The market parameters
@@ -707,7 +707,7 @@ def net_present_value(
 
     Arguments:
         agent: The agent of interest
-        demand: Demand for technology
+        demand: Demand for commodities
         search_space: The search space space for replacement technologies
         technologies: All the technologies
         market: The market parameters
@@ -901,7 +901,7 @@ def equivalent_annual_cost(
 
     Arguments:
         agent: The agent of interest
-        demand: Demand for technology
+        demand: Demand for commodities
         search_space: The search space space for replacement technologies
         technologies: All the technologies
         market: The market parameters
