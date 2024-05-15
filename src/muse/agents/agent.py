@@ -32,17 +32,18 @@ class AbstractAgent(ABC):
                 instance. The information should not be anything describing the
                 technologies themselves, but rather the stock of assets held by
                 the agent.
-            category: optional attribute that could be used to classify
-                different agents together.
-            quantity: different agents' share of the population
+            category: optional value that could be used to classify different agents
+                together.
+            quantity: optional value to classify different agents' share of the
+                population.
         """
         from uuid import uuid4
 
         super().__init__()
         self.name = name
-        """ Name associated with the agent """
+        """Name associated with the agent."""
         self.region = region
-        """ Region the agent operates in """
+        """Region the agent operates in."""
         self.assets = assets if assets is not None else xr.Dataset()
         """Current stock of technologies."""
         self.uuid = uuid4()
