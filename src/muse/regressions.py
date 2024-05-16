@@ -486,13 +486,11 @@ class Linear(Regression):
             condition = year + forecast < self.__scaleyear__
             scale = coeffs.b0 if condition else coeffs.b1
         elif year is not None and "year" in data.dims:
-            # fmt: disable
             years = (
                 year
                 if isinstance(year, DataArray)
                 else DataArray(year, coords={"year": year}, dims="year")
             )
-            # fmt: enable
             condition = years + forecast < self.__scaleyear__
             scale = coeffs.b0.where(condition, coeffs.b1)
         else:
