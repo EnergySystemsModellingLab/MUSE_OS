@@ -229,6 +229,25 @@ def efficiency(
     return result
 
 
+def _represent_hours(market: xr.Dataset, search_space: xr.DataArray) -> xr.DataArray:
+    """Retrieves the appropriate value for represent_hours.
+
+    Args:
+        market: The simulation market.
+        search_space: The search space for new tehcnologies.
+
+    Returns:
+        DataArray with the hours of each timeslice.
+    """
+    from muse.timeslices import represent_hours
+
+    if "represent_hours" in market:
+        return market.represent_hours
+    if "represent_hours" in search_space.coords:
+        return search_space.represent_hours
+    return represent_hours(market.timeslice)
+
+
 @register_objective(name="capacity")
 def capacity_to_service_demand(
     agent: Agent,
@@ -240,21 +259,13 @@ def capacity_to_service_demand(
     **kwargs,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
-    from muse.timeslices import represent_hours
-
     params = agent.filter_input(
         technologies[["utilization_factor", "fixed_outputs"]],
         year=agent.forecast_year,
         region=agent.region,
         technology=search_space.replacement,
     ).drop_vars("technology")
-    if "represent_hours" in market:
-        hours = market.represent_hours
-    elif "represent_hours" in search_space.coords:
-        hours = search_space.represent_hours
-    else:
-        hours = represent_hours(market.timeslice)
-
+    hours = _represent_hours(market, search_space)
     max_hours = hours.max() / hours.sum()
 
     commodity_output = params.fixed_outputs.sel(commodity=demand.commodity)
@@ -479,15 +490,18 @@ def annual_levelized_cost_of_energy(
     **kwargs,
 ):
     """Annual cost of energy (LCOE) of technologies - not dependent on production.
-    It needs to be used for trade agents where the actual service is unknown
 
-    It follows the `simplified LCOE` given by NREL.
+    It needs to be used for trade agents where the actual service is unknown. It follows
+    the `simplified LCOE` given by NREL.
 
     Arguments:
         agent: The agent of interest
+        demand: Demand for commodities
         search_space: The search space space for replacement technologies
         technologies: All the technologies
         market: The market parameters
+        *args: Extra arguments (unused)
+        **kwargs: Extra keyword arguments (unused)
 
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
@@ -519,7 +533,6 @@ def capital_recovery_factor(
     Return:
         xr.DataArray with the CRF calculated for the relevant technologies
     """
-
     tech = agent.filter_input(
         technologies[["technical_life", "interest_rate"]],
         technology=search_space.replacement,
@@ -542,13 +555,18 @@ def lifetime_levelized_cost_of_energy(
 ):
     """Levelized cost of energy (LCOE) of technologies over their lifetime.
 
-    It follows the `simplified LCOE` given by NREL.
+    It follows the `simplified LCOE` given by NREL. The LCOE is set to zero for those
+    timeslices where the production is zero, normally due to a zero utilisation
+    factor.
 
     Arguments:
         agent: The agent of interest
+        demand: Demand for commodities
         search_space: The search space space for replacement technologies
         technologies: All the technologies
         market: The market parameters
+        *args: Extra arguments (unused)
+        **kwargs: Extra keyword arguments (unused)
 
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
@@ -664,7 +682,7 @@ def lifetime_levelized_cost_of_energy(
         + fixed_and_variable_costs
     ) / (denominator.sel(commodity=products).sum("commodity") * rates).sum("year")
 
-    return results
+    return results.where(np.isfinite(results)).fillna(0.0)
 
 
 @register_objective(name="NPV")
@@ -702,9 +720,12 @@ def net_present_value(
 
     Arguments:
         agent: The agent of interest
+        demand: Demand for commodities
         search_space: The search space space for replacement technologies
         technologies: All the technologies
         market: The market parameters
+        *args: Extra arguments (unused)
+        **kwargs: Extra keyword arguments (unused)
 
     Return:
         xr.DataArray with the NPV calculated for the relevant technologies
@@ -893,9 +914,12 @@ def equivalent_annual_cost(
 
     Arguments:
         agent: The agent of interest
+        demand: Demand for commodities
         search_space: The search space space for replacement technologies
         technologies: All the technologies
         market: The market parameters
+        *args: Extra arguments (unused)
+        **kwargs: Extra keyword arguments (unused)
 
     Return:
         xr.DataArray with the EAC calculated for the relevant technologies

@@ -188,6 +188,7 @@ class Sector(AbstractSector):  # type: ignore
             time_period:
                 Length of the time period in the framework. Defaults to the range of
                 ``mca_market.year``.
+            current_year: Current year of the simulation
 
         Returns:
             A market containing the ``supply`` offered by the sector, it's attendant
