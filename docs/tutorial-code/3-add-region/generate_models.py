@@ -25,7 +25,7 @@ def generate_model_1():
     # Add region R2
     add_region(model_path, region_name="R2", copy_from="R1")
 
-    # Special handling for power/Technodata.csv
+    # Change growth/capacity limits for windturbine in R2
     technodata_file = model_path / "technodata/power/Technodata.csv"
     df = pd.read_csv(technodata_file)
     mask = (df["RegionName"] == "R2") & (df["ProcessName"] == "windturbine")

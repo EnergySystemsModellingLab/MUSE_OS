@@ -70,12 +70,6 @@ def generate_model_1():
     df.loc[1:, "TotalCapacityLimit"] = 60
     df.to_csv(technodata_file, index=False)
 
-    # # Change gas supply limits
-    # technodata_file = model_path/ "technodata/gas/technodata.csv"
-    # df = pd.read_csv(technodata_file)
-    # df.loc[df["ProcessName"] == "gassupply1", "MaxCapacityAddition"] = 100
-    # df.loc[df["ProcessName"] == "gassupply1", "MaxCapacityGrowth"] = 5
-
 
 if __name__ == "__main__":
     generate_model_1()

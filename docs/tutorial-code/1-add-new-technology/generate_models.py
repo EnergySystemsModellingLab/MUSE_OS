@@ -42,14 +42,6 @@ def generate_model_1() -> None:
         settings_file, lambda settings: settings.update({"maximum_iterations": 100})
     )
 
-    # Change carbon budget method (Undocumented)
-    modify_toml(
-        settings_file,
-        lambda settings: settings["carbon_budget_control"].update(
-            {"method": "fitting"}
-        ),
-    )
-
     # Copy wind commodity in power sector -> solar
     add_new_commodity(model_path, "solar", "power", "wind")
 

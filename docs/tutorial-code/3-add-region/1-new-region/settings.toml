@@ -37,7 +37,6 @@ keep_columns = [
 # Carbon budget control
 [carbon_budget_control]
 budget = []
-method = "fitting"
 
 [global_input_files]
 projections = '{path}/input/Projections.csv'

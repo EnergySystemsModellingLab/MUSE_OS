@@ -20,7 +20,7 @@ def generate_model_1() -> None:
     if model_path.exists():
         shutil.rmtree(model_path)
 
-    # Starting point: copy default model
+    # Starting point: copy default_timeslice model
     examples.copy_model(name="default_timeslice", path=parent_path, overwrite=True)
     os.rename(parent_path / "model", model_path)
 

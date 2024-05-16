@@ -35,17 +35,15 @@ def generate_model_1():
 
     # Modify timeslices
     settings_file = model_path / "settings.toml"
-    with open(settings_file, "r") as file:
-        settings = parse(file.read())
+    settings = parse(settings_file.read_text())
     timeslices = settings["timeslices"]["all-year"]["all-week"]
     for key in timeslices:
         timeslices[key] = 1095
     settings["timeslices"]["all-year"]["all-week"] = {
         key if key != "afternoon" else "mid-afternoon": value
         for key, value in timeslices.items()
-    }
-    with open(settings_file, "w") as file:
-        file.write(dumps(settings))
+    }  # hacky way to preserve the order
+    settings_file.write_text(dumps(settings))
 
     # Change consumption profile (Undocumented)
     consumption_values = [
@@ -98,7 +96,7 @@ def generate_model_2():
     technodata_file = model_path / "technodata/power/Technodata.csv"
     df = pd.read_csv(technodata_file)
     df.loc[1:, "MaxCapacityAddition"] = pd.to_numeric(df.loc[1:, "MaxCapacityAddition"])
-    df.loc[1:, "MaxCapacityAddition"] *= 20
+    df.loc[1:, "MaxCapacityAddition"] *= 2
     df.loc[1:, "MaxCapacityGrowth"] = pd.to_numeric(df.loc[1:, "MaxCapacityGrowth"])
     df.loc[1:, "MaxCapacityGrowth"] *= 2
     df.loc[1:, "TotalCapacityLimit"] = pd.to_numeric(df.loc[1:, "TotalCapacityLimit"])

@@ -64,7 +64,7 @@ def generate_model_1():
         shutil.rmtree(model_path)
     shutil.copytree(parent_path / "2-single-objective", model_path)
 
-    # Special handling for Agents.csv
+    # Add second objective for agent A2
     agents_file = model_path / "technodata/Agents.csv"
     df = pd.read_csv(agents_file)
     df.loc[df["Name"] == "A2", "Objective2"] = "EAC"
