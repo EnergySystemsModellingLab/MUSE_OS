@@ -175,7 +175,6 @@ def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
 
     There are four axes: (technology, region, year, commodity)
     """
-
     from muse.readers import camel_to_snake
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
@@ -843,7 +842,6 @@ def read_trade(
     drop: Optional[Union[Text, Sequence[Text]]] = None,
 ) -> Union[xr.DataArray, xr.Dataset]:
     """Read CSV table with source and destination regions."""
-
     from muse.readers import camel_to_snake
 
     if not isinstance(data, pd.DataFrame):
