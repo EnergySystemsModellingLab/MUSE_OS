@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from pathlib import Path
-from typing import Callable, Mapping, Optional, Sequence, Text, Tuple, Union
+from typing import Callable, ClassVar, Mapping, Optional, Sequence, Text, Tuple, Union
 
 from xarray import DataArray, Dataset
 
@@ -55,7 +55,7 @@ class Regression(Callable):
         ...     demand = expo(macrodrivers, year=2010, forecast=5)
     """
 
-    __mappings__ = {}
+    __mappings__: ClassVar = {}
     """ Maps from input names to coefficient names
 
     Maps the coefficients names in the class to their names in the input data
@@ -454,7 +454,11 @@ def LogisticSigmoid(
 class Linear(Regression):
     """a * population + b * (gdp - gdp[2010]/population[2010] * population)."""
 
-    __mappings__ = {"a": "constant", "b0": "GDPscaleLess", "b1": "GDPscaleGreater"}
+    __mappings__: ClassVar[dict[str, str]] = {
+        "a": "constant",
+        "b0": "GDPscaleLess",
+        "b1": "GDPscaleGreater",
+    }
 
     __regression__ = "linear"
     __scaleyear__ = 2015
@@ -482,15 +486,13 @@ class Linear(Regression):
             condition = year + forecast < self.__scaleyear__
             scale = coeffs.b0 if condition else coeffs.b1
         elif year is not None and "year" in data.dims:
-            # fmt: disable
             years = (
                 year
                 if isinstance(year, DataArray)
                 else DataArray(year, coords={"year": year}, dims="year")
             )
-            # fmt: enable
-            condition = years + forecast < self.__scaleyear__
-            scale = coeffs.b0.where(condition, coeffs.b1)
+            sel = years + forecast < self.__scaleyear__
+            scale = coeffs.b0.where(sel, coeffs.b1)
         else:
             scale = coeffs.b0
         data_baseyear = data.sel(year=self.base_year)

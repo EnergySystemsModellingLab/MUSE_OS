@@ -629,17 +629,16 @@ def test_consolidate_quantity(newcapa_agent, retro_agent):
     actual = consolidate_quantity(quantity, [a, b], agents)
 
     cols = set(
-        list(agents[retro_agent.uuid].keys())
-        + ["installed", "year", "technology", quantity]
+        (*agents[retro_agent.uuid].keys(), "installed", "year", "technology", quantity)
     )
     assert set(actual.columns) == cols
     assert all(actual.year == newcapa_agent.forecast_year)
     assert all(actual.installed == newcapa_agent.year)
     assert all(
-        [
+        (
             name in (newcapa_agent.name, retro_agent.name)
             for name in actual.agent.unique()
-        ]
+        )
     )
 
 

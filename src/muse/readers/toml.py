@@ -934,14 +934,14 @@ def read_technodata(
     if technologies.year.max() < maxyear:
         msg = "Forward-filling technodata to fit simulation timeframe"
         getLogger(__name__).info(msg)
-        years = technologies.year.data.tolist() + [maxyear]
+        years = [*technologies.year.data.tolist(), maxyear]
         technologies = technologies.sel(year=years, method="ffill")
         technologies["year"] = "year", years
     minyear = min(time_framework)
     if technologies.year.min() > minyear:
         msg = "Back-filling technodata to fit simulation timeframe"
         getLogger(__name__).info(msg)
-        years = [minyear] + technologies.year.data.tolist()
+        years = [minyear, *technologies.year.data.tolist()]
         technologies = technologies.sel(year=years, method="bfill")
         technologies["year"] = "year", years
 
