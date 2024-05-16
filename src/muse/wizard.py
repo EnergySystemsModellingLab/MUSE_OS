@@ -7,7 +7,7 @@ from tomlkit import dumps, parse
 
 
 def modify_toml(path_to_toml: Path, function: Callable):
-    """Apply the specified function to modify a toml file
+    """Apply the specified function to modify a toml file.
 
     Args:
         path_to_toml: Path to the toml file
@@ -177,8 +177,7 @@ def add_agent(
 
 
 def add_region(model_path: Path, region_name: str, copy_from: str) -> None:
-    """
-    Add a new region to the MUSE model.
+    """Add a new region to the MUSE model.
 
     Args:
         model_path: The path to the MUSE model directory.
@@ -222,8 +221,7 @@ def add_region(model_path: Path, region_name: str, copy_from: str) -> None:
 
 
 def add_timeslice(model_path: Path, timeslice_name: str, copy_from: str) -> None:
-    """
-    Add a new timeslice to the model.
+    """Add a new timeslice to the model.
 
     Args:
         model_path: The path to the model directory.

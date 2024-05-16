@@ -15,10 +15,6 @@ Model 1 - Min constraint
 
 
 def generate_model_1() -> None:
-    """
-    Code to generate model 1-min-constraint.
-
-    """
     model_name = "1-min-constraint"
     model_path = parent_path / model_name
     if model_path.exists():
@@ -30,10 +26,6 @@ def generate_model_1() -> None:
 
 
 def generate_model_2() -> None:
-    """
-    Code to generate model 2-max-constraint.
-
-    """
     model_name = "2-max-constraint"
     model_path = parent_path / model_name
     if model_path.exists():

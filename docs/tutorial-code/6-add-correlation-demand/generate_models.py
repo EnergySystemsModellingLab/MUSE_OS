@@ -16,10 +16,6 @@ Model 1 - Introduction
 
 
 def generate_model_1() -> None:
-    """
-    Code to generate model 1-introduction.
-
-    """
     model_name = "1-correlation"
     model_path = parent_path / model_name
     if model_path.exists():

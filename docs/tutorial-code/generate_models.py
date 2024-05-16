@@ -2,7 +2,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-parent_path = Path(__file__).parent
-for tutorial in parent_path.iterdir():
-    if (tutorial / "generate_models.py").exists():
-        subprocess.call([sys.executable, str(tutorial / "generate_models.py")])
+if __name__ == "__main__":
+    for tutorial in Path(__file__).parent.iterdir():
+        if (tutorial / "generate_models.py").exists():
+            subprocess.call([sys.executable, str(tutorial / "generate_models.py")])
