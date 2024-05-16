@@ -868,12 +868,12 @@ def read_trade(
     )
     if parameters is None:
         result: Union[xr.DataArray, xr.Dataset] = xr.DataArray.from_series(
-            data.set_index(indices + [col_region])["value"]
+            data.set_index([*indices, col_region])["value"]
         ).rename(name)
     else:
         result = xr.Dataset.from_dataframe(
             data.pivot_table(
-                values="value", columns=parameters, index=indices + [col_region]
+                values="value", columns=parameters, index=[*indices, col_region]
             ).rename(columns=camel_to_snake)
         )
 

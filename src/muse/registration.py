@@ -12,7 +12,7 @@ def name_variations(*args):
         comps = name.split("_")
         return comps[0] + "".join(x.title() for x in comps[1:])
 
-    def CamelCase(name):  # noqa
+    def CamelCase(name):
         return "".join(x.title() for x in name.split("_"))
 
     def kebab_case(name):
@@ -37,8 +37,8 @@ def name_variations(*args):
 
 
 def registrator(
-    decorator: Callable = None,
-    registry: MutableMapping = None,
+    decorator: Optional[Callable] = None,
+    registry: Optional[MutableMapping] = None,
     logname: Optional[Text] = None,
     loglevel: Optional[Text] = "Debug",
 ) -> Callable:
@@ -140,7 +140,7 @@ def registrator(
         from itertools import chain
         from logging import getLogger
 
-        # allows specifyng the registered name as a keyword argument
+        # allows specifying the registered name as a keyword argument
         if function is None:
             return lambda x: register(
                 x, name=name, vary_name=vary_name, overwrite=overwrite
@@ -151,7 +151,7 @@ def registrator(
         elif isinstance(name, Text):
             names = [name, function.__name__]
         else:
-            names = list(name) + [function.__name__]
+            names = [*name, function.__name__]
 
         # all registered filters will use the same logger, at least for the
         # default logging done in the decorated function

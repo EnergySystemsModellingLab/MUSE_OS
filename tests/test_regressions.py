@@ -89,8 +89,8 @@ if __name__ == "__main__":
     from pytest import approx  # noqa
 
     from muse import DEFAULT_SECTORS_DIRECTORY
-    from tests.agents import test_regressions  # noqa
+    from tests.agents import test_regressions
 
     sectors_dir = DEFAULT_SECTORS_DIRECTORY
-    regression_params = test_regressions.regression_params()  # noqa
-    drivers = test_regressions.drivers()  # noqa
+    regression_params = test_regressions.regression_params()
+    drivers = test_regressions.drivers()
