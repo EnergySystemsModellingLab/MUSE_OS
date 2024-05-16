@@ -1,4 +1,4 @@
-"""MUSE model"""
+"""MUSE model."""
 
 import os
 

@@ -229,7 +229,7 @@ def test_merge_assets():
             ("year", "asset"),
             np.random.rand(len(result.year), len(result.asset)),
         )
-        result = result[["capacity"] + list(order)].set_coords(order)
+        result = result[["capacity", *order]].set_coords(order)
         return result.capacity
 
     # checks order of coords does not interfere with merging

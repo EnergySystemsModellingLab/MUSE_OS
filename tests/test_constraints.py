@@ -127,7 +127,7 @@ def constraints(request, market_demand, assets, search_space, market, technologi
 
 
 def test_lp_constraints_matrix_b_is_scalar(constraint, lpcosts):
-    """b is a scalar.
+    """B is a scalar.
 
     When ``b`` is a scalar, the output should be equivalent to a single row matrix, or a
     single vector with only decision variables.
@@ -148,7 +148,7 @@ def test_lp_constraints_matrix_b_is_scalar(constraint, lpcosts):
 
 
 def test_max_production_constraint_diagonal(constraint, lpcosts):
-    """production side of max capacity production is diagonal.
+    """Production side of max capacity production is diagonal.
 
     The production for each timeslice, region, asset, and replacement technology should
     not outstrip the assigned for the asset and replacement technology. Hence, the

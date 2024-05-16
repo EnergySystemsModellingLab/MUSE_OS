@@ -1,7 +1,7 @@
-"""This module defines the LegacySector class, needed to interface the new MCA
-with the old MUSE sectors.
+"""This module defines the LegacySector class.
 
-It can be deleted once accessing those sectors is no longer needed.
+This is needed to interface the new MCA with the old MUSE sectors. It can be deleted
+once accessing those sectors is no longer needed.
 """
 
 from dataclasses import dataclass
@@ -320,7 +320,6 @@ class LegacySector(AbstractSector):  # type: ignore
 
     def _to(self, data: np.ndarray, data_ts, ts: pd.MultiIndex, qt: QuantityType):
         """From ndarray to dataarray."""
-
         return ndarray_to_xarray(
             years=self.time_framework,
             data=data,
@@ -335,7 +334,6 @@ class LegacySector(AbstractSector):  # type: ignore
 
     def _from(self, xdata: DataArray, ts: pd.MultiIndex, qt: QuantityType):
         """From dataarray to ndarray."""
-
         return xarray_to_ndarray(
             years=self.time_framework,
             xdata=xdata,
@@ -427,8 +425,7 @@ def xarray_to_ndarray(
 
 
 def commodities_idx(sector, comm: Text) -> Sequence:
-    """Gets the indices of the commodities involved in the processes of the
-    sector.
+    """Gets the indices of the commodities involved in the processes of the sector.
 
     Arguments:
         sector: The old MUSE sector of interest
@@ -437,7 +434,6 @@ def commodities_idx(sector, comm: Text) -> Sequence:
     Returns:
         A list with the indexes
     """
-
     comm = {
         "OUT": "listIndexCommoditiesOUT",
         "IN": "listIndexCommoditiesIN",

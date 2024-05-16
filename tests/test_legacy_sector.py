@@ -59,7 +59,6 @@ def legacy_input_file(sector: Text) -> Optional[Path]:
 
 def update_settings(settings, sec_dir, out_dir):
     """Updates a settings namedtuple with temporal sectors and output directories."""
-
     sectors = settings.sectors
 
     for s in sectors.list:

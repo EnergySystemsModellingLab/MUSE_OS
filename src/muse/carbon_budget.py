@@ -44,7 +44,9 @@ def update_carbon_budget(
     under: bool = True,
 ) -> float:
     """Adjust the carbon budget in the far future if emissions too high or low.
+
     This feature can allow to simulate overshoot shifting.
+
     Arguments:
         carbon_budget: budget for future year,
         emissions: emission for future year,
@@ -80,18 +82,17 @@ def fitting(
     price_too_high_threshold: float = 10,
     fitter: Text = "slinear",
 ) -> float:
-    """
-    Used to solve the carbon market: given the
-    emission of a period, adjusts carbon price to meet the budget.
-    A carbon market is meant as a pool of emissions for all
-    the modelled regions; therefore, the carbon price applies
-    to all modelled regions.
-    The method solves an equation applying
-    a fitting of the emission-carbon price relation
+    """Used to solve the carbon market.
+
+    Given the emission of a period, adjusts carbon price to meet the budget. A carbon
+    market is meant as a pool of emissions for all the modelled regions; therefore, the
+    carbon price applies to all modelled regions. The method solves an equation applying
+    a fitting of the emission-carbon price relation.
+
     Arguments:
         market: Market, with the prices, supply, and consumption,
         sectors: list of market sectors,
-        equilibrium: Method for searching maerket equilibrium,
+        equilibrium: Method for searching market equilibrium,
         carbon_budget: limit on emissions,
         carbon_price: current carbon price
         commodities: list of commodities to limit (ie. emissions),
@@ -103,7 +104,6 @@ def fitting(
     Returns:
         new_price: adjusted carbon price to meet budget
     """
-
     future = market.year[-1]
 
     threshold = carbon_budget.sel(year=future).values
@@ -160,8 +160,10 @@ def refine_new_price(
     commodities: list,
     price_too_high_threshold: float,
 ) -> float:
-    """Refine the value of the carbon price to ensure it is not too high or low
-    compared to heuristics values
+    """Refine the value of the carbon price.
+
+    Ensure it is not too high or low compared to heuristic values.
+
     Arguments:
         market: Market, with prices, supply, and consumption,
         historic_price: DataArray with the historic carbon prices,
@@ -172,7 +174,7 @@ def refine_new_price(
         price_too_high_threshold: Threshold to decide what is a price too high.
 
     Returns:
-        A refined carbon price.
+        The new carbon price
     """
     future = market.year[-1]
 
@@ -210,8 +212,7 @@ def exponential_fun(x, a, b, c):
 
 
 def create_sample(carbon_price, current_emissions, budget, size=4):
-    """Calculates a sample of carbon prices to estimate the adjusted carbon
-    price.
+    """Calculates a sample of carbon prices to estimate the adjusted carbon price.
 
     For each of these prices, the equilibrium loop will be run, obtaining a new value
     for the emissions. Out of those price-emissions pairs, the final carbon price will
@@ -262,8 +263,8 @@ def linear(prices: np.ndarray, emissions: np.ndarray, budget: int) -> float:
 def linear_guess_and_weights(
     prices: np.ndarray, emissions: np.ndarray, budget: int
 ) -> tuple:
-    """Estimates initial values for the linear fitting algorithm and the
-    weights.
+    """Estimates initial values for the linear fitting algorithm and the weights.
+
     The points closest to the budget are used to estimate the initial guess. They also
     have the highest weight.
 
@@ -323,8 +324,7 @@ def exponential(prices: np.ndarray, emissions: np.ndarray, budget: int) -> float
 def exp_guess_and_weights(
     prices: np.ndarray, emissions: np.ndarray, budget: int
 ) -> tuple:
-    """Estimates initial values for the exponential fitting algorithm and the
-    weights.
+    """Estimates initial values for the exponential fitting algorithm and the weights.
 
     The points closest to the budget are used to estimate the initial guess. They also
     have the highest weight.
@@ -374,9 +374,9 @@ def bisection(
     price_too_high_threshold: float = 10,
     fitter: Text = "slinear",
 ) -> float:
-    """
-    Applies bisection algorithm to escalate carbon price and
-    meet the budget. A carbon market is meant as a pool of emissions for all
+    """Applies bisection algorithm to escalate carbon price and meet the budget.
+
+    A carbon market is meant as a pool of emissions for all
     the modelled regions; therefore, the carbon price applies to all modelled regions.
     Bisection applies an iterative estimations of the emissions
     varying the carbon price until convergence or stop criteria
@@ -386,7 +386,7 @@ def bisection(
     Arguments:
         market: Market, with the prices, supply, consumption and demand,
         sectors: List of sectors,
-        equilibrium: Method for searching maerket equilibrium,
+        equilibrium: Method for searching market equilibrium,
         carbon_budget: DataArray with the carbon budget,
         carbon_price: DataArray with the carbon price,
         commodities: List of carbon-related commodities,
@@ -498,9 +498,10 @@ def min_max_bisect(
     threshold: float,
 ):
     """Refines bisection algorithm to escalate carbon price and meet the budget.
-    As emissions can be a discontinuous function of the carbon price,
-    this method is used to improve the solution search when discountinuities
-    are met, improving the bounds search.
+
+    As emissions can be a discontinuous function of the carbon price, this method is
+    used to improve the solution search when discontinuities are met, improving the
+    bounds search.
 
     Arguments:
         low: Value of carbon price at lower bound,
@@ -509,7 +510,7 @@ def min_max_bisect(
         ub: Value of emissions at upper bound,
         market: Market, with the prices, supply, consumption and demand,
         sectors: List of sectors,
-        equilibrium: Method for searching maerket equilibrium,
+        equilibrium: Method for searching market equilibrium,
         commodities: List of carbon-related commodities,
         sample_size: Number of iterations for bisection,
         refine_price: Boolean to decide on whether carbon price should be refined,
@@ -579,13 +580,14 @@ def bisect_loop(
     commodities: list,
     new_price: float,
 ) -> float:
-    """Calls market euilibrium iteration in bisection.
+    """Calls market equilibrium iteration in bisection.
+
     This updates emissions during iterations.
 
     Arguments:
         market: Market, with the prices, supply, consumption and demand,
         sectors: List of sectors,
-        equilibrium: Method for searching maerket equilibrium,
+        equilibrium: Method for searching market equilibrium,
         commodities: List of carbon-related commodities,
         new_price: New carbon price from bisection,
 

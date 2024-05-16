@@ -72,7 +72,7 @@ def reference_timeslice(
     level_names: Sequence[Text] = ("month", "day", "hour"),
     name: Text = "timeslice",
 ) -> DataArray:
-    """Reads reference timeslice from toml like input.
+    '''Reads reference timeslice from toml like input.
 
     Arguments:
         settings: A dictionary of nested dictionaries or a string that toml will
@@ -90,10 +90,9 @@ def reference_timeslice(
         weight of each timeslice.
 
     Example:
-
         >>> from muse.timeslices import reference_timeslice
         >>> reference_timeslice(
-        ...     \"\"\"
+        ...     """
         ...     [timeslices]
         ...     spring.weekday = 5
         ...     spring.weekend = 2
@@ -104,7 +103,7 @@ def reference_timeslice(
         ...     summer.weekday = 5
         ...     summer.weekend = 2
         ...     level_names = ["season", "week"]
-        ...     \"\"\"
+        ...     """
         ... )
         <xarray.DataArray (timeslice: 8)>
         array([5, 2, 5, 2, 5, 2, 5, 2])
@@ -112,7 +111,7 @@ def reference_timeslice(
           * timeslice  (timeslice) MultiIndex
           - season     (timeslice) object 'spring' 'spring' ... 'summer' 'summer'
           - week       (timeslice) object 'weekday' 'weekend' ... 'weekday' 'weekend'
-    """
+    '''
     from functools import reduce
     from typing import List, Tuple
 
@@ -151,7 +150,7 @@ def aggregate_transforms(
     settings: Optional[Union[Mapping, Text]] = None,
     timeslice: Optional[DataArray] = None,
 ) -> Dict[Tuple, ndarray]:
-    """Creates dictionary of transforms for aggregate levels.
+    '''Creates dictionary of transforms for aggregate levels.
 
     The transforms are used to create the projectors towards the finest timeslice.
 
@@ -166,8 +165,7 @@ def aggregate_transforms(
         timeslices.
 
     Example:
-
-        >>> toml = \"\"\"
+        >>> toml = """
         ...     [timeslices]
         ...     spring.weekday = 5
         ...     spring.weekend = 2
@@ -181,7 +179,7 @@ def aggregate_transforms(
         ...     [timeslices.aggregates]
         ...     spautumn = ["spring", "autumn"]
         ...     week = ["weekday", "weekend"]
-        ... \"\"\"
+        ... """
         >>> from muse.timeslices import reference_timeslice, aggregate_transforms
         >>> ref = reference_timeslice(toml)
         >>> transforms = aggregate_transforms(toml, ref)
@@ -193,7 +191,7 @@ def aggregate_transforms(
         array([0, 0, 1, 1, 0, 0, 0, 0])
         >>> transforms[("spautumn", "week")].T
         array([1, 1, 1, 1, 0, 0, 0, 0])
-    """
+    '''
     from itertools import product
 
     from numpy import identity, sum
@@ -252,17 +250,16 @@ def timeslice_projector(
     finest: Optional[DataArray] = None,
     transforms: Optional[Dict[Tuple, ndarray]] = None,
 ) -> DataArray:
-    """Project time-slice to standardized finest time-slices.
+    '''Project time-slice to standardized finest time-slices.
 
     Returns a matrix from the input timeslice ``x`` to the ``finest`` timeslice, using
     the input ``transforms``. The latter are a set of transforms that map indices from
     one timeslice to indices in another.
 
     Example:
-
         Lets define the following timeslices and aggregates:
 
-        >>> toml = \"\"\"
+        >>> toml = """
         ...     ["timeslices"]
         ...     winter.weekday.day = 5
         ...     winter.weekday.night = 5
@@ -276,7 +273,7 @@ def timeslice_projector(
         ...     summer.weekend.dusk = 1
         ...     level_names = ["semester", "week", "day"]
         ...     aggregates.allday = ["day", "night"]
-        ... \"\"\"
+        ... """
         >>> from muse.timeslices import (
         ...     reference_timeslice,  aggregate_transforms
         ... )
@@ -346,7 +343,7 @@ def timeslice_projector(
           - finest_week       (finest_timeslice) object 'weekday' ... 'weekend'
           - finest_day        (finest_timeslice) object 'day' 'night' ... 'night' 'dusk'
         Dimensions without coordinates: timeslice
-    """
+    '''
     from numpy import concatenate, ones_like
     from xarray import DataArray
 
@@ -406,7 +403,7 @@ def convert_timeslice(
     finest: Optional[DataArray] = None,
     transforms: Optional[Dict[Tuple, ndarray]] = None,
 ) -> Union[DataArray, Dataset]:
-    """Adjusts the timeslice of x to match that of ts.
+    '''Adjusts the timeslice of x to match that of ts.
 
     The conversion can be done in on of two ways, depending on whether the
     quantity is extensive or intensive. See `QuantityType`.
@@ -414,7 +411,7 @@ def convert_timeslice(
     Example:
         Lets define three timeslices from finest, to fine, to rough:
 
-        >>> toml = \"\"\"
+        >>> toml = """
         ...     ["timeslices"]
         ...     winter.weekday.day = 5
         ...     winter.weekday.night = 5
@@ -428,7 +425,7 @@ def convert_timeslice(
         ...     aggregates.allday = ["day", "night"]
         ...     aggregates.allweek = ["weekend", "weekday"]
         ...     aggregates.allyear = ["winter", "summer"]
-        ... \"\"\"
+        ... """
         >>> from muse.timeslices import setup_module
         >>> from muse.readers import read_timeslices
         >>> setup_module(toml)
@@ -530,7 +527,7 @@ def convert_timeslice(
         ... )
         >>> bool(all((weekend * 5).round(6) == (weekdays * 2).round(6)))
         True
-    """
+    '''
     if finest is None:
         global TIMESLICE
         finest = TIMESLICE
@@ -577,7 +574,6 @@ def new_to_old_timeslice(ts: DataArray, ag_level="Month") -> dict:
     This function is used in the LegacySector class to adapt the new MCA timeslices to
     the format required by the old sectors.
     """
-
     length = len(ts.month.values)
     converted_ts = {
         "Month": [kebab_to_camel(w) for w in ts.month.values],

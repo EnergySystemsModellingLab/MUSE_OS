@@ -1,4 +1,4 @@
-"""Output cached quantities
+"""Output cached quantities.
 
 Functions that output the state of diverse quantities at intermediate steps of the
 calculation.
@@ -328,7 +328,7 @@ class OutputCache:
 def extract_agents(
     sectors: List[AbstractSector],
 ) -> MutableMapping[Text, MutableMapping[Text, Text]]:
-    """_summary_
+    """_summary_.
 
     Args:
         sectors (List[AbstractSector]): _description_
@@ -372,11 +372,11 @@ def _aggregate_cache(quantity: Text, data: List[xr.DataArray]) -> pd.DataFrame:
 
     The merging gives precedence to the last entries of the list over the first ones.
     I.e, the records of the arrays cached last will overwrite those of the ones cached
-    before in the case of having dientical index.
+    before in the case of having identical index.
 
     Args:
-        quantity (Text): The quantity to cache.
-        data List[xr.DataArray]: The list of DataArrays to combine.
+        quantity: The quantity to cache.
+        data: The list of DataArrays to combine.
 
     Returns:
         pd.DataFrame: A Dataframe with the data aggregated.

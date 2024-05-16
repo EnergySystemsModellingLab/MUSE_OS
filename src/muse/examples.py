@@ -39,14 +39,14 @@ __all__ = ["model", "technodata"]
 
 
 def example_data_dir() -> Path:
-    """Gets the examples folder"""
+    """Gets the examples folder."""
     import muse
 
     return Path(muse.__file__).parent / "data" / "example"
 
 
 def available_examples() -> List[str]:
-    """List examples available in the examples folder"""
+    """List examples available in the examples folder."""
     return [d.stem for d in example_data_dir().iterdir() if d.is_dir()]
 
 
@@ -134,7 +134,6 @@ def search_space(sector: Text, model: Text = "default") -> xr.DataArray:
 
     Used in constraints or during investment.
     """
-
     if model == "trade" and sector != "residential":
         return _trade_search_space(sector, model)
     return _nontrade_search_space(sector, model)

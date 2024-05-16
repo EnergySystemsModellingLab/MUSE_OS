@@ -170,6 +170,7 @@ def demand_matching(
             as `max_production`.
         cost: Cost to minimize while fulfilling the demand.
         *constraints: each item is a separate constraint :math:`M_r`.
+        protected_dims: Dimensions that will not be modified
 
     Returns:
         An array with the joint dimensionality of `max_production`, `cost`, and
