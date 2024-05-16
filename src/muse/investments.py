@@ -346,12 +346,15 @@ def scipy_match_demand(
             },
         )
         if not res.success:
-            getLogger(__name__).critical(res.message)
-            print(f"in sector containing {df_technologies.technology[0]}")
+            msg = (
+                res.message
+                + "\n"
+                + f"Error in sector containing {df_technologies.technology.unique()}"
+            )
+            getLogger(__name__).critical(msg)
             raise GrowthOfCapacityTooConstrained
 
-    solution = cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(res.x)
-    return solution
+    return cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(res.x)
 
 
 @register_investment(name=["cvxopt"])

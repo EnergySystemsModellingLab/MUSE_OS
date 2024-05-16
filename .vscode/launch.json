@@ -19,6 +19,13 @@
             "args": ["--model", "multiple_agents"]
         },
         {
+            "name": "Model: default_timeslice",
+            "type": "python",
+            "request": "launch",
+            "module": "muse",
+            "args": ["--model", "default_timeslice"]
+        },
+        {
             "name": "model/settings.toml",
             "type": "debugpy",
             "request": "launch",
