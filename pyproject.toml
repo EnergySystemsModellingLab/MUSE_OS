@@ -105,7 +105,8 @@ select = [
     "D",  # pydocstyle
     "E",  # pycodestyle
     "F",  # Pyflakes
-    "I"  # isort
+    "I",  # isort
+    "RUF"  # Ruff's own checks
 ]
 ignore = [
     "D1"  # missing docstring checks
