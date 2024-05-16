@@ -32,16 +32,18 @@ class AbstractAgent(ABC):
                 instance. The information should not be anything describing the
                 technologies themselves, but rather the stock of assets held by
                 the agent.
-            category: optional attribute that could be used to classify
-                different agents together.
+            category: optional value that could be used to classify different agents
+                together.
+            quantity: optional value to classify different agents' share of the
+                population.
         """
         from uuid import uuid4
 
         super().__init__()
         self.name = name
-        """ Name associated with the agent """
+        """Name associated with the agent."""
         self.region = region
-        """ Region the agent operates in """
+        """Region the agent operates in."""
         self.assets = assets if assets is not None else xr.Dataset()
         """Current stock of technologies."""
         self.uuid = uuid4()
@@ -51,7 +53,7 @@ class AbstractAgent(ABC):
         self.category = category
         """Attribute to classify different sets of agents."""
         self.quantity = quantity
-        """Attribute to classify different agents share of the population"""
+        """Attribute to classify different agents' share of the population."""
 
     def filter_input(
         self,
@@ -116,19 +118,23 @@ class Agent(AbstractAgent):
         category: Optional[Text] = None,
         asset_threshhold: float = 1e-4,
         quantity: Optional[float] = 1,
+        spend_limit: int = 0,
         **kwargs,
     ):
         """Creates a standard buildings agent.
 
         Arguments:
-            assets: Current stock of technologies.
             name: Name of the agent, used for cross-refencing external tables
             region: Region where the agent operates, used for cross-referencing
                 external tables.
+            assets: Current stock of technologies.
+            interpolation: interpolation method. see `xarray.interp`.
             search_rules: method used to filter the search space
+            objectives: One or more objectives by which to decide next investments.
+            decision: single decision objective from one or more objectives.
+            year: year the agent is created / current year
             maturity_threshhold: threshold when filtering replacement
                 technologies with respect to market share
-            year: year the agent is created / current year
             forecast: Number of years the agent will forecast
             housekeeping: transform applied to the assets at the start of
                 iteration. Defaults to doing nothing.
@@ -137,6 +143,10 @@ class Agent(AbstractAgent):
             demand_threshhold: criteria below which the demand is zero.
             category: optional attribute that could be used to classify
                 different agents together.
+            asset_threshhold: Threshold below which assets are not added.
+            quantity: different agents' share of the population
+            spend_limit: The cost above which agents will not invest
+            **kwargs: Extra arguments
         """
         from muse.decisions import factory as decision_factory
         from muse.filters import factory as filter_factory
@@ -175,8 +185,7 @@ class Agent(AbstractAgent):
         Threshold when and if filtering replacement technologies with respect
         to market share.
         """
-        if kwargs is not None:
-            self.spend_limit = kwargs.get("spend_limit", 0)
+        self.spend_limit = spend_limit
 
         if objectives is None:
             objectives = objectives_factory()
@@ -366,8 +375,9 @@ class InvestingAgent(Agent):
 
         Arguments:
             *args: See :py:class:`~muse.agents.agent.Agent`
-            *kwargs: See :py:class:`~muse.agents.agent.Agent`
+            constraints: Set of constraints limiting investment
             investment: A function to perform investments
+            **kwargs: See :py:class:`~muse.agents.agent.Agent`
         """
         from muse.constraints import factory as csfactory
         from muse.investments import factory as ifactory

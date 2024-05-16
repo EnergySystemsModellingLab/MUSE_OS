@@ -204,6 +204,7 @@ def cliff_retirement_profile(
         current_year: current year
         protected: The technologies are assumed to be renewed between years
             `current_year` and `current_year + protected`
+        interpolation: Interpolation type
         **kwargs: arguments by which to filter technical_life, if any.
 
     Returns:

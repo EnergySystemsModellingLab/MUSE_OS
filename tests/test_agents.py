@@ -9,7 +9,7 @@ def assets():
     from muse.utilities import avoid_repetitions
     from numpy import ones
     from numpy.random import choice, randint
-    from xarray import Dataset  # noqa
+    from xarray import Dataset
 
     result = Dataset()
     result["year"] = "year", range(2010, 2031)
