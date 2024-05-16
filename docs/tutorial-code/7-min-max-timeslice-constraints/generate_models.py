@@ -24,6 +24,19 @@ def generate_model_1() -> None:
     examples.copy_model(name="default_timeslice", path=parent_path, overwrite=True)
     os.rename(parent_path / "model", model_path)
 
+    # Modify MinimumServiceFactor for gasCCGT
+    timeslices_file = model_path / "technodata/power/TechnodataTimeslices.csv"
+    df = pd.read_csv(timeslices_file)
+    df.loc[df["ProcessName"] == "gasCCGT", "MinimumServiceFactor"] = [
+        0.2,
+        0.4,
+        0.6,
+        0.4,
+        0.8,
+        1,
+    ]
+    df.to_csv(timeslices_file, index=False)
+
 
 def generate_model_2() -> None:
     model_name = "2-max-constraint"
