@@ -491,8 +491,8 @@ class Linear(Regression):
                 if isinstance(year, DataArray)
                 else DataArray(year, coords={"year": year}, dims="year")
             )
-            condition = years + forecast < self.__scaleyear__
-            scale = coeffs.b0.where(condition, coeffs.b1)
+            sel = years + forecast < self.__scaleyear__
+            scale = coeffs.b0.where(sel, coeffs.b1)
         else:
             scale = coeffs.b0
         data_baseyear = data.sel(year=self.base_year)
