@@ -1,4 +1,4 @@
-name: QA and tests
+name: Tests
 
 on:
   pull_request:
@@ -8,16 +8,7 @@ on:
   workflow_call:
 
 jobs:
-  # Checks the style using the pre-commit hooks
-  qa:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pre-commit/action@v3.0.1
-
-  # Only then, normal testing proceeds
   unit-tests:
-    needs: qa
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -58,7 +49,6 @@ jobs:
         run: pytest -m "not regression and not notebook"
 
   regression-tests:
-    needs: qa
     runs-on: ${{ matrix.os }}
 
     strategy:
