@@ -53,7 +53,7 @@ def generate_model_1():
     df.to_csv(commin_file, index=False)
 
     # Change cap_par, Fuel and EndUse
-    technodata_file = model_path / "technodata/residential/technodata.csv"
+    technodata_file = model_path / "technodata/residential/Technodata.csv"
     df = pd.read_csv(technodata_file)
     df.loc[df["ProcessName"] == "gas_stove", "cap_par"] = 8.8667
     df.loc[df["ProcessName"] == "gas_stove", "Fuel"] = "gas"
@@ -63,7 +63,7 @@ def generate_model_1():
     df.to_csv(technodata_file, index=False)
 
     # Change power sector limits
-    technodata_file = model_path / "technodata/power/technodata.csv"
+    technodata_file = model_path / "technodata/power/Technodata.csv"
     df = pd.read_csv(technodata_file)
     df.loc[1:, "MaxCapacityAddition"] = 4
     df.loc[1:, "MaxCapacityGrowth"] = 0.4
