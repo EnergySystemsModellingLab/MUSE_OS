@@ -427,7 +427,6 @@ def merge_assets(
             .sum(dimension)
             .clip(min=0)
             .pipe(multiindex_to_coords, dimension=dimension)
-            .rename({"asset_level_%i" % i: coord for i, coord in enumerate(levels)})
         )
     return result
 

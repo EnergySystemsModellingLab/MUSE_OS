@@ -382,7 +382,7 @@ def _aggregate_cache(quantity: Text, data: List[xr.DataArray]) -> pd.DataFrame:
         pd.DataFrame: A Dataframe with the data aggregated.
     """
     data = [da.to_dataframe().reset_index() for da in data]
-    cols = list(
+    cols = sorted(
         set.intersection(
             *map(set, [[c for c in d.columns if c != quantity] for d in data])
         )
@@ -398,7 +398,7 @@ def _aggregate_cache(quantity: Text, data: List[xr.DataArray]) -> pd.DataFrame:
         .T.groupby(check_col)
         .last(),
         data,
-    )
+    ).T
 
 
 def consolidate_quantity(
@@ -432,6 +432,7 @@ def consolidate_quantity(
     data = (
         data.groupby(group_cols)
         .sum()
+        .infer_objects()
         .fillna(0)
         .reset_index()
         .drop("asset", axis=1, errors="ignore")

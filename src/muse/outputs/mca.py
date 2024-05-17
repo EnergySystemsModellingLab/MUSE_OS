@@ -358,7 +358,9 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             technologies = a.filter_input(techs, year=output_year).fillna(0.0)
             agent_market = market.sel(year=output_year).copy()
-            agent_market["consumption"] = agent_market.consumption * a.quantity
+            agent_market["consumption"] = (
+                agent_market.consumption * a.quantity
+            ).drop_vars(["timeslice", "month", "day", "hour"])
             included = [
                 i
                 for i in agent_market["commodity"].values
@@ -392,7 +394,9 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
 
             a = data_agent.to_dataframe("supply")
             if len(a) > 0 and len(a.technology.values) > 0:
-                b = a.reset_index()
+                b = a.drop(
+                    ["month", "day", "hour"], axis=1, errors="ignore"
+                ).reset_index()
                 b = b[b["supply"] != 0]
                 data_sector.append(b)
     if len(data_sector) > 0:
@@ -400,9 +404,13 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
 
     else:
         output = pd.DataFrame()
-    output = output.reset_index()
 
-    return output
+    # Combine timeslice columns into a single column, if present
+    if "hour" in output.columns:
+        output["timeslice"] = list(zip(output["month"], output["day"], output["hour"]))
+        output = output.drop(["month", "day", "hour"], axis=1)
+
+    return output.reset_index()
 
 
 @register_output_quantity(name=["yearly_supply"])
@@ -592,7 +600,9 @@ def sector_consumption(
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             technologies = a.filter_input(techs, year=output_year).fillna(0.0)
             agent_market = market.sel(year=output_year).copy()
-            agent_market["consumption"] = agent_market.consumption * a.quantity
+            agent_market["consumption"] = (
+                agent_market.consumption * a.quantity
+            ).drop_vars(["timeslice", "month", "day", "hour"])
             included = [
                 i
                 for i in agent_market["commodity"].values
@@ -628,7 +638,9 @@ def sector_consumption(
             data_agent["sector"] = getattr(sector, "name", "unnamed")
             a = data_agent.to_dataframe("consumption")
             if len(a) > 0 and len(a.technology.values) > 0:
-                b = a.reset_index()
+                b = a.drop(
+                    ["month", "day", "hour"], axis=1, errors="ignore"
+                ).reset_index()
                 b = b[b["consumption"] != 0]
                 data_sector.append(b)
     if len(data_sector) > 0:
@@ -636,9 +648,13 @@ def sector_consumption(
 
     else:
         output = pd.DataFrame()
-    output = output.reset_index()
 
-    return output
+    # Combine timeslice columns into a single column, if present
+    if "hour" in output.columns:
+        output["timeslice"] = list(zip(output["month"], output["day"], output["hour"]))
+        output = output.drop(["month", "day", "hour"], axis=1)
+
+    return output.reset_index()
 
 
 @register_output_quantity(name=["yearly_consumption"])

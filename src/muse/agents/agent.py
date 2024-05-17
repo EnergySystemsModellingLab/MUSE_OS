@@ -414,7 +414,7 @@ class InvestingAgent(Agent):
         if search is None:
             return None
 
-        search["demand"] = demand
+        search["demand"] = demand.drop_vars(["timeslice", "month", "day", "hour"])
         not_assets = [u for u in search.demand.dims if u != "asset"]
         condtechs = (
             search.demand.sum(not_assets) > getattr(self, "tolerance", 1e-8)
