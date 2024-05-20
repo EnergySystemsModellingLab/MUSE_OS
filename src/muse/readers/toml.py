@@ -540,14 +540,14 @@ def read_timeslices(
         >>> ref = reference_timeslice(toml)
         >>> transforms = aggregate_transforms(toml, ref)
         >>> read_timeslices(toml, ref, transforms)
-        <xarray.Dataset>
+        <xarray.Dataset> Size: 216B
         Dimensions:          (timeslice: 6)
         Coordinates:
-          * timeslice        (timeslice) MultiIndex
-          - semester         (timeslice) object 'summer' 'summer' ... 'winter'
-          - week             (timeslice) object 'weekday' 'weekend' ... 'weekend'
-          - day              (timeslice) object 'allday' 'dusk' ... 'dusk' 'allday'
-            represent_hours  (timeslice) ... 10 1 4 10 1 4
+          * timeslice        (timeslice) object 48B MultiIndex
+          * semester         (timeslice) object 48B 'summer' 'summer' ... 'winter'
+          * week             (timeslice) object 48B 'weekday' 'weekend' ... 'weekend'
+          * day              (timeslice) object 48B 'allday' 'dusk' ... 'dusk' 'allday'
+            represent_hours  (timeslice) int32 24B 10 1 4 10 1 4
         Data variables:
             *empty*
     '''
