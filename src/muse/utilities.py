@@ -317,7 +317,7 @@ def filter_with_template(
             format is that of an *asset* (see `broadcast_techs`)
         kwargs: passed on to `broadcast_techs` or `filter_input`
 
-    Returns
+    Returns:
         `data` transformed to match the form of `template`
     """
     if asset_dimension in template.dims:
@@ -433,7 +433,7 @@ def merge_assets(
 
 
 def avoid_repetitions(data: xr.DataArray, dim: Text = "year") -> xr.DataArray:
-    """list of years such that there is no repetition in the data.
+    """List of years such that there is no repetition in the data.
 
     It removes the central year of any three consecutive years where all data is
     the same. This means the original data can be reobtained via a linear
@@ -472,7 +472,6 @@ def future_propagation(
     """Propagates values into the future.
 
     Example:
-
         ``Data`` should be an array with at least one dimension, "year":
 
         >>> coords = dict(year=list(range(2020, 2040, 5)), fuel=["gas", "coal"])
@@ -550,7 +549,6 @@ def agent_concatenation(
     """Concatenates input map along given dimension.
 
     Example:
-
         Lets create sets of random assets to work with. We set the seed so that this
         test can be reproduced exactly.
 
@@ -629,7 +627,6 @@ def aggregate_technology_model(
     are grouped together and summed over.
 
     Example:
-
         We first create a random set of agent assets and aggregate them.
         Some of these agents own assets from the same technology but potentially with
         different installation year. This function will aggregate together all assets

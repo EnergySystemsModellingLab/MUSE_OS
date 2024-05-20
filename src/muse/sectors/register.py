@@ -13,7 +13,6 @@ def register_sector(
     """Registers a sector so it is available MUSE-wide.
 
     Example:
-
         >>> from muse.sectors import AbstractSector, register_sector
         >>> @register_sector(name="MyResidence")
         ... class ResidentialSector(AbstractSector):

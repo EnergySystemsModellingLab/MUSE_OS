@@ -125,7 +125,6 @@ def check_usage(
             - "exact", should match each flag and nothing else.
 
     Examples:
-
         >>> from muse.commodities import CommodityUsage, check_usage
         >>> data = [
         ...     CommodityUsage.OTHER,
@@ -207,7 +206,6 @@ def is_pollutant(data: Sequence[CommodityUsage]) -> ndarray:
     """Environmental product.
 
     Examples:
-
         >>> from muse.commodities import CommodityUsage, is_pollutant
         >>> data = [
         ...     CommodityUsage.CONSUMABLE,
@@ -228,7 +226,6 @@ def is_consumable(data: Sequence[CommodityUsage]) -> ndarray:
     """Any consumable.
 
     Examples:
-
         >>> from muse.commodities import CommodityUsage, is_consumable
         >>> data = [
         ...     CommodityUsage.CONSUMABLE,
@@ -247,7 +244,6 @@ def is_fuel(data: Sequence[CommodityUsage]) -> ndarray:
     """Any consumable energy.
 
     Examples:
-
         >>> from muse.commodities import CommodityUsage, is_fuel
         >>> data = [
         ...     CommodityUsage.CONSUMABLE,
@@ -270,7 +266,6 @@ def is_material(data: Sequence[CommodityUsage]) -> ndarray:
     """Any non-energy non-environmental consumable.
 
     Examples:
-
         >>> from muse.commodities import CommodityUsage, is_material
         >>> data = [
         ...     CommodityUsage.CONSUMABLE,
@@ -299,7 +294,6 @@ def is_enduse(data: Sequence[CommodityUsage]) -> ndarray:
     """Non-environmental product.
 
     Examples:
-
         >>> from muse.commodities import CommodityUsage, is_enduse
         >>> data = [
         ...     CommodityUsage.CONSUMABLE,
@@ -323,7 +317,6 @@ def is_other(data: Sequence[CommodityUsage]) -> ndarray:
     """No flags are set.
 
     Examples:
-
         >>> from muse.commodities import CommodityUsage, is_other
         >>> data = [
         ...     CommodityUsage.OTHER,

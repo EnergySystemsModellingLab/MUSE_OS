@@ -8,7 +8,6 @@ from pytest import fixture, mark, raises
 @fixture
 def user_data_files(settings: dict) -> None:
     """Creates the files related to the user data."""
-
     files = list(settings["global_input_files"].keys())
     files.remove("path")
     for m in files:
@@ -40,7 +39,6 @@ def sectors_files(settings: dict):
 @fixture
 def plugins(settings: dict, tmp_path) -> Path:
     """Creates the files related to the custom modules."""
-
     plugin = tmp_path / "plugins" / "cat.py"
     plugin.parent.mkdir(parents=True, exist_ok=True)
     plugin.write_text("my_cat_colour = 'tabby' ")

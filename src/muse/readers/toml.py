@@ -127,7 +127,6 @@ def format_paths(
     nested dictionaries.
 
     Examples:
-
         Starting from a simple example, we see `data_path` has been modified to point to
         the current working directory:
 
@@ -356,12 +355,13 @@ def read_settings(
     """Loads the input settings for any MUSE simulation.
 
     Loads a MUSE settings file. This must be a TOML formatted file. Missing settings are
-    loaded from the DEFAULT_SETTINGS. Custom pythom modules, if present, are loaded
+    loaded from the DEFAULT_SETTINGS. Custom Python modules, if present, are loaded
     and checks are run to validate the settings and ensure that they are compatible with
     a MUSE simulation.
 
     Arguments:
-    settings_file: A string or a Path to the settings file
+        settings_file: A string or a Path to the settings file
+        path: A string or path to the settings folder
 
     Returns:
         A dictionary with the settings
@@ -406,15 +406,14 @@ def read_ts_multiindex(
     timeslice: Optional[xr.DataArray] = None,
     transforms: Optional[Dict[Tuple, np.ndarray]] = None,
 ) -> pd.MultiIndex:
-    """Read multiindex for a timeslice from TOML.
+    '''Read multiindex for a timeslice from TOML.
 
     Example:
-
         The timeslices are read from ``timeslice_levels``. The levels (keyword) and
         slice (list of values) correspond to the level, slices and slice aggregates
         defined  in the the ``timeslices`` section.
 
-        >>> toml = \"\"\"
+        >>> toml = """
         ...     ["timeslices"]
         ...     winter.weekday.day = 5
         ...     winter.weekday.night = 5
@@ -430,7 +429,7 @@ def read_ts_multiindex(
         ...     aggregates.allday = ["day", "night"]
         ...     [timeslice_levels]
         ...     day = ["dusk", "allday"]
-        ... \"\"\"
+        ... """
         >>> from muse.timeslices import (
         ...     reference_timeslice,  aggregate_transforms
         ... )
@@ -456,7 +455,7 @@ def read_ts_multiindex(
         Traceback (most recent call last):
         ...
         muse.readers.toml.IncorrectSettings: Unexpected slice(s): ...
-    """
+    '''
     from itertools import product
 
     from toml import loads
@@ -499,7 +498,7 @@ def read_timeslices(
     timeslice: Optional[xr.DataArray] = None,
     transforms: Optional[Dict[Tuple, np.ndarray]] = None,
 ) -> xr.Dataset:
-    """Reads timeslice levels and create resulting timeslice coordinate.
+    '''Reads timeslice levels and create resulting timeslice coordinate.
 
     Args:
         settings: TOML dictionary. It should contain a ``timeslice_levels`` section.
@@ -512,11 +511,12 @@ def read_timeslices(
             to the global in :py:mod:`~muse.timeslices`. If using the default,
             then this function should be called *after* the timeslice module has been
             setup with a call to :py:func:`~muse.timeslice.setup_module`.
+
     Returns:
         A xr.Dataset with the timeslice coordinates.
 
     Example:
-        >>> toml = \"\"\"
+        >>> toml = """
         ...     ["timeslices"]
         ...     winter.weekday.day = 5
         ...     winter.weekday.night = 5
@@ -532,7 +532,7 @@ def read_timeslices(
         ...     aggregates.allday = ["day", "night"]
         ...     [timeslice_levels]
         ...     day = ["dusk", "allday"]
-        ... \"\"\"
+        ... """
         >>> from muse.timeslices import (
         ...     reference_timeslice,  aggregate_transforms
         ... )
@@ -550,7 +550,7 @@ def read_timeslices(
             represent_hours  (timeslice) ... 10 1 4 10 1 4
         Data variables:
             *empty*
-    """
+    '''
     from muse.timeslices import TIMESLICE, timeslice_projector
 
     if timeslice is None:
@@ -631,7 +631,6 @@ def add_unknown_parameters(dd, u):
 
 def validate_settings(settings: Dict) -> None:
     """Run the checks on the settings file."""
-
     msg = " Validating input settings..."
     getLogger(__name__).info(msg)
 
@@ -678,7 +677,6 @@ def check_plugins(settings: Dict) -> None:
 @register_settings_check(vary_name=False)
 def check_log_level(settings: Dict) -> None:
     """Check the log level required in the simulation."""
-
     valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
     msg = "ERROR - Valid log levels are {}.".format(", ".join(valid_levels))
     assert settings["log_level"].upper() in valid_levels, msg
@@ -789,7 +787,6 @@ def check_time_slices(settings: Dict) -> None:
 @register_settings_check(vary_name=False)
 def check_global_data_files(settings: Dict) -> None:
     """Checks that the global user files exist."""
-
     user_data = settings["global_input_files"]
 
     if Path(user_data["path"]).is_absolute():
@@ -822,7 +819,6 @@ def check_global_data_files(settings: Dict) -> None:
 @register_settings_check(vary_name=False)
 def check_sectors_files(settings: Dict) -> None:
     """Checks that the sector files exist."""
-
     sectors = settings["sectors"]
     priorities = {
         "preset": 0,
@@ -938,14 +934,14 @@ def read_technodata(
     if technologies.year.max() < maxyear:
         msg = "Forward-filling technodata to fit simulation timeframe"
         getLogger(__name__).info(msg)
-        years = technologies.year.data.tolist() + [maxyear]
+        years = [*technologies.year.data.tolist(), maxyear]
         technologies = technologies.sel(year=years, method="ffill")
         technologies["year"] = "year", years
     minyear = min(time_framework)
     if technologies.year.min() > minyear:
         msg = "Back-filling technodata to fit simulation timeframe"
         getLogger(__name__).info(msg)
-        years = [minyear] + technologies.year.data.tolist()
+        years = [minyear, *technologies.year.data.tolist()]
         technologies = technologies.sel(year=years, method="bfill")
         technologies["year"] = "year", years
 

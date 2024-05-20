@@ -89,7 +89,6 @@ def factory(
     inputs: Optional[Sequence[Union[Mapping, Tuple[Text, Text]]]] = None,
 ) -> Callable[[Sequence[AbstractAgent]], None]:
     """Creates an interaction functor."""
-
     if inputs is None:
         inputs = tuple()
 

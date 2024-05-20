@@ -232,7 +232,7 @@ def retro_lexical_comparison(
 def _epsilon_constraints(
     objectives: Dataset, optimize: Text, mask: Optional[Any] = None, **epsilons
 ) -> DataArray:
-    """minimizes one objective subject to constraints on other objectives."""
+    """Minimizes one objective subject to constraints on other objectives."""
     constraints = True
     for name, epsilon in epsilons.items():
         reduced_dims = set(objectives[name].dims) - {"asset", "replacement"}

@@ -30,9 +30,11 @@ def supply(
     Arguments:
         capacity: number/quantity of assets that can service the demand
         demand: amount of each end-use required. The supply of each process will not
-            exceed it's share of the demand.
+            exceed its share of the demand.
         technologies: factors bindings the capacity of an asset with its production of
             commodities and environmental pollutants.
+        interpolation: Interpolation type
+        production_method: Production for a given capacity
 
     Return:
         A data array where the commodity dimension only contains actual outputs (i.e. no
@@ -133,7 +135,8 @@ def emission(production: xr.DataArray, fixed_outputs: xr.DataArray):
 def gross_margin(
     technologies: xr.Dataset, capacity: xr.DataArray, prices: xr.Dataset
 ) -> xr.DataArray:
-    """The percentage of revenue after direct expenses have been subtracted
+    """The percentage of revenue after direct expenses have been subtracted.
+
     .. _reference:
     https://www.investopedia.com/terms/g/grossmargin.asp
     We first calculate the revenues, which depend on prices
@@ -141,7 +144,7 @@ def gross_margin(
     - energy commodities INPUTS are related to fuel costs
     - environmental commodities OUTPUTS are related to environmental costs
     - variable costs is given as technodata inputs
-    - non-environmental commodities OUTPUTS are related to revenues
+    - non-environmental commodities OUTPUTS are related to revenues.
     """
     from muse.commodities import is_enduse, is_pollutant
     from muse.timeslices import QuantityType, convert_timeslice
@@ -441,6 +444,7 @@ def maximum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are
             silently ignored.
+
     Return:
         `capacity * fixed_outputs * utilization_factor`, whittled down according to the
         filters and the set of technologies in `capacity`.
@@ -474,6 +478,7 @@ def demand_matched_production(
         demand: demand to match.
         prices: price from which to compute the annual levelized cost of energy.
         capacity: capacity from which to obtain the maximum production constraints.
+        technologies: technologies we are looking at
         **filters: keyword arguments with which to filter the input datasets and
             data arrays., e.g. region, or year.
     """
@@ -513,6 +518,7 @@ def capacity_in_use(
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are
             silently ignored.
+
     Return:
         Capacity-in-use for each technology, whittled down by the filters.
     """
@@ -582,11 +588,11 @@ def costed_production(
     with_minimum_service: bool = True,
 ) -> xr.DataArray:
     """Computes production from ranked assets.
+
     The assets are ranked according to their cost. The asset with least cost are allowed
     to service the demand first, up to the maximum production. By default, the minimum
     service is applied first.
     """
-
     from muse.quantities import maximum_production
     from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs

@@ -1,4 +1,4 @@
-"""Investment constraints.
+r"""Investment constraints.
 
 Constraints on investements ensure that investements match some given criteria. For
 instance, the constraints could ensure that only so much of a new asset can be built
@@ -557,7 +557,6 @@ def lp_costs(
     """Creates costs for solving with scipy's LP solver.
 
     Example:
-
         We can now construct example inputs to the function from the sample model. The
         costs will be a matrix where each assets has a candidate replacement technology.
 
@@ -734,8 +733,7 @@ def lp_constraint_matrix(
      The result is the constraint matrix, expanded, reduced and diagonalized for the
      conditions above.
 
-     Example:
-
+    Example:
          Lets first setup a constraint and a cost matrix:
 
          >>> from muse import examples
@@ -861,7 +859,6 @@ class ScipyAdapter:
     """Creates the input for the scipy solvers.
 
     Example:
-
         Lets give a fist simple example. The constraint
         :py:func:`~muse.constraints.max_capacity_expansion` limits how much each
         capacity can be expanded in a given year.

@@ -135,6 +135,9 @@ def new_and_retro(
             to the production method. The ``consumption`` reflects the demand for the
             commodities produced by the current sector.
         technologies: quantities describing the technologies.
+        production: Production method
+        current_year: Current year of simulation
+        forecast: How many years to forecast ahead
 
     Pseudo-code:
 
@@ -343,6 +346,9 @@ def standard_demand(
             to the production method. The ``consumption`` reflects the demand for the
             commodities produced by the current sector.
         technologies: quantities describing the technologies.
+        production: Production method
+        current_year: Current year of simulation
+        forecast: How many years to forecast ahead
 
     """
     from functools import partial
@@ -465,7 +471,7 @@ def _inner_split(
     """
     from numpy import logical_and
 
-    shares = {
+    shares: Mapping[Hashable, xr.DataArray] = {
         key: method(capacity=capacity)
         .groupby("technology")
         .sum("asset")
@@ -473,13 +479,22 @@ def _inner_split(
         for key, capacity in assets.items()
     }
     try:
-        total = sum(shares.values()).sum("asset")  # type: ignore
+        summed_shares: xr.DataArray = xr.concat(shares.values(), dim="concat_dim").sum(
+            "concat_dim"
+        )
+
+        # Calculates the total demand assigned in the previous step with the "method"
+        # function across agents and assets.
+        total: xr.DataArray = summed_shares.sum("asset")
     except AttributeError:
         raise AgentWithNoAssetsInDemandShare()
 
-    unassigned = (
-        demand / (len(shares) * len(cast(xr.DataArray, sum(shares.values())).asset))
-    ).where(logical_and(demand > 1e-12, total <= 1e-12), 0)
+    # Calculates the demand divided by the number of assets times the number of agents
+    # if the demand is bigger than zero and the total demand assigned with the "method"
+    # function is zero.
+    unassigned = (demand / (len(shares) * len(summed_shares))).where(
+        logical_and(demand > 1e-12, total <= 1e-12), 0
+    )
 
     totals = {
         key: (share / share.sum("asset")).fillna(0) for key, share in shares.items()

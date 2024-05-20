@@ -167,7 +167,6 @@ class PresetSector(AbstractSector):  # type: ignore
 
     def _interpolate(self, data: DataArray, years: DataArray) -> DataArray:
         """Chooses interpolation depending on whether forecast is available."""
-
         if "forecast" in data.dims:
             baseyear = int(years.min())
             forecasted = (years - baseyear).values

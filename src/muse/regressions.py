@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from pathlib import Path
-from typing import Callable, Mapping, Optional, Sequence, Text, Tuple, Union
+from typing import Callable, ClassVar, Mapping, Optional, Sequence, Text, Tuple, Union
 
 from xarray import DataArray, Dataset
 
@@ -34,7 +34,6 @@ class Regression(Callable):
     All regression functors are derived from this object.
 
     Examples:
-
     Creating a regression function can be done via it's constructor, or
     through a input csv file. This file is a
 
@@ -56,7 +55,7 @@ class Regression(Callable):
         ...     demand = expo(macrodrivers, year=2010, forecast=5)
     """
 
-    __mappings__ = {}
+    __mappings__: ClassVar = {}
     """ Maps from input names to coefficient names
 
     Maps the coefficients names in the class to their names in the input data
@@ -391,7 +390,7 @@ def ExponentialAdj(
 def Logistic(
     self, gdp: DataArray, population: DataArray, forecast: int = 5, n: int = 4, **kwargs
 ) -> DataArray:
-    """(1 + t * f^n) / (1 + f^n) * a * pop / (1 + b * e^(gpd * c / pop))
+    """(1 + t * f^n) / (1 + f^n) * a * pop / (1 + b * e^(gpd * c / pop)).
 
     With f the number of forecast years.
     """
@@ -406,7 +405,7 @@ def Logistic(
 @register_regression(name="log-log")
 @regression_functor({"a": "constant", "b": "GDPexp"})
 def Loglog(self, gdp: DataArray, population: DataArray, *args, **kwargs) -> DataArray:
-    """1e6 * e^a * population * (gpd/population)^b"""
+    """1e6 * e^a * population * (gpd/population)^b."""
     from numpy import exp, power
 
     factor = 1e6 * exp(self.coeffs.a) * population
@@ -425,7 +424,7 @@ def LogisticSigmoid(
     year: Optional[Union[int, Sequence[int]]] = None,
     **kwargs,
 ) -> DataArray:
-    """0.001 * (constant * pop + gdp * c / sqrt(1 + (gdp * scale / pop)^2)"""
+    """0.001 * (constant * pop + gdp * c / sqrt(1 + (gdp * scale / pop)^2)."""
     from numpy import power
 
     constant = self.coeffs.a
@@ -453,9 +452,13 @@ def LogisticSigmoid(
 
 @register_regression
 class Linear(Regression):
-    """a * population + b * (gdp - gdp[2010]/population[2010] * population)"""
+    """a * population + b * (gdp - gdp[2010]/population[2010] * population)."""
 
-    __mappings__ = {"a": "constant", "b0": "GDPscaleLess", "b1": "GDPscaleGreater"}
+    __mappings__: ClassVar[dict[str, str]] = {
+        "a": "constant",
+        "b0": "GDPscaleLess",
+        "b1": "GDPscaleGreater",
+    }
 
     __regression__ = "linear"
     __scaleyear__ = 2015
@@ -483,15 +486,13 @@ class Linear(Regression):
             condition = year + forecast < self.__scaleyear__
             scale = coeffs.b0 if condition else coeffs.b1
         elif year is not None and "year" in data.dims:
-            # fmt: disable
             years = (
                 year
                 if isinstance(year, DataArray)
                 else DataArray(year, coords={"year": year}, dims="year")
             )
-            # fmt: enable
-            condition = years + forecast < self.__scaleyear__
-            scale = coeffs.b0.where(condition, coeffs.b1)
+            sel = years + forecast < self.__scaleyear__
+            scale = coeffs.b0.where(sel, coeffs.b1)
         else:
             scale = coeffs.b0
         data_baseyear = data.sel(year=self.base_year)
