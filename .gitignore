@@ -126,7 +126,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-/Results/
+**/Results/
+!docs/tutorial-code/**/Results
 /FileLog.txt
 /Power/Data/MusePower/Data/
 /MUSEGlobalSettings.csv/
@@ -147,7 +148,6 @@ other/
 JUnits.xml
 .DS_Store
 docs/developer_guide/tutorial/*.md
-docs/developer_guide/tutorial/Results
 docs/developer_guide/tutorial/model/
 docs/developer_guide/tutorial/mynewfunctions.py
 .vim/
