@@ -548,24 +548,21 @@ def convert_timeslice(
         index = finest.get_index("finest_timeslice")
         index = index.set_names((f"finest_{u}" for u in index.names))
         mindex_coords = xr.Coordinates.from_pandas_multiindex(index, "finest_timeslice")
-        finest = finest.drop_vars(
-            ["finest_timeslice", "month", "day", "hour"]
-        ).assign_coords(mindex_coords)
+        finest = finest.drop_vars(list(finest.coords)).assign_coords(mindex_coords)
         proj0 *= finest
         proj0 = proj0 / proj0.sum("finest_timeslice")
     elif quantity is QuantityType.INTENSIVE:
         proj1 = proj1 / proj1.sum("finest_timeslice")
-    P = (
-        proj1.rename(
-            timeslice="final_ts", month="month_ts", day="day_ts", hour="hour_ts"
-        )
-        * proj0
-    ).sum("finest_timeslice")
-    return (
-        (P * x)
-        .sum("timeslice")
-        .rename(final_ts="timeslice", month_ts="month", day_ts="day", hour_ts="hour")
-    )
+
+    new_names = {"timeslice": "final_ts"} | {
+        c: f"{c}_ts" for c in proj1.timeslice.coords if c != "timeslice"
+    }
+    P = (proj1.rename(**new_names) * proj0).sum("finest_timeslice")
+
+    final_names = {"final_ts": "timeslice"} | {
+        c: c.replace("_ts", "") for c in P.final_ts.coords if c != "final_ts"
+    }
+    return (P * x).sum("timeslice").rename(**final_names)
 
 
 def new_to_old_timeslice(ts: DataArray, ag_level="Month") -> dict:

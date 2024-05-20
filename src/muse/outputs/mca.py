@@ -332,7 +332,7 @@ class FiniteResources(AggregateResources):
         aggregate = aggregate.sum([u for u in aggregate.dims if u not in limits.dims])
         assert aggregate is not None
         limits = limits.sum([u for u in limits.dims if u not in aggregate.dims])
-        return aggregate <= limits
+        return aggregate <= limits.assign_coords(timeslice=aggregate.timeslice)
 
 
 @register_output_quantity(name=["timeslice_supply"])

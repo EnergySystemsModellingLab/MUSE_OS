@@ -170,7 +170,9 @@ def test_max_production_constraint_diagonal(constraint, lpcosts):
     )
     decision_dims = {f"d({x})" for x in lpcosts.production.dims}
     assert set(result.dims) == decision_dims.union(constraint_dims)
-
+    result = result.reset_index("d(timeslice)", drop=True).assign_coords(
+        {"d(timeslice)": result["d(timeslice)"].values}
+    )
     stacked = result.stack(d=sorted(decision_dims), c=sorted(constraint_dims))
     assert stacked.shape[0] == stacked.shape[1]
     assert stacked.values == approx(np.eye(stacked.shape[0]))
