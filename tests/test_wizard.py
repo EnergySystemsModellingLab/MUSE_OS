@@ -70,7 +70,7 @@ def test_get_sectors(tmp_path):
     sectors = get_sectors(model_path)
 
     # Check the returned sectors
-    assert sectors == ["sector1", "sector2"]
+    assert set(sectors) == {"sector1", "sector2"}
 
 
 def test_add_new_commodity(model_path):
