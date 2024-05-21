@@ -47,6 +47,16 @@ def add_new_commodity(
         sector: Sector to add the commodity to.
         copy_from: Name of the commodity to copy from.
     """
+    # Add commodity to global commodities file
+    global_commodities_file = model_path / "input/GlobalCommodities.csv"
+    df = pd.read_csv(global_commodities_file)
+    new_rows = df[df["Commodity"] == copy_from.capitalize()].assign(
+        Commodity=commodity_name.capitalize(), CommodityName=commodity_name
+    )
+    df = pd.concat([df, new_rows])
+    df.to_csv(global_commodities_file, index=False)
+
+    # Add columns to additional files
     files_to_update = [
         model_path / file
         for file in [
@@ -56,23 +66,9 @@ def add_new_commodity(
             "input/BaseYearExport.csv",
             "input/Projections.csv",
         ]
-    ]
+    ] + list((model_path / "technodata/preset").glob("*"))
 
     for file in files_to_update:
-        df = pd.read_csv(file)
-        df[commodity_name] = df[copy_from]
-        df.to_csv(file, index=False)
-
-    global_commodities_file = model_path / "input/GlobalCommodities.csv"
-    df = pd.read_csv(global_commodities_file)
-    new_rows = df[df["Commodity"] == copy_from.capitalize()].assign(
-        Commodity=commodity_name.capitalize(), CommodityName=commodity_name
-    )
-    df = pd.concat([df, new_rows])
-    df.to_csv(global_commodities_file, index=False)
-
-    # Add to projections
-    for file in (model_path / "technodata/preset").glob("*"):
         df = pd.read_csv(file)
         df[commodity_name] = df[copy_from]
         df.to_csv(file, index=False)
