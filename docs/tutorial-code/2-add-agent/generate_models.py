@@ -29,7 +29,7 @@ def generate_model_2():
     shutil.copytree(parent_path / "../1-add-new-technology/2-scenario", model_path)
 
     # Modify MaxCapacityGrowth (Undocumented)
-    technodata_file = model_path / "technodata/residential/technodata.csv"
+    technodata_file = model_path / "technodata/residential/Technodata.csv"
     df = pd.read_csv(technodata_file)
     df.loc[1:, "MaxCapacityGrowth"] = 0.04
     df.to_csv(technodata_file, index=False)

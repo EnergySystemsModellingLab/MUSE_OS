@@ -30,7 +30,7 @@ def generate_model_1() -> None:
     os.rename(parent_path / "model", model_path)
 
     # Modify MaxCapacityGrowth (Undocumented)
-    technodata_file = model_path / "technodata/power/technodata.csv"
+    technodata_file = model_path / "technodata/power/Technodata.csv"
     df = pd.read_csv(technodata_file)
     df.loc[1:, "MaxCapacityGrowth"] = 0.2
     df.to_csv(technodata_file, index=False)
@@ -56,7 +56,7 @@ def generate_model_1() -> None:
     df.to_csv(commin_file, index=False)
 
     # Modify technodata for solarPV
-    technodata_file = model_path / "technodata/power/technodata.csv"
+    technodata_file = model_path / "technodata/power/Technodata.csv"
     df = pd.read_csv(technodata_file)
     df.loc[df["ProcessName"] == "solarPV", "cap_par"] = 30
     df.loc[df["ProcessName"] == "solarPV", "Fuel"] = "solar"
@@ -87,7 +87,7 @@ def generate_model_2() -> None:
     add_price_data_for_new_year(model_path, "2040", "power", "2020")
 
     # Modify cap_par for solarPV
-    technodata_file = model_path / "technodata/power/technodata.csv"
+    technodata_file = model_path / "technodata/power/Technodata.csv"
     df = pd.read_csv(technodata_file)
     df.loc[(df["ProcessName"] == "solarPV") & (df["Time"] == "2020"), "cap_par"] = 40
     df.loc[(df["ProcessName"] == "solarPV") & (df["Time"] == "2040"), "cap_par"] = 30

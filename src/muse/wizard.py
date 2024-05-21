@@ -32,7 +32,7 @@ def get_sectors(model_path: Path) -> List[str]:
     return [
         s.name
         for s in (model_path / "technodata").iterdir()
-        if (s / "technodata.csv").is_file()
+        if (s / "Technodata.csv").is_file()
     ]
 
 
@@ -95,7 +95,7 @@ def add_new_process(
             f"technodata/{sector}/CommIn.csv",
             f"technodata/{sector}/CommOut.csv",
             f"technodata/{sector}/ExistingCapacity.csv",
-            f"technodata/{sector}/technodata.csv",
+            f"technodata/{sector}/Technodata.csv",
         ]
     ]
 
@@ -120,7 +120,7 @@ def add_price_data_for_new_year(
     """
     files_to_update = [
         model_path / f"technodata/{sector}/{file}"
-        for file in ["technodata.csv", "CommIn.csv", "CommOut.csv"]
+        for file in ["Technodata.csv", "CommIn.csv", "CommOut.csv"]
     ]
 
     for file in files_to_update:
@@ -167,7 +167,7 @@ def add_agent(
     df.to_csv(agents_file, index=False)
 
     for sector in get_sectors(model_path):
-        technodata_file = model_path / f"technodata/{sector}/technodata.csv"
+        technodata_file = model_path / f"technodata/{sector}/Technodata.csv"
         df = pd.read_csv(technodata_file)
         if copy_from_retrofit in df.columns:
             df[agentshare_retrofit] = df[copy_from_retrofit]
@@ -193,7 +193,7 @@ def add_region(model_path: Path, region_name: str, copy_from: str) -> None:
         model_path / "technodata" / sector / file
         for sector in get_sectors(model_path)
         for file in [
-            "technodata.csv",
+            "Technodata.csv",
             "CommIn.csv",
             "CommOut.csv",
             "ExistingCapacity.csv",
