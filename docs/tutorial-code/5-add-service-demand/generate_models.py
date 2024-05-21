@@ -7,13 +7,12 @@ from muse.wizard import add_new_commodity, add_new_process
 parent_path = Path(__file__).parent
 
 
-"""
-Model 1 - New service demand
-
-"""
-
-
 def generate_model_1():
+    """Generates the first model for tutorial 5.
+
+    Adds a new service demand for cooking.
+
+    """
     model_name = "1-new-service-demand"
 
     # Starting point: copy model from tutorial 4

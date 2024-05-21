@@ -8,13 +8,12 @@ from muse import examples
 parent_path = Path(__file__).parent
 
 
-"""
-Model 1 - Min constraint
-
-"""
-
-
 def generate_model_1() -> None:
+    """Generates the first model for tutorial 7.
+
+    Adds a minimum service factor constraint for gasCCGT.
+
+    """
     model_name = "1-min-constraint"
     model_path = parent_path / model_name
     if model_path.exists():
@@ -39,6 +38,11 @@ def generate_model_1() -> None:
 
 
 def generate_model_2() -> None:
+    """Generates the second model for tutorial 7.
+
+    Adds a maximum service factor constraint for windturbine.
+
+    """
     model_name = "2-max-constraint"
     model_path = parent_path / model_name
     if model_path.exists():

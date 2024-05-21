@@ -9,13 +9,13 @@ from muse.wizard import (
 
 parent_path = Path(__file__).parent
 
-"""
-Model 1 - Introduction
-
-"""
-
 
 def generate_model_1() -> None:
+    """Generates the first model for tutorial 6.
+
+    Adds correlation demand for residential sector.
+
+    """
     model_name = "1-correlation"
     model_path = parent_path / model_name
     if model_path.exists():

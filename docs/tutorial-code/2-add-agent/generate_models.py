@@ -8,8 +8,6 @@ parent_path = Path(__file__).parent
 
 
 """
-Model 2 - Single objective
-
 Note: Generating the models in reverse order as this makes more sense programmatically.
 Consider changing the tutorial
 
@@ -17,6 +15,11 @@ Consider changing the tutorial
 
 
 def generate_model_2():
+    """Generates the second model for tutorial 2.
+
+    Adds a new agent to the model with a single objective.
+
+    """
     model_name = "2-single-objective"
 
     # Starting point: copy model from previous tutorial
@@ -49,13 +52,12 @@ def generate_model_2():
         df.to_csv(technodata_file, index=False)
 
 
-"""
-Model 1 - Multiple objective
-
-"""
-
-
 def generate_model_1():
+    """Generates the first model for tutorial 2.
+
+    Adds a second objective for agent A2.
+
+    """
     model_name = "1-multiple-objective"
 
     # Starting point: copy model from previous tutorial

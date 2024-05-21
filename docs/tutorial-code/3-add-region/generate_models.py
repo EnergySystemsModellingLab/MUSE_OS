@@ -7,13 +7,12 @@ from muse.wizard import add_region
 parent_path = Path(__file__).parent
 
 
-"""
-Model 1 - New region
-
-"""
-
-
 def generate_model_1():
+    """Generates the first model for tutorial 3.
+
+    Adds a new region to the model.
+
+    """
     model_name = "1-new-region"
 
     # Starting point: copy model from tutorial 1
