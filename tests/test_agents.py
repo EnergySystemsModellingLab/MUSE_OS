@@ -41,8 +41,8 @@ def test_create_retrofit(agent_args, technologies, stock):
         **agent_args,
     )
     assert isinstance(agent, Agent)
-    assert len(agent.assets.capacity) == 0
-    assert "asset" in agent.assets.dims and len(agent.assets.asset) == 0
+    assert (agent.assets.capacity == 0).all()
+    assert "asset" in agent.assets.dims and len(agent.assets.asset) != 0
     assert "year" in agent.assets.dims or len(agent.assets.year) > 1
     assert "region" not in agent.assets.dims
     assert "commodity" not in agent.assets.dims
@@ -76,8 +76,8 @@ def test_create_newcapa(agent_args, technologies, stock):
         **agent_args,
     )
     assert isinstance(agent, Agent)
-    assert len(agent.assets.capacity) == 0
-    assert "asset" in agent.assets.dims and len(agent.assets.asset) == 0
+    assert (agent.assets.capacity == 0).all()
+    assert "asset" in agent.assets.dims and len(agent.assets.asset) != 0
     assert "year" in agent.assets.dims or len(agent.assets.year) > 1
     assert "region" not in agent.assets.dims
     assert "commodity" not in agent.assets.dims
@@ -129,8 +129,8 @@ def test_issue_835_and_842(agent_args, technologies, stock):
         **agent_args,
     )
     assert isinstance(agent, Agent)
-    assert len(agent.assets.capacity) == 0
-    assert "asset" in agent.assets.dims and len(agent.assets.asset) == 0
+    assert (agent.assets.capacity == 0).all()
+    assert "asset" in agent.assets.dims and len(agent.assets.asset) != 0
     assert "year" in agent.assets.dims or len(agent.assets.year) > 1
     assert "region" not in agent.assets.dims
     assert "commodity" not in agent.assets.dims
