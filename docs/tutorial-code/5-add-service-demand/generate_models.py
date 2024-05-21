@@ -14,7 +14,7 @@ Model 1 - New service demand
 
 
 def generate_model_1():
-    model_name = "1-new-service-demand"
+    model_name = "1-exogenous-demand"
 
     # Starting point: copy model from tutorial 4
     model_path = parent_path / model_name
@@ -34,8 +34,8 @@ def generate_model_1():
     df.loc[1:, "cook"] = 100
     df.to_csv(projections_file, index=False)
 
-    # Copy windturbine process in power sector -> cook
-    add_new_process(model_path, "estove", "residential", "heatpump")
+    # Copy processes in power sector -> cook
+    add_new_process(model_path, "electric_stove", "residential", "heatpump")
     add_new_process(model_path, "gas_stove", "residential", "gasboiler")
 
     # Modify output commodities
@@ -43,7 +43,7 @@ def generate_model_1():
     df = pd.read_csv(commout_file)
     df.loc[1:, "cook"] = 0
     df.loc[df["ProcessName"] == "gas_stove", df.columns[-6:]] = [0, 0, 0, 50, 0, 1]
-    df.loc[df["ProcessName"] == "estove", df.columns[-6:]] = [0, 0, 0, 0, 0, 1]
+    df.loc[df["ProcessName"] == "electric_stove", df.columns[-6:]] = [0, 0, 0, 0, 0, 1]
     df.to_csv(commout_file, index=False)
 
     # Modify input commodities
@@ -55,19 +55,21 @@ def generate_model_1():
     # Change cap_par, Fuel and EndUse
     technodata_file = model_path / "technodata/residential/Technodata.csv"
     df = pd.read_csv(technodata_file)
-    df.loc[df["ProcessName"] == "gas_stove", "cap_par"] = 8.8667
     df.loc[df["ProcessName"] == "gas_stove", "Fuel"] = "gas"
     df.loc[df["ProcessName"] == "electric_stove", "Fuel"] = "electricity"
     df.loc[df["ProcessName"] == "gas_stove", "EndUse"] = "cook"
     df.loc[df["ProcessName"] == "electric_stove", "EndUse"] = "cook"
     df.to_csv(technodata_file, index=False)
 
-    # Change power sector limits
+    # Increase capacity limits in power sector
     technodata_file = model_path / "technodata/power/Technodata.csv"
     df = pd.read_csv(technodata_file)
-    df.loc[1:, "MaxCapacityAddition"] = 4
-    df.loc[1:, "MaxCapacityGrowth"] = 0.4
-    df.loc[1:, "TotalCapacityLimit"] = 60
+    df.loc[1:, "MaxCapacityAddition"] = pd.to_numeric(df.loc[1:, "MaxCapacityAddition"])
+    df.loc[1:, "MaxCapacityAddition"] *= 2
+    df.loc[1:, "MaxCapacityGrowth"] = pd.to_numeric(df.loc[1:, "MaxCapacityGrowth"])
+    df.loc[1:, "MaxCapacityGrowth"] *= 2
+    df.loc[1:, "TotalCapacityLimit"] = pd.to_numeric(df.loc[1:, "TotalCapacityLimit"])
+    df.loc[1:, "TotalCapacityLimit"] *= 2
     df.to_csv(technodata_file, index=False)
 
 
