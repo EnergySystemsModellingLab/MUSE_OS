@@ -8,13 +8,12 @@ from tomlkit import dumps, parse
 parent_path = Path(__file__).parent
 
 
-"""
-Model 1 - Modify timeslices
-
-"""
-
-
 def generate_model_1():
+    """Generates first model for tutorial 4.
+
+    Adds two new timeslices to the model.
+
+    """
     model_name = "1-modify-timeslices"
 
     # Starting point: copy model from tutorial 3
@@ -72,6 +71,11 @@ def generate_model_1():
 
 
 def generate_model_2():
+    """Generates the second model for tutorial 4.
+
+    Modifies the time framework of the model to every two years.
+
+    """
     model_name = "2-modify-time-framework"
 
     # Starting point: copy previous model

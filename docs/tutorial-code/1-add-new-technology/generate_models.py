@@ -14,13 +14,12 @@ from muse.wizard import (
 parent_path = Path(__file__).parent
 
 
-"""
-Model 1 - Introduction
-
-"""
-
-
 def generate_model_1() -> None:
+    """Generates the first model for tutorial 1.
+
+    Adds solarPV to the default model.
+
+    """
     model_name = "1-introduction"
     model_path = parent_path / model_name
     if model_path.exists():
@@ -71,6 +70,11 @@ def generate_model_1() -> None:
 
 
 def generate_model_2() -> None:
+    """Generates the second model for tutorial 1.
+
+    Changes the price of solar between 2020 and 2040.
+
+    """
     model_name = "2-scenario"
     model_path = parent_path / model_name
     if model_path.exists():
