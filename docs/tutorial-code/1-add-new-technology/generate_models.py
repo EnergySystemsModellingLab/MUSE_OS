@@ -29,12 +29,6 @@ def generate_model_1() -> None:
     examples.copy_model(name="default", path=parent_path, overwrite=True)
     os.rename(parent_path / "model", model_path)
 
-    # Change maximum_iterations to 100 (Undocumented)
-    settings_file = model_path / "settings.toml"
-    modify_toml(
-        settings_file, lambda settings: settings.update({"maximum_iterations": 100})
-    )
-
     # Copy wind commodity in power sector -> solar
     add_new_commodity(model_path, "solar", "power", "wind")
 
