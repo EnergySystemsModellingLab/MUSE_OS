@@ -29,12 +29,6 @@ def generate_model_1() -> None:
     examples.copy_model(name="default", path=parent_path, overwrite=True)
     os.rename(parent_path / "model", model_path)
 
-    # Modify MaxCapacityGrowth (Undocumented)
-    technodata_file = model_path / "technodata/power/Technodata.csv"
-    df = pd.read_csv(technodata_file)
-    df.loc[1:, "MaxCapacityGrowth"] = 0.2
-    df.to_csv(technodata_file, index=False)
-
     # Change maximum_iterations to 100 (Undocumented)
     settings_file = model_path / "settings.toml"
     modify_toml(
