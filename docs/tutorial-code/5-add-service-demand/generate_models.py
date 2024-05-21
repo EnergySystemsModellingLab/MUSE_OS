@@ -12,7 +12,7 @@ def generate_model_1():
 
     Adds a new service demand for cooking.
 
-def generate_model_1():
+    """
     model_name = "1-exogenous-demand"
 
     # Starting point: copy model from tutorial 4
