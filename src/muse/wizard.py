@@ -1,4 +1,5 @@
 import os
+from itertools import chain
 from pathlib import Path
 from typing import Callable, List
 
@@ -57,18 +58,18 @@ def add_new_commodity(
     df.to_csv(global_commodities_file, index=False)
 
     # Add columns to additional files
-    files_to_update = [
+    files_to_update = (
         model_path / file
-        for file in [
+        for file in (
             f"technodata/{sector}/CommIn.csv",
             f"technodata/{sector}/CommOut.csv",
             "input/BaseYearImport.csv",
             "input/BaseYearExport.csv",
             "input/Projections.csv",
-        ]
-    ] + list((model_path / "technodata/preset").glob("*"))
-
-    for file in files_to_update:
+        )
+    )
+    preset_files = (model_path / "technodata/preset").glob("*")
+    for file in chain(files_to_update, preset_files):
         df = pd.read_csv(file)
         df[commodity_name] = df[copy_from]
         df.to_csv(file, index=False)
@@ -85,15 +86,15 @@ def add_new_process(
         sector: Sector to add the process to.
         copy_from: Name of the process to copy from.
     """
-    files_to_update = [
+    files_to_update = (
         model_path / file
-        for file in [
+        for file in (
             f"technodata/{sector}/CommIn.csv",
             f"technodata/{sector}/CommOut.csv",
             f"technodata/{sector}/ExistingCapacity.csv",
             f"technodata/{sector}/Technodata.csv",
-        ]
-    ]
+        )
+    )
 
     for file in files_to_update:
         df = pd.read_csv(file)
@@ -114,10 +115,10 @@ def add_price_data_for_new_year(
         sector: Sector to add the price data to.
         copy_from: Year to copy the price data from.
     """
-    files_to_update = [
+    files_to_update = (
         model_path / f"technodata/{sector}/{file}"
         for file in ["Technodata.csv", "CommIn.csv", "CommOut.csv"]
-    ]
+    )
 
     for file in files_to_update:
         df = pd.read_csv(file)
@@ -185,30 +186,30 @@ def add_region(model_path: Path, region_name: str, copy_from: str) -> None:
     modify_toml(settings_file, lambda x: x["regions"].append(region_name))
 
     # Modify csv files
-    sector_files = [
+    sector_files = (
         model_path / "technodata" / sector / file
         for sector in get_sectors(model_path)
-        for file in [
+        for file in (
             "Technodata.csv",
             "CommIn.csv",
             "CommOut.csv",
             "ExistingCapacity.csv",
-        ]
-    ]
-    preset_files = [
+        )
+    )
+    preset_files = (
         model_path / "technodata" / "preset" / file
         for file in os.listdir(model_path / "technodata" / "preset")
-    ]
-    global_files = [
+    )
+    global_files = (
         model_path / file
-        for file in [
+        for file in (
             "technodata/Agents.csv",
             "input/BaseYearImport.csv",
             "input/BaseYearExport.csv",
             "input/Projections.csv",
-        ]
-    ]
-    for file_path in sector_files + preset_files + global_files:
+        )
+    )
+    for file_path in chain(sector_files, preset_files, global_files):
         df = pd.read_csv(file_path)
         new_rows = df[df["RegionName"] == copy_from].copy()
         new_rows["RegionName"] = region_name
