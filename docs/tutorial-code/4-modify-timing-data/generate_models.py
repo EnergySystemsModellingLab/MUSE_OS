@@ -44,7 +44,7 @@ def generate_model_1():
     }  # hacky way to preserve the order
     settings_file.write_text(dumps(settings))
 
-    # Change consumption profile (Undocumented)
+    # Change consumption profile
     consumption_values = [
         0.714,
         1.071,
