@@ -16,22 +16,23 @@ tolerance_unmet_demand = -0.1
 [[outputs]]
 quantity = "prices"
 sink = "aggregate"
-filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
 quantity = "capacity"
 sink = "aggregate"
-filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
-
-[[outputs]]
-quantity = "timeslice_consumption"
-sink = "aggregate"
-filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
-
-[[outputs]]
-quantity = "timeslice_supply"
-sink = "aggregate"
-filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+index = false
+keep_columns = [
+    'technology',
+    'dst_region',
+    'region',
+    'agent',
+    'sector',
+    'type',
+    'year',
+    'capacity'
+]
 
 # Carbon budget control
 [carbon_budget_control]
@@ -63,6 +64,21 @@ constraints = [
 demand_share = "new_and_retro"  # Optional, default to new_and_retro
 forecast = 5  # Optional, defaults to 5
 
+[[sectors.residential.outputs]]
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+quantity = "capacity"
+sink = 'csv'
+overwrite = true
+index = false
+
+[[sectors.residential.outputs]]
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+sink = 'csv'
+overwrite = true
+quantity.name = "supply"
+quantity.sum_over = "timeslice"
+quantity.drop = ["comm_usage", "units_prices"]
+
 [[sectors.residential.interactions]]
 net = 'new_to_retro'
 interaction = 'transfer'
@@ -79,6 +95,13 @@ commodities_out = '{path}/technodata/power/CommOut.csv'
 agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
 lpsolver = "scipy"
+
+[[sectors.power.outputs]]
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+quantity = "capacity"
+sink = 'csv'
+overwrite = true
+index = false
 
 [[sectors.power.interactions]]
 net = 'new_to_retro'
@@ -97,6 +120,13 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/gas/ExistingCapacity.csv'
 lpsolver = "scipy"
 
+[[sectors.gas.outputs]]
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+quantity = "capacity"
+sink = 'csv'
+overwrite = true
+index = false
+
 [[sectors.gas.interactions]]
 net = 'new_to_retro'
 interaction = 'transfer'
@@ -108,9 +138,11 @@ consumption_path = "{path}/technodata/preset/*Consumption.csv"
 
 [timeslices]
 level_names = ["month", "day", "hour"]
-all-year.all-week.night = 1460
-all-year.all-week.morning = 1460
-all-year.all-week.afternoon = 1460
-all-year.all-week.early-peak = 1460
-all-year.all-week.late-peak = 1460
-all-year.all-week.evening = 1460
+
+[timeslices.all-year.all-week]
+night = 1460
+morning = 1460
+afternoon = 1460
+early-peak = 1460
+late-peak = 1460
+evening = 1460
