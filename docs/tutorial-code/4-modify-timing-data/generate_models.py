@@ -46,27 +46,27 @@ def generate_model_1():
 
     # Change consumption profile
     consumption_values = [
-        0.714,
-        1.071,
-        0.714,
-        1.071,
-        2.143,
-        1.429,
-        1.429,
-        1.429,
-        0.714,
-        1.071,
-        0.714,
-        1.071,
-        2.143,
-        1.429,
-        1.429,
-        1.429,
+        0.7,
+        1.0,
+        0.7,
+        1.0,
+        2.1,
+        1.4,
+        1.4,
+        1.4,
+        0.7,
+        1.0,
+        0.7,
+        1.0,
+        2.1,
+        1.4,
+        1.4,
+        1.4,
     ]
     for year, multiplier in zip([2020, 2050], [1, 3]):
         file = model_path / f"technodata/preset/Residential{year}Consumption.csv"
         df = pd.read_csv(file)
-        df["heat"] = [i * multiplier for i in consumption_values]
+        df["heat"] = [round(i * multiplier, 1) for i in consumption_values]
         df.to_csv(file, index=False)
 
 
