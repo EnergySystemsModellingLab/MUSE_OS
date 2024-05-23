@@ -22,12 +22,6 @@ def generate_model_1():
         shutil.rmtree(model_path)
     shutil.copytree(parent_path / "../3-add-region/1-new-region", model_path)
 
-    # Modify MaxCapacityGrowth (Undocumented)
-    technodata_file = model_path / "technodata/residential/Technodata.csv"
-    df = pd.read_csv(technodata_file)
-    df.loc[1:, "MaxCapacityGrowth"] = 0.04
-    df.to_csv(technodata_file, index=False)
-
     # Add timeslices
     add_timeslice(model_path, timeslice_name="early-morning", copy_from="evening")
     add_timeslice(model_path, timeslice_name="late-afternoon", copy_from="evening")
@@ -114,7 +108,7 @@ def generate_model_2():
     df.loc[1:, "MaxCapacityAddition"] = pd.to_numeric(df.loc[1:, "MaxCapacityAddition"])
     df.loc[1:, "MaxCapacityAddition"] *= 2
     df.loc[1:, "MaxCapacityGrowth"] = pd.to_numeric(df.loc[1:, "MaxCapacityGrowth"])
-    df.loc[1:, "MaxCapacityGrowth"] *= 2
+    df.loc[1:, "MaxCapacityGrowth"] *= 3
     df.loc[1:, "TotalCapacityLimit"] = pd.to_numeric(df.loc[1:, "TotalCapacityLimit"])
     df.loc[1:, "TotalCapacityLimit"] *= 2
     df.to_csv(technodata_file, index=False)
