@@ -21,12 +21,6 @@ def generate_model_1():
         shutil.rmtree(model_path)
     shutil.copytree(parent_path / "../1-add-new-technology/2-scenario", model_path)
 
-    # Modify MaxCapacityGrowth (Undocumented)
-    technodata_file = model_path / "technodata/residential/Technodata.csv"
-    df = pd.read_csv(technodata_file)
-    df.loc[1:, "MaxCapacityGrowth"] = 0.04
-    df.to_csv(technodata_file, index=False)
-
     # Copy agent A1 -> A2
     add_agent(
         model_path,
@@ -35,6 +29,12 @@ def generate_model_1():
         agentshare_new="Agent3",
         agentshare_retrofit="Agent4",
     )
+
+    # Split population between the two agents
+    agents_file = model_path / "technodata/Agents.csv"
+    df = pd.read_csv(agents_file)
+    df.loc[:, "Quantity"] = 0.5
+    df.to_csv(agents_file, index=False)
 
     # Split capacity equally between the two agents
     for sector in get_sectors(model_path):
@@ -65,7 +65,14 @@ def generate_model_2():
     df.loc[df["Name"] == "A2", "Objective2"] = "EAC"
     df.loc[df["Name"] == "A2", "DecisionMethod"] = "weighted_sum"
     df.loc[df["Name"] == "A2", ["ObjData1", "ObjData2"]] = 0.5
+    df.loc[df["Name"] == "A2", "Objsort2"] = True
     df.to_csv(agents_file, index=False)
+
+    # Modify residential sector MaxCapacityGrowth (Undocumented)
+    technodata_file = model_path / "technodata/residential/Technodata.csv"
+    df = pd.read_csv(technodata_file)
+    df.loc[1:, "MaxCapacityGrowth"] = 0.04
+    df.to_csv(technodata_file, index=False)
 
 
 if __name__ == "__main__":
