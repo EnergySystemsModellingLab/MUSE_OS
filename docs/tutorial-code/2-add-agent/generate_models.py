@@ -68,7 +68,7 @@ def generate_model_2():
     df.loc[df["Name"] == "A2", "Objsort2"] = True
     df.to_csv(agents_file, index=False)
 
-    # Modify residential sector MaxCapacityGrowth (Undocumented)
+    # Modify residential sector MaxCapacityGrowth
     technodata_file = model_path / "technodata/residential/Technodata.csv"
     df = pd.read_csv(technodata_file)
     df.loc[1:, "MaxCapacityGrowth"] = 0.04
