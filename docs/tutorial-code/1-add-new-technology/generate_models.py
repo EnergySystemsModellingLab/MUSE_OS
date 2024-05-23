@@ -50,7 +50,7 @@ def generate_model_1() -> None:
     df.loc[df["ProcessName"] == "solarPV", "Fuel"] = "solar"
     df.to_csv(technodata_file, index=False)
 
-    # Add solar to excluded commodities (Undocumented)
+    # Add solar to excluded commodities
     settings_file = model_path / "settings.toml"
     modify_toml(
         settings_file, lambda settings: settings["excluded_commodities"].append("solar")
