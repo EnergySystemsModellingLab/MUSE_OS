@@ -523,7 +523,7 @@ def capital_recovery_factor(
     Energy.
 
     .. _capital recovery factor:
-        https://www.homerenergy.com/products/pro/docs/3.11/capital_recovery_factor.html
+        https://www.homerenergy.com/products/pro/docs/3.15/capital_recovery_factor.html
 
     Arguments:
         agent: The agent of interest
@@ -702,7 +702,7 @@ def net_present_value(
     it. Follows the definition of the `net present cost`_ given by HOMER Energy.
     Metrics are calculated
     .. _net present cost:
-    ..      https://www.homerenergy.com/products/pro/docs/3.11/net_present_cost.html
+    ..      https://www.homerenergy.com/products/pro/docs/3.15/net_present_cost.html
 
     - energy commodities INPUTS are related to fuel costs
     - environmental commodities OUTPUTS are related to environmental costs
@@ -910,7 +910,7 @@ def equivalent_annual_cost(
     `annualized cost`_ expression given by HOMER Energy.
 
     .. _annualized cost:
-        https://www.homerenergy.com/products/pro/docs/3.11/annualized_cost.html
+        https://www.homerenergy.com/products/pro/docs/3.15/annualized_cost.html
 
     Arguments:
         agent: The agent of interest
