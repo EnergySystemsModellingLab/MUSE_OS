@@ -141,7 +141,7 @@ def weighted_sum(objectives: Dataset, parameters: Mapping[Text, float]) -> DataA
         \sum_m c_m \frac{A_m - \min(A_m)}{\max(A_m) - \min(A_m)}
 
     where sum runs over the different objectives, c_m is a scalar coefficient,
-    A_m is a matrix with dimensions (existing tech, replacemnt tech). `max(A)`
+    A_m is a matrix with dimensions (existing tech, replacement tech). `max(A)`
     and `min(A)` return the largest and smallest component of the input matrix.
     If c_m is positive, then that particular objective is minimized, whereas if
     it is negative, that particular objective is maximized.
