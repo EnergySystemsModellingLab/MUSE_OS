@@ -115,7 +115,7 @@ TechnicalLife
    represents the number of years that a technology operates before it is decommissioned.
 
 UtilizationFactor
-   represents the maximum actual output of the technology in a year, divided by the theoretical maximum output if the technology were operating at full capacity for the whole year.
+   represents the maximum actual output of the technology in a year, divided by the theoretical maximum output if the technology were operating at full capacity for the whole year. Should be between 0 and 1.
 
 ScalingSize
    represents the reference capacity at which capital costs are estimated when used as agents' objective as described in :ref:`inputs-agents`.
