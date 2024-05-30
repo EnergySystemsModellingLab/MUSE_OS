@@ -34,7 +34,7 @@ hour
    represents the third level of the timeslice.
 
 UtilizationFactor
-   represents the maximum actual output of the technology in a timeslice, divided by the theoretical maximum output if the technology were operating at full capacity for the whole timeslice. Should be between 0 and 1. This overwrites the UtilizationFactor in the technodata file.
+   represents the maximum actual output of the technology in a timeslice, divided by the theoretical maximum output if the technology were operating at full capacity for the whole timeslice. Must be between 0 and 1. This overwrites the UtilizationFactor in the technodata file.
 
 MinimumServiceFactor
    represents the minimum service that a technology can output. For instance, the minimum amount of electricity that can be output from a nuclear power plant at a particular timeslice.
