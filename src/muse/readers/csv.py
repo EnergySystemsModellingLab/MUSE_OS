@@ -17,7 +17,7 @@ __all__ = [
 ]
 
 from pathlib import Path
-from typing import Hashable, List, Optional, Sequence, Text, Union, cast
+from typing import List, Optional, Sequence, Text, Union, cast
 
 import numpy as np
 import pandas as pd
