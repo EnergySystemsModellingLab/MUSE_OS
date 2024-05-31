@@ -75,10 +75,17 @@ class PresetSector(AbstractSector):  # type: ignore
                 )
                 assert consumption.commodity.isin(shares.commodity).all()
                 assert consumption.region.isin(shares.region).all()
-                consumption = consumption * shares.sel(
-                    region=consumption.region, commodity=consumption.commodity
-                )
-            presets["consumption"] = consumption.assign_coords(timeslice=timeslice)
+                if "timeslice" in shares.dims:
+                    ts = shares.timeslice
+                    shares = shares.drop_vars(["timeslice", "month", "day", "hour"])
+                    consumption = (shares * consumption).assign_coords(timeslice=ts)
+                else:
+                    consumption = consumption * shares.sel(
+                        region=consumption.region, commodity=consumption.commodity
+                    )
+            presets["consumption"] = consumption.drop_vars(
+                ["timeslice", "month", "day", "hour"]
+            ).assign_coords(timeslice=timeslice)
 
         if getattr(sector_conf, "supply_path", None) is not None:
             supply = read_csv_outputs(sector_conf.supply_path)

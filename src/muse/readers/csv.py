@@ -502,7 +502,6 @@ def read_timeslice_shares(
         result = result.drop_vars("timeslice")
     elif isinstance(timeslice, xr.DataArray) and hasattr(timeslice, "timeslice"):
         result["timeslice"] = timeslice.timeslice
-        result[cast(Hashable, timeslice.name)] = timeslice
     else:
         result["timeslice"] = timeslice
     return result.shares
