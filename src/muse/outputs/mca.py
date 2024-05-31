@@ -182,13 +182,23 @@ def prices(
     """Current MCA market prices."""
     from muse.outputs.sector import market_quantity
 
+    ts_coords = list(market.indexes["timeslice"].names)
     result = market_quantity(market.prices, **kwargs).to_dataframe()
     if drop_empty:
         result = result[result.prices != 0]
+
     if isinstance(keep_columns, Text):
-        result = result[[keep_columns]]
+        result = result[[*ts_coords, keep_columns]]
+
     elif keep_columns is not None and len(keep_columns) > 0:
-        result = result[[u for u in result.columns if u in keep_columns]]
+        result = result[ts_coords + [u for u in result.columns if u in keep_columns]]
+
+    # We assign back a timeslice column with the original coordinate names
+    # Each timeslice is a tuple of the original coordinates (month, day, hour)
+    index_names = result.index.names
+    result = result.reset_index()
+    result["timeslice"] = list(zip(*[result[name] for name in ts_coords]))
+    result = result.set_index(index_names, drop=True).drop(ts_coords, axis=1)
     return result
 
 
