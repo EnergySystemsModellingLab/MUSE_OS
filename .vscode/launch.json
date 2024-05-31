@@ -20,7 +20,7 @@
         },
         {
             "name": "Model: default_timeslice",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "muse",
             "args": ["--model", "default_timeslice"]
