@@ -138,9 +138,11 @@ consumption_path = "{path}/technodata/preset/*Consumption.csv"
 
 [timeslices]
 level_names = ["month", "day", "hour"]
-all-year.all-week.night = 1460
-all-year.all-week.morning = 1460
-all-year.all-week.afternoon = 1460
-all-year.all-week.early-peak = 1460
-all-year.all-week.late-peak = 1460
-all-year.all-week.evening = 1460
+
+[timeslices.all-year.all-week]
+night = 1460
+morning = 1460
+afternoon = 1460
+early-peak = 1460
+late-peak = 1460
+evening = 1460

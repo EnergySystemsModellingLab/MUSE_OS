@@ -357,6 +357,8 @@ def _shared_capacity(
 
     techs = (existing > 0) & (shares > 0)
     techs = techs.any([u for u in techs.dims if u != "asset"])
+    if not any(techs):
+        return (capacity * shares).copy()
     return (capacity * shares).sel(asset=techs.values).copy()
 
 
