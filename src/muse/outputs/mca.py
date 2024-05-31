@@ -403,6 +403,7 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             data_agent["sector"] = getattr(sector, "name", "unnamed")
 
             a = data_agent.to_dataframe("supply")
+            a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
             if len(a) > 0 and len(a.technology.values) > 0:
                 b = a.drop(
                     ["month", "day", "hour"], axis=1, errors="ignore"
