@@ -29,7 +29,7 @@ def multiindex_to_coords(
     assert isinstance(data.indexes[dimension], MultiIndex)
     names = data.indexes[dimension].names
     coords = {n: data[n].values for n in names}
-    result = data.drop_vars([dimension] + names)
+    result = data.drop_vars([dimension, *names])
     for name, coord in coords.items():
         result[name] = dimension, coord
     if isinstance(result, xr.Dataset):
@@ -395,7 +395,6 @@ def merge_assets(
     """Merge two capacity arrays."""
     years = sorted(set(capa_a.year.values).union(capa_b.year.values))
 
-    levels = (coord for coord in capa_a.coords if capa_a[coord].dims == (dimension,))
     if len(capa_a.year) == 1:
         result = xr.concat(
             (
