@@ -28,7 +28,8 @@ dependencies = [
     "toml",
     "xlrd",
     "mypy-extensions",
-    "pypubsub"
+    "pypubsub",
+    "tomlkit"
 ]
 dynamic = ["version"]
 
