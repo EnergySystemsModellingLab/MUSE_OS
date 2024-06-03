@@ -43,6 +43,10 @@ jobs:
       - name: Upload coverage to Codecov
         if: success() && (runner.os == 'Linux' && matrix.python-version == 3.9)
         uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
 
       - name: Unit tests (not linux)
         if: (runner.os != 'Linux')
