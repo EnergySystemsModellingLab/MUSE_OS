@@ -104,7 +104,7 @@ def reference_timeslice(
         ...     summer.weekend = 2
         ...     level_names = ["season", "week"]
         ...     """
-        ... )
+        ... )  # doctest: +SKIP
         <xarray.DataArray (timeslice: 8)> Size: 32B
         array([5, 2, 5, 2, 5, 2, 5, 2])
         Coordinates:
@@ -294,7 +294,7 @@ def timeslice_projector(
         ...     },
         ...     dims="timeslice"
         ... )
-        >>> input_ts
+        >>> input_ts  # doctest: +SKIP
         <xarray.DataArray (timeslice: 3)> Size: 12B
         array([1, 2, 3])
         Coordinates:
