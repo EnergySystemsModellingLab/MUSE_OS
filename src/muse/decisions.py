@@ -92,12 +92,12 @@ def register_decision(function: DECISION_SIGNATURE, name: Text):
     return decorated
 
 
-def coeff_sign(domin: bool, coeff: Any):
+def coeff_sign(domain: bool, coeff: Any):
     """Adds sign to coefficient depending on minimizing or maximizing.
 
     This function standardizes across the decision methods.
     """
-    return coeff if domin else -coeff
+    return coeff if domain else -coeff
 
 
 def factory(settings: Union[Text, Mapping] = "mean") -> Callable:
