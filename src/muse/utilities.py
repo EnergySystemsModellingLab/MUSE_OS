@@ -115,7 +115,7 @@ def reduce_assets(
         The point of `reduce_assets` is to aggregate assets that refer to the
         same process:
 
-        >>> reduce_assets(data.capacity)
+        >>> reduce_assets(data.capacity)  # doctest: +ELLIPSIS
         <xarray.DataArray 'capacity' (year: 3, asset: 3)> Size: 36B
         array([[ 0,  3,  3],
                [ 4,  7, 11],
@@ -134,7 +134,7 @@ def reduce_assets(
         ...     data.capacity,
         ...     coords=('technology', 'installed'),
         ...     operation = lambda x: x.mean(dim='asset')
-        ... )
+        ... )  # doctest: +ELLIPSIS
         <xarray.DataArray 'capacity' (year: 3, asset: 3)> Size: 72B
         array([[ 0. ,  1.5,  3. ],
                [ 4. ,  5.5,  7. ],
@@ -491,7 +491,7 @@ def future_propagation(
         values differed for the current year beyond a given threshold:
 
         >>> from muse.utilities import future_propagation
-        >>> future_propagation(data, future, threshold=0.1)
+        >>> future_propagation(data, future, threshold=0.1)  # doctest: +ELLIPSIS
         <xarray.DataArray (fuel: 2, year: 4)> Size: 64B
         array([[ 0. ,  1.2,  1.2,  1.2],
                [-5. , -4. , -3. , -2. ]])
@@ -505,14 +505,18 @@ def future_propagation(
         The dimensions of ``future`` do not have to match exactly those of ``data``.
         Standard broadcasting is used if they do not match:
 
-        >>> future_propagation(data, future.sel(fuel="gas", drop=True), threshold=0.1)
+        >>> future_propagation(
+        ...    data, future.sel(fuel="gas", drop=True), threshold=0.1
+        ... )  # doctest: +ELLIPSIS
         <xarray.DataArray (fuel: 2, year: 4)> Size: 64B
         array([[ 0. ,  1.2,  1.2,  1.2],
                [-5. ,  1.2,  1.2,  1.2]])
         Coordinates:
           * year     (year) int32 16B 2020 2025 2030 2035
           * fuel     (fuel) <U4 32B 'gas' 'coal'
-        >>> future_propagation(data, future.sel(fuel="coal", drop=True), threshold=0.1)
+        >>> future_propagation(
+        ...     data, future.sel(fuel="coal", drop=True), threshold=0.1
+        ... )  # doctest: +ELLIPSIS
         <xarray.DataArray (fuel: 2, year: 4)> Size: 64B
         array([[ 0.  , -3.95, -3.95, -3.95],
                [-5.  , -4.  , -3.  , -2.  ]])
@@ -560,7 +564,7 @@ def agent_concatenation(
 
         >>> from muse.utilities import agent_concatenation
         >>> aggregate = agent_concatenation(assets)
-        >>> aggregate
+        >>> aggregate # doctest: +ELLIPSIS
         <xarray.Dataset> Size: 4kB
         Dimensions:     (asset: 19, year: 12)
         Coordinates:
