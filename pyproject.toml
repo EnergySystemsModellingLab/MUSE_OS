@@ -88,8 +88,10 @@ addopts = "--doctest-modules -rfE -n auto --dist=loadscope"
 markers = [
     "sgidata: test that require legacy data",
     "legacy: test that require legacy modules",
-    "regression: a regression test",
-    "notebook: a test which consist in running a jupyter notebook"
+    "regression: a regression test, including examples and tutorials",
+    "notebook: a test which consist in running a jupyter notebook",
+    "example: a test which consist in running an example",
+    "tutorial: a test which consist in running a tutorial",
 ]
 
 [tool.mypy]

@@ -6,6 +6,7 @@ from pytest import mark
 
 @mark.usefixtures("save_timeslice_globals")
 @mark.regression
+@mark.example
 @mark.parametrize("model", available_examples())
 def test_fullsim_regression(model, tmpdir, compare_dirs):
     from warnings import simplefilter
@@ -39,6 +40,7 @@ def available_tutorials():
 
 @mark.usefixtures("save_timeslice_globals")
 @mark.regression
+@mark.tutorial
 @mark.parametrize("tutorial_path", available_tutorials())
 def test_tutorial_regression(tutorial_path, tmpdir, compare_dirs):
     import shutil
