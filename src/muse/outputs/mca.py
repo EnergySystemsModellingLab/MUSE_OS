@@ -529,6 +529,7 @@ def sectory_supply(
             data_agent["sector"] = getattr(sector, "name", "unnamed")
 
             a = data_agent.to_dataframe("supply")
+            a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
             if len(a) > 0 and len(a.technology.values) > 0:
                 b = a.reset_index()
                 b = b[b["supply"] != 0]
@@ -570,6 +571,7 @@ def sectory_supply(
                 data_agent["sector"] = getattr(sector, "name", "unnamed")
 
                 a = data_agent.to_dataframe("supply")
+                a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
                 if len(a) > 0 and len(a.technology.values) > 0:
                     b = a.reset_index()
                     b = b[b["supply"] != 0]
@@ -648,6 +650,7 @@ def sector_consumption(
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
             a = data_agent.to_dataframe("consumption")
+            a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
             if len(a) > 0 and len(a.technology.values) > 0:
                 b = a.drop(
                     ["month", "day", "hour"], axis=1, errors="ignore"
@@ -726,6 +729,7 @@ def sectory_consumption(
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
             a = data_agent.to_dataframe("consumption")
+            a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
             if len(a) > 0 and len(a.technology.values) > 0:
                 b = a.reset_index()
                 b = b[b["consumption"] != 0]
