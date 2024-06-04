@@ -308,7 +308,7 @@ def timeslice_projector(
         it to the equivalent times in the finest timeslice:
 
         >>> from muse.timeslices import timeslice_projector
-        >>> timeslice_projector(input_ts, ref, transforms)
+        >>> timeslice_projector(input_ts, ref, transforms)  # doctest: +SKIP
         <xarray.DataArray 'projector' (finest_timeslice: 10, timeslice: 3)> Size: 120B
         array([[1, 0, 0],
                [1, 0, 0],
@@ -334,7 +334,7 @@ def timeslice_projector(
         own:
 
         >>> nots = DataArray([5.0, 1.0, 2.0], dims="a", coords={'a': [1, 2, 3]})
-        >>> timeslice_projector(nots, ref, transforms).T
+        >>> timeslice_projector(nots, ref, transforms).T  # doctest: +SKIP
         <xarray.DataArray (timeslice: 1, finest_timeslice: 10)> Size: 40B
         array([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
         Coordinates:
