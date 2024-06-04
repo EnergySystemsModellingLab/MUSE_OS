@@ -14,7 +14,7 @@ a new column needs to be added per agent."""
 
 
 class UnitsConflictInCommodities(Exception):
-    """Indicates that there is a conflcit in the commodity units between files."""
+    """Indicates that there is a conflict in the commodity units between files."""
 
     msg = """The units of “CommIn” “CommOut” and “GlobalCommodities” files must be the
 same, including the casing. Check the consistency of the units across those three files.
@@ -28,7 +28,7 @@ class GrowthOfCapacityTooConstrained(Exception):
     """Indicates that the investment step failed because capacity could not grow."""
 
     msg = """Error during the investment process. The capacity was not allowed to grow
-sufficiently in order to match the demand. Consider increating the MaxCapacityAddition
+sufficiently in order to match the demand. Consider increasing the MaxCapacityAddition
 and/or the MaxCapacityGrowth in the technodata."""
 
     def __str__(self):
