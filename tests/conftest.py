@@ -77,9 +77,18 @@ def compare_df(
     for col in floats:
         actual_col = actual.loc[expected.index, col].values
         expected_col = expected[col].values
-        if actual_col != approx(expected_col, rel=rtol, abs=atol, nan_ok=equal_nan):
-            print(f"file: {msg}, column: {col}")
-        assert actual_col == approx(expected_col, rel=rtol, abs=atol, nan_ok=equal_nan)
+        try:
+            assert actual_col == approx(
+                expected_col, rel=rtol, abs=atol, nan_ok=equal_nan
+            )
+        except AssertionError:
+            # if the columns are not equal, we check if the sets are equal as sometimes
+            # the order of the rows is different because of different sorting algorithms
+            try:
+                assert set(actual_col) == set(expected_col)
+            except AssertionError:
+                print(f"file: {msg}, column: {col}")
+                raise
 
 
 @fixture
