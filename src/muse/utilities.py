@@ -48,8 +48,7 @@ def coords_to_multiindex(
     names = [u for u in data.coords if data[u].dims == (dimension,)]
     index = MultiIndex.from_arrays([data[u].values for u in names], names=names)
     mindex_coords = xr.Coordinates.from_pandas_multiindex(index, dimension)
-    result = data.drop_vars(names).assign_coords(mindex_coords)
-    return result
+    return data.drop_vars(names).assign_coords(mindex_coords)
 
 
 def reduce_assets(
