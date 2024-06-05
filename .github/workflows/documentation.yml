@@ -13,14 +13,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.9
+          python-version: 3.12
       - name: Install dependencies
         run: |
           sudo apt update -y
           sudo apt install -y pandoc graphviz latexmk texlive-latex-recommended \
                   texlive-latex-extra texlive-fonts-recommended
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade setuptools==62.6.0 wheel
           python -m pip install -e .[doc,dev]
       - name: Generate results for default model
         run: |
