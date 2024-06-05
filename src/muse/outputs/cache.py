@@ -396,9 +396,9 @@ def _aggregate_cache(quantity: Text, data: List[xr.DataArray]) -> pd.DataFrame:
     return reduce(
         lambda left, right: pd.DataFrame.merge(left, right, how="outer", on=cols)
         .T.groupby(check_col)
-        .last(),
+        .last().T,
         data,
-    ).T
+    )
 
 
 def consolidate_quantity(
