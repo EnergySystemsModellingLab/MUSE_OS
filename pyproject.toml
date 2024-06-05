@@ -93,7 +93,7 @@ markers = [
     "regression: a regression test, including examples and tutorials",
     "notebook: a test which consist in running a jupyter notebook",
     "example: a test which consist in running an example",
-    "tutorial: a test which consist in running a tutorial",
+    "tutorial: a test which consist in running a tutorial"
 ]
 
 [tool.mypy]
