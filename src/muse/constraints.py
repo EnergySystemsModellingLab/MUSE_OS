@@ -519,13 +519,6 @@ def minimum_service(
         return None
     if np.all(technologies["minimum_service_factor"] == 0):
         return None
-
-    min_service_factor = technologies["minimum_service_factor"]
-    if not np.all((0 <= min_service_factor) & (min_service_factor <= 1)):
-        raise ValueError(
-            "Minimum service factor values must all be between 0 and 1 inclusive"
-        )
-
     if year is None:
         year = int(market.year.min())
     commodities = technologies.commodity.sel(
