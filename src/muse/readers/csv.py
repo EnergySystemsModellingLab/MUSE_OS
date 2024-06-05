@@ -129,7 +129,7 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
     data = csv[csv.technology != "Unit"]
 
     data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"))
-    data = check_utilization_not_all_zero(data, filename)
+    check_utilization_not_all_zero(data, filename)
 
     ts = pd.MultiIndex.from_frame(
         data.drop(
@@ -921,4 +921,3 @@ def check_utilization_not_all_zero(data, filename):
             """A technology can not have a utilization factor of 0 for every
                 timeslice. Please check file {}.""".format(filename)
         )
-    return data
