@@ -1,3 +1,4 @@
+import numpy as np
 from pytest import mark
 
 
@@ -23,7 +24,8 @@ def modify_minimum_service_factors(
 
 @mark.parametrize("process_name", [("gasCCGT", "windturbine")])
 @mark.parametrize(
-    "minimum_service_factor", [([1, 2, 3, 4, 5, 6], [0] * 6), ([0], [1, 2, 3, 4, 5, 6])]
+    "minimum_service_factor",
+    [(np.linspace(0, 1, 6), [0] * 6), ([0], np.linspace(0, 1, 6))],
 )
 def test_minimum_service_factor(tmpdir, minimum_service_factor, process_name):
     import pandas as pd
