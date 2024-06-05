@@ -130,6 +130,9 @@ def read_technodictionary(filename: Union[str, Path]) -> xr.Dataset:
 
     if "year" in result.dims and len(result.year) == 1:
         result = result.isel(year=0, drop=True)
+
+    check_minimum_service_factors_in_range(data, filename)
+
     return result
 
 
@@ -145,7 +148,7 @@ def read_technodata_timeslices(filename: Union[str, Path]) -> xr.Dataset:
     data = csv[csv.technology != "Unit"]
 
     data = data.apply(to_numeric)
-    data = check_utilization_not_all_zero(data, filename)
+    check_utilization_not_all_zero(data, filename)
 
     ts = pd.MultiIndex.from_frame(
         data.drop(
@@ -934,4 +937,12 @@ def check_utilization_not_all_zero(data, filename):
             f"""A technology can not have a utilization factor of 0 for every
                 timeslice. Please check file {filename}."""
         )
-    return data
+
+
+def check_minimum_service_factors_in_range(data, filename):
+    min_service_factor = data["minimum_service_factor"]
+    if not np.all((0 <= min_service_factor) & (min_service_factor <= 1)):
+        raise ValueError(
+            f"""Minimum service factor values must all be between 0 and 1 inclusive.
+             Please check file {filename}."""
+        )
