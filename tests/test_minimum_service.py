@@ -1,11 +1,8 @@
-from itertools import permutations
-
-import numpy as np
 from pytest import mark
 
 
 def modify_minimum_service_factors(
-    model_path, sector, processes, minimum_service_factors
+    model_path, sector, process_name, minimum_service_factor
 ):
     import pandas as pd
 
@@ -13,25 +10,27 @@ def modify_minimum_service_factors(
         model_path / "technodata" / sector / "TechnodataTimeslices.csv"
     )
 
-    for process, minimum in zip(processes, minimum_service_factors):
-        technodata_timeslices.loc[
-            technodata_timeslices["ProcessName"] == process, "MinimumServiceFactor"
-        ] = minimum
+    technodata_timeslices.loc[
+        technodata_timeslices["ProcessName"] == process_name[0], "MinimumServiceFactor"
+    ] = minimum_service_factor[0]
+
+    technodata_timeslices.loc[
+        technodata_timeslices["ProcessName"] == process_name[1], "MinimumServiceFactor"
+    ] = minimum_service_factor[1]
 
     return technodata_timeslices
 
 
+@mark.parametrize("process_name", [("gasCCGT", "windturbine")])
 @mark.parametrize(
-    "minimum_service_factors",
-    permutations((np.linspace(0, 1, 6), [0] * 6)),
+    "minimum_service_factor", [([1, 2, 3, 4, 5, 6], [0] * 6), ([0], [1, 2, 3, 4, 5, 6])]
 )
-def test_minimum_service_factor(tmpdir, minimum_service_factors):
+def test_minimum_service_factor(tmpdir, minimum_service_factor, process_name):
     import pandas as pd
     from muse import examples
     from muse.mca import MCA
 
     sector = "power"
-    processes = ("gasCCGT", "windturbine")
 
     # Copy the model inputs to tmpdir
     model_path = examples.copy_model(
@@ -41,8 +40,8 @@ def test_minimum_service_factor(tmpdir, minimum_service_factors):
     technodata_timeslices = modify_minimum_service_factors(
         model_path=model_path,
         sector=sector,
-        processes=processes,
-        minimum_service_factors=minimum_service_factors,
+        process_name=process_name,
+        minimum_service_factor=minimum_service_factor,
     )
 
     technodata_timeslices.to_csv(
@@ -54,7 +53,7 @@ def test_minimum_service_factor(tmpdir, minimum_service_factors):
 
     supply_timeslice = pd.read_csv(tmpdir / "Results/MCAMetric_Supply.csv")
 
-    for process, service_factor in zip(processes, minimum_service_factors):
+    for process, service_factor in zip(process_name, minimum_service_factor):
         for i, factor in enumerate(service_factor):
             assert (
                 supply_timeslice[
