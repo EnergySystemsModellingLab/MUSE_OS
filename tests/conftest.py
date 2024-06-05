@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Callable, Mapping, Optional, Sequence, Text
 
+import numpy as np
 from muse.agents import Agent
 from pandas import DataFrame
 from pytest import fixture, mark
@@ -82,10 +83,13 @@ def compare_df(
                 expected_col, rel=rtol, abs=atol, nan_ok=equal_nan
             )
         except AssertionError:
-            # if the columns are not equal, we check if the sets are equal as sometimes
-            # the order of the rows is different because of different sorting algorithms
+            # if the columns are not equal, we check if the sorted ones are equal as
+            # sometimes the order of the rows is different because of different sorting
+            # algorithms
             try:
-                assert set(actual_col) == set(expected_col)
+                assert np.sort(actual_col) == approx(
+                    np.sort(expected_col), rel=rtol, abs=atol, nan_ok=equal_nan
+                )
             except AssertionError:
                 print(f"file: {msg}, column: {col}")
                 raise
