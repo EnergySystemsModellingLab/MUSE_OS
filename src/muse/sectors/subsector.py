@@ -66,7 +66,7 @@ class Subsector:
             market = market.copy()
             market["prices"] = np.maximum(
                 market.prices, market.prices.rename(region="dst_region")
-            )
+            ).drop_vars(["timeslice", "month", "day", "hour"])
 
         for agent in self.agents:
             agent.asset_housekeeping()

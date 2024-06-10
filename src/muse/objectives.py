@@ -140,7 +140,10 @@ def factory(
     ) -> xr.Dataset:
         result = xr.Dataset(coords=search_space.coords)
         for name, objective in functions:
-            result[name] = objective(agent, demand, search_space, *args, **kwargs)
+            obj = objective(agent, demand, search_space, *args, **kwargs)
+            if "timeslice" in obj.dims and "timeslice" in result.dims:
+                obj = obj.drop_vars(["timeslice", "month", "day", "hour"])
+            result[name] = obj
         return result
 
     return objectives

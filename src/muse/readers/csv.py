@@ -17,7 +17,7 @@ __all__ = [
 ]
 
 from pathlib import Path
-from typing import Hashable, List, Optional, Sequence, Text, Union, cast
+from typing import List, Optional, Sequence, Text, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -25,6 +25,21 @@ import xarray as xr
 
 from muse.defaults import DEFAULT_SECTORS_DIRECTORY
 from muse.errors import UnitsConflictInCommodities
+
+
+def to_numeric(x):
+    """Converts a value to numeric if possible.
+
+    Args:
+        x: The value to convert.
+
+    Returns:
+        The value converted to numeric if possible, otherwise the original value.
+    """
+    try:
+        return pd.to_numeric(x)
+    except ValueError:
+        return x
 
 
 def find_sectors_file(
@@ -83,7 +98,7 @@ def read_technodictionary(filename: Union[Text, Path]) -> xr.Dataset:
     data.index.name = "technology"
     data = data.drop(["process_name", "region_name", "time"], axis=1)
 
-    data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"), axis=0)
+    data = data.apply(to_numeric, axis=0)
 
     result = xr.Dataset.from_dataframe(data.sort_index())
     if "fuel" in result.variables:
@@ -128,7 +143,7 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
     )
     data = csv[csv.technology != "Unit"]
 
-    data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"))
+    data = data.apply(to_numeric)
     data = check_utilization_not_all_zero(data, filename)
 
     ts = pd.MultiIndex.from_frame(
@@ -160,8 +175,6 @@ def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
 
     There are four axes: (technology, region, year, commodity)
     """
-    from functools import partial
-
     from muse.readers import camel_to_snake
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
@@ -180,7 +193,7 @@ def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
     data.columns.name = "commodity"
     data.index.name = "technology"
     data = data.rename(columns=camel_to_snake)
-    data = data.apply(partial(pd.to_numeric, errors="ignore"), axis=0)
+    data = data.apply(to_numeric, axis=0)
 
     fixed_set = xr.Dataset.from_dataframe(data[data.level == "fixed"]).drop_vars(
         "level"
@@ -489,7 +502,6 @@ def read_timeslice_shares(
         result = result.drop_vars("timeslice")
     elif isinstance(timeslice, xr.DataArray) and hasattr(timeslice, "timeslice"):
         result["timeslice"] = timeslice.timeslice
-        result[cast(Hashable, timeslice.name)] = timeslice
     else:
         result["timeslice"] = timeslice
     return result.shares
@@ -658,7 +670,9 @@ def read_initial_market(
     result = result.rename(
         commodity_price="prices", units_commodity_price="units_prices"
     )
-    result["prices"] = result["prices"].expand_dims({"timeslice": timeslices})
+    result["prices"] = (
+        result["prices"].expand_dims({"timeslice": timeslices}).drop_vars("timeslice")
+    )
 
     return result
 
@@ -827,8 +841,6 @@ def read_trade(
     drop: Optional[Union[Text, Sequence[Text]]] = None,
 ) -> Union[xr.DataArray, xr.Dataset]:
     """Read CSV table with source and destination regions."""
-    from functools import partial
-
     from muse.readers import camel_to_snake
 
     if not isinstance(data, pd.DataFrame):
@@ -842,7 +854,7 @@ def read_trade(
     else:
         row_region = "src_region"
         col_region = "dst_region"
-    data = data.apply(partial(pd.to_numeric, errors="ignore"), axis=0)
+    data = data.apply(to_numeric, axis=0)
     if isinstance(drop, Text):
         drop = [drop]
     if drop:
