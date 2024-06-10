@@ -1,0 +1,8 @@
+ProcessName,RegionName,Time,Level,electricity,gas,heat,CO2f,wind,solar
+Unit,-,Year,-,PJ/PJ,PJ/PJ,PJ/PJ,kt/PJ,PJ/PJ,PJ/PJ
+gasCCGT,R1,2020,fixed,0,1.67,0,0,0,0
+gasCCGT,R1,2040,fixed,0,1.67,0,0,0,0
+windturbine,R1,2020,fixed,0,0,0,0,1,0
+windturbine,R1,2040,fixed,0,0,0,0,1,0
+solarPV,R1,2020,fixed,0,0,0,0,0,1
+solarPV,R1,2040,fixed,0,0,0,0,0,1
