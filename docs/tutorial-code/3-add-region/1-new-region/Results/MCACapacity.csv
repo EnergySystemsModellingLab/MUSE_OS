@@ -63,9 +63,8 @@ gasCCGT,R1,R1,A1,power,retrofit,2040,3.00000000000
 solarPV,R1,R1,A1,power,retrofit,2040,6.75000000000
 solarPV,R1,R1,A1,power,retrofit,2040,2.40000000000
 solarPV,R1,R1,A1,power,retrofit,2040,6.00000000000
-solarPV,R1,R1,A1,power,retrofit,2040,10.00000000000
+solarPV,R1,R1,A1,power,retrofit,2040,9.19000000000
 windturbine,R1,R1,A1,power,retrofit,2040,10.00000000000
-windturbine,R1,R1,A1,power,retrofit,2040,8.38000000000
 gasCCGT,R2,R2,A1,power,retrofit,2040,3.00000000000
 solarPV,R2,R2,A1,power,retrofit,2040,2.40000000000
 solarPV,R2,R2,A1,power,retrofit,2040,2.40000000000
@@ -87,9 +86,9 @@ gasCCGT,R1,R1,A1,power,retrofit,2045,3.00000000000
 solarPV,R1,R1,A1,power,retrofit,2045,6.75000000000
 solarPV,R1,R1,A1,power,retrofit,2045,2.40000000000
 solarPV,R1,R1,A1,power,retrofit,2045,6.00000000000
-solarPV,R1,R1,A1,power,retrofit,2045,10.00000000000
+solarPV,R1,R1,A1,power,retrofit,2045,9.19000000000
+solarPV,R1,R1,A1,power,retrofit,2045,6.00000000000
 windturbine,R1,R1,A1,power,retrofit,2045,10.00000000000
-windturbine,R1,R1,A1,power,retrofit,2045,8.38000000000
 gasCCGT,R2,R2,A1,power,retrofit,2045,3.00000000000
 solarPV,R2,R2,A1,power,retrofit,2045,2.40000000000
 solarPV,R2,R2,A1,power,retrofit,2045,2.40000000000
@@ -109,10 +108,10 @@ heatpump,R2,R2,A1,residential,retrofit,2050,23.00000000000
 gasCCGT,R1,R1,A1,power,retrofit,2050,3.00000000000
 solarPV,R1,R1,A1,power,retrofit,2050,2.40000000000
 solarPV,R1,R1,A1,power,retrofit,2050,6.00000000000
-solarPV,R1,R1,A1,power,retrofit,2050,10.00000000000
+solarPV,R1,R1,A1,power,retrofit,2050,9.19000000000
+solarPV,R1,R1,A1,power,retrofit,2050,6.00000000000
 solarPV,R1,R1,A1,power,retrofit,2050,16.91000000000
-windturbine,R1,R1,A1,power,retrofit,2050,8.38000000000
-windturbine,R1,R1,A1,power,retrofit,2050,3.56000000000
+windturbine,R1,R1,A1,power,retrofit,2050,6.75000000000
 gasCCGT,R2,R2,A1,power,retrofit,2050,3.00000000000
 solarPV,R2,R2,A1,power,retrofit,2050,2.40000000000
 solarPV,R2,R2,A1,power,retrofit,2050,2.40000000000

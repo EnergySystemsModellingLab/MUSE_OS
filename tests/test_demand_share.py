@@ -27,7 +27,7 @@ def _matching_market(technologies, stock, timeslice):
     market["supply"] = production.sum("asset")
     market["consumption"] = (
         consumption(technologies, production).sum("asset") + market.supply
-    )
+    ).drop_vars(["timeslice", "month", "day", "hour"])
     market["prices"] = market.supply.dims, random(market.supply.shape)
 
     return market

@@ -40,6 +40,21 @@ class CommodityUsage(IntFlag):
     """Commodity which is a fuel for this or another sector."""
     # BYPRODUCT = auto()
 
+    @property
+    def name(self) -> Text:
+        """Hack to get the name of the flag consistently across python versions."""
+        return (
+            self._name_
+            if self._name_ is not None
+            else "|".join(
+                [
+                    com._name_
+                    for com in CommodityUsage
+                    if com in self and com != CommodityUsage.OTHER
+                ]
+            )
+        )
+
     @staticmethod
     def from_technologies(technologies: Dataset) -> DataArray:
         from numpy import array, bitwise_or

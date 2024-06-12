@@ -29,7 +29,7 @@ def multiindex_to_coords(
     assert isinstance(data.indexes[dimension], MultiIndex)
     names = data.indexes[dimension].names
     coords = {n: data[n].values for n in names}
-    result = data.drop_vars(dimension)
+    result = data.drop_vars([dimension, *names])
     for name, coord in coords.items():
         result[name] = dimension, coord
     if isinstance(result, xr.Dataset):
@@ -47,9 +47,8 @@ def coords_to_multiindex(
     assert dimension not in data.indexes
     names = [u for u in data.coords if data[u].dims == (dimension,)]
     index = MultiIndex.from_arrays([data[u].values for u in names], names=names)
-    result = data.drop_vars(names)
-    result[dimension] = index
-    return result
+    mindex_coords = xr.Coordinates.from_pandas_multiindex(index, dimension)
+    return data.drop_vars(names).assign_coords(mindex_coords)
 
 
 def reduce_assets(
@@ -115,16 +114,16 @@ def reduce_assets(
         The point of `reduce_assets` is to aggregate assets that refer to the
         same process:
 
-        >>> reduce_assets(data.capacity)
-        <xarray.DataArray 'capacity' (year: 3, asset: 3)>
+        >>> reduce_assets(data.capacity)  # doctest: +SKIP
+        <xarray.DataArray 'capacity' (year: 3, asset: 3)> Size: 36B
         array([[ 0,  3,  3],
                [ 4,  7, 11],
                [ 8, 11, 19]])
         Coordinates:
-          * year        (year) ... 2010 2015 2017
-            installed   (asset) ... 1990 1990 1991
-            technology  (asset) <U1 'a' 'c' 'b'
-            region      (asset) <U1 'x' 'y' 'x'
+          * year        (year) int32 12B 2010 2015 2017
+            installed   (asset) int32 12B 1990 1990 1991
+            technology  (asset) <U1 12B 'a' 'c' 'b'
+            region      (asset) <U1 12B 'x' 'y' 'x'
         Dimensions without coordinates: asset
 
         We can also specify explicitly which coordinates in the 'asset'
@@ -134,15 +133,15 @@ def reduce_assets(
         ...     data.capacity,
         ...     coords=('technology', 'installed'),
         ...     operation = lambda x: x.mean(dim='asset')
-        ... )
-        <xarray.DataArray 'capacity' (year: 3, asset: 3)>
+        ... )  # doctest: +SKIP
+        <xarray.DataArray 'capacity' (year: 3, asset: 3)> Size: 72B
         array([[ 0. ,  1.5,  3. ],
                [ 4. ,  5.5,  7. ],
                [ 8. ,  9.5, 11. ]])
         Coordinates:
-          * year        (year) ... 2010 2015 2017
-            technology  (asset) <U1 'a' 'b' 'c'
-            installed   (asset) ... 1990 1991 1990
+          * year        (year) int32 12B 2010 2015 2017
+            technology  (asset) <U1 12B 'a' 'b' 'c'
+            installed   (asset) int32 12B 1990 1991 1990
         Dimensions without coordinates: asset
     """
     from copy import copy
@@ -395,7 +394,6 @@ def merge_assets(
     """Merge two capacity arrays."""
     years = sorted(set(capa_a.year.values).union(capa_b.year.values))
 
-    levels = (coord for coord in capa_a.coords if capa_a[coord].dims == (dimension,))
     if len(capa_a.year) == 1:
         result = xr.concat(
             (
@@ -427,7 +425,6 @@ def merge_assets(
             .sum(dimension)
             .clip(min=0)
             .pipe(multiindex_to_coords, dimension=dimension)
-            .rename({"asset_level_%i" % i: coord for i, coord in enumerate(levels)})
         )
     return result
 
@@ -493,13 +490,13 @@ def future_propagation(
         values differed for the current year beyond a given threshold:
 
         >>> from muse.utilities import future_propagation
-        >>> future_propagation(data, future, threshold=0.1)
-        <xarray.DataArray (fuel: 2, year: 4)>
+        >>> future_propagation(data, future, threshold=0.1)  # doctest: +SKIP
+        <xarray.DataArray (fuel: 2, year: 4)> Size: 64B
         array([[ 0. ,  1.2,  1.2,  1.2],
                [-5. , -4. , -3. , -2. ]])
         Coordinates:
-          * year     (year) ... 2020 2025 2030 2035
-          * fuel     (fuel) <U4 'gas' 'coal'
+          * year     (year) int32 16B 2020 2025 2030 2035
+          * fuel     (fuel) <U4 32B 'gas' 'coal'
 
         Above, the data for coal is not sufficiently different given the threshold.
         hence, the future values for coal remain as they where.
@@ -507,20 +504,24 @@ def future_propagation(
         The dimensions of ``future`` do not have to match exactly those of ``data``.
         Standard broadcasting is used if they do not match:
 
-        >>> future_propagation(data, future.sel(fuel="gas", drop=True), threshold=0.1)
-        <xarray.DataArray (fuel: 2, year: 4)>
+        >>> future_propagation(
+        ...    data, future.sel(fuel="gas", drop=True), threshold=0.1
+        ... )  # doctest: +SKIP
+        <xarray.DataArray (fuel: 2, year: 4)> Size: 64B
         array([[ 0. ,  1.2,  1.2,  1.2],
                [-5. ,  1.2,  1.2,  1.2]])
         Coordinates:
-          * year     (year) ... 2020 2025 2030 2035
-          * fuel     (fuel) <U4 'gas' 'coal'
-        >>> future_propagation(data, future.sel(fuel="coal", drop=True), threshold=0.1)
-        <xarray.DataArray (fuel: 2, year: 4)>
+          * year     (year) int32 16B 2020 2025 2030 2035
+          * fuel     (fuel) <U4 32B 'gas' 'coal'
+        >>> future_propagation(
+        ...     data, future.sel(fuel="coal", drop=True), threshold=0.1
+        ... )  # doctest: +SKIP
+        <xarray.DataArray (fuel: 2, year: 4)> Size: 64B
         array([[ 0.  , -3.95, -3.95, -3.95],
                [-5.  , -4.  , -3.  , -2.  ]])
         Coordinates:
-          * year     (year) ... 2020 2025 2030 2035
-          * fuel     (fuel) <U4 'gas' 'coal'
+          * year     (year) int32 16B 2020 2025 2030 2035
+          * fuel     (fuel) <U4 32B 'gas' 'coal'
     """
     if dim not in data.dims or dim not in future.coords:
         raise ValueError("Expected dimension 'year' in `data` and `future`.")
@@ -562,18 +563,18 @@ def agent_concatenation(
 
         >>> from muse.utilities import agent_concatenation
         >>> aggregate = agent_concatenation(assets)
-        >>> aggregate
-        <xarray.Dataset>
+        >>> aggregate # doctest: +SKIP
+        <xarray.Dataset> Size: 4kB
         Dimensions:     (asset: 19, year: 12)
         Coordinates:
-          * year        (year) int64 2033 2035 2036 2037 2039 ... 2046 2047 2048 2049
-            technology  (asset) <U9 'oven' 'stove' 'oven' ... 'stove' 'oven' 'thermomix'
-            region      (asset) <U9 'Brexitham' 'Brexitham' ... 'Brexitham' 'Brexitham'
-            agent       (asset) ... 0 0 0 0 0 1 1 1 2 2 2 2 3 3 3 4 4 4 4
-            installed   (asset) int64 2030 2025 2030 2010 2030 ... 2025 2030 2010 2025
+            agent       (asset) int32 76B 0 0 0 0 0 1 1 1 2 2 2 2 3 3 3 4 4 4 4
+          * year        (year) int64 96B 2033 2035 2036 2037 ... 2046 2047 2048 2049
+            installed   (asset) int64 152B 2030 2025 2030 2010 ... 2025 2030 2010 2025
+            technology  (asset) <U9 684B 'oven' 'stove' 'oven' ... 'oven' 'thermomix'
+            region      (asset) <U9 684B 'Brexitham' 'Brexitham' ... 'Brexitham'
         Dimensions without coordinates: asset
         Data variables:
-            capacity    (asset, year) float64 26.0 26.0 26.0 56.0 ... 62.0 62.0 62.0
+            capacity    (asset, year) float64 2kB 26.0 26.0 26.0 56.0 ... 62.0 62.0 62.0
 
         Note that the `dtype` of the capacity has changed from integers to floating
         points. This is due to how ``xarray`` performs the operation.

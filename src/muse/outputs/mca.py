@@ -182,13 +182,23 @@ def prices(
     """Current MCA market prices."""
     from muse.outputs.sector import market_quantity
 
+    ts_coords = list(market.indexes["timeslice"].names)
     result = market_quantity(market.prices, **kwargs).to_dataframe()
     if drop_empty:
         result = result[result.prices != 0]
+
     if isinstance(keep_columns, Text):
-        result = result[[keep_columns]]
+        result = result[[*ts_coords, keep_columns]]
+
     elif keep_columns is not None and len(keep_columns) > 0:
-        result = result[[u for u in result.columns if u in keep_columns]]
+        result = result[ts_coords + [u for u in result.columns if u in keep_columns]]
+
+    # We assign back a timeslice column with the original coordinate names
+    # Each timeslice is a tuple of the original coordinates (month, day, hour)
+    index_names = result.index.names
+    result = result.reset_index()
+    result["timeslice"] = list(zip(*[result[name] for name in ts_coords]))
+    result = result.set_index(index_names, drop=True).drop(ts_coords, axis=1)
     return result
 
 
@@ -332,7 +342,7 @@ class FiniteResources(AggregateResources):
         aggregate = aggregate.sum([u for u in aggregate.dims if u not in limits.dims])
         assert aggregate is not None
         limits = limits.sum([u for u in limits.dims if u not in aggregate.dims])
-        return aggregate <= limits
+        return aggregate <= limits.assign_coords(timeslice=aggregate.timeslice)
 
 
 @register_output_quantity(name=["timeslice_supply"])
@@ -358,7 +368,9 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             technologies = a.filter_input(techs, year=output_year).fillna(0.0)
             agent_market = market.sel(year=output_year).copy()
-            agent_market["consumption"] = agent_market.consumption * a.quantity
+            agent_market["consumption"] = (
+                agent_market.consumption * a.quantity
+            ).drop_vars(["timeslice", "month", "day", "hour"])
             included = [
                 i
                 for i in agent_market["commodity"].values
@@ -391,8 +403,11 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             data_agent["sector"] = getattr(sector, "name", "unnamed")
 
             a = data_agent.to_dataframe("supply")
+            a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
             if len(a) > 0 and len(a.technology.values) > 0:
-                b = a.reset_index()
+                b = a.drop(
+                    ["month", "day", "hour"], axis=1, errors="ignore"
+                ).reset_index()
                 b = b[b["supply"] != 0]
                 data_sector.append(b)
     if len(data_sector) > 0:
@@ -400,9 +415,13 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
 
     else:
         output = pd.DataFrame()
-    output = output.reset_index()
 
-    return output
+    # Combine timeslice columns into a single column, if present
+    if "hour" in output.columns:
+        output["timeslice"] = list(zip(output["month"], output["day"], output["hour"]))
+        output = output.drop(["month", "day", "hour"], axis=1)
+
+    return output.reset_index()
 
 
 @register_output_quantity(name=["yearly_supply"])
@@ -510,6 +529,7 @@ def sectory_supply(
             data_agent["sector"] = getattr(sector, "name", "unnamed")
 
             a = data_agent.to_dataframe("supply")
+            a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
             if len(a) > 0 and len(a.technology.values) > 0:
                 b = a.reset_index()
                 b = b[b["supply"] != 0]
@@ -551,6 +571,7 @@ def sectory_supply(
                 data_agent["sector"] = getattr(sector, "name", "unnamed")
 
                 a = data_agent.to_dataframe("supply")
+                a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
                 if len(a) > 0 and len(a.technology.values) > 0:
                     b = a.reset_index()
                     b = b[b["supply"] != 0]
@@ -592,7 +613,9 @@ def sector_consumption(
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             technologies = a.filter_input(techs, year=output_year).fillna(0.0)
             agent_market = market.sel(year=output_year).copy()
-            agent_market["consumption"] = agent_market.consumption * a.quantity
+            agent_market["consumption"] = (
+                agent_market.consumption * a.quantity
+            ).drop_vars(["timeslice", "month", "day", "hour"])
             included = [
                 i
                 for i in agent_market["commodity"].values
@@ -627,8 +650,11 @@ def sector_consumption(
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
             a = data_agent.to_dataframe("consumption")
+            a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
             if len(a) > 0 and len(a.technology.values) > 0:
-                b = a.reset_index()
+                b = a.drop(
+                    ["month", "day", "hour"], axis=1, errors="ignore"
+                ).reset_index()
                 b = b[b["consumption"] != 0]
                 data_sector.append(b)
     if len(data_sector) > 0:
@@ -636,9 +662,13 @@ def sector_consumption(
 
     else:
         output = pd.DataFrame()
-    output = output.reset_index()
 
-    return output
+    # Combine timeslice columns into a single column, if present
+    if "hour" in output.columns:
+        output["timeslice"] = list(zip(output["month"], output["day"], output["hour"]))
+        output = output.drop(["month", "day", "hour"], axis=1)
+
+    return output.reset_index()
 
 
 @register_output_quantity(name=["yearly_consumption"])
@@ -699,6 +729,7 @@ def sectory_consumption(
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
             a = data_agent.to_dataframe("consumption")
+            a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
             if len(a) > 0 and len(a.technology.values) > 0:
                 b = a.reset_index()
                 b = b[b["consumption"] != 0]

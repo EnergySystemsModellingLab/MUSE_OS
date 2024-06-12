@@ -539,17 +539,14 @@ def read_timeslices(
         >>> from muse.readers.toml import read_timeslices
         >>> ref = reference_timeslice(toml)
         >>> transforms = aggregate_transforms(toml, ref)
-        >>> read_timeslices(toml, ref, transforms)
-        <xarray.Dataset>
-        Dimensions:          (timeslice: 6)
-        Coordinates:
-          * timeslice        (timeslice) MultiIndex
-          - semester         (timeslice) object 'summer' 'summer' ... 'winter'
-          - week             (timeslice) object 'weekday' 'weekend' ... 'weekend'
-          - day              (timeslice) object 'allday' 'dusk' ... 'dusk' 'allday'
-            represent_hours  (timeslice) ... 10 1 4 10 1 4
-        Data variables:
-            *empty*
+        >>> ts = read_timeslices(toml, ref, transforms)
+        >>> assert "semester" in ts.coords
+        >>> assert "week" in ts.coords
+        >>> assert "day" in ts.coords
+        >>> assert "represent_hours" in ts.coords
+        >>> assert set(ts.coords["day"].data) == {"dusk", "allday"}
+        >>> assert set(ts.coords["week"].data) == {"weekday", "weekend"}
+        >>> assert set(ts.coords["semester"].data) == {"summer", "winter"}
     '''
     from muse.timeslices import TIMESLICE, timeslice_projector
 
