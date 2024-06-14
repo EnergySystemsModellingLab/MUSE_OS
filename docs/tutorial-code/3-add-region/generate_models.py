@@ -29,7 +29,6 @@ def generate_model_1():
     df = pd.read_csv(technodata_file)
     mask = (df["RegionName"] == "R2") & (df["ProcessName"] == "windturbine")
     df.loc[mask, "MaxCapacityAddition"] = 5
-    df.loc[mask, "MaxCapacityGrowth"] = 0.5
     df.loc[mask, "TotalCapacityLimit"] = 100
     df.to_csv(technodata_file, index=False)
 
