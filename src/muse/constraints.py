@@ -501,6 +501,43 @@ def max_production(
 
 
 @register_constraints
+def demand_limitting_capacity(
+    demand_: xr.DataArray,
+    assets: xr.Dataset,
+    search_space: xr.DataArray,
+    market: xr.Dataset,
+    technologies: xr.Dataset,
+    year: Optional[int] = None,
+) -> Constraint:
+    """Limits the maximum combined capacity to match the demand.
+
+    This is a somewhat more restrictive constraint than the max_production constraint or
+    the maximum capacity expansion. In this case, the combined new capacity of all
+    assets must be sufficient to meet the demand of the most demanding timeslice, and
+    no more.
+    """
+    # We start with the maximum production constraint and the demand constraint
+    capacity_constraint = max_production(
+        demand_, assets, search_space, market, technologies, year
+    )
+    demand_constraint = demand(
+        demand_, assets, search_space, market, technologies, year
+    )
+
+    # We need to find the most demanding timeslice and use as the demand constraint
+    b = demand_constraint.b.max("timeslice")
+
+    # Now we need to find the maximum capacity constraint (as the capacity here is
+    # negative)
+    capacity = capacity_constraint.capacity.max("timeslice")
+
+    return xr.Dataset(
+        dict(capacity=capacity, production=0, b=b),
+        attrs=dict(kind=ConstraintKind.UPPER_BOUND),
+    )
+
+
+@register_constraints
 def minimum_service(
     demand: xr.DataArray,
     assets: xr.Dataset,
