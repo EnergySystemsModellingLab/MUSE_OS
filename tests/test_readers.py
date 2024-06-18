@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import toml
 import xarray as xr
 from pytest import fixture, mark, raises
@@ -410,3 +411,8 @@ def test_read_trade_technodata(tmp_path):
         "max_capacity_growth",
         "total_capacity_limit",
     }
+    assert all(val == np.float64 for val in data.dtypes.values())
+    assert list(data.coords["dst_region"].values) == ["R1", "R2"]
+    assert list(data.coords["technology"].values) == ["gassupply1"]
+    assert list(data.coords["region"].values) == ["R1", "R2", "R3"]
+    assert all(var.coords.equals(data.coords) for var in data.data_vars.values())
