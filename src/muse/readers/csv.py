@@ -98,8 +98,9 @@ def read_technodictionary(filename: Union[str, Path]) -> xr.Dataset:
     data.columns.name = "technodata"
     data.index.name = "technology"
     data = data.drop(["process_name", "region_name", "time"], axis=1)
-
     data = data.apply(to_numeric, axis=0)
+
+    check_utilization_not_all_zero(data, filename)
 
     result = xr.Dataset.from_dataframe(data.sort_index())
     if "fuel" in result.variables:
