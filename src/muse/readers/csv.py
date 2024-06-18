@@ -272,7 +272,7 @@ def read_technologies(
     Arguments:
         technodata_path_or_sector: If `comm_out_path` and `comm_in_path` are not given,
             then this argument refers to the name of the sector. The three paths are
-            then determined using standard locations and name. Specifically, thechnodata
+            then determined using standard locations and name. Specifically, technodata
             looks for a "technodataSECTORNAME.csv" file in the standard location for
             that sector. However, if  `comm_out_path` and `comm_in_path` are given, then
             this should be the path to the the technodata file.
