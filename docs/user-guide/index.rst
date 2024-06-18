@@ -16,7 +16,7 @@ We recommend following the tutorials step by step, as the files build on the pre
    add-agent
    add-region
    modify-timing-data
-   addition-service-demand
+   additional-service-demand
    add-gdp-correlation-demand
    min-max-timeslice-constraints
 
