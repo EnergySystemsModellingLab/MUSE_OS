@@ -390,6 +390,10 @@ def test_read_existing_trade(tmp_path):
 
     assert isinstance(data, xr.DataArray)
     assert set(data.dims) == {"year", "technology", "dst_region", "region"}
+    assert list(data.coords["year"].values) == [2010, 2020, 2030, 2040, 2050]
+    assert list(data.coords["technology"].values) == ["gassupply1"]
+    assert list(data.coords["dst_region"].values) == ["R1", "R2"]
+    assert list(data.coords["region"].values) == ["R1", "R2"]
 
 
 def test_read_trade_technodata(tmp_path):
