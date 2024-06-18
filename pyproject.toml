@@ -111,7 +111,8 @@ select = [
     "E",  # pycodestyle
     "F",  # Pyflakes
     "I",  # isort
-    "RUF"  # Ruff's own checks
+    "RUF",  # Ruff's own checks
+    "NPY201"  # Numpy2 migration
 ]
 ignore = [
     "D1"  # missing docstring checks

@@ -574,7 +574,7 @@ def supply_cost(
         else:
             data = data.groupby("region").sum(asset_dim)
 
-    total = data.production.where(np.abs(data.production) > 1e-15, np.infty).sum(
+    total = data.production.where(np.abs(data.production) > 1e-15, np.inf).sum(
         "timeslice"
     )
     return data.prices / total
