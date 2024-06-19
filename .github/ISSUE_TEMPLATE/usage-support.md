@@ -19,7 +19,7 @@ assignees: ''
 
 Please, complete the following to better understand the system you are using to run MUSE.
 
-- Operative system (eg. Windows 10):
+- Operating system (eg. Windows 10):
 - MUSE version (eg. 1.0.1):
 - Installation method (eg. pipx, pip, development mode):
 - Python version (you can get this running `python --version`):
