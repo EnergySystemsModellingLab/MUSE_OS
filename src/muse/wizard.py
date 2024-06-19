@@ -135,8 +135,8 @@ def add_agent(
     model_path: Path,
     agent_name: str,
     copy_from: str,
-    agentshare_new: str,
-    agentshare_retrofit: str,
+    agentshare_new: str | None = None,
+    agentshare_retrofit: str | None = None,
 ) -> None:
     """Add a new agent to the model by copying an existing one.
 
@@ -144,32 +144,40 @@ def add_agent(
         model_path: Path to the model folder.
         agent_name: Name of the new agent.
         copy_from: Name of the agent to copy from.
-        agentshare_new: Name of the new agent share for new agent.
-        agentshare_retrofit: Name of the retrofit agent share for new agent.
+        agentshare_new: Name of the 'new' agent share for new agent. If None, the new
+            agent will not have a 'new' share.
+        agentshare_retrofit: Name of the 'retrofit' agent share for new agent. If None,
+            the new agent will not have a 'retrofit' share.
     """
     agents_file = model_path / "technodata/Agents.csv"
     df = pd.read_csv(agents_file)
-    copy_from_new = df.loc[
-        (df["Name"] == copy_from) & (df["Type"] == "New"), "AgentShare"
-    ].values[0]
-    copy_from_retrofit = df.loc[
-        (df["Name"] == copy_from) & (df["Type"] == "Retrofit"), "AgentShare"
-    ].values[0]
 
-    new_rows = df[df["Name"] == copy_from].copy()
-    new_rows["Name"] = agent_name
-    new_rows.loc[new_rows["Type"] == "New", "AgentShare"] = agentshare_new
-    new_rows.loc[new_rows["Type"] == "Retrofit", "AgentShare"] = agentshare_retrofit
-    df = pd.concat([df, new_rows])
+    copy_to_shares = {"New": agentshare_new, "Retrofit": agentshare_retrofit}
+    copy_from_shares = {}
+    for share_type in ["New", "Retrofit"]:
+        filtered_df = df.loc[
+            (df["Name"] == copy_from) & (df["Type"] == share_type), "AgentShare"
+        ]
+        copy_from_shares[share_type] = (
+            filtered_df.iat[0] if not filtered_df.empty else None
+        )
+
+        if copy_to_shares[share_type] and copy_from_shares[share_type]:
+            rows = df[
+                (df["Name"] == copy_from)
+                & (df["AgentShare"] == copy_from_shares[share_type])
+            ].copy()
+            rows["Name"] = agent_name
+            rows["AgentShare"] = copy_to_shares[share_type]
+            df = pd.concat([df, rows])
     df.to_csv(agents_file, index=False)
 
     for sector in get_sectors(model_path):
         technodata_file = model_path / f"technodata/{sector}/Technodata.csv"
         df = pd.read_csv(technodata_file)
-        if copy_from_retrofit in df.columns:
-            df[agentshare_retrofit] = df[copy_from_retrofit]
-        if copy_from_new in df.columns:
-            df[agentshare_new] = df[copy_from_new]
+        for share_type in ["New", "Retrofit"]:
+            if copy_to_shares[share_type] and copy_from_shares[share_type]:
+                df[copy_to_shares[share_type]] = df[copy_from_shares[share_type]]
         df.to_csv(technodata_file, index=False)
 
 

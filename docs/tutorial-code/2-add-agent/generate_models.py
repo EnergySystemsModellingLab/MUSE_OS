@@ -26,8 +26,7 @@ def generate_model_1():
         model_path,
         agent_name="A2",
         copy_from="A1",
-        agentshare_new="Agent3",
-        agentshare_retrofit="Agent4",
+        agentshare_new="Agent2",
     )
 
     # Split population between the two agents
@@ -40,8 +39,8 @@ def generate_model_1():
     for sector in get_sectors(model_path):
         technodata_file = model_path / f"technodata/{sector}/Technodata.csv"
         df = pd.read_csv(technodata_file)
+        df.loc[1:, "Agent1"] = 0.5
         df.loc[1:, "Agent2"] = 0.5
-        df.loc[1:, "Agent4"] = 0.5
         df.to_csv(technodata_file, index=False)
 
 
@@ -71,7 +70,7 @@ def generate_model_2():
     # Modify residential sector MaxCapacityGrowth
     technodata_file = model_path / "technodata/residential/Technodata.csv"
     df = pd.read_csv(technodata_file)
-    df.loc[1:, "MaxCapacityGrowth"] = 0.04
+    df.loc[1:, "MaxCapacityGrowth"] = 0.4
     df.to_csv(technodata_file, index=False)
 
 
