@@ -35,7 +35,7 @@ In the following sections, we will guide you step by step in configuring your sy
 Launching a terminal
 ~~~~~~~~~~~~~~~~~~~~
 
-All operative systems have a Terminal application that let you run commands. You will need to use it extensively when using MUSE, so we strongly suggest you get familiar with it. For now, let's just figure out how to launch it:
+All operating systems have a Terminal application that let you run commands. You will need to use it extensively when using MUSE, so we strongly suggest you get familiar with it. For now, let's just figure out how to launch it:
 
 - **Linux**: Depending on the distribution, you might have a shortcut in your tasks bar already or it should be easily found in the menu. Look for ``Console`` or ``Terminal`` to lunch the application.
 - **MacOS**: Press ``Super key + Space`` to open the search box. There, type ``Terminal`` and press ``Enter``.
@@ -103,7 +103,7 @@ There are multiple ways of installing Python, as well as multiple distributions.
 Installing ``pyenv``
 ^^^^^^^^^^^^^^^^^^^^
 
-`pyenv <https://github.com/pyenv/pyenv>`_ (`pyenv-win <https://pyenv-win.github.io/pyenv-win/>`_ for Windows) is a tool that lets you install and manage different python versions. It is small, unobtrusive and self-contained, and it is available for the three operative systems. However, you might want to consider a more fully fledged Python distribution like Anaconda, specially if your work involved non-python packages or a lot of data science and machine learning tools. If that is the case, go to the :ref:`virtual-env-based` section.
+`pyenv <https://github.com/pyenv/pyenv>`_ (`pyenv-win <https://pyenv-win.github.io/pyenv-win/>`_ for Windows) is a tool that lets you install and manage different python versions. It is small, unobtrusive and self-contained, and it is available for the three operating systems. However, you might want to consider a more fully fledged Python distribution like Anaconda, specially if your work involved non-python packages or a lot of data science and machine learning tools. If that is the case, go to the :ref:`virtual-env-based` section.
 
 To install ``pyenv``, follow these steps:
 
@@ -199,7 +199,7 @@ Installing ``pipx``
 
 Next we need to install ``pipx``, a Python application manager that facilitates installing, keeping applications updated and run them in their own isolated environments. We could skip this step and install MUSE directly, but that will risk to have conflicting dependencies in the future if you install any other application, breaking your MUSE installation, and we do not want that to happen.
 
-The installation instructions for ``pipx`` can be found in the `official webpage <https://pypa.github.io/pipx/installation/>`_ specific for the three operative systems. The following instructions, however, should work for the three cases:
+The installation instructions for ``pipx`` can be found in the `official webpage <https://pypa.github.io/pipx/installation/>`_ specific for the three operating systems. The following instructions, however, should work for the three cases:
 
 .. code-block:: bash
 
