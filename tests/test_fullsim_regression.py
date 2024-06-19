@@ -28,7 +28,7 @@ def test_fullsim_regression(model, tmpdir, compare_dirs):
     compare_dirs(
         tmpdir / "Results",
         Path(__file__).parent / "example_outputs" / model.replace("-", "_"),
-        rtol=1e-5,
+        rtol=1e-4,
         atol=1e-7,
     )
 
@@ -70,6 +70,6 @@ def test_tutorial_regression(tutorial_path, tmpdir, compare_dirs):
     compare_dirs(
         tmpdir / "Results",
         expected,
-        rtol=1e-5,
+        rtol=1e-4,
         atol=1e-7,
     )

@@ -21,7 +21,7 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
 ]
 dependencies = [
-    "numpy",
+    "numpy<2.0",
     "scipy",
     "pandas",
     "xarray",
