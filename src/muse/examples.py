@@ -313,7 +313,7 @@ def _copy_multiple_agents(path: Path):
     copytree(example_data_dir() / "default" / "input", path / "input")
     copytree(example_data_dir() / "default" / "technodata", path / "technodata")
     toml = load(example_data_dir() / "default" / "settings.toml")
-    toml["sectors"]["residential"]["subsectors"]["retro_and_new"]["agents"] = (
+    toml["sectors"]["residential"]["subsectors"]["all"]["agents"] = (
         "{path}/technodata/residential/Agents.csv"
     )
     with (path / "settings.toml").open("w") as fileobj:

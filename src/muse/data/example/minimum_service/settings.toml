@@ -50,7 +50,7 @@ technodata = '{path}/technodata/industry/Technodata.csv'
 commodities_in = '{path}/technodata/industry/CommIn.csv'
 commodities_out = '{path}/technodata/industry/CommOut.csv'
 
-[sectors.industry.subsectors.retro_and_new]
+[sectors.industry.subsectors.all]
 agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/industry/Existing.csv'
 lpsolver = "scipy"
@@ -62,7 +62,7 @@ constraints = [
     "search_space",
     "minimum_service"
 ]
-demand_share = "new_and_retro"  # Optional, default to new_and_retro
+demand_share = "standard_demand"  # Optional, default to new_and_retro
 forecast = 5  # Optional, defaults to 5
 
 [[sectors.industry.outputs]]
@@ -79,10 +79,6 @@ overwrite = true
 quantity.name = "supply"
 quantity.sum_over = "timeslice"
 quantity.drop = ["comm_usage", "units_prices"]
-
-[[sectors.industry.interactions]]
-net = 'new_to_retro'
-interaction = 'transfer'
 
 [sectors.industry_presets]
 type = 'presets'
