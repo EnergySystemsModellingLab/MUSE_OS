@@ -129,8 +129,8 @@ def test_factory_smoke_test(model, technologies, tmp_path):
     settings = read_settings(tmp_path / "model" / "settings.toml")
 
     subsector = Subsector.factory(
-        settings.sectors.residential.subsectors.retro_and_new, technologies
+        settings.sectors.residential.subsectors.all, technologies
     )
 
     assert isinstance(subsector, Subsector)
-    assert len(subsector.agents) == 2
+    assert len(subsector.agents) == 1
