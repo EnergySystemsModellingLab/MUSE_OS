@@ -515,21 +515,33 @@ def demand_limitting_capacity(
     the maximum capacity expansion. In this case, the combined new capacity of all
     assets must be sufficient to meet the demand of the most demanding timeslice, and
     no more.
+
+    Rather than coding from scratch the constraint, we can use the max_production
+    constraint and the demand constraint to construct this constraint.
     """
     # We start with the maximum production constraint and the demand constraint
     capacity_constraint = max_production(
-        demand_, assets, search_space, market, technologies, year
+        demand_, assets, search_space, market, technologies, year=year
     )
     demand_constraint = demand(
-        demand_, assets, search_space, market, technologies, year
+        demand_, assets, search_space, market, technologies, year=year
     )
 
     # We need to find the most demanding timeslice and use as the demand constraint
-    b = demand_constraint.b.max("timeslice")
+    if "timeslice" in demand_constraint.b.dims:
+        b = demand_constraint.b.max("timeslice")
+    else:
+        b = demand_constraint.b
+
+    # Drop 'year' so there's no confusion with the 'year' in the capacity constraint
+    b = b.drop_vars("year")
 
     # Now we need to find the maximum capacity constraint (as the capacity here is
-    # negative)
-    capacity = capacity_constraint.capacity.max("timeslice")
+    # negative), and switch the sign to make it positive
+    if "timeslice" in capacity_constraint.capacity.dims:
+        capacity = -capacity_constraint.capacity.max("timeslice")
+    else:
+        capacity = -capacity_constraint.capacity
 
     return xr.Dataset(
         dict(capacity=capacity, production=0, b=b),
