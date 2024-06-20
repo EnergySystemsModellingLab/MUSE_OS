@@ -57,7 +57,7 @@ menu = [
             {
                 "type": "Link",
                 "menuTitle": "Log a question in GitHub",
-                "url": "https://github.com/SGIModel/MUSE_OS/issues/new/choose",
+                "url": "https://github.com/EnergySystemsModellingLab/MUSE_OS/issues/new/choose",
             },
             {
                 "type": "AboutDialog",
