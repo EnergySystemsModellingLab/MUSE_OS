@@ -4,7 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 authors = [
-    {name = "Hawkes Research Group @ Chemical Engineering, Imperial College London", email = "a.hawkes@imperial.ac.uk"}
+    {name = "Hawkes Research Group @ Chemical Engineering, Imperial College London", email = "a.hawkes@imperial.ac.uk"},
+    {name = "Imperial College London RSE Team", email = "ict-rse-team@imperial.ac.uk"}
 ]
 name = "MUSE_OS"
 description = "Energy System Model"
