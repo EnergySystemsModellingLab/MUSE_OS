@@ -1,3 +1,4 @@
+from itertools import chain, permutations
 from pathlib import Path
 
 import toml
@@ -459,3 +460,34 @@ def test_check_utilization_not_all_zero_fail_missing_column():
 
     with raises(ValueError):
         check_utilization_not_all_zero(df, "file.csv")
+
+
+def test_check_minimum_service_factors_in_range_success():
+    import pandas as pd
+    from muse.readers.csv import check_minimum_service_factors_in_range
+
+    df = pd.DataFrame({"minimum_service_factor": (0, 1)})
+    check_minimum_service_factors_in_range(df, "file.csv")
+
+
+def test_check_minimum_service_factors_in_range_column_missing():
+    import pandas as pd
+    from muse.readers.csv import check_minimum_service_factors_in_range
+
+    # If the minimum_service_factor column is missing, the function should just return
+    # without raising an error
+    df = pd.DataFrame()
+    check_minimum_service_factors_in_range(df, "file.csv")
+
+
+@mark.parametrize(
+    "values", chain.from_iterable(permutations((0, bad)) for bad in (-1, 2))
+)
+def test_check_minimum_service_factors_in_range_fail(values):
+    import pandas as pd
+    from muse.readers.csv import check_minimum_service_factors_in_range
+
+    df = pd.DataFrame({"minimum_service_factor": values})
+
+    with raises(ValueError):
+        check_minimum_service_factors_in_range(df, "file.csv")
