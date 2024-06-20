@@ -534,15 +534,16 @@ def demand_limitting_capacity(
     else:
         b = demand_constraint.b
 
-    # Drop 'year' so there's no confusion with the 'year' in the capacity constraint
-    b = b.drop_vars("year")
-
     # Now we need to find the maximum capacity constraint (as the capacity here is
     # negative), and switch the sign to make it positive
     if "timeslice" in capacity_constraint.capacity.dims:
         capacity = -capacity_constraint.capacity.max("timeslice")
     else:
         capacity = -capacity_constraint.capacity
+
+    # Drop 'year' so there's no conflict with the 'year' in the capacity constraint
+    if "year" in b.dims and "year" in capacity.dims:
+        b = b.drop_vars("year")
 
     return xr.Dataset(
         dict(capacity=capacity, production=0, b=b),
