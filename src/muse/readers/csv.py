@@ -940,7 +940,12 @@ def check_utilization_not_all_zero(data, filename):
 
 
 def check_minimum_service_factors_in_range(data, filename):
-    min_service_factor = data["minimum_service_factor"]
+    try:
+        min_service_factor = data["minimum_service_factor"]
+    except KeyError:
+        # Minimum service factor not specified, so we don't need to check it
+        return
+
     if not np.all((0 <= min_service_factor) & (min_service_factor <= 1)):
         raise ValueError(
             f"""Minimum service factor values must all be between 0 and 1 inclusive.
