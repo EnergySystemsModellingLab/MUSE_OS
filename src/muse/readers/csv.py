@@ -150,6 +150,7 @@ def read_technodata_timeslices(filename: Union[str, Path]) -> xr.Dataset:
 
     data = data.apply(to_numeric)
     check_utilization_not_all_zero(data, filename)
+    check_minimum_service_factors_in_range(data, filename)
 
     ts = pd.MultiIndex.from_frame(
         data.drop(
