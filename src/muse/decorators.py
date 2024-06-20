@@ -1,12 +1,13 @@
+from collections.abc import Mapping
 from logging import getLogger
-from typing import Callable, Mapping, Text
+from typing import Callable
 
 from muse.registration import registrator
 
 SETTINGS_CHECKS_SIGNATURE = Callable[[dict], None]
 """settings checks signature."""
 
-SETTINGS_CHECKS: Mapping[Text, SETTINGS_CHECKS_SIGNATURE] = {}
+SETTINGS_CHECKS: Mapping[str, SETTINGS_CHECKS_SIGNATURE] = {}
 """Dictionary of settings checks."""
 
 
@@ -26,7 +27,7 @@ def register_settings_check(function: SETTINGS_CHECKS_SIGNATURE):
     def decorated(settings) -> None:
         result = function(settings)
 
-        msg = " {} PASSED".format(function.__name__)
+        msg = f" {function.__name__} PASSED"
         getLogger(__name__).info(msg)
 
         return result

@@ -27,7 +27,7 @@ The same models can be instantiated in a python script as follows:
 
 from logging import getLogger
 from pathlib import Path
-from typing import List, Optional, Text, Union, cast
+from typing import Optional, Union, cast
 
 import numpy as np
 import xarray as xr
@@ -45,12 +45,12 @@ def example_data_dir() -> Path:
     return Path(muse.__file__).parent / "data" / "example"
 
 
-def available_examples() -> List[str]:
+def available_examples() -> list[str]:
     """List examples available in the examples folder."""
     return [d.stem for d in example_data_dir().iterdir() if d.is_dir()]
 
 
-def model(name: Text = "default") -> MCA:
+def model(name: str = "default") -> MCA:
     """Fully constructs a given example model."""
     from tempfile import TemporaryDirectory
 
@@ -66,8 +66,8 @@ def model(name: Text = "default") -> MCA:
 
 
 def copy_model(
-    name: Text = "default",
-    path: Optional[Union[Text, Path]] = None,
+    name: str = "default",
+    path: Optional[Union[str, Path]] = None,
     overwrite: bool = False,
 ) -> Path:
     """Copy model files to given path.
@@ -86,14 +86,14 @@ def copy_model(
     path = Path() if path is None else Path(path)
 
     if path.exists() and not path.is_dir():
-        raise IOError(f"{path} exists and is not a directory")
+        raise OSError(f"{path} exists and is not a directory")
 
     path /= "model"
     if path.exists():
         if not path.is_dir():
-            raise IOError(f"{path} exists and is not a directory")
+            raise OSError(f"{path} exists and is not a directory")
         elif not overwrite:
-            raise IOError(f"{path} exists and ``overwrite`` is not allowed")
+            raise OSError(f"{path} exists and ``overwrite`` is not allowed")
         rmtree(path)
 
     if name.lower() == "default":
@@ -111,7 +111,7 @@ def copy_model(
     return path
 
 
-def technodata(sector: Text, model: Text = "default") -> xr.Dataset:
+def technodata(sector: str, model: str = "default") -> xr.Dataset:
     """Technology for a sector of a given example model."""
     from tempfile import TemporaryDirectory
 
@@ -129,7 +129,7 @@ def technodata(sector: Text, model: Text = "default") -> xr.Dataset:
         return read_technodata(settings, sector)
 
 
-def search_space(sector: Text, model: Text = "default") -> xr.DataArray:
+def search_space(sector: str, model: str = "default") -> xr.DataArray:
     """Determines which technology is considered for which asset.
 
     Used in constraints or during investment.
@@ -139,7 +139,7 @@ def search_space(sector: Text, model: Text = "default") -> xr.DataArray:
     return _nontrade_search_space(sector, model)
 
 
-def sector(sector: Text, model: Text = "default") -> AbstractSector:
+def sector(sector: str, model: str = "default") -> AbstractSector:
     """Loads a given sector from a given example model."""
     from tempfile import TemporaryDirectory
 
@@ -153,7 +153,7 @@ def sector(sector: Text, model: Text = "default") -> AbstractSector:
         return SECTORS_REGISTERED[kind](sector, settings)
 
 
-def available_sectors(model: Text = "default") -> List[Text]:
+def available_sectors(model: str = "default") -> list[str]:
     """Sectors in this particular model."""
     from tempfile import TemporaryDirectory
 
@@ -165,7 +165,7 @@ def available_sectors(model: Text = "default") -> List[Text]:
         return [u for u in undo_damage(settings).keys() if u != "list"]
 
 
-def mca_market(model: Text = "default") -> xr.Dataset:
+def mca_market(model: str = "default") -> xr.Dataset:
     """Initial market as seen by the MCA."""
     from tempfile import TemporaryDirectory
 
@@ -202,7 +202,7 @@ def mca_market(model: Text = "default") -> xr.Dataset:
         return cast(xr.Dataset, market)
 
 
-def residential_market(model: Text = "default") -> xr.Dataset:
+def residential_market(model: str = "default") -> xr.Dataset:
     """Initial market as seen by the residential sector."""
     from muse.mca import single_year_iteration
 
@@ -238,7 +238,7 @@ def random_agent_assets(rng: np.random.Generator):
     return result
 
 
-def matching_market(sector: Text, model: Text = "default") -> xr.Dataset:
+def matching_market(sector: str, model: str = "default") -> xr.Dataset:
     """Market with a demand matching the maximum production from a sector."""
     from muse.examples import sector as load_sector
     from muse.quantities import consumption, maximum_production
@@ -366,7 +366,7 @@ def _copy_trade(path: Path):
     copyfile(example_data_dir() / "trade" / "settings.toml", path / "settings.toml")
 
 
-def _trade_search_space(sector: Text, model: Text = "default") -> xr.DataArray:
+def _trade_search_space(sector: str, model: str = "default") -> xr.DataArray:
     from muse.agents import Agent
     from muse.examples import sector as load_sector
     from muse.sectors import Sector
@@ -392,7 +392,7 @@ def _trade_search_space(sector: Text, model: Text = "default") -> xr.DataArray:
     )
 
 
-def _nontrade_search_space(sector: Text, model: Text = "default") -> xr.DataArray:
+def _nontrade_search_space(sector: str, model: str = "default") -> xr.DataArray:
     from numpy import ones
 
     technology = technodata(sector, model).technology

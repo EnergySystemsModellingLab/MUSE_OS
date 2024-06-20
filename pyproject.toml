@@ -108,12 +108,16 @@ files = ["src/**/*.py", "tests/**/*.py"]
 module = ["setup"]
 ignore_errors = true
 
+[tool.ruff]
+target-version = "py39"
+
 [tool.ruff.lint]
 select = [
     "D",  # pydocstyle
     "E",  # pycodestyle
     "F",  # Pyflakes
     "I",  # isort
+    "UP",  # Pyupgrade
     "RUF"  # Ruff's own checks
 ]
 ignore = [

@@ -4,10 +4,11 @@ This is needed to interface the new MCA with the old MUSE sectors. It can be del
 once accessing those sectors is no longer needed.
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from itertools import chain
 from logging import getLogger
-from typing import Any, Dict, Sequence, Text, Tuple, Union
+from typing import Any, Union
 
 import numpy as np
 import pandas as pd
@@ -20,7 +21,7 @@ from muse.timeslices import QuantityType, new_to_old_timeslice
 
 
 @dataclass
-class LegacyMarket(object):
+class LegacyMarket:
     BaseYear: int
     EndYear: int
     Foresight: np.ndarray
@@ -32,13 +33,13 @@ class LegacyMarket(object):
     macro_drivers: pd.DataFrame
     dfRegions: pd.DataFrame
     Regions: np.ndarray
-    interpolation_mode: Text
+    interpolation_mode: str
 
 
 @register_sector(name="legacy")
 class LegacySector(AbstractSector):  # type: ignore
     @classmethod
-    def factory(cls, name: Text, settings: Any, **kwargs) -> "LegacySector":
+    def factory(cls, name: str, settings: Any, **kwargs) -> "LegacySector":
         from pathlib import Path
 
         from muse_legacy.sectors import SECTORS
@@ -130,7 +131,7 @@ class LegacySector(AbstractSector):  # type: ignore
             name: global_commodities.isel(commodity=sector_comm),
         }
 
-        msg = "LegacySector {} created successfully.".format(name)
+        msg = f"LegacySector {name} created successfully."
         getLogger(__name__).info(msg)
         return cls(
             name,
@@ -150,19 +151,19 @@ class LegacySector(AbstractSector):  # type: ignore
 
     def __init__(
         self,
-        name: Text,
+        name: str,
         old_sector,
-        timeslices: Dict,
-        commodities: Dict,
+        timeslices: dict,
+        commodities: dict,
         commodity_price: DataArray,
         static_trade: DataArray,
         regions: Sequence,
         time_framework: np.ndarray,
-        mode: Text,
+        mode: str,
         excess: Union[int, float],
-        market_iterative: Text,
-        sectors_dir: Text,
-        output_dir: Text,
+        market_iterative: str,
+        sectors_dir: str,
+        output_dir: str,
     ):
         super().__init__()
         self.name = name
@@ -277,7 +278,7 @@ class LegacySector(AbstractSector):  # type: ignore
         return result
 
     @staticmethod
-    def load_timeslices_and_aggregation(timeslices, sectors) -> Tuple[dict, str]:
+    def load_timeslices_and_aggregation(timeslices, sectors) -> tuple[dict, str]:
         """Loads all sector timeslices and finds the finest one."""
         timeslices = {"prices": timeslices.rename("prices timeslices")}
         finest = timeslices["prices"].copy()
@@ -378,11 +379,11 @@ def ndarray_to_xarray(
     global_commodities: DataArray,
     sector_commodities: DataArray,
     data_ts: pd.MultiIndex,
-    dims: Sequence[Text],
-    regions: Sequence[Text],
+    dims: Sequence[str],
+    regions: Sequence[str],
 ) -> DataArray:
     """From ndarray to dataarray."""
-    from typing import Hashable, Mapping
+    from collections.abc import Hashable, Mapping
 
     from muse.timeslices import convert_timeslice
 
@@ -403,11 +404,11 @@ def xarray_to_ndarray(
     ts: pd.MultiIndex,
     qt: QuantityType,
     global_commodities: DataArray,
-    dims: Sequence[Text],
-    regions: Sequence[Text],
+    dims: Sequence[str],
+    regions: Sequence[str],
 ) -> np.ndarray:
     """From dataarray to ndarray."""
-    from typing import Hashable, Mapping
+    from collections.abc import Hashable, Mapping
 
     from muse.timeslices import convert_timeslice
 
@@ -424,7 +425,7 @@ def xarray_to_ndarray(
     return result.values
 
 
-def commodities_idx(sector, comm: Text) -> Sequence:
+def commodities_idx(sector, comm: str) -> Sequence:
     """Gets the indices of the commodities involved in the processes of the sector.
 
     Arguments:

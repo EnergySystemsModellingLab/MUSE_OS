@@ -11,20 +11,21 @@ __all__ = [
     "housekeeping_factory",
     "asset_merge_factory",
 ]
-from typing import Callable, Mapping, MutableMapping, Text, Union
+from collections.abc import Mapping, MutableMapping
+from typing import Callable, Union
 
 from xarray import Dataset
 
 from muse.agents import Agent
 from muse.registration import registrator
 
-INITIAL_ASSET_TRANSFORM: MutableMapping[Text, Callable] = {}
+INITIAL_ASSET_TRANSFORM: MutableMapping[str, Callable] = {}
 """ Transform at the start of each step. """
-FINAL_ASSET_TRANSFORM: MutableMapping[Text, Callable] = {}
+FINAL_ASSET_TRANSFORM: MutableMapping[str, Callable] = {}
 """ Transform at the end of each step, including new assets. """
 
 
-def housekeeping_factory(settings: Union[Text, Mapping] = "noop") -> Callable:
+def housekeeping_factory(settings: Union[str, Mapping] = "noop") -> Callable:
     """Returns a function for performing initial housekeeping.
 
     For instance, remove technologies with no capacity now or in the future.
@@ -33,7 +34,7 @@ def housekeeping_factory(settings: Union[Text, Mapping] = "noop") -> Callable:
     """
     from muse.agents import AbstractAgent
 
-    if isinstance(settings, Text):
+    if isinstance(settings, str):
         name = settings
         params: Mapping = {}
     else:
@@ -48,7 +49,7 @@ def housekeeping_factory(settings: Union[Text, Mapping] = "noop") -> Callable:
     return initial_assets_transform
 
 
-def asset_merge_factory(settings: Union[Text, Mapping] = "new") -> Callable:
+def asset_merge_factory(settings: Union[str, Mapping] = "new") -> Callable:
     """Returns a function for merging new investments into assets.
 
     Available merging functions should be registered with
@@ -60,7 +61,7 @@ def asset_merge_factory(settings: Union[Text, Mapping] = "new") -> Callable:
     Available housekeeping functions should be registered with
     :py:func:`@register_initial_asset_transform<register_initial_asset_transform>`.
     """
-    if isinstance(settings, Text):
+    if isinstance(settings, str):
         name = settings
         params: Mapping = {}
     else:

@@ -82,9 +82,7 @@ def test_aggregate_sector_manyregions():
     from pandas import DataFrame, concat
 
     mca = examples.model("multiple_agents")
-    residential = next(
-        (sector for sector in mca.sectors if sector.name == "residential")
-    )
+    residential = next(sector for sector in mca.sectors if sector.name == "residential")
     agents = list(residential.agents)
     agents[0].assets["region"] = "BELARUS"
     agents[1].assets["region"] = "BELARUS"

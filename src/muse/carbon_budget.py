@@ -1,4 +1,5 @@
-from typing import Callable, MutableMapping, Sequence, Text
+from collections.abc import MutableMapping, Sequence
+from typing import Callable
 
 import numpy as np
 import xarray as xr
@@ -17,10 +18,10 @@ CARBON_BUDGET_FITTERS_SIGNATURE = Callable[[np.ndarray, np.ndarray, int], float]
 """carbon budget fitters signature."""
 
 
-CARBON_BUDGET_METHODS: MutableMapping[Text, CARBON_BUDGET_METHODS_SIGNATURE] = {}
+CARBON_BUDGET_METHODS: MutableMapping[str, CARBON_BUDGET_METHODS_SIGNATURE] = {}
 """Dictionary of carbon budget methods checks."""
 
-CARBON_BUDGET_FITTERS: MutableMapping[Text, CARBON_BUDGET_FITTERS_SIGNATURE] = {}
+CARBON_BUDGET_FITTERS: MutableMapping[str, CARBON_BUDGET_FITTERS_SIGNATURE] = {}
 """Dictionary of carbon budget fitters."""
 
 
@@ -80,7 +81,7 @@ def fitting(
     sample_size: int = 4,
     refine_price: bool = True,
     price_too_high_threshold: float = 10,
-    fitter: Text = "slinear",
+    fitter: str = "slinear",
 ) -> float:
     """Used to solve the carbon market.
 
@@ -372,7 +373,7 @@ def bisection(
     sample_size: int = 2,
     refine_price: bool = True,
     price_too_high_threshold: float = 10,
-    fitter: Text = "slinear",
+    fitter: str = "slinear",
 ) -> float:
     """Applies bisection algorithm to escalate carbon price and meet the budget.
 
