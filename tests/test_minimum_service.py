@@ -1,7 +1,7 @@
-from itertools import permutations
+from itertools import chain, permutations
 
 import numpy as np
-from pytest import mark
+from pytest import mark, raises
 
 
 def modify_minimum_service_factors(
@@ -64,3 +64,35 @@ def test_minimum_service_factor(tmpdir, minimum_service_factors):
                 ].supply
                 >= factor
             ).all()
+
+
+@mark.parametrize(
+    "minimum_service_factors",
+    chain.from_iterable(map(permutations, ((-1, 0), (2, 0), (float("nan"), 0)))),
+)
+def test_minimum_service_factor_invalid_input(tmpdir, minimum_service_factors):
+    from muse import examples
+    from muse.mca import MCA
+
+    sector = "power"
+    processes = ("gasCCGT", "windturbine")
+
+    # Copy the model inputs to tmpdir
+    model_path = examples.copy_model(
+        name="default_timeslice", path=tmpdir, overwrite=True
+    )
+
+    technodata_timeslices = modify_minimum_service_factors(
+        model_path=model_path,
+        sector=sector,
+        processes=processes,
+        minimum_service_factors=minimum_service_factors,
+    )
+
+    technodata_timeslices.to_csv(
+        model_path / "technodata" / sector / "TechnodataTimeslices.csv", index=False
+    )
+
+    with raises(ValueError):
+        with tmpdir.as_cwd():
+            MCA.factory(model_path / "settings.toml").run()
