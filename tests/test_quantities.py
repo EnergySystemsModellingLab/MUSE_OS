@@ -9,7 +9,8 @@ from pytest import approx, fixture
 def demand(
     technologies: xr.Dataset, capacity: xr.DataArray, market: xr.DataArray
 ) -> xr.DataArray:
-    from typing import Any, Hashable, Mapping
+    from collections.abc import Hashable, Mapping
+    from typing import Any
 
     region = xr.DataArray(list(set(capacity.region.values)), dims="region")
     coords: Mapping[Hashable, Any] = {

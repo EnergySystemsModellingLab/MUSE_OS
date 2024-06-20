@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Text
+from typing import Optional
 
 from pytest import approx, mark
 
@@ -44,7 +44,7 @@ def legacy_inputs():
     ]
 
 
-def legacy_input_file(sector: Text) -> Optional[Path]:
+def legacy_input_file(sector: str) -> Optional[Path]:
     """Gets the legacy sector settings file."""
     input_file = (
         Path(__file__).parent

@@ -1,7 +1,6 @@
 """Test saving outputs to file."""
 
 from pathlib import Path
-from typing import Dict, Text
 from unittest.mock import patch
 
 import numpy as np
@@ -217,7 +216,7 @@ def test_yearly_aggregate():
         pass
 
     @register_output_sink(overwrite=True)
-    def dummy(data, year: int, sector: Text, overwrite: bool) -> MySpecialReturn:
+    def dummy(data, year: int, sector: str, overwrite: bool) -> MySpecialReturn:
         nonlocal received_data, gyear, gsector, goverwrite
         received_data = data
         gyear = year
@@ -496,7 +495,7 @@ def test_match_quantities():
     da = xr.DataArray(name=q)
     ds = xr.Dataset({q: da})
 
-    def assert_equal(a: Dict[str, xr.DataArray], b: Dict[str, xr.DataArray]):
+    def assert_equal(a: dict[str, xr.DataArray], b: dict[str, xr.DataArray]):
         assert set(a.keys()) == set(b.keys())
         for k in a:
             xr.testing.assert_equal(a[k], b[k])
@@ -586,7 +585,7 @@ def test_aggregate_cache():
 
     c = a.copy()
     c.assign_coords(dim_0=c.dim_0.data * 10)
-    dc, da = [da.to_dataframe().reset_index() for da in [c, a]]
+    dc, da = (da.to_dataframe().reset_index() for da in [c, a])
 
     actual = _aggregate_cache(quantity, [c, a])
     expected = pd.DataFrame.merge(dc, da, how="outer").astype(float)
@@ -635,10 +634,7 @@ def test_consolidate_quantity(newcapa_agent, retro_agent):
     assert all(actual.year == newcapa_agent.forecast_year)
     assert all(actual.installed == newcapa_agent.year)
     assert all(
-        (
-            name in (newcapa_agent.name, retro_agent.name)
-            for name in actual.agent.unique()
-        )
+        name in (newcapa_agent.name, retro_agent.name) for name in actual.agent.unique()
     )
 
 
