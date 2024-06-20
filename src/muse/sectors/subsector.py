@@ -191,6 +191,7 @@ class Subsector:
             # only used by self-investing agents
             investment=getattr(settings, "lpsolver", "adhoc"),
             forecast=getattr(settings, "forecast", 5),
+            constraints=getattr(settings, "constraints", ()),
         )
         # technologies can have nans where a commodity
         # does not apply to a technology at all

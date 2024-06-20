@@ -225,7 +225,7 @@ def factory(
     """
     from functools import partial
 
-    if settings is None:
+    if not settings:
         settings = (
             "max_production",
             "max_capacity_expansion",
