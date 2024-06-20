@@ -7,7 +7,7 @@ MUSE is available as a standalone application for Windows that bundles together 
 
 To get and install the standalone version of MUSE simply:
 
-- Go to the `releases page in GitHub <https://github.com/SGIModel/MUSE_OS/releases>`_ and download the standalone bundle for the release you are interested. Note that **there are bundles only from MUSE v1.1.0 onwards**, and it might be that not all releases have a bundle.
+- Go to the `releases page in GitHub <https://github.com/EnergySystemsModellingLab/MUSE_OS/releases>`_ and download the standalone bundle for the release you are interested. Note that **there are bundles only from MUSE v1.1.0 onwards**, and it might be that not all releases have a bundle.
 - Unzip it to a known location in your drive, eg. ``Documents/Programs/MUSE``
 
 Inside the resulting directory you will see many files and documents related to Python and MUSE dependencies. Look for ``muse.exe`` and ``muse_gui.exe``, which are the two executables of interest, one to run MUSE in the terminal (and therefore only makes sense to execute from the terminal!) and another to run the graphical user interface (GUI) of MUSE. Just double click in ``muse_gui.exe`` and you should see the main MUSE GUI, like the following:
