@@ -2,7 +2,7 @@
 [![PyPI status](https://img.shields.io/pypi/status/MUSE-OS.svg)](https://pypi.python.org/pypi/MUSE-OS/)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/MUSE-OS.svg)](https://pypi.python.org/pypi/MUSE-OS/)
 [![PyPI license](https://img.shields.io/pypi/l/MUSE-OS.svg)](https://pypi.python.org/pypi/MUSE-OS/)
-[![QA, tests and publishing](https://github.com/SGIModel/MUSE_OS/actions/workflows/ci.yml/badge.svg)](https://github.com/SGIModel/MUSE_OS/actions/workflows/ci.yml)
+[![QA, tests and publishing](https://github.com/EnergySystemsModellingLab/MUSE_OS/actions/workflows/ci.yml/badge.svg)](https://github.com/EnergySystemsModellingLab/MUSE_OS/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/EnergySystemsModellingLab/MUSE_OS/graph/badge.svg?token=KJFHOHMKWK)](https://codecov.io/gh/EnergySystemsModellingLab/MUSE_OS)
 
 # ModUlar energy system Simulation Environment: MUSE

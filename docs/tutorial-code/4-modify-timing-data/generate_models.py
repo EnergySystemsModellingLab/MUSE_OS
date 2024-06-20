@@ -22,12 +22,6 @@ def generate_model_1():
         shutil.rmtree(model_path)
     shutil.copytree(parent_path / "../3-add-region/1-new-region", model_path)
 
-    # Modify MaxCapacityGrowth (Undocumented)
-    technodata_file = model_path / "technodata/residential/Technodata.csv"
-    df = pd.read_csv(technodata_file)
-    df.loc[1:, "MaxCapacityGrowth"] = 0.04
-    df.to_csv(technodata_file, index=False)
-
     # Add timeslices
     add_timeslice(model_path, timeslice_name="early-morning", copy_from="evening")
     add_timeslice(model_path, timeslice_name="late-afternoon", copy_from="evening")
@@ -44,29 +38,29 @@ def generate_model_1():
     }  # hacky way to preserve the order
     settings_file.write_text(dumps(settings))
 
-    # Change consumption profile (Undocumented)
+    # Change consumption profile
     consumption_values = [
-        0.714,
-        1.071,
-        0.714,
-        1.071,
-        2.143,
-        1.429,
-        1.429,
-        1.429,
-        0.714,
-        1.071,
-        0.714,
-        1.071,
-        2.143,
-        1.429,
-        1.429,
-        1.429,
+        0.7,
+        1.0,
+        0.7,
+        1.0,
+        2.1,
+        1.4,
+        1.4,
+        1.4,
+        0.7,
+        1.0,
+        0.7,
+        1.0,
+        2.1,
+        1.4,
+        1.4,
+        1.4,
     ]
     for year, multiplier in zip([2020, 2050], [1, 3]):
         file = model_path / f"technodata/preset/Residential{year}Consumption.csv"
         df = pd.read_csv(file)
-        df["heat"] = [i * multiplier for i in consumption_values]
+        df["heat"] = [round(i * multiplier, 1) for i in consumption_values]
         df.to_csv(file, index=False)
 
 
@@ -97,7 +91,7 @@ def generate_model_2():
             ),
         )
 
-    # Double capacity limits in power sector
+    # Increase capacity limits in power sector
     technodata_file = model_path / "technodata/power/Technodata.csv"
     df = pd.read_csv(technodata_file)
     df.loc[1:, "MaxCapacityAddition"] = pd.to_numeric(df.loc[1:, "MaxCapacityAddition"])
@@ -108,13 +102,13 @@ def generate_model_2():
     df.loc[1:, "TotalCapacityLimit"] *= 2
     df.to_csv(technodata_file, index=False)
 
-    # Double capacity limits in residential sector
+    # Increase capacity limits in residential sector
     technodata_file = model_path / "technodata/residential/Technodata.csv"
     df = pd.read_csv(technodata_file)
     df.loc[1:, "MaxCapacityAddition"] = pd.to_numeric(df.loc[1:, "MaxCapacityAddition"])
     df.loc[1:, "MaxCapacityAddition"] *= 2
     df.loc[1:, "MaxCapacityGrowth"] = pd.to_numeric(df.loc[1:, "MaxCapacityGrowth"])
-    df.loc[1:, "MaxCapacityGrowth"] *= 2
+    df.loc[1:, "MaxCapacityGrowth"] *= 3
     df.loc[1:, "TotalCapacityLimit"] = pd.to_numeric(df.loc[1:, "TotalCapacityLimit"])
     df.loc[1:, "TotalCapacityLimit"] *= 2
     df.to_csv(technodata_file, index=False)

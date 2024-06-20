@@ -8,7 +8,7 @@ If the :ref:`pipx-based` does not work for you, you don't want to use ``pyenv`` 
 Installing Anaconda Python
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To install Anaconda, just go to the official `Anaconda webpage <https://www.anaconda.com/>`_ and download and install a version appropriate for your operative system. Do not worry about the Python version as ``conda`` will let you choose that when creating a virtual environment.
+To install Anaconda, just go to the official `Anaconda webpage <https://www.anaconda.com/>`_ and download and install a version appropriate for your operating system. Do not worry about the Python version as ``conda`` will let you choose that when creating a virtual environment.
 
 The installer should guide you step by step on the process of installing Anaconda and configuring your system to use it as your Python installation.
 
@@ -26,7 +26,7 @@ Using ``pipx`` ensures that each application it installs has its own virtual env
 Creating a ``conda`` virtual environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This option is available only if you installed Anaconda Python. Depending on the settings you used when installing Anaconda and your operative system, you might have ``conda`` available in your normal terminal or you might need to use the Anaconda Prompt.
+This option is available only if you installed Anaconda Python. Depending on the settings you used when installing Anaconda and your operating system, you might have ``conda`` available in your normal terminal or you might need to use the Anaconda Prompt.
 
 ``conda`` not only lets you create a virtual environment but also selecting which python version to use within, independently of the version of Anaconda Python installed, which means it can be an alternative to ``pyenv`` if it happens that you already have Anaconda installed in your system.
 

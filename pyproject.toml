@@ -3,7 +3,10 @@ requires = ["setuptools>=61", "wheel", "setuptools_scm>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-authors = [{name = "Sustainable Gas Institute", email = "sgi@imperial.ac.uk"}]
+authors = [
+    {name = "Hawkes Research Group @ Chemical Engineering, Imperial College London", email = "a.hawkes@imperial.ac.uk"},
+    {name = "Imperial College London RSE Team", email = "ict-rse-team@imperial.ac.uk"}
+]
 name = "MUSE_OS"
 description = "Energy System Model"
 readme = "README.md"
@@ -21,7 +24,7 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
 ]
 dependencies = [
-    "numpy",
+    "numpy<2.0",
     "scipy",
     "pandas",
     "xarray",
