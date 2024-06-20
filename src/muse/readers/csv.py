@@ -100,7 +100,7 @@ def read_technodictionary(filename: Union[str, Path]) -> xr.Dataset:
     data = data.drop(["process_name", "region_name", "time"], axis=1)
     data = data.apply(to_numeric, axis=0)
 
-    check_utilization_not_all_zero(data, filename)
+    check_utilization_and_minimum_service_factors(data, filename)
 
     result = xr.Dataset.from_dataframe(data.sort_index())
     if "fuel" in result.variables:
@@ -132,8 +132,6 @@ def read_technodictionary(filename: Union[str, Path]) -> xr.Dataset:
     if "year" in result.dims and len(result.year) == 1:
         result = result.isel(year=0, drop=True)
 
-    check_minimum_service_factors_in_range(data, filename)
-
     return result
 
 
@@ -149,8 +147,7 @@ def read_technodata_timeslices(filename: Union[str, Path]) -> xr.Dataset:
     data = csv[csv.technology != "Unit"]
 
     data = data.apply(to_numeric)
-    check_utilization_not_all_zero(data, filename)
-    check_minimum_service_factors_in_range(data, filename)
+    check_utilization_and_minimum_service_factors(data, filename)
 
     ts = pd.MultiIndex.from_frame(
         data.drop(
@@ -925,13 +922,18 @@ def read_finite_resources(path: Union[str, Path]) -> xr.DataArray:
     return xr.Dataset.from_dataframe(data).to_array(dim="commodity")
 
 
-def check_utilization_not_all_zero(data, filename):
+def check_utilization_and_minimum_service_factors(data, filename):
     if "utilization_factor" not in data.columns:
         raise ValueError(
             f"""A technology needs to have a utilization factor defined for every
              timeslice. Please check file {filename}."""
         )
 
+    _check_utilization_not_all_zero(data, filename)
+    _check_minimum_service_factors_in_range(data, filename)
+
+
+def _check_utilization_not_all_zero(data, filename):
     utilization_sum = data.groupby(["technology", "region", "year"]).sum()
 
     if (utilization_sum.utilization_factor == 0).any():
@@ -941,7 +943,7 @@ def check_utilization_not_all_zero(data, filename):
         )
 
 
-def check_minimum_service_factors_in_range(data, filename):
+def _check_minimum_service_factors_in_range(data, filename):
     try:
         min_service_factor = data["minimum_service_factor"]
     except KeyError:
