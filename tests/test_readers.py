@@ -449,6 +449,25 @@ def test_check_utilization_in_range_fail(values):
         _check_utilization_in_range(df, "file.csv")
 
 
+def test_check_utilization_not_below_minimum_success():
+    import pandas as pd
+    from muse.readers.csv import _check_utilization_not_below_minimum
+
+    df = pd.DataFrame({"utilization_factor": (0, 1), "minimum_service_factor": (0, 0)})
+    _check_utilization_not_below_minimum(df, "file.csv")
+
+
+def test_check_utilization_not_below_minimum_fail():
+    import pandas as pd
+    from muse.readers.csv import _check_utilization_not_below_minimum
+
+    df = pd.DataFrame(
+        {"utilization_factor": (0, 1), "minimum_service_factor": (0.1, 0)}
+    )
+    with raises(ValueError):
+        _check_utilization_not_below_minimum(df, "file.csv")
+
+
 def test_check_utilization_not_all_zero_fail_all_zero():
     import pandas as pd
     from muse.readers.csv import _check_utilization_not_all_zero
@@ -489,6 +508,7 @@ def test_check_minimum_service_factors_in_range_fail(values):
 
 @patch("muse.readers.csv._check_utilization_in_range")
 @patch("muse.readers.csv._check_utilization_not_all_zero")
+@patch("muse.readers.csv._check_utilization_not_below_minimum")
 @patch("muse.readers.csv._check_minimum_service_factors_in_range")
 def test_check_utilization_and_minimum_service_factors(*mocks):
     import pandas as pd
@@ -504,9 +524,10 @@ def test_check_utilization_and_minimum_service_factors(*mocks):
 
 @patch("muse.readers.csv._check_utilization_in_range")
 @patch("muse.readers.csv._check_utilization_not_all_zero")
+@patch("muse.readers.csv._check_utilization_not_below_minimum")
 @patch("muse.readers.csv._check_minimum_service_factors_in_range")
 def test_check_utilization_and_minimum_service_factors_no_min(
-    min_service_factor_mock, *mocks
+    min_service_factor_mock, utilization_below_min_mock, *mocks
 ):
     import pandas as pd
     from muse.readers.csv import check_utilization_and_minimum_service_factors
@@ -516,10 +537,12 @@ def test_check_utilization_and_minimum_service_factors_no_min(
     for mock in mocks:
         mock.assert_called_once_with(df, "file.csv")
     min_service_factor_mock.assert_not_called()
+    utilization_below_min_mock.assert_not_called()
 
 
 @patch("muse.readers.csv._check_utilization_in_range")
 @patch("muse.readers.csv._check_utilization_not_all_zero")
+@patch("muse.readers.csv._check_utilization_not_below_minimum")
 @patch("muse.readers.csv._check_minimum_service_factors_in_range")
 def test_check_utilization_and_minimum_service_factors_fail_missing_utilization(*mocks):
     import pandas as pd

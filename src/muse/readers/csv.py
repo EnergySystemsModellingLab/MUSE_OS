@@ -934,6 +934,7 @@ def check_utilization_and_minimum_service_factors(data, filename):
 
     if "minimum_service_factor" in data.columns:
         _check_minimum_service_factors_in_range(data, filename)
+        _check_utilization_not_below_minimum(data, filename)
 
 
 def _check_utilization_not_all_zero(data, filename):
@@ -953,6 +954,13 @@ def _check_utilization_in_range(data, filename):
             f"""Utilization factor values must all be between 0 and 1 inclusive.
             Please check file {filename}."""
         )
+
+
+def _check_utilization_not_below_minimum(data, filename):
+    if (data["utilization_factor"] < data["minimum_service_factor"]).any():
+        raise ValueError(f"""Utilization factors must all be greater than or equal to
+                          their corresponding minimum service factors. Please check
+                         {filename}.""")
 
 
 def _check_minimum_service_factors_in_range(data, filename):
