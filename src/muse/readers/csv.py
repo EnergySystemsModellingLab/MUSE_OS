@@ -930,6 +930,7 @@ def check_utilization_and_minimum_service_factors(data, filename):
         )
 
     _check_utilization_not_all_zero(data, filename)
+    _check_utilization_in_range(data, filename)
     _check_minimum_service_factors_in_range(data, filename)
 
 
@@ -940,6 +941,15 @@ def _check_utilization_not_all_zero(data, filename):
         raise ValueError(
             f"""A technology can not have a utilization factor of 0 for every
                 timeslice. Please check file {filename}."""
+        )
+
+
+def _check_utilization_in_range(data, filename):
+    utilization = data["utilization_factor"]
+    if not np.all((0 <= utilization) & (utilization <= 1)):
+        raise ValueError(
+            f"""Utilization factor values must all be between 0 and 1 inclusive.
+            Please check file {filename}."""
         )
 
 

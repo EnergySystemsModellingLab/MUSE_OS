@@ -429,6 +429,26 @@ def test_check_utilization_not_all_zero_success():
     _check_utilization_not_all_zero(df, "file.csv")
 
 
+def test_check_utilization_in_range_success():
+    import pandas as pd
+    from muse.readers.csv import _check_utilization_in_range
+
+    df = pd.DataFrame({"utilization_factor": (0, 1)})
+    _check_utilization_in_range(df, "file.csv")
+
+
+@mark.parametrize(
+    "values", chain.from_iterable(permutations((0, bad)) for bad in (-1, 2))
+)
+def test_check_utilization_in_range_fail(values):
+    import pandas as pd
+    from muse.readers.csv import _check_utilization_in_range
+
+    df = pd.DataFrame({"utilization_factor": values})
+    with raises(ValueError):
+        _check_utilization_in_range(df, "file.csv")
+
+
 def test_check_utilization_not_all_zero_fail_all_zero():
     import pandas as pd
     from muse.readers.csv import _check_utilization_not_all_zero
@@ -478,6 +498,7 @@ def test_check_minimum_service_factors_in_range_fail(values):
 
 
 @patch("muse.readers.csv._check_minimum_service_factors_in_range")
+@patch("muse.readers.csv._check_utilization_in_range")
 @patch("muse.readers.csv._check_utilization_not_all_zero")
 def test_check_utilization_and_minimum_service_factors(*mocks):
     import pandas as pd
@@ -490,6 +511,7 @@ def test_check_utilization_and_minimum_service_factors(*mocks):
 
 
 @patch("muse.readers.csv._check_minimum_service_factors_in_range")
+@patch("muse.readers.csv._check_utilization_in_range")
 @patch("muse.readers.csv._check_utilization_not_all_zero")
 def test_check_utilization_and_minimum_service_factors_missing_column(*mocks):
     import pandas as pd
