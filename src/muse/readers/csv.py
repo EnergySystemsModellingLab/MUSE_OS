@@ -931,7 +931,9 @@ def check_utilization_and_minimum_service_factors(data, filename):
 
     _check_utilization_not_all_zero(data, filename)
     _check_utilization_in_range(data, filename)
-    _check_minimum_service_factors_in_range(data, filename)
+
+    if "minimum_service_factor" in data.columns:
+        _check_minimum_service_factors_in_range(data, filename)
 
 
 def _check_utilization_not_all_zero(data, filename):
@@ -954,11 +956,7 @@ def _check_utilization_in_range(data, filename):
 
 
 def _check_minimum_service_factors_in_range(data, filename):
-    try:
-        min_service_factor = data["minimum_service_factor"]
-    except KeyError:
-        # Minimum service factor not specified, so we don't need to check it
-        return
+    min_service_factor = data["minimum_service_factor"]
 
     if not np.all((0 <= min_service_factor) & (min_service_factor <= 1)):
         raise ValueError(
