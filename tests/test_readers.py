@@ -410,3 +410,52 @@ def test_read_trade_technodata(tmp_path):
         "max_capacity_growth",
         "total_capacity_limit",
     }
+
+
+def test_check_utilization_not_all_zero_success():
+    import pandas as pd
+    from muse.readers.csv import check_utilization_not_all_zero
+
+    df = pd.DataFrame(
+        {
+            "utilization_factor": (0, 1, 1),
+            "technology": ("gas", "gas", "solar"),
+            "region": ("GB", "GB", "FR"),
+            "year": (2010, 2010, 2011),
+        }
+    )
+    check_utilization_not_all_zero(df, "file.csv")
+
+
+def test_check_utilization_not_all_zero_fail_all_zero():
+    import pandas as pd
+    from muse.readers.csv import check_utilization_not_all_zero
+
+    df = pd.DataFrame(
+        {
+            "utilization_factor": (0, 0, 1),
+            "technology": ("gas", "gas", "solar"),
+            "region": ("GB", "GB", "FR"),
+            "year": (2010, 2010, 2011),
+        }
+    )
+
+    with raises(ValueError):
+        check_utilization_not_all_zero(df, "file.csv")
+
+
+def test_check_utilization_not_all_zero_fail_missing_column():
+    import pandas as pd
+    from muse.readers.csv import check_utilization_not_all_zero
+
+    # NB: Required utilization_factor column is missing
+    df = pd.DataFrame(
+        {
+            "technology": ("gas", "gas", "solar"),
+            "region": ("GB", "GB", "FR"),
+            "year": (2010, 2010, 2011),
+        }
+    )
+
+    with raises(ValueError):
+        check_utilization_not_all_zero(df, "file.csv")
