@@ -29,8 +29,8 @@ Once you have your environment created, **activate it** and install MUSE within 
     cd MUSE_OS
     # 1- Create a virtual environment
     # 2- Activate that virtual environment
-    # 3- Finally, install MUSE in editable mode with:
-    python -m pip install -e .[dev,doc]
+    # 3- Install MUSE in editable mode with: python -m pip install -e .[dev,doc]
+    # 4 - Invoke `muse --model default`
 
 .. note::
     Depending on your system, you might need to add quotation marks around ``[dev,doc]`` as in ``"[dev,doc]"``.

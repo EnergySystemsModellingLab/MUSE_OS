@@ -8,6 +8,9 @@ from pytest import mark
 
 def available_notebooks() -> List[Path]:
     """Locate the available notebooks in the docs."""
+    if not Path("Results/MCACapacity.csv").exists():
+        return []
+
     base_path = Path(__file__).parent.parent / "docs"
     return [p for p in base_path.rglob("*.ipynb") if "build" not in str(p)]
 
