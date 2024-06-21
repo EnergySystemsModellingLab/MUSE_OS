@@ -6,7 +6,7 @@ timeslice,commodity,year,asset,region,month,day,hour,technology,installed,supply
 0,CO2f,2055,5,R1,winter,all-week,all-day,procammonia_1,2035,18228.27250000000
 0,CO2f,2055,6,R1,winter,all-week,all-day,procammonia_1,2040,7892.26240000000
 0,CO2f,2055,7,R1,winter,all-week,all-day,procammonia_1,2045,7828.40920000000
-0,CO2f,2055,8,R1,winter,all-week,all-day,procammonia_1,2050,20214.22470000000
+0,CO2f,2055,8,R1,winter,all-week,all-day,procammonia_1,2050,21831.36270000000
 0,ammonia,2050,4,R1,winter,all-week,all-day,procammonia_1,2030,5.16890000000
 0,ammonia,2050,5,R1,winter,all-week,all-day,procammonia_1,2035,4.54880000000
 0,ammonia,2050,6,R1,winter,all-week,all-day,procammonia_1,2040,1.98540000000
@@ -14,7 +14,7 @@ timeslice,commodity,year,asset,region,month,day,hour,technology,installed,supply
 0,ammonia,2055,5,R1,winter,all-week,all-day,procammonia_1,2035,4.54880000000
 0,ammonia,2055,6,R1,winter,all-week,all-day,procammonia_1,2040,1.98540000000
 0,ammonia,2055,7,R1,winter,all-week,all-day,procammonia_1,2045,1.98540000000
-0,ammonia,2055,8,R1,winter,all-week,all-day,procammonia_1,2050,5.16890000000
+0,ammonia,2055,8,R1,winter,all-week,all-day,procammonia_1,2050,5.58240000000
 1,CO2f,2050,4,R1,summer,all-week,all-day,procammonia_1,2030,21511.86840000000
 1,CO2f,2050,5,R1,summer,all-week,all-day,procammonia_1,2035,18780.64440000000
 1,CO2f,2050,6,R1,summer,all-week,all-day,procammonia_1,2040,8131.42190000000
@@ -22,7 +22,7 @@ timeslice,commodity,year,asset,region,month,day,hour,technology,installed,supply
 1,CO2f,2055,5,R1,summer,all-week,all-day,procammonia_1,2035,18780.64440000000
 1,CO2f,2055,6,R1,summer,all-week,all-day,procammonia_1,2040,8131.42190000000
 1,CO2f,2055,7,R1,summer,all-week,all-day,procammonia_1,2045,8065.63370000000
-1,CO2f,2055,8,R1,summer,all-week,all-day,procammonia_1,2050,20826.77700000000
+1,CO2f,2055,8,R1,summer,all-week,all-day,procammonia_1,2050,22492.91920000000
 1,ammonia,2050,4,R1,summer,all-week,all-day,procammonia_1,2030,5.32550000000
 1,ammonia,2050,5,R1,summer,all-week,all-day,procammonia_1,2035,4.68670000000
 1,ammonia,2050,6,R1,summer,all-week,all-day,procammonia_1,2040,2.04560000000
@@ -30,7 +30,7 @@ timeslice,commodity,year,asset,region,month,day,hour,technology,installed,supply
 1,ammonia,2055,5,R1,summer,all-week,all-day,procammonia_1,2035,4.68670000000
 1,ammonia,2055,6,R1,summer,all-week,all-day,procammonia_1,2040,2.04560000000
 1,ammonia,2055,7,R1,summer,all-week,all-day,procammonia_1,2045,2.04560000000
-1,ammonia,2055,8,R1,summer,all-week,all-day,procammonia_1,2050,5.32550000000
+1,ammonia,2055,8,R1,summer,all-week,all-day,procammonia_1,2050,5.75150000000
 2,CO2f,2050,4,R1,spring-autumn,all-week,all-day,procammonia_1,2030,20879.16640000000
 2,CO2f,2050,5,R1,spring-autumn,all-week,all-day,procammonia_1,2035,18228.27250000000
 2,CO2f,2050,6,R1,spring-autumn,all-week,all-day,procammonia_1,2040,7892.26240000000
@@ -38,7 +38,7 @@ timeslice,commodity,year,asset,region,month,day,hour,technology,installed,supply
 2,CO2f,2055,5,R1,spring-autumn,all-week,all-day,procammonia_1,2035,18228.27250000000
 2,CO2f,2055,6,R1,spring-autumn,all-week,all-day,procammonia_1,2040,7892.26240000000
 2,CO2f,2055,7,R1,spring-autumn,all-week,all-day,procammonia_1,2045,7828.40920000000
-2,CO2f,2055,8,R1,spring-autumn,all-week,all-day,procammonia_1,2050,20214.22470000000
+2,CO2f,2055,8,R1,spring-autumn,all-week,all-day,procammonia_1,2050,21831.36270000000
 2,ammonia,2050,4,R1,spring-autumn,all-week,all-day,procammonia_1,2030,5.16890000000
 2,ammonia,2050,5,R1,spring-autumn,all-week,all-day,procammonia_1,2035,4.54880000000
 2,ammonia,2050,6,R1,spring-autumn,all-week,all-day,procammonia_1,2040,1.98540000000
@@ -46,4 +46,4 @@ timeslice,commodity,year,asset,region,month,day,hour,technology,installed,supply
 2,ammonia,2055,5,R1,spring-autumn,all-week,all-day,procammonia_1,2035,4.54880000000
 2,ammonia,2055,6,R1,spring-autumn,all-week,all-day,procammonia_1,2040,1.98540000000
 2,ammonia,2055,7,R1,spring-autumn,all-week,all-day,procammonia_1,2045,1.98540000000
-2,ammonia,2055,8,R1,spring-autumn,all-week,all-day,procammonia_1,2050,5.16890000000
+2,ammonia,2055,8,R1,spring-autumn,all-week,all-day,procammonia_1,2050,5.58240000000
