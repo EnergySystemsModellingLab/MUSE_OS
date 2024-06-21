@@ -47,6 +47,7 @@ def supply(
         production_method = maximum_production
 
     maxprod = production_method(technologies, capacity)
+    minprod = minimum_production(technologies, capacity)
     size = np.array(maxprod.region).size
     # in presence of trade demand needs to map maxprod dst_region
     if (
@@ -86,12 +87,14 @@ def supply(
         expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
 
     expanded_maxprod = (maxprod * demand / demand.sum(prodsum)).fillna(0)
-
+    expanded_minprod = (minprod * demand / demand.sum(prodsum)).fillna(0)
     expanded_demand = expanded_demand.reindex_like(maxprod)
+    expanded_minprod = expanded_minprod.reindex_like(maxprod)
 
     result = expanded_demand.where(
         expanded_demand <= expanded_maxprod, expanded_maxprod
     )
+    result = result.where(result >= expanded_minprod, expanded_minprod)
 
     # add production of environmental pollutants
     env = is_pollutant(technologies.comm_usage)
