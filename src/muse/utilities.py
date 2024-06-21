@@ -1,16 +1,11 @@
 """Collection of functions and stand-alone algorithms."""
 
+from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
 from typing import (
     Any,
     Callable,
-    Hashable,
-    Iterable,
-    Iterator,
-    Mapping,
     NamedTuple,
     Optional,
-    Sequence,
-    Text,
     Union,
     cast,
 )
@@ -20,7 +15,7 @@ import xarray as xr
 
 
 def multiindex_to_coords(
-    data: Union[xr.Dataset, xr.DataArray], dimension: Text = "asset"
+    data: Union[xr.Dataset, xr.DataArray], dimension: str = "asset"
 ):
     """Flattens multi-index dimension into multi-coord dimension."""
     from pandas import MultiIndex
@@ -38,7 +33,7 @@ def multiindex_to_coords(
 
 
 def coords_to_multiindex(
-    data: Union[xr.Dataset, xr.DataArray], dimension: Text = "asset"
+    data: Union[xr.Dataset, xr.DataArray], dimension: str = "asset"
 ) -> Union[xr.Dataset, xr.DataArray]:
     """Creates a multi-index from flattened multiple coords."""
     from pandas import MultiIndex
@@ -53,8 +48,8 @@ def coords_to_multiindex(
 
 def reduce_assets(
     assets: Union[xr.DataArray, xr.Dataset, Sequence[Union[xr.Dataset, xr.DataArray]]],
-    coords: Optional[Union[Text, Sequence[Text], Iterable[Text]]] = None,
-    dim: Text = "asset",
+    coords: Optional[Union[str, Sequence[str], Iterable[str]]] = None,
+    dim: str = "asset",
     operation: Optional[Callable] = None,
 ) -> Union[xr.DataArray, xr.Dataset]:
     r"""Combine assets along given asset dimension.
@@ -159,8 +154,8 @@ def reduce_assets(
     if assets[dim].size == 0:
         return assets
     if coords is None:
-        coords = [cast(Text, k) for k, v in assets.coords.items() if v.dims == (dim,)]
-    elif isinstance(coords, Text):
+        coords = [cast(str, k) for k, v in assets.coords.items() if v.dims == (dim,)]
+    elif isinstance(coords, str):
         coords = (coords,)
     coords = [k for k in coords if k in assets.coords and assets[k].dims == (dim,)]
     assets = copy(assets)
@@ -179,8 +174,8 @@ def reduce_assets(
 def broadcast_techs(
     technologies: Union[xr.Dataset, xr.DataArray],
     template: Union[xr.DataArray, xr.Dataset],
-    dimension: Text = "asset",
-    interpolation: Text = "linear",
+    dimension: str = "asset",
+    interpolation: str = "linear",
     installed_as_year: bool = True,
     **kwargs,
 ) -> Union[xr.Dataset, xr.DataArray]:
@@ -262,14 +257,12 @@ def clean_assets(assets: xr.Dataset, years: Union[int, Sequence[int]]):
 def filter_input(
     dataset: Union[xr.Dataset, xr.DataArray],
     year: Optional[Union[int, Iterable[int]]] = None,
-    interpolation: Text = "linear",
+    interpolation: str = "linear",
     **kwargs,
 ) -> Union[xr.Dataset, xr.DataArray]:
     """Filter inputs, taking care to interpolate years."""
-    from typing import Set
-
     if year is None:
-        setyear: Set[int] = set()
+        setyear: set[int] = set()
     else:
         try:
             setyear = {int(year)}  # type: ignore
@@ -299,7 +292,7 @@ def filter_input(
 def filter_with_template(
     data: Union[xr.Dataset, xr.DataArray],
     template: Union[xr.DataArray, xr.Dataset],
-    asset_dimension: Text = "asset",
+    asset_dimension: str = "asset",
     **kwargs,
 ):
     """Filters data to match template.
@@ -388,8 +381,8 @@ def lexical_comparison(
 def merge_assets(
     capa_a: xr.DataArray,
     capa_b: xr.DataArray,
-    interpolation: Text = "linear",
-    dimension: Text = "asset",
+    interpolation: str = "linear",
+    dimension: str = "asset",
 ) -> xr.DataArray:
     """Merge two capacity arrays."""
     years = sorted(set(capa_a.year.values).union(capa_b.year.values))
@@ -429,7 +422,7 @@ def merge_assets(
     return result
 
 
-def avoid_repetitions(data: xr.DataArray, dim: Text = "year") -> xr.DataArray:
+def avoid_repetitions(data: xr.DataArray, dim: str = "year") -> xr.DataArray:
     """List of years such that there is no repetition in the data.
 
     It removes the central year of any three consecutive years where all data is
@@ -464,7 +457,7 @@ def future_propagation(
     data: xr.DataArray,
     future: xr.DataArray,
     threshold: float = 1e-12,
-    dim: Text = "year",
+    dim: str = "year",
 ) -> xr.DataArray:
     """Propagates values into the future.
 
@@ -543,8 +536,8 @@ def future_propagation(
 
 def agent_concatenation(
     data: Mapping[Hashable, Union[xr.DataArray, xr.Dataset]],
-    dim: Text = "asset",
-    name: Text = "agent",
+    dim: str = "asset",
+    name: str = "agent",
     fill_value: Any = 0,
 ) -> Union[xr.DataArray, xr.Dataset]:
     """Concatenates input map along given dimension.
@@ -619,8 +612,8 @@ def agent_concatenation(
 
 def aggregate_technology_model(
     data: Union[xr.DataArray, xr.Dataset],
-    dim: Text = "asset",
-    drop: Union[Text, Sequence[Text]] = "installed",
+    dim: str = "asset",
+    drop: Union[str, Sequence[str]] = "installed",
 ) -> Union[xr.DataArray, xr.Dataset]:
     """Aggregate together assets with the same installation year.
 
@@ -658,13 +651,9 @@ def aggregate_technology_model(
         ...     assert len(actual.asset) == 1
         ...     assert (actual == expected).all()
     """
-    if isinstance(drop, Text):
+    if isinstance(drop, str):
         drop = (drop,)
     return reduce_assets(
         data,
-        [
-            cast(Text, u)
-            for u in data.coords
-            if u not in drop and data[u].dims == (dim,)
-        ],
+        [cast(str, u) for u in data.coords if u not in drop and data[u].dims == (dim,)],
     )

@@ -156,7 +156,6 @@ def test_no_overlap():
 
 def test_aggregate_transforms_no_aggregates():
     from itertools import product
-    from typing import Dict
 
     from muse.timeslices import aggregate_transforms, reference_timeslice
     from numpy import ndarray, zeros
@@ -172,7 +171,7 @@ def test_aggregate_transforms_no_aggregates():
     )
 
     vectors = aggregate_transforms(timeslice=reference)
-    assert isinstance(vectors, Dict)
+    assert isinstance(vectors, dict)
     assert set(vectors) == set(product(["spring", "autumn"], ["weekday", "weekend"]))
     for i in range(reference.shape[0]):
         index = reference.timeslice[i].values.tolist()
@@ -185,7 +184,6 @@ def test_aggregate_transforms_no_aggregates():
 
 def test_aggregate_transforms_with_aggregates():
     from itertools import product
-    from typing import Dict
 
     from muse.timeslices import aggregate_transforms, reference_timeslice
     from toml import loads
@@ -219,7 +217,7 @@ def test_aggregate_transforms_with_aggregates():
     reference = reference_timeslice(toml)
 
     vectors = aggregate_transforms(toml, reference)
-    assert isinstance(vectors, Dict)
+    assert isinstance(vectors, dict)
     assert set(vectors) == set(
         product(
             ["winter", "spring", "summer", "autumn", "springautumn"],

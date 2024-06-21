@@ -38,7 +38,8 @@ __all__ = [
     "supply",
     "PRODUCTION_SIGNATURE",
 ]
-from typing import Any, Callable, Mapping, MutableMapping, Text, Union, cast
+from collections.abc import Mapping, MutableMapping
+from typing import Any, Callable, Union, cast
 
 import xarray as xr
 
@@ -47,7 +48,7 @@ from muse.registration import registrator
 PRODUCTION_SIGNATURE = Callable[[xr.DataArray, xr.DataArray, xr.Dataset], xr.DataArray]
 """Production signature."""
 
-PRODUCTION_METHODS: MutableMapping[Text, PRODUCTION_SIGNATURE] = {}
+PRODUCTION_METHODS: MutableMapping[str, PRODUCTION_SIGNATURE] = {}
 """Dictionary of production methods. """
 
 
@@ -63,7 +64,7 @@ def register_production(function: PRODUCTION_SIGNATURE = None):
 
 
 def factory(
-    settings: Union[Text, Mapping] = "maximum_production", **kwargs
+    settings: Union[str, Mapping] = "maximum_production", **kwargs
 ) -> PRODUCTION_SIGNATURE:
     """Creates a production functor.
 
@@ -80,9 +81,9 @@ def factory(
 
     from muse.production import PRODUCTION_METHODS
 
-    if isinstance(settings, Text):
+    if isinstance(settings, str):
         name = settings
-        keywords: MutableMapping[Text, Any] = dict()
+        keywords: MutableMapping[str, Any] = dict()
     else:
         keywords = dict(**settings)
         name = keywords.pop("name")
@@ -129,7 +130,7 @@ def demand_matched_production(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    costs: Text = "prices",
+    costs: str = "prices",
 ) -> xr.DataArray:
     """Production from matching demand via annual lcoe."""
     from muse.quantities import annual_levelized_cost_of_energy as lcoe
@@ -160,7 +161,7 @@ def costed_production(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    costs: Union[xr.DataArray, Callable, Text] = "alcoe",
+    costs: Union[xr.DataArray, Callable, str] = "alcoe",
     with_minimum_service: bool = True,
     with_emission: bool = True,
 ) -> xr.DataArray:
@@ -179,9 +180,9 @@ def costed_production(
     )
     from muse.utilities import broadcast_techs
 
-    if isinstance(costs, Text) and costs.lower() == "alcoe":
+    if isinstance(costs, str) and costs.lower() == "alcoe":
         costs = annual_levelized_cost_of_energy
-    elif isinstance(costs, Text):
+    elif isinstance(costs, str):
         raise ValueError(f"Unknown cost {costs}")
     if callable(costs):
         technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))

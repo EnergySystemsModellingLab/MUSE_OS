@@ -1,4 +1,4 @@
-from typing import Sequence
+from collections.abc import Sequence
 
 from muse.commodities import CommodityUsage
 from xarray import Dataset

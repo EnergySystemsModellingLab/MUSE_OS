@@ -1,5 +1,6 @@
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Callable, Mapping, Optional, Sequence, Text
+from typing import Callable, Optional
 
 import numpy as np
 from muse.agents import Agent
@@ -28,7 +29,7 @@ def cases_directory() -> Optional[Path]:
 
 
 @fixture(scope="session")
-def regression_directories(cases_directory) -> Mapping[Text, Path]:
+def regression_directories(cases_directory) -> Mapping[str, Path]:
     if cases_directory is None:
         return {}
     return {
@@ -420,7 +421,7 @@ def stock_factory() -> Callable:
 def _stock(
     coords,
     technologies,
-    region: Optional[Sequence[Text]] = None,
+    region: Optional[Sequence[str]] = None,
     nassets: Optional[int] = None,
 ) -> Dataset:
     from numpy import cumprod, stack
@@ -604,7 +605,7 @@ def save_registries():
     from contextlib import contextmanager
 
     @contextmanager
-    def saveme(module_name: Text, registry_name: Text):
+    def saveme(module_name: str, registry_name: str):
         from copy import deepcopy
         from importlib import import_module
 
