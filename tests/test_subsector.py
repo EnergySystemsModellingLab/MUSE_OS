@@ -1,7 +1,8 @@
 from collections.abc import Sequence
+from unittest.mock import MagicMock, patch
 
 import xarray as xr
-from pytest import fixture
+from pytest import fixture, raises
 
 
 @fixture
@@ -134,3 +135,45 @@ def test_factory_smoke_test(model, technologies, tmp_path):
 
     assert isinstance(subsector, Subsector)
     assert len(subsector.agents) == 2
+
+
+def test_factory_constraints_passed_to_agents(model, technologies, tmp_path):
+    from muse import examples
+    from muse.readers.toml import read_settings
+    from muse.sectors.subsector import Subsector
+
+    examples.copy_model(model, tmp_path)
+    settings = read_settings(tmp_path / "model" / "settings.toml")
+
+    # The constraints in the settings are not none
+    assert len(settings.sectors.residential.subsectors.retro_and_new.constraints) > 0
+
+    class BreakException(Exception):
+        pass
+
+    _withness = MagicMock()
+
+    def agent_factory(*args, **kwargs):
+        _withness(*args, **kwargs)
+        raise BreakException()
+
+    # We asses they are indeed passed to the agents factory
+    with patch("muse.agents.agents_factory", new=agent_factory):
+        with raises(BreakException):
+            Subsector.factory(
+                settings.sectors.residential.subsectors.retro_and_new, technologies
+            )
+        assert (
+            _withness.call_args[1]["constraints"]
+            == settings.sectors.residential.subsectors.retro_and_new.constraints
+        )
+
+    # But if there are no constraints, we pass an empty tuple
+    settings.sectors.residential.subsectors.retro_and_new.constraints.clear()
+    _withness.reset_mock()
+    with patch("muse.agents.agents_factory", new=agent_factory):
+        with raises(BreakException):
+            Subsector.factory(
+                settings.sectors.residential.subsectors.retro_and_new, technologies
+            )
+        assert tuple(_withness.call_args[1]["constraints"]) == ()
