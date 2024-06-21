@@ -501,7 +501,7 @@ def demand_limitting_capacity(
     search_space: xr.DataArray,
     market: xr.Dataset,
     technologies: xr.Dataset,
-    year: Optional[int] = None,
+    year: int | None = None,
 ) -> Constraint:
     """Limits the maximum combined capacity to match the demand.
 
