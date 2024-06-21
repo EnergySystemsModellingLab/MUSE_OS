@@ -110,6 +110,17 @@ def max_capacity_expansion(market_demand, assets, search_space, market, technolo
     )
 
 
+@fixture
+def demand_limitting_capacity(
+    market_demand, assets, search_space, market, technologies
+):
+    from muse.constraints import demand_limitting_capacity
+
+    return demand_limitting_capacity(
+        market_demand, assets, search_space, market, technologies
+    )
+
+
 @fixture(params=["timeslice_as_list", "timeslice_as_multindex"])
 def constraints(request, market_demand, assets, search_space, market, technologies):
     from muse import constraints as cs
@@ -492,3 +503,19 @@ def test_max_production(max_production):
     assert set(max_production.production.dims) == dims
     assert set(max_production.b.dims) == dims
     assert (max_production.capacity <= 0).all()
+
+
+def test_demand_limitting_capacity(
+    demand_limitting_capacity, max_production, demand_constraint
+):
+    assert demand_limitting_capacity.capacity.values == approx(
+        -max_production.capacity.max("timeslice").values
+        if "timeslice" in max_production.capacity.dims
+        else -max_production.capacity.values
+    )
+    assert demand_limitting_capacity.production == 0
+    assert demand_limitting_capacity.b.values == approx(
+        demand_constraint.b.max("timeslice").values
+        if "timeslice" in demand_constraint.b.dims
+        else demand_constraint.b.values
+    )

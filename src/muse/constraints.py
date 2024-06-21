@@ -518,7 +518,9 @@ def demand_limitting_capacity(
     no more.
 
     Rather than coding from scratch the constraint, we can use the max_production
-    constraint and the demand constraint to construct this constraint.
+    constraint and the demand constraint to construct this constraint. Starting from
+    the maximum production instead of the maximum capacity ensures that the constraint
+    accounts for the utilization factor of the technologies.
     """
     # We start with the maximum production constraint and the demand constraint
     capacity_constraint = max_production(
@@ -529,24 +531,30 @@ def demand_limitting_capacity(
     )
 
     # We need to find the most demanding timeslice and use as the demand constraint
-    if "timeslice" in demand_constraint.b.dims:
-        b = demand_constraint.b.max("timeslice")
-    else:
-        b = demand_constraint.b
+    b = (
+        demand_constraint.b.max("timeslice")
+        if "timeslice" in demand_constraint.b.dims
+        else demand_constraint.b
+    )
 
     # Now we need to find the maximum capacity constraint (as the capacity here is
-    # negative), and switch the sign to make it positive
-    if "timeslice" in capacity_constraint.capacity.dims:
-        capacity = -capacity_constraint.capacity.max("timeslice")
-    else:
-        capacity = -capacity_constraint.capacity
+    # negative), and switch the sign to make it positive. In practice, we want to
+    # capture the utilisation factor of the technologies.
+    capacity = (
+        -capacity_constraint.capacity.max("timeslice")
+        if "timeslice" in capacity_constraint.capacity.dims
+        else -capacity_constraint.capacity
+    )
 
     # Drop 'year' so there's no conflict with the 'year' in the capacity constraint
     if "year" in b.coords and "year" in capacity.coords:
         b = b.drop_vars("year")
 
+    # This constraint is independent on the production
+    production = 0
+
     return xr.Dataset(
-        dict(capacity=capacity, production=0, b=b),
+        dict(capacity=capacity, production=production, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
     )
 
