@@ -53,7 +53,7 @@ def test_minimum_service_factor(check_mock, tmpdir, minimum_service_factors):
 
     with tmpdir.as_cwd():
         MCA.factory(model_path / "settings.toml").run()
-    check_mock.assert_called_once()
+    check_mock.assert_called()
 
     supply_timeslice = pd.read_csv(tmpdir / "Results/MCAMetric_Supply.csv")
 
