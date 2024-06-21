@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Sequence, Text
 from unittest.mock import MagicMock, patch
 
 import xarray as xr
