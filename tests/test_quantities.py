@@ -613,3 +613,20 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
         assert (actual[dim] == maxdemand[dim]).all()
     assert (actual >= 0.9 * maxdemand - 1e-8).all()
     assert (result >= minprod - 1e-8).all()
+
+
+def test_min_production(technologies, capacity):
+    """Test minimum production quantity."""
+    from muse.quantities import maximum_production, minimum_production
+
+    # If no minimum service factor is defined, the minimum production is zero
+    assert "minimum_service_factor" not in technologies
+    production = minimum_production(technologies, capacity)
+    assert (production == 0).all()
+
+    # If minimum service factor is defined, then the minimum production is not zero
+    # and it is less than the maximum production
+    technologies["minimum_service_factor"] = 0.5
+    production = minimum_production(technologies, capacity)
+    assert not (production == 0).all()
+    assert (production <= maximum_production(technologies, capacity)).all()
