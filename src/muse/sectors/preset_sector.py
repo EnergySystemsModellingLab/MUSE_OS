@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Text
+from typing import Any
 
 from xarray import DataArray, Dataset
 
@@ -14,9 +14,9 @@ class PresetSector(AbstractSector):  # type: ignore
     """Sector with outcomes fixed from the start."""
 
     @classmethod
-    def factory(cls, name: Text, settings: Any) -> PresetSector:
+    def factory(cls, name: str, settings: Any) -> PresetSector:
         """Constructs a PresetSectors from input data."""
-        from typing import Sequence
+        from collections.abc import Sequence
 
         from xarray import DataArray, zeros_like
 
@@ -108,7 +108,7 @@ class PresetSector(AbstractSector):  # type: ignore
             presets["costs"] = costs
 
         if len(presets.data_vars) == 0:
-            raise IOError("None of supply, consumption, costs given")
+            raise OSError("None of supply, consumption, costs given")
 
         # add missing data as zeros: we only need one of conumption, costs, supply
         components = {"supply", "consumption", "costs"}
@@ -140,14 +140,14 @@ class PresetSector(AbstractSector):  # type: ignore
     def __init__(
         self,
         presets: Dataset,
-        interpolation_mode: Text = "linear",
-        name: Text = "preset",
+        interpolation_mode: str = "linear",
+        name: str = "preset",
     ):
         super().__init__()
 
         self.presets: Dataset = presets
         """Market across time and space."""
-        self.interpolation_mode: Text = interpolation_mode
+        self.interpolation_mode: str = interpolation_mode
         """Interpolation method"""
         self.name = name
         """Name by which to identify a sector"""

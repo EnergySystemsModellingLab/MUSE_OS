@@ -1,16 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import (
     Any,
     Callable,
-    List,
-    Mapping,
     NamedTuple,
-    Optional,
-    Sequence,
-    Text,
-    Union,
     cast,
 )
 
@@ -21,7 +16,7 @@ from muse.readers import read_initial_market
 from muse.sectors import SECTORS_REGISTERED, AbstractSector
 
 
-class MCA(object):
+class MCA:
     """Market Clearing Algorithm.
 
     The market clearing algorithm is the main object implementing the MUSE model. It is
@@ -30,7 +25,7 @@ class MCA(object):
     """
 
     @classmethod
-    def factory(cls, settings: Union[Text, Path, Mapping, Any]) -> MCA:
+    def factory(cls, settings: str | Path | Mapping | Any) -> MCA:
         """Loads MCA from input settings and input files.
 
         Arguments:
@@ -45,7 +40,7 @@ class MCA(object):
         from muse.readers import read_settings
         from muse.readers.toml import convert
 
-        if isinstance(settings, (Text, Path)):
+        if isinstance(settings, (str, Path)):
             settings = read_settings(settings)  # type: ignore
         elif isinstance(settings, Mapping):
             settings = convert(settings)
@@ -120,25 +115,25 @@ class MCA(object):
 
     def __init__(
         self,
-        sectors: List[AbstractSector],
+        sectors: list[AbstractSector],
         market: Dataset,
-        outputs: Optional[Callable[[List[AbstractSector], Dataset], Any]] = None,
-        outputs_cache: Optional[OutputCache] = None,
+        outputs: Callable[[list[AbstractSector], Dataset], Any] | None = None,
+        outputs_cache: OutputCache | None = None,
         time_framework: Sequence[int] = list(range(2010, 2100, 10)),
         equilibrium: bool = True,
-        equilibrium_variable: Text = "demand",
+        equilibrium_variable: str = "demand",
         maximum_iterations: int = 3,
         tolerance: float = 0.1,
         tolerance_unmet_demand: float = -0.1,
-        excluded_commodities: Optional[Sequence[Text]] = None,
-        carbon_budget: Optional[Sequence] = None,
-        carbon_price: Optional[Sequence] = None,
-        carbon_commodities: Optional[Sequence[Text]] = None,
+        excluded_commodities: Sequence[str] | None = None,
+        carbon_budget: Sequence | None = None,
+        carbon_price: Sequence | None = None,
+        carbon_commodities: Sequence[str] | None = None,
         debug: bool = False,
         control_undershoot: bool = True,
         control_overshoot: bool = True,
-        carbon_method: Text = "fitting",
-        method_options: Optional[Mapping] = None,
+        carbon_method: str = "fitting",
+        method_options: Mapping | None = None,
     ):
         """Market clearing algorithm class which rules the whole MUSE."""
         from logging import getLogger
@@ -151,7 +146,7 @@ class MCA(object):
 
         getLogger(__name__).info("MCA Initialisation")
 
-        self.sectors: List[AbstractSector] = list(sectors)
+        self.sectors: list[AbstractSector] = list(sectors)
         self.market = market
 
         # Simulation flow parameters
@@ -197,8 +192,8 @@ class MCA(object):
     def find_equilibrium(
         self,
         market: Dataset,
-        sectors: Optional[List[AbstractSector]] = None,
-        maxiter: Optional[int] = None,
+        sectors: list[AbstractSector] | None = None,
+        maxiter: int | None = None,
     ) -> FindEquilibriumResults:
         """Specialised version of the find_equilibrium function.
 
@@ -249,7 +244,7 @@ class MCA(object):
             self.control_undershoot,
         )
 
-    def update_carbon_price(self, market) -> Optional[float]:
+    def update_carbon_price(self, market) -> float | None:
         """Calculates the updated carbon price, if required.
 
         If the emission calculated for the next time period is larger than the
@@ -442,11 +437,11 @@ class SingleYearIterationResult(NamedTuple):
     """
 
     market: Dataset
-    sectors: List[AbstractSector]
+    sectors: list[AbstractSector]
 
 
 def single_year_iteration(
-    market: Dataset, sectors: List[AbstractSector]
+    market: Dataset, sectors: list[AbstractSector]
 ) -> SingleYearIterationResult:
     """Runs one iteration of the sectors (runs each sector once).
 
@@ -511,17 +506,17 @@ class FindEquilibriumResults(NamedTuple):
 
     converged: bool
     market: Dataset
-    sectors: List[AbstractSector]
+    sectors: list[AbstractSector]
 
 
 def find_equilibrium(
     market: Dataset,
-    sectors: List[AbstractSector],
+    sectors: list[AbstractSector],
     maxiter: int = 3,
     tol: float = 0.1,
-    equilibrium_variable: Text = "demand",
+    equilibrium_variable: str = "demand",
     tol_unmet_demand: float = -0.1,
-    excluded_commodities: Optional[Sequence] = None,
+    excluded_commodities: Sequence | None = None,
     equilibrium: bool = True,
 ) -> FindEquilibriumResults:
     """Runs the equilibrium loop.
@@ -672,8 +667,8 @@ def check_equilibrium(
     market: Dataset,
     int_market: Dataset,
     tolerance: float,
-    equilibrium_variable: Text,
-    year: Optional[int] = None,
+    equilibrium_variable: str,
+    year: int | None = None,
 ) -> bool:
     """Checks if equilibrium has been reached.
 

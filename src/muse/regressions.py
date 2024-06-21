@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Callable, ClassVar, Mapping, Optional, Sequence, Text, Tuple, Union
+from typing import Callable, ClassVar
 
 from xarray import DataArray, Dataset
 
@@ -67,7 +68,7 @@ class Regression(Callable):
     This class attribute must be overridden.
     """
 
-    def __init__(self, interpolation: Text = "linear", base_year: int = 2010, **kwargs):
+    def __init__(self, interpolation: str = "linear", base_year: int = 2010, **kwargs):
         super().__init__()
         self.interpolation = interpolation
         """Interpolation method when interpolating years"""
@@ -82,15 +83,15 @@ class Regression(Callable):
     @abstractmethod
     def __call__(
         self,
-        gdp_or_dataset: Union[DataArray, Dataset],
-        population: Optional[DataArray],
-        year: Optional[Union[int, Sequence[int]]] = None,
+        gdp_or_dataset: DataArray | Dataset,
+        population: DataArray | None,
+        year: int | Sequence[int] | None = None,
         forecast: int = 5,
         **kwargs,
     ) -> DataArray:
         pass
 
-    def sel(self, **filters) -> "Regression":
+    def sel(self, **filters) -> Regression:
         """Regression over part of the data only."""
         return self.__class__(
             interpolation=self.interpolation,
@@ -100,7 +101,7 @@ class Regression(Callable):
 
     @staticmethod
     def _to_dataset(
-        first: Union[DataArray, Dataset], population: Optional[DataArray]
+        first: DataArray | Dataset, population: DataArray | None
     ) -> Dataset:
         data = first if isinstance(first, Dataset) else Dataset({"gdp": first})
         if population is not None:
@@ -108,7 +109,7 @@ class Regression(Callable):
         return data
 
     @staticmethod
-    def _split_kwargs(data: Dataset, **kwargs) -> Tuple[Mapping, Mapping]:
+    def _split_kwargs(data: Dataset, **kwargs) -> tuple[Mapping, Mapping]:
         filters = {k: v for k, v in kwargs.items() if k in data.dims}
         attrs = {k: v for k, v in kwargs.items() if k not in data.dims}
         return filters, attrs
@@ -116,8 +117,8 @@ class Regression(Callable):
     @classmethod
     def factory(
         cls,
-        regression_data: Union[Text, Path, Dataset],
-        interpolation: Text = "linear",
+        regression_data: str | Path | Dataset,
+        interpolation: str = "linear",
         base_year: int = 2010,
         **filters,
     ) -> Regression:
@@ -127,7 +128,7 @@ class Regression(Callable):
         assert cls.__mappings__
         assert cls.__regression__ != ""
 
-        if isinstance(regression_data, (Text, Path)):
+        if isinstance(regression_data, (str, Path)):
             regression_data = read_regression_parameters(regression_data)
 
         # Get the parameters of interest with a 'simple' name
@@ -137,13 +138,13 @@ class Regression(Callable):
 
 
 def factory(
-    regression_parameters: Union[Text, Path, Dataset],
-    sector: Optional[Union[Text, Sequence[Text]]] = None,
+    regression_parameters: str | Path | Dataset,
+    sector: str | Sequence[str] | None = None,
 ) -> Regression:
     """Creates regression functor from standard MUSE data for given sector."""
     from muse.readers import read_regression_parameters
 
-    if isinstance(regression_parameters, (Text, Path)):
+    if isinstance(regression_parameters, (str, Path)):
         regression_parameters = read_regression_parameters(regression_parameters)
 
     if sector is not None:
@@ -189,7 +190,7 @@ def _kebab_case(name: str) -> str:
 
 
 def register_regression(
-    Functor: Regression = None, name: Optional[Text] = None
+    Functor: Regression = None, name: str | None = None
 ) -> Regression:
     """Registers a functor with MUSE regressions.
 
@@ -213,15 +214,12 @@ def register_regression(
     logger = getLogger(__name__)
 
     def factory(file_or_dataset, *args, **kwargs):
-        if isinstance(file_or_dataset, (Path, Text)):
-            msg = "Creating regression functor {} from data in {}".format(
-                _kebab_case(name if name is not None else Functor.__name__),
-                file_or_dataset,
-            )
+        if isinstance(file_or_dataset, (Path, str)):
+            opt = _kebab_case(name if name is not None else Functor.__name__)
+            msg = f"Creating regression functor {opt} from data in {file_or_dataset}"
         else:
-            msg = "Creating regression functor {} from dataset".format(
-                _kebab_case(name if name is not None else Functor.__name__)
-            )
+            opt = _kebab_case(name if name is not None else Functor.__name__)
+            msg = f"Creating regression functor {opt} from dataset"
         logger.info(msg)
         function = getattr(Functor, "factory", Functor)
         return function(file_or_dataset, *args, **kwargs)
@@ -230,7 +228,7 @@ def register_regression(
     REGRESSION_FUNCTOR_NAMES[Functor.__name__.lower()] = []
     for n in name_variations(*names):
         if n in REGRESSION_FUNCTOR_CREATOR:
-            msg = "A regression with the name %s already exists" % n
+            msg = f"A regression with the name {n} already exists"
             raise RuntimeError(msg)
         REGRESSION_FUNCTOR_CREATOR[n] = factory
         REGRESSION_FUNCTOR_NAMES[Functor.__name__.lower()].append(n)
@@ -239,7 +237,7 @@ def register_regression(
 
 
 def regression_functor(
-    mappings: Mapping[Text, Text], name: Optional[Text] = None
+    mappings: Mapping[str, str], name: str | None = None
 ) -> Regression:
     """Creates a macro-driver functor from a function.
 
@@ -266,16 +264,16 @@ def regression_functor(
         classname = func.__name__
 
         logger = getLogger(__name__)
-        log = "Calling {} regression function".format(_kebab_case(classname))
+        log = f"Calling {_kebab_case(classname)} regression function"
 
         # the main function will transform the input so 'func' can deal with it
         @wraps(func)
         def __call__(
             self,
-            gdp_or_dataset: Union[DataArray, Dataset],
-            population: Optional[DataArray] = None,
-            year: Optional[Union[int, Sequence[int]]] = None,
-            forecast: Optional[Union[int, Sequence[int]]] = None,
+            gdp_or_dataset: DataArray | Dataset,
+            population: DataArray | None = None,
+            year: int | Sequence[int] | None = None,
+            forecast: int | Sequence[int] | None = None,
             **kwargs,
         ):
             from numpy import ndarray
@@ -328,12 +326,12 @@ def regression_functor(
         if __call__.__doc__ is None:
             __call__.__doc__ = "\n\n" + msg
         else:
-            __call__.__doc__ += "Regression function: {}\n\n{}".format(name_, msg)
+            __call__.__doc__ += f"Regression function: {name_}\n\n{msg}"
 
-        doc = """Regression function: {name}
+        doc = f"""Regression function: {name_}
 
-        This functor is a regression function registered with MUSE as '{name}'.
-        """.format(name=name_)
+        This functor is a regression function registered with MUSE as '{name_}'.
+        """
 
         Self = type(
             classname,
@@ -369,7 +367,7 @@ def ExponentialAdj(
     gdp: DataArray,
     population: DataArray,
     *args,
-    year: Optional[Union[int, Sequence[int]]] = None,
+    year: int | Sequence[int] | None = None,
     forecast: int = 5,
     n: int = 6,
     **kwargs,
@@ -421,7 +419,7 @@ def LogisticSigmoid(
     gdp: DataArray,
     population: DataArray,
     *args,
-    year: Optional[Union[int, Sequence[int]]] = None,
+    year: int | Sequence[int] | None = None,
     **kwargs,
 ) -> DataArray:
     """0.001 * (constant * pop + gdp * c / sqrt(1 + (gdp * scale / pop)^2)."""
@@ -465,9 +463,9 @@ class Linear(Regression):
 
     def __call__(
         self,
-        gdp_or_dataset: Union[DataArray, Dataset],
-        population: Optional[DataArray] = None,
-        year: Optional[Union[int, Sequence[int]]] = None,
+        gdp_or_dataset: DataArray | Dataset,
+        population: DataArray | None = None,
+        year: int | Sequence[int] | None = None,
         forecast: int = 5,
         **kwargs,
     ) -> DataArray:
@@ -506,15 +504,15 @@ class Linear(Regression):
 
 
 def endogenous_demand(
-    regression_parameters: Union[Text, Path, Dataset],
-    drivers: Union[Text, Path, Dataset],
-    sector: Optional[Union[Text, Sequence]] = None,
+    regression_parameters: str | Path | Dataset,
+    drivers: str | Path | Dataset,
+    sector: str | Sequence | None = None,
     **kwargs,
 ) -> Dataset:
     """Endogenous demand based on macro drivers and regression parameters."""
     from muse.readers import read_macro_drivers
 
     regression = factory(regression_parameters, sector=sector)
-    if isinstance(drivers, (Text, Path)):
+    if isinstance(drivers, (str, Path)):
         drivers = read_macro_drivers(drivers)
     return regression(drivers, **kwargs)

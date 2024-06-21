@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Sequence, Text
 from unittest.mock import MagicMock, patch
 
@@ -6,7 +7,7 @@ from pytest import fixture, raises
 
 
 @fixture
-def model() -> Text:
+def model() -> str:
     return "medium"
 
 
@@ -37,7 +38,7 @@ def test_subsector_investing_aggregation():
         mca = examples.model(model)
         for sname in sector_list:
             agents = list(examples.sector(sname, model).agents)
-            sector = next((sector for sector in mca.sectors if sector.name == sname))
+            sector = next(sector for sector in mca.sectors if sector.name == sname)
             technologies = sector.technologies
             commodities = aggregate_enduses(
                 (agent.assets for agent in agents), technologies
@@ -116,7 +117,7 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
     assert "agent" in lpcosts.coords
     assert isinstance(lpconstraints, Sequence)
     assert len(lpconstraints) == 1
-    assert all((isinstance(u, xr.Dataset) for u in lpconstraints))
+    assert all(isinstance(u, xr.Dataset) for u in lpconstraints)
     # makes sure agent investment got called
     assert all(agent.year == 2025 for agent in agents)
 

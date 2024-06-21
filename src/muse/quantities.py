@@ -5,7 +5,8 @@ e.g. lcoe, maximum production for a given capacity, etc, especially where these
 functions are used in different areas of the model.
 """
 
-from typing import Callable, Optional, Sequence, Text, Tuple, Union, cast
+from collections.abc import Sequence
+from typing import Callable, Optional, Union, cast
 
 import numpy as np
 import xarray as xr
@@ -15,7 +16,7 @@ def supply(
     capacity: xr.DataArray,
     demand: xr.DataArray,
     technologies: Union[xr.Dataset, xr.DataArray],
-    interpolation: Text = "linear",
+    interpolation: str = "linear",
     production_method: Optional[Callable] = None,
 ) -> xr.DataArray:
     """Production and emission for a given capacity servicing a given demand.
@@ -196,7 +197,7 @@ def gross_margin(
     # costs due to pollutants
     production_costs = prices * fixed_outputs
     environmental_costs = (production_costs.sel(commodity=environmentals)).sum(
-        ("commodity")
+        "commodity"
     )
     # revenues due to product sales
     revenues = (production_costs.sel(commodity=enduses)).sum("commodity")
@@ -312,8 +313,8 @@ def consumption(
 def annual_levelized_cost_of_energy(
     prices: xr.DataArray,
     technologies: xr.Dataset,
-    interpolation: Text = "linear",
-    fill_value: Union[int, Text] = "extrapolate",
+    interpolation: str = "linear",
+    fill_value: Union[int, str] = "extrapolate",
     **filters,
 ) -> xr.DataArray:
     """Undiscounted levelized cost of energy (LCOE) of technologies on each given year.
@@ -500,7 +501,7 @@ def demand_matched_production(
 def capacity_in_use(
     production: xr.DataArray,
     technologies: xr.Dataset,
-    max_dim: Optional[Union[Text, Tuple[Text]]] = "commodity",
+    max_dim: Optional[Union[str, tuple[str]]] = "commodity",
     **filters,
 ):
     """Capacity-in-use for each asset, given production.
@@ -549,7 +550,7 @@ def capacity_in_use(
 
 
 def supply_cost(
-    production: xr.DataArray, lcoe: xr.DataArray, asset_dim: Optional[Text] = "asset"
+    production: xr.DataArray, lcoe: xr.DataArray, asset_dim: Optional[str] = "asset"
 ) -> xr.DataArray:
     """Supply cost given production and the levelized cost of energy.
 

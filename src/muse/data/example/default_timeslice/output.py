@@ -1,4 +1,4 @@
-from typing import List, Optional, Text
+from typing import Optional
 
 import xarray as xr
 from muse.outputs.sector import market_quantity, register_output_quantity
@@ -9,8 +9,8 @@ def supply_timeslice(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    sum_over: Optional[List[Text]] = None,
-    drop: Optional[List[Text]] = None,
+    sum_over: Optional[list[str]] = None,
+    drop: Optional[list[str]] = None,
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current supply."""
@@ -29,8 +29,8 @@ def consumption_timeslice(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    sum_over: Optional[List[Text]] = None,
-    drop: Optional[List[Text]] = None,
+    sum_over: Optional[list[str]] = None,
+    drop: Optional[list[str]] = None,
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current consumption."""

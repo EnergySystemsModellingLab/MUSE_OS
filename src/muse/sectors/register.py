@@ -1,15 +1,16 @@
-from typing import Callable, Mapping, Optional, Sequence, Text, Type, Union
+from collections.abc import Mapping, Sequence
+from typing import Callable, Optional, Union
 
 from muse.sectors.abstract import AbstractSector
 
-SECTORS_REGISTERED: Mapping[Text, Callable] = {}
+SECTORS_REGISTERED: Mapping[str, Callable] = {}
 """Dictionary of sectors."""
 
 
 def register_sector(
-    sector_class: Optional[Type[AbstractSector]] = None,
-    name: Optional[Union[Text, Sequence[Text]]] = None,
-) -> Type[AbstractSector]:
+    sector_class: Optional[type[AbstractSector]] = None,
+    name: Optional[Union[str, Sequence[str]]] = None,
+) -> type[AbstractSector]:
     """Registers a sector so it is available MUSE-wide.
 
     Example:
@@ -24,8 +25,8 @@ def register_sector(
     if sector_class is None:
         return lambda x: register_sector(x, name=name)  # type: ignore
 
-    if isinstance(name, Text):
-        names: Sequence[Text] = (name,)
+    if isinstance(name, str):
+        names: Sequence[str] = (name,)
     elif name is None:
         names = (sector_class.__name__,)
     else:

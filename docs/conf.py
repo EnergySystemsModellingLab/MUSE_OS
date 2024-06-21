@@ -4,7 +4,6 @@
 # list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 # -- Project information -----------------------------------------------------
-from typing import List
 
 project = "MUSE"
 copyright = "2022, Sustainable Gas Institute"
@@ -54,7 +53,7 @@ intersphinx_mapping = {
     "xarray": ("http://xarray.pydata.org/en/stable/", None),
 }
 
-bibtex_bibfiles: List[str] = []
+bibtex_bibfiles: list[str] = []
 
 # -- GraphViz configuration ----------------------------------
 graphviz_output_format = "svg"
