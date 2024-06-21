@@ -542,7 +542,7 @@ def demand_limitting_capacity(
         capacity = -capacity_constraint.capacity
 
     # Drop 'year' so there's no conflict with the 'year' in the capacity constraint
-    if "year" in b.dims and "year" in capacity.dims:
+    if "year" in b.coords and "year" in capacity.coords:
         b = b.drop_vars("year")
 
     return xr.Dataset(
