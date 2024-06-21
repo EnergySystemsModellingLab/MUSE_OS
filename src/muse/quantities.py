@@ -48,6 +48,7 @@ def supply(
 
     maxprod = production_method(technologies, capacity)
     minprod = minimum_production(technologies, capacity)
+    assert (minprod <= maxprod).all(), "Minimum production exceeds maximum production"
     size = np.array(maxprod.region).size
     # in presence of trade demand needs to map maxprod dst_region
     if (

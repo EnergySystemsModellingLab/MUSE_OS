@@ -630,3 +630,18 @@ def test_min_production(technologies, capacity):
     production = minimum_production(technologies, capacity)
     assert not (production == 0).all()
     assert (production <= maximum_production(technologies, capacity)).all()
+
+
+def test_supply_capped_by_min_service(technologies, capacity):
+    """Test supply is capped by the minimum service."""
+    from muse.quantities import maximum_production, supply
+
+    prod = maximum_production(technologies, capacity)
+
+    assert "minimum_service_factor" not in technologies
+    spl = supply(capacity, prod.sum("asset") * 0.0, technologies)
+    assert (spl == 0).all()
+
+    technologies["minimum_service_factor"] = 0.1
+    spl = supply(capacity, prod.sum("asset") * 0.0, technologies)
+    assert not (spl == 0).all()
