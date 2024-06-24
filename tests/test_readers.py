@@ -504,3 +504,30 @@ def test_read_technodata_timeslices(tmp_path):
     assert list(data.coords["month"]) == month_values
     assert list(data.coords["day"]) == day_values
     assert list(data.coords["hour"]) == hour_values
+
+
+def test_read_io_technodata(default_model):
+    from muse.readers.csv import read_io_technodata
+
+    path = default_model / "technodata" / "residential" / "CommOut.csv"
+    data = read_io_technodata(path)
+
+    assert isinstance(data, xr.Dataset)
+    assert set(data.dims) == {"technology", "region", "year", "commodity"}
+    assert dict(data.dtypes) == dict(
+        fixed=np.float64, flexible=np.float64, commodity_units=np.dtype("O")
+    )
+    assert list(data.coords["technology"].values) == ["gasboiler", "heatpump"]
+    assert list(data.coords["region"].values) == ["R1"]
+    assert list(data.coords["year"].values) == [2020]
+    assert list(data.coords["commodity"].values) == [
+        "electricity",
+        "gas",
+        "heat",
+        "CO2f",
+        "wind",
+    ]
+
+    assert data.data_vars["fixed"].coords.equals(data.coords)
+    assert data.data_vars["flexible"].coords.equals(data.coords)
+    assert list(data.data_vars["commodity_units"].coords) == ["commodity"]
