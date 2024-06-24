@@ -657,3 +657,28 @@ def test_read_initial_market(default_model):
     assert list(data.coords["hour"]) == hour_values
 
     assert all(var.coords.equals(data.coords) for var in data.data_vars.values())
+
+
+def test_read_attribute_table(default_model):
+    from muse.readers.csv import read_attribute_table
+
+    path = default_model / "input" / "Projections.csv"
+    data = read_attribute_table(path)
+
+    assert isinstance(data, xr.DataArray)
+    assert data.dtype == np.float64
+
+    assert set(data.dims) == {"region", "year", "commodity"}
+    assert list(data.coords["region"].values) == ["R1"]
+    assert list(data.coords["year"].values) == list(range(2010, 2105, 5))
+    assert list(data.coords["commodity"].values) == [
+        "electricity",
+        "gas",
+        "heat",
+        "CO2f",
+        "wind",
+    ]
+    assert (
+        list(data.coords["units_commodity_price"].values)
+        == ["MUS$2010/PJ"] * 3 + ["MUS$2010/kt"] * 2
+    )
