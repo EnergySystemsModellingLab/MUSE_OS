@@ -184,7 +184,7 @@ def add_agent(
             if (
                 copy_to_shares[share_type]
                 and copy_from_shares[share_type]
-                and copy_to_shares[share_type] in technodata_df.columns
+                and copy_from_shares[share_type] in technodata_df.columns
             ):
                 technodata_df[copy_to_shares[share_type]] = technodata_df[
                     copy_from_shares[share_type]
