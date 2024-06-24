@@ -45,15 +45,11 @@ __all__ = [
     "unmet_forecasted_demand",
     "DEMAND_SHARE_SIGNATURE",
 ]
+from collections.abc import Hashable, Mapping, MutableMapping, Sequence
 from typing import (
     Any,
     Callable,
-    Hashable,
-    Mapping,
-    MutableMapping,
     Optional,
-    Sequence,
-    Text,
     Union,
     cast,
 )
@@ -73,7 +69,7 @@ DEMAND_SHARE_SIGNATURE = Callable[
 ]
 """Demand share signature."""
 
-DEMAND_SHARE: MutableMapping[Text, DEMAND_SHARE_SIGNATURE] = {}
+DEMAND_SHARE: MutableMapping[str, DEMAND_SHARE_SIGNATURE] = {}
 """Dictionary of demand share functions."""
 
 
@@ -84,11 +80,11 @@ def register_demand_share(function: DEMAND_SHARE_SIGNATURE):
 
 
 def factory(
-    settings: Optional[Union[Text, Mapping[Text, Any]]] = None,
+    settings: Optional[Union[str, Mapping[str, Any]]] = None,
 ) -> DEMAND_SHARE_SIGNATURE:
-    if settings is None or isinstance(settings, Text):
+    if settings is None or isinstance(settings, str):
         name = settings or "new_and_retro"
-        params: Mapping[Text, Any] = {}
+        params: Mapping[str, Any] = {}
     else:
         name = settings.get("name", "new_and_retro")
         params = {k: v for k, v in settings.items() if k != "name"}
@@ -116,7 +112,7 @@ def new_and_retro(
     agents: Sequence[AbstractAgent],
     market: xr.Dataset,
     technologies: xr.Dataset,
-    production: Union[Text, Mapping, Callable] = "maximum_production",
+    production: Union[str, Mapping, Callable] = "maximum_production",
     current_year: Optional[int] = None,
     forecast: int = 5,
 ) -> xr.DataArray:
@@ -327,7 +323,7 @@ def standard_demand(
     agents: Sequence[AbstractAgent],
     market: xr.Dataset,
     technologies: xr.Dataset,
-    production: Union[Text, Mapping, Callable] = "maximum_production",
+    production: Union[str, Mapping, Callable] = "maximum_production",
     current_year: Optional[int] = None,
     forecast: int = 5,
 ) -> xr.DataArray:
@@ -432,7 +428,7 @@ def unmet_forecasted_demand(
     market: xr.Dataset,
     technologies: xr.Dataset,
     current_year: Optional[int] = None,
-    production: Union[Text, Mapping, Callable] = "maximum_production",
+    production: Union[str, Mapping, Callable] = "maximum_production",
     forecast: int = 5,
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
@@ -512,7 +508,7 @@ def unmet_demand(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    production: Union[Text, Mapping, Callable] = "maximum_production",
+    production: Union[str, Mapping, Callable] = "maximum_production",
 ):
     r"""Share of the demand that cannot be serviced by the existing assets.
 
@@ -592,7 +588,7 @@ def new_and_retro_demands(
     capacity: xr.DataArray,
     market: xr.Dataset,
     technologies: xr.Dataset,
-    production: Union[Text, Mapping, Callable] = "maximum_production",
+    production: Union[str, Mapping, Callable] = "maximum_production",
     current_year: Optional[int] = None,
     forecast: int = 5,
 ) -> xr.Dataset:
@@ -662,7 +658,7 @@ def new_demand(
     capacity: xr.DataArray,
     market: xr.Dataset,
     technologies: xr.Dataset,
-    production: Union[Text, Mapping, Callable] = "maximum_production",
+    production: Union[str, Mapping, Callable] = "maximum_production",
     current_year: Optional[int] = None,
     forecast: int = 5,
 ) -> xr.DataArray:

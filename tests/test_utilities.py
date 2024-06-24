@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 import xarray as xr
 from pytest import approx, mark
@@ -16,7 +14,7 @@ def make_array(array):
     "coordinates",
     [("technology", "installed", "region"), ("technology", "installed"), ("region",)],
 )
-def test_reduce_assets(coordinates: Tuple, capacity: xr.DataArray):
+def test_reduce_assets(coordinates: tuple, capacity: xr.DataArray):
     from muse.utilities import reduce_assets
 
     actual = reduce_assets(capacity, coords=coordinates)

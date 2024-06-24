@@ -9,8 +9,9 @@ __all__ = [
     "represent_hours",
 ]
 
+from collections.abc import Mapping, Sequence
 from enum import Enum, unique
-from typing import Dict, Mapping, Optional, Sequence, Text, Tuple, Union
+from typing import Optional, Union
 
 import xarray as xr
 from numpy import ndarray
@@ -21,7 +22,7 @@ from muse.readers import kebab_to_camel
 
 TIMESLICE: DataArray = None  # type: ignore
 """Array with the finest timeslice."""
-TRANSFORMS: Dict[Tuple, ndarray] = None  # type: ignore
+TRANSFORMS: dict[tuple, ndarray] = None  # type: ignore
 """Transforms from each aggregate to the finest timeslice."""
 
 DEFAULT_TIMESLICE_DESCRIPTION = """
@@ -68,9 +69,9 @@ DEFAULT_TIMESLICE_DESCRIPTION = """
 
 
 def reference_timeslice(
-    settings: Union[Mapping, Text],
-    level_names: Sequence[Text] = ("month", "day", "hour"),
-    name: Text = "timeslice",
+    settings: Union[Mapping, str],
+    level_names: Sequence[str] = ("month", "day", "hour"),
+    name: str = "timeslice",
 ) -> DataArray:
     '''Reads reference timeslice from toml like input.
 
@@ -113,11 +114,10 @@ def reference_timeslice(
           * week       (timeslice) object 64B 'weekday' 'weekend' ... 'weekend'
     '''
     from functools import reduce
-    from typing import List, Tuple
 
     from toml import loads
 
-    if isinstance(settings, Text):
+    if isinstance(settings, str):
         settings = loads(settings)
     settings = dict(**settings.get("timeslices", settings))
     if "level_names" in settings:
@@ -125,7 +125,7 @@ def reference_timeslice(
     settings.pop("aggregates", {})
 
     # figures out levels
-    levels: List[Tuple] = [(level,) for level in settings]
+    levels: list[tuple] = [(level,) for level in settings]
     ts = list(settings.values())
     while all(isinstance(v, Mapping) for v in ts):
         levels = [(*previous, b) for previous, a in zip(levels, ts) for b in a]
@@ -147,9 +147,9 @@ def reference_timeslice(
 
 
 def aggregate_transforms(
-    settings: Optional[Union[Mapping, Text]] = None,
+    settings: Optional[Union[Mapping, str]] = None,
     timeslice: Optional[DataArray] = None,
-) -> Dict[Tuple, ndarray]:
+) -> dict[tuple, ndarray]:
     '''Creates dictionary of transforms for aggregate levels.
 
     The transforms are used to create the projectors towards the finest timeslice.
@@ -201,13 +201,13 @@ def aggregate_transforms(
         timeslice = TIMESLICE
     if settings is None:
         settings = {}
-    elif isinstance(settings, Text):
+    elif isinstance(settings, str):
         settings = loads(settings)
 
     # get timeslice dimension
     Id = identity(len(timeslice), dtype=int)
     indices = timeslice.get_index("timeslice")
-    unitvecs: Dict[Tuple, ndarray] = {index: Id[i] for (i, index) in enumerate(indices)}
+    unitvecs: dict[tuple, ndarray] = {index: Id[i] for (i, index) in enumerate(indices)}
     if "timeslices" in settings or "aggregates" in settings:
         settings = settings.get("timeslices", settings).get("aggregates", {})
     assert isinstance(settings, Mapping)
@@ -225,7 +225,7 @@ def aggregate_transforms(
         level = matching_levels.index(True)
         levels[level].append(name)
 
-    result: Dict[Tuple, ndarray] = {}
+    result: dict[tuple, ndarray] = {}
     for index in set(product(*levels)).difference(unitvecs):
         if not any(level in settings for level in index):
             continue
@@ -237,7 +237,7 @@ def aggregate_transforms(
     return result
 
 
-def setup_module(settings: Union[Text, Mapping]):
+def setup_module(settings: Union[str, Mapping]):
     """Sets up module singletons."""
     global TIMESLICE
     global TRANSFORMS
@@ -248,7 +248,7 @@ def setup_module(settings: Union[Text, Mapping]):
 def timeslice_projector(
     x: Union[DataArray, MultiIndex],
     finest: Optional[DataArray] = None,
-    transforms: Optional[Dict[Tuple, ndarray]] = None,
+    transforms: Optional[dict[tuple, ndarray]] = None,
 ) -> DataArray:
     '''Project time-slice to standardized finest time-slices.
 
@@ -355,7 +355,7 @@ def timeslice_projector(
         transforms = TRANSFORMS
 
     index = finest.get_index("timeslice")
-    index = index.set_names((f"finest_{u}" for u in index.names))
+    index = index.set_names(f"finest_{u}" for u in index.names)
 
     if isinstance(x, MultiIndex):
         timeslices = x
@@ -399,9 +399,9 @@ class QuantityType(Enum):
 def convert_timeslice(
     x: Union[DataArray, Dataset],
     ts: Union[DataArray, Dataset, MultiIndex],
-    quantity: Union[QuantityType, Text] = QuantityType.EXTENSIVE,
+    quantity: Union[QuantityType, str] = QuantityType.EXTENSIVE,
     finest: Optional[DataArray] = None,
-    transforms: Optional[Dict[Tuple, ndarray]] = None,
+    transforms: Optional[dict[tuple, ndarray]] = None,
 ) -> Union[DataArray, Dataset]:
     '''Adjusts the timeslice of x to match that of ts.
 
@@ -546,7 +546,7 @@ def convert_timeslice(
     if quantity is QuantityType.EXTENSIVE:
         finest = finest.rename(timeslice="finest_timeslice")
         index = finest.get_index("finest_timeslice")
-        index = index.set_names((f"finest_{u}" for u in index.names))
+        index = index.set_names(f"finest_{u}" for u in index.names)
         mindex_coords = xr.Coordinates.from_pandas_multiindex(index, "finest_timeslice")
         finest = finest.drop_vars(list(finest.coords)).assign_coords(mindex_coords)
         proj0 *= finest

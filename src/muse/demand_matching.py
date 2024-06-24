@@ -46,7 +46,7 @@ solve these constrained problems one way or another.
 __all__ = ["demand_matching"]
 
 
-from typing import Optional, Set
+from typing import Optional
 
 import pandas as pd
 from xarray import DataArray
@@ -56,7 +56,7 @@ def demand_matching(
     demand: DataArray,
     cost: DataArray,
     *constraints: DataArray,
-    protected_dims: Optional[Set] = None,
+    protected_dims: Optional[set] = None,
 ) -> DataArray:
     r"""Demand matching over heterogeneous dimensions.
 

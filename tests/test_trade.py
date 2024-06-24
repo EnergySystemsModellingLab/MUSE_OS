@@ -1,4 +1,5 @@
-from typing import Any, Mapping, Text
+from collections.abc import Mapping
+from typing import Any
 
 import numpy as np
 import xarray as xr
@@ -6,7 +7,7 @@ from pytest import approx, fixture
 
 
 @fixture
-def constraints_args(sector="power", model="trade") -> Mapping[Text, Any]:
+def constraints_args(sector="power", model="trade") -> Mapping[str, Any]:
     from muse import examples
     from muse.utilities import agent_concatenation, reduce_assets
 
