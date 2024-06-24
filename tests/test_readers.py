@@ -573,3 +573,37 @@ def test_global_commodities(default_model):
         "CO2f",
     ]
     assert all(var.coords.equals(data.coords) for var in data.data_vars.values())
+
+
+def test_read_csv_agent_parameters(default_model):
+    from muse.readers.csv import read_csv_agent_parameters
+
+    path = default_model / "technodata" / "Agents.csv"
+    data = read_csv_agent_parameters(path)
+
+    assert data == [
+        {
+            "name": "A1",
+            "region": "R1",
+            "objectives": ["LCOE"],
+            "search_rules": "all",
+            "decision": {"name": "singleObj", "parameters": [("LCOE", True, 1)]},
+            "agent_type": "newcapa",
+            "quantity": 1,
+            "maturity_threshhold": -1,
+            "spend_limit": np.inf,
+            "share": "agent_share_1",
+        },
+        {
+            "name": "A1",
+            "region": "R1",
+            "objectives": ["LCOE"],
+            "search_rules": "all",
+            "decision": {"name": "singleObj", "parameters": [("LCOE", True, 1)]},
+            "agent_type": "retrofit",
+            "quantity": 1,
+            "maturity_threshhold": -1,
+            "spend_limit": np.inf,
+            "share": "agent_share_2",
+        },
+    ]
