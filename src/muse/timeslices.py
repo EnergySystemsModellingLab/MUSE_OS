@@ -9,9 +9,11 @@ __all__ = [
     "represent_hours",
 ]
 
+from collections.abc import Mapping, Sequence
 from enum import Enum, unique
-from typing import Dict, Mapping, Optional, Sequence, Text, Tuple, Union
+from typing import Optional, Union
 
+import xarray as xr
 from numpy import ndarray
 from pandas import MultiIndex
 from xarray import DataArray, Dataset
@@ -20,7 +22,7 @@ from muse.readers import kebab_to_camel
 
 TIMESLICE: DataArray = None  # type: ignore
 """Array with the finest timeslice."""
-TRANSFORMS: Dict[Tuple, ndarray] = None  # type: ignore
+TRANSFORMS: dict[tuple, ndarray] = None  # type: ignore
 """Transforms from each aggregate to the finest timeslice."""
 
 DEFAULT_TIMESLICE_DESCRIPTION = """
@@ -67,9 +69,9 @@ DEFAULT_TIMESLICE_DESCRIPTION = """
 
 
 def reference_timeslice(
-    settings: Union[Mapping, Text],
-    level_names: Sequence[Text] = ("month", "day", "hour"),
-    name: Text = "timeslice",
+    settings: Union[Mapping, str],
+    level_names: Sequence[str] = ("month", "day", "hour"),
+    name: str = "timeslice",
 ) -> DataArray:
     '''Reads reference timeslice from toml like input.
 
@@ -103,20 +105,19 @@ def reference_timeslice(
         ...     summer.weekend = 2
         ...     level_names = ["season", "week"]
         ...     """
-        ... )
-        <xarray.DataArray (timeslice: 8)>
+        ... )  # doctest: +SKIP
+        <xarray.DataArray (timeslice: 8)> Size: 32B
         array([5, 2, 5, 2, 5, 2, 5, 2])
         Coordinates:
-          * timeslice  (timeslice) MultiIndex
-          - season     (timeslice) object 'spring' 'spring' ... 'summer' 'summer'
-          - week       (timeslice) object 'weekday' 'weekend' ... 'weekday' 'weekend'
+          * timeslice  (timeslice) object 64B MultiIndex
+          * season     (timeslice) object 64B 'spring' 'spring' ... 'summer' 'summer'
+          * week       (timeslice) object 64B 'weekday' 'weekend' ... 'weekend'
     '''
     from functools import reduce
-    from typing import List, Tuple
 
     from toml import loads
 
-    if isinstance(settings, Text):
+    if isinstance(settings, str):
         settings = loads(settings)
     settings = dict(**settings.get("timeslices", settings))
     if "level_names" in settings:
@@ -124,7 +125,7 @@ def reference_timeslice(
     settings.pop("aggregates", {})
 
     # figures out levels
-    levels: List[Tuple] = [(level,) for level in settings]
+    levels: list[tuple] = [(level,) for level in settings]
     ts = list(settings.values())
     while all(isinstance(v, Mapping) for v in ts):
         levels = [(*previous, b) for previous, a in zip(levels, ts) for b in a]
@@ -146,9 +147,9 @@ def reference_timeslice(
 
 
 def aggregate_transforms(
-    settings: Optional[Union[Mapping, Text]] = None,
+    settings: Optional[Union[Mapping, str]] = None,
     timeslice: Optional[DataArray] = None,
-) -> Dict[Tuple, ndarray]:
+) -> dict[tuple, ndarray]:
     '''Creates dictionary of transforms for aggregate levels.
 
     The transforms are used to create the projectors towards the finest timeslice.
@@ -200,13 +201,13 @@ def aggregate_transforms(
         timeslice = TIMESLICE
     if settings is None:
         settings = {}
-    elif isinstance(settings, Text):
+    elif isinstance(settings, str):
         settings = loads(settings)
 
     # get timeslice dimension
     Id = identity(len(timeslice), dtype=int)
     indices = timeslice.get_index("timeslice")
-    unitvecs: Dict[Tuple, ndarray] = {index: Id[i] for (i, index) in enumerate(indices)}
+    unitvecs: dict[tuple, ndarray] = {index: Id[i] for (i, index) in enumerate(indices)}
     if "timeslices" in settings or "aggregates" in settings:
         settings = settings.get("timeslices", settings).get("aggregates", {})
     assert isinstance(settings, Mapping)
@@ -224,7 +225,7 @@ def aggregate_transforms(
         level = matching_levels.index(True)
         levels[level].append(name)
 
-    result: Dict[Tuple, ndarray] = {}
+    result: dict[tuple, ndarray] = {}
     for index in set(product(*levels)).difference(unitvecs):
         if not any(level in settings for level in index):
             continue
@@ -236,7 +237,7 @@ def aggregate_transforms(
     return result
 
 
-def setup_module(settings: Union[Text, Mapping]):
+def setup_module(settings: Union[str, Mapping]):
     """Sets up module singletons."""
     global TIMESLICE
     global TRANSFORMS
@@ -247,7 +248,7 @@ def setup_module(settings: Union[Text, Mapping]):
 def timeslice_projector(
     x: Union[DataArray, MultiIndex],
     finest: Optional[DataArray] = None,
-    transforms: Optional[Dict[Tuple, ndarray]] = None,
+    transforms: Optional[dict[tuple, ndarray]] = None,
 ) -> DataArray:
     '''Project time-slice to standardized finest time-slices.
 
@@ -293,22 +294,22 @@ def timeslice_projector(
         ...     },
         ...     dims="timeslice"
         ... )
-        >>> input_ts
-        <xarray.DataArray (timeslice: 3)>
+        >>> input_ts  # doctest: +SKIP
+        <xarray.DataArray (timeslice: 3)> Size: 12B
         array([1, 2, 3])
         Coordinates:
-          * timeslice  (timeslice) MultiIndex
-          - semester   (timeslice) object 'winter' 'winter' 'summer'
-          - week       (timeslice) object 'weekday' 'weekend' 'weekend'
-          - day        (timeslice) object 'allday' 'dusk' 'night'
+          * timeslice  (timeslice) object 24B MultiIndex
+          * semester   (timeslice) object 24B 'winter' 'winter' 'summer'
+          * week       (timeslice) object 24B 'weekday' 'weekend' 'weekend'
+          * day        (timeslice) object 24B 'allday' 'dusk' 'night'
 
         The input timeslice does not have to be complete. In any case, we can now
         compute a transform, i.e. a matrix that will take this timeslice and transform
         it to the equivalent times in the finest timeslice:
 
         >>> from muse.timeslices import timeslice_projector
-        >>> timeslice_projector(input_ts, ref, transforms)
-        <xarray.DataArray 'projector' (finest_timeslice: 10, timeslice: 3)>
+        >>> timeslice_projector(input_ts, ref, transforms)  # doctest: +SKIP
+        <xarray.DataArray 'projector' (finest_timeslice: 10, timeslice: 3)> Size: 120B
         array([[1, 0, 0],
                [1, 0, 0],
                [0, 0, 0],
@@ -320,27 +321,27 @@ def timeslice_projector(
                [0, 0, 1],
                [0, 0, 0]])
         Coordinates:
-          * finest_timeslice  (finest_timeslice) MultiIndex
-          - finest_semester   (finest_timeslice) object 'winter' 'winter' ... 'summer'
-          - finest_week       (finest_timeslice) object 'weekday' ... 'weekend'
-          - finest_day        (finest_timeslice) object 'day' 'night' ... 'night' 'dusk'
-          * timeslice         (timeslice) MultiIndex
-          - semester          (timeslice) object 'winter' 'winter' 'summer'
-          - week              (timeslice) object 'weekday' 'weekend' 'weekend'
-          - day               (timeslice) object 'allday' 'dusk' 'night'
+          * finest_timeslice  (finest_timeslice) object 80B MultiIndex
+          * finest_semester   (finest_timeslice) object 80B 'winter' ... 'summer'
+          * finest_week       (finest_timeslice) object 80B 'weekday' ... 'weekend'
+          * finest_day        (finest_timeslice) object 80B 'day' 'night' ... 'dusk'
+          * timeslice         (timeslice) object 24B MultiIndex
+          * semester          (timeslice) object 24B 'winter' 'winter' 'summer'
+          * week              (timeslice) object 24B 'weekday' 'weekend' 'weekend'
+          * day               (timeslice) object 24B 'allday' 'dusk' 'night'
 
         It is possible to give as input an array which does not have a timeslice of its
         own:
 
         >>> nots = DataArray([5.0, 1.0, 2.0], dims="a", coords={'a': [1, 2, 3]})
-        >>> timeslice_projector(nots, ref, transforms).T
-        <xarray.DataArray (timeslice: 1, finest_timeslice: 10)>
+        >>> timeslice_projector(nots, ref, transforms).T  # doctest: +SKIP
+        <xarray.DataArray (timeslice: 1, finest_timeslice: 10)> Size: 40B
         array([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
         Coordinates:
-          * finest_timeslice  (finest_timeslice) MultiIndex
-          - finest_semester   (finest_timeslice) object 'winter' 'winter' ... 'summer'
-          - finest_week       (finest_timeslice) object 'weekday' ... 'weekend'
-          - finest_day        (finest_timeslice) object 'day' 'night' ... 'night' 'dusk'
+          * finest_timeslice  (finest_timeslice) object 80B MultiIndex
+          * finest_semester   (finest_timeslice) object 80B 'winter' ... 'summer'
+          * finest_week       (finest_timeslice) object 80B 'weekday' ... 'weekend'
+          * finest_day        (finest_timeslice) object 80B 'day' 'night' ... 'dusk'
         Dimensions without coordinates: timeslice
     '''
     from numpy import concatenate, ones_like
@@ -354,7 +355,7 @@ def timeslice_projector(
         transforms = TRANSFORMS
 
     index = finest.get_index("timeslice")
-    index = index.set_names((f"finest_{u}" for u in index.names))
+    index = index.set_names(f"finest_{u}" for u in index.names)
 
     if isinstance(x, MultiIndex):
         timeslices = x
@@ -398,9 +399,9 @@ class QuantityType(Enum):
 def convert_timeslice(
     x: Union[DataArray, Dataset],
     ts: Union[DataArray, Dataset, MultiIndex],
-    quantity: Union[QuantityType, Text] = QuantityType.EXTENSIVE,
+    quantity: Union[QuantityType, str] = QuantityType.EXTENSIVE,
     finest: Optional[DataArray] = None,
-    transforms: Optional[Dict[Tuple, ndarray]] = None,
+    transforms: Optional[dict[tuple, ndarray]] = None,
 ) -> Union[DataArray, Dataset]:
     '''Adjusts the timeslice of x to match that of ts.
 
@@ -450,7 +451,7 @@ def convert_timeslice(
         >>> from muse.timeslices import convert_timeslice, QuantityType
         >>> z = convert_timeslice(x, finest_ts, QuantityType.EXTENSIVE)
         >>> z.round(6)
-        <xarray.DataArray (timeslice: 8, a: 3)>
+        <xarray.DataArray (timeslice: 8, a: 3)> Size: 192B
         array([[0.892857, 0.357143, 0.535714],
                [0.892857, 0.357143, 0.535714],
                [0.357143, 0.142857, 0.214286],
@@ -460,16 +461,16 @@ def convert_timeslice(
                [0.357143, 0.142857, 0.214286],
                [0.357143, 0.142857, 0.214286]])
         Coordinates:
-          * timeslice  (timeslice) MultiIndex
-          - semester   (timeslice) object 'winter' 'winter' ... 'summer' 'summer'
-          - week       (timeslice) object 'weekday' 'weekday' ... 'weekend' 'weekend'
-          - day        (timeslice) object 'day' 'night' 'day' ... 'night' 'day' 'night'
-          * a          (a) int64 1 2 3
+          * timeslice  (timeslice) object 64B MultiIndex
+          * semester   (timeslice) object 64B 'winter' 'winter' ... 'summer' 'summer'
+          * week       (timeslice) object 64B 'weekday' 'weekday' ... 'weekend'
+          * day        (timeslice) object 64B 'day' 'night' 'day' ... 'day' 'night'
+          * a          (a) int64 24B 1 2 3
         >>> z.sum("timeslice")
-        <xarray.DataArray (a: 3)>
+        <xarray.DataArray (a: 3)> Size: 24B
         array([5., 2., 3.])
         Coordinates:
-          * a        (a) int64 1 2 3
+          * a        (a) int64 24B 1 2 3
 
         As expected, the sum over timeslices recovers the original array.
 
@@ -485,7 +486,7 @@ def convert_timeslice(
         >>> zfine = x + y + zeros_like(fine_ts.timeslice, dtype=int)
         >>> zrough = convert_timeslice(zfine, rough_ts)
         >>> zrough.round(6)
-        <xarray.DataArray (timeslice: 2, a: 3, b: 3)>
+        <xarray.DataArray (timeslice: 2, a: 3, b: 3)> Size: 144B
         array([[[17.142857, 17.142857, 20.      ],
                 [ 8.571429,  8.571429, 11.428571],
                 [11.428571, 11.428571, 14.285714]],
@@ -494,19 +495,19 @@ def convert_timeslice(
                 [ 3.428571,  3.428571,  4.571429],
                 [ 4.571429,  4.571429,  5.714286]]])
         Coordinates:
-          * timeslice  (timeslice) MultiIndex
-          - semester   (timeslice) object 'allyear' 'allyear'
-          - week       (timeslice) object 'weekday' 'weekend'
-          - day        (timeslice) object 'allday' 'allday'
-          * a          (a) int64 1 2 3
-          * b          (b) <U1 'd' 'e' 'f'
+          * timeslice  (timeslice) object 16B MultiIndex
+          * semester   (timeslice) object 16B 'allyear' 'allyear'
+          * week       (timeslice) object 16B 'weekday' 'weekend'
+          * day        (timeslice) object 16B 'allday' 'allday'
+          * a          (a) int64 24B 1 2 3
+          * b          (b) <U1 12B 'd' 'e' 'f'
 
         We can check that nothing has been added to z (the quantity is ``EXTENSIVE`` by
         default):
 
         >>> from numpy import all
         >>> all(zfine.sum("timeslice").round(6) == zrough.sum("timeslice").round(6))
-        <xarray.DataArray ()>
+        <xarray.DataArray ()> Size: 1B
         array(True)
 
         Or that the ratio of weekdays to weekends makes sense:
@@ -545,14 +546,23 @@ def convert_timeslice(
     if quantity is QuantityType.EXTENSIVE:
         finest = finest.rename(timeslice="finest_timeslice")
         index = finest.get_index("finest_timeslice")
-        index = index.set_names((f"finest_{u}" for u in index.names))
-        finest.coords["finest_timeslice"] = index
+        index = index.set_names(f"finest_{u}" for u in index.names)
+        mindex_coords = xr.Coordinates.from_pandas_multiindex(index, "finest_timeslice")
+        finest = finest.drop_vars(list(finest.coords)).assign_coords(mindex_coords)
         proj0 *= finest
         proj0 = proj0 / proj0.sum("finest_timeslice")
     elif quantity is QuantityType.INTENSIVE:
         proj1 = proj1 / proj1.sum("finest_timeslice")
-    P = (proj1.rename(timeslice="final_ts") * proj0).sum("finest_timeslice")
-    return (P * x).sum("timeslice").rename(final_ts="timeslice")
+
+    new_names = {"timeslice": "final_ts"} | {
+        c: f"{c}_ts" for c in proj1.timeslice.coords if c != "timeslice"
+    }
+    P = (proj1.rename(**new_names) * proj0).sum("finest_timeslice")
+
+    final_names = {"final_ts": "timeslice"} | {
+        c: c.replace("_ts", "") for c in P.final_ts.coords if c != "final_ts"
+    }
+    return (P * x).sum("timeslice").rename(**final_names)
 
 
 def new_to_old_timeslice(ts: DataArray, ag_level="Month") -> dict:

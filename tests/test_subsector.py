@@ -1,11 +1,12 @@
-from typing import Sequence, Text
+from collections.abc import Sequence
+from unittest.mock import MagicMock, patch
 
 import xarray as xr
-from pytest import fixture
+from pytest import fixture, raises
 
 
 @fixture
-def model() -> Text:
+def model() -> str:
     return "medium"
 
 
@@ -36,7 +37,7 @@ def test_subsector_investing_aggregation():
         mca = examples.model(model)
         for sname in sector_list:
             agents = list(examples.sector(sname, model).agents)
-            sector = next((sector for sector in mca.sectors if sector.name == sname))
+            sector = next(sector for sector in mca.sectors if sector.name == sname)
             technologies = sector.technologies
             commodities = aggregate_enduses(
                 (agent.assets for agent in agents), technologies
@@ -115,7 +116,7 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
     assert "agent" in lpcosts.coords
     assert isinstance(lpconstraints, Sequence)
     assert len(lpconstraints) == 1
-    assert all((isinstance(u, xr.Dataset) for u in lpconstraints))
+    assert all(isinstance(u, xr.Dataset) for u in lpconstraints)
     # makes sure agent investment got called
     assert all(agent.year == 2025 for agent in agents)
 
@@ -134,3 +135,45 @@ def test_factory_smoke_test(model, technologies, tmp_path):
 
     assert isinstance(subsector, Subsector)
     assert len(subsector.agents) == 2
+
+
+def test_factory_constraints_passed_to_agents(model, technologies, tmp_path):
+    from muse import examples
+    from muse.readers.toml import read_settings
+    from muse.sectors.subsector import Subsector
+
+    examples.copy_model(model, tmp_path)
+    settings = read_settings(tmp_path / "model" / "settings.toml")
+
+    # The constraints in the settings are not none
+    assert len(settings.sectors.residential.subsectors.retro_and_new.constraints) > 0
+
+    class BreakException(Exception):
+        pass
+
+    _withness = MagicMock()
+
+    def agent_factory(*args, **kwargs):
+        _withness(*args, **kwargs)
+        raise BreakException()
+
+    # We asses they are indeed passed to the agents factory
+    with patch("muse.agents.agents_factory", new=agent_factory):
+        with raises(BreakException):
+            Subsector.factory(
+                settings.sectors.residential.subsectors.retro_and_new, technologies
+            )
+        assert (
+            _withness.call_args[1]["constraints"]
+            == settings.sectors.residential.subsectors.retro_and_new.constraints
+        )
+
+    # But if there are no constraints, we pass an empty tuple
+    settings.sectors.residential.subsectors.retro_and_new.constraints.clear()
+    _withness.reset_mock()
+    with patch("muse.agents.agents_factory", new=agent_factory):
+        with raises(BreakException):
+            Subsector.factory(
+                settings.sectors.residential.subsectors.retro_and_new, technologies
+            )
+        assert tuple(_withness.call_args[1]["constraints"]) == ()

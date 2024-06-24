@@ -1,7 +1,8 @@
 """Methods and types around commodities."""
 
+from collections.abc import Sequence
 from enum import IntFlag, auto
-from typing import Sequence, Text, Union
+from typing import Union
 
 from numpy import ndarray
 from xarray import DataArray, Dataset
@@ -39,6 +40,21 @@ class CommodityUsage(IntFlag):
     ENERGY = auto()
     """Commodity which is a fuel for this or another sector."""
     # BYPRODUCT = auto()
+
+    @property
+    def name(self) -> str:
+        """Hack to get the name of the flag consistently across python versions."""
+        return (
+            self._name_
+            if self._name_ is not None
+            else "|".join(
+                [
+                    com._name_
+                    for com in CommodityUsage
+                    if com in self and com != CommodityUsage.OTHER
+                ]
+            )
+        )
 
     @staticmethod
     def from_technologies(technologies: Dataset) -> DataArray:
@@ -109,8 +125,8 @@ class CommodityUsage(IntFlag):
 
 def check_usage(
     data: Sequence[CommodityUsage],
-    flag: Union[Text, CommodityUsage, None],
-    match: Text = "all",
+    flag: Union[str, CommodityUsage, None],
+    match: str = "all",
 ) -> ndarray:
     """Match usage flags with input data array.
 
@@ -179,7 +195,7 @@ def check_usage(
 
     from numpy import bitwise_and, equal
 
-    if isinstance(flag, Text) and len(flag) > 0:
+    if isinstance(flag, str) and len(flag) > 0:
         usage = {
             k.lower(): getattr(CommodityUsage, k)
             for k in dir(CommodityUsage)
@@ -189,7 +205,7 @@ def check_usage(
         flag = reduce(
             lambda x, y: x | y, [usage[a.lower().strip()] for a in flag.split("|")]
         )
-    elif isinstance(flag, Text) or flag is None:
+    elif isinstance(flag, str) or flag is None:
         flag = CommodityUsage.OTHER
 
     if match.lower() == "all":

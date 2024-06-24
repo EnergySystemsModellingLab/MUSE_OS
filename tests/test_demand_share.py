@@ -27,7 +27,7 @@ def _matching_market(technologies, stock, timeslice):
     market["supply"] = production.sum("asset")
     market["consumption"] = (
         consumption(technologies, production).sum("asset") + market.supply
-    )
+    ).drop_vars(["timeslice", "month", "day", "hour"])
     market["prices"] = market.supply.dims, random(market.supply.shape)
 
     return market
@@ -224,7 +224,6 @@ def test_demand_split_zero_share(technologies, stock, matching_market):
 
 def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_factory):
     from dataclasses import dataclass
-    from typing import Text
     from uuid import UUID, uuid4
 
     from muse.commodities import is_enduse
@@ -242,10 +241,10 @@ def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_f
     @dataclass
     class Agent:
         assets: xr.Dataset
-        category: Text
+        category: str
         uuid: UUID
-        name: Text
-        region: Text
+        name: str
+        region: str
         quantity: float
 
     agents = [
@@ -278,7 +277,6 @@ def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_f
 
 def test_standard_demand_share(technologies, coords, market, timeslice, stock_factory):
     from dataclasses import dataclass
-    from typing import Text
     from uuid import UUID, uuid4
 
     from muse.commodities import is_enduse
@@ -297,10 +295,10 @@ def test_standard_demand_share(technologies, coords, market, timeslice, stock_fa
     @dataclass
     class Agent:
         assets: xr.Dataset
-        category: Text
+        category: str
         uuid: UUID
-        name: Text
-        region: Text
+        name: str
+        region: str
         quantity: float
 
     agents = [

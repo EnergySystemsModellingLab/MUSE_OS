@@ -14,7 +14,7 @@ Once you have ``git`` in your system, clone the MUSE repository with:
 
 .. code-block:: bash
 
-    git clone https://github.com/SGIModel/MUSE_OS.git
+    git clone https://github.com/EnergySystemsModellingLab/MUSE_OS.git
 
 For developing MUSE, **it is highly recommended to do so in a virtual Python environment**. This is to isolate dependencies and to avoid version conflicts on other Python libraries.
 Moreover, this allows for unconstrained experimentation with the code without breaking system dependencies, which, as least as far as ``Linux`` is concerned, is an issue.

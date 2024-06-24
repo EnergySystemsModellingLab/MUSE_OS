@@ -47,14 +47,11 @@ __all__ = [
     "register_investment",
     "INVESTMENT_SIGNATURE",
 ]
+from collections.abc import Mapping, MutableMapping
 from typing import (
     Any,
     Callable,
-    List,
-    Mapping,
-    MutableMapping,
     Optional,
-    Text,
     Union,
     cast,
 )
@@ -69,12 +66,12 @@ from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
 
 INVESTMENT_SIGNATURE = Callable[
-    [xr.DataArray, xr.DataArray, xr.Dataset, List[Constraint], KwArg(Any)],
+    [xr.DataArray, xr.DataArray, xr.Dataset, list[Constraint], KwArg(Any)],
     Union[xr.DataArray, xr.Dataset],
 ]
 """Investment signature. """
 
-INVESTMENTS: MutableMapping[Text, INVESTMENT_SIGNATURE] = {}
+INVESTMENTS: MutableMapping[str, INVESTMENT_SIGNATURE] = {}
 """Dictionary of investment functions."""
 
 
@@ -94,7 +91,7 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
         costs: xr.DataArray,
         search_space: xr.DataArray,
         technologies: xr.Dataset,
-        constraints: List[Constraint],
+        constraints: list[Constraint],
         **kwargs,
     ) -> xr.DataArray:
         result = function(costs, search_space, technologies, constraints, **kwargs)
@@ -113,13 +110,11 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
     return decorated
 
 
-def factory(settings: Optional[Union[Text, Mapping]] = None) -> Callable:
-    from typing import Dict
-
+def factory(settings: Optional[Union[str, Mapping]] = None) -> Callable:
     if settings is None:
         name = "match_demand"
-        params: Dict = {}
-    elif isinstance(settings, Text):
+        params: dict = {}
+    elif isinstance(settings, str):
         name = settings
         params = {}
     else:
@@ -127,7 +122,7 @@ def factory(settings: Optional[Union[Text, Mapping]] = None) -> Callable:
         params = {k: v for k, v in settings.items() if k != "name"}
 
     top = params.get("timeslice_op", "max")
-    if isinstance(top, Text):
+    if isinstance(top, str):
         if top.lower() == "max":
 
             def timeslice_op(x: xr.DataArray) -> xr.DataArray:
@@ -150,7 +145,7 @@ def factory(settings: Optional[Union[Text, Mapping]] = None) -> Callable:
     def compute_investment(
         search: xr.Dataset,
         technologies: xr.Dataset,
-        constraints: List[Constraint],
+        constraints: list[Constraint],
         **kwargs,
     ) -> xr.DataArray:
         """Computes investment needed to fulfill demand.
@@ -182,7 +177,7 @@ def cliff_retirement_profile(
     technical_life: xr.DataArray,
     current_year: int = 0,
     protected: int = 0,
-    interpolation: Text = "linear",
+    interpolation: str = "linear",
     **kwargs,
 ) -> xr.DataArray:
     """Cliff-like retirement profile from current year.
@@ -251,7 +246,7 @@ def adhoc_match_demand(
     costs: xr.DataArray,
     search_space: xr.DataArray,
     technologies: xr.Dataset,
-    constraints: List[Constraint],
+    constraints: list[Constraint],
     year: int,
     timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
 ) -> xr.DataArray:
@@ -259,11 +254,9 @@ def adhoc_match_demand(
     from muse.quantities import capacity_in_use, maximum_production
     from muse.timeslices import QuantityType, convert_timeslice
 
-    demand = next((c for c in constraints if c.name == "demand")).b
+    demand = next(c for c in constraints if c.name == "demand").b
 
-    max_capacity = next(
-        (c for c in constraints if c.name == "max capacity expansion")
-    ).b
+    max_capacity = next(c for c in constraints if c.name == "max capacity expansion").b
     max_prod = maximum_production(
         technologies,
         max_capacity,
@@ -306,7 +299,7 @@ def scipy_match_demand(
     costs: xr.DataArray,
     search_space: xr.DataArray,
     technologies: xr.Dataset,
-    constraints: List[Constraint],
+    constraints: list[Constraint],
     year: Optional[int] = None,
     timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
     **options,
@@ -317,7 +310,11 @@ def scipy_match_demand(
 
     from muse.constraints import ScipyAdapter
 
-    df_technologies = technologies.to_dataframe().reset_index()
+    df_technologies = (
+        technologies.to_dataframe()
+        .drop(["month", "day", "hour"], axis=1, errors="ignore")
+        .reset_index()
+    )
 
     if "timeslice" in costs.dims and timeslice_op is not None:
         costs = timeslice_op(costs)
@@ -327,7 +324,7 @@ def scipy_match_demand(
         techs = technologies.sel(year=year).drop_vars("year")
     else:
         techs = technologies
-    timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
+    timeslice = next(cs.timeslice for cs in constraints if "timeslice" in cs.dims)
 
     adapter = ScipyAdapter.factory(
         techs, cast(np.ndarray, costs), timeslice, *constraints
@@ -362,7 +359,7 @@ def cvxopt_match_demand(
     costs: xr.DataArray,
     search_space: xr.DataArray,
     technologies: xr.Dataset,
-    constraints: List[Constraint],
+    constraints: list[Constraint],
     year: Optional[int] = None,
     timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
     **options,
@@ -397,7 +394,7 @@ def cvxopt_match_demand(
 
     if "timeslice" in costs.dims and timeslice_op is not None:
         costs = timeslice_op(costs)
-    timeslice = next((cs.timeslice for cs in constraints if "timeslice" in cs.dims))
+    timeslice = next(cs.timeslice for cs in constraints if "timeslice" in cs.dims)
     adapter = ScipyAdapter.factory(
         techs, -cast(np.ndarray, costs), timeslice, *constraints
     )

@@ -1,12 +1,11 @@
 from pathlib import Path
-from typing import List
 
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 from pytest import mark
 
 
-def available_notebooks() -> List[Path]:
+def available_notebooks() -> list[Path]:
     """Locate the available notebooks in the docs."""
     if not Path("Results/MCACapacity.csv").exists():
         return []

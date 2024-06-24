@@ -29,18 +29,6 @@ def generate_model_1() -> None:
     examples.copy_model(name="default", path=parent_path, overwrite=True)
     os.rename(parent_path / "model", model_path)
 
-    # Modify MaxCapacityGrowth (Undocumented)
-    technodata_file = model_path / "technodata/power/Technodata.csv"
-    df = pd.read_csv(technodata_file)
-    df.loc[1:, "MaxCapacityGrowth"] = 0.2
-    df.to_csv(technodata_file, index=False)
-
-    # Change maximum_iterations to 100 (Undocumented)
-    settings_file = model_path / "settings.toml"
-    modify_toml(
-        settings_file, lambda settings: settings.update({"maximum_iterations": 100})
-    )
-
     # Copy wind commodity in power sector -> solar
     add_new_commodity(model_path, "solar", "power", "wind")
 
@@ -62,7 +50,7 @@ def generate_model_1() -> None:
     df.loc[df["ProcessName"] == "solarPV", "Fuel"] = "solar"
     df.to_csv(technodata_file, index=False)
 
-    # Add solar to excluded commodities (Undocumented)
+    # Add solar to excluded commodities
     settings_file = model_path / "settings.toml"
     modify_toml(
         settings_file, lambda settings: settings["excluded_commodities"].append("solar")

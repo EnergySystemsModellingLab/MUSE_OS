@@ -22,11 +22,9 @@ def user_data_files(settings: dict) -> None:
 @fixture
 def sectors_files(settings: dict):
     """Creates the files related to the sector."""
-    from typing import Text
-
     for data in settings["sectors"].values():
         for path in data.values():
-            if not isinstance(path, (Path, Text)):
+            if not isinstance(path, (Path, str)):
                 continue
             path = Path(path)
             if path.suffix != ".csv":

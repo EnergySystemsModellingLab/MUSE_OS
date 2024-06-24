@@ -6,7 +6,7 @@ pipx-based installation
 To help you installing MUSE in your system we will follow these steps:
 
 - `Launching a terminal`_: Needed to both install and run MUSE.
-- `Installing a compatible Python version`_: At the moment, MUSE works with Python 3.8 and 3.9.
+- `Installing a compatible Python version`_: MUSE works with Python 3.9 to 3.12.
 - `Installing pipx`_: A Python application manager that facilitates installing, keeping applications updated and run them in their own isolated environments.
 - `Installing MUSE itself`_
 
@@ -35,7 +35,7 @@ In the following sections, we will guide you step by step in configuring your sy
 Launching a terminal
 ~~~~~~~~~~~~~~~~~~~~
 
-All operative systems have a Terminal application that let you run commands. You will need to use it extensively when using MUSE, so we strongly suggest you get familiar with it. For now, let's just figure out how to launch it:
+All operating systems have a Terminal application that let you run commands. You will need to use it extensively when using MUSE, so we strongly suggest you get familiar with it. For now, let's just figure out how to launch it:
 
 - **Linux**: Depending on the distribution, you might have a shortcut in your tasks bar already or it should be easily found in the menu. Look for ``Console`` or ``Terminal`` to lunch the application.
 - **MacOS**: Press ``Super key + Space`` to open the search box. There, type ``Terminal`` and press ``Enter``.
@@ -67,7 +67,7 @@ Once you have launched the Terminal, the window that opens will show the command
 Installing a compatible Python version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-MUSE needs Python to run but, for now, it only works with versions 3.8 and 3.9, so the next step is to install a suitable version of Python.
+MUSE needs Python to run and it works with versions 3.9 to 3.12, so the next step is to install a suitable version of Python.
 
 .. note::
 
@@ -92,7 +92,7 @@ The first thing will be to check if you already have a suitable python version i
 
     python --version
 
-If the output is ``Python 3.8.X`` or ``Python 3.9.X``, where ``X`` is any number, then **you have a version of Python compatible with MUSE and you can skip this section altogether**. Move to `Installing pipx`_. In any other case, keep reading.
+If the output is ``Python 3.Y.X`` or ``Python 3.Y.X``, where ``X`` is any number and ``Y`` is 9, 10, 11 or 12, then **you have a version of Python compatible with MUSE and you can skip this section altogether**. Move to `Installing pipx`_. In any other case, keep reading.
 
 There are multiple ways of installing Python, as well as multiple distributions. Here we have opted for the one that we believe is simplest, requires the smallest downloads and gives the maximum flexibility: using ``pyenv``.
 
@@ -103,7 +103,7 @@ There are multiple ways of installing Python, as well as multiple distributions.
 Installing ``pyenv``
 ^^^^^^^^^^^^^^^^^^^^
 
-`pyenv <https://github.com/pyenv/pyenv>`_ (`pyenv-win <https://pyenv-win.github.io/pyenv-win/>`_ for Windows) is a tool that lets you install and manage different python versions. It is small, unobtrusive and self-contained, and it is available for the three operative systems. However, you might want to consider a more fully fledged Python distribution like Anaconda, specially if your work involved non-python packages or a lot of data science and machine learning tools. If that is the case, go to the :ref:`virtual-env-based` section.
+`pyenv <https://github.com/pyenv/pyenv>`_ (`pyenv-win <https://pyenv-win.github.io/pyenv-win/>`_ for Windows) is a tool that lets you install and manage different python versions. It is small, unobtrusive and self-contained, and it is available for the three operating systems. However, you might want to consider a more fully fledged Python distribution like Anaconda, specially if your work involved non-python packages or a lot of data science and machine learning tools. If that is the case, go to the :ref:`virtual-env-based` section.
 
 To install ``pyenv``, follow these steps:
 
@@ -199,7 +199,7 @@ Installing ``pipx``
 
 Next we need to install ``pipx``, a Python application manager that facilitates installing, keeping applications updated and run them in their own isolated environments. We could skip this step and install MUSE directly, but that will risk to have conflicting dependencies in the future if you install any other application, breaking your MUSE installation, and we do not want that to happen.
 
-The installation instructions for ``pipx`` can be found in the `official webpage <https://pypa.github.io/pipx/installation/>`_ specific for the three operative systems. The following instructions, however, should work for the three cases:
+The installation instructions for ``pipx`` can be found in the `official webpage <https://pypa.github.io/pipx/installation/>`_ specific for the three operating systems. The following instructions, however, should work for the three cases:
 
 .. code-block:: bash
 

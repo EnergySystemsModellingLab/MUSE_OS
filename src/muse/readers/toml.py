@@ -4,20 +4,14 @@ __all__ = ["read_settings"]
 
 import importlib.util as implib
 from collections import namedtuple
+from collections.abc import Mapping, MutableMapping, Sequence
 from copy import deepcopy
 from logging import getLogger
 from pathlib import Path
 from typing import (
     IO,
     Any,
-    Dict,
-    List,
-    Mapping,
-    MutableMapping,
     Optional,
-    Sequence,
-    Text,
-    Tuple,
     Union,
 )
 
@@ -47,7 +41,7 @@ class IncorrectSettings(InputError):
 def convert(dictionary):
     """Converts a dictionary (with nested ones) to a nametuple."""
     for key, value in dictionary.items():
-        if isinstance(value, Dict):
+        if isinstance(value, dict):
             dictionary[key] = convert(value)
     return namedtuple("MUSEOptions", dictionary.keys())(**dictionary)
 
@@ -78,11 +72,11 @@ class FormatDict(dict):
 
 
 def format_path(
-    filepath: Text,
+    filepath: str,
     replacements: Optional[Mapping] = None,
-    path: Optional[Union[Text, Path]] = None,
-    cwd: Optional[Union[Text, Path]] = None,
-    muse_sectors: Optional[Text] = None,
+    path: Optional[Union[str, Path]] = None,
+    cwd: Optional[Union[str, Path]] = None,
+    muse_sectors: Optional[str] = None,
 ):
     """Replaces known patterns in a path.
 
@@ -110,10 +104,10 @@ def format_path(
 def format_paths(
     settings: Mapping,
     replacements: Optional[Mapping] = None,
-    path: Optional[Union[Text, Path]] = None,
-    cwd: Optional[Union[Text, Path]] = None,
-    muse_sectors: Optional[Text] = None,
-    suffixes: Sequence[Text] = (".csv", ".nc", ".xls", ".xlsx", ".py", ".toml"),
+    path: Optional[Union[str, Path]] = None,
+    cwd: Optional[Union[str, Path]] = None,
+    muse_sectors: Optional[str] = None,
+    suffixes: Sequence[str] = (".csv", ".nc", ".xls", ".xlsx", ".py", ".toml"),
 ):
     """Format paths passed to settings.
 
@@ -214,7 +208,7 @@ def format_paths(
         **({} if replacements is None else replacements),
     }
 
-    def format(path: Text) -> Text:
+    def format(path: str) -> str:
         if path.lower() in ("optional", "required"):
             return path
         return format_path(path, **patterns)  # type: ignore
@@ -228,7 +222,7 @@ def format_paths(
 
     def is_a_path(key, value):
         return any(re.search(x, key) is not None for x in path_names) or (
-            isinstance(value, Text) and Path(value).suffix in suffixes
+            isinstance(value, str) and Path(value).suffix in suffixes
         )
 
     path = format(settings.get("path", str(patterns["path"])))
@@ -242,7 +236,7 @@ def format_paths(
             result[key] = format(value)
         elif isinstance(value, Mapping):
             result[key] = format_paths(value, patterns, path)
-        elif isinstance(value, List):
+        elif isinstance(value, list):
             result[key] = [
                 format_paths(item, patterns, path)
                 if isinstance(item, Mapping)
@@ -256,8 +250,8 @@ def format_paths(
 
 
 def read_split_toml(
-    tomlfile: Union[Text, Path, IO[Text], Mapping],
-    path: Optional[Union[Text, Path]] = None,
+    tomlfile: Union[str, Path, IO[str], Mapping],
+    path: Optional[Union[str, Path]] = None,
 ) -> MutableMapping:
     """Reads and consolidate TOML files.
 
@@ -349,8 +343,8 @@ def read_split_toml(
 
 
 def read_settings(
-    settings_file: Union[Text, Path, IO[Text], Mapping],
-    path: Optional[Union[Text, Path]] = None,
+    settings_file: Union[str, Path, IO[str], Mapping],
+    path: Optional[Union[str, Path]] = None,
 ) -> Any:
     """Loads the input settings for any MUSE simulation.
 
@@ -402,9 +396,9 @@ def read_settings(
 
 
 def read_ts_multiindex(
-    settings: Optional[Union[Mapping, Text]] = None,
+    settings: Optional[Union[Mapping, str]] = None,
     timeslice: Optional[xr.DataArray] = None,
-    transforms: Optional[Dict[Tuple, np.ndarray]] = None,
+    transforms: Optional[dict[tuple, np.ndarray]] = None,
 ) -> pd.MultiIndex:
     '''Read multiindex for a timeslice from TOML.
 
@@ -465,7 +459,7 @@ def read_ts_multiindex(
     indices = (TIMESLICE if timeslice is None else timeslice).get_index("timeslice")
     if transforms is None:
         transforms = TRANSFORMS
-    if isinstance(settings, Text):
+    if isinstance(settings, str):
         settings = loads(settings)
     elif settings is None:
         return indices
@@ -481,7 +475,7 @@ def read_ts_multiindex(
     levels = [
         settings.get(name, level) for name, level in zip(indices.names, indices.levels)
     ]
-    levels = [[level] if isinstance(level, Text) else level for level in levels]
+    levels = [[level] if isinstance(level, str) else level for level in levels]
     for i, level in enumerate(levels):
         known = [index[i] for index in transforms if len(index) > i]
         unexpected = set(level).difference(known)
@@ -494,9 +488,9 @@ def read_ts_multiindex(
 
 
 def read_timeslices(
-    settings: Optional[Union[Text, Mapping]] = None,
+    settings: Optional[Union[str, Mapping]] = None,
     timeslice: Optional[xr.DataArray] = None,
-    transforms: Optional[Dict[Tuple, np.ndarray]] = None,
+    transforms: Optional[dict[tuple, np.ndarray]] = None,
 ) -> xr.Dataset:
     '''Reads timeslice levels and create resulting timeslice coordinate.
 
@@ -539,17 +533,14 @@ def read_timeslices(
         >>> from muse.readers.toml import read_timeslices
         >>> ref = reference_timeslice(toml)
         >>> transforms = aggregate_transforms(toml, ref)
-        >>> read_timeslices(toml, ref, transforms)
-        <xarray.Dataset>
-        Dimensions:          (timeslice: 6)
-        Coordinates:
-          * timeslice        (timeslice) MultiIndex
-          - semester         (timeslice) object 'summer' 'summer' ... 'winter'
-          - week             (timeslice) object 'weekday' 'weekend' ... 'weekend'
-          - day              (timeslice) object 'allday' 'dusk' ... 'dusk' 'allday'
-            represent_hours  (timeslice) ... 10 1 4 10 1 4
-        Data variables:
-            *empty*
+        >>> ts = read_timeslices(toml, ref, transforms)
+        >>> assert "semester" in ts.coords
+        >>> assert "week" in ts.coords
+        >>> assert "day" in ts.coords
+        >>> assert "represent_hours" in ts.coords
+        >>> assert set(ts.coords["day"].data) == {"dusk", "allday"}
+        >>> assert set(ts.coords["week"].data) == {"weekday", "weekend"}
+        >>> assert set(ts.coords["semester"].data) == {"summer", "winter"}
     '''
     from muse.timeslices import TIMESLICE, timeslice_projector
 
@@ -589,22 +580,22 @@ def add_known_parameters(dd, u, parent=None):
             if isinstance(v, Mapping):
                 new_parent = k
                 if parent is not None:
-                    new_parent = "{}.{}".format(parent, k)
+                    new_parent = f"{parent}.{k}"
                 d[k] = add_known_parameters(d.get(k, {}), v, new_parent)
             else:
                 d[k] = v
         # Required parameters
-        elif isinstance(d[k], Text) and d[k].lower() == "required":
+        elif isinstance(d[k], str) and d[k].lower() == "required":
             missing.append(k)
         # Optional parameters with default values
-        elif isinstance(d[k], Text) and d[k].lower() == "optional":
+        elif isinstance(d[k], str) and d[k].lower() == "optional":
             d.pop(k)
         elif parent is not None:
-            defaults_used.append("{}.{}".format(parent, k))
+            defaults_used.append(f"{parent}.{k}")
         else:
             defaults_used.append(k)
 
-    msg = "ERROR - Required parameters missing in input file: {}.".format(missing)
+    msg = f"ERROR - Required parameters missing in input file: {missing}."
     if len(missing) > 0:
         raise MissingSettings(msg)
 
@@ -629,7 +620,7 @@ def add_unknown_parameters(dd, u):
     return d
 
 
-def validate_settings(settings: Dict) -> None:
+def validate_settings(settings: dict) -> None:
     """Run the checks on the settings file."""
     msg = " Validating input settings..."
     getLogger(__name__).info(msg)
@@ -640,7 +631,7 @@ def validate_settings(settings: Dict) -> None:
         SETTINGS_CHECKS[check](settings)
 
 
-def check_plugins(settings: Dict) -> None:
+def check_plugins(settings: dict) -> None:
     """Checks that the user custom defined python files exist.
 
     Checks that the user custom defined python files exist. If flagged to use, they are
@@ -651,10 +642,10 @@ def check_plugins(settings: Dict) -> None:
     """
     plugins = settings.get("plugins", [])
 
-    if isinstance(plugins, (Dict, Mapping)):
+    if isinstance(plugins, (dict, Mapping)):
         plugins = plugins.get("plugins")
 
-    if isinstance(plugins, (Path, Text)):
+    if isinstance(plugins, (Path, str)):
         plugins = [plugins]
 
     if not plugins:
@@ -675,7 +666,7 @@ def check_plugins(settings: Dict) -> None:
 
 
 @register_settings_check(vary_name=False)
-def check_log_level(settings: Dict) -> None:
+def check_log_level(settings: dict) -> None:
     """Check the log level required in the simulation."""
     valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
     msg = "ERROR - Valid log levels are {}.".format(", ".join(valid_levels))
@@ -685,7 +676,7 @@ def check_log_level(settings: Dict) -> None:
 
 
 @register_settings_check(vary_name=False)
-def check_interpolation_mode(settings: Dict) -> None:
+def check_interpolation_mode(settings: dict) -> None:
     """Just updates the interpolation mode to a bool.
 
     There's no check, actually.
@@ -705,7 +696,7 @@ def check_interpolation_mode(settings: Dict) -> None:
 
 
 @register_settings_check(vary_name=False)
-def check_budget_parameters(settings: Dict) -> None:
+def check_budget_parameters(settings: dict) -> None:
     """Check the parameters that are required if carbon_budget > 0."""
     length = len(settings["carbon_budget_control"]["budget"])
     if length > 0:
@@ -728,7 +719,7 @@ def check_budget_parameters(settings: Dict) -> None:
 
 
 @register_settings_check(vary_name=False)
-def check_foresight(settings: Dict) -> None:
+def check_foresight(settings: dict) -> None:
     """Check that foresight is a multiple of the smaller time_framework difference.
 
     If so, we update the time framework adding the foresight year to the list and
@@ -749,7 +740,7 @@ def check_foresight(settings: Dict) -> None:
 
 
 @register_settings_check(vary_name=False)
-def check_iteration_control(settings: Dict) -> None:
+def check_iteration_control(settings: dict) -> None:
     """Checks the variables related to the control of the iterations.
 
     This includes whether equilibrium must be reached, the maximum number of iterations
@@ -771,7 +762,7 @@ def check_iteration_control(settings: Dict) -> None:
 
 
 @register_settings_check(vary_name=False)
-def check_time_slices(settings: Dict) -> None:
+def check_time_slices(settings: dict) -> None:
     """Check the time slices.
 
     If there is no error, they are transformed into a xr.DataArray
@@ -785,7 +776,7 @@ def check_time_slices(settings: Dict) -> None:
 
 
 @register_settings_check(vary_name=False)
-def check_global_data_files(settings: Dict) -> None:
+def check_global_data_files(settings: dict) -> None:
     """Checks that the global user files exist."""
     user_data = settings["global_input_files"]
 
@@ -794,7 +785,7 @@ def check_global_data_files(settings: Dict) -> None:
     else:
         basedir = settings["root"] / Path(user_data["path"])
 
-    msg = "ERROR Directory of global user files does not exist: {}.".format(basedir)
+    msg = f"ERROR Directory of global user files does not exist: {basedir}."
     assert basedir.exists(), msg
 
     # Update the path to the base directory
@@ -817,7 +808,7 @@ def check_global_data_files(settings: Dict) -> None:
 
 
 @register_settings_check(vary_name=False)
-def check_sectors_files(settings: Dict) -> None:
+def check_sectors_files(settings: dict) -> None:
     """Checks that the sector files exist."""
     sectors = settings["sectors"]
     priorities = {
@@ -847,10 +838,10 @@ def check_sectors_files(settings: Dict) -> None:
 
 def read_technodata(
     settings: Any,
-    sector_name: Optional[Text] = None,
+    sector_name: Optional[str] = None,
     time_framework: Optional[Sequence[int]] = None,
-    commodities: Optional[Union[Text, Path]] = None,
-    regions: Optional[Sequence[Text]] = None,
+    commodities: Optional[Union[str, Path]] = None,
+    regions: Optional[Sequence[str]] = None,
     **kwargs,
 ) -> xr.Dataset:
     """Helper function to create technodata for a given sector."""
@@ -876,7 +867,7 @@ def read_technodata(
         raise MissingSettings("Missing technodata section")
     technosettings = undo_damage(settings.technodata)
 
-    if isinstance(technosettings, Text):
+    if isinstance(technosettings, str):
         technosettings = dict(
             technodata=technosettings,
             technodata_timeslices=technodata_timeslices,
@@ -913,7 +904,7 @@ def read_technodata(
     techcomms = technologies.commodity[ins | outs]
     technologies = technologies.sel(commodity=techcomms)
     for name, value in technosettings.items():
-        if isinstance(name, (Text, Path)):
+        if isinstance(name, (str, Path)):
             data = read_trade(value, drop="Unit")
             if "region" in data.dims:
                 data = data.sel(region=regions)

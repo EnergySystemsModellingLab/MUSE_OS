@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Text
+from typing import Any
 
 from xarray import DataArray, Dataset
 
@@ -14,9 +14,9 @@ class PresetSector(AbstractSector):  # type: ignore
     """Sector with outcomes fixed from the start."""
 
     @classmethod
-    def factory(cls, name: Text, settings: Any) -> PresetSector:
+    def factory(cls, name: str, settings: Any) -> PresetSector:
         """Constructs a PresetSectors from input data."""
-        from typing import Sequence
+        from collections.abc import Sequence
 
         from xarray import DataArray, zeros_like
 
@@ -35,13 +35,12 @@ class PresetSector(AbstractSector):  # type: ignore
         sector_conf = getattr(settings.sectors, name)
         presets = Dataset()
 
-        presets["timeslice"] = read_timeslices(
+        timeslice = read_timeslices(
             getattr(sector_conf, "timeslice_levels", None)
         ).timeslice
         if getattr(sector_conf, "consumption_path", None) is not None:
             consumption = read_csv_outputs(sector_conf.consumption_path)
-            consumption.coords["timeslice"] = presets.timeslice
-            presets["consumption"] = consumption
+            presets["consumption"] = consumption.assign_coords(timeslice=timeslice)
         elif getattr(sector_conf, "demand_path", None) is not None:
             presets["consumption"] = read_attribute_table(sector_conf.demand_path)
         elif (
@@ -70,17 +69,23 @@ class PresetSector(AbstractSector):  # type: ignore
                 consumption = consumption.sum("sector")
 
             if getattr(sector_conf, "timeslice_shares_path", None) is not None:
-                timeslice = presets["timeslice"]
                 assert isinstance(timeslice, DataArray)
                 shares = read_timeslice_shares(
                     sector_conf.timeslice_shares_path, timeslice=timeslice
                 )
                 assert consumption.commodity.isin(shares.commodity).all()
                 assert consumption.region.isin(shares.region).all()
-                consumption = consumption * shares.sel(
-                    region=consumption.region, commodity=consumption.commodity
-                )
-            presets["consumption"] = consumption
+                if "timeslice" in shares.dims:
+                    ts = shares.timeslice
+                    shares = shares.drop_vars(["timeslice", "month", "day", "hour"])
+                    consumption = (shares * consumption).assign_coords(timeslice=ts)
+                else:
+                    consumption = consumption * shares.sel(
+                        region=consumption.region, commodity=consumption.commodity
+                    )
+            presets["consumption"] = consumption.drop_vars(
+                ["timeslice", "month", "day", "hour"]
+            ).assign_coords(timeslice=timeslice)
 
         if getattr(sector_conf, "supply_path", None) is not None:
             supply = read_csv_outputs(sector_conf.supply_path)
@@ -103,14 +108,16 @@ class PresetSector(AbstractSector):  # type: ignore
             presets["costs"] = costs
 
         if len(presets.data_vars) == 0:
-            raise IOError("None of supply, consumption, costs given")
+            raise OSError("None of supply, consumption, costs given")
 
         # add missing data as zeros: we only need one of conumption, costs, supply
         components = {"supply", "consumption", "costs"}
         for component in components:
             others = components.intersection(presets.data_vars).difference({component})
             if component not in presets and len(others) > 0:
-                presets[component] = zeros_like(presets[others.pop()])
+                presets[component] = zeros_like(presets[others.pop()]).drop_vars(
+                    ["timeslice", "month", "day", "hour"]
+                )
         # add timeslice, if missing
         for component in {"supply", "consumption"}:
             if "timeslice" not in presets[component].dims:
@@ -133,14 +140,14 @@ class PresetSector(AbstractSector):  # type: ignore
     def __init__(
         self,
         presets: Dataset,
-        interpolation_mode: Text = "linear",
-        name: Text = "preset",
+        interpolation_mode: str = "linear",
+        name: str = "preset",
     ):
         super().__init__()
 
         self.presets: Dataset = presets
         """Market across time and space."""
-        self.interpolation_mode: Text = interpolation_mode
+        self.interpolation_mode: str = interpolation_mode
         """Interpolation method"""
         self.name = name
         """Name by which to identify a sector"""
@@ -161,7 +168,7 @@ class PresetSector(AbstractSector):  # type: ignore
         )
         result["costs"] = convert_timeslice(
             costs, mca_market.timeslice, QuantityType.INTENSIVE
-        )
+        ).drop_vars(["timeslice", "month", "day", "hour"])
         assert isinstance(result, Dataset)
         return result
 

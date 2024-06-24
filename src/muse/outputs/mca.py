@@ -16,19 +16,13 @@ The function should never modify it's arguments. It can return either a pandas d
 or an xarray xr.DataArray.
 """
 
+from collections.abc import Hashable, Iterable, Mapping, MutableMapping, Sequence
 from operator import attrgetter
 from pathlib import Path
 from typing import (
     Any,
     Callable,
-    Hashable,
-    Iterable,
-    List,
-    Mapping,
-    MutableMapping,
     Optional,
-    Sequence,
-    Text,
     Union,
     cast,
 )
@@ -43,14 +37,14 @@ from muse.sectors import AbstractSector
 from muse.timeslices import QuantityType, convert_timeslice
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
-    [xr.Dataset, List[AbstractSector], KwArg(Any)], Union[xr.DataArray, pd.DataFrame]
+    [xr.Dataset, list[AbstractSector], KwArg(Any)], Union[xr.DataArray, pd.DataFrame]
 ]
 """Signature of functions computing quantities for later analysis."""
 
-OUTPUT_QUANTITIES: MutableMapping[Text, OUTPUT_QUANTITY_SIGNATURE] = {}
+OUTPUT_QUANTITIES: MutableMapping[str, OUTPUT_QUANTITY_SIGNATURE] = {}
 """Quantity for post-simulation analysis."""
 
-OUTPUTS_PARAMETERS = Union[Text, Mapping]
+OUTPUTS_PARAMETERS = Union[str, Mapping]
 """Acceptable Datastructures for outputs parameters"""
 
 
@@ -79,7 +73,7 @@ def round_values(function: Callable) -> OUTPUT_QUANTITY_SIGNATURE:
 
     @wraps(function)
     def rounded(
-        market: xr.Dataset, sectors: List[AbstractSector], rounding: int = 4, **kwargs
+        market: xr.Dataset, sectors: list[AbstractSector], rounding: int = 4, **kwargs
     ) -> xr.DataArray:
         result = function(market, sectors, **kwargs)
 
@@ -95,7 +89,7 @@ def round_values(function: Callable) -> OUTPUT_QUANTITY_SIGNATURE:
 
 def factory(
     *parameters: OUTPUTS_PARAMETERS,
-) -> Callable[[xr.Dataset, List[AbstractSector]], List[Path]]:
+) -> Callable[[xr.Dataset, list[AbstractSector]], list[Path]]:
     """Creates outputs functions for post-mortem analysis.
 
     Each parameter is a dictionary containing the following:
@@ -121,13 +115,13 @@ def factory(
         from muse.readers.toml import MissingSettings
 
         name = params["quantity"]
-        if not isinstance(name, Text):
+        if not isinstance(name, str):
             name = name["name"]
         if name.lower() not in {"finite_resources", "finiteresources"}:
             return params
 
         quantity = params["quantity"]
-        if isinstance(quantity, Text):
+        if isinstance(quantity, str):
             quantity = dict(name=quantity)
         else:
             quantity = dict(**quantity)
@@ -153,7 +147,7 @@ def factory(
 @register_output_quantity
 @round_values
 def consumption(
-    market: xr.Dataset, sectors: List[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
 ) -> xr.DataArray:
     """Current consumption."""
     from muse.outputs.sector import market_quantity
@@ -163,7 +157,7 @@ def consumption(
 
 @register_output_quantity
 @round_values
-def supply(market: xr.Dataset, sectors: List[AbstractSector], **kwargs) -> xr.DataArray:
+def supply(market: xr.Dataset, sectors: list[AbstractSector], **kwargs) -> xr.DataArray:
     """Current supply."""
     from muse.outputs.sector import market_quantity
 
@@ -174,28 +168,38 @@ def supply(market: xr.Dataset, sectors: List[AbstractSector], **kwargs) -> xr.Da
 @round_values
 def prices(
     market: xr.Dataset,
-    sectors: List[AbstractSector],
+    sectors: list[AbstractSector],
     drop_empty: bool = True,
-    keep_columns: Optional[Union[Sequence[Text], Text]] = "prices",
+    keep_columns: Optional[Union[Sequence[str], str]] = "prices",
     **kwargs,
 ) -> pd.DataFrame:
     """Current MCA market prices."""
     from muse.outputs.sector import market_quantity
 
+    ts_coords = list(market.indexes["timeslice"].names)
     result = market_quantity(market.prices, **kwargs).to_dataframe()
     if drop_empty:
         result = result[result.prices != 0]
-    if isinstance(keep_columns, Text):
-        result = result[[keep_columns]]
+
+    if isinstance(keep_columns, str):
+        result = result[[*ts_coords, keep_columns]]
+
     elif keep_columns is not None and len(keep_columns) > 0:
-        result = result[[u for u in result.columns if u in keep_columns]]
+        result = result[ts_coords + [u for u in result.columns if u in keep_columns]]
+
+    # We assign back a timeslice column with the original coordinate names
+    # Each timeslice is a tuple of the original coordinates (month, day, hour)
+    index_names = result.index.names
+    result = result.reset_index()
+    result["timeslice"] = list(zip(*[result[name] for name in ts_coords]))
+    result = result.set_index(index_names, drop=True).drop(ts_coords, axis=1)
     return result
 
 
 @register_output_quantity
 @round_values
 def capacity(
-    market: xr.Dataset, sectors: List[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current capacity across all sectors."""
     return _aggregate_sectors(sectors, op=sector_capacity)
@@ -203,7 +207,7 @@ def capacity(
 
 def sector_capacity(sector: AbstractSector) -> pd.DataFrame:
     """Sector capacity with agent annotations."""
-    capa_sector: List[xr.DataArray] = []
+    capa_sector: list[xr.DataArray] = []
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
     for agent in agents:
         capa_agent = agent.assets.capacity
@@ -244,7 +248,7 @@ def sector_capacity(sector: AbstractSector) -> pd.DataFrame:
 
 
 def _aggregate_sectors(
-    sectors: List[AbstractSector], *args, op: Callable
+    sectors: list[AbstractSector], *args, op: Callable
 ) -> pd.DataFrame:
     """Aggregate outputs from all sectors."""
     alldata = [op(sector, *args) for sector in sectors]
@@ -260,10 +264,10 @@ class AggregateResources:
 
     def __init__(
         self,
-        commodities: Union[Text, Iterable[Hashable]] = (),
-        metric: Text = "consumption",
+        commodities: Union[str, Iterable[Hashable]] = (),
+        metric: str = "consumption",
     ):
-        if isinstance(commodities, Text):
+        if isinstance(commodities, str):
             commodities = [commodities]
         else:
             commodities = list(commodities)
@@ -274,7 +278,7 @@ class AggregateResources:
     def __call__(
         self,
         market: xr.Dataset,
-        sectors: List[AbstractSector],
+        sectors: list[AbstractSector],
         year: Optional[int] = None,
     ) -> Optional[xr.DataArray]:
         if len(self.commodities) == 0:
@@ -297,14 +301,14 @@ class FiniteResources(AggregateResources):
 
     def __init__(
         self,
-        limits_path: Union[Text, Path, xr.DataArray],
-        commodities: Union[Text, Iterable[Hashable]] = (),
-        metric: Text = "consumption",
+        limits_path: Union[str, Path, xr.DataArray],
+        commodities: Union[str, Iterable[Hashable]] = (),
+        metric: str = "consumption",
     ):
         from muse.readers.csv import read_finite_resources
 
         super().__init__(commodities=commodities, metric=metric)
-        if isinstance(limits_path, Text):
+        if isinstance(limits_path, str):
             limits_path = Path(limits_path)
         if isinstance(limits_path, Path):
             limits_path = read_finite_resources(limits_path)
@@ -314,7 +318,7 @@ class FiniteResources(AggregateResources):
     def __call__(
         self,
         market: xr.Dataset,
-        sectors: List[AbstractSector],
+        sectors: list[AbstractSector],
         year: Optional[int] = None,
     ) -> Optional[xr.DataArray]:
         if len(self.commodities) == 0:
@@ -332,12 +336,12 @@ class FiniteResources(AggregateResources):
         aggregate = aggregate.sum([u for u in aggregate.dims if u not in limits.dims])
         assert aggregate is not None
         limits = limits.sum([u for u in limits.dims if u not in aggregate.dims])
-        return aggregate <= limits
+        return aggregate <= limits.assign_coords(timeslice=aggregate.timeslice)
 
 
 @register_output_quantity(name=["timeslice_supply"])
 def metric_supply(
-    market: xr.Dataset, sectors: List[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current timeslice supply across all sectors."""
     market_out = market.copy(deep=True)
@@ -348,7 +352,7 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
     """Sector supply with agent annotations."""
     from muse.production import supply
 
-    data_sector: List[xr.DataArray] = []
+    data_sector: list[xr.DataArray] = []
     techs = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
@@ -358,7 +362,9 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             technologies = a.filter_input(techs, year=output_year).fillna(0.0)
             agent_market = market.sel(year=output_year).copy()
-            agent_market["consumption"] = agent_market.consumption * a.quantity
+            agent_market["consumption"] = (
+                agent_market.consumption * a.quantity
+            ).drop_vars(["timeslice", "month", "day", "hour"])
             included = [
                 i
                 for i in agent_market["commodity"].values
@@ -391,8 +397,11 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             data_agent["sector"] = getattr(sector, "name", "unnamed")
 
             a = data_agent.to_dataframe("supply")
+            a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
             if len(a) > 0 and len(a.technology.values) > 0:
-                b = a.reset_index()
+                b = a.drop(
+                    ["month", "day", "hour"], axis=1, errors="ignore"
+                ).reset_index()
                 b = b[b["supply"] != 0]
                 data_sector.append(b)
     if len(data_sector) > 0:
@@ -400,14 +409,18 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
 
     else:
         output = pd.DataFrame()
-    output = output.reset_index()
 
-    return output
+    # Combine timeslice columns into a single column, if present
+    if "hour" in output.columns:
+        output["timeslice"] = list(zip(output["month"], output["day"], output["hour"]))
+        output = output.drop(["month", "day", "hour"], axis=1)
+
+    return output.reset_index()
 
 
 @register_output_quantity(name=["yearly_supply"])
 def metricy_supply(
-    market: xr.Dataset, sectors: List[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current yearlysupply across all sectors."""
     market_out = market.copy(deep=True)
@@ -477,7 +490,7 @@ def sectory_supply(
             ]
         )
 
-    data_sector: List[xr.DataArray] = []
+    data_sector: list[xr.DataArray] = []
     techs = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
@@ -510,6 +523,7 @@ def sectory_supply(
             data_agent["sector"] = getattr(sector, "name", "unnamed")
 
             a = data_agent.to_dataframe("supply")
+            a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
             if len(a) > 0 and len(a.technology.values) > 0:
                 b = a.reset_index()
                 b = b[b["supply"] != 0]
@@ -551,6 +565,7 @@ def sectory_supply(
                 data_agent["sector"] = getattr(sector, "name", "unnamed")
 
                 a = data_agent.to_dataframe("supply")
+                a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
                 if len(a) > 0 and len(a.technology.values) > 0:
                     b = a.reset_index()
                     b = b[b["supply"] != 0]
@@ -568,7 +583,7 @@ def sectory_supply(
 
 @register_output_quantity(name=["timeslice_consumption"])
 def metric_consumption(
-    market: xr.Dataset, sectors: List[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current timeslice consumption across all sectors."""
     return _aggregate_sectors(sectors, market, op=sector_consumption)
@@ -581,7 +596,7 @@ def sector_consumption(
     from muse.production import supply
     from muse.quantities import consumption
 
-    data_sector: List[xr.DataArray] = []
+    data_sector: list[xr.DataArray] = []
     techs = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
@@ -592,7 +607,9 @@ def sector_consumption(
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             technologies = a.filter_input(techs, year=output_year).fillna(0.0)
             agent_market = market.sel(year=output_year).copy()
-            agent_market["consumption"] = agent_market.consumption * a.quantity
+            agent_market["consumption"] = (
+                agent_market.consumption * a.quantity
+            ).drop_vars(["timeslice", "month", "day", "hour"])
             included = [
                 i
                 for i in agent_market["commodity"].values
@@ -627,8 +644,11 @@ def sector_consumption(
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
             a = data_agent.to_dataframe("consumption")
+            a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
             if len(a) > 0 and len(a.technology.values) > 0:
-                b = a.reset_index()
+                b = a.drop(
+                    ["month", "day", "hour"], axis=1, errors="ignore"
+                ).reset_index()
                 b = b[b["consumption"] != 0]
                 data_sector.append(b)
     if len(data_sector) > 0:
@@ -636,14 +656,18 @@ def sector_consumption(
 
     else:
         output = pd.DataFrame()
-    output = output.reset_index()
 
-    return output
+    # Combine timeslice columns into a single column, if present
+    if "hour" in output.columns:
+        output["timeslice"] = list(zip(output["month"], output["day"], output["hour"]))
+        output = output.drop(["month", "day", "hour"], axis=1)
+
+    return output.reset_index()
 
 
 @register_output_quantity(name=["yearly_consumption"])
 def metricy_consumption(
-    market: xr.Dataset, sectors: List[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current yearly consumption across all sectors."""
     return _aggregate_sectors(sectors, market, op=sectory_consumption)
@@ -656,7 +680,7 @@ def sectory_consumption(
     from muse.production import supply
     from muse.quantities import consumption
 
-    data_sector: List[xr.DataArray] = []
+    data_sector: list[xr.DataArray] = []
     techs = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
@@ -699,6 +723,7 @@ def sectory_consumption(
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
             a = data_agent.to_dataframe("consumption")
+            a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
             if len(a) > 0 and len(a.technology.values) > 0:
                 b = a.reset_index()
                 b = b[b["consumption"] != 0]
@@ -715,7 +740,7 @@ def sectory_consumption(
 
 @register_output_quantity(name=["fuel_costs"])
 def metric_fuel_costs(
-    market: xr.Dataset, sectors: List[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current lifetime levelised cost across all sectors."""
     return _aggregate_sectors(sectors, market, op=sector_fuel_costs)
@@ -729,7 +754,7 @@ def sector_fuel_costs(
     from muse.production import supply
     from muse.quantities import consumption
 
-    data_sector: List[xr.DataArray] = []
+    data_sector: list[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
@@ -783,7 +808,7 @@ def sector_fuel_costs(
 
 @register_output_quantity(name=["capital_costs"])
 def metric_capital_costs(
-    market: xr.Dataset, sectors: List[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current capital costs across all sectors."""
     return _aggregate_sectors(sectors, market, op=sector_capital_costs)
@@ -793,7 +818,7 @@ def sector_capital_costs(
     sector: AbstractSector, market: xr.Dataset, **kwargs
 ) -> pd.DataFrame:
     """Sector capital costs with agent annotations."""
-    data_sector: List[xr.DataArray] = []
+    data_sector: list[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
@@ -834,7 +859,7 @@ def sector_capital_costs(
 
 @register_output_quantity(name=["emission_costs"])
 def metric_emission_costs(
-    market: xr.Dataset, sectors: List[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current emission costs across all sectors."""
     return _aggregate_sectors(sectors, market, op=sector_emission_costs)
@@ -847,7 +872,7 @@ def sector_emission_costs(
     from muse.commodities import is_enduse, is_pollutant
     from muse.production import supply
 
-    data_sector: List[xr.DataArray] = []
+    data_sector: list[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
@@ -902,7 +927,7 @@ def sector_emission_costs(
 
 @register_output_quantity(name=["LCOE"])
 def metric_lcoe(
-    market: xr.Dataset, sectors: List[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current emission costs across all sectors."""
     return _aggregate_sectors(sectors, market, op=sector_lcoe)
@@ -931,7 +956,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
         return max_demand / technologies.utilization_factor / max_hours
 
     # Filtering of the inputs
-    data_sector: List[xr.DataArray] = []
+    data_sector: list[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
     retro = [a for a in agents if a.category == "retrofit"]
@@ -1104,7 +1129,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
 
 @register_output_quantity(name=["EAC"])
 def metric_eac(
-    market: xr.Dataset, sectors: List[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
 ) -> pd.DataFrame:
     """Current emission costs across all sectors."""
     return _aggregate_sectors(sectors, market, op=sector_eac)
@@ -1133,7 +1158,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
         return max_demand / technologies.utilization_factor / max_hours
 
     # Filtering of the inputs
-    data_sector: List[xr.DataArray] = []
+    data_sector: list[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
     retro = [a for a in agents if a.category == "retrofit"]

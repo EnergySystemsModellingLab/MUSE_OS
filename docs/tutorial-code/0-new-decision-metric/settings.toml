@@ -16,22 +16,22 @@ tolerance_unmet_demand = -0.1
 [[outputs]]
 quantity = "prices"
 sink = "aggregate"
-filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
 quantity = "capacity"
 sink = "aggregate"
-filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
 quantity = "timeslice_consumption"
 sink = "aggregate"
-filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
 quantity = "timeslice_supply"
 sink = "aggregate"
-filename = "{path}/{default_output_dir}/MCA{Quantity}.csv"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 # Carbon budget control
 [carbon_budget_control]

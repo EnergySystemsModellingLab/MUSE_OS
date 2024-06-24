@@ -46,8 +46,9 @@ solve these constrained problems one way or another.
 __all__ = ["demand_matching"]
 
 
-from typing import Optional, Set
+from typing import Optional
 
+import pandas as pd
 from xarray import DataArray
 
 
@@ -55,7 +56,7 @@ def demand_matching(
     demand: DataArray,
     cost: DataArray,
     *constraints: DataArray,
-    protected_dims: Optional[Set] = None,
+    protected_dims: Optional[set] = None,
 ) -> DataArray:
     r"""Demand matching over heterogeneous dimensions.
 
@@ -247,7 +248,8 @@ def demand_matching(
 
     if len(multics) > 0:
         for k in multics:
-            ds.coords[k] = list(range(len(ds[k])))
+            ds = ds.drop_vars(["timeslice", "month", "day", "hour"])
+            ds[k] = pd.Index(constraint.get_index(k), tupleize_cols=False)
         result = demand_matching(  # type: ignore
             ds.demand, ds.cost, *(ds[f"constraint{i}"] for i in range(len(constraints)))
         )

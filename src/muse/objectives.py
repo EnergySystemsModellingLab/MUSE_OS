@@ -71,7 +71,8 @@ __all__ = [
     "factory",
 ]
 
-from typing import Any, Callable, Mapping, MutableMapping, Sequence, Text, Union, cast
+from collections.abc import Mapping, MutableMapping, Sequence
+from typing import Any, Callable, Union, cast
 
 import numpy as np
 import xarray as xr
@@ -87,14 +88,14 @@ OBJECTIVE_SIGNATURE = Callable[
 ]
 """Objectives signature."""
 
-OBJECTIVES: MutableMapping[Text, OBJECTIVE_SIGNATURE] = {}
+OBJECTIVES: MutableMapping[str, OBJECTIVE_SIGNATURE] = {}
 """Dictionary of objectives when selecting replacement technology."""
 
 
-def objective_factory(settings=Union[Text, Mapping]):
+def objective_factory(settings=Union[str, Mapping]):
     from functools import partial
 
-    if isinstance(settings, Text):
+    if isinstance(settings, str):
         params = dict(name=settings)
     else:
         params = dict(**settings)
@@ -104,7 +105,7 @@ def objective_factory(settings=Union[Text, Mapping]):
 
 
 def factory(
-    settings: Union[Text, Mapping, Sequence[Union[Text, Mapping]]] = "LCOE",
+    settings: Union[str, Mapping, Sequence[Union[str, Mapping]]] = "LCOE",
 ) -> Callable:
     """Creates a function computing multiple objectives.
 
@@ -114,15 +115,14 @@ def factory(
     objectives defined by name or by dictionary.
     """
     from logging import getLogger
-    from typing import Dict, List
 
-    if isinstance(settings, Text):
-        params: List[Dict] = [{"name": settings}]
+    if isinstance(settings, str):
+        params: list[dict] = [{"name": settings}]
     elif isinstance(settings, Mapping):
         params = [dict(**settings)]
     else:
         params = [
-            {"name": param} if isinstance(param, Text) else dict(**param)
+            {"name": param} if isinstance(param, str) else dict(**param)
             for param in settings
         ]
 
@@ -140,7 +140,10 @@ def factory(
     ) -> xr.Dataset:
         result = xr.Dataset(coords=search_space.coords)
         for name, objective in functions:
-            result[name] = objective(agent, demand, search_space, *args, **kwargs)
+            obj = objective(agent, demand, search_space, *args, **kwargs)
+            if "timeslice" in obj.dims and "timeslice" in result.dims:
+                obj = obj.drop_vars(["timeslice", "month", "day", "hour"])
+            result[name] = obj
         return result
 
     return objectives
@@ -175,10 +178,7 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
 
         dtype = result.values.dtype
         if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
-            msg = "dtype of objective %s is not a number (%s)" % (
-                function.__name__,
-                dtype,
-            )
+            msg = f"dtype of objective {function.__name__} is not a number ({dtype})"
             getLogger(function.__module__).warning(msg)
 
         if "technology" in result.dims:
@@ -523,7 +523,7 @@ def capital_recovery_factor(
     Energy.
 
     .. _capital recovery factor:
-        https://www.homerenergy.com/products/pro/docs/3.11/capital_recovery_factor.html
+        https://www.homerenergy.com/products/pro/docs/3.15/capital_recovery_factor.html
 
     Arguments:
         agent: The agent of interest
@@ -702,7 +702,7 @@ def net_present_value(
     it. Follows the definition of the `net present cost`_ given by HOMER Energy.
     Metrics are calculated
     .. _net present cost:
-    ..      https://www.homerenergy.com/products/pro/docs/3.11/net_present_cost.html
+    ..      https://www.homerenergy.com/products/pro/docs/3.15/net_present_cost.html
 
     - energy commodities INPUTS are related to fuel costs
     - environmental commodities OUTPUTS are related to environmental costs
@@ -910,7 +910,7 @@ def equivalent_annual_cost(
     `annualized cost`_ expression given by HOMER Energy.
 
     .. _annualized cost:
-        https://www.homerenergy.com/products/pro/docs/3.11/annualized_cost.html
+        https://www.homerenergy.com/products/pro/docs/3.15/annualized_cost.html
 
     Arguments:
         agent: The agent of interest
