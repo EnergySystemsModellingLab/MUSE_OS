@@ -707,11 +707,21 @@ def minimum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
         return xr.zeros_like(capa)
 
     btechs = broadcast_techs(  # type: ignore
-        cast(xr.Dataset, technologies[["fixed_outputs", "minimum_service_factor"]]),
+        cast(
+            xr.Dataset,
+            technologies[
+                ["fixed_outputs", "minimum_service_factor", "utilization_factor"]
+            ],
+        ),
         capa,
     )
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
     )
-    result = capa * ftechs.fixed_outputs * ftechs.minimum_service_factor
+    result = (
+        capa
+        * ftechs.fixed_outputs
+        * ftechs.minimum_service_factor
+        * ftechs.utilization_factor
+    )
     return result.where(is_enduse(result.comm_usage), 0)
