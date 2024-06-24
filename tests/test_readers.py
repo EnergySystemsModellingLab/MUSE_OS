@@ -547,3 +547,29 @@ def test_read_initial_assets(default_model):
     assert list(data.coords["technology"].values) == ["gasboiler", "heatpump"]
     assert list(data.coords["installed"].values) == [2020, 2020]
     assert list(data.coords["year"].values) == list(range(2020, 2055, 5))
+
+
+def test_global_commodities(default_model):
+    from muse.readers.csv import read_global_commodities
+
+    path = default_model / "input" / "GlobalCommodities.csv"
+    data = read_global_commodities(path)
+
+    assert isinstance(data, xr.Dataset)
+    assert set(data.dims) == {"commodity"}
+    assert dict(data.dtypes) == dict(
+        comm_name=np.dtype("O"),
+        comm_type=np.dtype("O"),
+        emmission_factor=np.float64,
+        heat_rate=np.int64,
+        unit=np.dtype("O"),
+    )
+
+    assert list(data.coords["commodity"].values) == [
+        "electricity",
+        "gas",
+        "heat",
+        "wind",
+        "CO2f",
+    ]
+    assert all(var.coords.equals(data.coords) for var in data.data_vars.values())
