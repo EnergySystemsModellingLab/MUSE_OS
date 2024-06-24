@@ -1,6 +1,6 @@
 r"""Investment constraints.
 
-Constraints on investements ensure that investements match some given criteria. For
+Constraints on investments ensure that investments match some given criteria. For
 instance, the constraints could ensure that only so much of a new asset can be built
 every year.
 
@@ -8,7 +8,7 @@ Functions to compute constraints should be registered via the decorator
 :py:meth:`~muse.constraints.register_constraints`. This registration step makes it
 possible for constraints to be declared in the TOML file.
 
-Generally, LP solvers accept linear constraint defined as:
+Generally, LP solvers accept linear constraints defined as:
 
 .. math::
 
@@ -16,8 +16,8 @@ Generally, LP solvers accept linear constraint defined as:
 
 with :math:`A` a matrix, :math:`x` the decision variables, and :math:`b` a vector.
 However, these quantities are dimensionless. They do no have timeslices, assets, or
-replacement technologies, or any other dimensions that users have set-up in their model.
-The crux is to translates from MUSE's data-structures to a consistent dimensionless
+replacement technologies, or any other dimensions that users have set up in their model.
+The crux is to translate from MUSE's data-structures to a consistent dimensionless
 format.
 
 In MUSE, users can register constraints functions that return fully dimensional
@@ -44,8 +44,8 @@ happens as described below.
 - Any dimension in :math:`A_c .* x_c` (:math:`A_p .* x_p`) that is also in :math:`b`
   defines diagonal entries into the left (right) submatrix of :math:`A`.
 - Any dimension in :math:`A_c .* x_c` (:math:`A_p .* x_b`) and missing from
-  :math:`b` is reduce by summation over a row in the left (right) submatrix of
-  :math:`A`. In other words, those dimension do become part of a standard tensor
+  :math:`b` is reduced by summation over a row in the left (right) submatrix of
+  :math:`A`. In other words, those dimensions become part of a standard tensor
   reduction or matrix multiplication.
 
 There are two additional rules. However, they are likely to be the result of an
@@ -281,7 +281,7 @@ def max_capacity_expansion(
     :math:`y=y_1` is the year marking the end of the investment period.
 
     Let :math:`\mathcal{A}^{i, r}_{t, \iota}(y)` be the current assets, before
-    invesment, and let :math:`\Delta\mathcal{A}^{i,r}_t` be the future investements.
+    investment, and let :math:`\Delta\mathcal{A}^{i,r}_t` be the future investments.
     The the constraint on agent :math:`i` are given as:
 
     .. math::
