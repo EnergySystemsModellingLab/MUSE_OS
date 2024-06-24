@@ -682,3 +682,26 @@ def test_read_attribute_table(default_model):
         list(data.coords["units_commodity_price"].values)
         == ["MUS$2010/PJ"] * 3 + ["MUS$2010/kt"] * 2
     )
+
+
+def test_read_csv_outputs(default_model):
+    from muse.readers.csv import read_csv_outputs
+
+    path = default_model / "technodata" / "preset" / "*Consumption.csv"
+    data = read_csv_outputs(str(path))
+
+    assert isinstance(data, xr.DataArray)
+    assert data.dtype == np.float64
+
+    assert set(data.dims) == {"year", "commodity", "region", "process", "timeslice"}
+    assert list(data.coords["region"].values) == ["R1"]
+    assert list(data.coords["process"].values) == ["gasboiler"]
+    assert list(data.coords["timeslice"].values) == list(range(1, 7))
+    assert list(data.coords["year"].values) == [2020, 2050]
+    assert list(data.coords["commodity"].values) == [
+        "electricity",
+        "gas",
+        "heat",
+        "CO2f",
+        "wind",
+    ]
