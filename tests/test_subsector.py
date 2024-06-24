@@ -146,7 +146,7 @@ def test_factory_constraints_passed_to_agents(model, technologies, tmp_path):
     settings = read_settings(tmp_path / "model" / "settings.toml")
 
     # The constraints in the settings are not none
-    assert len(settings.sectors.residential.subsectors.retro_and_new.constraints) > 0
+    assert len(settings.sectors.residential.subsectors.all.constraints) > 0
 
     class BreakException(Exception):
         pass
@@ -160,20 +160,16 @@ def test_factory_constraints_passed_to_agents(model, technologies, tmp_path):
     # We asses they are indeed passed to the agents factory
     with patch("muse.agents.agents_factory", new=agent_factory):
         with raises(BreakException):
-            Subsector.factory(
-                settings.sectors.residential.subsectors.retro_and_new, technologies
-            )
+            Subsector.factory(settings.sectors.residential.subsectors.all, technologies)
         assert (
             _withness.call_args[1]["constraints"]
-            == settings.sectors.residential.subsectors.retro_and_new.constraints
+            == settings.sectors.residential.subsectors.all.constraints
         )
 
     # But if there are no constraints, we pass an empty tuple
-    settings.sectors.residential.subsectors.retro_and_new.constraints.clear()
+    settings.sectors.residential.subsectors.all.constraints.clear()
     _withness.reset_mock()
     with patch("muse.agents.agents_factory", new=agent_factory):
         with raises(BreakException):
-            Subsector.factory(
-                settings.sectors.residential.subsectors.retro_and_new, technologies
-            )
+            Subsector.factory(settings.sectors.residential.subsectors.all, technologies)
         assert tuple(_withness.call_args[1]["constraints"]) == ()
