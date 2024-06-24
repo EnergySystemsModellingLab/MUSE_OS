@@ -531,3 +531,19 @@ def test_read_io_technodata(default_model):
     assert data.data_vars["fixed"].coords.equals(data.coords)
     assert data.data_vars["flexible"].coords.equals(data.coords)
     assert list(data.data_vars["commodity_units"].coords) == ["commodity"]
+
+
+def test_read_initial_assets(default_model):
+    from muse.readers.csv import read_initial_assets
+
+    path = default_model / "technodata" / "residential" / "ExistingCapacity.csv"
+    data = read_initial_assets(path)
+
+    assert isinstance(data, xr.DataArray)
+    assert set(data.dims) == {"region", "asset", "year"}
+    assert data.dtype == np.int64
+
+    assert list(data.coords["region"].values) == ["R1"]
+    assert list(data.coords["technology"].values) == ["gasboiler", "heatpump"]
+    assert list(data.coords["installed"].values) == [2020, 2020]
+    assert list(data.coords["year"].values) == list(range(2020, 2055, 5))
