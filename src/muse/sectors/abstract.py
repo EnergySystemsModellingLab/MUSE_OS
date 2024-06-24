@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Text
+from typing import Any
 
 from xarray import Dataset
 
@@ -22,7 +22,7 @@ class AbstractSector(ABC):
 
     @classmethod
     @abstractmethod
-    def factory(cls, name: Text, settings: Any) -> AbstractSector:
+    def factory(cls, name: str, settings: Any) -> AbstractSector:
         """Creates class from settings named-tuple."""
         pass
 

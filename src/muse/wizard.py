@@ -1,7 +1,7 @@
 import os
 from itertools import chain
 from pathlib import Path
-from typing import Callable, List
+from typing import Callable
 
 import pandas as pd
 from tomlkit import dumps, parse
@@ -21,7 +21,7 @@ def modify_toml(path_to_toml: Path, function: Callable):
     path_to_toml.write_text(dumps(data))
 
 
-def get_sectors(model_path: Path) -> List[str]:
+def get_sectors(model_path: Path) -> list[str]:
     """Get a list of sector names for a model.
 
     Args:

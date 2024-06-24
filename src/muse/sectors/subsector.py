@@ -1,16 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Hashable, MutableMapping, Sequence
 from typing import (
     Any,
     Callable,
-    Hashable,
-    List,
-    MutableMapping,
-    Optional,
-    Sequence,
-    Text,
-    Tuple,
-    Union,
     cast,
 )
 
@@ -26,11 +19,11 @@ class Subsector:
     def __init__(
         self,
         agents: Sequence[Agent],
-        commodities: Sequence[Text],
-        demand_share: Optional[Callable] = None,
-        constraints: Optional[Callable] = None,
-        investment: Optional[Callable] = None,
-        name: Text = "subsector",
+        commodities: Sequence[str],
+        demand_share: Callable | None = None,
+        constraints: Callable | None = None,
+        investment: Callable | None = None,
+        name: str = "subsector",
         forecast: int = 5,
         expand_market_prices: bool = False,
     ):
@@ -39,7 +32,7 @@ class Subsector:
         from muse import investments as iv
 
         self.agents: Sequence[Agent] = list(agents)
-        self.commodities: List[Text] = list(commodities)
+        self.commodities: list[str] = list(commodities)
         self.demand_share = demand_share or ds.factory()
         self.constraints = constraints or cs.factory()
         self.investment = investment or iv.factory()
@@ -58,7 +51,7 @@ class Subsector:
         technologies: xr.Dataset,
         market: xr.Dataset,
         time_period: int = 5,
-        current_year: Optional[int] = None,
+        current_year: int | None = None,
     ) -> None:
         if current_year is None:
             current_year = market.year.min()
@@ -106,8 +99,8 @@ class Subsector:
         technologies: xr.Dataset,
         market: xr.Dataset,
         time_period: int = 5,
-        current_year: Optional[int] = None,
-    ) -> Optional[Tuple[xr.Dataset, Sequence[xr.Dataset]]]:
+        current_year: int | None = None,
+    ) -> tuple[xr.Dataset, Sequence[xr.Dataset]] | None:
         from muse.utilities import agent_concatenation, reduce_assets
 
         if current_year is None:
@@ -170,9 +163,9 @@ class Subsector:
         cls,
         settings: Any,
         technologies: xr.Dataset,
-        regions: Optional[Sequence[Text]] = None,
-        current_year: Optional[int] = None,
-        name: Text = "subsector",
+        regions: Sequence[str] | None = None,
+        current_year: int | None = None,
+        name: str = "subsector",
     ) -> Subsector:
         from muse import constraints as cs
         from muse import demand_share as ds
@@ -191,6 +184,7 @@ class Subsector:
             # only used by self-investing agents
             investment=getattr(settings, "lpsolver", "adhoc"),
             forecast=getattr(settings, "forecast", 5),
+            constraints=getattr(settings, "constraints", ()),
         )
         # technologies can have nans where a commodity
         # does not apply to a technology at all
@@ -232,7 +226,7 @@ class Subsector:
         expand_market_prices = getattr(settings, "expand_market_prices", None)
         if expand_market_prices is None:
             expand_market_prices = "dst_region" in technologies.dims and not any(
-                (isinstance(u, InvestingAgent) for u in agents)
+                isinstance(u, InvestingAgent) for u in agents
             )
 
         return cls(
@@ -248,8 +242,8 @@ class Subsector:
 
 
 def aggregate_enduses(
-    assets: Sequence[Union[xr.Dataset, xr.DataArray]], technologies: xr.Dataset
-) -> Sequence[Text]:
+    assets: Sequence[xr.Dataset | xr.DataArray], technologies: xr.Dataset
+) -> Sequence[str]:
     """Aggregate enduse commodities for input assets.
 
     This function is meant as a helper to figure out the commodities attached to a group

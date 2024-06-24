@@ -17,14 +17,11 @@ The signature of a sink is:
         pass
 """
 
+from collections.abc import Mapping, MutableMapping, Sequence
 from typing import (
     Any,
     Callable,
-    Mapping,
-    MutableMapping,
     Optional,
-    Sequence,
-    Text,
     Union,
     cast,
 )
@@ -36,15 +33,15 @@ from mypy_extensions import KwArg
 from muse.registration import registrator
 
 OUTPUT_SINK_SIGNATURE = Callable[
-    [Union[xr.DataArray, pd.DataFrame], int, KwArg(Any)], Optional[Text]
+    [Union[xr.DataArray, pd.DataFrame], int, KwArg(Any)], Optional[str]
 ]
 """Signature of functions used to save quantities."""
 
-OUTPUT_SINKS: MutableMapping[Text, Union[OUTPUT_SINK_SIGNATURE, Callable]] = {}
+OUTPUT_SINKS: MutableMapping[str, Union[OUTPUT_SINK_SIGNATURE, Callable]] = {}
 """Stores a quantity somewhere."""
 
 
-def factory(parameters: Mapping, sector_name: Text = "default") -> Callable:
+def factory(parameters: Mapping, sector_name: str = "default") -> Callable:
     from functools import partial
     from inspect import isclass
     from pathlib import Path
@@ -55,11 +52,11 @@ def factory(parameters: Mapping, sector_name: Text = "default") -> Callable:
     config.pop("quantity", None)
 
     def normalize(
-        params: Optional[Mapping], filename: Optional[Text] = None
+        params: Optional[Mapping], filename: Optional[str] = None
     ) -> MutableMapping:
         if isinstance(params, Mapping):
             params = dict(**params)
-        elif isinstance(params, Text):
+        elif isinstance(params, str):
             params = dict(name=params)
         else:
             suffix = config.get("suffix", Path(filename).suffix if filename else "csv")
@@ -96,7 +93,7 @@ def register_output_sink(function: OUTPUT_SINK_SIGNATURE = None) -> Callable:
     return function
 
 
-def sink_to_file(suffix: Text):
+def sink_to_file(suffix: str):
     """Simplifies sinks to files.
 
     The decorator takes care of figuring out the path to the file, as well as trims the
@@ -109,7 +106,7 @@ def sink_to_file(suffix: Text):
 
     from muse.defaults import DEFAULT_OUTPUT_DIRECTORY
 
-    def decorator(function: Callable[[Union[pd.DataFrame, xr.DataArray], Text], None]):
+    def decorator(function: Callable[[Union[pd.DataFrame, xr.DataArray], str], None]):
         @wraps(function)
         def decorated(
             quantity: Union[pd.DataFrame, xr.DataArray], year: int, **config
@@ -152,7 +149,7 @@ def sink_to_file(suffix: Text):
                         "not been given."
                     )
                     getLogger(function.__module__).critical(msg)
-                    raise IOError(msg)
+                    raise OSError(msg)
 
             filename.parent.mkdir(parents=True, exist_ok=True)
             function(quantity, filename, **params)  # type: ignore
@@ -164,7 +161,7 @@ def sink_to_file(suffix: Text):
 
 
 def standardize_quantity(
-    function: Callable[[Union[pd.DataFrame, xr.DataArray], Text], None],
+    function: Callable[[Union[pd.DataFrame, xr.DataArray], str], None],
 ):
     """Helps standardize how the quantities are specified.
 
@@ -191,7 +188,7 @@ def standardize_quantity(
         *args,
         set_index: Union[Any, NotSpecified] = NotSpecified,
         sort_index: Union[Any, NotSpecified, bool] = NotSpecified,
-        keep_columns: Union[Text, Sequence[Text], NotSpecified] = NotSpecified,
+        keep_columns: Union[str, Sequence[str], NotSpecified] = NotSpecified,
         group_by: Union[Any, NotSpecified] = NotSpecified,
         **config,
     ) -> None:
@@ -230,7 +227,7 @@ def standardize_quantity(
 @sink_to_file(".csv")
 @standardize_quantity
 def to_csv(
-    quantity: Union[pd.DataFrame, xr.DataArray], filename: Text, **params
+    quantity: Union[pd.DataFrame, xr.DataArray], filename: str, **params
 ) -> None:
     """Saves data array to csv format, using pandas.to_csv.
 
@@ -252,7 +249,7 @@ def to_csv(
 @register_output_sink(name=("netcdf", "nc"))
 @sink_to_file(".nc")
 def to_netcdf(
-    quantity: Union[xr.DataArray, pd.DataFrame], filename: Text, **params
+    quantity: Union[xr.DataArray, pd.DataFrame], filename: str, **params
 ) -> None:
     """Saves data array to csv format, using xarray.to_netcdf.
 
@@ -274,7 +271,7 @@ def to_netcdf(
 @sink_to_file(".xlsx")
 @standardize_quantity
 def to_excel(
-    quantity: Union[pd.DataFrame, xr.DataArray], filename: Text, **params
+    quantity: Union[pd.DataFrame, xr.DataArray], filename: str, **params
 ) -> None:
     """Saves data array to csv format, using pandas.to_excel.
 
@@ -290,7 +287,7 @@ def to_excel(
     try:
         quantity.to_excel(filename, **params)
     except ModuleNotFoundError as e:
-        msg = "Cannot save to excel format: missing python package (%s)" % e
+        msg = f"Cannot save to excel format: missing python package ({e})"
         getLogger(__name__).critical(msg)
         raise
 
@@ -301,8 +298,8 @@ class YearlyAggregate:
 
     def __init__(
         self,
-        final_sink: Optional[MutableMapping[Text, Any]] = None,
-        sector: Text = "",
+        final_sink: Optional[MutableMapping[str, Any]] = None,
+        sector: str = "",
         axis="year",
         **kwargs,
     ):

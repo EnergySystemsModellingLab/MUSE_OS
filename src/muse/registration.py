@@ -2,7 +2,8 @@
 
 __all__ = ["registrator"]
 
-from typing import Callable, MutableMapping, Optional, Sequence, Text, Union
+from collections.abc import MutableMapping, Sequence
+from typing import Callable, Optional, Union
 
 
 def name_variations(*args):
@@ -39,8 +40,8 @@ def name_variations(*args):
 def registrator(
     decorator: Optional[Callable] = None,
     registry: Optional[MutableMapping] = None,
-    logname: Optional[Text] = None,
-    loglevel: Optional[Text] = "Debug",
+    logname: Optional[str] = None,
+    loglevel: Optional[str] = "Debug",
 ) -> Callable:
     """A decorator to create a decorator that registers functions with MUSE.
 
@@ -132,7 +133,7 @@ def registrator(
     @wraps(decorator)
     def register(
         function=None,
-        name: Optional[Union[Text, Sequence[Text]]] = None,
+        name: Optional[Union[str, Sequence[str]]] = None,
         vary_name: bool = True,
         overwrite: bool = False,
     ):
@@ -148,7 +149,7 @@ def registrator(
 
         if name is None:
             names = [function.__name__]
-        elif isinstance(name, Text):
+        elif isinstance(name, str):
             names = [name, function.__name__]
         else:
             names = [*name, function.__name__]
@@ -156,7 +157,7 @@ def registrator(
         # all registered filters will use the same logger, at least for the
         # default logging done in the decorated function
         logger = getLogger(function.__module__)
-        msg = "Computing {}: {}".format(logname, names[0])
+        msg = f"Computing {logname}: {names[0]}"
 
         assert decorator is not None
         if "name" in signature(decorator).parameters:

@@ -160,7 +160,7 @@ def test_add_region(model_path):
     add_region(model_path, "R2", "R1")
 
     # Check if the new region is added to the settings.toml file
-    with open(model_path / "settings.toml", "r") as f:
+    with open(model_path / "settings.toml") as f:
         modified_settings_data = parse(f.read())
     assert "R2" in modified_settings_data["regions"]
 
@@ -185,7 +185,7 @@ def test_add_timeslice(model_path):
     add_timeslice(model_path, "midnight", "evening")
 
     # Check if the new timeslice is added to the settings.toml file
-    with open(model_path / "settings.toml", "r") as f:
+    with open(model_path / "settings.toml") as f:
         modified_settings_data = parse(f.read())
     assert "midnight" in modified_settings_data["timeslices"]["all-year"]["all-week"]
     n_timeslices = len(modified_settings_data["timeslices"]["all-year"]["all-week"])

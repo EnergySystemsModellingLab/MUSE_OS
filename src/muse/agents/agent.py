@@ -1,7 +1,8 @@
 """Holds all building agents."""
 
 from abc import ABC, abstractmethod
-from typing import Callable, Optional, Sequence, Text, Union
+from collections.abc import Sequence
+from typing import Callable, Optional, Union
 
 import xarray as xr
 
@@ -14,11 +15,11 @@ class AbstractAgent(ABC):
 
     def __init__(
         self,
-        name: Text = "Agent",
-        region: Text = "",
+        name: str = "Agent",
+        region: str = "",
         assets: Optional[xr.Dataset] = None,
-        interpolation: Text = "linear",
-        category: Optional[Text] = None,
+        interpolation: str = "linear",
+        category: Optional[str] = None,
         quantity: Optional[float] = 1,
     ):
         """Creates a standard MUSE agent.
@@ -102,10 +103,10 @@ class Agent(AbstractAgent):
 
     def __init__(
         self,
-        name: Text = "Agent",
-        region: Text = "USA",
+        name: str = "Agent",
+        region: str = "USA",
         assets: Optional[xr.Dataset] = None,
-        interpolation: Text = "linear",
+        interpolation: str = "linear",
         search_rules: Optional[Callable] = None,
         objectives: Optional[Callable] = None,
         decision: Optional[Callable] = None,
@@ -115,7 +116,7 @@ class Agent(AbstractAgent):
         housekeeping: Optional[Callable] = None,
         merge_transform: Optional[Callable] = None,
         demand_threshhold: Optional[float] = None,
-        category: Optional[Text] = None,
+        category: Optional[str] = None,
         asset_threshhold: float = 1e-4,
         quantity: Optional[float] = 1,
         spend_limit: int = 0,
