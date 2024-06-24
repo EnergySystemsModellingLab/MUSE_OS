@@ -150,35 +150,46 @@ def add_agent(
             the new agent will not have a 'retrofit' share.
     """
     agents_file = model_path / "technodata/Agents.csv"
-    df = pd.read_csv(agents_file)
+    agents_df = pd.read_csv(agents_file)
 
+    # Create mapping between share names
     copy_to_shares = {"New": agentshare_new, "Retrofit": agentshare_retrofit}
     copy_from_shares = {}
     for share_type in ["New", "Retrofit"]:
-        filtered_df = df.loc[
-            (df["Name"] == copy_from) & (df["Type"] == share_type), "AgentShare"
+        filtered_df = agents_df.loc[
+            (agents_df["Name"] == copy_from) & (agents_df["Type"] == share_type),
+            "AgentShare",
         ]
         copy_from_shares[share_type] = (
             filtered_df.iat[0] if not filtered_df.empty else None
         )
 
+    # Update agents file
+    for share_type in ["New", "Retrofit"]:
         if copy_to_shares[share_type] and copy_from_shares[share_type]:
-            rows = df[
-                (df["Name"] == copy_from)
-                & (df["AgentShare"] == copy_from_shares[share_type])
+            rows = agents_df[
+                (agents_df["Name"] == copy_from)
+                & (agents_df["AgentShare"] == copy_from_shares[share_type])
             ].copy()
             rows["Name"] = agent_name
             rows["AgentShare"] = copy_to_shares[share_type]
-            df = pd.concat([df, rows])
-    df.to_csv(agents_file, index=False)
+            agents_df = pd.concat([agents_df, rows])
+    agents_df.to_csv(agents_file, index=False)
 
+    # Update technodata files for each sector
     for sector in get_sectors(model_path):
         technodata_file = model_path / f"technodata/{sector}/Technodata.csv"
-        df = pd.read_csv(technodata_file)
+        technodata_df = pd.read_csv(technodata_file)
         for share_type in ["New", "Retrofit"]:
-            if copy_to_shares[share_type] and copy_from_shares[share_type]:
-                df[copy_to_shares[share_type]] = df[copy_from_shares[share_type]]
-        df.to_csv(technodata_file, index=False)
+            if (
+                copy_to_shares[share_type]
+                and copy_from_shares[share_type]
+                and copy_to_shares[share_type] in technodata_df.columns
+            ):
+                technodata_df[copy_to_shares[share_type]] = technodata_df[
+                    copy_from_shares[share_type]
+                ]
+        technodata_df.to_csv(technodata_file, index=False)
 
 
 def add_region(model_path: Path, region_name: str, copy_from: str) -> None:
