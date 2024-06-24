@@ -468,3 +468,39 @@ def test_read_technodictionary(default_model):
             assert list(data.data_vars[var].coords) == ["technology"]
         else:
             assert data.data_vars[var].coords.equals(data.coords)
+
+
+def test_read_technodata_timeslices(tmp_path):
+    from muse.examples import copy_model
+    from muse.readers.csv import read_technodata_timeslices
+
+    copy_model("default_timeslice", tmp_path)
+    path = tmp_path / "model" / "technodata" / "power" / "TechnodataTimeslices.csv"
+    data = read_technodata_timeslices(path)
+
+    assert isinstance(data, xr.Dataset)
+    assert set(data.dims) == {"technology", "region", "year", "timeslice"}
+    assert dict(data.dtypes) == dict(
+        utilization_factor=np.int64,
+        minimum_service_factor=np.int64,
+    )
+    assert list(data.coords["technology"].values) == ["gasCCGT", "windturbine"]
+    assert list(data.coords["region"].values) == ["R1"]
+    assert list(data.coords["year"].values) == [2020]
+    month_values = ["all-year"] * 6
+    day_values = ["all-week"] * 6
+    hour_values = [
+        "afternoon",
+        "early-peak",
+        "evening",
+        "late-peak",
+        "morning",
+        "night",
+    ]
+
+    assert list(data.coords["timeslice"].values) == list(
+        zip(month_values, day_values, hour_values)
+    )
+    assert list(data.coords["month"]) == month_values
+    assert list(data.coords["day"]) == day_values
+    assert list(data.coords["hour"]) == hour_values
