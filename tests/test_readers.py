@@ -420,3 +420,51 @@ def test_read_trade_technodata(tmp_path):
     assert list(data.coords["technology"].values) == ["gassupply1"]
     assert list(data.coords["region"].values) == ["R1", "R2", "R3"]
     assert all(var.coords.equals(data.coords) for var in data.data_vars.values())
+
+
+@fixture
+def default_model(tmp_path):
+    from muse.examples import copy_model
+
+    copy_model("default", tmp_path)
+    return tmp_path / "model"
+
+
+def test_read_technodictionary(default_model):
+    from muse.readers.csv import read_technodictionary
+
+    path = default_model / "technodata" / "residential" / "Technodata.csv"
+    data = read_technodictionary(path)
+    assert isinstance(data, xr.Dataset)
+    assert set(data.dims) == {"technology", "region"}
+
+    assert dict(data.dtypes) == dict(
+        level=np.dtype("O"),
+        cap_par=np.dtype("float64"),
+        cap_exp=np.dtype("int64"),
+        fix_par=np.dtype("int64"),
+        fix_exp=np.dtype("int64"),
+        var_par=np.dtype("int64"),
+        interest_rate=np.dtype("float64"),
+        type=np.dtype("O"),
+        fuel=np.dtype("<U11"),
+        enduse=np.dtype("<U4"),
+        agent_share_2=np.dtype("int64"),
+        tech_type=np.dtype("<U6"),
+        efficiency=np.dtype("int64"),
+        max_capacity_addition=np.dtype("int64"),
+        max_capacity_growth=np.dtype("float64"),
+        scaling_size=np.dtype("float64"),
+        technical_life=np.dtype("int64"),
+        total_capacity_limit=np.dtype("int64"),
+        utilization_factor=np.dtype("int64"),
+        var_exp=np.dtype("int64"),
+    )
+    assert list(data.coords["technology"].values) == ["gasboiler", "heatpump"]
+    assert list(data.coords["region"].values) == ["R1"]
+
+    for var in data.data_vars:
+        if var in ("fuel", "enduse", "tech_type"):
+            assert list(data.data_vars[var].coords) == ["technology"]
+        else:
+            assert data.data_vars[var].coords.equals(data.coords)
