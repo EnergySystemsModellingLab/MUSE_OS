@@ -607,3 +607,53 @@ def test_read_csv_agent_parameters(default_model):
             "share": "agent_share_2",
         },
     ]
+
+
+def test_read_initial_market(default_model):
+    from muse.readers.csv import read_initial_market
+    from muse.readers.toml import read_settings
+
+    settings = read_settings(default_model / "settings.toml")
+    path = default_model / "input" / "Projections.csv"
+    data = read_initial_market(path, timeslices=settings.timeslices)
+
+    assert isinstance(data, xr.Dataset)
+    assert set(data.dims) == {"region", "year", "commodity", "timeslice"}
+    assert dict(data.dtypes) == dict(
+        prices=np.float64,
+        exports=np.float64,
+        imports=np.float64,
+        static_trade=np.float64,
+    )
+    assert list(data.coords["region"].values) == ["R1"]
+    assert list(data.coords["year"].values) == list(range(2010, 2105, 5))
+    assert list(data.coords["commodity"].values) == [
+        "electricity",
+        "gas",
+        "heat",
+        "CO2f",
+        "wind",
+    ]
+    assert (
+        list(data.coords["units_prices"].values)
+        == ["MUS$2010/PJ"] * 3 + ["MUS$2010/kt"] * 2
+    )
+    month_values = ["all-year"] * 6
+    day_values = ["all-week"] * 6
+    hour_values = [
+        "night",
+        "morning",
+        "afternoon",
+        "early-peak",
+        "late-peak",
+        "evening",
+    ]
+
+    assert list(data.coords["timeslice"].values) == list(
+        zip(month_values, day_values, hour_values)
+    )
+    assert list(data.coords["month"]) == month_values
+    assert list(data.coords["day"]) == day_values
+    assert list(data.coords["hour"]) == hour_values
+
+    assert all(var.coords.equals(data.coords) for var in data.data_vars.values())
