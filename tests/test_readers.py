@@ -1,4 +1,6 @@
+from itertools import chain, permutations
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import toml
@@ -705,3 +707,150 @@ def test_read_csv_outputs(default_model):
         "CO2f",
         "wind",
     ]
+
+
+def test_check_utilization_not_all_zero_success():
+    import pandas as pd
+    from muse.readers.csv import _check_utilization_not_all_zero
+
+    df = pd.DataFrame(
+        {
+            "utilization_factor": (0, 1, 1),
+            "technology": ("gas", "gas", "solar"),
+            "region": ("GB", "GB", "FR"),
+            "year": (2010, 2010, 2011),
+        }
+    )
+    _check_utilization_not_all_zero(df, "file.csv")
+
+
+def test_check_utilization_in_range_success():
+    import pandas as pd
+    from muse.readers.csv import _check_utilization_in_range
+
+    df = pd.DataFrame({"utilization_factor": (0, 1)})
+    _check_utilization_in_range(df, "file.csv")
+
+
+@mark.parametrize(
+    "values", chain.from_iterable(permutations((0, bad)) for bad in (-1, 2))
+)
+def test_check_utilization_in_range_fail(values):
+    import pandas as pd
+    from muse.readers.csv import _check_utilization_in_range
+
+    df = pd.DataFrame({"utilization_factor": values})
+    with raises(ValueError):
+        _check_utilization_in_range(df, "file.csv")
+
+
+def test_check_utilization_not_below_minimum_success():
+    import pandas as pd
+    from muse.readers.csv import _check_utilization_not_below_minimum
+
+    df = pd.DataFrame({"utilization_factor": (0, 1), "minimum_service_factor": (0, 0)})
+    _check_utilization_not_below_minimum(df, "file.csv")
+
+
+def test_check_utilization_not_below_minimum_fail():
+    import pandas as pd
+    from muse.readers.csv import _check_utilization_not_below_minimum
+
+    df = pd.DataFrame(
+        {"utilization_factor": (0, 1), "minimum_service_factor": (0.1, 0)}
+    )
+    with raises(ValueError):
+        _check_utilization_not_below_minimum(df, "file.csv")
+
+
+def test_check_utilization_not_all_zero_fail_all_zero():
+    import pandas as pd
+    from muse.readers.csv import _check_utilization_not_all_zero
+
+    df = pd.DataFrame(
+        {
+            "utilization_factor": (0, 0, 1),
+            "technology": ("gas", "gas", "solar"),
+            "region": ("GB", "GB", "FR"),
+            "year": (2010, 2010, 2011),
+        }
+    )
+
+    with raises(ValueError):
+        _check_utilization_not_all_zero(df, "file.csv")
+
+
+def test_check_minimum_service_factors_in_range_success():
+    import pandas as pd
+    from muse.readers.csv import _check_minimum_service_factors_in_range
+
+    df = pd.DataFrame({"minimum_service_factor": (0, 1)})
+    _check_minimum_service_factors_in_range(df, "file.csv")
+
+
+@mark.parametrize(
+    "values", chain.from_iterable(permutations((0, bad)) for bad in (-1, 2))
+)
+def test_check_minimum_service_factors_in_range_fail(values):
+    import pandas as pd
+    from muse.readers.csv import _check_minimum_service_factors_in_range
+
+    df = pd.DataFrame({"minimum_service_factor": values})
+
+    with raises(ValueError):
+        _check_minimum_service_factors_in_range(df, "file.csv")
+
+
+@patch("muse.readers.csv._check_utilization_in_range")
+@patch("muse.readers.csv._check_utilization_not_all_zero")
+@patch("muse.readers.csv._check_utilization_not_below_minimum")
+@patch("muse.readers.csv._check_minimum_service_factors_in_range")
+def test_check_utilization_and_minimum_service_factors(*mocks):
+    import pandas as pd
+    from muse.readers.csv import check_utilization_and_minimum_service_factors
+
+    df = pd.DataFrame(
+        {"utilization_factor": (0, 0, 1), "minimum_service_factor": (0, 0, 0)}
+    )
+    check_utilization_and_minimum_service_factors(df, "file.csv")
+    for mock in mocks:
+        mock.assert_called_once_with(df, "file.csv")
+
+
+@patch("muse.readers.csv._check_utilization_in_range")
+@patch("muse.readers.csv._check_utilization_not_all_zero")
+@patch("muse.readers.csv._check_utilization_not_below_minimum")
+@patch("muse.readers.csv._check_minimum_service_factors_in_range")
+def test_check_utilization_and_minimum_service_factors_no_min(
+    min_service_factor_mock, utilization_below_min_mock, *mocks
+):
+    import pandas as pd
+    from muse.readers.csv import check_utilization_and_minimum_service_factors
+
+    df = pd.DataFrame({"utilization_factor": (0, 0, 1)})
+    check_utilization_and_minimum_service_factors(df, "file.csv")
+    for mock in mocks:
+        mock.assert_called_once_with(df, "file.csv")
+    min_service_factor_mock.assert_not_called()
+    utilization_below_min_mock.assert_not_called()
+
+
+@patch("muse.readers.csv._check_utilization_in_range")
+@patch("muse.readers.csv._check_utilization_not_all_zero")
+@patch("muse.readers.csv._check_utilization_not_below_minimum")
+@patch("muse.readers.csv._check_minimum_service_factors_in_range")
+def test_check_utilization_and_minimum_service_factors_fail_missing_utilization(*mocks):
+    import pandas as pd
+    from muse.readers.csv import check_utilization_and_minimum_service_factors
+
+    # NB: Required utilization_factor column is missing
+    df = pd.DataFrame(
+        {
+            "technology": ("gas", "gas", "solar"),
+            "region": ("GB", "GB", "FR"),
+            "year": (2010, 2010, 2011),
+        }
+    )
+
+    with raises(ValueError):
+        check_utilization_and_minimum_service_factors(df, "file.csv")
