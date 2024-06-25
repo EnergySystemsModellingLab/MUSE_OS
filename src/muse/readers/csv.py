@@ -98,8 +98,9 @@ def read_technodictionary(filename: Union[str, Path]) -> xr.Dataset:
     data.columns.name = "technodata"
     data.index.name = "technology"
     data = data.drop(["process_name", "region_name", "time"], axis=1)
-
     data = data.apply(to_numeric, axis=0)
+
+    check_utilization_and_minimum_service_factors(data, filename)
 
     result = xr.Dataset.from_dataframe(data.sort_index())
     if "fuel" in result.variables:
@@ -130,6 +131,7 @@ def read_technodictionary(filename: Union[str, Path]) -> xr.Dataset:
 
     if "year" in result.dims and len(result.year) == 1:
         result = result.isel(year=0, drop=True)
+
     return result
 
 
@@ -145,7 +147,7 @@ def read_technodata_timeslices(filename: Union[str, Path]) -> xr.Dataset:
     data = csv[csv.technology != "Unit"]
 
     data = data.apply(to_numeric)
-    data = check_utilization_not_all_zero(data, filename)
+    check_utilization_and_minimum_service_factors(data, filename)
 
     ts = pd.MultiIndex.from_frame(
         data.drop(
@@ -269,7 +271,7 @@ def read_technologies(
     Arguments:
         technodata_path_or_sector: If `comm_out_path` and `comm_in_path` are not given,
             then this argument refers to the name of the sector. The three paths are
-            then determined using standard locations and name. Specifically, thechnodata
+            then determined using standard locations and name. Specifically, technodata
             looks for a "technodataSECTORNAME.csv" file in the standard location for
             that sector. However, if  `comm_out_path` and `comm_in_path` are given, then
             this should be the path to the the technodata file.
@@ -920,13 +922,22 @@ def read_finite_resources(path: Union[str, Path]) -> xr.DataArray:
     return xr.Dataset.from_dataframe(data).to_array(dim="commodity")
 
 
-def check_utilization_not_all_zero(data, filename):
+def check_utilization_and_minimum_service_factors(data, filename):
     if "utilization_factor" not in data.columns:
         raise ValueError(
             f"""A technology needs to have a utilization factor defined for every
              timeslice. Please check file {filename}."""
         )
 
+    _check_utilization_not_all_zero(data, filename)
+    _check_utilization_in_range(data, filename)
+
+    if "minimum_service_factor" in data.columns:
+        _check_minimum_service_factors_in_range(data, filename)
+        _check_utilization_not_below_minimum(data, filename)
+
+
+def _check_utilization_not_all_zero(data, filename):
     utilization_sum = data.groupby(["technology", "region", "year"]).sum()
 
     if (utilization_sum.utilization_factor == 0).any():
@@ -934,4 +945,29 @@ def check_utilization_not_all_zero(data, filename):
             f"""A technology can not have a utilization factor of 0 for every
                 timeslice. Please check file {filename}."""
         )
-    return data
+
+
+def _check_utilization_in_range(data, filename):
+    utilization = data["utilization_factor"]
+    if not np.all((0 <= utilization) & (utilization <= 1)):
+        raise ValueError(
+            f"""Utilization factor values must all be between 0 and 1 inclusive.
+            Please check file {filename}."""
+        )
+
+
+def _check_utilization_not_below_minimum(data, filename):
+    if (data["utilization_factor"] < data["minimum_service_factor"]).any():
+        raise ValueError(f"""Utilization factors must all be greater than or equal to
+                          their corresponding minimum service factors. Please check
+                         {filename}.""")
+
+
+def _check_minimum_service_factors_in_range(data, filename):
+    min_service_factor = data["minimum_service_factor"]
+
+    if not np.all((0 <= min_service_factor) & (min_service_factor <= 1)):
+        raise ValueError(
+            f"""Minimum service factor values must all be between 0 and 1 inclusive.
+             Please check file {filename}."""
+        )
