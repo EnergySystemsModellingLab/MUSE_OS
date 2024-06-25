@@ -1,0 +1,8 @@
+process_name,region,agent,capacity,year
+gassupply1,R1,Agent2,15,2020
+gassupply1,R1,Agent2,15,2025
+gassupply1,R1,Agent2,7.5,2030
+gasCCGT,R1,Agent2,1,2020
+gasCCGT,R1,Agent2,1,2025
+gasboiler,R1,Agent2,10,2020
+gasboiler,R1,Agent2,5,2025

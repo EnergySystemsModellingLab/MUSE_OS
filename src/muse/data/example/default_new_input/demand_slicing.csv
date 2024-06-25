@@ -1,0 +1,7 @@
+commodity,region,timeslice,fraction,year
+heat,R1,night,0.1,
+heat,R1,morning,0.15,
+heat,R1,afternoon,0.1,
+heat,R1,early-peak,0.15,
+heat,R1,late-peak,0.3,
+heat,R1,evening,0.2,
