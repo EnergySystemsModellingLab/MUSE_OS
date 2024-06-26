@@ -61,12 +61,11 @@ Time
    contain at least the base year of the simulation.
 
 Level
-   characterises either a fixed or a flexible input type the following columns should
-   contain the list of commodities the row.
+   characterises either a fixed or a flexible input type.
 
-Unit
-   reports the unit in which the technology consumption is defined; it is for the user
-   internal reference only.
+The remaining columns should contain the full list of commodities.
+
+The first row of the table reports the units for each column; it is for user reference only.
 
 The input data has to be provided for the base year. Additional years within the time
 framework of the overall simulation can be defined. In this case, MUSE would interpolate
