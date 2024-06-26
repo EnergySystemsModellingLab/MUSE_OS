@@ -27,9 +27,6 @@ Time
    represents the period of the simulation to which the value applies; it needs to
    contain at least the base year of the simulation
 
-Level
-   characterises either a fixed or a flexible input type
-
 cap_par, cap_exp
    are used in the capital cost estimation. Capital costs are calculated as:
 
