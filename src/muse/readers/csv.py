@@ -118,7 +118,7 @@ def read_technodictionary(filename: Union[str, Path]) -> xr.Dataset:
         ]
 
     units = csv[csv.process_name == "Unit"].drop(
-        ["process_name", "region_name", "time", "level"], axis=1
+        ["process_name", "region_name", "time"], axis=1
     )
     for variable, value in units.items():
         if all(u not in {"-", "Retro", "New"} for u in value.values):

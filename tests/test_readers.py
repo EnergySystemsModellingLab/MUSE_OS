@@ -441,7 +441,6 @@ def test_read_technodictionary(default_model):
     assert set(data.dims) == {"technology", "region"}
 
     assert dict(data.dtypes) == dict(
-        level=np.dtype("O"),
         cap_par=np.dtype("float64"),
         cap_exp=np.dtype("int64"),
         fix_par=np.dtype("int64"),
