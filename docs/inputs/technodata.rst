@@ -11,10 +11,10 @@ the electric boiler used in households is taken as an example for a generic regi
 
 
 .. csv-table:: Techno-data: cost inputs
-   :header: ProcessName, RegionName, Time, Level, cap_par, cap_exp, fix_par, ...
+   :header: ProcessName, RegionName, Time, cap_par, cap_exp, fix_par, ...
 
-   resBoilerElectric, region1, 2010, fixed, 3.81, 1.00, 0.38, ...
-   resBoilerElectric, region1, 2030, fixed, 3.81, 1.00, 0.38, ...
+   resBoilerElectric, region1, 2010, 3.81, 1.00, 0.38, ...
+   resBoilerElectric, region1, 2030, 3.81, 1.00, 0.38, ...
 
 
 ProcessName
@@ -26,9 +26,6 @@ RegionName
 Time
    represents the period of the simulation to which the value applies; it needs to
    contain at least the base year of the simulation
-
-Level
-   characterises either a fixed or a flexible input type
 
 cap_par, cap_exp
    are used in the capital cost estimation. Capital costs are calculated as:
