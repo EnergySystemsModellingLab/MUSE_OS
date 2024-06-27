@@ -190,7 +190,7 @@ def read_io_technodata(filename: Union[str, Path]) -> xr.Dataset:
     process = data.ProcessName
     year = [int(u) for u in data.Time]
 
-    data = data.drop_vars(["ProcessName", "RegionName", "Time"], axis=1)
+    data = data.drop(["ProcessName", "RegionName", "Time"], axis=1)
 
     ts = pd.MultiIndex.from_arrays(
         [process, region, year], names=("technology", "region", "year")
@@ -360,7 +360,7 @@ def read_technologies(
             f"'flexible' outputs are not permitted in {opath}. "
             "All outputs must be 'fixed'"
         )
-    outs = outs.drop("flexible_outputs")
+    outs = outs.drop_vars("flexible_outputs")
     ins = read_io_technodata(ipath).rename(
         flexible="flexible_inputs", fixed="fixed_inputs"
     )
