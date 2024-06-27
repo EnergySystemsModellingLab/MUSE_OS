@@ -66,17 +66,9 @@ class CommodityUsage(IntFlag):
                 dims.remove("commodity")
             return x.any(dims)
 
-        products = list(
-            just_tech(technologies[x] > 0)
-            for x in {"fixed_outputs", "flexible_outputs"}
-            if x in technologies.data_vars
-        )
-        if len(products) == 0:
+        if "fixed_outputs" not in technologies.data_vars:
             raise ValueError("Missing output array in technologies")
-        elif len(products) == 1:
-            products = products[0]
-        else:
-            products = bitwise_or(*products)
+        products = just_tech(technologies["fixed_outputs"] > 0)
         products = [
             CommodityUsage.PRODUCT if u else CommodityUsage.OTHER for u in products
         ]

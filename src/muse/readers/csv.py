@@ -360,6 +360,7 @@ def read_technologies(
             f"'flexible' outputs are not permitted in {opath}. "
             "All outputs must be 'fixed'"
         )
+    outs = outs.drop("flexible_outputs")
     ins = read_io_technodata(ipath).rename(
         flexible="flexible_inputs", fixed="fixed_inputs"
     )
