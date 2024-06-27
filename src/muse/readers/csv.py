@@ -181,6 +181,9 @@ def read_io_technodata(filename: Union[str, Path]) -> xr.Dataset:
     from muse.readers import camel_to_snake
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
+    if "Level" not in csv.columns:
+        # Applies to outputs files, where level is not specified (must be "fixed")
+        csv["Level"] = "fixed"
     data = csv[csv.ProcessName != "Unit"]
 
     region = np.array(data.RegionName, dtype=str)
