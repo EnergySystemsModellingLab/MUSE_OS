@@ -53,7 +53,7 @@ commodities_out = '{path}/technodata/residential/CommOut.csv'
 [sectors.residential.subsectors.retro_and_new]
 agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
-lpsolver = "scipy"  # Optional, defaults to "adhoc"
+lpsolver = "scipy"  # Optional, defaults to "scipy"
 constraints = [
     # Optional, defaults to the constraints below
     "max_production",
