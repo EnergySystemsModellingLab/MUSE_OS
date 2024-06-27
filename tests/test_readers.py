@@ -911,7 +911,7 @@ def test_read_demand(default_new_input):
         "CO2f",
     }
 
-    assert data.sel(year="2020", commodity="electricity", region="R1", timeslice=0) == 1
+    assert data.sel(year=2020, commodity="electricity", region="R1", timeslice=0) == 1
 
 
 @mark.xfail
