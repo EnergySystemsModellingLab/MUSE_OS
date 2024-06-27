@@ -5,7 +5,7 @@ from unittest.mock import patch
 import numpy as np
 import toml
 import xarray as xr
-from pytest import fixture, mark, raises
+from pytest import approx, fixture, mark, raises
 
 
 @fixture
@@ -854,3 +854,148 @@ def test_check_utilization_and_minimum_service_factors_fail_missing_utilization(
 
     with raises(ValueError):
         check_utilization_and_minimum_service_factors(df, "file.csv")
+
+
+@fixture
+def default_new_input(tmp_path):
+    from muse.examples import copy_model
+
+    copy_model("default_new_input", tmp_path)
+    return tmp_path
+
+
+@mark.xfail
+def test_read_new_global_commodities(default_new_input):
+    from muse.new_input.readers import read_inputs
+
+    all_data = read_inputs(default_new_input)
+    data = all_data["global_commodities"]
+
+    assert isinstance(data, xr.Dataset)
+    assert set(data.dims) == {"commodity"}
+    assert dict(data.dtypes) == dict(
+        type=np.dtype("str"),
+        unit=np.dtype("str"),
+    )
+
+    assert list(data.coords["commodity"].values) == [
+        "electricity",
+        "gas",
+        "heat",
+        "wind",
+        "CO2f",
+    ]
+    assert list(data.data_vars["type"].values) == ["energy"] * 5
+    assert list(data.data_vars["unit"].values) == ["PJ"] * 4 + ["kt"]
+
+
+@mark.xfail
+def test_read_demand(default_new_input):
+    from muse.new_input.readers import read_inputs
+
+    all_data = read_inputs(default_new_input)
+    data = all_data["demand"]
+
+    assert isinstance(data, xr.DataArray)
+    assert data.dtype == np.float64
+
+    assert set(data.dims) == {"year", "commodity", "region", "timeslice"}
+    assert list(data.coords["region"].values) == ["R1"]
+    assert list(data.coords["timeslice"].values) == list(range(1, 7))
+    assert list(data.coords["year"].values) == [2020, 2050]
+    assert set(data.coords["commodity"].values) == {
+        "electricity",
+        "gas",
+        "heat",
+        "wind",
+        "CO2f",
+    }
+
+    assert data.sel(year=2020, commodity="electricity", region="R1", timeslice=0) == 1
+
+
+@mark.xfail
+def test_new_read_initial_market(default_new_input):
+    from muse.new_input.readers import read_inputs
+
+    all_data = read_inputs(default_new_input)
+    data = all_data["initial_market"]
+
+    assert isinstance(data, xr.Dataset)
+    assert set(data.dims) == {"region", "year", "commodity", "timeslice"}
+    assert dict(data.dtypes) == dict(
+        prices=np.float64,
+        exports=np.float64,
+        imports=np.float64,
+        static_trade=np.float64,
+    )
+    assert list(data.coords["region"].values) == ["R1"]
+    assert list(data.coords["year"].values) == list(range(2010, 2105, 5))
+    assert list(data.coords["commodity"].values) == [
+        "electricity",
+        "gas",
+        "heat",
+        "CO2f",
+        "wind",
+    ]
+    month_values = ["all-year"] * 6
+    day_values = ["all-week"] * 6
+    hour_values = [
+        "night",
+        "morning",
+        "afternoon",
+        "early-peak",
+        "late-peak",
+        "evening",
+    ]
+
+    assert list(data.coords["timeslice"].values) == list(
+        zip(month_values, day_values, hour_values)
+    )
+    assert list(data.coords["month"]) == month_values
+    assert list(data.coords["day"]) == day_values
+    assert list(data.coords["hour"]) == hour_values
+
+    assert all(var.coords.equals(data.coords) for var in data.data_vars.values())
+
+    prices = data.data_vars["prices"]
+    assert approx(
+        prices.sel(
+            year=2010,
+            region="R1",
+            commodity="electricity",
+            timeslice=("all-year", "all-week", "night"),
+        )
+        - 14.81481,
+        abs=1e-4,
+    )
+
+    exports = data.data_vars["exports"]
+    assert (
+        exports.sel(
+            year=2010,
+            region="R1",
+            commodity="electricity",
+            timeslice=("all-year", "all-week", "night"),
+        )
+    ) == 0
+
+    imports = data.data_vars["imports"]
+    assert (
+        imports.sel(
+            year=2010,
+            region="R1",
+            commodity="electricity",
+            timeslice=("all-year", "all-week", "night"),
+        )
+    ) == 0
+
+    static_trade = data.data_vars["static_trade"]
+    assert (
+        static_trade.sel(
+            year=2010,
+            region="R1",
+            commodity="electricity",
+            timeslice=("all-year", "all-week", "night"),
+        )
+    ) == 0

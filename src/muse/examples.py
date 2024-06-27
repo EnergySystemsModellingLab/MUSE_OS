@@ -47,7 +47,12 @@ def example_data_dir() -> Path:
 
 def available_examples() -> list[str]:
     """List examples available in the examples folder."""
-    return [d.stem for d in example_data_dir().iterdir() if d.is_dir()]
+    # temporary skip for default_new_input as this is not yet working
+    return [
+        d.stem
+        for d in example_data_dir().iterdir()
+        if d.is_dir() and d.name != "default_new_input"
+    ]
 
 
 def model(name: str = "default") -> MCA:
@@ -108,6 +113,8 @@ def copy_model(
         _copy_minimum_service(path)
     elif name.lower() == "trade":
         _copy_trade(path)
+    elif name.lower() == "default_new_input":
+        _copy_default_new_input(path)
     return path
 
 
@@ -286,6 +293,12 @@ def _copy_default(path: Path):
     copytree(example_data_dir() / "default" / "input", path / "input")
     copytree(example_data_dir() / "default" / "technodata", path / "technodata")
     copyfile(example_data_dir() / "default" / "settings.toml", path / "settings.toml")
+
+
+def _copy_default_new_input(path: Path):
+    from shutil import copytree
+
+    copytree(example_data_dir() / "default_new_input", path)
 
 
 def _copy_default_timeslice(path: Path):
