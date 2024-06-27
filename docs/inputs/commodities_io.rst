@@ -60,8 +60,15 @@ Time
    represents the period of the simulation to which the value applies; it needs to
    contain at least the base year of the simulation.
 
-Level
-   characterises either a fixed or a flexible input type.
+Level (for **input** commodities only)
+   characterises inputs as either "fixed" or "flexible".
+   Fixed inputs are always used by a technology in a fixed proportion.
+   Flexible inputs allow a technology to choose amongst several alternative fuels,
+   depending on which one is cheapest at the time.
+   For example, if a vehicle can use either petrodiesel or biodiesel, these
+   should be specified as "flexible" inputs, and the technology will choose between
+   them based on the price of each.
+   If a process has a mix of fixed and flexible inputs, these should be split over two rows.
 
 The remaining columns should contain the full list of commodities.
 
