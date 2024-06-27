@@ -190,7 +190,7 @@ def read_io_technodata(filename: Union[str, Path]) -> xr.Dataset:
     process = data.ProcessName
     year = [int(u) for u in data.Time]
 
-    data = data.drop(["ProcessName", "RegionName", "Time"], axis=1)
+    data = data.drop_vars(["ProcessName", "RegionName", "Time"], axis=1)
 
     ts = pd.MultiIndex.from_arrays(
         [process, region, year], names=("technology", "region", "year")
