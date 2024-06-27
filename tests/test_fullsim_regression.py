@@ -3,11 +3,14 @@ from pathlib import Path
 from muse.examples import available_examples
 from pytest import mark
 
+MODELS = available_examples()
+MODELS.pop("default_new_input")
+
 
 @mark.usefixtures("save_timeslice_globals")
 @mark.regression
 @mark.example
-@mark.parametrize("model", available_examples())
+@mark.parametrize("model", MODELS)
 def test_fullsim_regression(model, tmpdir, compare_dirs):
     from warnings import simplefilter
 

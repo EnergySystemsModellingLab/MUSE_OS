@@ -48,11 +48,7 @@ def example_data_dir() -> Path:
 def available_examples() -> list[str]:
     """List examples available in the examples folder."""
     # temporary skip for default_new_input as this is not yet working
-    return [
-        d.stem
-        for d in example_data_dir().iterdir()
-        if d.is_dir() and d.name != "default_new_input"
-    ]
+    return [d.stem for d in example_data_dir().iterdir()]
 
 
 def model(name: str = "default") -> MCA:
