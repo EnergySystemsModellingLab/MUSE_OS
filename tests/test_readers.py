@@ -1,7 +1,9 @@
+from io import StringIO
 from itertools import chain, permutations
 from pathlib import Path
 from unittest.mock import patch
 
+import duckdb
 import numpy as np
 import toml
 import xarray as xr
@@ -861,40 +863,159 @@ def default_new_input(tmp_path):
     from muse.examples import copy_model
 
     copy_model("default_new_input", tmp_path)
-    return tmp_path
+    return tmp_path / "model"
 
 
-@mark.xfail
-def test_read_new_global_commodities(default_new_input):
-    from muse.new_input.readers import read_inputs
+@fixture
+def con():
+    from muse.new_input.readers import TableBase
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session
 
-    all_data = read_inputs(default_new_input)
-    data = all_data["global_commodities"]
+    engine = create_engine("duckdb:///:memory:")
+    session = Session(engine)
+    TableBase.metadata.create_all(engine)
+    return session.connection().connection
+
+
+@fixture
+def populate_regions(default_new_input, con):
+    from muse.new_input.readers import Regions, read_csv
+
+    with open(default_new_input / "regions.csv") as f:
+        return read_csv(f, Regions, con)
+
+
+@fixture
+def populate_commodities(default_new_input, con):
+    from muse.new_input.readers import Commodities, read_csv
+
+    with open(default_new_input / "commodities.csv") as f:
+        return read_csv(f, Commodities, con)
+
+
+@fixture
+def populate_demand(default_new_input, con, populate_regions, populate_commodities):
+    from muse.new_input.readers import Demand, read_csv
+
+    with open(default_new_input / "demand.csv") as f:
+        return read_csv(f, Demand, con)
+
+
+def test_read_regions(populate_regions):
+    assert populate_regions["name"] == np.array(["R1"])
+
+
+def test_read_regions_primary_key_constraint(default_new_input, con):
+    from muse.new_input.readers import Regions, read_csv
+
+    csv = StringIO("name\nR1\nR1\n")
+    with raises(duckdb.ConstraintException, match=".*duplicate key.*"):
+        read_csv(csv, Regions, con)
+
+
+def test_read_new_commodities(populate_commodities):
+    data = populate_commodities
+    assert list(data["name"]) == ["electricity", "gas", "heat", "wind", "CO2f"]
+    assert list(data["type"]) == ["energy"] * 5
+    assert list(data["unit"]) == ["PJ"] * 4 + ["kt"]
+
+
+def test_calculate_global_commodities(populate_commodities):
+    from muse.new_input.readers import calculate_global_commodities
+
+    data = calculate_global_commodities(populate_commodities)
 
     assert isinstance(data, xr.Dataset)
     assert set(data.dims) == {"commodity"}
-    assert dict(data.dtypes) == dict(
-        type=np.dtype("str"),
-        unit=np.dtype("str"),
-    )
+    for dt in data.dtypes.values():
+        assert np.issubdtype(dt, np.dtype("str"))
 
-    assert list(data.coords["commodity"].values) == [
-        "electricity",
-        "gas",
-        "heat",
-        "wind",
-        "CO2f",
-    ]
-    assert list(data.data_vars["type"].values) == ["energy"] * 5
-    assert list(data.data_vars["unit"].values) == ["PJ"] * 4 + ["kt"]
+    assert list(data.coords["commodity"].values) == list(populate_commodities["name"])
+    assert list(data.data_vars["type"].values) == list(populate_commodities["type"])
+    assert list(data.data_vars["unit"].values) == list(populate_commodities["unit"])
+
+
+def test_read_new_commodities_primary_key_constraint(default_new_input, con):
+    from muse.new_input.readers import Commodities, read_csv
+
+    csv = StringIO("name,type,unit\nfoo,energy,bar\nfoo,energy,bar\n")
+    with raises(duckdb.ConstraintException, match=".*duplicate key.*"):
+        read_csv(csv, Commodities, con)
+
+
+def test_read_new_commodities_type_constraint(default_new_input, con):
+    from muse.new_input.readers import Commodities, read_csv
+
+    csv = StringIO("name,type,unit\nfoo,invalid,bar\n")
+    with raises(duckdb.ConstraintException):
+        read_csv(csv, Commodities, con)
+
+
+def test_new_read_demand_csv(populate_demand):
+    data = populate_demand
+    assert np.all(data["year"] == np.array([2020, 2050]))
+    assert np.all(data["commodity"] == np.array(["heat", "heat"]))
+    assert np.all(data["region"] == np.array(["R1", "R1"]))
+    assert np.all(data["demand"] == np.array([10, 30]))
+
+
+def test_new_read_demand_csv_commodity_constraint(
+    default_new_input, con, populate_commodities, populate_regions
+):
+    from muse.new_input.readers import Demand, read_csv
+
+    csv = StringIO("year,commodity_name,region,demand\n2020,invalid,R1,0\n")
+    with raises(duckdb.ConstraintException, match=".*foreign key.*"):
+        read_csv(csv, Demand, con)
+
+
+def test_new_read_demand_csv_region_constraint(
+    default_new_input, con, populate_commodities, populate_regions
+):
+    from muse.new_input.readers import Demand, read_csv
+
+    csv = StringIO("year,commodity_name,region,demand\n2020,heat,invalid,0\n")
+    with raises(duckdb.ConstraintException, match=".*foreign key.*"):
+        read_csv(csv, Demand, con)
+
+
+def test_new_read_demand_csv_primary_key_constraint(
+    default_new_input, con, populate_commodities, populate_regions
+):
+    from muse.new_input.readers import Demand, Regions, read_csv
+
+    # Add another region so we can test varying it as a primary key
+    csv = StringIO("name\nR2\n")
+    read_csv(csv, Regions, con)
+
+    # all fine so long as one primary key column differs
+    csv = StringIO(
+        """year,commodity_name,region,demand
+2020,gas,R1,0
+2021,gas,R1,0
+2020,heat,R1,0
+2020,gas,R2,0
+"""
+    )
+    read_csv(csv, Demand, con)
+
+    # no good if all primary key columns match a previous entry
+    csv = StringIO("year,commodity_name,region,demand\n2020,gas,R1,0")
+    with raises(duckdb.ConstraintException, match=".*duplicate key.*"):
+        read_csv(csv, Demand, con)
 
 
 @mark.xfail
-def test_read_demand(default_new_input):
-    from muse.new_input.readers import read_inputs
+def test_demand_dataset(default_new_input):
+    import duckdb
+    from muse.new_input.readers import read_commodities, read_demand, read_regions
 
-    all_data = read_inputs(default_new_input)
-    data = all_data["demand"]
+    con = duckdb.connect(":memory:")
+
+    read_regions(default_new_input, con)
+    read_commodities(default_new_input, con)
+    data = read_demand(default_new_input, con)
 
     assert isinstance(data, xr.DataArray)
     assert data.dtype == np.float64
