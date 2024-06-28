@@ -36,7 +36,9 @@ dependencies = [
     "pypubsub",
     "tomlkit",
     "duckdb",
-    "fsspec"
+    "fsspec",
+    "sqlalchemy",
+    "duckdb-engine"
 ]
 dynamic = ["version"]
 
