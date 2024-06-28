@@ -341,26 +341,26 @@ def con():
 
 @fixture
 def populate_regions(default_new_input, con):
-    from muse.new_input.readers import read_regions_csv
+    from muse.new_input.readers import Regions, read_csv
 
     with open(default_new_input / "regions.csv") as f:
-        return read_regions_csv(f, con)
+        return read_csv(f, Regions, con)
 
 
 @fixture
 def populate_commodities(default_new_input, con):
-    from muse.new_input.readers import read_commodities_csv
+    from muse.new_input.readers import Commodities, read_csv
 
     with open(default_new_input / "commodities.csv") as f:
-        return read_commodities_csv(f, con)
+        return read_csv(f, Commodities, con)
 
 
 @fixture
 def populate_demand(default_new_input, con, populate_regions, populate_commodities):
-    from muse.new_input.readers import read_demand_csv
+    from muse.new_input.readers import Demand, read_csv
 
     with open(default_new_input / "demand.csv") as f:
-        return read_demand_csv(f, con)
+        return read_csv(f, Demand, con)
 
 
 def test_read_regions(populate_regions):
@@ -368,11 +368,11 @@ def test_read_regions(populate_regions):
 
 
 def test_read_regions_primary_key_constraint(default_new_input, con):
-    from muse.new_input.readers import read_regions_csv
+    from muse.new_input.readers import Regions, read_csv
 
     csv = StringIO("name\nR1\nR1\n")
     with raises(duckdb.ConstraintException, match=".*duplicate key.*"):
-        read_regions_csv(csv, con)
+        read_csv(csv, Regions, con)
 
 
 def test_read_new_commodities(populate_commodities):
@@ -398,19 +398,19 @@ def test_calculate_global_commodities(populate_commodities):
 
 
 def test_read_new_commodities_primary_key_constraint(default_new_input, con):
-    from muse.new_input.readers import read_commodities_csv
+    from muse.new_input.readers import Commodities, read_csv
 
     csv = StringIO("name,type,unit\nfoo,energy,bar\nfoo,energy,bar\n")
     with raises(duckdb.ConstraintException, match=".*duplicate key.*"):
-        read_commodities_csv(csv, con)
+        read_csv(csv, Commodities, con)
 
 
 def test_read_new_commodities_type_constraint(default_new_input, con):
-    from muse.new_input.readers import read_commodities_csv
+    from muse.new_input.readers import Commodities, read_csv
 
     csv = StringIO("name,type,unit\nfoo,invalid,bar\n")
     with raises(duckdb.ConstraintException):
-        read_commodities_csv(csv, con)
+        read_csv(csv, Commodities, con)
 
 
 def test_new_read_demand_csv(populate_demand):
@@ -424,31 +424,31 @@ def test_new_read_demand_csv(populate_demand):
 def test_new_read_demand_csv_commodity_constraint(
     default_new_input, con, populate_commodities, populate_regions
 ):
-    from muse.new_input.readers import read_demand_csv
+    from muse.new_input.readers import Demand, read_csv
 
     csv = StringIO("year,commodity_name,region,demand\n2020,invalid,R1,0\n")
     with raises(duckdb.ConstraintException, match=".*foreign key.*"):
-        read_demand_csv(csv, con)
+        read_csv(csv, Demand, con)
 
 
 def test_new_read_demand_csv_region_constraint(
     default_new_input, con, populate_commodities, populate_regions
 ):
-    from muse.new_input.readers import read_demand_csv
+    from muse.new_input.readers import Demand, read_csv
 
     csv = StringIO("year,commodity_name,region,demand\n2020,heat,invalid,0\n")
     with raises(duckdb.ConstraintException, match=".*foreign key.*"):
-        read_demand_csv(csv, con)
+        read_csv(csv, Demand, con)
 
 
 def test_new_read_demand_csv_primary_key_constraint(
     default_new_input, con, populate_commodities, populate_regions
 ):
-    from muse.new_input.readers import read_demand_csv, read_regions_csv
+    from muse.new_input.readers import Demand, Regions, read_csv
 
     # Add another region so we can test varying it as a primary key
     csv = StringIO("name\nR2\n")
-    read_regions_csv(csv, con)
+    read_csv(csv, Regions, con)
 
     # all fine so long as one primary key column differs
     csv = StringIO(
@@ -459,12 +459,12 @@ def test_new_read_demand_csv_primary_key_constraint(
 2020,gas,R2,0
 """
     )
-    read_demand_csv(csv, con)
+    read_csv(csv, Demand, con)
 
     # no good if all primary key columns match a previous entry
     csv = StringIO("year,commodity_name,region,demand\n2020,gas,R1,0")
     with raises(duckdb.ConstraintException, match=".*duplicate key.*"):
-        read_demand_csv(csv, con)
+        read_csv(csv, Demand, con)
 
 
 @mark.xfail
