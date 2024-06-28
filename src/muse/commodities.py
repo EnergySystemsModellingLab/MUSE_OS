@@ -67,7 +67,7 @@ class CommodityUsage(IntFlag):
             return x.any(dims)
 
         if "fixed_outputs" not in technologies.data_vars:
-            raise ValueError("Missing output array in technologies")
+            raise ValueError("Missing 'fixed_outputs' array in technologies")
         products = just_tech(technologies["fixed_outputs"] > 0)
         products = [
             CommodityUsage.PRODUCT if u else CommodityUsage.OTHER for u in products
