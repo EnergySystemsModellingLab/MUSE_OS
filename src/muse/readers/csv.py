@@ -181,11 +181,16 @@ def read_io_technodata(filename: Union[str, Path]) -> xr.Dataset:
     from muse.readers import camel_to_snake
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
-    if "Level" not in csv.columns:
-        # Applies to outputs files, where level is not specified (must be "fixed")
-        csv["Level"] = "fixed"
-    data = csv[csv.ProcessName != "Unit"]
 
+    # Unspecified Level values default to "fixed"
+    if "Level" in csv.columns:
+        csv["Level"] = csv["Level"].fillna("fixed")
+    else:
+        # Particularly relevant to outputs files where the Level column is omitted by
+        # default, as only "fixed" outputs are allowed.
+        csv["Level"] = "fixed"
+
+    data = csv[csv.ProcessName != "Unit"]
     region = np.array(data.RegionName, dtype=str)
     process = data.ProcessName
     year = [int(u) for u in data.Time]

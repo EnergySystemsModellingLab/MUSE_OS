@@ -69,6 +69,7 @@ Level (for **input** commodities only)
    should be specified as "flexible" inputs, and the technology will choose between
    them based on the price of each.
    If a process has a mix of fixed and flexible inputs, these should be split over two rows.
+   Defaults to "fixed".
 
 The remaining columns should contain the full list of commodities.
 
