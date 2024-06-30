@@ -407,7 +407,11 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
                 data_sector.append(a[a["supply"] != 0])
 
     if len(data_sector) > 0:
-        output = pd.concat([u for u in data_sector], sort=True).reset_index()
+        output = (
+            pd.concat([u for u in data_sector], sort=True)
+            .reset_index()
+            .drop("index", axis=1, errors="ignore")
+        )
     else:
         output = pd.DataFrame()
     return output
@@ -650,7 +654,11 @@ def sector_consumption(
                 data_sector.append(a[a["consumption"] != 0])
 
     if len(data_sector) > 0:
-        output = pd.concat([u for u in data_sector], sort=True).reset_index()
+        output = (
+            pd.concat([u for u in data_sector], sort=True)
+            .reset_index()
+            .drop("index", axis=1, errors="ignore")
+        )
     else:
         output = pd.DataFrame()
     return output
