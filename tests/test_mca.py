@@ -16,20 +16,14 @@ def test_check_equilibrium(market: Dataset):
     new_market = market.copy(deep=True)
 
     assert check_equilibrium(new_market, market, tol, equilibrium_variable)
-    new_market["supply"] = (
-        new_market["supply"].drop_vars(["timeslice", "month", "day", "hour"])
-        + tol * 1.5
-    )
+    new_market["supply"] = new_market["supply"].drop_vars("timeslice") + tol * 1.5
 
     assert not check_equilibrium(new_market, market, tol, equilibrium_variable)
 
     equilibrium_variable = "prices"
 
     assert check_equilibrium(new_market, market, tol, equilibrium_variable)
-    new_market["prices"] = (
-        new_market["prices"].drop_vars(["timeslice", "month", "day", "hour"])
-        + tol * 1.5
-    )
+    new_market["prices"] = new_market["prices"].drop_vars("timeslice") + tol * 1.5
     assert not check_equilibrium(new_market, market, tol, equilibrium_variable)
 
 
@@ -39,16 +33,13 @@ def test_check_demand_fulfillment(market):
 
     tolerance_unmet_demand = -0.1
 
-    market["supply"] = market.consumption.copy(deep=True).drop_vars(
-        ["timeslice", "month", "day", "hour"]
-    )
+    market["supply"] = market.consumption.copy(deep=True).drop_vars("timeslice")
     assert check_demand_fulfillment(
         market,
         tolerance_unmet_demand,
     )
     market["supply"] = (
-        market["supply"].drop_vars(["timeslice", "month", "day", "hour"])
-        + tolerance_unmet_demand * 1.5
+        market["supply"].drop_vars("timeslice") + tolerance_unmet_demand * 1.5
     )
     assert not check_demand_fulfillment(
         market,

@@ -248,7 +248,7 @@ def demand_matching(
 
     if len(multics) > 0:
         for k in multics:
-            ds = ds.drop_vars(["timeslice", "month", "day", "hour"])
+            ds = ds.drop_vars("timeslice")
             ds[k] = pd.Index(constraint.get_index(k), tupleize_cols=False)
         result = demand_matching(  # type: ignore
             ds.demand, ds.cost, *(ds[f"constraint{i}"] for i in range(len(constraints)))

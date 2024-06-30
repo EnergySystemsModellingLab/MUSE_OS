@@ -416,7 +416,7 @@ class InvestingAgent(Agent):
             return None
 
         if "timeslice" in search.dims:
-            search["demand"] = demand.drop_vars(["timeslice", "month", "day", "hour"])
+            search["demand"] = demand.drop_vars("timeslice")
         else:
             search["demand"] = demand
         not_assets = [u for u in search.demand.dims if u != "asset"]

@@ -77,15 +77,15 @@ class PresetSector(AbstractSector):  # type: ignore
                 assert consumption.region.isin(shares.region).all()
                 if "timeslice" in shares.dims:
                     ts = shares.timeslice
-                    shares = shares.drop_vars(["timeslice", "month", "day", "hour"])
+                    shares = shares.drop_vars("timeslice")
                     consumption = (shares * consumption).assign_coords(timeslice=ts)
                 else:
                     consumption = consumption * shares.sel(
                         region=consumption.region, commodity=consumption.commodity
                     )
-            presets["consumption"] = consumption.drop_vars(
-                ["timeslice", "month", "day", "hour"]
-            ).assign_coords(timeslice=timeslice)
+            presets["consumption"] = consumption.drop_vars("timeslice").assign_coords(
+                timeslice=timeslice
+            )
 
         if getattr(sector_conf, "supply_path", None) is not None:
             supply = read_csv_outputs(sector_conf.supply_path)
@@ -116,7 +116,7 @@ class PresetSector(AbstractSector):  # type: ignore
             others = components.intersection(presets.data_vars).difference({component})
             if component not in presets and len(others) > 0:
                 presets[component] = zeros_like(presets[others.pop()]).drop_vars(
-                    ["timeslice", "month", "day", "hour"]
+                    "timeslice"
                 )
         # add timeslice, if missing
         for component in {"supply", "consumption"}:
@@ -168,7 +168,7 @@ class PresetSector(AbstractSector):  # type: ignore
         )
         result["costs"] = convert_timeslice(
             costs, mca_market.timeslice, QuantityType.INTENSIVE
-        ).drop_vars(["timeslice", "month", "day", "hour"])
+        ).drop_vars("timeslice")
         assert isinstance(result, Dataset)
         return result
 
