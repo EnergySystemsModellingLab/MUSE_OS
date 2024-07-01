@@ -17,7 +17,7 @@ In the following sections, we will guide you step by step in configuring your sy
     The next sections will explain in detail the appropriate steps as well as commenting on possible caveats. **We strongly encourage you to read through the sections below** to understand what these steps entitle, but in the end, what we are going to do to install MUSE is the following:
 
     - Open a terminal
-    - Install `pyenv <https://github.com/pyenv/pyenv>`_ (Linux and MacOS) or `pyenv-win <https://pyenv-win.github.io/pyenv-win/>`_ (Windows) and ascertain it works by invoking `pyenv --version` in the terminal.
+    - Install `pyenv <https://github.com/pyenv/pyenv>`_ (Linux and MacOS) or `pyenv-win <https://pyenv-win.github.io/pyenv-win/>`_ (Windows) and make sure it works by invoking `pyenv --version` in the terminal.
     - Run the following commands in the terminal:
 
         .. code-block::
