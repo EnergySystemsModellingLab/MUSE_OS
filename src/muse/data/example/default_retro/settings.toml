@@ -61,7 +61,7 @@ constraints = [
     "demand",
     "search_space"
 ]
-demand_share = "new_and_retro"  # Optional, default to new_and_retro
+demand_share = "new_and_retro"  # Optional, default to standard_demand
 forecast = 5  # Optional, defaults to 5
 
 [[sectors.residential.outputs]]
