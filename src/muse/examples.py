@@ -192,8 +192,12 @@ def mca_market(model: str = "default") -> xr.Dataset:
             .sel(region=settings.regions)
             .interp(year=settings.time_framework, method=settings.interpolation_mode)
         )
-        market["supply"] = zeros_like(market.exports).drop_vars("timeslice")
-        market["consumption"] = zeros_like(market.exports).drop_vars("timeslice")
+        market["supply"] = zeros_like(market.exports).drop_vars(
+            ["timeslice", "month", "day", "hour"]
+        )
+        market["consumption"] = zeros_like(market.exports).drop_vars(
+            ["timeslice", "month", "day", "hour"]
+        )
 
         return cast(xr.Dataset, market)
 
@@ -264,7 +268,7 @@ def matching_market(sector: str, model: str = "default") -> xr.Dataset:
                 {"asset", "dst_region"}.intersection(consump.dims)
             )
             + market.supply
-        ).drop_vars("timeslice")
+        ).drop_vars(["timeslice", "month", "day", "hour"])
     else:
         market["consumption"] = (
             consumption(loaded_sector.technologies, production).sum(

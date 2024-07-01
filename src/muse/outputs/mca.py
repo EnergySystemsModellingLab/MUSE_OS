@@ -364,7 +364,7 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             agent_market = market.sel(year=output_year).copy()
             agent_market["consumption"] = (
                 agent_market.consumption * a.quantity
-            ).drop_vars("timeslice")
+            ).drop_vars(["timeslice", "month", "day", "hour"])
             included = [
                 i
                 for i in agent_market["commodity"].values
@@ -608,7 +608,7 @@ def sector_consumption(
             agent_market = market.sel(year=output_year).copy()
             agent_market["consumption"] = (
                 agent_market.consumption * a.quantity
-            ).drop_vars("timeslice")
+            ).drop_vars(["timeslice", "month", "day", "hour"])
             included = [
                 i
                 for i in agent_market["commodity"].values

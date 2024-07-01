@@ -622,7 +622,7 @@ def lp_costs(
     production = zeros_like(ts_costs * fouts)
     for dim in production.dims:
         if isinstance(production.get_index(dim), pd.MultiIndex):
-            production = production.drop_vars("timeslice")
+            production = production.drop_vars(["timeslice", "month", "day", "hour"])
             production[dim] = pd.Index(production.get_index(dim), tupleize_cols=False)
 
     return xr.Dataset(dict(capacity=costs, production=production))
@@ -689,7 +689,7 @@ def lp_constraint(constraint: Constraint, lpcosts: xr.Dataset) -> Constraint:
     constraint = constraint.copy(deep=False)
     for dim in constraint.dims:
         if isinstance(constraint.get_index(dim), pd.MultiIndex):
-            constraint = constraint.drop_vars("timeslice")
+            constraint = constraint.drop_vars(["timeslice", "month", "day", "hour"])
             constraint[dim] = pd.Index(constraint.get_index(dim), tupleize_cols=False)
     b = constraint.b.drop_vars(set(constraint.b.coords) - set(constraint.b.dims))
     b = b.rename({k: f"c({k})" for k in b.dims})
