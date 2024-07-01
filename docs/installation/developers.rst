@@ -27,12 +27,13 @@ Once you have your environment created, **activate it** and install MUSE within 
 .. code-block:: bash
 
     cd MUSE_OS
-    # 1- Create a virtual environment
-    # 2- Activate that virtual environment
-    # 3- Install MUSE in editable mode with: python -m pip install -e .[dev,doc]
+    # 1 - Create a virtual environment
+    # 2 - Activate that virtual environment
+    # 3 - Install MUSE in editable mode with: python -m pip install -e .[dev,doc]
     # 4 - Invoke `muse --model default`
 
 .. note::
+
     Depending on your system, you might need to add quotation marks around ``[dev,doc]`` as in ``"[dev,doc]"``.
 
     For example on ``Windows``, the command will read `python -m pip install -e .[dev,doc]`. On Ubuntu Linux, it will be `python -m pip install -e ."[dev,doc]"`.
@@ -59,14 +60,21 @@ To ensure the consistency of the code with other developers, install the pre-com
 Running tests
 ~~~~~~~~~~~~~
 
-If you followed **Installation for developers**, you will run and develop your own tests for MUSE.
-This is to check that a model reproduces expected results for a defined set of input data.
-Tests can be run with the command [pytest](https://docs.pytest.org/en/latest/), from the testing framework of the same name.
+If you followed the **Installation for developers** guide, you are likely developing your own tests for MUSE.
+These tests ensure that a model produces reproducible results for a defined set of input data.
+Tests can be run with the command [pytest](https://docs.pytest.org/en/latest/), using the testing framework of the same name.
 
-Within the ``MUSE-OS`` directory, just run:
+To run tests, within the ``MUSE-OS`` directory, activate the virtual environment where you installed ``MUSE`` and run a model as shown in Step 1 below.
+This can be your own model or, for simplicity, the default one.
+Although this was the final step when installing ``MUSE``, it is mentioned here again because running a model creates a set of files
+needed for the tests themselves. In Step 2, you can then run the actual tests, which should all pass before continuing code development.
 
 .. code-block:: bash
 
+    # Step 1: Run a model
+    muse --model default
+
+    # Step 2: Run the test scripts
     python -m pytest
 
 Building the documentation
