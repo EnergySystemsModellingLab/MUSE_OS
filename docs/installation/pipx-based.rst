@@ -17,7 +17,7 @@ In the following sections, we will guide you step by step in configuring your sy
     The next sections will explain in detail the appropriate steps as well as commenting on possible caveats. **We strongly encourage you to read through the sections below** to understand what these steps entitle, but in the end, what we are going to do to install MUSE is the following:
 
     - Open a terminal
-    - Install `pyenv <https://github.com/pyenv/pyenv>`_ (Linux and MacOS) or `pyenv-win <https://pyenv-win.github.io/pyenv-win/>`_ (Windows) and ascertain it works by invoking `pyenv --version` in the terminal.
+    - Install `pyenv <https://github.com/pyenv/pyenv>`_ (Linux and MacOS) or `pyenv-win <https://pyenv-win.github.io/pyenv-win/>`_ (Windows) and make sure it works by invoking `pyenv --version` in the terminal.
     - Run the following commands in the terminal:
 
         .. code-block::
@@ -28,7 +28,7 @@ In the following sections, we will guide you step by step in configuring your sy
             python -m pipx ensurepath
             python -m pipx install muse-os
 
-    - After this, MUSE will be available to use system wide simply by invoking ``muse`` in the terminal, for example ``muse --model default``.
+    - After this, MUSE will be available to use system wide simply by invoking ``muse`` in the terminal. To illustrate this and to finish installation, run ``muse --model default``.
 
 .. _launch-terminal:
 
@@ -109,25 +109,25 @@ To install ``pyenv``, follow these steps:
 
 - **Linux**: In this case, you will need to clone the GitHub repository using ``git``. Most Linux distributions come with ``git`` installed, so this should work out of the box.
 Then, complete the setup by adding ``pyenv`` to your profile, so the executable can be found. You can `check the instructions in the official webpage <https://github.com/pyenv/pyenv#set-up-your-shell-environment-for-pyenv>`_,
-    or follow the below commands that were tested on `Ubuntu 22.04 LTS` using its popular `bash shell` and `z-shell`. To be specific, we tested them
-    on `GNU bash, version 5.1.16(1)-release (x86_64-pc-linux-gnu)` and `zsh 5.8.1 (x86_64-ubuntu-linux-gnu)`.
+or follow the below commands that were tested on `Ubuntu 22.04 LTS` using its popular `bash shell` and `z-shell`. To be specific, we tested them
+on `GNU bash, version 5.1.16(1)-release (x86_64-pc-linux-gnu)` and `zsh 5.8.1 (x86_64-ubuntu-linux-gnu)`.
 
-    We now go through the installation procedure of `pyenv` on Linux, step-by-step:
+Now, we go through the installation procedure of ``pyenv`` on Linux, step-by-step:
 
  .. code-block::
 
             # Step 1: Install essential libraries needed for pyenv
             sudo apt install -y make build-essential libssl-dev zlib1g-dev \
-            libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev \
-            libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev python3-openssl \
-            git
+                libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev \
+                libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev python3-openssl \
+                git
 
 
             # Step 2: Clone the `pyenv` repository for Linux
             git clone https://github.com/pyenv/pyenv.git ~/.pyenv
 
 
-            #Step 3: Run one code block in this step only, depending on what shell you use:
+            # Step 3: Run one code block in this step only, depending on what shell you use:
 
             # If you are on the bash shell run the following:
             echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
@@ -160,13 +160,13 @@ but the easiest way is to run the following command in the ``powershell`` and, u
 
     .. code-block:: powershell
 
-        # Step 1:
-        Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/pyenv-win/pyenv-win/master/pyenv-win/install-pyenv-win.ps1" -OutFile "./install-pyenv-win.ps1"; &"./install-pyenv-win.ps1"
+        # Step 1: In your powershell, invoke the following command:
+        `Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/pyenv-win/pyenv-win/master/pyenv-win/install-pyenv-win.ps1" -OutFile "./install-pyenv-win.ps1"; &"./install-pyenv-win.ps1"`
 
         # Step 2: close the shell you invoked in the command from Step 1 and re-launch an new `powershell`. This is equivalent to invoke the shell command `source` in Linux.
 
         # Step 3: Confirm success; you should be returned something similar to `pyenv 3.1.1`
-        pyenv --version
+        `pyenv --version`
 
     .. note::
 
@@ -179,7 +179,7 @@ but the easiest way is to run the following command in the ``powershell`` and, u
         Finally open a normal PowerShell and re-run the above installation command.
 
 
-Actually installing Python
+Installing your chosen Python version
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 With ``pyenv`` installed and correctly configured, it is now easy to install any Python version we want. To see the versions available run:
@@ -188,22 +188,22 @@ With ``pyenv`` installed and correctly configured, it is now easy to install any
 
     pyenv install -l
 
-You should see a very long list of versions to choose from. Let us install the latest version of the 3.9 family:
+You should see a long list of versions to choose from. Let's install one of the later version of the 3.9 family:
 
 .. code-block:: bash
 
-    pyenv install 3.9.19
+    pyenv install 3.9.13
 
-The command will take a minute or two to complete, depending on your internet connection, and show an output similar to the following (this is just an example for Windows):
+The command will take a minute or two to complete, depending on your internet connection, and show an output similar to the following (this is an example from Windows):
 
 .. code-block:: output
 
     :: [Info] ::  Mirror: https://www.python.org/ftp/python
-    :: [Downloading] ::  3.9.19 ...
-    :: [Downloading] ::  From https://www.python.org/ftp/python/3.9.19/python-3.9.19-amd64.exe
-    :: [Downloading] ::  To   C:\Users\your_username\.pyenv\pyenv-win\install_cache\python-3.9.19-amd64.exe
-    :: [Installing] ::  3.9.19 ...
-    :: [Info] :: completed! 3.9.19
+    :: [Downloading] ::  3.9.13 ...
+    :: [Downloading] ::  From https://www.python.org/ftp/python/3.9.13/python-3.9.13-amd64.exe
+    :: [Downloading] ::  To C:\Users\your_username\.pyenv\pyenv-win\install_cache\python-3.9.13-amd64.exe
+    :: [Installing] ::  3.9.13 ...
+    :: [Info] :: completed! 3.9.13
 
 Now, we have a new Python version in our system, but it is still not available (if you run ``python --version`` you will get the same result as before). There are two options moving forward:
 
@@ -211,15 +211,15 @@ Now, we have a new Python version in our system, but it is still not available (
 
     .. code-block:: bash
 
-        pyenv global 3.9.19
+        pyenv global 3.9.13
 
 - If you just want it momentarily to install MUSE run instead the following command:
 
     .. code-block:: bash
 
-        pyenv shell 3.9.19
+        pyenv shell 3.9.13
 
-In both cases, if you run ``python --version`` afterwards, you should get ``Python 3.9.19``.
+In both cases, if you run ``python --version`` afterwards, you should get ``Python 3.9.13``.
 
 Installing ``pipx``
 ~~~~~~~~~~~~~~~~~~~
