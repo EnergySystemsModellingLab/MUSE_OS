@@ -60,13 +60,20 @@ Time
    represents the period of the simulation to which the value applies; it needs to
    contain at least the base year of the simulation.
 
-Level
-   characterises either a fixed or a flexible input type the following columns should
-   contain the list of commodities the row.
+Level (for **input** commodities only)
+   characterises inputs as either "fixed" or "flexible".
+   Fixed inputs are always used by a technology in a fixed proportion.
+   Flexible inputs allow a technology to choose amongst several alternative fuels,
+   depending on which one is cheapest at the time.
+   For example, if a vehicle can use either petrodiesel or biodiesel, these
+   should be specified as "flexible" inputs, and the technology will choose between
+   them based on the price of each.
+   If a process has a mix of fixed and flexible inputs, these should be split over two rows.
+   Defaults to "fixed".
 
-Unit
-   reports the unit in which the technology consumption is defined; it is for the user
-   internal reference only.
+The remaining columns should contain the full list of commodities.
+
+The first row of the table reports the units for each column; it is for user reference only.
 
 The input data has to be provided for the base year. Additional years within the time
 framework of the overall simulation can be defined. In this case, MUSE would interpolate
