@@ -116,13 +116,13 @@ class PresetSector(AbstractSector):  # type: ignore
             others = components.intersection(presets.data_vars).difference({component})
             if component not in presets and len(others) > 0:
                 presets[component] = zeros_like(presets[others.pop()]).drop_vars(
-                    ["timeslice", "month", "day", "hour"]
+                    ["timeslice", "month", "day", "hour"], errors="ignore"
                 )
         # add timeslice, if missing
         for component in {"supply", "consumption"}:
             if "timeslice" not in presets[component].dims:
                 presets[component] = convert_timeslice(
-                    presets[component], presets.timeslice, QuantityType.EXTENSIVE
+                    presets[component], timeslice, QuantityType.EXTENSIVE
                 )
 
         comm_usage = (presets.costs > 0).any(set(presets.costs.dims) - {"commodity"})
@@ -168,7 +168,7 @@ class PresetSector(AbstractSector):  # type: ignore
         )
         result["costs"] = convert_timeslice(
             costs, mca_market.timeslice, QuantityType.INTENSIVE
-        ).drop_vars(["timeslice", "month", "day", "hour"])
+        ).drop_vars(["timeslice", "month", "day", "hour"], errors="ignore")
         assert isinstance(result, Dataset)
         return result
 
