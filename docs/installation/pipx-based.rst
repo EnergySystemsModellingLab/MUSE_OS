@@ -224,7 +224,7 @@ In both cases, if you run ``python --version`` afterwards, you should get ``Pyth
 Installing ``pipx``
 ~~~~~~~~~~~~~~~~~~~
 
-Next we need to install ``pipx``, a Python application manager that facilitates installing, keeping applications updated and run them in their own isolated environments.
+Next we need to install ``pipx``, a Python application manager that facilitates installing, keeping applications updated and running them in their own isolated environments.
 More specifically, ``pipx`` will create a virtual environment to run the tools it installs based on the python version that was used to install pipx to start with, unless you specify another version and that other version is system wide available.
 We could skip this step and install MUSE directly, but that will risk to have conflicting dependencies in the future if you install any other application, breaking your MUSE installation, and we do not want that to happen.
 
