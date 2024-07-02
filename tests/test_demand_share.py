@@ -1,4 +1,5 @@
 import xarray as xr
+from muse.timeslices import drop_timeslice
 from pytest import approx, fixture, raises
 
 
@@ -25,9 +26,9 @@ def _matching_market(technologies, stock, timeslice):
         QuantityType.EXTENSIVE,
     )
     market["supply"] = production.sum("asset")
-    market["consumption"] = (
-        consumption(technologies, production).sum("asset") + market.supply
-    ).drop_vars(["timeslice", "month", "day", "hour"])
+    market["consumption"] = consumption(technologies, production).sum(
+        "asset"
+    ) + drop_timeslice(market.supply)
     market["prices"] = market.supply.dims, random(market.supply.shape)
 
     return market
