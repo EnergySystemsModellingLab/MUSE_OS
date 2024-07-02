@@ -737,7 +737,7 @@ def lp_constraint_matrix(
          >>> technologies = res.technologies
          >>> market = examples.residential_market("medium")
          >>> search = examples.search_space("residential", model="medium")
-         >>> assets = next(a.assets for a in res.agents if a.category == "retrofit")
+         >>> assets = next(a.assets for a in res.agents)
          >>> demand = None # not used in max production
          >>> constraint = cs.max_production(demand, assets, search, market,
          ...                                technologies) # noqa: E501
@@ -874,7 +874,7 @@ class ScipyAdapter:
         >>> res = examples.sector("residential", model="medium")
         >>> market = examples.residential_market("medium")
         >>> search = examples.search_space("residential", model="medium")
-        >>> assets = next(a.assets for a in res.agents if a.category == "retrofit")
+        >>> assets = next(a.assets for a in res.agents)
         >>> market_demand =  0.8 * maximum_production(
         ...     res.technologies.interp(year=2025),
         ...     convert_timeslice(
@@ -902,7 +902,7 @@ class ScipyAdapter:
         but not over the assets. Hence the assets will be summed over in the final
         constraint:
 
-        >>> assert (constraint.b.data == np.array([50.0, 3.0, 3.0, 50.0 ])).all()
+        >>> assert (constraint.b.data == np.array([50.0, 12.0, 12.0, 50.0 ])).all()
         >>> assert set(constraint.b.dims) == {"replacement"}
         >>> assert constraint.kind == cs.ConstraintKind.UPPER_BOUND
 

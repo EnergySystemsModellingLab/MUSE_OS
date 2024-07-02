@@ -15,12 +15,14 @@ def generate_model_1():
 
     """
     model_name = "1-modify-timeslices"
-
-    # Starting point: copy model from tutorial 3
     model_path = parent_path / model_name
     if model_path.exists():
         shutil.rmtree(model_path)
+
+    # Starting point: copy model from tutorial 3
     shutil.copytree(parent_path / "../3-add-region/1-new-region", model_path)
+    if (model_path / "Results").exists():
+        shutil.rmtree(model_path / "Results")
 
     # Add timeslices
     add_timeslice(model_path, timeslice_name="early-morning", copy_from="evening")
@@ -71,12 +73,14 @@ def generate_model_2():
 
     """
     model_name = "2-modify-time-framework"
-
-    # Starting point: copy previous model
     model_path = parent_path / model_name
     if model_path.exists():
         shutil.rmtree(model_path)
+
+    # Starting point: copy previous model
     shutil.copytree(parent_path / "1-modify-timeslices", model_path)
+    if (model_path / "Results").exists():
+        shutil.rmtree(model_path / "Results")
 
     # Modify time framework
     settings_file = model_path / "settings.toml"
@@ -86,32 +90,8 @@ def generate_model_2():
     for sector in get_sectors(model_path):
         modify_toml(
             settings_file,
-            lambda x: x["sectors"][sector]["subsectors"]["retro_and_new"].update(
-                {"forecast": 2}
-            ),
+            lambda x: x["sectors"][sector]["subsectors"]["all"].update({"forecast": 2}),
         )
-
-    # Increase capacity limits in power sector
-    technodata_file = model_path / "technodata/power/Technodata.csv"
-    df = pd.read_csv(technodata_file)
-    df.loc[1:, "MaxCapacityAddition"] = pd.to_numeric(df.loc[1:, "MaxCapacityAddition"])
-    df.loc[1:, "MaxCapacityAddition"] *= 2
-    df.loc[1:, "MaxCapacityGrowth"] = pd.to_numeric(df.loc[1:, "MaxCapacityGrowth"])
-    df.loc[1:, "MaxCapacityGrowth"] *= 2
-    df.loc[1:, "TotalCapacityLimit"] = pd.to_numeric(df.loc[1:, "TotalCapacityLimit"])
-    df.loc[1:, "TotalCapacityLimit"] *= 2
-    df.to_csv(technodata_file, index=False)
-
-    # Increase capacity limits in residential sector
-    technodata_file = model_path / "technodata/residential/Technodata.csv"
-    df = pd.read_csv(technodata_file)
-    df.loc[1:, "MaxCapacityAddition"] = pd.to_numeric(df.loc[1:, "MaxCapacityAddition"])
-    df.loc[1:, "MaxCapacityAddition"] *= 2
-    df.loc[1:, "MaxCapacityGrowth"] = pd.to_numeric(df.loc[1:, "MaxCapacityGrowth"])
-    df.loc[1:, "MaxCapacityGrowth"] *= 3
-    df.loc[1:, "TotalCapacityLimit"] = pd.to_numeric(df.loc[1:, "TotalCapacityLimit"])
-    df.loc[1:, "TotalCapacityLimit"] *= 2
-    df.to_csv(technodata_file, index=False)
 
 
 if __name__ == "__main__":

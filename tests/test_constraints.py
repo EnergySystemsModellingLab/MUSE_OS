@@ -65,7 +65,7 @@ def lpcosts(technologies, market, costs):
 
 @fixture
 def assets(residential):
-    return next(a.assets for a in residential.agents if a.category == "retrofit")
+    return next(a.assets for a in residential.agents)
 
 
 @fixture
@@ -479,7 +479,7 @@ def test_max_capacity_expansion(max_capacity_expansion):
     assert max_capacity_expansion.production == 0
     assert max_capacity_expansion.b.dims == ("replacement",)
     assert max_capacity_expansion.b.shape == (4,)
-    assert max_capacity_expansion.b.values == approx([50, 3, 3, 50])
+    assert max_capacity_expansion.b.values == approx([50, 12, 12, 50])
     assert (
         max_capacity_expansion.replacement
         == ["estove", "gasboiler", "gasstove", "heatpump"]

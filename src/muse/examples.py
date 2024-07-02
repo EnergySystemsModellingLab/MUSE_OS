@@ -98,6 +98,8 @@ def copy_model(
 
     if name.lower() == "default":
         _copy_default(path)
+    elif name.lower() == "default_retro":
+        _copy_default_retro(path)
     elif name.lower() == "default_timeslice":
         _copy_default_timeslice(path)
     elif name.lower() == "medium":
@@ -288,6 +290,16 @@ def _copy_default(path: Path):
     copyfile(example_data_dir() / "default" / "settings.toml", path / "settings.toml")
 
 
+def _copy_default_retro(path: Path):
+    from shutil import copyfile, copytree
+
+    copytree(example_data_dir() / "default_retro" / "input", path / "input")
+    copytree(example_data_dir() / "default_retro" / "technodata", path / "technodata")
+    copyfile(
+        example_data_dir() / "default_retro" / "settings.toml", path / "settings.toml"
+    )
+
+
 def _copy_default_timeslice(path: Path):
     from shutil import copyfile, copytree
 
@@ -313,7 +325,7 @@ def _copy_multiple_agents(path: Path):
     copytree(example_data_dir() / "default" / "input", path / "input")
     copytree(example_data_dir() / "default" / "technodata", path / "technodata")
     toml = load(example_data_dir() / "default" / "settings.toml")
-    toml["sectors"]["residential"]["subsectors"]["retro_and_new"]["agents"] = (
+    toml["sectors"]["residential"]["subsectors"]["all"]["agents"] = (
         "{path}/technodata/residential/Agents.csv"
     )
     with (path / "settings.toml").open("w") as fileobj:

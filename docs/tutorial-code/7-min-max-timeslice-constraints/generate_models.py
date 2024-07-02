@@ -51,6 +51,8 @@ def generate_model_2() -> None:
 
     # Starting point: copy model from 1-min-constraint
     shutil.copytree(parent_path / "1-min-constraint", model_path)
+    if (model_path / "Results").exists():
+        shutil.rmtree(model_path / "Results")
 
     # Modify UtilizationFactor and MinimumServiceFactor for windturbine
     timeslices_file = model_path / "technodata/power/TechnodataTimeslices.csv"
