@@ -523,27 +523,37 @@ def demand_limitting_capacity(
         demand_, assets, search_space, market, technologies, year=year
     )
 
-    # We need to find the most demanding timeslice and use as the demand constraint
-    b = (
-        demand_constraint.b.max("timeslice")
-        if "timeslice" in demand_constraint.b.dims
-        else demand_constraint.b
-    )
-
-    # Now we need to find the maximum capacity constraint (as the capacity here is
-    # negative), and switch the sign to make it positive. In practice, we want to
-    # capture the utilisation factor of the technologies.
-    capacity = (
-        -capacity_constraint.capacity.max("timeslice")
-        if "timeslice" in capacity_constraint.capacity.dims
-        else -capacity_constraint.capacity
-    )
+    # We are interested in the demand of the demand constraint and the capacity of the
+    # capacity constraint.
+    b = demand_constraint.b
+    capacity = -capacity_constraint.capacity
 
     # Drop 'year' so there's no conflict with the 'year' in the capacity constraint
     if "year" in b.coords and "year" in capacity.coords:
         b = b.drop_vars("year")
 
-    # This constraint is independent on the production
+    # If there are timeslices, we need to find the one where more capacity is needed to
+    # meet the demand which would be a combination of a high demand and a low
+    # utilization factor.
+    if "timeslice" in b.dims or "timeslice" in capacity.dims:
+        ratio = b / capacity
+        ts = ratio.timeslice.isel(
+            timeslice=ratio.min("replacement").argmax("timeslice")
+        )
+        # We select this timeslice for each array - don't trust the indices:
+        # search for the right timeslice in the array and select it.
+        b = (
+            b.isel(timeslice=(b.timeslice == ts).argmax("timeslice"))
+            if "timeslice" in b.dims
+            else b
+        )
+        capacity = (
+            capacity.isel(timeslice=(capacity.timeslice == ts).argmax("timeslice"))
+            if "timeslice" in capacity.dims
+            else capacity
+        )
+
+    # This constraint is independent of the production
     production = 0
 
     return xr.Dataset(
