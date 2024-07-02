@@ -15,12 +15,14 @@ def generate_model_1():
 
     """
     model_name = "1-modify-timeslices"
-
-    # Starting point: copy model from tutorial 3
     model_path = parent_path / model_name
     if model_path.exists():
         shutil.rmtree(model_path)
+
+    # Starting point: copy model from tutorial 3
     shutil.copytree(parent_path / "../3-add-region/1-new-region", model_path)
+    if (model_path / "Results").exists():
+        shutil.rmtree(model_path / "Results")
 
     # Add timeslices
     add_timeslice(model_path, timeslice_name="early-morning", copy_from="evening")
@@ -71,12 +73,14 @@ def generate_model_2():
 
     """
     model_name = "2-modify-time-framework"
-
-    # Starting point: copy previous model
     model_path = parent_path / model_name
     if model_path.exists():
         shutil.rmtree(model_path)
+
+    # Starting point: copy previous model
     shutil.copytree(parent_path / "1-modify-timeslices", model_path)
+    if (model_path / "Results").exists():
+        shutil.rmtree(model_path / "Results")
 
     # Modify time framework
     settings_file = model_path / "settings.toml"

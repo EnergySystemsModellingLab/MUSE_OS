@@ -70,6 +70,8 @@ def generate_model_2() -> None:
 
     # Starting point: copy model from 1-introduction
     shutil.copytree(parent_path / "1-introduction", model_path)
+    if (model_path / "Results").exists():
+        shutil.rmtree(model_path / "Results")
 
     # Copy price data for 2020 -> 2040
     add_price_data_for_new_year(model_path, "2040", "power", "2020")
