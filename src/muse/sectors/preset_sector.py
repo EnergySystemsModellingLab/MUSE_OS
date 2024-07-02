@@ -7,6 +7,7 @@ from typing import Any
 from xarray import DataArray, Dataset
 
 from muse.sectors.register import AbstractSector, register_sector
+from muse.timeslices import drop_timeslice
 
 
 @register_sector(name=("preset", "presets"))
@@ -77,15 +78,15 @@ class PresetSector(AbstractSector):  # type: ignore
                 assert consumption.region.isin(shares.region).all()
                 if "timeslice" in shares.dims:
                     ts = shares.timeslice
-                    shares = shares.drop_vars(["timeslice", "month", "day", "hour"])
+                    shares = drop_timeslice(shares)
                     consumption = (shares * consumption).assign_coords(timeslice=ts)
                 else:
                     consumption = consumption * shares.sel(
                         region=consumption.region, commodity=consumption.commodity
                     )
-            presets["consumption"] = consumption.drop_vars(
-                ["timeslice", "month", "day", "hour"]
-            ).assign_coords(timeslice=timeslice)
+            presets["consumption"] = drop_timeslice(consumption).assign_coords(
+                timeslice=timeslice
+            )
 
         if getattr(sector_conf, "supply_path", None) is not None:
             supply = read_csv_outputs(sector_conf.supply_path)
@@ -115,9 +116,7 @@ class PresetSector(AbstractSector):  # type: ignore
         for component in components:
             others = components.intersection(presets.data_vars).difference({component})
             if component not in presets and len(others) > 0:
-                presets[component] = zeros_like(presets[others.pop()]).drop_vars(
-                    ["timeslice", "month", "day", "hour"], errors="ignore"
-                )
+                presets[component] = drop_timeslice(zeros_like(presets[others.pop()]))
         # add timeslice, if missing
         for component in {"supply", "consumption"}:
             if "timeslice" not in presets[component].dims:
@@ -166,9 +165,9 @@ class PresetSector(AbstractSector):  # type: ignore
             mca_market.timeslice,
             QuantityType.EXTENSIVE,
         )
-        result["costs"] = convert_timeslice(
-            costs, mca_market.timeslice, QuantityType.INTENSIVE
-        ).drop_vars(["timeslice", "month", "day", "hour"], errors="ignore")
+        result["costs"] = drop_timeslice(
+            convert_timeslice(costs, mca_market.timeslice, QuantityType.INTENSIVE)
+        )
         assert isinstance(result, Dataset)
         return result
 

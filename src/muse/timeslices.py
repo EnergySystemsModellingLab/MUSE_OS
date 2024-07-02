@@ -596,4 +596,15 @@ def represent_hours(
     return convert_timeslice(DataArray([nhours]), timeslices).squeeze()
 
 
+def drop_timeslice(data: DataArray):
+    """Drop the timeslice variable from a DataArray.
+
+    If the array doesn't contain the timeslice variable, return the input unchanged.
+    """
+    if "timeslice" not in data.dims:
+        return data
+
+    return data.drop_vars([c for c in data.timeslice.indexes])
+
+
 setup_module(DEFAULT_TIMESLICE_DESCRIPTION)

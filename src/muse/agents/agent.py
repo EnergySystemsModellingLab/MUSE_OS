@@ -6,6 +6,8 @@ from typing import Callable, Optional, Union
 
 import xarray as xr
 
+from muse.timeslices import drop_timeslice
+
 
 class AbstractAgent(ABC):
     """Base class for all agents."""
@@ -416,7 +418,7 @@ class InvestingAgent(Agent):
             return None
 
         if "timeslice" in search.dims:
-            search["demand"] = demand.drop_vars(["timeslice", "month", "day", "hour"])
+            search["demand"] = drop_timeslice(demand)
         else:
             search["demand"] = demand
         not_assets = [u for u in search.demand.dims if u != "asset"]
