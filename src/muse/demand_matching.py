@@ -51,6 +51,8 @@ from typing import Optional
 import pandas as pd
 from xarray import DataArray
 
+from muse.timeslices import drop_timeslice
+
 
 def demand_matching(
     demand: DataArray,
@@ -248,7 +250,7 @@ def demand_matching(
 
     if len(multics) > 0:
         for k in multics:
-            ds = ds.drop_vars(["timeslice", "month", "day", "hour"])
+            ds = drop_timeslice(ds)
             ds[k] = pd.Index(constraint.get_index(k), tupleize_cols=False)
         result = demand_matching(  # type: ignore
             ds.demand, ds.cost, *(ds[f"constraint{i}"] for i in range(len(constraints)))

@@ -14,6 +14,7 @@ from xarray import Dataset, zeros_like
 from muse.outputs.cache import OutputCache
 from muse.readers import read_initial_market
 from muse.sectors import SECTORS_REGISTERED, AbstractSector
+from muse.timeslices import drop_timeslice
 
 
 class MCA:
@@ -59,12 +60,8 @@ class MCA:
             ).sel(region=settings.regions)
         ).interp(year=settings.time_framework, method=settings.interpolation_mode)
 
-        market["supply"] = zeros_like(market.exports).drop_vars(
-            ["timeslice", "month", "day", "hour"]
-        )
-        market["consumption"] = zeros_like(market.exports).drop_vars(
-            ["timeslice", "month", "day", "hour"]
-        )
+        market["supply"] = drop_timeslice(zeros_like(market.exports))
+        market["consumption"] = drop_timeslice(zeros_like(market.exports))
 
         # We create the sectors
         sectors = []
@@ -461,9 +458,7 @@ def single_year_iteration(
     sectors = deepcopy(sectors)
     market = market.copy(deep=True)
     if "updated_prices" not in market.data_vars:
-        market["updated_prices"] = market.prices.copy().drop_vars(
-            ["timeslice", "month", "day", "hour"]
-        )
+        market["updated_prices"] = drop_timeslice(market.prices.copy())
 
     # eventually, the first market should be one that creates the initial demand
     for sector in sectors:
@@ -551,16 +546,12 @@ def find_equilibrium(
     else:
         included = ones(len(market.commodity), dtype=bool)
 
-    market["updated_prices"] = market.prices.copy().drop_vars(
-        ["timeslice", "month", "day", "hour"]
-    )
+    market["updated_prices"] = drop_timeslice(market.prices.copy())
     prior_market = market.copy(deep=True)
     converged = False
     equilibrium_sectors = sectors
     for i in range(maxiter):
-        market["prices"] = market.updated_prices.drop_vars(
-            ["timeslice", "month", "day", "hour"]
-        )
+        market["prices"] = drop_timeslice(market.updated_prices)
         prior_market, market = market, prior_market
         market.consumption[:] = 0.0
         market.supply[:] = 0.0
@@ -582,9 +573,11 @@ def find_equilibrium(
             new_price.loc[dict(commodity=included)] = market.updated_prices.sel(
                 commodity=included, year=market.year[1]
             )
-            market["prices"] = future_propagation(  # type: ignore
-                market["prices"], new_price
-            ).drop_vars(["timeslice", "month", "day", "hour"])
+            market["prices"] = drop_timeslice(
+                future_propagation(  # type: ignore
+                    market["prices"], new_price
+                )
+            )
 
             break
 
@@ -599,9 +592,11 @@ def find_equilibrium(
                     dict(year=market.year[1], commodity=included)
                 ]
             )
-            market["prices"] = future_propagation(  # type: ignore
-                market["prices"], new_price
-            ).drop_vars(["timeslice", "month", "day", "hour"])
+            market["prices"] = drop_timeslice(
+                future_propagation(  # type: ignore
+                    market["prices"], new_price
+                )
+            )
         if not equilibrium:
             equilibrium_reached = True
             converged = True
@@ -626,9 +621,11 @@ def find_equilibrium(
             0.2
             * market.updated_prices.loc[dict(year=market.year[1], commodity=included)]
         )
-        market["prices"] = future_propagation(  # type: ignore
-            market["prices"], new_price
-        ).drop_vars(["timeslice", "month", "day", "hour"])
+        market["prices"] = drop_timeslice(
+            future_propagation(  # type: ignore
+                market["prices"], new_price
+            )
+        )
         getLogger(__name__).critical(msg)
 
     return FindEquilibriumResults(
