@@ -604,7 +604,7 @@ def drop_timeslice(data: DataArray) -> DataArray:
     if "timeslice" not in data.dims:
         return data
 
-    return data.drop_vars([c for c in data.timeslice.indexes])
+    return data.drop_vars(data.timeslice.indexes)
 
 
 setup_module(DEFAULT_TIMESLICE_DESCRIPTION)
