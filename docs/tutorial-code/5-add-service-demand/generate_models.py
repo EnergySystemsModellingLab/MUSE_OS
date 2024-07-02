@@ -14,15 +14,17 @@ def generate_model_1():
 
     """
     model_name = "1-exogenous-demand"
-
-    # Starting point: copy model from tutorial 4
     model_path = parent_path / model_name
     if model_path.exists():
         shutil.rmtree(model_path)
+
+    # Starting point: copy model from tutorial 4
     shutil.copytree(
         parent_path / "../4-modify-timing-data/1-modify-timeslices",
         model_path,
     )
+    if (model_path / "Results").exists():
+        shutil.rmtree(model_path / "Results")
 
     # Copy gas commodity in power sector -> cook
     add_new_commodity(model_path, "cook", "residential", "heat")
