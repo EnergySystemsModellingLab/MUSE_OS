@@ -599,7 +599,7 @@ def minimum_service(
         .drop_vars("technology")
     )
     capacity = convert_timeslice(
-        techs.fixed_outputs * techs.utilization_factor * techs.minimum_service_factor,
+        techs.fixed_outputs * techs.minimum_service_factor,
         market.timeslice,
         QuantityType.EXTENSIVE,
     )
