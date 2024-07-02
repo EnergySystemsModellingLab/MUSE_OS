@@ -35,7 +35,7 @@ In the following sections, we will guide you step by step in configuring your sy
 Launching a terminal
 ~~~~~~~~~~~~~~~~~~~~
 
-All operating systems have a Terminal application that let you run commands. You will need to use it extensively when using MUSE, so we strongly suggest you get familiar with it. For now, let us just figure out how to launch one:
+All operating systems have a Terminal application that let you run commands. You will need to use it extensively when using MUSE, so we strongly suggest you get familiar with it. For now, let's just figure out how to launch one:
 
 - **Linux**: Depending on the distribution, you might have a shortcut in your tasks bar already or it should be easily found in the menu. Look for ``Console`` or ``Terminal`` to lunch the application.
 - **MacOS**: Press ``Super key + Space`` to open the search box. There, type ``Terminal`` and press ``Enter``.
