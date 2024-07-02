@@ -188,7 +188,7 @@ With ``pyenv`` installed and correctly configured, it is now easy to install any
 
     pyenv install -l
 
-You should see a long list of versions to choose from. Let's install one of the later version of the 3.9 family:
+You should see a long list of versions to choose from. Let's install one of the later versions of the 3.9 family:
 
 .. code-block:: bash
 
