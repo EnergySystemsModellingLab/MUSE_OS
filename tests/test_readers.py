@@ -441,7 +441,6 @@ def test_read_technodictionary(default_model):
     assert set(data.dims) == {"technology", "region"}
 
     assert dict(data.dtypes) == dict(
-        level=np.dtype("O"),
         cap_par=np.dtype("float64"),
         cap_exp=np.dtype("int64"),
         fix_par=np.dtype("int64"),
@@ -451,7 +450,7 @@ def test_read_technodictionary(default_model):
         type=np.dtype("O"),
         fuel=np.dtype("<U11"),
         enduse=np.dtype("<U4"),
-        agent_share_2=np.dtype("int64"),
+        agent_share_1=np.dtype("int64"),
         tech_type=np.dtype("<U6"),
         efficiency=np.dtype("int64"),
         max_capacity_addition=np.dtype("int64"),
@@ -595,18 +594,6 @@ def test_read_csv_agent_parameters(default_model):
             "maturity_threshhold": -1,
             "spend_limit": np.inf,
             "share": "agent_share_1",
-        },
-        {
-            "name": "A1",
-            "region": "R1",
-            "objectives": ["LCOE"],
-            "search_rules": "all",
-            "decision": {"name": "singleObj", "parameters": [("LCOE", True, 1)]},
-            "agent_type": "retrofit",
-            "quantity": 1,
-            "maturity_threshhold": -1,
-            "spend_limit": np.inf,
-            "share": "agent_share_2",
         },
     ]
 

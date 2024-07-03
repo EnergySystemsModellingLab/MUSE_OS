@@ -12,6 +12,13 @@
             "args": ["--model", "default"]
         },
         {
+            "name": "Model: default_retro",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "muse",
+            "args": ["--model", "default_retro"]
+        },
+        {
             "name": "Model: multiple_agents",
             "type": "debugpy",
             "request": "launch",
