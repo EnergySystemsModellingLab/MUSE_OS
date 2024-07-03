@@ -161,12 +161,12 @@ but the easiest way is to run the following command in the ``powershell`` and, u
     .. code-block:: powershell
 
         # Step 1: In your powershell, invoke the following command:
-        `Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/pyenv-win/pyenv-win/master/pyenv-win/install-pyenv-win.ps1" -OutFile "./install-pyenv-win.ps1"; &"./install-pyenv-win.ps1"`
+        Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/pyenv-win/pyenv-win/master/pyenv-win/install-pyenv-win.ps1" -OutFile "./install-pyenv-win.ps1"; &"./install-pyenv-win.ps1"
 
-        # Step 2: close the shell you invoked in the command from Step 1 and re-launch an new `powershell`. This is equivalent to invoke the shell command `source` in Linux.
+        # Step 2: close the shell you invoked in the command from Step 1 and re-launch powershell
 
         # Step 3: Confirm success; you should be returned something similar to `pyenv 3.1.1`
-        `pyenv --version`
+        pyenv --version
 
     .. note::
 
