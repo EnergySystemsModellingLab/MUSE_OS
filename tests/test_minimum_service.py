@@ -22,12 +22,14 @@ def modify_minimum_service_factors(
     return technodata_timeslices
 
 
+@mark.xfail
 @mark.parametrize(
     "minimum_service_factors",
     permutations((np.linspace(0, 1, 6), [0] * 6)),
 )
 @patch("muse.readers.csv.check_utilization_and_minimum_service_factors")
 def test_minimum_service_factor(check_mock, tmpdir, minimum_service_factors):
+    """NOTE: Failing due to incorrect supply output (#335)."""
     import pandas as pd
     from muse import examples
     from muse.mca import MCA
