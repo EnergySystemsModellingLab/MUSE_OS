@@ -48,6 +48,9 @@ Later, to recover the system-wide "normal" python, deactivate the environment wi
 
     conda deactivate
 
+
+.. _python_venv:
+
 Creating a virtual environment with ``venv``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -87,8 +90,24 @@ Later, to recover the system-wide "normal" python, deactivate the environment wi
 
     deactivate
 
-Installing MUSE in a virtual environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Creating a virtual environment with ``pyenv + venv``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Alternatively to creating virtual environments in ``conda``, you can also make use of two well-tested and maintained libraries.
+We met the first one, ``pyenv``, already in the :ref:`pipx-based <pipx-based>` under the section :ref:`Installing pyenv <pipx-based-installing-pyenv>` and the installation procedure is exactly the same.
+If you go down that route, please follow the steps outlined there and chose a recent version ``Python``, say 3.9.
+
+The second package we need to create virtual environments for any specific ``Python`` version is called
+``venv``, and it ships with ``Python`` by default. To create such an environment, we first need to ensure that the
+``Python`` version we wish to use is indeed the one we want. To do this, open the terminal and invoke ``pyenv versions``.
+To install different versions or set them to local or global scope, please refer again to
+:ref:`Installing pyenv <pipx-based-installing-pyenv>`.
+
+We can now create virtual environments using ``Python`` directly as explained in :ref:`python_venv`.
+
+
+Installing standalone MUSE in a virtual environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Regardless of the method used, **once it has been created and activated**, you can install ``MUSE`` within using:
 
