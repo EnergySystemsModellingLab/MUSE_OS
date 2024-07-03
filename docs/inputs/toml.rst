@@ -546,7 +546,7 @@ to define the timeslice simply by referring to the slices it will use at each le
           specifying which technologies are considered for investment.
         - :py:func:`~muse.constraints.minimum_service`: a lower constraint for
           production for those technologies that need to keep a minimum production.
-        - :py:func:`~muse.constraints.demand_limitting_capacity`: limits the combined
+        - :py:func:`~muse.constraints.demand_limiting_capacity`: limits the combined
           capacity to be installed to the demand of the peak timeslice.
 
 

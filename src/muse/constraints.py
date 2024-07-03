@@ -225,7 +225,7 @@ def factory(
             "demand",
             "search_space",
             "minimum_service",
-            "demand_limitting_capacity",
+            "demand_limiting_capacity",
         )
 
     def normalize(x) -> MutableMapping:
@@ -495,7 +495,7 @@ def max_production(
 
 
 @register_constraints
-def demand_limitting_capacity(
+def demand_limiting_capacity(
     demand_: xr.DataArray,
     assets: xr.Dataset,
     search_space: xr.DataArray,
