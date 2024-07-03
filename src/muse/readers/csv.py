@@ -118,7 +118,7 @@ def read_technodictionary(filename: Union[str, Path]) -> xr.Dataset:
         ]
 
     units = csv[csv.process_name == "Unit"].drop(
-        ["process_name", "region_name", "time", "level"], axis=1
+        ["process_name", "region_name", "time"], axis=1
     )
     for variable, value in units.items():
         if all(u not in {"-", "Retro", "New"} for u in value.values):
@@ -181,8 +181,16 @@ def read_io_technodata(filename: Union[str, Path]) -> xr.Dataset:
     from muse.readers import camel_to_snake
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
-    data = csv[csv.ProcessName != "Unit"]
 
+    # Unspecified Level values default to "fixed"
+    if "Level" in csv.columns:
+        csv["Level"] = csv["Level"].fillna("fixed")
+    else:
+        # Particularly relevant to outputs files where the Level column is omitted by
+        # default, as only "fixed" outputs are allowed.
+        csv["Level"] = "fixed"
+
+    data = csv[csv.ProcessName != "Unit"]
     region = np.array(data.RegionName, dtype=str)
     process = data.ProcessName
     year = [int(u) for u in data.Time]
@@ -352,6 +360,12 @@ def read_technologies(
     outs = read_io_technodata(opath).rename(
         flexible="flexible_outputs", fixed="fixed_outputs"
     )
+    if not (outs["flexible_outputs"] == 0).all():
+        raise ValueError(
+            f"'flexible' outputs are not permitted in {opath}. "
+            "All outputs must be 'fixed'"
+        )
+    outs = outs.drop_vars("flexible_outputs")
     ins = read_io_technodata(ipath).rename(
         flexible="flexible_inputs", fixed="fixed_inputs"
     )

@@ -70,7 +70,7 @@ a whole.
    whether equilibrium of `demand` or `prices` should be sought. Defaults to `demand`.
 
 *maximum_iterations*
-   Maximum number of iterations when searching for equilibrium. Defaults to 3.
+   Maximum number of iterations when searching for equilibrium. Defaults to 100.
 
 *tolerance*
    Tolerance criteria when checking for equilibrium. Defaults to 0.1. 0.1 signifies that 10% of a deviation is allowed among the iterative value of either demand or price over a year per region.
@@ -544,6 +544,10 @@ to define the timeslice simply by referring to the slices it will use at each le
           how much the capacity can grow during each investment event.
         - :py:func:`~muse.constraints.search_space`: a binary (on-off) constraint
           specifying which technologies are considered for investment.
+        - :py:func:`~muse.constraints.minimum_service`: a lower constraint for
+          production for those technologies that need to keep a minimum production.
+        - :py:func:`~muse.constraints.demand_limiting_capacity`: limits the combined
+          capacity to be installed to the demand of the peak timeslice.
 
 
 *output*
@@ -668,15 +672,15 @@ The following attributes are accepted:
    The CSV format should follow the following format:
 
    .. csv-table:: Consumption
-      :header: " ", "RegionName", "ProcessName", "TimeSlice", "electricity", "diesel", "algae"
+      :header: " ", "RegionName", "ProcessName", "Timeslice", "electricity", "diesel", "algae"
       :stub-columns: 4
 
       0,USA,fluorescent light,1,1.9, 0, 0
       1,USA,fluorescent light,2,1.8, 0, 0
 
 
-   The index column as well as "RegionName", "ProcessName", and "TimeSlice" must be
-   present. Further columns are reserved for commodities. "TimeSlice" refers to the
+   The index column as well as "RegionName", "ProcessName", and "Timeslice" must be
+   present. Further columns are reserved for commodities. "Timeslice" refers to the
    index of the timeslice. Timeslices should be defined consistently to the sectoral
    level timeslices.
    The column "ProcessName" needs to be present and filled in, in order for the data

@@ -11,10 +11,10 @@ the electric boiler used in households is taken as an example for a generic regi
 
 
 .. csv-table:: Techno-data: cost inputs
-   :header: ProcessName, RegionName, Time, Level, cap_par, cap_exp, fix_par, ...
+   :header: ProcessName, RegionName, Time, cap_par, cap_exp, fix_par, ...
 
-   resBoilerElectric, region1, 2010, fixed, 3.81, 1.00, 0.38, ...
-   resBoilerElectric, region1, 2030, fixed, 3.81, 1.00, 0.38, ...
+   resBoilerElectric, region1, 2010, 3.81, 1.00, 0.38, ...
+   resBoilerElectric, region1, 2030, 3.81, 1.00, 0.38, ...
 
 
 ProcessName
@@ -26,9 +26,6 @@ RegionName
 Time
    represents the period of the simulation to which the value applies; it needs to
    contain at least the base year of the simulation
-
-Level
-   characterises either a fixed or a flexible input type
 
 cap_par, cap_exp
    are used in the capital cost estimation. Capital costs are calculated as:
@@ -115,7 +112,10 @@ TechnicalLife
    represents the number of years that a technology operates before it is decommissioned.
 
 UtilizationFactor
-   represents the maximum actual output of the technology in a year, divided by the theoretical maximum output if the technology were operating at full capacity for the whole year. Must be between 0 and 1.
+   represents the *maximum* actual output of the technology in a year, divided by the theoretical maximum output if the technology were operating at full capacity for the whole year. Must be between 0 and 1.
+
+MinimumServiceFactor
+   Is the *minimum* output of the technology in a year, divided by the theoretical maximum output if the technology were operating at full capacity for the whole year. Must be between 0 and 1 and be smaller or equal than the `UtilizationFactor`. It is used to define the minimum service level that a technology must provide due to, typically, technical or efficiency constraints.
 
 ScalingSize
    represents the reference capacity at which capital costs are estimated when used as agents' objective as described in :ref:`inputs-agents`.
