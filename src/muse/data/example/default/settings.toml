@@ -9,7 +9,7 @@ log_level = 'info'
 excluded_commodities = ["wind"]
 # Convergence parameters
 equilibrium_variable = 'demand'
-maximum_iterations = 1
+maximum_iterations = 100
 tolerance = 0.1
 tolerance_unmet_demand = -0.1
 
@@ -50,7 +50,7 @@ technodata = '{path}/technodata/residential/Technodata.csv'
 commodities_in = '{path}/technodata/residential/CommIn.csv'
 commodities_out = '{path}/technodata/residential/CommOut.csv'
 
-[sectors.residential.subsectors.retro_and_new]
+[sectors.residential.subsectors.all]
 agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
 lpsolver = "scipy"  # Optional, defaults to "adhoc"
@@ -63,7 +63,7 @@ constraints = [
     "minimum_service",
     "demand_limitting_capacity"
 ]
-demand_share = "new_and_retro"  # Optional, default to new_and_retro
+demand_share = "standard_demand"  # Optional, default to standard_demand
 forecast = 5  # Optional, defaults to 5
 
 [[sectors.residential.outputs]]
@@ -81,10 +81,6 @@ quantity.name = "supply"
 quantity.sum_over = "timeslice"
 quantity.drop = ["comm_usage", "units_prices"]
 
-[[sectors.residential.interactions]]
-net = 'new_to_retro'
-interaction = 'transfer'
-
 [sectors.power]
 type = 'default'
 priority = 2
@@ -93,10 +89,11 @@ technodata = '{path}/technodata/power/Technodata.csv'
 commodities_in = '{path}/technodata/power/CommIn.csv'
 commodities_out = '{path}/technodata/power/CommOut.csv'
 
-[sectors.power.subsectors.retro_and_new]
+[sectors.power.subsectors.all]
 agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
 lpsolver = "scipy"
+demand_share = "standard_demand"
 
 [[sectors.power.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
@@ -104,10 +101,6 @@ quantity = "capacity"
 sink = 'csv'
 overwrite = true
 index = false
-
-[[sectors.power.interactions]]
-net = 'new_to_retro'
-interaction = 'transfer'
 
 [sectors.gas]
 type = 'default'
@@ -117,10 +110,11 @@ technodata = '{path}/technodata/gas/Technodata.csv'
 commodities_in = '{path}/technodata/gas/CommIn.csv'
 commodities_out = '{path}/technodata/gas/CommOut.csv'
 
-[sectors.gas.subsectors.retro_and_new]
+[sectors.gas.subsectors.all]
 agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/gas/ExistingCapacity.csv'
 lpsolver = "scipy"
+demand_share = "standard_demand"
 
 [[sectors.gas.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
@@ -128,10 +122,6 @@ quantity = "capacity"
 sink = 'csv'
 overwrite = true
 index = false
-
-[[sectors.gas.interactions]]
-net = 'new_to_retro'
-interaction = 'transfer'
 
 [sectors.residential_presets]
 type = 'presets'

@@ -70,7 +70,7 @@ a whole.
    whether equilibrium of `demand` or `prices` should be sought. Defaults to `demand`.
 
 *maximum_iterations*
-   Maximum number of iterations when searching for equilibrium. Defaults to 3.
+   Maximum number of iterations when searching for equilibrium. Defaults to 100.
 
 *tolerance*
    Tolerance criteria when checking for equilibrium. Defaults to 0.1. 0.1 signifies that 10% of a deviation is allowed among the iterative value of either demand or price over a year per region.
