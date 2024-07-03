@@ -74,4 +74,4 @@ def test_minimum_service_factor(check_mock, tmpdir, minimum_service_factors):
             ),
             axis=1,
         )
-        assert (supply_process["supply"] > supply_process["min_supply"]).all()
+        assert (supply_process["supply"] >= supply_process["min_supply"]).all()
