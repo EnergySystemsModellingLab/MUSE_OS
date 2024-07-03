@@ -298,7 +298,7 @@ def _copy_default_new_input(path: Path):
 
     copytree(example_data_dir() / "default_new_input", path)
 
-    
+
 def _copy_default_retro(path: Path):
     from shutil import copyfile, copytree
 
