@@ -35,6 +35,7 @@ from mypy_extensions import KwArg
 from muse.registration import registrator
 from muse.sectors import AbstractSector
 from muse.timeslices import QuantityType, convert_timeslice, drop_timeslice
+from muse.utilities import multiindex_to_coords
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
     [xr.Dataset, list[AbstractSector], KwArg(Any)], Union[xr.DataArray, pd.DataFrame]
@@ -396,22 +397,13 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
 
-            a = (
-                data_agent.reset_index("timeslice")
-                .to_dataframe("supply")
-                .reset_index()
-                .drop("timeslice", axis=1)
-            )
+            a = multiindex_to_coords(data_agent, "timeslice").to_dataframe("supply")
             a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
             if not a.empty:
                 data_sector.append(a[a["supply"] != 0])
 
     if len(data_sector) > 0:
-        output = (
-            pd.concat([u for u in data_sector], sort=True)
-            .reset_index()
-            .drop("index", axis=1, errors="ignore")
-        )
+        output = pd.concat([u for u in data_sector], sort=True).reset_index()
     else:
         output = pd.DataFrame()
     return output
@@ -643,22 +635,15 @@ def sector_consumption(
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
 
-            a = (
-                data_agent.reset_index("timeslice")
-                .to_dataframe("consumption")
-                .reset_index()
-                .drop("timeslice", axis=1)
+            a = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
+                "consumption"
             )
             a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
             if not a.empty:
                 data_sector.append(a[a["consumption"] != 0])
 
     if len(data_sector) > 0:
-        output = (
-            pd.concat([u for u in data_sector], sort=True)
-            .reset_index()
-            .drop("index", axis=1, errors="ignore")
-        )
+        output = pd.concat([u for u in data_sector], sort=True).reset_index()
     else:
         output = pd.DataFrame()
     return output
