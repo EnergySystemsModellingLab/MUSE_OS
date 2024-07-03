@@ -668,15 +668,15 @@ The following attributes are accepted:
    The CSV format should follow the following format:
 
    .. csv-table:: Consumption
-      :header: " ", "RegionName", "ProcessName", "TimeSlice", "electricity", "diesel", "algae"
+      :header: " ", "RegionName", "ProcessName", "Timeslice", "electricity", "diesel", "algae"
       :stub-columns: 4
 
       0,USA,fluorescent light,1,1.9, 0, 0
       1,USA,fluorescent light,2,1.8, 0, 0
 
 
-   The index column as well as "RegionName", "ProcessName", and "TimeSlice" must be
-   present. Further columns are reserved for commodities. "TimeSlice" refers to the
+   The index column as well as "RegionName", "ProcessName", and "Timeslice" must be
+   present. Further columns are reserved for commodities. "Timeslice" refers to the
    index of the timeslice. Timeslices should be defined consistently to the sectoral
    level timeslices.
    The column "ProcessName" needs to be present and filled in, in order for the data
