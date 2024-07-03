@@ -28,7 +28,7 @@ In the following sections, we will guide you step by step in configuring your sy
             python -m pipx ensurepath
             python -m pipx install muse-os
 
-    - After this, MUSE will be available to use system wide simply by invoking ``muse`` in the terminal. To illustrate this and to finish installation, run ``muse --model default``.
+    - After this, MUSE will be available to use system wide simply by invoking muse in the terminal. To illustrate this and to test your installation, run muse --model default. You should then see a a list of outputs printed to the terminal showing the computations going on in the background.
 
 .. _launch-terminal:
 
