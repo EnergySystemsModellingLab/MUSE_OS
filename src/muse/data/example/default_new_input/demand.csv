@@ -1,3 +1,3 @@
-year,commodity_name,region,demand
-2020,heat,R1,10
-2050,heat,R1,30
+commodity_id,region_id,year,demand
+heat,R1,2020,10
+heat,R1,2050,30

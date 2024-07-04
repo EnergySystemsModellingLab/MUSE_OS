@@ -1,4 +1,4 @@
-name,description,type,unit
+id,description,type,unit
 electricity,Electricity,energy,PJ
 gas,Gas,energy,PJ
 heat,Heat,energy,PJ
