@@ -14,20 +14,21 @@ def generate_model_1():
 
     """
     model_name = "1-single-objective"
-
-    # Starting point: copy model from previous tutorial
     model_path = parent_path / model_name
     if model_path.exists():
         shutil.rmtree(model_path)
+
+    # Starting point: copy model from previous tutorial
     shutil.copytree(parent_path / "../1-add-new-technology/2-scenario", model_path)
+    if (model_path / "Results").exists():
+        shutil.rmtree(model_path / "Results")
 
     # Copy agent A1 -> A2
     add_agent(
         model_path,
         agent_name="A2",
         copy_from="A1",
-        agentshare_new="Agent3",
-        agentshare_retrofit="Agent4",
+        agentshare_new="Agent2",
     )
 
     # Split population between the two agents
@@ -40,8 +41,8 @@ def generate_model_1():
     for sector in get_sectors(model_path):
         technodata_file = model_path / f"technodata/{sector}/Technodata.csv"
         df = pd.read_csv(technodata_file)
+        df.loc[1:, "Agent1"] = 0.5
         df.loc[1:, "Agent2"] = 0.5
-        df.loc[1:, "Agent4"] = 0.5
         df.to_csv(technodata_file, index=False)
 
 
@@ -52,12 +53,14 @@ def generate_model_2():
 
     """
     model_name = "2-multiple-objective"
-
-    # Starting point: copy model from previous tutorial
     model_path = parent_path / model_name
     if model_path.exists():
         shutil.rmtree(model_path)
+
+    # Starting point: copy model from previous tutorial
     shutil.copytree(parent_path / "1-single-objective", model_path)
+    if (model_path / "Results").exists():
+        shutil.rmtree(model_path / "Results")
 
     # Add second objective for agent A2
     agents_file = model_path / "technodata/Agents.csv"
@@ -71,7 +74,7 @@ def generate_model_2():
     # Modify residential sector MaxCapacityGrowth
     technodata_file = model_path / "technodata/residential/Technodata.csv"
     df = pd.read_csv(technodata_file)
-    df.loc[1:, "MaxCapacityGrowth"] = 0.04
+    df.loc[1:, "MaxCapacityGrowth"] = 0.4
     df.to_csv(technodata_file, index=False)
 
 

@@ -119,7 +119,7 @@ class MCA:
         time_framework: Sequence[int] = list(range(2010, 2100, 10)),
         equilibrium: bool = True,
         equilibrium_variable: str = "demand",
-        maximum_iterations: int = 3,
+        maximum_iterations: int = 100,
         tolerance: float = 0.1,
         tolerance_unmet_demand: float = -0.1,
         excluded_commodities: Sequence[str] | None = None,
