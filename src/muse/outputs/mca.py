@@ -35,6 +35,7 @@ from mypy_extensions import KwArg
 from muse.registration import registrator
 from muse.sectors import AbstractSector
 from muse.timeslices import QuantityType, convert_timeslice, drop_timeslice
+from muse.utilities import multiindex_to_coords
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
     [xr.Dataset, list[AbstractSector], KwArg(Any)], Union[xr.DataArray, pd.DataFrame]
@@ -396,26 +397,16 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
 
-            a = data_agent.to_dataframe("supply")
+            a = multiindex_to_coords(data_agent, "timeslice").to_dataframe("supply")
             a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
-            if len(a) > 0 and len(a.technology.values) > 0:
-                b = a.drop(
-                    ["month", "day", "hour"], axis=1, errors="ignore"
-                ).reset_index()
-                b = b[b["supply"] != 0]
-                data_sector.append(b)
-    if len(data_sector) > 0:
-        output = pd.concat([u for u in data_sector], sort=True)
+            if not a.empty:
+                data_sector.append(a[a["supply"] != 0])
 
+    if len(data_sector) > 0:
+        output = pd.concat(data_sector, sort=True).reset_index()
     else:
         output = pd.DataFrame()
-
-    # Combine timeslice columns into a single column, if present
-    if "hour" in output.columns:
-        output["timeslice"] = list(zip(output["month"], output["day"], output["hour"]))
-        output = output.drop(["month", "day", "hour"], axis=1)
-
-    return output.reset_index()
+    return output
 
 
 @register_output_quantity(name=["yearly_supply"])
@@ -572,12 +563,9 @@ def sectory_supply(
                     data_sector.append(b)
 
     if len(data_sector) > 0:
-        output = pd.concat([u for u in data_sector], sort=True)
-
+        output = pd.concat(data_sector, sort=True).reset_index()
     else:
         output = pd.DataFrame()
-    output = output.reset_index()
-
     return output
 
 
@@ -643,26 +631,19 @@ def sector_consumption(
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
-            a = data_agent.to_dataframe("consumption")
-            a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
-            if len(a) > 0 and len(a.technology.values) > 0:
-                b = a.drop(
-                    ["month", "day", "hour"], axis=1, errors="ignore"
-                ).reset_index()
-                b = b[b["consumption"] != 0]
-                data_sector.append(b)
-    if len(data_sector) > 0:
-        output = pd.concat([u for u in data_sector], sort=True)
 
+            a = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
+                "consumption"
+            )
+            a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
+            if not a.empty:
+                data_sector.append(a[a["consumption"] != 0])
+
+    if len(data_sector) > 0:
+        output = pd.concat(data_sector, sort=True).reset_index()
     else:
         output = pd.DataFrame()
-
-    # Combine timeslice columns into a single column, if present
-    if "hour" in output.columns:
-        output["timeslice"] = list(zip(output["month"], output["day"], output["hour"]))
-        output = output.drop(["month", "day", "hour"], axis=1)
-
-    return output.reset_index()
+    return output
 
 
 @register_output_quantity(name=["yearly_consumption"])
@@ -729,12 +710,9 @@ def sectory_consumption(
                 b = b[b["consumption"] != 0]
                 data_sector.append(b)
     if len(data_sector) > 0:
-        output = pd.concat([u for u in data_sector], sort=True)
-
+        output = pd.concat(data_sector, sort=True).reset_index()
     else:
         output = pd.DataFrame()
-    output = output.reset_index()
-
     return output
 
 
@@ -848,12 +826,9 @@ def sector_capital_costs(
                 b = b[b["capital_costs"] != 0]
                 data_sector.append(b)
     if len(data_sector) > 0:
-        output = pd.concat([u for u in data_sector], sort=True)
-        output = output.reset_index()
-
+        output = pd.concat(data_sector, sort=True).reset_index()
     else:
         output = pd.DataFrame()
-
     return output
 
 

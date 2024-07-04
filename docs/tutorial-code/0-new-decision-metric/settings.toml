@@ -76,6 +76,7 @@ commodities_out = '{path}/technodata/power/CommOut.csv'
 agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
 lpsolver = "scipy"
+demand_share = "standard_demand"
 
 [sectors.gas]
 type = 'default'
@@ -89,6 +90,7 @@ commodities_out = '{path}/technodata/gas/CommOut.csv'
 agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/gas/ExistingCapacity.csv'
 lpsolver = "scipy"
+demand_share = "standard_demand"
 
 [sectors.residential_presets]
 type = 'presets'

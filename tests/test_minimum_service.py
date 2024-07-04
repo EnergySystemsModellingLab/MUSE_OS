@@ -22,12 +22,14 @@ def modify_minimum_service_factors(
     return technodata_timeslices
 
 
+@mark.xfail
 @mark.parametrize(
     "minimum_service_factors",
     permutations((np.linspace(0, 1, 6), [0] * 6)),
 )
 @patch("muse.readers.csv.check_utilization_and_minimum_service_factors")
 def test_minimum_service_factor(check_mock, tmpdir, minimum_service_factors):
+    """NOTE: Failing due to incorrect supply output (#335)."""
     import pandas as pd
     from muse import examples
     from muse.mca import MCA
@@ -55,15 +57,23 @@ def test_minimum_service_factor(check_mock, tmpdir, minimum_service_factors):
         MCA.factory(model_path / "settings.toml").run()
     check_mock.assert_called()
 
-    supply_timeslice = pd.read_csv(tmpdir / "Results/MCAMetric_Supply.csv")
-
+    techno_out = pd.read_csv(model_path / "technodata" / sector / "CommOut.csv")
+    capacity = pd.read_csv(tmpdir / "Results/MCACapacity.csv")
+    capacity_summed = capacity.groupby(["year", "technology"]).sum().reset_index()
+    supply = pd.read_csv(tmpdir / "Results/MCAMetric_Supply.csv")
+    supply = supply[supply.commodity == "electricity"].merge(
+        capacity_summed[["year", "technology", "capacity"]],
+        on=["year", "technology"],
+        how="left",
+    )
     for process, service_factor in zip(processes, minimum_service_factors):
-        for i, factor in enumerate(service_factor):
-            assert (
-                supply_timeslice[
-                    (supply_timeslice.technology == process)
-                    & (supply_timeslice.commodity == "electricity")
-                    & (supply_timeslice.timeslice == i)
-                ].supply
-                >= factor
-            ).all()
+        supply_process = supply[supply.technology == process]
+        supply_process.loc[:, "min_supply"] = supply_process.apply(
+            lambda x: x.capacity
+            * service_factor[x.timeslice]
+            * float(
+                techno_out[techno_out.ProcessName == process]["electricity"].values[0]
+            ),
+            axis=1,
+        )
+        assert (supply_process["supply"] >= supply_process["min_supply"]).all()
