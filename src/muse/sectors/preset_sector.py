@@ -121,7 +121,7 @@ class PresetSector(AbstractSector):  # type: ignore
         for component in {"supply", "consumption"}:
             if "timeslice" not in presets[component].dims:
                 presets[component] = convert_timeslice(
-                    presets[component], presets.timeslice, QuantityType.EXTENSIVE
+                    presets[component], timeslice, QuantityType.EXTENSIVE
                 )
 
         comm_usage = (presets.costs > 0).any(set(presets.costs.dims) - {"commodity"})
