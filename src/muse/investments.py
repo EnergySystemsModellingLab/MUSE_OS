@@ -310,7 +310,7 @@ def scipy_match_demand(
 
     from muse.constraints import ScipyAdapter
 
-    df_technologies = technologies.to_dataframe()
+    df_technologies = technologies.to_dataframe().reset_index()
 
     if "timeslice" in costs.dims and timeslice_op is not None:
         costs = timeslice_op(costs)
