@@ -67,7 +67,7 @@ excel = ["openpyxl"]
 gui = ["gooey"]
 
 [project.urls]
-Homepage = "http://www.sustainablegasinstitute.org/home/muse-energy-model/"
+Homepage = "https://www.imperial.ac.uk/muse-energy/what-is-muse-/"
 
 [project.scripts]
 muse = "muse.__main__:run"
