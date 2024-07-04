@@ -1,6 +1,6 @@
-name,type,fuel,end_use,level,sector
-gassupply1,energy,gas,gas,fixed,gas
-gasCCGT,energy,gas,electricity,fixed,power
-windturbine,energy,wind,electricity,fixed,power
-gasboiler,energy,gas,heat,fixed,residential
-heatpump,energy,electricity,heat,fixed,residential
+id,sector_id,type,fuel,end_use,level
+gassupply1,gas,energy,gas,gas,fixed
+gasCCGT,power,energy,gas,electricity,fixed
+windturbine,power,energy,wind,electricity,fixed
+gasboiler,residential,energy,gas,heat,fixed
+heatpump,residential,energy,electricity,heat,fixed

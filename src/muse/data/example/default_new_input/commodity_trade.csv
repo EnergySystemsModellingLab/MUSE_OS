@@ -1,1 +1,1 @@
-commodity,region,year,import,export
+commodity_id,region_id,year,import,export
