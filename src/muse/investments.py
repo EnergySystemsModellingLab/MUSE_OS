@@ -310,8 +310,6 @@ def scipy_match_demand(
 
     from muse.constraints import ScipyAdapter
 
-    df_technologies = technologies.to_dataframe()
-
     if "timeslice" in costs.dims and timeslice_op is not None:
         costs = timeslice_op(costs)
     if "year" in technologies.dims and year is None:
@@ -342,7 +340,7 @@ def scipy_match_demand(
             msg = (
                 res.message
                 + "\n"
-                + f"Error in sector containing {df_technologies.technology.unique()}"
+                + f"Error in sector containing {technologies.technology.values}"
             )
             getLogger(__name__).critical(msg)
             raise GrowthOfCapacityTooConstrained
