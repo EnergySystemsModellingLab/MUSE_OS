@@ -30,7 +30,6 @@ Once you have your environment created, **activate it** and install MUSE within 
     # 1 - Create a virtual environment
     # 2 - Activate that virtual environment
     # 3 - Install MUSE in editable mode with: python -m pip install -e .[dev,doc]
-    # 4 - Invoke `muse --model default`
 
 .. note::
 
@@ -38,8 +37,6 @@ Once you have your environment created, **activate it** and install MUSE within 
 
     For example on ``Windows``, the command will read `python -m pip install -e .[dev,doc]`. On Ubuntu Linux, it will be `python -m pip install -e ."[dev,doc]"`.
     This will install MUSE including its dependencies for development. The downloaded code can be modified and the changes will be automatically reflected in the virtual environment.
-
-Finally, in the activated virtual environment, run `muse --model default` to generate output data that are used to make `pytest` run without failures.
 
 .. note::
 
@@ -66,15 +63,10 @@ Tests can be run with the command [pytest](https://docs.pytest.org/en/latest/), 
 
 To run tests, within the ``MUSE-OS`` directory, activate the virtual environment where you installed ``MUSE`` and run a model as shown in Step 1 below.
 This can be your own model or, for simplicity, the default one.
-Although this was the final step when installing ``MUSE``, it is mentioned here again because running a model creates a set of files
-needed for the tests themselves. In Step 2, you can then run the actual tests, which should all pass before continuing code development.
 
 .. code-block:: bash
 
-    # Step 1: Run a model
-    muse --model default
-
-    # Step 2: Run the test scripts
+    # Run the test scripts
     python -m pytest
 
 Building the documentation
