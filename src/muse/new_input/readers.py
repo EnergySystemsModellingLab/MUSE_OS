@@ -69,7 +69,7 @@ def read_commodity_costs_csv(buffer_, con):
     con.sql(sql)
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
     con.sql("""INSERT INTO commodity_costs SELECT
-            commidity_id, region_id, year, value FROM rel;""")
+            commodity_id, region_id, year, value FROM rel;""")
     return con.sql("SELECT * from commodity_costs").fetchnumpy()
 
 
