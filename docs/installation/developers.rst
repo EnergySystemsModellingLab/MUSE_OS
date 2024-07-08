@@ -61,7 +61,7 @@ If you followed the **Installation for developers** guide, you are likely develo
 These tests ensure that a model produces reproducible results for a defined set of input data.
 Tests can be run with the command [pytest](https://docs.pytest.org/en/latest/), using the testing framework of the same name.
 
-To run tests, within the ``MUSE-OS`` directory, activate the virtual environment where you installed ``MUSE`` and run a model as shown in Step 1 below.
+To run tests, within the ``MUSE-OS`` directory, activate the virtual environment where you installed ``MUSE`` and run:
 
 .. code-block:: bash
 
