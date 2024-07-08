@@ -65,7 +65,6 @@ To run tests, within the ``MUSE-OS`` directory, activate the virtual environment
 
 .. code-block:: bash
 
-    # Run the test scripts
     python -m pytest
 
 Building the documentation
