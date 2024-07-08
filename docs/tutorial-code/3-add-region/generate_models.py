@@ -14,12 +14,14 @@ def generate_model_1():
 
     """
     model_name = "1-new-region"
-
-    # Starting point: copy model from tutorial 1
     model_path = parent_path / model_name
     if model_path.exists():
         shutil.rmtree(model_path)
+
+    # Starting point: copy model from tutorial 1
     shutil.copytree(parent_path / "../1-add-new-technology/2-scenario", model_path)
+    if (model_path / "Results").exists():
+        shutil.rmtree(model_path / "Results")
 
     # Add region R2
     add_region(model_path, region_name="R2", copy_from="R1")

@@ -83,10 +83,10 @@ def factory(
     settings: Optional[Union[str, Mapping[str, Any]]] = None,
 ) -> DEMAND_SHARE_SIGNATURE:
     if settings is None or isinstance(settings, str):
-        name = settings or "new_and_retro"
+        name = settings or "standard_demand"
         params: Mapping[str, Any] = {}
     else:
-        name = settings.get("name", "new_and_retro")
+        name = settings.get("name", "standard_demand")
         params = {k: v for k, v in settings.items() if k != "name"}
 
     function = DEMAND_SHARE[name]

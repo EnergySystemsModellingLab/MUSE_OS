@@ -115,6 +115,7 @@ import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.registration import registrator
+from muse.timeslices import drop_timeslice
 
 CAPACITY_DIMS = "asset", "replacement", "region"
 """Default dimensions for capacity decision variables."""
@@ -225,6 +226,7 @@ def factory(
             "demand",
             "search_space",
             "minimum_service",
+            "demand_limiting_capacity",
         )
 
     def normalize(x) -> MutableMapping:
@@ -494,6 +496,74 @@ def max_production(
 
 
 @register_constraints
+def demand_limiting_capacity(
+    demand_: xr.DataArray,
+    assets: xr.Dataset,
+    search_space: xr.DataArray,
+    market: xr.Dataset,
+    technologies: xr.Dataset,
+    year: int | None = None,
+) -> Constraint:
+    """Limits the maximum combined capacity to match the demand.
+
+    This is a somewhat more restrictive constraint than the max_production constraint or
+    the maximum capacity expansion. In this case, the combined new capacity of all
+    assets must be sufficient to meet the demand of the most demanding timeslice, and
+    no more.
+
+    Rather than coding from scratch the constraint, we can use the max_production
+    constraint and the demand constraint to construct this constraint. Starting from
+    the maximum production instead of the maximum capacity ensures that the constraint
+    accounts for the utilization factor of the technologies.
+    """
+    # We start with the maximum production constraint and the demand constraint
+    capacity_constraint = max_production(
+        demand_, assets, search_space, market, technologies, year=year
+    )
+    demand_constraint = demand(
+        demand_, assets, search_space, market, technologies, year=year
+    )
+
+    # We are interested in the demand of the demand constraint and the capacity of the
+    # capacity constraint.
+    b = demand_constraint.b
+    capacity = -capacity_constraint.capacity
+
+    # Drop 'year' so there's no conflict with the 'year' in the capacity constraint
+    if "year" in b.coords and "year" in capacity.coords:
+        b = b.drop_vars("year")
+
+    # If there are timeslices, we need to find the one where more capacity is needed to
+    # meet the demand which would be a combination of a high demand and a low
+    # utilization factor.
+    if "timeslice" in b.dims or "timeslice" in capacity.dims:
+        ratio = b / capacity
+        ts = ratio.timeslice.isel(
+            timeslice=ratio.min("replacement").argmax("timeslice")
+        )
+        # We select this timeslice for each array - don't trust the indices:
+        # search for the right timeslice in the array and select it.
+        b = (
+            b.isel(timeslice=(b.timeslice == ts).argmax("timeslice"))
+            if "timeslice" in b.dims
+            else b
+        )
+        capacity = (
+            capacity.isel(timeslice=(capacity.timeslice == ts).argmax("timeslice"))
+            if "timeslice" in capacity.dims
+            else capacity
+        )
+
+    # This constraint is independent of the production
+    production = 0
+
+    return xr.Dataset(
+        dict(capacity=capacity, production=production, b=b),
+        attrs=dict(kind=ConstraintKind.UPPER_BOUND),
+    )
+
+
+@register_constraints
 def minimum_service(
     demand: xr.DataArray,
     assets: xr.Dataset,
@@ -530,7 +600,7 @@ def minimum_service(
         .drop_vars("technology")
     )
     capacity = convert_timeslice(
-        techs.fixed_outputs * techs.utilization_factor * techs.minimum_service_factor,
+        techs.fixed_outputs * techs.minimum_service_factor,
         market.timeslice,
         QuantityType.EXTENSIVE,
     )
@@ -622,7 +692,7 @@ def lp_costs(
     production = zeros_like(ts_costs * fouts)
     for dim in production.dims:
         if isinstance(production.get_index(dim), pd.MultiIndex):
-            production = production.drop_vars(["timeslice", "month", "day", "hour"])
+            production = drop_timeslice(production)
             production[dim] = pd.Index(production.get_index(dim), tupleize_cols=False)
 
     return xr.Dataset(dict(capacity=costs, production=production))
@@ -689,7 +759,7 @@ def lp_constraint(constraint: Constraint, lpcosts: xr.Dataset) -> Constraint:
     constraint = constraint.copy(deep=False)
     for dim in constraint.dims:
         if isinstance(constraint.get_index(dim), pd.MultiIndex):
-            constraint = constraint.drop_vars(["timeslice", "month", "day", "hour"])
+            constraint = drop_timeslice(constraint)
             constraint[dim] = pd.Index(constraint.get_index(dim), tupleize_cols=False)
     b = constraint.b.drop_vars(set(constraint.b.coords) - set(constraint.b.dims))
     b = b.rename({k: f"c({k})" for k in b.dims})
@@ -737,7 +807,7 @@ def lp_constraint_matrix(
          >>> technologies = res.technologies
          >>> market = examples.residential_market("medium")
          >>> search = examples.search_space("residential", model="medium")
-         >>> assets = next(a.assets for a in res.agents if a.category == "retrofit")
+         >>> assets = next(a.assets for a in res.agents)
          >>> demand = None # not used in max production
          >>> constraint = cs.max_production(demand, assets, search, market,
          ...                                technologies) # noqa: E501
@@ -874,7 +944,7 @@ class ScipyAdapter:
         >>> res = examples.sector("residential", model="medium")
         >>> market = examples.residential_market("medium")
         >>> search = examples.search_space("residential", model="medium")
-        >>> assets = next(a.assets for a in res.agents if a.category == "retrofit")
+        >>> assets = next(a.assets for a in res.agents)
         >>> market_demand =  0.8 * maximum_production(
         ...     res.technologies.interp(year=2025),
         ...     convert_timeslice(
@@ -902,7 +972,7 @@ class ScipyAdapter:
         but not over the assets. Hence the assets will be summed over in the final
         constraint:
 
-        >>> assert (constraint.b.data == np.array([50.0, 3.0, 3.0, 50.0 ])).all()
+        >>> assert (constraint.b.data == np.array([50.0, 12.0, 12.0, 50.0 ])).all()
         >>> assert set(constraint.b.dims) == {"replacement"}
         >>> assert constraint.kind == cs.ConstraintKind.UPPER_BOUND
 
