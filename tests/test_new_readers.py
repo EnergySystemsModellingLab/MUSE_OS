@@ -28,11 +28,41 @@ def populate_commodities(default_new_input, con):
 
 
 @fixture
+def populate_commodity_trade(
+    default_new_input, con, populate_commodities, populate_regions
+):
+    from muse.new_input.readers import read_commodity_trade_csv
+
+    with open(default_new_input / "commodity_trade.csv") as f:
+        return read_commodity_trade_csv(f, con)
+
+
+@fixture
+def populate_commodity_costs(
+    default_new_input, con, populate_commodities, populate_regions
+):
+    from muse.new_input.readers import read_commodity_costs_csv
+
+    with open(default_new_input / "commodity_costs.csv") as f:
+        return read_commodity_costs_csv(f, con)
+
+
+@fixture
 def populate_demand(default_new_input, con, populate_regions, populate_commodities):
     from muse.new_input.readers import read_demand_csv
 
     with open(default_new_input / "demand.csv") as f:
         return read_demand_csv(f, con)
+
+
+@fixture
+def populate_demand_slicing(
+    default_new_input, con, populate_regions, populate_commodities
+):
+    from muse.new_input.readers import read_demand_slicing_csv
+
+    with open(default_new_input / "demand_slicing.csv") as f:
+        return read_demand_slicing_csv(f, con)
 
 
 @fixture
@@ -43,15 +73,41 @@ def populate_regions(default_new_input, con):
         return read_regions_csv(f, con)
 
 
-def test_read_regions(populate_regions):
-    assert populate_regions["id"] == np.array(["R1"])
-
-
-def test_read_new_global_commodities(populate_commodities):
+def test_read_commodities_csv(populate_commodities):
     data = populate_commodities
     assert list(data["id"]) == ["electricity", "gas", "heat", "wind", "CO2f"]
     assert list(data["type"]) == ["energy"] * 5
     assert list(data["unit"]) == ["PJ"] * 4 + ["kt"]
+
+
+def test_read_commodity_trade_csv(populate_commodity_trade):
+    data = populate_commodity_trade
+    assert data["commodity"].size == 0
+    assert data["region"].size == 0
+    assert data["year"].size == 0
+    assert data["import"].size == 0
+    assert data["export"].size == 0
+
+
+def test_read_commodity_costs_csv(populate_commodity_costs):
+    data = populate_commodity_costs
+    # Only checking the first element of each array, as the table is large
+    assert next(iter(data["commodity"])) == "electricity"
+    assert next(iter(data["region"])) == "R1"
+    assert next(iter(data["year"])) == 2010
+    assert next(iter(data["value"])) == approx(14.81481)
+
+
+def test_read_demand_csv(populate_demand):
+    data = populate_demand
+    assert np.all(data["year"] == np.array([2020, 2050]))
+    assert np.all(data["commodity"] == np.array(["heat", "heat"]))
+    assert np.all(data["region"] == np.array(["R1", "R1"]))
+    assert np.all(data["demand"] == np.array([10, 30]))
+
+
+def test_read_regions_csv(populate_regions):
+    assert populate_regions["id"] == np.array(["R1"])
 
 
 def test_calculate_global_commodities(populate_commodities):
@@ -69,7 +125,7 @@ def test_calculate_global_commodities(populate_commodities):
     assert list(data.data_vars["unit"].values) == list(populate_commodities["unit"])
 
 
-def test_read_new_global_commodities_type_constraint(default_new_input, con):
+def test_read_global_commodities_type_constraint(default_new_input, con):
     from muse.new_input.readers import read_commodities_csv
 
     csv = StringIO("id,type,unit\nfoo,invalid,bar\n")
@@ -77,15 +133,7 @@ def test_read_new_global_commodities_type_constraint(default_new_input, con):
         read_commodities_csv(csv, con)
 
 
-def test_new_read_demand_csv(populate_demand):
-    data = populate_demand
-    assert np.all(data["year"] == np.array([2020, 2050]))
-    assert np.all(data["commodity"] == np.array(["heat", "heat"]))
-    assert np.all(data["region"] == np.array(["R1", "R1"]))
-    assert np.all(data["demand"] == np.array([10, 30]))
-
-
-def test_new_read_demand_csv_commodity_constraint(
+def test_read_demand_csv_commodity_constraint(
     default_new_input, con, populate_commodities, populate_regions
 ):
     from muse.new_input.readers import read_demand_csv
@@ -95,7 +143,7 @@ def test_new_read_demand_csv_commodity_constraint(
         read_demand_csv(csv, con)
 
 
-def test_new_read_demand_csv_region_constraint(
+def test_read_demand_csv_region_constraint(
     default_new_input, con, populate_commodities, populate_regions
 ):
     from muse.new_input.readers import read_demand_csv
