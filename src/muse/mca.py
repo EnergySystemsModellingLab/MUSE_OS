@@ -589,6 +589,7 @@ def find_equilibrium(
         market["prices"] = drop_timeslice(
             future_propagation(market["prices"], new_price)
         )
+        iteration += 1
 
     if not converged:
         msg = (
