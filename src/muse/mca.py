@@ -544,9 +544,7 @@ def find_equilibrium(
     else:
         included = ones(len(market.commodity), dtype=bool)
 
-    market["updated_prices"] = drop_timeslice(market.prices.copy())
     prior_market = market.copy(deep=True)
-
     converged = False
     iteration = 0
     while iteration < maxiter and not converged:
