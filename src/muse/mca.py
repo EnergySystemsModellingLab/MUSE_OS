@@ -538,8 +538,6 @@ def find_equilibrium(
 
     from numpy import ones
 
-    from muse.utilities import future_propagation
-
     market = market.copy(deep=True)
     if excluded_commodities:
         included = ~market.commodity.isin(excluded_commodities)
@@ -548,12 +546,10 @@ def find_equilibrium(
 
     market["updated_prices"] = drop_timeslice(market.prices.copy())
     prior_market = market.copy(deep=True)
-    equilibrium_sectors = sectors
 
     converged = False
     iteration = 0
     while iteration < maxiter and not converged:
-        market["prices"] = drop_timeslice(market["updated_prices"])
         prior_market, market = market, prior_market
         market.consumption[:] = 0.0
         market.supply[:] = 0.0
@@ -573,22 +569,8 @@ def find_equilibrium(
             market.year[1],
         )
 
-        new_price = prior_market["prices"].sel(year=market.year[-1]).copy()
-        if converged:
-            # Save prices for the equilibrium market
-            new_price.loc[dict(commodity=included)] = market["updated_prices"].sel(
-                commodity=included, year=market.year[-1]
-            )
-        else:
-            # Update prices for next iteration
-            new_price.loc[{"commodity": included}] *= 0.8
-            new_price.loc[{"commodity": included}] += 0.2 * market[
-                "updated_prices"
-            ].sel(commodity=included, year=market.year[-1])
-
-        market["prices"] = drop_timeslice(
-            future_propagation(market["prices"], new_price)
-        )
+        # Update prices
+        market["prices"] = drop_timeslice(market["updated_prices"])
         iteration += 1
 
     if not converged:
