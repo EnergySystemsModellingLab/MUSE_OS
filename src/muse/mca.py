@@ -544,7 +544,6 @@ def find_equilibrium(
     else:
         included = ones(len(market.commodity), dtype=bool)
 
-    prior_market = market.copy(deep=True)
     converged = False
     iteration = 0
     while iteration < maxiter and not converged:
