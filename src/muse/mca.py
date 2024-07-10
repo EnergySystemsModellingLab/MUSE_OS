@@ -548,7 +548,7 @@ def find_equilibrium(
     converged = False
     iteration = 0
     while iteration < maxiter and not converged:
-        prior_market, market = market, prior_market
+        prior_market = market.copy(deep=True)
         market.consumption[:] = 0.0
         market.supply[:] = 0.0
         market, equilibrium_sectors = single_year_iteration(market, sectors)
@@ -556,6 +556,9 @@ def find_equilibrium(
         if maxiter == 1 or not equilibrium:
             converged = True
             break
+
+        # Update prices
+        market["prices"] = drop_timeslice(market["updated_prices"])
 
         # Check convergence criteria
         check_demand_fulfillment(market.sel(commodity=included), tol_unmet_demand)
@@ -566,9 +569,6 @@ def find_equilibrium(
             equilibrium_variable,
             market.year[1],
         )
-
-        # Update prices
-        market["prices"] = drop_timeslice(market["updated_prices"])
         iteration += 1
 
     if not converged:
