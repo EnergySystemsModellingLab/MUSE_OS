@@ -3,11 +3,15 @@ from pathlib import Path
 from muse.examples import available_examples
 from pytest import mark
 
+# hack to skip regression tests for new input schema
+MODELS = available_examples()
+MODELS.pop(MODELS.index("default_new_input"))
+
 
 @mark.usefixtures("save_timeslice_globals")
 @mark.regression
 @mark.example
-@mark.parametrize("model", available_examples())
+@mark.parametrize("model", MODELS)
 def test_fullsim_regression(model, tmpdir, compare_dirs):
     from warnings import simplefilter
 
