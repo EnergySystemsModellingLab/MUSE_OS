@@ -1,205 +1,205 @@
-agent,asset,category,comm_usage,commodity,dst_region,index,installed,region,sector,supply,technology,timeslice,units_prices,year
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,4,2020.00000000000,R1,residential,1.00000000000,gasboiler,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,6,2020.00000000000,R1,residential,64.71000000000,gasboiler,"('all-year', 'all-week', 'night')",MUS$2010/kt,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,12,2020.00000000000,R1,residential,1.50000000000,gasboiler,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,14,2020.00000000000,R1,residential,97.06500000000,gasboiler,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,20,2020.00000000000,R1,residential,1.00000000000,gasboiler,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,22,2020.00000000000,R1,residential,64.71000000000,gasboiler,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,28,2020.00000000000,R1,residential,1.50000000000,gasboiler,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,30,2020.00000000000,R1,residential,97.06500000000,gasboiler,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,36,2020.00000000000,R1,residential,3.00000000000,gasboiler,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,38,2020.00000000000,R1,residential,194.13000000000,gasboiler,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,44,2020.00000000000,R1,residential,2.00000000000,gasboiler,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,46,2020.00000000000,R1,residential,129.42000000000,gasboiler,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,gas,R1,0,2020.00000000000,R1,gas,1.16732260678,gassupply1,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,gas,R1,1,2020.00000000000,R1,gas,1.88146776247,gassupply1,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,gas,R1,2,2020.00000000000,R1,gas,1.68925801597,gassupply1,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,gas,R1,3,2020.00000000000,R1,gas,1.88146776247,gassupply1,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,gas,R1,4,2020.00000000000,R1,gas,3.76293552495,gassupply1,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,gas,R1,5,2020.00000000000,R1,gas,3.11754832735,gassupply1,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2020.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,6,2020.00000000000,R1,residential,0.27777777778,gasboiler,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2025.00000000000
-A1,1.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,7,2020.00000000000,R1,residential,1.05555555556,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,9,2020.00000000000,R1,residential,17.97500000000,gasboiler,"('all-year', 'all-week', 'night')",MUS$2010/kt,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,18,2020.00000000000,R1,residential,0.41666666667,gasboiler,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2025.00000000000
-A1,1.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,19,2020.00000000000,R1,residential,1.58333333333,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,21,2020.00000000000,R1,residential,26.96250000000,gasboiler,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,30,2020.00000000000,R1,residential,0.27777777778,gasboiler,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2025.00000000000
-A1,1.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,31,2020.00000000000,R1,residential,1.05555555556,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,33,2020.00000000000,R1,residential,17.97500000000,gasboiler,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,42,2020.00000000000,R1,residential,0.41666666667,gasboiler,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2025.00000000000
-A1,1.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,43,2020.00000000000,R1,residential,1.58333333333,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,45,2020.00000000000,R1,residential,26.96250000000,gasboiler,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,54,2020.00000000000,R1,residential,0.83333333333,gasboiler,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2025.00000000000
-A1,1.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,55,2020.00000000000,R1,residential,3.16666666667,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,57,2020.00000000000,R1,residential,53.92500000000,gasboiler,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,66,2020.00000000000,R1,residential,0.55555555556,gasboiler,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2025.00000000000
-A1,1.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,67,2020.00000000000,R1,residential,2.11111111111,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,69,2020.00000000000,R1,residential,35.95000000000,gasboiler,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,0,2020.00000000000,R1,power,0.42222222222,gasCCGT,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,8,2020.00000000000,R1,power,38.70511111111,gasCCGT,"('all-year', 'all-week', 'night')",MUS$2010/kt,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,16,2020.00000000000,R1,power,0.63333333333,gasCCGT,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,24,2020.00000000000,R1,power,58.05766666667,gasCCGT,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,32,2020.00000000000,R1,power,0.42222222222,gasCCGT,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,40,2020.00000000000,R1,power,38.70511111111,gasCCGT,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,48,2020.00000000000,R1,power,0.63333333333,gasCCGT,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,56,2020.00000000000,R1,power,58.05766666667,gasCCGT,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,64,2020.00000000000,R1,power,1.00000000000,gasCCGT,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,72,2020.00000000000,R1,power,91.67000000000,gasCCGT,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,80,2020.00000000000,R1,power,0.84444444444,gasCCGT,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,R1,88,2020.00000000000,R1,power,77.41022222222,gasCCGT,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,gas,R1,0,2020.00000000000,R1,gas,1.02733333333,gassupply1,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,gas,R1,1,2020.00000000000,R1,gas,1.54100000000,gassupply1,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,gas,R1,2,2020.00000000000,R1,gas,1.32422222222,gassupply1,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,gas,R1,3,2020.00000000000,R1,gas,1.54100000000,gassupply1,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,gas,R1,4,2020.00000000000,R1,gas,3.08200000000,gassupply1,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2025.00000000000
-A1,0.00000000000,newcapa,PRODUCT|ENERGY,gas,R1,5,2020.00000000000,R1,gas,2.31444444444,gassupply1,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2025.00000000000
-A1,1.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,9,2020.00000000000,R1,residential,1.09195402299,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2030.00000000000
-A1,2.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,10,2025.00000000000,R1,residential,0.57471264368,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2030.00000000000
-A1,1.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,25,2020.00000000000,R1,residential,1.63793103448,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2030.00000000000
-A1,2.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,26,2025.00000000000,R1,residential,0.86206896552,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2030.00000000000
-A1,1.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,41,2020.00000000000,R1,residential,1.09195402299,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2030.00000000000
-A1,2.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,42,2025.00000000000,R1,residential,0.57471264368,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2030.00000000000
-A1,1.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,57,2020.00000000000,R1,residential,1.63793103448,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2030.00000000000
-A1,2.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,58,2025.00000000000,R1,residential,0.86206896552,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2030.00000000000
-A1,1.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,73,2020.00000000000,R1,residential,3.27586206897,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2030.00000000000
-A1,2.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,74,2025.00000000000,R1,residential,1.72413793103,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2030.00000000000
-A1,1.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,89,2020.00000000000,R1,residential,2.18390804598,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2030.00000000000
-A1,2.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,90,2025.00000000000,R1,residential,1.14942528736,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2030.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,3,2025.00000000000,R1,power,0.66666666667,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2030.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,27,2025.00000000000,R1,power,0.50000000000,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2030.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,51,2025.00000000000,R1,power,0.50000000000,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2030.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,75,2025.00000000000,R1,power,1.00000000000,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2030.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,99,2025.00000000000,R1,power,1.00000000000,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2030.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,123,2025.00000000000,R1,power,1.00000000000,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2030.00000000000
-A1,2.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,12,2025.00000000000,R1,residential,0.55555555556,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2035.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,13,2030.00000000000,R1,residential,1.44444444444,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2035.00000000000
-A1,2.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,32,2025.00000000000,R1,residential,0.83333333333,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2035.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,33,2030.00000000000,R1,residential,2.16666666667,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2035.00000000000
-A1,2.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,52,2025.00000000000,R1,residential,0.55555555556,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2035.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,53,2030.00000000000,R1,residential,1.44444444444,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2035.00000000000
-A1,2.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,72,2025.00000000000,R1,residential,0.83333333333,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2035.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,73,2030.00000000000,R1,residential,2.16666666667,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2035.00000000000
-A1,2.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,92,2025.00000000000,R1,residential,1.66666666667,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2035.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,93,2030.00000000000,R1,residential,4.33333333333,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2035.00000000000
-A1,2.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,112,2025.00000000000,R1,residential,1.11111111111,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2035.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,113,2030.00000000000,R1,residential,2.88888888889,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2035.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,3,2025.00000000000,R1,power,0.40000000000,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2035.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,5,2030.00000000000,R1,power,0.40000000000,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2035.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,35,2025.00000000000,R1,power,0.50000000000,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2035.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,37,2030.00000000000,R1,power,0.50000000000,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2035.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,67,2025.00000000000,R1,power,0.40000000000,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2035.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,69,2030.00000000000,R1,power,0.40000000000,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2035.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,99,2025.00000000000,R1,power,0.60000000000,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2035.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,101,2030.00000000000,R1,power,0.60000000000,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2035.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,131,2025.00000000000,R1,power,1.00000000000,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2035.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,133,2030.00000000000,R1,power,1.00000000000,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2035.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,163,2025.00000000000,R1,power,0.80000000000,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2035.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,165,2030.00000000000,R1,power,0.80000000000,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2035.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,15,2030.00000000000,R1,residential,1.44444444444,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2040.00000000000
-A1,4.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,16,2035.00000000000,R1,residential,0.88888888889,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2040.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,39,2030.00000000000,R1,residential,2.16666666667,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2040.00000000000
-A1,4.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,40,2035.00000000000,R1,residential,1.33333333333,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2040.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,63,2030.00000000000,R1,residential,1.44444444444,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2040.00000000000
-A1,4.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,64,2035.00000000000,R1,residential,0.88888888889,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2040.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,87,2030.00000000000,R1,residential,2.16666666667,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2040.00000000000
-A1,4.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,88,2035.00000000000,R1,residential,1.33333333333,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2040.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,111,2030.00000000000,R1,residential,4.33333333333,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2040.00000000000
-A1,4.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,112,2035.00000000000,R1,residential,2.66666666667,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2040.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,135,2030.00000000000,R1,residential,2.88888888889,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2040.00000000000
-A1,4.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,136,2035.00000000000,R1,residential,1.77777777778,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2040.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,3,2025.00000000000,R1,power,0.31111111111,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2040.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,5,2030.00000000000,R1,power,0.31111111111,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2040.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,7,2035.00000000000,R1,power,0.31111111111,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2040.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,43,2025.00000000000,R1,power,0.46666666667,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2040.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,45,2030.00000000000,R1,power,0.46666666667,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2040.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,47,2035.00000000000,R1,power,0.46666666667,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2040.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,83,2025.00000000000,R1,power,0.31111111111,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2040.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,85,2030.00000000000,R1,power,0.31111111111,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2040.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,87,2035.00000000000,R1,power,0.31111111111,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2040.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,123,2025.00000000000,R1,power,0.46666666667,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2040.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,125,2030.00000000000,R1,power,0.46666666667,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2040.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,127,2035.00000000000,R1,power,0.46666666667,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2040.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,163,2025.00000000000,R1,power,0.93333333333,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2040.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,165,2030.00000000000,R1,power,0.93333333333,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2040.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,167,2035.00000000000,R1,power,0.93333333333,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2040.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,203,2025.00000000000,R1,power,0.62222222222,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2040.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,205,2030.00000000000,R1,power,0.62222222222,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2040.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,207,2035.00000000000,R1,power,0.62222222222,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2040.00000000000
-A1,4.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,18,2035.00000000000,R1,residential,0.88888888889,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2045.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,19,2040.00000000000,R1,residential,1.77777777778,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2045.00000000000
-A1,4.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,46,2035.00000000000,R1,residential,1.33333333333,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2045.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,47,2040.00000000000,R1,residential,2.66666666667,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2045.00000000000
-A1,4.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,74,2035.00000000000,R1,residential,0.88888888889,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2045.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,75,2040.00000000000,R1,residential,1.77777777778,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2045.00000000000
-A1,4.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,102,2035.00000000000,R1,residential,1.33333333333,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2045.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,103,2040.00000000000,R1,residential,2.66666666667,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2045.00000000000
-A1,4.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,130,2035.00000000000,R1,residential,2.66666666667,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2045.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,131,2040.00000000000,R1,residential,5.33333333333,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2045.00000000000
-A1,4.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,158,2035.00000000000,R1,residential,1.77777777778,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2045.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,159,2040.00000000000,R1,residential,3.55555555556,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2045.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,3,2025.00000000000,R1,power,0.21333333333,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2045.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,5,2030.00000000000,R1,power,0.21333333333,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2045.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,7,2035.00000000000,R1,power,0.21333333333,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2045.00000000000
-A1,9.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,9,2040.00000000000,R1,power,0.42666666667,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2045.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,51,2025.00000000000,R1,power,0.32000000000,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2045.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,53,2030.00000000000,R1,power,0.32000000000,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2045.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,55,2035.00000000000,R1,power,0.32000000000,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2045.00000000000
-A1,9.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,57,2040.00000000000,R1,power,0.64000000000,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2045.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,99,2025.00000000000,R1,power,0.21333333333,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2045.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,101,2030.00000000000,R1,power,0.21333333333,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2045.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,103,2035.00000000000,R1,power,0.21333333333,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2045.00000000000
-A1,9.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,105,2040.00000000000,R1,power,0.42666666667,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2045.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,147,2025.00000000000,R1,power,0.32000000000,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2045.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,149,2030.00000000000,R1,power,0.32000000000,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2045.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,151,2035.00000000000,R1,power,0.32000000000,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2045.00000000000
-A1,9.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,153,2040.00000000000,R1,power,0.64000000000,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2045.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,195,2025.00000000000,R1,power,0.64000000000,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2045.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,197,2030.00000000000,R1,power,0.64000000000,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2045.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,199,2035.00000000000,R1,power,0.64000000000,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2045.00000000000
-A1,9.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,201,2040.00000000000,R1,power,1.28000000000,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2045.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,243,2025.00000000000,R1,power,0.42666666667,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2045.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,245,2030.00000000000,R1,power,0.42666666667,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2045.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,247,2035.00000000000,R1,power,0.42666666667,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2045.00000000000
-A1,9.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,249,2040.00000000000,R1,power,0.85333333333,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2045.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,21,2040.00000000000,R1,residential,1.77777777778,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2050.00000000000
-A1,6.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,22,2045.00000000000,R1,residential,1.22222222222,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2050.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,53,2040.00000000000,R1,residential,2.66666666667,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2050.00000000000
-A1,6.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,54,2045.00000000000,R1,residential,1.83333333333,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2050.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,85,2040.00000000000,R1,residential,1.77777777778,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2050.00000000000
-A1,6.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,86,2045.00000000000,R1,residential,1.22222222222,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2050.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,117,2040.00000000000,R1,residential,2.66666666667,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2050.00000000000
-A1,6.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,118,2045.00000000000,R1,residential,1.83333333333,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2050.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,149,2040.00000000000,R1,residential,5.33333333333,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2050.00000000000
-A1,6.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,150,2045.00000000000,R1,residential,3.66666666667,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2050.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,181,2040.00000000000,R1,residential,3.55555555556,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2050.00000000000
-A1,6.00000000000,newcapa,PRODUCT|ENERGY,heat,R1,182,2045.00000000000,R1,residential,2.44444444444,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2050.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,3,2025.00000000000,R1,power,0.17142857143,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2050.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,5,2030.00000000000,R1,power,0.17142857143,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2050.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,7,2035.00000000000,R1,power,0.17142857143,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2050.00000000000
-A1,9.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,9,2040.00000000000,R1,power,0.34285714286,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2050.00000000000
-A1,11.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,11,2045.00000000000,R1,power,0.34285714286,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2050.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,59,2025.00000000000,R1,power,0.25714285714,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2050.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,61,2030.00000000000,R1,power,0.25714285714,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2050.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,63,2035.00000000000,R1,power,0.25714285714,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2050.00000000000
-A1,9.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,65,2040.00000000000,R1,power,0.51428571429,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2050.00000000000
-A1,11.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,67,2045.00000000000,R1,power,0.51428571429,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2050.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,115,2025.00000000000,R1,power,0.17142857143,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2050.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,117,2030.00000000000,R1,power,0.17142857143,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2050.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,119,2035.00000000000,R1,power,0.17142857143,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2050.00000000000
-A1,9.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,121,2040.00000000000,R1,power,0.34285714286,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2050.00000000000
-A1,11.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,123,2045.00000000000,R1,power,0.34285714286,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2050.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,171,2025.00000000000,R1,power,0.25714285714,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2050.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,173,2030.00000000000,R1,power,0.25714285714,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2050.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,175,2035.00000000000,R1,power,0.25714285714,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2050.00000000000
-A1,9.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,177,2040.00000000000,R1,power,0.51428571429,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2050.00000000000
-A1,11.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,179,2045.00000000000,R1,power,0.51428571429,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2050.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,227,2025.00000000000,R1,power,0.51428571429,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2050.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,229,2030.00000000000,R1,power,0.51428571429,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2050.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,231,2035.00000000000,R1,power,0.51428571429,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2050.00000000000
-A1,9.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,233,2040.00000000000,R1,power,1.02857142857,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2050.00000000000
-A1,11.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,235,2045.00000000000,R1,power,1.02857142857,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2050.00000000000
-A1,3.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,283,2025.00000000000,R1,power,0.34285714286,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2050.00000000000
-A1,5.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,285,2030.00000000000,R1,power,0.34285714286,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2050.00000000000
-A1,7.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,287,2035.00000000000,R1,power,0.34285714286,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2050.00000000000
-A1,9.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,289,2040.00000000000,R1,power,0.68571428571,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2050.00000000000
-A1,11.00000000000,newcapa,PRODUCT|ENERGY,electricity,R1,291,2045.00000000000,R1,power,0.68571428571,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2050.00000000000
+agent,asset,category,comm_usage,commodity,day,dst_region,hour,installed,month,region,sector,supply,technology,timeslice,units_prices,year
+A1,0,newcapa,PRODUCT|ENERGY,heat,all-week,R1,night,2020,all-year,R1,residential,1.00000000000,gasboiler,0,MUS$2010/PJ,2020
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,night,2020,all-year,R1,residential,64.71000000000,gasboiler,0,MUS$2010/kt,2020
+A1,0,newcapa,PRODUCT|ENERGY,heat,all-week,R1,morning,2020,all-year,R1,residential,1.50000000000,gasboiler,1,MUS$2010/PJ,2020
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,morning,2020,all-year,R1,residential,97.06500000000,gasboiler,1,MUS$2010/kt,2020
+A1,0,newcapa,PRODUCT|ENERGY,heat,all-week,R1,afternoon,2020,all-year,R1,residential,1.00000000000,gasboiler,2,MUS$2010/PJ,2020
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,afternoon,2020,all-year,R1,residential,64.71000000000,gasboiler,2,MUS$2010/kt,2020
+A1,0,newcapa,PRODUCT|ENERGY,heat,all-week,R1,early-peak,2020,all-year,R1,residential,1.50000000000,gasboiler,3,MUS$2010/PJ,2020
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,early-peak,2020,all-year,R1,residential,97.06500000000,gasboiler,3,MUS$2010/kt,2020
+A1,0,newcapa,PRODUCT|ENERGY,heat,all-week,R1,late-peak,2020,all-year,R1,residential,3.00000000000,gasboiler,4,MUS$2010/PJ,2020
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,late-peak,2020,all-year,R1,residential,194.13000000000,gasboiler,4,MUS$2010/kt,2020
+A1,0,newcapa,PRODUCT|ENERGY,heat,all-week,R1,evening,2020,all-year,R1,residential,2.00000000000,gasboiler,5,MUS$2010/PJ,2020
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,evening,2020,all-year,R1,residential,129.42000000000,gasboiler,5,MUS$2010/kt,2020
+A1,0,newcapa,PRODUCT|ENERGY,gas,all-week,R1,night,2020,all-year,R1,gas,1.16732260678,gassupply1,0,MUS$2010/PJ,2020
+A1,0,newcapa,PRODUCT|ENERGY,gas,all-week,R1,morning,2020,all-year,R1,gas,1.88146776247,gassupply1,1,MUS$2010/PJ,2020
+A1,0,newcapa,PRODUCT|ENERGY,gas,all-week,R1,afternoon,2020,all-year,R1,gas,1.68925801597,gassupply1,2,MUS$2010/PJ,2020
+A1,0,newcapa,PRODUCT|ENERGY,gas,all-week,R1,early-peak,2020,all-year,R1,gas,1.88146776247,gassupply1,3,MUS$2010/PJ,2020
+A1,0,newcapa,PRODUCT|ENERGY,gas,all-week,R1,late-peak,2020,all-year,R1,gas,3.76293552495,gassupply1,4,MUS$2010/PJ,2020
+A1,0,newcapa,PRODUCT|ENERGY,gas,all-week,R1,evening,2020,all-year,R1,gas,3.11754832735,gassupply1,5,MUS$2010/PJ,2020
+A1,0,newcapa,PRODUCT|ENERGY,heat,all-week,R1,night,2020,all-year,R1,residential,0.27777777778,gasboiler,0,MUS$2010/PJ,2025
+A1,1,newcapa,PRODUCT|ENERGY,heat,all-week,R1,night,2020,all-year,R1,residential,1.05555555556,heatpump,0,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,night,2020,all-year,R1,residential,17.97500000000,gasboiler,0,MUS$2010/kt,2025
+A1,0,newcapa,PRODUCT|ENERGY,heat,all-week,R1,morning,2020,all-year,R1,residential,0.41666666667,gasboiler,1,MUS$2010/PJ,2025
+A1,1,newcapa,PRODUCT|ENERGY,heat,all-week,R1,morning,2020,all-year,R1,residential,1.58333333333,heatpump,1,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,morning,2020,all-year,R1,residential,26.96250000000,gasboiler,1,MUS$2010/kt,2025
+A1,0,newcapa,PRODUCT|ENERGY,heat,all-week,R1,afternoon,2020,all-year,R1,residential,0.27777777778,gasboiler,2,MUS$2010/PJ,2025
+A1,1,newcapa,PRODUCT|ENERGY,heat,all-week,R1,afternoon,2020,all-year,R1,residential,1.05555555556,heatpump,2,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,afternoon,2020,all-year,R1,residential,17.97500000000,gasboiler,2,MUS$2010/kt,2025
+A1,0,newcapa,PRODUCT|ENERGY,heat,all-week,R1,early-peak,2020,all-year,R1,residential,0.41666666667,gasboiler,3,MUS$2010/PJ,2025
+A1,1,newcapa,PRODUCT|ENERGY,heat,all-week,R1,early-peak,2020,all-year,R1,residential,1.58333333333,heatpump,3,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,early-peak,2020,all-year,R1,residential,26.96250000000,gasboiler,3,MUS$2010/kt,2025
+A1,0,newcapa,PRODUCT|ENERGY,heat,all-week,R1,late-peak,2020,all-year,R1,residential,0.83333333333,gasboiler,4,MUS$2010/PJ,2025
+A1,1,newcapa,PRODUCT|ENERGY,heat,all-week,R1,late-peak,2020,all-year,R1,residential,3.16666666667,heatpump,4,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,late-peak,2020,all-year,R1,residential,53.92500000000,gasboiler,4,MUS$2010/kt,2025
+A1,0,newcapa,PRODUCT|ENERGY,heat,all-week,R1,evening,2020,all-year,R1,residential,0.55555555556,gasboiler,5,MUS$2010/PJ,2025
+A1,1,newcapa,PRODUCT|ENERGY,heat,all-week,R1,evening,2020,all-year,R1,residential,2.11111111111,heatpump,5,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,evening,2020,all-year,R1,residential,35.95000000000,gasboiler,5,MUS$2010/kt,2025
+A1,0,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,night,2020,all-year,R1,power,0.42222222222,gasCCGT,0,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,night,2020,all-year,R1,power,38.70511111111,gasCCGT,0,MUS$2010/kt,2025
+A1,0,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,morning,2020,all-year,R1,power,0.63333333333,gasCCGT,1,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,morning,2020,all-year,R1,power,58.05766666667,gasCCGT,1,MUS$2010/kt,2025
+A1,0,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,afternoon,2020,all-year,R1,power,0.42222222222,gasCCGT,2,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,afternoon,2020,all-year,R1,power,38.70511111111,gasCCGT,2,MUS$2010/kt,2025
+A1,0,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,early-peak,2020,all-year,R1,power,0.63333333333,gasCCGT,3,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,early-peak,2020,all-year,R1,power,58.05766666667,gasCCGT,3,MUS$2010/kt,2025
+A1,0,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,late-peak,2020,all-year,R1,power,1.00000000000,gasCCGT,4,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,late-peak,2020,all-year,R1,power,91.67000000000,gasCCGT,4,MUS$2010/kt,2025
+A1,0,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,evening,2020,all-year,R1,power,0.84444444444,gasCCGT,5,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENVIRONMENTAL,CO2f,all-week,R1,evening,2020,all-year,R1,power,77.41022222222,gasCCGT,5,MUS$2010/kt,2025
+A1,0,newcapa,PRODUCT|ENERGY,gas,all-week,R1,night,2020,all-year,R1,gas,1.02733333333,gassupply1,0,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENERGY,gas,all-week,R1,morning,2020,all-year,R1,gas,1.54100000000,gassupply1,1,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENERGY,gas,all-week,R1,afternoon,2020,all-year,R1,gas,1.32422222222,gassupply1,2,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENERGY,gas,all-week,R1,early-peak,2020,all-year,R1,gas,1.54100000000,gassupply1,3,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENERGY,gas,all-week,R1,late-peak,2020,all-year,R1,gas,3.08200000000,gassupply1,4,MUS$2010/PJ,2025
+A1,0,newcapa,PRODUCT|ENERGY,gas,all-week,R1,evening,2020,all-year,R1,gas,2.31444444444,gassupply1,5,MUS$2010/PJ,2025
+A1,1,newcapa,PRODUCT|ENERGY,heat,all-week,R1,night,2020,all-year,R1,residential,1.09195402299,heatpump,0,MUS$2010/PJ,2030
+A1,2,newcapa,PRODUCT|ENERGY,heat,all-week,R1,night,2025,all-year,R1,residential,0.57471264368,heatpump,0,MUS$2010/PJ,2030
+A1,1,newcapa,PRODUCT|ENERGY,heat,all-week,R1,morning,2020,all-year,R1,residential,1.63793103448,heatpump,1,MUS$2010/PJ,2030
+A1,2,newcapa,PRODUCT|ENERGY,heat,all-week,R1,morning,2025,all-year,R1,residential,0.86206896552,heatpump,1,MUS$2010/PJ,2030
+A1,1,newcapa,PRODUCT|ENERGY,heat,all-week,R1,afternoon,2020,all-year,R1,residential,1.09195402299,heatpump,2,MUS$2010/PJ,2030
+A1,2,newcapa,PRODUCT|ENERGY,heat,all-week,R1,afternoon,2025,all-year,R1,residential,0.57471264368,heatpump,2,MUS$2010/PJ,2030
+A1,1,newcapa,PRODUCT|ENERGY,heat,all-week,R1,early-peak,2020,all-year,R1,residential,1.63793103448,heatpump,3,MUS$2010/PJ,2030
+A1,2,newcapa,PRODUCT|ENERGY,heat,all-week,R1,early-peak,2025,all-year,R1,residential,0.86206896552,heatpump,3,MUS$2010/PJ,2030
+A1,1,newcapa,PRODUCT|ENERGY,heat,all-week,R1,late-peak,2020,all-year,R1,residential,3.27586206897,heatpump,4,MUS$2010/PJ,2030
+A1,2,newcapa,PRODUCT|ENERGY,heat,all-week,R1,late-peak,2025,all-year,R1,residential,1.72413793103,heatpump,4,MUS$2010/PJ,2030
+A1,1,newcapa,PRODUCT|ENERGY,heat,all-week,R1,evening,2020,all-year,R1,residential,2.18390804598,heatpump,5,MUS$2010/PJ,2030
+A1,2,newcapa,PRODUCT|ENERGY,heat,all-week,R1,evening,2025,all-year,R1,residential,1.14942528736,heatpump,5,MUS$2010/PJ,2030
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,night,2025,all-year,R1,power,0.66666666667,windturbine,0,MUS$2010/PJ,2030
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,morning,2025,all-year,R1,power,0.50000000000,windturbine,1,MUS$2010/PJ,2030
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,afternoon,2025,all-year,R1,power,0.50000000000,windturbine,2,MUS$2010/PJ,2030
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,early-peak,2025,all-year,R1,power,1.00000000000,windturbine,3,MUS$2010/PJ,2030
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,late-peak,2025,all-year,R1,power,1.00000000000,windturbine,4,MUS$2010/PJ,2030
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,evening,2025,all-year,R1,power,1.00000000000,windturbine,5,MUS$2010/PJ,2030
+A1,2,newcapa,PRODUCT|ENERGY,heat,all-week,R1,night,2025,all-year,R1,residential,0.55555555556,heatpump,0,MUS$2010/PJ,2035
+A1,3,newcapa,PRODUCT|ENERGY,heat,all-week,R1,night,2030,all-year,R1,residential,1.44444444444,heatpump,0,MUS$2010/PJ,2035
+A1,2,newcapa,PRODUCT|ENERGY,heat,all-week,R1,morning,2025,all-year,R1,residential,0.83333333333,heatpump,1,MUS$2010/PJ,2035
+A1,3,newcapa,PRODUCT|ENERGY,heat,all-week,R1,morning,2030,all-year,R1,residential,2.16666666667,heatpump,1,MUS$2010/PJ,2035
+A1,2,newcapa,PRODUCT|ENERGY,heat,all-week,R1,afternoon,2025,all-year,R1,residential,0.55555555556,heatpump,2,MUS$2010/PJ,2035
+A1,3,newcapa,PRODUCT|ENERGY,heat,all-week,R1,afternoon,2030,all-year,R1,residential,1.44444444444,heatpump,2,MUS$2010/PJ,2035
+A1,2,newcapa,PRODUCT|ENERGY,heat,all-week,R1,early-peak,2025,all-year,R1,residential,0.83333333333,heatpump,3,MUS$2010/PJ,2035
+A1,3,newcapa,PRODUCT|ENERGY,heat,all-week,R1,early-peak,2030,all-year,R1,residential,2.16666666667,heatpump,3,MUS$2010/PJ,2035
+A1,2,newcapa,PRODUCT|ENERGY,heat,all-week,R1,late-peak,2025,all-year,R1,residential,1.66666666667,heatpump,4,MUS$2010/PJ,2035
+A1,3,newcapa,PRODUCT|ENERGY,heat,all-week,R1,late-peak,2030,all-year,R1,residential,4.33333333333,heatpump,4,MUS$2010/PJ,2035
+A1,2,newcapa,PRODUCT|ENERGY,heat,all-week,R1,evening,2025,all-year,R1,residential,1.11111111111,heatpump,5,MUS$2010/PJ,2035
+A1,3,newcapa,PRODUCT|ENERGY,heat,all-week,R1,evening,2030,all-year,R1,residential,2.88888888889,heatpump,5,MUS$2010/PJ,2035
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,night,2025,all-year,R1,power,0.40000000000,windturbine,0,MUS$2010/PJ,2035
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,night,2030,all-year,R1,power,0.40000000000,windturbine,0,MUS$2010/PJ,2035
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,morning,2025,all-year,R1,power,0.50000000000,windturbine,1,MUS$2010/PJ,2035
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,morning,2030,all-year,R1,power,0.50000000000,windturbine,1,MUS$2010/PJ,2035
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,afternoon,2025,all-year,R1,power,0.40000000000,windturbine,2,MUS$2010/PJ,2035
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,afternoon,2030,all-year,R1,power,0.40000000000,windturbine,2,MUS$2010/PJ,2035
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,early-peak,2025,all-year,R1,power,0.60000000000,windturbine,3,MUS$2010/PJ,2035
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,early-peak,2030,all-year,R1,power,0.60000000000,windturbine,3,MUS$2010/PJ,2035
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,late-peak,2025,all-year,R1,power,1.00000000000,windturbine,4,MUS$2010/PJ,2035
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,late-peak,2030,all-year,R1,power,1.00000000000,windturbine,4,MUS$2010/PJ,2035
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,evening,2025,all-year,R1,power,0.80000000000,windturbine,5,MUS$2010/PJ,2035
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,evening,2030,all-year,R1,power,0.80000000000,windturbine,5,MUS$2010/PJ,2035
+A1,3,newcapa,PRODUCT|ENERGY,heat,all-week,R1,night,2030,all-year,R1,residential,1.44444444444,heatpump,0,MUS$2010/PJ,2040
+A1,4,newcapa,PRODUCT|ENERGY,heat,all-week,R1,night,2035,all-year,R1,residential,0.88888888889,heatpump,0,MUS$2010/PJ,2040
+A1,3,newcapa,PRODUCT|ENERGY,heat,all-week,R1,morning,2030,all-year,R1,residential,2.16666666667,heatpump,1,MUS$2010/PJ,2040
+A1,4,newcapa,PRODUCT|ENERGY,heat,all-week,R1,morning,2035,all-year,R1,residential,1.33333333333,heatpump,1,MUS$2010/PJ,2040
+A1,3,newcapa,PRODUCT|ENERGY,heat,all-week,R1,afternoon,2030,all-year,R1,residential,1.44444444444,heatpump,2,MUS$2010/PJ,2040
+A1,4,newcapa,PRODUCT|ENERGY,heat,all-week,R1,afternoon,2035,all-year,R1,residential,0.88888888889,heatpump,2,MUS$2010/PJ,2040
+A1,3,newcapa,PRODUCT|ENERGY,heat,all-week,R1,early-peak,2030,all-year,R1,residential,2.16666666667,heatpump,3,MUS$2010/PJ,2040
+A1,4,newcapa,PRODUCT|ENERGY,heat,all-week,R1,early-peak,2035,all-year,R1,residential,1.33333333333,heatpump,3,MUS$2010/PJ,2040
+A1,3,newcapa,PRODUCT|ENERGY,heat,all-week,R1,late-peak,2030,all-year,R1,residential,4.33333333333,heatpump,4,MUS$2010/PJ,2040
+A1,4,newcapa,PRODUCT|ENERGY,heat,all-week,R1,late-peak,2035,all-year,R1,residential,2.66666666667,heatpump,4,MUS$2010/PJ,2040
+A1,3,newcapa,PRODUCT|ENERGY,heat,all-week,R1,evening,2030,all-year,R1,residential,2.88888888889,heatpump,5,MUS$2010/PJ,2040
+A1,4,newcapa,PRODUCT|ENERGY,heat,all-week,R1,evening,2035,all-year,R1,residential,1.77777777778,heatpump,5,MUS$2010/PJ,2040
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,night,2025,all-year,R1,power,0.31111111111,windturbine,0,MUS$2010/PJ,2040
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,night,2030,all-year,R1,power,0.31111111111,windturbine,0,MUS$2010/PJ,2040
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,night,2035,all-year,R1,power,0.31111111111,windturbine,0,MUS$2010/PJ,2040
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,morning,2025,all-year,R1,power,0.46666666667,windturbine,1,MUS$2010/PJ,2040
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,morning,2030,all-year,R1,power,0.46666666667,windturbine,1,MUS$2010/PJ,2040
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,morning,2035,all-year,R1,power,0.46666666667,windturbine,1,MUS$2010/PJ,2040
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,afternoon,2025,all-year,R1,power,0.31111111111,windturbine,2,MUS$2010/PJ,2040
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,afternoon,2030,all-year,R1,power,0.31111111111,windturbine,2,MUS$2010/PJ,2040
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,afternoon,2035,all-year,R1,power,0.31111111111,windturbine,2,MUS$2010/PJ,2040
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,early-peak,2025,all-year,R1,power,0.46666666667,windturbine,3,MUS$2010/PJ,2040
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,early-peak,2030,all-year,R1,power,0.46666666667,windturbine,3,MUS$2010/PJ,2040
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,early-peak,2035,all-year,R1,power,0.46666666667,windturbine,3,MUS$2010/PJ,2040
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,late-peak,2025,all-year,R1,power,0.93333333333,windturbine,4,MUS$2010/PJ,2040
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,late-peak,2030,all-year,R1,power,0.93333333333,windturbine,4,MUS$2010/PJ,2040
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,late-peak,2035,all-year,R1,power,0.93333333333,windturbine,4,MUS$2010/PJ,2040
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,evening,2025,all-year,R1,power,0.62222222222,windturbine,5,MUS$2010/PJ,2040
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,evening,2030,all-year,R1,power,0.62222222222,windturbine,5,MUS$2010/PJ,2040
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,evening,2035,all-year,R1,power,0.62222222222,windturbine,5,MUS$2010/PJ,2040
+A1,4,newcapa,PRODUCT|ENERGY,heat,all-week,R1,night,2035,all-year,R1,residential,0.88888888889,heatpump,0,MUS$2010/PJ,2045
+A1,5,newcapa,PRODUCT|ENERGY,heat,all-week,R1,night,2040,all-year,R1,residential,1.77777777778,heatpump,0,MUS$2010/PJ,2045
+A1,4,newcapa,PRODUCT|ENERGY,heat,all-week,R1,morning,2035,all-year,R1,residential,1.33333333333,heatpump,1,MUS$2010/PJ,2045
+A1,5,newcapa,PRODUCT|ENERGY,heat,all-week,R1,morning,2040,all-year,R1,residential,2.66666666667,heatpump,1,MUS$2010/PJ,2045
+A1,4,newcapa,PRODUCT|ENERGY,heat,all-week,R1,afternoon,2035,all-year,R1,residential,0.88888888889,heatpump,2,MUS$2010/PJ,2045
+A1,5,newcapa,PRODUCT|ENERGY,heat,all-week,R1,afternoon,2040,all-year,R1,residential,1.77777777778,heatpump,2,MUS$2010/PJ,2045
+A1,4,newcapa,PRODUCT|ENERGY,heat,all-week,R1,early-peak,2035,all-year,R1,residential,1.33333333333,heatpump,3,MUS$2010/PJ,2045
+A1,5,newcapa,PRODUCT|ENERGY,heat,all-week,R1,early-peak,2040,all-year,R1,residential,2.66666666667,heatpump,3,MUS$2010/PJ,2045
+A1,4,newcapa,PRODUCT|ENERGY,heat,all-week,R1,late-peak,2035,all-year,R1,residential,2.66666666667,heatpump,4,MUS$2010/PJ,2045
+A1,5,newcapa,PRODUCT|ENERGY,heat,all-week,R1,late-peak,2040,all-year,R1,residential,5.33333333333,heatpump,4,MUS$2010/PJ,2045
+A1,4,newcapa,PRODUCT|ENERGY,heat,all-week,R1,evening,2035,all-year,R1,residential,1.77777777778,heatpump,5,MUS$2010/PJ,2045
+A1,5,newcapa,PRODUCT|ENERGY,heat,all-week,R1,evening,2040,all-year,R1,residential,3.55555555556,heatpump,5,MUS$2010/PJ,2045
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,night,2025,all-year,R1,power,0.21333333333,windturbine,0,MUS$2010/PJ,2045
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,night,2030,all-year,R1,power,0.21333333333,windturbine,0,MUS$2010/PJ,2045
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,night,2035,all-year,R1,power,0.21333333333,windturbine,0,MUS$2010/PJ,2045
+A1,9,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,night,2040,all-year,R1,power,0.42666666667,windturbine,0,MUS$2010/PJ,2045
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,morning,2025,all-year,R1,power,0.32000000000,windturbine,1,MUS$2010/PJ,2045
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,morning,2030,all-year,R1,power,0.32000000000,windturbine,1,MUS$2010/PJ,2045
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,morning,2035,all-year,R1,power,0.32000000000,windturbine,1,MUS$2010/PJ,2045
+A1,9,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,morning,2040,all-year,R1,power,0.64000000000,windturbine,1,MUS$2010/PJ,2045
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,afternoon,2025,all-year,R1,power,0.21333333333,windturbine,2,MUS$2010/PJ,2045
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,afternoon,2030,all-year,R1,power,0.21333333333,windturbine,2,MUS$2010/PJ,2045
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,afternoon,2035,all-year,R1,power,0.21333333333,windturbine,2,MUS$2010/PJ,2045
+A1,9,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,afternoon,2040,all-year,R1,power,0.42666666667,windturbine,2,MUS$2010/PJ,2045
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,early-peak,2025,all-year,R1,power,0.32000000000,windturbine,3,MUS$2010/PJ,2045
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,early-peak,2030,all-year,R1,power,0.32000000000,windturbine,3,MUS$2010/PJ,2045
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,early-peak,2035,all-year,R1,power,0.32000000000,windturbine,3,MUS$2010/PJ,2045
+A1,9,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,early-peak,2040,all-year,R1,power,0.64000000000,windturbine,3,MUS$2010/PJ,2045
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,late-peak,2025,all-year,R1,power,0.64000000000,windturbine,4,MUS$2010/PJ,2045
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,late-peak,2030,all-year,R1,power,0.64000000000,windturbine,4,MUS$2010/PJ,2045
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,late-peak,2035,all-year,R1,power,0.64000000000,windturbine,4,MUS$2010/PJ,2045
+A1,9,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,late-peak,2040,all-year,R1,power,1.28000000000,windturbine,4,MUS$2010/PJ,2045
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,evening,2025,all-year,R1,power,0.42666666667,windturbine,5,MUS$2010/PJ,2045
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,evening,2030,all-year,R1,power,0.42666666667,windturbine,5,MUS$2010/PJ,2045
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,evening,2035,all-year,R1,power,0.42666666667,windturbine,5,MUS$2010/PJ,2045
+A1,9,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,evening,2040,all-year,R1,power,0.85333333333,windturbine,5,MUS$2010/PJ,2045
+A1,5,newcapa,PRODUCT|ENERGY,heat,all-week,R1,night,2040,all-year,R1,residential,1.77777777778,heatpump,0,MUS$2010/PJ,2050
+A1,6,newcapa,PRODUCT|ENERGY,heat,all-week,R1,night,2045,all-year,R1,residential,1.22222222222,heatpump,0,MUS$2010/PJ,2050
+A1,5,newcapa,PRODUCT|ENERGY,heat,all-week,R1,morning,2040,all-year,R1,residential,2.66666666667,heatpump,1,MUS$2010/PJ,2050
+A1,6,newcapa,PRODUCT|ENERGY,heat,all-week,R1,morning,2045,all-year,R1,residential,1.83333333333,heatpump,1,MUS$2010/PJ,2050
+A1,5,newcapa,PRODUCT|ENERGY,heat,all-week,R1,afternoon,2040,all-year,R1,residential,1.77777777778,heatpump,2,MUS$2010/PJ,2050
+A1,6,newcapa,PRODUCT|ENERGY,heat,all-week,R1,afternoon,2045,all-year,R1,residential,1.22222222222,heatpump,2,MUS$2010/PJ,2050
+A1,5,newcapa,PRODUCT|ENERGY,heat,all-week,R1,early-peak,2040,all-year,R1,residential,2.66666666667,heatpump,3,MUS$2010/PJ,2050
+A1,6,newcapa,PRODUCT|ENERGY,heat,all-week,R1,early-peak,2045,all-year,R1,residential,1.83333333333,heatpump,3,MUS$2010/PJ,2050
+A1,5,newcapa,PRODUCT|ENERGY,heat,all-week,R1,late-peak,2040,all-year,R1,residential,5.33333333333,heatpump,4,MUS$2010/PJ,2050
+A1,6,newcapa,PRODUCT|ENERGY,heat,all-week,R1,late-peak,2045,all-year,R1,residential,3.66666666667,heatpump,4,MUS$2010/PJ,2050
+A1,5,newcapa,PRODUCT|ENERGY,heat,all-week,R1,evening,2040,all-year,R1,residential,3.55555555556,heatpump,5,MUS$2010/PJ,2050
+A1,6,newcapa,PRODUCT|ENERGY,heat,all-week,R1,evening,2045,all-year,R1,residential,2.44444444444,heatpump,5,MUS$2010/PJ,2050
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,night,2025,all-year,R1,power,0.17142857143,windturbine,0,MUS$2010/PJ,2050
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,night,2030,all-year,R1,power,0.17142857143,windturbine,0,MUS$2010/PJ,2050
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,night,2035,all-year,R1,power,0.17142857143,windturbine,0,MUS$2010/PJ,2050
+A1,9,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,night,2040,all-year,R1,power,0.34285714286,windturbine,0,MUS$2010/PJ,2050
+A1,11,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,night,2045,all-year,R1,power,0.34285714286,windturbine,0,MUS$2010/PJ,2050
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,morning,2025,all-year,R1,power,0.25714285714,windturbine,1,MUS$2010/PJ,2050
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,morning,2030,all-year,R1,power,0.25714285714,windturbine,1,MUS$2010/PJ,2050
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,morning,2035,all-year,R1,power,0.25714285714,windturbine,1,MUS$2010/PJ,2050
+A1,9,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,morning,2040,all-year,R1,power,0.51428571429,windturbine,1,MUS$2010/PJ,2050
+A1,11,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,morning,2045,all-year,R1,power,0.51428571429,windturbine,1,MUS$2010/PJ,2050
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,afternoon,2025,all-year,R1,power,0.17142857143,windturbine,2,MUS$2010/PJ,2050
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,afternoon,2030,all-year,R1,power,0.17142857143,windturbine,2,MUS$2010/PJ,2050
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,afternoon,2035,all-year,R1,power,0.17142857143,windturbine,2,MUS$2010/PJ,2050
+A1,9,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,afternoon,2040,all-year,R1,power,0.34285714286,windturbine,2,MUS$2010/PJ,2050
+A1,11,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,afternoon,2045,all-year,R1,power,0.34285714286,windturbine,2,MUS$2010/PJ,2050
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,early-peak,2025,all-year,R1,power,0.25714285714,windturbine,3,MUS$2010/PJ,2050
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,early-peak,2030,all-year,R1,power,0.25714285714,windturbine,3,MUS$2010/PJ,2050
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,early-peak,2035,all-year,R1,power,0.25714285714,windturbine,3,MUS$2010/PJ,2050
+A1,9,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,early-peak,2040,all-year,R1,power,0.51428571429,windturbine,3,MUS$2010/PJ,2050
+A1,11,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,early-peak,2045,all-year,R1,power,0.51428571429,windturbine,3,MUS$2010/PJ,2050
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,late-peak,2025,all-year,R1,power,0.51428571429,windturbine,4,MUS$2010/PJ,2050
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,late-peak,2030,all-year,R1,power,0.51428571429,windturbine,4,MUS$2010/PJ,2050
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,late-peak,2035,all-year,R1,power,0.51428571429,windturbine,4,MUS$2010/PJ,2050
+A1,9,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,late-peak,2040,all-year,R1,power,1.02857142857,windturbine,4,MUS$2010/PJ,2050
+A1,11,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,late-peak,2045,all-year,R1,power,1.02857142857,windturbine,4,MUS$2010/PJ,2050
+A1,3,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,evening,2025,all-year,R1,power,0.34285714286,windturbine,5,MUS$2010/PJ,2050
+A1,5,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,evening,2030,all-year,R1,power,0.34285714286,windturbine,5,MUS$2010/PJ,2050
+A1,7,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,evening,2035,all-year,R1,power,0.34285714286,windturbine,5,MUS$2010/PJ,2050
+A1,9,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,evening,2040,all-year,R1,power,0.68571428571,windturbine,5,MUS$2010/PJ,2050
+A1,11,newcapa,PRODUCT|ENERGY,electricity,all-week,R1,evening,2045,all-year,R1,power,0.68571428571,windturbine,5,MUS$2010/PJ,2050
