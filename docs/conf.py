@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 
 project = "MUSE"
-copyright = "2022, Sustainable Gas Institute"
+copyright = "2024, Imperial College London"
 author = "Imperial College London"
 release = "1.1.0"
 version = ".".join(release.split(".")[:2])

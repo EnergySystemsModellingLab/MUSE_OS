@@ -81,6 +81,7 @@ from mypy_extensions import KwArg
 from muse.agents import Agent
 from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
+from muse.timeslices import drop_timeslice
 
 OBJECTIVE_SIGNATURE = Callable[
     [Agent, xr.DataArray, xr.DataArray, xr.Dataset, xr.Dataset, KwArg(Any)],
@@ -142,7 +143,7 @@ def factory(
         for name, objective in functions:
             obj = objective(agent, demand, search_space, *args, **kwargs)
             if "timeslice" in obj.dims and "timeslice" in result.dims:
-                obj = obj.drop_vars(["timeslice", "month", "day", "hour"])
+                obj = drop_timeslice(obj)
             result[name] = obj
         return result
 

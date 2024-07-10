@@ -3,6 +3,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 import xarray as xr
+from muse.timeslices import drop_timeslice
 from pytest import approx, fixture
 
 
@@ -419,9 +420,7 @@ def _as_list(data: Union[xr.DataArray, xr.Dataset]) -> Union[xr.DataArray, xr.Da
             data.get_index("timeslice"), names=("month", "day", "hour")
         )
         mindex_coords = xr.Coordinates.from_pandas_multiindex(index, "timeslice")
-        data = data.drop_vars(["timeslice", "month", "day", "hour"]).assign_coords(
-            mindex_coords
-        )
+        data = drop_timeslice(data).assign_coords(mindex_coords)
     return data
 
 

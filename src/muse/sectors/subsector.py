@@ -11,6 +11,7 @@ import numpy as np
 import xarray as xr
 
 from muse.agents import Agent
+from muse.timeslices import drop_timeslice
 
 
 class Subsector:
@@ -57,9 +58,9 @@ class Subsector:
             current_year = market.year.min()
         if self.expand_market_prices:
             market = market.copy()
-            market["prices"] = np.maximum(
-                market.prices, market.prices.rename(region="dst_region")
-            ).drop_vars(["timeslice", "month", "day", "hour"])
+            market["prices"] = drop_timeslice(
+                np.maximum(market.prices, market.prices.rename(region="dst_region"))
+            )
 
         for agent in self.agents:
             agent.asset_housekeeping()
