@@ -559,8 +559,7 @@ def find_equilibrium(
         # Update prices
         market["prices"] = drop_timeslice(market["updated_prices"])
 
-        # Check convergence criteria
-        check_demand_fulfillment(market.sel(commodity=included), tol_unmet_demand)
+        # Check convergence
         converged = check_equilibrium(
             market.sel(commodity=included),
             prior_market.sel(commodity=included),
@@ -576,6 +575,9 @@ def find_equilibrium(
             f"in year {int(market.year[0])}"
         )
         getLogger(__name__).critical(msg)
+
+    # Check that demand is fulfilled (raises a warning if not)
+    check_demand_fulfillment(market.sel(commodity=included), tol_unmet_demand)
 
     return FindEquilibriumResults(
         converged, market.drop_vars("updated_prices"), equilibrium_sectors
