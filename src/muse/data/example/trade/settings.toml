@@ -15,21 +15,16 @@ tolerance_unmet_demand = -0.1
 
 [[outputs]]
 quantity = "prices"
-filename = "{cwd}/Results/Prices.csv"
-sink.name = "aggregate"
-sink.sink.name = "csv"
-sink.sink.set_index = ["region", "commodity", "year", "timeslice"]
-sink.sink.sort_index = true
-sink.sink.keep_columns = ["prices"]
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+index = false
 
 [[outputs]]
 quantity = "capacity"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 index = false
-filename = "{cwd}/Results/Capacities.csv"
-sink.name = "aggregate"
-sink.sink.name = "csv"
-sink.sink.sort_index = true
-sink.sink.keep_columns = [
+keep_columns = [
     'technology',
     'dst_region',
     'region',
