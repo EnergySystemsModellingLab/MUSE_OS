@@ -219,8 +219,6 @@ def sector_capacity(sector: AbstractSector) -> pd.DataFrame:
 
     capacity = pd.concat([u for u in capa_sector])
     capacity = capacity[capacity.capacity != 0]
-
-    capacity = capacity.reset_index()
     return capacity
 
 
