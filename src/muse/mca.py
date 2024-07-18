@@ -15,6 +15,7 @@ from muse.outputs.cache import OutputCache
 from muse.readers import read_initial_market
 from muse.sectors import SECTORS_REGISTERED, AbstractSector
 from muse.timeslices import drop_timeslice
+from muse.utilities import future_propagation
 
 
 class MCA:
@@ -302,8 +303,6 @@ class MCA:
         from numpy import where
         from xarray import DataArray
 
-        from muse.utilities import future_propagation
-
         _, self.sectors, hist_years = self.calibrate_legacy_sectors()
         if len(hist_years) > 0:
             hist = where(self.time_framework <= hist_years[-1])[0]
@@ -557,7 +556,11 @@ def find_equilibrium(
             break
 
         # Update prices
-        market["prices"] = drop_timeslice(market["updated_prices"])
+        market["prices"] = drop_timeslice(
+            future_propagation(
+                market["prices"], market["updated_prices"].sel(year=market.year[1])
+            )
+        )
 
         # Check convergence
         converged = check_equilibrium(
