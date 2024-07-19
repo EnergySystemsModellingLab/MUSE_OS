@@ -352,23 +352,11 @@ def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
     for region in set(production.region.values):
         expected = average(
             lcoe.sel(asset=production.region == region),
-            weights=production.sel(asset=production.region == region)
-            / production.sel(asset=production.region == region).sum("asset"),
+            weights=production.sel(asset=production.region == region),
             axis=production.get_axis_num("asset"),
         )
 
-    for region in set(production.region.values):
-        weight = production / production.sel(asset=production.region == region).sum(
-            "asset"
-        ).sum("timeslice")
-
-        expected = lcoe * weight
-
-        assert actual.sel(region=region).values == approx(
-            expected.sel(asset=production.region == region).sum(
-                axis=production.get_axis_num("asset")
-            )
-        )
+        assert actual.sel(region=region).values == approx(expected)
 
 
 def test_supply_cost_zero_prod(production: xr.DataArray, timeslice: xr.Dataset):
