@@ -24,7 +24,7 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
 ]
 dependencies = [
-    "numpy<2.0",
+    "numpy>=2.0",
     "scipy",
     "pandas",
     "xarray",
@@ -47,7 +47,6 @@ dev = [
     "nbconvert",
     "nbformat",
     "mypy",
-    "numpy>=1.17",
     "pytest-xdist",
     "bump2version",
     "pyinstaller",
