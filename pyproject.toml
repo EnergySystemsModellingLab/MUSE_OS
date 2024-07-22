@@ -25,9 +25,9 @@ classifiers = [
 ]
 dependencies = [
     "numpy<2.0",
-    "scipy",
-    "pandas",
-    "xarray",
+    "scipy>=1.13",
+    "pandas>=2.2",
+    "xarray>=2024.6",
     "bottleneck",
     "coloredlogs",
     "toml",
