@@ -744,14 +744,13 @@ def sector_fuel_costs(
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
             data_agent["year"] = output_year
-            if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
-                data_sector.append(data_agent.groupby("technology").fillna(0))
+            data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
+                "fuel_consumption_costs"
+            )
+            if not data_agent.empty:
+                data_sector.append(data_agent)
     if len(data_sector) > 0:
-        output = pd.concat(
-            [u.to_dataframe("fuel_consumption_costs") for u in data_sector], sort=True
-        )
-        output = output.reset_index()
-
+        output = pd.concat(data_sector, sort=True).reset_index()
     else:
         output = pd.DataFrame()
 
@@ -794,11 +793,12 @@ def sector_capital_costs(
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
             data_agent["year"] = output_year
-            a = data_agent.to_dataframe("capital_costs")
-            if len(a) > 0 and len(a.technology.values) > 0:
-                b = a.reset_index()
-                b = b[b["capital_costs"] != 0]
-                data_sector.append(b)
+            data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
+                "capital_costs"
+            )
+            if not data_agent.empty:
+                data_sector.append(data_agent)
+
     if len(data_sector) > 0:
         output = pd.concat(data_sector, sort=True).reset_index()
     else:
@@ -860,14 +860,14 @@ def sector_emission_costs(
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
             data_agent["year"] = output_year
-            if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
-                data_sector.append(data_agent.groupby("technology").fillna(0))
-    if len(data_sector) > 0:
-        output = pd.concat(
-            [u.to_dataframe("emission_costs") for u in data_sector], sort=True
-        )
-        output = output.reset_index()
+            data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
+                "emission_costs"
+            )
+            if not data_agent.empty:
+                data_sector.append(data_agent)
 
+    if len(data_sector) > 0:
+        output = pd.concat(data_sector, sort=True).reset_index()
     else:
         output = pd.DataFrame()
 
@@ -909,7 +909,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
     retro = [a for a in agents if a.category == "retrofit"]
-    new = [a for a in agents if a.category == "new"]
+    new = [a for a in agents if a.category == "newcapa"]
     agents = retro if len(retro) > 0 else new
     if len(technologies) > 0:
         for agent in agents:
@@ -1065,12 +1065,15 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             data_agent["category"] = agent.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
             data_agent["year"] = output_year
-            if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
-                data_sector.append(data_agent.groupby("technology").fillna(0))
-    if len(data_sector) > 0:
-        output = pd.concat([u.to_dataframe("LCOE") for u in data_sector], sort=True)
-        output = output.reset_index()
+            data_agent = data_agent.fillna(0)
+            data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
+                "LCOE"
+            )
+            if not data_agent.empty:
+                data_sector.append(data_agent)
 
+    if len(data_sector) > 0:
+        output = pd.concat(data_sector, sort=True).reset_index()
     else:
         output = pd.DataFrame()
     return output
@@ -1111,7 +1114,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
     retro = [a for a in agents if a.category == "retrofit"]
-    new = [a for a in agents if a.category == "new"]
+    new = [a for a in agents if a.category == "newcapa"]
     agents = retro if len(retro) > 0 else new
     if len(technologies) > 0:
         for agent in agents:
@@ -1275,10 +1278,13 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             data_agent["category"] = agent.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
             data_agent["year"] = output_year
-            if len(data_agent) > 0 and len(data_agent.technology.values) > 0:
-                data_sector.append(data_agent.groupby("technology").fillna(0))
+            data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
+                "capital_costs"
+            )
+            if not data_agent.empty:
+                data_sector.append(data_agent)
     if len(data_sector) > 0:
-        output = pd.concat([u.to_dataframe("EAC") for u in data_sector], sort=True)
+        output = pd.concat(data_sector, sort=True)
         output = output.reset_index()
 
     else:
