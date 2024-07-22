@@ -150,14 +150,14 @@ def factory(
 @round_values
 def consumption(
     market: xr.Dataset, sectors: list[AbstractSector], **kwargs
-) -> xr.DataArray:
+) -> pd.DataFrame:
     """Current consumption."""
     return market_quantity(market.consumption, **kwargs).to_dataframe().reset_index()
 
 
 @register_output_quantity
 @round_values
-def supply(market: xr.Dataset, sectors: list[AbstractSector], **kwargs) -> xr.DataArray:
+def supply(market: xr.Dataset, sectors: list[AbstractSector], **kwargs) -> pd.DataFrame:
     """Current supply."""
     return market_quantity(market.supply, **kwargs).to_dataframe().reset_index()
 
@@ -1284,9 +1284,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             if not data_agent.empty:
                 data_sector.append(data_agent)
     if len(data_sector) > 0:
-        output = pd.concat(data_sector, sort=True)
-        output = output.reset_index()
-
+        output = pd.concat(data_sector, sort=True).reset_index()
     else:
         output = pd.DataFrame()
     return output
