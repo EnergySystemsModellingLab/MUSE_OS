@@ -17,13 +17,11 @@ tolerance_unmet_demand = -0.1
 quantity = "prices"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-index = false
 
 [[outputs]]
 quantity = "capacity"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-index = false
 
 [[outputs]]
 quantity = "timeslice_consumption"

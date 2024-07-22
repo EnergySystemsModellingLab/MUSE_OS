@@ -17,13 +17,11 @@ tolerance_unmet_demand = -0.1
 quantity = "prices"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-index = false
 
 [[outputs]]
 quantity = "capacity"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-index = false
 
 # Carbon budget control
 [carbon_budget_control]
@@ -62,7 +60,6 @@ filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "capacity"
 sink = 'csv'
 overwrite = true
-index = false
 
 [[sectors.residential.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
@@ -92,7 +89,6 @@ filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "capacity"
 sink = 'csv'
 overwrite = true
-index = false
 
 [sectors.gas]
 type = 'default'
@@ -114,7 +110,6 @@ filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "capacity"
 sink = 'csv'
 overwrite = true
-index = false
 
 [sectors.residential_presets]
 type = 'presets'

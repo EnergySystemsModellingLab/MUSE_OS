@@ -270,7 +270,6 @@ See section on `Timeslices_`.
       quantity = "production"
       sink = "aggregate"
       filename = "{cwd}/{default_output_dir}/Cache{Quantity}.csv"
-      index = false
 
 ----------------
 Standard sectors

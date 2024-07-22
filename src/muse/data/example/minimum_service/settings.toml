@@ -30,7 +30,6 @@ filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 quantity = "capacity"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-index = false
 
 [sectors.industry]
 type = 'default'
@@ -60,7 +59,6 @@ filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "capacity"
 sink = 'csv'
 overwrite = true
-index = false
 
 [[sectors.industry.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'

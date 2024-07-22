@@ -17,13 +17,11 @@ tolerance_unmet_demand = -0.1
 quantity = "prices"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-index = false
 
 [[outputs]]
 quantity = "capacity"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-index = false
 
 [carbon_budget_control]
 budget = []
@@ -68,7 +66,6 @@ quantity = "capacity"
 sink = 'csv'
 overwrite = true
 columns = ["asset", "year", "region", "technology", "installed", "capacity"]
-index = false
 
 [[sectors.residential.interactions]]
 net = 'new_to_retro'
@@ -113,7 +110,6 @@ columns = [
     "installed",
     "capacity"
 ]
-index = false
 
 [sectors.gas]
 type = 'default'
@@ -154,7 +150,6 @@ columns = [
     "installed",
     "capacity"
 ]
-index = false
 
 [timeslices]
 level_names = ["month", "day", "hour"]
