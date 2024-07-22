@@ -15,6 +15,7 @@ from muse.outputs.cache import OutputCache
 from muse.readers import read_initial_market
 from muse.sectors import SECTORS_REGISTERED, AbstractSector
 from muse.timeslices import drop_timeslice
+from muse.utilities import future_propagation
 
 
 class MCA:
@@ -302,8 +303,6 @@ class MCA:
         from numpy import where
         from xarray import DataArray
 
-        from muse.utilities import future_propagation
-
         _, self.sectors, hist_years = self.calibrate_legacy_sectors()
         if len(hist_years) > 0:
             hist = where(self.time_framework <= hist_years[-1])[0]
@@ -544,11 +543,10 @@ def find_equilibrium(
     else:
         included = ones(len(market.commodity), dtype=bool)
 
-    prior_market = market.copy(deep=True)
     converged = False
     iteration = 0
     while iteration < maxiter and not converged:
-        prior_market, market = market, prior_market
+        prior_market = market.copy(deep=True)
         market.consumption[:] = 0.0
         market.supply[:] = 0.0
         market, equilibrium_sectors = single_year_iteration(market, sectors)
@@ -557,8 +555,14 @@ def find_equilibrium(
             converged = True
             break
 
-        # Check convergence criteria
-        check_demand_fulfillment(market.sel(commodity=included), tol_unmet_demand)
+        # Update prices
+        market["prices"] = drop_timeslice(
+            future_propagation(
+                market["prices"], market["updated_prices"].sel(year=market.year[1])
+            )
+        )
+
+        # Check convergence
         converged = check_equilibrium(
             market.sel(commodity=included),
             prior_market.sel(commodity=included),
@@ -566,9 +570,6 @@ def find_equilibrium(
             equilibrium_variable,
             market.year[1],
         )
-
-        # Update prices
-        market["prices"] = drop_timeslice(market["updated_prices"])
         iteration += 1
 
     if not converged:
@@ -577,6 +578,9 @@ def find_equilibrium(
             f"in year {int(market.year[0])}"
         )
         getLogger(__name__).critical(msg)
+
+    # Check that demand is fulfilled (raises a warning if not)
+    check_demand_fulfillment(market.sel(commodity=included), tol_unmet_demand)
 
     return FindEquilibriumResults(
         converged, market.drop_vars("updated_prices"), equilibrium_sectors
