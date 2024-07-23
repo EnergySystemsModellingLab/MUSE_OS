@@ -32,6 +32,7 @@ import pandas as pd
 import xarray as xr
 from mypy_extensions import KwArg
 
+from muse.outputs.sector import market_quantity
 from muse.registration import registrator
 from muse.sectors import AbstractSector
 from muse.timeslices import QuantityType, convert_timeslice, drop_timeslice
@@ -106,7 +107,7 @@ def factory(
     - any other parameter relevant to the sink, e.g. `pandas.to_csv` keyword
       arguments.
 
-    For simplicity, it is also possible to given lone strings as input.
+    For simplicity, it is also possible to give lone strings as input.
     They default to `{'quantity': string}` (and the sink will default to
     "csv").
     """
@@ -149,20 +150,16 @@ def factory(
 @round_values
 def consumption(
     market: xr.Dataset, sectors: list[AbstractSector], **kwargs
-) -> xr.DataArray:
+) -> pd.DataFrame:
     """Current consumption."""
-    from muse.outputs.sector import market_quantity
-
-    return market_quantity(market.consumption, **kwargs)
+    return market_quantity(market.consumption, **kwargs).to_dataframe().reset_index()
 
 
 @register_output_quantity
 @round_values
-def supply(market: xr.Dataset, sectors: list[AbstractSector], **kwargs) -> xr.DataArray:
+def supply(market: xr.Dataset, sectors: list[AbstractSector], **kwargs) -> pd.DataFrame:
     """Current supply."""
-    from muse.outputs.sector import market_quantity
-
-    return market_quantity(market.supply, **kwargs)
+    return market_quantity(market.supply, **kwargs).to_dataframe().reset_index()
 
 
 @register_output_quantity
@@ -170,31 +167,10 @@ def supply(market: xr.Dataset, sectors: list[AbstractSector], **kwargs) -> xr.Da
 def prices(
     market: xr.Dataset,
     sectors: list[AbstractSector],
-    drop_empty: bool = True,
-    keep_columns: Optional[Union[Sequence[str], str]] = "prices",
     **kwargs,
 ) -> pd.DataFrame:
     """Current MCA market prices."""
-    from muse.outputs.sector import market_quantity
-
-    ts_coords = list(market.indexes["timeslice"].names)
-    result = market_quantity(market.prices, **kwargs).to_dataframe()
-    if drop_empty:
-        result = result[result.prices != 0]
-
-    if isinstance(keep_columns, str):
-        result = result[[*ts_coords, keep_columns]]
-
-    elif keep_columns is not None and len(keep_columns) > 0:
-        result = result[ts_coords + [u for u in result.columns if u in keep_columns]]
-
-    # We assign back a timeslice column with the original coordinate names
-    # Each timeslice is a tuple of the original coordinates (month, day, hour)
-    index_names = result.index.names
-    result = result.reset_index()
-    result["timeslice"] = list(zip(*[result[name] for name in ts_coords]))
-    result = result.set_index(index_names, drop=True).drop(ts_coords, axis=1)
-    return result
+    return market_quantity(market.prices, **kwargs).to_dataframe().reset_index()
 
 
 @register_output_quantity
@@ -243,8 +219,6 @@ def sector_capacity(sector: AbstractSector) -> pd.DataFrame:
 
     capacity = pd.concat([u for u in capa_sector])
     capacity = capacity[capacity.capacity != 0]
-
-    capacity = capacity.reset_index()
     return capacity
 
 
@@ -1310,9 +1284,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             if not data_agent.empty:
                 data_sector.append(data_agent)
     if len(data_sector) > 0:
-        output = pd.concat(data_sector, sort=True)
-        output = output.reset_index()
-
+        output = pd.concat(data_sector, sort=True).reset_index()
     else:
         output = pd.DataFrame()
     return output
