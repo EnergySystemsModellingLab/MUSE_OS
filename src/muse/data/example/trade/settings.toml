@@ -15,30 +15,13 @@ tolerance_unmet_demand = -0.1
 
 [[outputs]]
 quantity = "prices"
-filename = "{cwd}/Results/Prices.csv"
-sink.name = "aggregate"
-sink.sink.name = "csv"
-sink.sink.set_index = ["region", "commodity", "year", "timeslice"]
-sink.sink.sort_index = true
-sink.sink.keep_columns = ["prices"]
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
 quantity = "capacity"
-index = false
-filename = "{cwd}/Results/Capacities.csv"
-sink.name = "aggregate"
-sink.sink.name = "csv"
-sink.sink.sort_index = true
-sink.sink.keep_columns = [
-    'technology',
-    'dst_region',
-    'region',
-    'agent',
-    'sector',
-    'type',
-    'year',
-    'capacity'
-]
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [carbon_budget_control]
 budget = []
@@ -83,7 +66,6 @@ quantity = "capacity"
 sink = 'csv'
 overwrite = true
 columns = ["asset", "year", "region", "technology", "installed", "capacity"]
-index = false
 
 [[sectors.residential.interactions]]
 net = 'new_to_retro'
@@ -128,7 +110,6 @@ columns = [
     "installed",
     "capacity"
 ]
-index = false
 
 [sectors.gas]
 type = 'default'
@@ -169,7 +150,6 @@ columns = [
     "installed",
     "capacity"
 ]
-index = false
 
 [timeslices]
 level_names = ["month", "day", "hour"]
