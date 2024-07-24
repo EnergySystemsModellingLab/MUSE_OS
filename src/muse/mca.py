@@ -372,7 +372,7 @@ class MCA:
         from copy import deepcopy
         from logging import getLogger
 
-        from numpy import clip, where
+        from numpy import where
 
         hist_years = []
         if len([s for s in self.sectors if "LegacySector" in str(type(s))]) == 0:
@@ -405,12 +405,9 @@ class MCA:
 
                 dims = {i: sector_market[i] for i in sector_market.consumption.dims}
 
-                sector_market.consumption.loc[dims] = clip(
-                    sector_market.consumption.loc[dims]
-                    - sector_market.supply.loc[dims],
-                    0.0,
-                    None,
-                )
+                sector_market.consumption.loc[dims] = (
+                    sector_market.consumption.loc[dims] - sector_market.supply.loc[dims]
+                ).clip(min=0.0, max=None)
                 new_market.consumption.loc[dims] += sector_market.consumption
 
                 dims = {i: sector_market[i] for i in sector_market.supply.dims}
@@ -450,8 +447,6 @@ def single_year_iteration(
     """
     from copy import deepcopy
 
-    from numpy import clip
-
     from muse.commodities import is_enduse
 
     sectors = deepcopy(sectors)
@@ -469,11 +464,9 @@ def single_year_iteration(
 
         dims = {i: sector_market[i] for i in sector_market.consumption.dims}
 
-        sector_market.consumption.loc[dims] = clip(
-            sector_market.consumption.loc[dims] - sector_market.supply.loc[dims],
-            0.0,
-            None,
-        )
+        sector_market.consumption.loc[dims] = (
+            sector_market.consumption.loc[dims] - sector_market.supply.loc[dims]
+        ).clip(min=0.0, max=None)
 
         market.consumption.loc[dims] += sector_market.consumption
 
