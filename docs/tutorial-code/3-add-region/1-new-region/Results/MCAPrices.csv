@@ -1,337 +1,337 @@
-timeslice,commodity,region,prices,year
-"('all-year', 'all-week', 'night')",electricity,R1,19.50000000000,2020
-"('all-year', 'all-week', 'night')",electricity,R2,19.50000000000,2020
-"('all-year', 'all-week', 'night')",gas,R1,7.15280000000,2020
-"('all-year', 'all-week', 'night')",gas,R2,7.15280000000,2020
-"('all-year', 'all-week', 'night')",heat,R1,100.00000000000,2020
-"('all-year', 'all-week', 'night')",heat,R2,100.00000000000,2020
-"('all-year', 'all-week', 'night')",CO2f,R1,0.08310000000,2020
-"('all-year', 'all-week', 'night')",CO2f,R2,0.08310000000,2020
-"('all-year', 'all-week', 'morning')",electricity,R1,19.50000000000,2020
-"('all-year', 'all-week', 'morning')",electricity,R2,19.50000000000,2020
-"('all-year', 'all-week', 'morning')",gas,R1,7.15280000000,2020
-"('all-year', 'all-week', 'morning')",gas,R2,7.15280000000,2020
-"('all-year', 'all-week', 'morning')",heat,R1,100.00000000000,2020
-"('all-year', 'all-week', 'morning')",heat,R2,100.00000000000,2020
-"('all-year', 'all-week', 'morning')",CO2f,R1,0.08310000000,2020
-"('all-year', 'all-week', 'morning')",CO2f,R2,0.08310000000,2020
-"('all-year', 'all-week', 'afternoon')",electricity,R1,19.50000000000,2020
-"('all-year', 'all-week', 'afternoon')",electricity,R2,19.50000000000,2020
-"('all-year', 'all-week', 'afternoon')",gas,R1,7.15280000000,2020
-"('all-year', 'all-week', 'afternoon')",gas,R2,7.15280000000,2020
-"('all-year', 'all-week', 'afternoon')",heat,R1,100.00000000000,2020
-"('all-year', 'all-week', 'afternoon')",heat,R2,100.00000000000,2020
-"('all-year', 'all-week', 'afternoon')",CO2f,R1,0.08310000000,2020
-"('all-year', 'all-week', 'afternoon')",CO2f,R2,0.08310000000,2020
-"('all-year', 'all-week', 'early-peak')",electricity,R1,19.50000000000,2020
-"('all-year', 'all-week', 'early-peak')",electricity,R2,19.50000000000,2020
-"('all-year', 'all-week', 'early-peak')",gas,R1,7.15280000000,2020
-"('all-year', 'all-week', 'early-peak')",gas,R2,7.15280000000,2020
-"('all-year', 'all-week', 'early-peak')",heat,R1,100.00000000000,2020
-"('all-year', 'all-week', 'early-peak')",heat,R2,100.00000000000,2020
-"('all-year', 'all-week', 'early-peak')",CO2f,R1,0.08310000000,2020
-"('all-year', 'all-week', 'early-peak')",CO2f,R2,0.08310000000,2020
-"('all-year', 'all-week', 'late-peak')",electricity,R1,19.50000000000,2020
-"('all-year', 'all-week', 'late-peak')",electricity,R2,19.50000000000,2020
-"('all-year', 'all-week', 'late-peak')",gas,R1,7.15280000000,2020
-"('all-year', 'all-week', 'late-peak')",gas,R2,7.15280000000,2020
-"('all-year', 'all-week', 'late-peak')",heat,R1,100.00000000000,2020
-"('all-year', 'all-week', 'late-peak')",heat,R2,100.00000000000,2020
-"('all-year', 'all-week', 'late-peak')",CO2f,R1,0.08310000000,2020
-"('all-year', 'all-week', 'late-peak')",CO2f,R2,0.08310000000,2020
-"('all-year', 'all-week', 'evening')",electricity,R1,19.50000000000,2020
-"('all-year', 'all-week', 'evening')",electricity,R2,19.50000000000,2020
-"('all-year', 'all-week', 'evening')",gas,R1,7.15280000000,2020
-"('all-year', 'all-week', 'evening')",gas,R2,7.15280000000,2020
-"('all-year', 'all-week', 'evening')",heat,R1,100.00000000000,2020
-"('all-year', 'all-week', 'evening')",heat,R2,100.00000000000,2020
-"('all-year', 'all-week', 'evening')",CO2f,R1,0.08310000000,2020
-"('all-year', 'all-week', 'evening')",CO2f,R2,0.08310000000,2020
-"('all-year', 'all-week', 'night')",electricity,R1,9.18790000000,2025
-"('all-year', 'all-week', 'night')",electricity,R2,9.18790000000,2025
-"('all-year', 'all-week', 'night')",gas,R1,0.47220000000,2025
-"('all-year', 'all-week', 'night')",gas,R2,0.47220000000,2025
-"('all-year', 'all-week', 'night')",heat,R1,4.85420000000,2025
-"('all-year', 'all-week', 'night')",heat,R2,4.85420000000,2025
-"('all-year', 'all-week', 'night')",CO2f,R1,0.12010000000,2025
-"('all-year', 'all-week', 'night')",CO2f,R2,0.12010000000,2025
-"('all-year', 'all-week', 'morning')",electricity,R1,9.18790000000,2025
-"('all-year', 'all-week', 'morning')",electricity,R2,9.18790000000,2025
-"('all-year', 'all-week', 'morning')",gas,R1,0.47220000000,2025
-"('all-year', 'all-week', 'morning')",gas,R2,0.47220000000,2025
-"('all-year', 'all-week', 'morning')",heat,R1,4.85420000000,2025
-"('all-year', 'all-week', 'morning')",heat,R2,4.85420000000,2025
-"('all-year', 'all-week', 'morning')",CO2f,R1,0.12010000000,2025
-"('all-year', 'all-week', 'morning')",CO2f,R2,0.12010000000,2025
-"('all-year', 'all-week', 'afternoon')",electricity,R1,9.18790000000,2025
-"('all-year', 'all-week', 'afternoon')",electricity,R2,9.18790000000,2025
-"('all-year', 'all-week', 'afternoon')",gas,R1,0.47220000000,2025
-"('all-year', 'all-week', 'afternoon')",gas,R2,0.47220000000,2025
-"('all-year', 'all-week', 'afternoon')",heat,R1,4.85420000000,2025
-"('all-year', 'all-week', 'afternoon')",heat,R2,4.85420000000,2025
-"('all-year', 'all-week', 'afternoon')",CO2f,R1,0.12010000000,2025
-"('all-year', 'all-week', 'afternoon')",CO2f,R2,0.12010000000,2025
-"('all-year', 'all-week', 'early-peak')",electricity,R1,9.18790000000,2025
-"('all-year', 'all-week', 'early-peak')",electricity,R2,9.18790000000,2025
-"('all-year', 'all-week', 'early-peak')",gas,R1,0.47220000000,2025
-"('all-year', 'all-week', 'early-peak')",gas,R2,0.47220000000,2025
-"('all-year', 'all-week', 'early-peak')",heat,R1,4.85420000000,2025
-"('all-year', 'all-week', 'early-peak')",heat,R2,4.85420000000,2025
-"('all-year', 'all-week', 'early-peak')",CO2f,R1,0.12010000000,2025
-"('all-year', 'all-week', 'early-peak')",CO2f,R2,0.12010000000,2025
-"('all-year', 'all-week', 'late-peak')",electricity,R1,9.18790000000,2025
-"('all-year', 'all-week', 'late-peak')",electricity,R2,9.18790000000,2025
-"('all-year', 'all-week', 'late-peak')",gas,R1,0.47220000000,2025
-"('all-year', 'all-week', 'late-peak')",gas,R2,0.47220000000,2025
-"('all-year', 'all-week', 'late-peak')",heat,R1,4.85420000000,2025
-"('all-year', 'all-week', 'late-peak')",heat,R2,4.85420000000,2025
-"('all-year', 'all-week', 'late-peak')",CO2f,R1,0.12010000000,2025
-"('all-year', 'all-week', 'late-peak')",CO2f,R2,0.12010000000,2025
-"('all-year', 'all-week', 'evening')",electricity,R1,9.18790000000,2025
-"('all-year', 'all-week', 'evening')",electricity,R2,9.18790000000,2025
-"('all-year', 'all-week', 'evening')",gas,R1,0.47220000000,2025
-"('all-year', 'all-week', 'evening')",gas,R2,0.47220000000,2025
-"('all-year', 'all-week', 'evening')",heat,R1,4.85420000000,2025
-"('all-year', 'all-week', 'evening')",heat,R2,4.85420000000,2025
-"('all-year', 'all-week', 'evening')",CO2f,R1,0.12010000000,2025
-"('all-year', 'all-week', 'evening')",CO2f,R2,0.12010000000,2025
-"('all-year', 'all-week', 'night')",electricity,R1,13.07600000000,2030
-"('all-year', 'all-week', 'night')",electricity,R2,13.07600000000,2030
-"('all-year', 'all-week', 'night')",gas,R1,0.47220000000,2030
-"('all-year', 'all-week', 'night')",gas,R2,0.47220000000,2030
-"('all-year', 'all-week', 'night')",heat,R1,5.47090000000,2030
-"('all-year', 'all-week', 'night')",heat,R2,5.47090000000,2030
-"('all-year', 'all-week', 'night')",CO2f,R1,0.15700000000,2030
-"('all-year', 'all-week', 'night')",CO2f,R2,0.15700000000,2030
-"('all-year', 'all-week', 'morning')",electricity,R1,13.07600000000,2030
-"('all-year', 'all-week', 'morning')",electricity,R2,13.07600000000,2030
-"('all-year', 'all-week', 'morning')",gas,R1,0.47220000000,2030
-"('all-year', 'all-week', 'morning')",gas,R2,0.47220000000,2030
-"('all-year', 'all-week', 'morning')",heat,R1,5.47090000000,2030
-"('all-year', 'all-week', 'morning')",heat,R2,5.47090000000,2030
-"('all-year', 'all-week', 'morning')",CO2f,R1,0.15700000000,2030
-"('all-year', 'all-week', 'morning')",CO2f,R2,0.15700000000,2030
-"('all-year', 'all-week', 'afternoon')",electricity,R1,13.07600000000,2030
-"('all-year', 'all-week', 'afternoon')",electricity,R2,13.07600000000,2030
-"('all-year', 'all-week', 'afternoon')",gas,R1,0.47220000000,2030
-"('all-year', 'all-week', 'afternoon')",gas,R2,0.47220000000,2030
-"('all-year', 'all-week', 'afternoon')",heat,R1,5.47090000000,2030
-"('all-year', 'all-week', 'afternoon')",heat,R2,5.47090000000,2030
-"('all-year', 'all-week', 'afternoon')",CO2f,R1,0.15700000000,2030
-"('all-year', 'all-week', 'afternoon')",CO2f,R2,0.15700000000,2030
-"('all-year', 'all-week', 'early-peak')",electricity,R1,13.07600000000,2030
-"('all-year', 'all-week', 'early-peak')",electricity,R2,13.07600000000,2030
-"('all-year', 'all-week', 'early-peak')",gas,R1,0.47220000000,2030
-"('all-year', 'all-week', 'early-peak')",gas,R2,0.47220000000,2030
-"('all-year', 'all-week', 'early-peak')",heat,R1,5.47090000000,2030
-"('all-year', 'all-week', 'early-peak')",heat,R2,5.47090000000,2030
-"('all-year', 'all-week', 'early-peak')",CO2f,R1,0.15700000000,2030
-"('all-year', 'all-week', 'early-peak')",CO2f,R2,0.15700000000,2030
-"('all-year', 'all-week', 'late-peak')",electricity,R1,13.07600000000,2030
-"('all-year', 'all-week', 'late-peak')",electricity,R2,13.07600000000,2030
-"('all-year', 'all-week', 'late-peak')",gas,R1,0.47220000000,2030
-"('all-year', 'all-week', 'late-peak')",gas,R2,0.47220000000,2030
-"('all-year', 'all-week', 'late-peak')",heat,R1,5.47090000000,2030
-"('all-year', 'all-week', 'late-peak')",heat,R2,5.47090000000,2030
-"('all-year', 'all-week', 'late-peak')",CO2f,R1,0.15700000000,2030
-"('all-year', 'all-week', 'late-peak')",CO2f,R2,0.15700000000,2030
-"('all-year', 'all-week', 'evening')",electricity,R1,13.07600000000,2030
-"('all-year', 'all-week', 'evening')",electricity,R2,13.07600000000,2030
-"('all-year', 'all-week', 'evening')",gas,R1,0.47220000000,2030
-"('all-year', 'all-week', 'evening')",gas,R2,0.47220000000,2030
-"('all-year', 'all-week', 'evening')",heat,R1,5.47090000000,2030
-"('all-year', 'all-week', 'evening')",heat,R2,5.47090000000,2030
-"('all-year', 'all-week', 'evening')",CO2f,R1,0.15700000000,2030
-"('all-year', 'all-week', 'evening')",CO2f,R2,0.15700000000,2030
-"('all-year', 'all-week', 'night')",electricity,R1,14.77530000000,2035
-"('all-year', 'all-week', 'night')",electricity,R2,14.77530000000,2035
-"('all-year', 'all-week', 'night')",gas,R1,0.47220000000,2035
-"('all-year', 'all-week', 'night')",gas,R2,0.47220000000,2035
-"('all-year', 'all-week', 'night')",heat,R1,6.15060000000,2035
-"('all-year', 'all-week', 'night')",heat,R2,6.15060000000,2035
-"('all-year', 'all-week', 'night')",CO2f,R1,0.21490000000,2035
-"('all-year', 'all-week', 'night')",CO2f,R2,0.21490000000,2035
-"('all-year', 'all-week', 'morning')",electricity,R1,14.77530000000,2035
-"('all-year', 'all-week', 'morning')",electricity,R2,14.77530000000,2035
-"('all-year', 'all-week', 'morning')",gas,R1,0.47220000000,2035
-"('all-year', 'all-week', 'morning')",gas,R2,0.47220000000,2035
-"('all-year', 'all-week', 'morning')",heat,R1,6.15060000000,2035
-"('all-year', 'all-week', 'morning')",heat,R2,6.15060000000,2035
-"('all-year', 'all-week', 'morning')",CO2f,R1,0.21490000000,2035
-"('all-year', 'all-week', 'morning')",CO2f,R2,0.21490000000,2035
-"('all-year', 'all-week', 'afternoon')",electricity,R1,14.77530000000,2035
-"('all-year', 'all-week', 'afternoon')",electricity,R2,14.77530000000,2035
-"('all-year', 'all-week', 'afternoon')",gas,R1,0.47220000000,2035
-"('all-year', 'all-week', 'afternoon')",gas,R2,0.47220000000,2035
-"('all-year', 'all-week', 'afternoon')",heat,R1,6.15060000000,2035
-"('all-year', 'all-week', 'afternoon')",heat,R2,6.15060000000,2035
-"('all-year', 'all-week', 'afternoon')",CO2f,R1,0.21490000000,2035
-"('all-year', 'all-week', 'afternoon')",CO2f,R2,0.21490000000,2035
-"('all-year', 'all-week', 'early-peak')",electricity,R1,14.77530000000,2035
-"('all-year', 'all-week', 'early-peak')",electricity,R2,14.77530000000,2035
-"('all-year', 'all-week', 'early-peak')",gas,R1,0.47220000000,2035
-"('all-year', 'all-week', 'early-peak')",gas,R2,0.47220000000,2035
-"('all-year', 'all-week', 'early-peak')",heat,R1,6.15060000000,2035
-"('all-year', 'all-week', 'early-peak')",heat,R2,6.15060000000,2035
-"('all-year', 'all-week', 'early-peak')",CO2f,R1,0.21490000000,2035
-"('all-year', 'all-week', 'early-peak')",CO2f,R2,0.21490000000,2035
-"('all-year', 'all-week', 'late-peak')",electricity,R1,14.77530000000,2035
-"('all-year', 'all-week', 'late-peak')",electricity,R2,14.77530000000,2035
-"('all-year', 'all-week', 'late-peak')",gas,R1,0.47220000000,2035
-"('all-year', 'all-week', 'late-peak')",gas,R2,0.47220000000,2035
-"('all-year', 'all-week', 'late-peak')",heat,R1,6.15060000000,2035
-"('all-year', 'all-week', 'late-peak')",heat,R2,6.15060000000,2035
-"('all-year', 'all-week', 'late-peak')",CO2f,R1,0.21490000000,2035
-"('all-year', 'all-week', 'late-peak')",CO2f,R2,0.21490000000,2035
-"('all-year', 'all-week', 'evening')",electricity,R1,14.77530000000,2035
-"('all-year', 'all-week', 'evening')",electricity,R2,14.77530000000,2035
-"('all-year', 'all-week', 'evening')",gas,R1,0.47220000000,2035
-"('all-year', 'all-week', 'evening')",gas,R2,0.47220000000,2035
-"('all-year', 'all-week', 'evening')",heat,R1,6.15060000000,2035
-"('all-year', 'all-week', 'evening')",heat,R2,6.15060000000,2035
-"('all-year', 'all-week', 'evening')",CO2f,R1,0.21490000000,2035
-"('all-year', 'all-week', 'evening')",CO2f,R2,0.21490000000,2035
-"('all-year', 'all-week', 'night')",electricity,R1,15.97270000000,2040
-"('all-year', 'all-week', 'night')",electricity,R2,15.97270000000,2040
-"('all-year', 'all-week', 'night')",gas,R1,0.47220000000,2040
-"('all-year', 'all-week', 'night')",gas,R2,0.47220000000,2040
-"('all-year', 'all-week', 'night')",heat,R1,6.62960000000,2040
-"('all-year', 'all-week', 'night')",heat,R2,6.62960000000,2040
-"('all-year', 'all-week', 'night')",CO2f,R1,0.27280000000,2040
-"('all-year', 'all-week', 'night')",CO2f,R2,0.27280000000,2040
-"('all-year', 'all-week', 'morning')",electricity,R1,15.97270000000,2040
-"('all-year', 'all-week', 'morning')",electricity,R2,15.97270000000,2040
-"('all-year', 'all-week', 'morning')",gas,R1,0.47220000000,2040
-"('all-year', 'all-week', 'morning')",gas,R2,0.47220000000,2040
-"('all-year', 'all-week', 'morning')",heat,R1,6.62960000000,2040
-"('all-year', 'all-week', 'morning')",heat,R2,6.62960000000,2040
-"('all-year', 'all-week', 'morning')",CO2f,R1,0.27280000000,2040
-"('all-year', 'all-week', 'morning')",CO2f,R2,0.27280000000,2040
-"('all-year', 'all-week', 'afternoon')",electricity,R1,15.97270000000,2040
-"('all-year', 'all-week', 'afternoon')",electricity,R2,15.97270000000,2040
-"('all-year', 'all-week', 'afternoon')",gas,R1,0.47220000000,2040
-"('all-year', 'all-week', 'afternoon')",gas,R2,0.47220000000,2040
-"('all-year', 'all-week', 'afternoon')",heat,R1,6.62960000000,2040
-"('all-year', 'all-week', 'afternoon')",heat,R2,6.62960000000,2040
-"('all-year', 'all-week', 'afternoon')",CO2f,R1,0.27280000000,2040
-"('all-year', 'all-week', 'afternoon')",CO2f,R2,0.27280000000,2040
-"('all-year', 'all-week', 'early-peak')",electricity,R1,15.97270000000,2040
-"('all-year', 'all-week', 'early-peak')",electricity,R2,15.97270000000,2040
-"('all-year', 'all-week', 'early-peak')",gas,R1,0.47220000000,2040
-"('all-year', 'all-week', 'early-peak')",gas,R2,0.47220000000,2040
-"('all-year', 'all-week', 'early-peak')",heat,R1,6.62960000000,2040
-"('all-year', 'all-week', 'early-peak')",heat,R2,6.62960000000,2040
-"('all-year', 'all-week', 'early-peak')",CO2f,R1,0.27280000000,2040
-"('all-year', 'all-week', 'early-peak')",CO2f,R2,0.27280000000,2040
-"('all-year', 'all-week', 'late-peak')",electricity,R1,15.97270000000,2040
-"('all-year', 'all-week', 'late-peak')",electricity,R2,15.97270000000,2040
-"('all-year', 'all-week', 'late-peak')",gas,R1,0.47220000000,2040
-"('all-year', 'all-week', 'late-peak')",gas,R2,0.47220000000,2040
-"('all-year', 'all-week', 'late-peak')",heat,R1,6.62960000000,2040
-"('all-year', 'all-week', 'late-peak')",heat,R2,6.62960000000,2040
-"('all-year', 'all-week', 'late-peak')",CO2f,R1,0.27280000000,2040
-"('all-year', 'all-week', 'late-peak')",CO2f,R2,0.27280000000,2040
-"('all-year', 'all-week', 'evening')",electricity,R1,15.97270000000,2040
-"('all-year', 'all-week', 'evening')",electricity,R2,15.97270000000,2040
-"('all-year', 'all-week', 'evening')",gas,R1,0.47220000000,2040
-"('all-year', 'all-week', 'evening')",gas,R2,0.47220000000,2040
-"('all-year', 'all-week', 'evening')",heat,R1,6.62960000000,2040
-"('all-year', 'all-week', 'evening')",heat,R2,6.62960000000,2040
-"('all-year', 'all-week', 'evening')",CO2f,R1,0.27280000000,2040
-"('all-year', 'all-week', 'evening')",CO2f,R2,0.27280000000,2040
-"('all-year', 'all-week', 'night')",electricity,R1,17.94720000000,2045
-"('all-year', 'all-week', 'night')",electricity,R2,17.94720000000,2045
-"('all-year', 'all-week', 'night')",gas,R1,0.47220000000,2045
-"('all-year', 'all-week', 'night')",gas,R2,0.47220000000,2045
-"('all-year', 'all-week', 'night')",heat,R1,7.41940000000,2045
-"('all-year', 'all-week', 'night')",heat,R2,7.41940000000,2045
-"('all-year', 'all-week', 'night')",CO2f,R1,0.35390000000,2045
-"('all-year', 'all-week', 'night')",CO2f,R2,0.35390000000,2045
-"('all-year', 'all-week', 'morning')",electricity,R1,17.94720000000,2045
-"('all-year', 'all-week', 'morning')",electricity,R2,17.94720000000,2045
-"('all-year', 'all-week', 'morning')",gas,R1,0.47220000000,2045
-"('all-year', 'all-week', 'morning')",gas,R2,0.47220000000,2045
-"('all-year', 'all-week', 'morning')",heat,R1,7.41940000000,2045
-"('all-year', 'all-week', 'morning')",heat,R2,7.41940000000,2045
-"('all-year', 'all-week', 'morning')",CO2f,R1,0.35390000000,2045
-"('all-year', 'all-week', 'morning')",CO2f,R2,0.35390000000,2045
-"('all-year', 'all-week', 'afternoon')",electricity,R1,17.94720000000,2045
-"('all-year', 'all-week', 'afternoon')",electricity,R2,17.94720000000,2045
-"('all-year', 'all-week', 'afternoon')",gas,R1,0.47220000000,2045
-"('all-year', 'all-week', 'afternoon')",gas,R2,0.47220000000,2045
-"('all-year', 'all-week', 'afternoon')",heat,R1,7.41940000000,2045
-"('all-year', 'all-week', 'afternoon')",heat,R2,7.41940000000,2045
-"('all-year', 'all-week', 'afternoon')",CO2f,R1,0.35390000000,2045
-"('all-year', 'all-week', 'afternoon')",CO2f,R2,0.35390000000,2045
-"('all-year', 'all-week', 'early-peak')",electricity,R1,17.94720000000,2045
-"('all-year', 'all-week', 'early-peak')",electricity,R2,17.94720000000,2045
-"('all-year', 'all-week', 'early-peak')",gas,R1,0.47220000000,2045
-"('all-year', 'all-week', 'early-peak')",gas,R2,0.47220000000,2045
-"('all-year', 'all-week', 'early-peak')",heat,R1,7.41940000000,2045
-"('all-year', 'all-week', 'early-peak')",heat,R2,7.41940000000,2045
-"('all-year', 'all-week', 'early-peak')",CO2f,R1,0.35390000000,2045
-"('all-year', 'all-week', 'early-peak')",CO2f,R2,0.35390000000,2045
-"('all-year', 'all-week', 'late-peak')",electricity,R1,17.94720000000,2045
-"('all-year', 'all-week', 'late-peak')",electricity,R2,17.94720000000,2045
-"('all-year', 'all-week', 'late-peak')",gas,R1,0.47220000000,2045
-"('all-year', 'all-week', 'late-peak')",gas,R2,0.47220000000,2045
-"('all-year', 'all-week', 'late-peak')",heat,R1,7.41940000000,2045
-"('all-year', 'all-week', 'late-peak')",heat,R2,7.41940000000,2045
-"('all-year', 'all-week', 'late-peak')",CO2f,R1,0.35390000000,2045
-"('all-year', 'all-week', 'late-peak')",CO2f,R2,0.35390000000,2045
-"('all-year', 'all-week', 'evening')",electricity,R1,17.94720000000,2045
-"('all-year', 'all-week', 'evening')",electricity,R2,17.94720000000,2045
-"('all-year', 'all-week', 'evening')",gas,R1,0.47220000000,2045
-"('all-year', 'all-week', 'evening')",gas,R2,0.47220000000,2045
-"('all-year', 'all-week', 'evening')",heat,R1,7.41940000000,2045
-"('all-year', 'all-week', 'evening')",heat,R2,7.41940000000,2045
-"('all-year', 'all-week', 'evening')",CO2f,R1,0.35390000000,2045
-"('all-year', 'all-week', 'evening')",CO2f,R2,0.35390000000,2045
-"('all-year', 'all-week', 'night')",electricity,R1,19.46150000000,2050
-"('all-year', 'all-week', 'night')",electricity,R2,19.46150000000,2050
-"('all-year', 'all-week', 'night')",gas,R1,0.47220000000,2050
-"('all-year', 'all-week', 'night')",gas,R2,0.47220000000,2050
-"('all-year', 'all-week', 'night')",heat,R1,8.02510000000,2050
-"('all-year', 'all-week', 'night')",heat,R2,8.02510000000,2050
-"('all-year', 'all-week', 'night')",CO2f,R1,0.43510000000,2050
-"('all-year', 'all-week', 'night')",CO2f,R2,0.43510000000,2050
-"('all-year', 'all-week', 'morning')",electricity,R1,19.46150000000,2050
-"('all-year', 'all-week', 'morning')",electricity,R2,19.46150000000,2050
-"('all-year', 'all-week', 'morning')",gas,R1,0.47220000000,2050
-"('all-year', 'all-week', 'morning')",gas,R2,0.47220000000,2050
-"('all-year', 'all-week', 'morning')",heat,R1,8.02510000000,2050
-"('all-year', 'all-week', 'morning')",heat,R2,8.02510000000,2050
-"('all-year', 'all-week', 'morning')",CO2f,R1,0.43510000000,2050
-"('all-year', 'all-week', 'morning')",CO2f,R2,0.43510000000,2050
-"('all-year', 'all-week', 'afternoon')",electricity,R1,19.46150000000,2050
-"('all-year', 'all-week', 'afternoon')",electricity,R2,19.46150000000,2050
-"('all-year', 'all-week', 'afternoon')",gas,R1,0.47220000000,2050
-"('all-year', 'all-week', 'afternoon')",gas,R2,0.47220000000,2050
-"('all-year', 'all-week', 'afternoon')",heat,R1,8.02510000000,2050
-"('all-year', 'all-week', 'afternoon')",heat,R2,8.02510000000,2050
-"('all-year', 'all-week', 'afternoon')",CO2f,R1,0.43510000000,2050
-"('all-year', 'all-week', 'afternoon')",CO2f,R2,0.43510000000,2050
-"('all-year', 'all-week', 'early-peak')",electricity,R1,19.46150000000,2050
-"('all-year', 'all-week', 'early-peak')",electricity,R2,19.46150000000,2050
-"('all-year', 'all-week', 'early-peak')",gas,R1,0.47220000000,2050
-"('all-year', 'all-week', 'early-peak')",gas,R2,0.47220000000,2050
-"('all-year', 'all-week', 'early-peak')",heat,R1,8.02510000000,2050
-"('all-year', 'all-week', 'early-peak')",heat,R2,8.02510000000,2050
-"('all-year', 'all-week', 'early-peak')",CO2f,R1,0.43510000000,2050
-"('all-year', 'all-week', 'early-peak')",CO2f,R2,0.43510000000,2050
-"('all-year', 'all-week', 'late-peak')",electricity,R1,19.46150000000,2050
-"('all-year', 'all-week', 'late-peak')",electricity,R2,19.46150000000,2050
-"('all-year', 'all-week', 'late-peak')",gas,R1,0.47220000000,2050
-"('all-year', 'all-week', 'late-peak')",gas,R2,0.47220000000,2050
-"('all-year', 'all-week', 'late-peak')",heat,R1,8.02510000000,2050
-"('all-year', 'all-week', 'late-peak')",heat,R2,8.02510000000,2050
-"('all-year', 'all-week', 'late-peak')",CO2f,R1,0.43510000000,2050
-"('all-year', 'all-week', 'late-peak')",CO2f,R2,0.43510000000,2050
-"('all-year', 'all-week', 'evening')",electricity,R1,19.46150000000,2050
-"('all-year', 'all-week', 'evening')",electricity,R2,19.46150000000,2050
-"('all-year', 'all-week', 'evening')",gas,R1,0.47220000000,2050
-"('all-year', 'all-week', 'evening')",gas,R2,0.47220000000,2050
-"('all-year', 'all-week', 'evening')",heat,R1,8.02510000000,2050
-"('all-year', 'all-week', 'evening')",heat,R2,8.02510000000,2050
-"('all-year', 'all-week', 'evening')",CO2f,R1,0.43510000000,2050
-"('all-year', 'all-week', 'evening')",CO2f,R2,0.43510000000,2050
+commodity,day,hour,month,prices,region,timeslice,units_prices,year
+electricity,all-week,night,all-year,19.50000000000,R1,0,MUS$2010/PJ,2020
+electricity,all-week,night,all-year,19.50000000000,R2,0,MUS$2010/PJ,2020
+gas,all-week,night,all-year,7.15280000000,R1,0,MUS$2010/PJ,2020
+gas,all-week,night,all-year,7.15280000000,R2,0,MUS$2010/PJ,2020
+heat,all-week,night,all-year,100.00000000000,R1,0,MUS$2010/PJ,2020
+heat,all-week,night,all-year,100.00000000000,R2,0,MUS$2010/PJ,2020
+CO2f,all-week,night,all-year,0.08310000000,R1,0,MUS$2010/kt,2020
+CO2f,all-week,night,all-year,0.08310000000,R2,0,MUS$2010/kt,2020
+electricity,all-week,morning,all-year,19.50000000000,R1,1,MUS$2010/PJ,2020
+electricity,all-week,morning,all-year,19.50000000000,R2,1,MUS$2010/PJ,2020
+gas,all-week,morning,all-year,7.15280000000,R1,1,MUS$2010/PJ,2020
+gas,all-week,morning,all-year,7.15280000000,R2,1,MUS$2010/PJ,2020
+heat,all-week,morning,all-year,100.00000000000,R1,1,MUS$2010/PJ,2020
+heat,all-week,morning,all-year,100.00000000000,R2,1,MUS$2010/PJ,2020
+CO2f,all-week,morning,all-year,0.08310000000,R1,1,MUS$2010/kt,2020
+CO2f,all-week,morning,all-year,0.08310000000,R2,1,MUS$2010/kt,2020
+electricity,all-week,afternoon,all-year,19.50000000000,R1,2,MUS$2010/PJ,2020
+electricity,all-week,afternoon,all-year,19.50000000000,R2,2,MUS$2010/PJ,2020
+gas,all-week,afternoon,all-year,7.15280000000,R1,2,MUS$2010/PJ,2020
+gas,all-week,afternoon,all-year,7.15280000000,R2,2,MUS$2010/PJ,2020
+heat,all-week,afternoon,all-year,100.00000000000,R1,2,MUS$2010/PJ,2020
+heat,all-week,afternoon,all-year,100.00000000000,R2,2,MUS$2010/PJ,2020
+CO2f,all-week,afternoon,all-year,0.08310000000,R1,2,MUS$2010/kt,2020
+CO2f,all-week,afternoon,all-year,0.08310000000,R2,2,MUS$2010/kt,2020
+electricity,all-week,early-peak,all-year,19.50000000000,R1,3,MUS$2010/PJ,2020
+electricity,all-week,early-peak,all-year,19.50000000000,R2,3,MUS$2010/PJ,2020
+gas,all-week,early-peak,all-year,7.15280000000,R1,3,MUS$2010/PJ,2020
+gas,all-week,early-peak,all-year,7.15280000000,R2,3,MUS$2010/PJ,2020
+heat,all-week,early-peak,all-year,100.00000000000,R1,3,MUS$2010/PJ,2020
+heat,all-week,early-peak,all-year,100.00000000000,R2,3,MUS$2010/PJ,2020
+CO2f,all-week,early-peak,all-year,0.08310000000,R1,3,MUS$2010/kt,2020
+CO2f,all-week,early-peak,all-year,0.08310000000,R2,3,MUS$2010/kt,2020
+electricity,all-week,late-peak,all-year,19.50000000000,R1,4,MUS$2010/PJ,2020
+electricity,all-week,late-peak,all-year,19.50000000000,R2,4,MUS$2010/PJ,2020
+gas,all-week,late-peak,all-year,7.15280000000,R1,4,MUS$2010/PJ,2020
+gas,all-week,late-peak,all-year,7.15280000000,R2,4,MUS$2010/PJ,2020
+heat,all-week,late-peak,all-year,100.00000000000,R1,4,MUS$2010/PJ,2020
+heat,all-week,late-peak,all-year,100.00000000000,R2,4,MUS$2010/PJ,2020
+CO2f,all-week,late-peak,all-year,0.08310000000,R1,4,MUS$2010/kt,2020
+CO2f,all-week,late-peak,all-year,0.08310000000,R2,4,MUS$2010/kt,2020
+electricity,all-week,evening,all-year,19.50000000000,R1,5,MUS$2010/PJ,2020
+electricity,all-week,evening,all-year,19.50000000000,R2,5,MUS$2010/PJ,2020
+gas,all-week,evening,all-year,7.15280000000,R1,5,MUS$2010/PJ,2020
+gas,all-week,evening,all-year,7.15280000000,R2,5,MUS$2010/PJ,2020
+heat,all-week,evening,all-year,100.00000000000,R1,5,MUS$2010/PJ,2020
+heat,all-week,evening,all-year,100.00000000000,R2,5,MUS$2010/PJ,2020
+CO2f,all-week,evening,all-year,0.08310000000,R1,5,MUS$2010/kt,2020
+CO2f,all-week,evening,all-year,0.08310000000,R2,5,MUS$2010/kt,2020
+electricity,all-week,night,all-year,9.18790000000,R1,0,MUS$2010/PJ,2025
+electricity,all-week,night,all-year,9.18790000000,R2,0,MUS$2010/PJ,2025
+gas,all-week,night,all-year,0.47220000000,R1,0,MUS$2010/PJ,2025
+gas,all-week,night,all-year,0.47220000000,R2,0,MUS$2010/PJ,2025
+heat,all-week,night,all-year,4.85420000000,R1,0,MUS$2010/PJ,2025
+heat,all-week,night,all-year,4.85420000000,R2,0,MUS$2010/PJ,2025
+CO2f,all-week,night,all-year,0.12010000000,R1,0,MUS$2010/kt,2025
+CO2f,all-week,night,all-year,0.12010000000,R2,0,MUS$2010/kt,2025
+electricity,all-week,morning,all-year,9.18790000000,R1,1,MUS$2010/PJ,2025
+electricity,all-week,morning,all-year,9.18790000000,R2,1,MUS$2010/PJ,2025
+gas,all-week,morning,all-year,0.47220000000,R1,1,MUS$2010/PJ,2025
+gas,all-week,morning,all-year,0.47220000000,R2,1,MUS$2010/PJ,2025
+heat,all-week,morning,all-year,4.85420000000,R1,1,MUS$2010/PJ,2025
+heat,all-week,morning,all-year,4.85420000000,R2,1,MUS$2010/PJ,2025
+CO2f,all-week,morning,all-year,0.12010000000,R1,1,MUS$2010/kt,2025
+CO2f,all-week,morning,all-year,0.12010000000,R2,1,MUS$2010/kt,2025
+electricity,all-week,afternoon,all-year,9.18790000000,R1,2,MUS$2010/PJ,2025
+electricity,all-week,afternoon,all-year,9.18790000000,R2,2,MUS$2010/PJ,2025
+gas,all-week,afternoon,all-year,0.47220000000,R1,2,MUS$2010/PJ,2025
+gas,all-week,afternoon,all-year,0.47220000000,R2,2,MUS$2010/PJ,2025
+heat,all-week,afternoon,all-year,4.85420000000,R1,2,MUS$2010/PJ,2025
+heat,all-week,afternoon,all-year,4.85420000000,R2,2,MUS$2010/PJ,2025
+CO2f,all-week,afternoon,all-year,0.12010000000,R1,2,MUS$2010/kt,2025
+CO2f,all-week,afternoon,all-year,0.12010000000,R2,2,MUS$2010/kt,2025
+electricity,all-week,early-peak,all-year,9.18790000000,R1,3,MUS$2010/PJ,2025
+electricity,all-week,early-peak,all-year,9.18790000000,R2,3,MUS$2010/PJ,2025
+gas,all-week,early-peak,all-year,0.47220000000,R1,3,MUS$2010/PJ,2025
+gas,all-week,early-peak,all-year,0.47220000000,R2,3,MUS$2010/PJ,2025
+heat,all-week,early-peak,all-year,4.85420000000,R1,3,MUS$2010/PJ,2025
+heat,all-week,early-peak,all-year,4.85420000000,R2,3,MUS$2010/PJ,2025
+CO2f,all-week,early-peak,all-year,0.12010000000,R1,3,MUS$2010/kt,2025
+CO2f,all-week,early-peak,all-year,0.12010000000,R2,3,MUS$2010/kt,2025
+electricity,all-week,late-peak,all-year,9.18790000000,R1,4,MUS$2010/PJ,2025
+electricity,all-week,late-peak,all-year,9.18790000000,R2,4,MUS$2010/PJ,2025
+gas,all-week,late-peak,all-year,0.47220000000,R1,4,MUS$2010/PJ,2025
+gas,all-week,late-peak,all-year,0.47220000000,R2,4,MUS$2010/PJ,2025
+heat,all-week,late-peak,all-year,4.85420000000,R1,4,MUS$2010/PJ,2025
+heat,all-week,late-peak,all-year,4.85420000000,R2,4,MUS$2010/PJ,2025
+CO2f,all-week,late-peak,all-year,0.12010000000,R1,4,MUS$2010/kt,2025
+CO2f,all-week,late-peak,all-year,0.12010000000,R2,4,MUS$2010/kt,2025
+electricity,all-week,evening,all-year,9.18790000000,R1,5,MUS$2010/PJ,2025
+electricity,all-week,evening,all-year,9.18790000000,R2,5,MUS$2010/PJ,2025
+gas,all-week,evening,all-year,0.47220000000,R1,5,MUS$2010/PJ,2025
+gas,all-week,evening,all-year,0.47220000000,R2,5,MUS$2010/PJ,2025
+heat,all-week,evening,all-year,4.85420000000,R1,5,MUS$2010/PJ,2025
+heat,all-week,evening,all-year,4.85420000000,R2,5,MUS$2010/PJ,2025
+CO2f,all-week,evening,all-year,0.12010000000,R1,5,MUS$2010/kt,2025
+CO2f,all-week,evening,all-year,0.12010000000,R2,5,MUS$2010/kt,2025
+electricity,all-week,night,all-year,13.07600000000,R1,0,MUS$2010/PJ,2030
+electricity,all-week,night,all-year,13.07600000000,R2,0,MUS$2010/PJ,2030
+gas,all-week,night,all-year,0.47220000000,R1,0,MUS$2010/PJ,2030
+gas,all-week,night,all-year,0.47220000000,R2,0,MUS$2010/PJ,2030
+heat,all-week,night,all-year,5.47090000000,R1,0,MUS$2010/PJ,2030
+heat,all-week,night,all-year,5.47090000000,R2,0,MUS$2010/PJ,2030
+CO2f,all-week,night,all-year,0.15700000000,R1,0,MUS$2010/kt,2030
+CO2f,all-week,night,all-year,0.15700000000,R2,0,MUS$2010/kt,2030
+electricity,all-week,morning,all-year,13.07600000000,R1,1,MUS$2010/PJ,2030
+electricity,all-week,morning,all-year,13.07600000000,R2,1,MUS$2010/PJ,2030
+gas,all-week,morning,all-year,0.47220000000,R1,1,MUS$2010/PJ,2030
+gas,all-week,morning,all-year,0.47220000000,R2,1,MUS$2010/PJ,2030
+heat,all-week,morning,all-year,5.47090000000,R1,1,MUS$2010/PJ,2030
+heat,all-week,morning,all-year,5.47090000000,R2,1,MUS$2010/PJ,2030
+CO2f,all-week,morning,all-year,0.15700000000,R1,1,MUS$2010/kt,2030
+CO2f,all-week,morning,all-year,0.15700000000,R2,1,MUS$2010/kt,2030
+electricity,all-week,afternoon,all-year,13.07600000000,R1,2,MUS$2010/PJ,2030
+electricity,all-week,afternoon,all-year,13.07600000000,R2,2,MUS$2010/PJ,2030
+gas,all-week,afternoon,all-year,0.47220000000,R1,2,MUS$2010/PJ,2030
+gas,all-week,afternoon,all-year,0.47220000000,R2,2,MUS$2010/PJ,2030
+heat,all-week,afternoon,all-year,5.47090000000,R1,2,MUS$2010/PJ,2030
+heat,all-week,afternoon,all-year,5.47090000000,R2,2,MUS$2010/PJ,2030
+CO2f,all-week,afternoon,all-year,0.15700000000,R1,2,MUS$2010/kt,2030
+CO2f,all-week,afternoon,all-year,0.15700000000,R2,2,MUS$2010/kt,2030
+electricity,all-week,early-peak,all-year,13.07600000000,R1,3,MUS$2010/PJ,2030
+electricity,all-week,early-peak,all-year,13.07600000000,R2,3,MUS$2010/PJ,2030
+gas,all-week,early-peak,all-year,0.47220000000,R1,3,MUS$2010/PJ,2030
+gas,all-week,early-peak,all-year,0.47220000000,R2,3,MUS$2010/PJ,2030
+heat,all-week,early-peak,all-year,5.47090000000,R1,3,MUS$2010/PJ,2030
+heat,all-week,early-peak,all-year,5.47090000000,R2,3,MUS$2010/PJ,2030
+CO2f,all-week,early-peak,all-year,0.15700000000,R1,3,MUS$2010/kt,2030
+CO2f,all-week,early-peak,all-year,0.15700000000,R2,3,MUS$2010/kt,2030
+electricity,all-week,late-peak,all-year,13.07600000000,R1,4,MUS$2010/PJ,2030
+electricity,all-week,late-peak,all-year,13.07600000000,R2,4,MUS$2010/PJ,2030
+gas,all-week,late-peak,all-year,0.47220000000,R1,4,MUS$2010/PJ,2030
+gas,all-week,late-peak,all-year,0.47220000000,R2,4,MUS$2010/PJ,2030
+heat,all-week,late-peak,all-year,5.47090000000,R1,4,MUS$2010/PJ,2030
+heat,all-week,late-peak,all-year,5.47090000000,R2,4,MUS$2010/PJ,2030
+CO2f,all-week,late-peak,all-year,0.15700000000,R1,4,MUS$2010/kt,2030
+CO2f,all-week,late-peak,all-year,0.15700000000,R2,4,MUS$2010/kt,2030
+electricity,all-week,evening,all-year,13.07600000000,R1,5,MUS$2010/PJ,2030
+electricity,all-week,evening,all-year,13.07600000000,R2,5,MUS$2010/PJ,2030
+gas,all-week,evening,all-year,0.47220000000,R1,5,MUS$2010/PJ,2030
+gas,all-week,evening,all-year,0.47220000000,R2,5,MUS$2010/PJ,2030
+heat,all-week,evening,all-year,5.47090000000,R1,5,MUS$2010/PJ,2030
+heat,all-week,evening,all-year,5.47090000000,R2,5,MUS$2010/PJ,2030
+CO2f,all-week,evening,all-year,0.15700000000,R1,5,MUS$2010/kt,2030
+CO2f,all-week,evening,all-year,0.15700000000,R2,5,MUS$2010/kt,2030
+electricity,all-week,night,all-year,14.77530000000,R1,0,MUS$2010/PJ,2035
+electricity,all-week,night,all-year,14.77530000000,R2,0,MUS$2010/PJ,2035
+gas,all-week,night,all-year,0.47220000000,R1,0,MUS$2010/PJ,2035
+gas,all-week,night,all-year,0.47220000000,R2,0,MUS$2010/PJ,2035
+heat,all-week,night,all-year,6.15060000000,R1,0,MUS$2010/PJ,2035
+heat,all-week,night,all-year,6.15060000000,R2,0,MUS$2010/PJ,2035
+CO2f,all-week,night,all-year,0.21490000000,R1,0,MUS$2010/kt,2035
+CO2f,all-week,night,all-year,0.21490000000,R2,0,MUS$2010/kt,2035
+electricity,all-week,morning,all-year,14.77530000000,R1,1,MUS$2010/PJ,2035
+electricity,all-week,morning,all-year,14.77530000000,R2,1,MUS$2010/PJ,2035
+gas,all-week,morning,all-year,0.47220000000,R1,1,MUS$2010/PJ,2035
+gas,all-week,morning,all-year,0.47220000000,R2,1,MUS$2010/PJ,2035
+heat,all-week,morning,all-year,6.15060000000,R1,1,MUS$2010/PJ,2035
+heat,all-week,morning,all-year,6.15060000000,R2,1,MUS$2010/PJ,2035
+CO2f,all-week,morning,all-year,0.21490000000,R1,1,MUS$2010/kt,2035
+CO2f,all-week,morning,all-year,0.21490000000,R2,1,MUS$2010/kt,2035
+electricity,all-week,afternoon,all-year,14.77530000000,R1,2,MUS$2010/PJ,2035
+electricity,all-week,afternoon,all-year,14.77530000000,R2,2,MUS$2010/PJ,2035
+gas,all-week,afternoon,all-year,0.47220000000,R1,2,MUS$2010/PJ,2035
+gas,all-week,afternoon,all-year,0.47220000000,R2,2,MUS$2010/PJ,2035
+heat,all-week,afternoon,all-year,6.15060000000,R1,2,MUS$2010/PJ,2035
+heat,all-week,afternoon,all-year,6.15060000000,R2,2,MUS$2010/PJ,2035
+CO2f,all-week,afternoon,all-year,0.21490000000,R1,2,MUS$2010/kt,2035
+CO2f,all-week,afternoon,all-year,0.21490000000,R2,2,MUS$2010/kt,2035
+electricity,all-week,early-peak,all-year,14.77530000000,R1,3,MUS$2010/PJ,2035
+electricity,all-week,early-peak,all-year,14.77530000000,R2,3,MUS$2010/PJ,2035
+gas,all-week,early-peak,all-year,0.47220000000,R1,3,MUS$2010/PJ,2035
+gas,all-week,early-peak,all-year,0.47220000000,R2,3,MUS$2010/PJ,2035
+heat,all-week,early-peak,all-year,6.15060000000,R1,3,MUS$2010/PJ,2035
+heat,all-week,early-peak,all-year,6.15060000000,R2,3,MUS$2010/PJ,2035
+CO2f,all-week,early-peak,all-year,0.21490000000,R1,3,MUS$2010/kt,2035
+CO2f,all-week,early-peak,all-year,0.21490000000,R2,3,MUS$2010/kt,2035
+electricity,all-week,late-peak,all-year,14.77530000000,R1,4,MUS$2010/PJ,2035
+electricity,all-week,late-peak,all-year,14.77530000000,R2,4,MUS$2010/PJ,2035
+gas,all-week,late-peak,all-year,0.47220000000,R1,4,MUS$2010/PJ,2035
+gas,all-week,late-peak,all-year,0.47220000000,R2,4,MUS$2010/PJ,2035
+heat,all-week,late-peak,all-year,6.15060000000,R1,4,MUS$2010/PJ,2035
+heat,all-week,late-peak,all-year,6.15060000000,R2,4,MUS$2010/PJ,2035
+CO2f,all-week,late-peak,all-year,0.21490000000,R1,4,MUS$2010/kt,2035
+CO2f,all-week,late-peak,all-year,0.21490000000,R2,4,MUS$2010/kt,2035
+electricity,all-week,evening,all-year,14.77530000000,R1,5,MUS$2010/PJ,2035
+electricity,all-week,evening,all-year,14.77530000000,R2,5,MUS$2010/PJ,2035
+gas,all-week,evening,all-year,0.47220000000,R1,5,MUS$2010/PJ,2035
+gas,all-week,evening,all-year,0.47220000000,R2,5,MUS$2010/PJ,2035
+heat,all-week,evening,all-year,6.15060000000,R1,5,MUS$2010/PJ,2035
+heat,all-week,evening,all-year,6.15060000000,R2,5,MUS$2010/PJ,2035
+CO2f,all-week,evening,all-year,0.21490000000,R1,5,MUS$2010/kt,2035
+CO2f,all-week,evening,all-year,0.21490000000,R2,5,MUS$2010/kt,2035
+electricity,all-week,night,all-year,15.97270000000,R1,0,MUS$2010/PJ,2040
+electricity,all-week,night,all-year,15.97270000000,R2,0,MUS$2010/PJ,2040
+gas,all-week,night,all-year,0.47220000000,R1,0,MUS$2010/PJ,2040
+gas,all-week,night,all-year,0.47220000000,R2,0,MUS$2010/PJ,2040
+heat,all-week,night,all-year,6.62960000000,R1,0,MUS$2010/PJ,2040
+heat,all-week,night,all-year,6.62960000000,R2,0,MUS$2010/PJ,2040
+CO2f,all-week,night,all-year,0.27280000000,R1,0,MUS$2010/kt,2040
+CO2f,all-week,night,all-year,0.27280000000,R2,0,MUS$2010/kt,2040
+electricity,all-week,morning,all-year,15.97270000000,R1,1,MUS$2010/PJ,2040
+electricity,all-week,morning,all-year,15.97270000000,R2,1,MUS$2010/PJ,2040
+gas,all-week,morning,all-year,0.47220000000,R1,1,MUS$2010/PJ,2040
+gas,all-week,morning,all-year,0.47220000000,R2,1,MUS$2010/PJ,2040
+heat,all-week,morning,all-year,6.62960000000,R1,1,MUS$2010/PJ,2040
+heat,all-week,morning,all-year,6.62960000000,R2,1,MUS$2010/PJ,2040
+CO2f,all-week,morning,all-year,0.27280000000,R1,1,MUS$2010/kt,2040
+CO2f,all-week,morning,all-year,0.27280000000,R2,1,MUS$2010/kt,2040
+electricity,all-week,afternoon,all-year,15.97270000000,R1,2,MUS$2010/PJ,2040
+electricity,all-week,afternoon,all-year,15.97270000000,R2,2,MUS$2010/PJ,2040
+gas,all-week,afternoon,all-year,0.47220000000,R1,2,MUS$2010/PJ,2040
+gas,all-week,afternoon,all-year,0.47220000000,R2,2,MUS$2010/PJ,2040
+heat,all-week,afternoon,all-year,6.62960000000,R1,2,MUS$2010/PJ,2040
+heat,all-week,afternoon,all-year,6.62960000000,R2,2,MUS$2010/PJ,2040
+CO2f,all-week,afternoon,all-year,0.27280000000,R1,2,MUS$2010/kt,2040
+CO2f,all-week,afternoon,all-year,0.27280000000,R2,2,MUS$2010/kt,2040
+electricity,all-week,early-peak,all-year,15.97270000000,R1,3,MUS$2010/PJ,2040
+electricity,all-week,early-peak,all-year,15.97270000000,R2,3,MUS$2010/PJ,2040
+gas,all-week,early-peak,all-year,0.47220000000,R1,3,MUS$2010/PJ,2040
+gas,all-week,early-peak,all-year,0.47220000000,R2,3,MUS$2010/PJ,2040
+heat,all-week,early-peak,all-year,6.62960000000,R1,3,MUS$2010/PJ,2040
+heat,all-week,early-peak,all-year,6.62960000000,R2,3,MUS$2010/PJ,2040
+CO2f,all-week,early-peak,all-year,0.27280000000,R1,3,MUS$2010/kt,2040
+CO2f,all-week,early-peak,all-year,0.27280000000,R2,3,MUS$2010/kt,2040
+electricity,all-week,late-peak,all-year,15.97270000000,R1,4,MUS$2010/PJ,2040
+electricity,all-week,late-peak,all-year,15.97270000000,R2,4,MUS$2010/PJ,2040
+gas,all-week,late-peak,all-year,0.47220000000,R1,4,MUS$2010/PJ,2040
+gas,all-week,late-peak,all-year,0.47220000000,R2,4,MUS$2010/PJ,2040
+heat,all-week,late-peak,all-year,6.62960000000,R1,4,MUS$2010/PJ,2040
+heat,all-week,late-peak,all-year,6.62960000000,R2,4,MUS$2010/PJ,2040
+CO2f,all-week,late-peak,all-year,0.27280000000,R1,4,MUS$2010/kt,2040
+CO2f,all-week,late-peak,all-year,0.27280000000,R2,4,MUS$2010/kt,2040
+electricity,all-week,evening,all-year,15.97270000000,R1,5,MUS$2010/PJ,2040
+electricity,all-week,evening,all-year,15.97270000000,R2,5,MUS$2010/PJ,2040
+gas,all-week,evening,all-year,0.47220000000,R1,5,MUS$2010/PJ,2040
+gas,all-week,evening,all-year,0.47220000000,R2,5,MUS$2010/PJ,2040
+heat,all-week,evening,all-year,6.62960000000,R1,5,MUS$2010/PJ,2040
+heat,all-week,evening,all-year,6.62960000000,R2,5,MUS$2010/PJ,2040
+CO2f,all-week,evening,all-year,0.27280000000,R1,5,MUS$2010/kt,2040
+CO2f,all-week,evening,all-year,0.27280000000,R2,5,MUS$2010/kt,2040
+electricity,all-week,night,all-year,17.94720000000,R1,0,MUS$2010/PJ,2045
+electricity,all-week,night,all-year,17.94720000000,R2,0,MUS$2010/PJ,2045
+gas,all-week,night,all-year,0.47220000000,R1,0,MUS$2010/PJ,2045
+gas,all-week,night,all-year,0.47220000000,R2,0,MUS$2010/PJ,2045
+heat,all-week,night,all-year,7.41940000000,R1,0,MUS$2010/PJ,2045
+heat,all-week,night,all-year,7.41940000000,R2,0,MUS$2010/PJ,2045
+CO2f,all-week,night,all-year,0.35390000000,R1,0,MUS$2010/kt,2045
+CO2f,all-week,night,all-year,0.35390000000,R2,0,MUS$2010/kt,2045
+electricity,all-week,morning,all-year,17.94720000000,R1,1,MUS$2010/PJ,2045
+electricity,all-week,morning,all-year,17.94720000000,R2,1,MUS$2010/PJ,2045
+gas,all-week,morning,all-year,0.47220000000,R1,1,MUS$2010/PJ,2045
+gas,all-week,morning,all-year,0.47220000000,R2,1,MUS$2010/PJ,2045
+heat,all-week,morning,all-year,7.41940000000,R1,1,MUS$2010/PJ,2045
+heat,all-week,morning,all-year,7.41940000000,R2,1,MUS$2010/PJ,2045
+CO2f,all-week,morning,all-year,0.35390000000,R1,1,MUS$2010/kt,2045
+CO2f,all-week,morning,all-year,0.35390000000,R2,1,MUS$2010/kt,2045
+electricity,all-week,afternoon,all-year,17.94720000000,R1,2,MUS$2010/PJ,2045
+electricity,all-week,afternoon,all-year,17.94720000000,R2,2,MUS$2010/PJ,2045
+gas,all-week,afternoon,all-year,0.47220000000,R1,2,MUS$2010/PJ,2045
+gas,all-week,afternoon,all-year,0.47220000000,R2,2,MUS$2010/PJ,2045
+heat,all-week,afternoon,all-year,7.41940000000,R1,2,MUS$2010/PJ,2045
+heat,all-week,afternoon,all-year,7.41940000000,R2,2,MUS$2010/PJ,2045
+CO2f,all-week,afternoon,all-year,0.35390000000,R1,2,MUS$2010/kt,2045
+CO2f,all-week,afternoon,all-year,0.35390000000,R2,2,MUS$2010/kt,2045
+electricity,all-week,early-peak,all-year,17.94720000000,R1,3,MUS$2010/PJ,2045
+electricity,all-week,early-peak,all-year,17.94720000000,R2,3,MUS$2010/PJ,2045
+gas,all-week,early-peak,all-year,0.47220000000,R1,3,MUS$2010/PJ,2045
+gas,all-week,early-peak,all-year,0.47220000000,R2,3,MUS$2010/PJ,2045
+heat,all-week,early-peak,all-year,7.41940000000,R1,3,MUS$2010/PJ,2045
+heat,all-week,early-peak,all-year,7.41940000000,R2,3,MUS$2010/PJ,2045
+CO2f,all-week,early-peak,all-year,0.35390000000,R1,3,MUS$2010/kt,2045
+CO2f,all-week,early-peak,all-year,0.35390000000,R2,3,MUS$2010/kt,2045
+electricity,all-week,late-peak,all-year,17.94720000000,R1,4,MUS$2010/PJ,2045
+electricity,all-week,late-peak,all-year,17.94720000000,R2,4,MUS$2010/PJ,2045
+gas,all-week,late-peak,all-year,0.47220000000,R1,4,MUS$2010/PJ,2045
+gas,all-week,late-peak,all-year,0.47220000000,R2,4,MUS$2010/PJ,2045
+heat,all-week,late-peak,all-year,7.41940000000,R1,4,MUS$2010/PJ,2045
+heat,all-week,late-peak,all-year,7.41940000000,R2,4,MUS$2010/PJ,2045
+CO2f,all-week,late-peak,all-year,0.35390000000,R1,4,MUS$2010/kt,2045
+CO2f,all-week,late-peak,all-year,0.35390000000,R2,4,MUS$2010/kt,2045
+electricity,all-week,evening,all-year,17.94720000000,R1,5,MUS$2010/PJ,2045
+electricity,all-week,evening,all-year,17.94720000000,R2,5,MUS$2010/PJ,2045
+gas,all-week,evening,all-year,0.47220000000,R1,5,MUS$2010/PJ,2045
+gas,all-week,evening,all-year,0.47220000000,R2,5,MUS$2010/PJ,2045
+heat,all-week,evening,all-year,7.41940000000,R1,5,MUS$2010/PJ,2045
+heat,all-week,evening,all-year,7.41940000000,R2,5,MUS$2010/PJ,2045
+CO2f,all-week,evening,all-year,0.35390000000,R1,5,MUS$2010/kt,2045
+CO2f,all-week,evening,all-year,0.35390000000,R2,5,MUS$2010/kt,2045
+electricity,all-week,night,all-year,19.46150000000,R1,0,MUS$2010/PJ,2050
+electricity,all-week,night,all-year,19.46150000000,R2,0,MUS$2010/PJ,2050
+gas,all-week,night,all-year,0.47220000000,R1,0,MUS$2010/PJ,2050
+gas,all-week,night,all-year,0.47220000000,R2,0,MUS$2010/PJ,2050
+heat,all-week,night,all-year,8.02510000000,R1,0,MUS$2010/PJ,2050
+heat,all-week,night,all-year,8.02510000000,R2,0,MUS$2010/PJ,2050
+CO2f,all-week,night,all-year,0.43510000000,R1,0,MUS$2010/kt,2050
+CO2f,all-week,night,all-year,0.43510000000,R2,0,MUS$2010/kt,2050
+electricity,all-week,morning,all-year,19.46150000000,R1,1,MUS$2010/PJ,2050
+electricity,all-week,morning,all-year,19.46150000000,R2,1,MUS$2010/PJ,2050
+gas,all-week,morning,all-year,0.47220000000,R1,1,MUS$2010/PJ,2050
+gas,all-week,morning,all-year,0.47220000000,R2,1,MUS$2010/PJ,2050
+heat,all-week,morning,all-year,8.02510000000,R1,1,MUS$2010/PJ,2050
+heat,all-week,morning,all-year,8.02510000000,R2,1,MUS$2010/PJ,2050
+CO2f,all-week,morning,all-year,0.43510000000,R1,1,MUS$2010/kt,2050
+CO2f,all-week,morning,all-year,0.43510000000,R2,1,MUS$2010/kt,2050
+electricity,all-week,afternoon,all-year,19.46150000000,R1,2,MUS$2010/PJ,2050
+electricity,all-week,afternoon,all-year,19.46150000000,R2,2,MUS$2010/PJ,2050
+gas,all-week,afternoon,all-year,0.47220000000,R1,2,MUS$2010/PJ,2050
+gas,all-week,afternoon,all-year,0.47220000000,R2,2,MUS$2010/PJ,2050
+heat,all-week,afternoon,all-year,8.02510000000,R1,2,MUS$2010/PJ,2050
+heat,all-week,afternoon,all-year,8.02510000000,R2,2,MUS$2010/PJ,2050
+CO2f,all-week,afternoon,all-year,0.43510000000,R1,2,MUS$2010/kt,2050
+CO2f,all-week,afternoon,all-year,0.43510000000,R2,2,MUS$2010/kt,2050
+electricity,all-week,early-peak,all-year,19.46150000000,R1,3,MUS$2010/PJ,2050
+electricity,all-week,early-peak,all-year,19.46150000000,R2,3,MUS$2010/PJ,2050
+gas,all-week,early-peak,all-year,0.47220000000,R1,3,MUS$2010/PJ,2050
+gas,all-week,early-peak,all-year,0.47220000000,R2,3,MUS$2010/PJ,2050
+heat,all-week,early-peak,all-year,8.02510000000,R1,3,MUS$2010/PJ,2050
+heat,all-week,early-peak,all-year,8.02510000000,R2,3,MUS$2010/PJ,2050
+CO2f,all-week,early-peak,all-year,0.43510000000,R1,3,MUS$2010/kt,2050
+CO2f,all-week,early-peak,all-year,0.43510000000,R2,3,MUS$2010/kt,2050
+electricity,all-week,late-peak,all-year,19.46150000000,R1,4,MUS$2010/PJ,2050
+electricity,all-week,late-peak,all-year,19.46150000000,R2,4,MUS$2010/PJ,2050
+gas,all-week,late-peak,all-year,0.47220000000,R1,4,MUS$2010/PJ,2050
+gas,all-week,late-peak,all-year,0.47220000000,R2,4,MUS$2010/PJ,2050
+heat,all-week,late-peak,all-year,8.02510000000,R1,4,MUS$2010/PJ,2050
+heat,all-week,late-peak,all-year,8.02510000000,R2,4,MUS$2010/PJ,2050
+CO2f,all-week,late-peak,all-year,0.43510000000,R1,4,MUS$2010/kt,2050
+CO2f,all-week,late-peak,all-year,0.43510000000,R2,4,MUS$2010/kt,2050
+electricity,all-week,evening,all-year,19.46150000000,R1,5,MUS$2010/PJ,2050
+electricity,all-week,evening,all-year,19.46150000000,R2,5,MUS$2010/PJ,2050
+gas,all-week,evening,all-year,0.47220000000,R1,5,MUS$2010/PJ,2050
+gas,all-week,evening,all-year,0.47220000000,R2,5,MUS$2010/PJ,2050
+heat,all-week,evening,all-year,8.02510000000,R1,5,MUS$2010/PJ,2050
+heat,all-week,evening,all-year,8.02510000000,R2,5,MUS$2010/PJ,2050
+CO2f,all-week,evening,all-year,0.43510000000,R1,5,MUS$2010/kt,2050
+CO2f,all-week,evening,all-year,0.43510000000,R2,5,MUS$2010/kt,2050
