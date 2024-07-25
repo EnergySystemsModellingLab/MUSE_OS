@@ -28,7 +28,7 @@ dependencies = [
     "scipy>=1.13",
     "pandas>=2.2",
     "xarray>=2024.6",
-    "bottleneck",
+    "bottleneck>=1.4",
     "coloredlogs",
     "toml",
     "xlrd",
