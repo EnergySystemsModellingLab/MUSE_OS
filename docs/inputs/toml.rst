@@ -522,13 +522,13 @@ to define the timeslice simply by referring to the slices it will use at each le
         in the simulation. There are currently two options:
 
         - :py:func:`~muse.demand_share.standard_demand` (default): The input demand is
-        split amongst *new* agents. *New* agents get a share of the increase in demand
-        for the forecast years, as well as the demand that occurs from decommissioned
-        assets.
+          split amongst *new* agents. *New* agents get a share of the increase in demand
+          for the forecast years, as well as the demand that occurs from decommissioned
+          assets.
         - :py:func:`~muse.demand_share.new_and_retro`: The input demand is split amongst
-        both *new* and *retrofit* agents. *New* agents get a share of the increase in
-        demand for the forecast year, whereas *retrofit* agents are assigned a share of
-        the demand that occurs from decommissioned assets.
+          both *new* and *retrofit* agents. *New* agents get a share of the increase in
+          demand for the forecast year, whereas *retrofit* agents are assigned a share
+          of the demand that occurs from decommissioned assets.
 
     *constraints*
         The list of constraints to apply to the LP problem solved by the sector. By
