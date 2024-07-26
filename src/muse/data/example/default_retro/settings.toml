@@ -48,7 +48,9 @@ constraints = [
     "max_production",
     "max_capacity_expansion",
     "demand",
-    "search_space"
+    "search_space",
+    "minimum_service",
+    "demand_limiting_capacity"
 ]
 demand_share = "new_and_retro"  # Optional, default to standard_demand
 forecast = 5  # Optional, defaults to 5
