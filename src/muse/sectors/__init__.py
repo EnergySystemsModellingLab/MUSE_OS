@@ -23,11 +23,12 @@ __ https://www.python-course.eu/python3_abstract_classes.php
 - :meth:`AbstractSector.factory`: Creates a sector from input data
 - :meth:`AbstractSector.next`: A function which takes a market (demand, supply,
   prices) and returns a market.  What happens within could be anything, though it will
-  likely constists of dispatch and investment.
+  likely consists of dispatch and investment.
 
 New sectors can be registered with the MUSE input files using
 :func:`muse.sectors.register.register_sector`.
 """
+
 __all__ = [
     "AbstractSector",
     "Sector",

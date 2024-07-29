@@ -1,4 +1,5 @@
 """Makes MUSE executable."""
+
 import pathlib
 from argparse import ArgumentParser
 

@@ -1,6 +1,8 @@
 """Holds all building agents."""
+
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Text, Union
+from typing import Any, Callable, Optional, Union
 
 import xarray as xr
 
@@ -13,9 +15,9 @@ def create_standard_agent(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
     year: int,
-    region: Text,
-    share: Optional[Text] = None,
-    interpolation: Text = "linear",
+    region: str,
+    share: Optional[str] = None,
+    interpolation: str = "linear",
     **kwargs,
 ):
     """Creates retrofit agent from muse primitives."""
@@ -45,11 +47,11 @@ def create_standard_agent(
 def create_retrofit_agent(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
-    share: Text,
+    share: str,
     year: int,
-    region: Text,
-    interpolation: Text = "linear",
-    decision: Union[Callable, Text, Mapping] = "mean",
+    region: str,
+    interpolation: str = "linear",
+    decision: Union[Callable, str, Mapping] = "mean",
     **kwargs,
 ):
     """Creates retrofit agent from muse primitives."""
@@ -58,7 +60,7 @@ def create_retrofit_agent(
     from muse.filters import factory as filter_factory
 
     if not callable(decision):
-        name = decision if isinstance(decision, Text) else decision["name"]
+        name = decision if isinstance(decision, str) else decision["name"]
         unusual = {"lexo", "lexical_comparison", "epsilon_constaints", "epsilon"}
         if name in unusual:
             msg = (
@@ -90,13 +92,13 @@ def create_retrofit_agent(
 def create_newcapa_agent(
     capacity: xr.DataArray,
     year: int,
-    region: Text,
-    share: Text,
-    search_rules: Union[Text, Sequence[Text]] = "all",
-    interpolation: Text = "linear",
-    merge_transform: Union[Text, Mapping, Callable] = "new",
+    region: str,
+    share: str,
+    search_rules: Union[str, Sequence[str]] = "all",
+    interpolation: str = "linear",
+    merge_transform: Union[str, Mapping, Callable] = "new",
     quantity: float = 0.3,
-    housekeeping: Union[Text, Mapping, Callable] = "noop",
+    housekeeping: Union[str, Mapping, Callable] = "noop",
     retrofit_present: bool = True,
     **kwargs,
 ):
@@ -160,7 +162,7 @@ def create_newcapa_agent(
     return result
 
 
-def create_agent(agent_type: Text, **kwargs) -> Agent:
+def create_agent(agent_type: str, **kwargs) -> Agent:
     method = {
         "retrofit": create_retrofit_agent,
         "newcapa": create_newcapa_agent,
@@ -172,14 +174,14 @@ def create_agent(agent_type: Text, **kwargs) -> Agent:
 
 
 def factory(
-    existing_capacity_path: Optional[Union[Path, Text]] = None,
-    agent_parameters_path: Optional[Union[Path, Text]] = None,
-    technodata_path: Optional[Union[Path, Text]] = None,
-    technodata_timeslices_path: Optional[Union[Text, Path]] = None,
-    sector: Optional[Text] = None,
-    sectors_directory: Union[Text, Path] = DEFAULT_SECTORS_DIRECTORY,
+    existing_capacity_path: Optional[Union[Path, str]] = None,
+    agent_parameters_path: Optional[Union[Path, str]] = None,
+    technodata_path: Optional[Union[Path, str]] = None,
+    technodata_timeslices_path: Optional[Union[str, Path]] = None,
+    sector: Optional[str] = None,
+    sectors_directory: Union[str, Path] = DEFAULT_SECTORS_DIRECTORY,
     baseyear: int = 2010,
-) -> List[Agent]:
+) -> list[Agent]:
     """Reads list of agents from standard MUSE input files."""
     from copy import deepcopy
     from logging import getLogger
@@ -200,22 +202,22 @@ def factory(
 
     if existing_capacity_path is None:
         existing_capacity_path = find_sectors_file(
-            "Existing%s.csv" % sector, sector, sectors_directory
+            f"Existing{sector}.csv", sector, sectors_directory
         )
     if agent_parameters_path is None:
         agent_parameters_path = find_sectors_file(
-            "BuildingAgent%s.csv" % sector, sector, sectors_directory
+            f"BuildingAgent{sector}.csv", sector, sectors_directory
         )
     if technodata_path is None:
         technodata_path = find_sectors_file(
-            "technodata%s.csv" % sector, sector, sectors_directory
+            f"technodata{sector}.csv", sector, sectors_directory
         )
 
     params = read_csv_agent_parameters(agent_parameters_path)
     techno = read_technodictionary(technodata_path)
     capa = read_initial_assets(existing_capacity_path)
     if technodata_timeslices_path and isinstance(
-        technodata_timeslices_path, (Text, Path)
+        technodata_timeslices_path, (str, Path)
     ):
         technodata_timeslices = read_technodata_timeslices(technodata_timeslices_path)
     else:
@@ -262,24 +264,24 @@ def factory(
 
 
 def agents_factory(
-    params_or_path: Union[Text, Path, List],
-    capacity: Union[xr.DataArray, Text, Path],
+    params_or_path: Union[str, Path, list],
+    capacity: Union[xr.DataArray, str, Path],
     technologies: xr.Dataset,
-    regions: Optional[Sequence[Text]] = None,
+    regions: Optional[Sequence[str]] = None,
     year: Optional[int] = None,
     **kwargs,
-) -> List[Agent]:
+) -> list[Agent]:
     """Creates a list of agents for the chosen sector."""
     from copy import deepcopy
     from logging import getLogger
 
     from muse.readers import read_csv_agent_parameters, read_initial_assets
 
-    if isinstance(params_or_path, (Text, Path)):
+    if isinstance(params_or_path, (str, Path)):
         params = read_csv_agent_parameters(params_or_path)
     else:
         params = params_or_path
-    if isinstance(capacity, (Text, Path)):
+    if isinstance(capacity, (str, Path)):
         capacity = read_initial_assets(capacity)
     assert isinstance(capacity, xr.DataArray)
     if year is None:
@@ -327,10 +329,10 @@ def agents_factory(
 def _shared_capacity(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
-    region: Text,
-    share: Text,
+    region: str,
+    share: str,
     year: int,
-    interpolation: Text = "linear",
+    interpolation: str = "linear",
 ) -> xr.DataArray:
     if "region" in capacity.dims:
         capacity = capacity.sel(region=region)
@@ -356,16 +358,18 @@ def _shared_capacity(
 
     techs = (existing > 0) & (shares > 0)
     techs = techs.any([u for u in techs.dims if u != "asset"])
+    if not any(techs):
+        return (capacity * shares).copy()
     return (capacity * shares).sel(asset=techs.values).copy()
 
 
 def _standardize_inputs(
-    housekeeping: Union[Text, Mapping, Callable] = "clean",
-    merge_transform: Union[Text, Mapping, Callable] = "merge",
+    housekeeping: Union[str, Mapping, Callable] = "clean",
+    merge_transform: Union[str, Mapping, Callable] = "merge",
     objectives: Union[
-        Callable, Text, Mapping, Sequence[Union[Text, Mapping]]
+        Callable, str, Mapping, Sequence[Union[str, Mapping]]
     ] = "fixed_costs",
-    decision: Union[Callable, Text, Mapping] = "mean",
+    decision: Union[Callable, str, Mapping] = "mean",
     **kwargs,
 ):
     from muse.decisions import factory as decision_factory
@@ -389,20 +393,20 @@ def _standardize_inputs(
 
 
 def _standardize_investing_inputs(
-    search_rules: Optional[Union[Text, Sequence[Text]]] = None,
-    investment: Union[Callable, Text, Mapping] = "adhoc",
+    search_rules: Optional[Union[str, Sequence[str]]] = None,
+    investment: Union[Callable, str, Mapping] = "adhoc",
     constraints: Optional[
-        Union[Callable, Text, Mapping, Sequence[Union[Text, Mapping]]]
+        Union[Callable, str, Mapping, Sequence[Union[str, Mapping]]]
     ] = None,
     **kwargs,
-) -> Dict[Text, Any]:
+) -> dict[str, Any]:
     from muse.constraints import factory as constraints_factory
     from muse.investments import factory as investment_factory
 
     kwargs = _standardize_inputs(**kwargs)
     if search_rules is None:
         search_rules = list()
-    if isinstance(search_rules, Text):
+    if isinstance(search_rules, str):
         search_rules = [u.strip() for u in search_rules.split("->")]
     search_rules = list(search_rules)
     if len(search_rules) == 0 or search_rules[-1] != "compress":

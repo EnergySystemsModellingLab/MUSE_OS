@@ -1,8 +1,7 @@
 import numpy as np
 import xarray as xr
-from pytest import fixture, mark
-
 from muse.filters import factory, register_filter, register_initializer
+from pytest import fixture, mark
 
 
 @fixture
@@ -80,9 +79,9 @@ def test_same_enduse(retro_agent, technologies, search_space):
         for tech in result.replacement:
             tech_enduses = finputs.sel(technology=tech)
             tech_enduses = set(tech_enduses.commodity.loc[tech_enduses].values)
-            expected.loc[
-                {"replacement": tech, "asset": asset}
-            ] = asset_enduses.issubset(tech_enduses)
+            expected.loc[{"replacement": tech, "asset": asset}] = (
+                asset_enduses.issubset(tech_enduses)
+            )
 
     assert sorted(result.dims) == sorted(search_space.dims)
     assert (result == expected).all()

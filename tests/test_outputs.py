@@ -1,14 +1,13 @@
 """Test saving outputs to file."""
+
 from pathlib import Path
-from typing import Dict, Text
 from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import xarray as xr
-from pytest import approx, fixture, importorskip, mark, raises
-
 from muse.outputs.sector import factory
+from pytest import approx, fixture, importorskip, mark, raises
 
 
 @fixture
@@ -217,7 +216,7 @@ def test_yearly_aggregate():
         pass
 
     @register_output_sink(overwrite=True)
-    def dummy(data, year: int, sector: Text, overwrite: bool) -> MySpecialReturn:
+    def dummy(data, year: int, sector: str, overwrite: bool) -> MySpecialReturn:
         nonlocal received_data, gyear, gsector, goverwrite
         received_data = data
         gyear = year
@@ -257,14 +256,14 @@ def test_yearly_aggregate_file(tmpdir):
     data["year"] = 2010
     assert sink(data, 2010) == path
     dataframe = pd.read_csv(path)
-    assert set(dataframe.columns) == {"a", "year", "georges"}
+    assert set(dataframe.columns) == {"year", "georges"}
     assert dataframe.shape[0] == 2
 
     data = xr.DataArray([0, 1], coords=dict(a=[2, 4]), dims="a", name="georges")
     data["year"] = 2020
     assert sink(data, 2020) == path
     dataframe = pd.read_csv(path)
-    assert set(dataframe.columns) == {"a", "year", "georges"}
+    assert set(dataframe.columns) == {"year", "georges"}
     assert dataframe.shape[0] == 4
 
 
@@ -276,10 +275,9 @@ def test_yearly_aggregate_no_outputs(tmpdir):
 
 
 def test_mca_aggregate_outputs(tmpdir):
-    from toml import dump, load
-
     from muse import examples
     from muse.mca import MCA
+    from toml import dump, load
 
     examples.copy_model(path=str(tmpdir))
     settings = load(str(tmpdir / "model" / "settings.toml"))
@@ -299,12 +297,11 @@ def test_mca_aggregate_outputs(tmpdir):
 
 @mark.usefixtures("save_registries")
 def test_path_formatting(tmpdir):
-    from toml import dump, load
-
     from muse.examples import copy_model
     from muse.mca import MCA
     from muse.outputs.mca import register_output_quantity
     from muse.outputs.sinks import register_output_sink, sink_to_file
+    from toml import dump, load
 
     # Copy the data to tmpdir
     copy_model(path=tmpdir)
@@ -366,12 +363,11 @@ def test_finite_resources_quantity(limits_path):
 
 
 def test_finite_resources_in_sim(tmp_path, limits_path):
-    from toml import dump, load
-
     from muse import examples
     from muse.mca import MCA
     from muse.outputs.sinks import FiniteResourceException
     from muse.readers.toml import read_settings
+    from toml import dump, load
 
     examples.copy_model("default", path=tmp_path)
     toml = load(tmp_path / "model" / "settings.toml")
@@ -423,7 +419,6 @@ class TestOutputCache:
     @patch("muse.outputs.sector._factory")
     def test_cache(self, mock_factory, mock_subscribe):
         import xarray as xr
-
         from muse.outputs.cache import OutputCache
 
         param = [dict(quantity="height"), dict(quantity="width")]
@@ -444,7 +439,6 @@ class TestOutputCache:
     @patch("muse.outputs.sector._factory")
     def test_consolidate_cache(self, mock_factory, mock_subscribe):
         import xarray as xr
-
         from muse.outputs.cache import OutputCache
 
         param = [dict(quantity="height"), dict(quantity="width")]
@@ -495,14 +489,13 @@ def test_cache_quantity(mock_match, mock_send):
 
 def test_match_quantities():
     import xarray as xr
-
     from muse.outputs.cache import match_quantities
 
     q = "mass"
     da = xr.DataArray(name=q)
     ds = xr.Dataset({q: da})
 
-    def assert_equal(a: Dict[str, xr.DataArray], b: Dict[str, xr.DataArray]):
+    def assert_equal(a: dict[str, xr.DataArray], b: dict[str, xr.DataArray]):
         assert set(a.keys()) == set(b.keys())
         for k in a:
             xr.testing.assert_equal(a[k], b[k])
@@ -575,11 +568,10 @@ def test_extract_agents_internal(newcapa_agent, retro_agent):
 def test_aggregate_cache():
     import numpy as np
     import xarray as xr
+    from muse.outputs.cache import _aggregate_cache
     from pandas.testing import assert_frame_equal
 
-    from muse.outputs.cache import _aggregate_cache
-
-    quantity = "heigth"
+    quantity = "height"
 
     a = xr.DataArray(np.ones((3, 4, 5)), name=quantity)
     b = a.copy()
@@ -593,7 +585,7 @@ def test_aggregate_cache():
 
     c = a.copy()
     c.assign_coords(dim_0=c.dim_0.data * 10)
-    dc, da = [da.to_dataframe().reset_index() for da in [c, a]]
+    dc, da = (da.to_dataframe().reset_index() for da in [c, a])
 
     actual = _aggregate_cache(quantity, [c, a])
     expected = pd.DataFrame.merge(dc, da, how="outer").astype(float)
@@ -612,7 +604,7 @@ def test_consolidate_quantity(newcapa_agent, retro_agent):
     sector = SimpleNamespace(name="IT", agents=[newcapa_agent, retro_agent])
     agents = extract_agents_internal(sector)
 
-    quantity = "heigth"
+    quantity = "height"
     a = xr.DataArray(
         np.ones((3, 4, 5)),
         dims=("agent", "replacement", "asset"),
@@ -636,24 +628,19 @@ def test_consolidate_quantity(newcapa_agent, retro_agent):
     actual = consolidate_quantity(quantity, [a, b], agents)
 
     cols = set(
-        list(agents[retro_agent.uuid].keys())
-        + ["installed", "year", "technology", quantity]
+        (*agents[retro_agent.uuid].keys(), "installed", "year", "technology", quantity)
     )
     assert set(actual.columns) == cols
     assert all(actual.year == newcapa_agent.forecast_year)
     assert all(actual.installed == newcapa_agent.year)
     assert all(
-        [
-            name in (newcapa_agent.name, retro_agent.name)
-            for name in actual.agent.unique()
-        ]
+        name in (newcapa_agent.name, retro_agent.name) for name in actual.agent.unique()
     )
 
 
 @patch("muse.outputs.cache.consolidate_quantity")
 def test_output_capacity(mock_consolidate):
     import xarray as xr
-
     from muse.outputs.cache import capacity
 
     cached = [xr.DataArray() for _ in range(3)]
@@ -666,7 +653,6 @@ def test_output_capacity(mock_consolidate):
 @patch("muse.outputs.cache.consolidate_quantity")
 def test_output_production(mock_consolidate):
     import xarray as xr
-
     from muse.outputs.cache import production
 
     cached = [xr.DataArray() for _ in range(3)]
@@ -679,7 +665,6 @@ def test_output_production(mock_consolidate):
 @patch("muse.outputs.cache.consolidate_quantity")
 def test_output_lcoe(mock_consolidate):
     import xarray as xr
-
     from muse.outputs.cache import lcoe
 
     cached = [xr.DataArray() for _ in range(3)]

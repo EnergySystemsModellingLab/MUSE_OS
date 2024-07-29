@@ -36,6 +36,7 @@ Returns:
     the :py:attr:`~muse.agents.agent.AbstractAgent.uuid` of the agent, then agents will
     only service that par of the demand.
 """
+
 __all__ = [
     "new_and_retro",
     "factory",
@@ -44,15 +45,11 @@ __all__ = [
     "unmet_forecasted_demand",
     "DEMAND_SHARE_SIGNATURE",
 ]
+from collections.abc import Hashable, Mapping, MutableMapping, Sequence
 from typing import (
     Any,
     Callable,
-    Hashable,
-    Mapping,
-    MutableMapping,
     Optional,
-    Sequence,
-    Text,
     Union,
     cast,
 )
@@ -72,7 +69,7 @@ DEMAND_SHARE_SIGNATURE = Callable[
 ]
 """Demand share signature."""
 
-DEMAND_SHARE: MutableMapping[Text, DEMAND_SHARE_SIGNATURE] = {}
+DEMAND_SHARE: MutableMapping[str, DEMAND_SHARE_SIGNATURE] = {}
 """Dictionary of demand share functions."""
 
 
@@ -83,13 +80,13 @@ def register_demand_share(function: DEMAND_SHARE_SIGNATURE):
 
 
 def factory(
-    settings: Optional[Union[Text, Mapping[Text, Any]]] = None
+    settings: Optional[Union[str, Mapping[str, Any]]] = None,
 ) -> DEMAND_SHARE_SIGNATURE:
-    if settings is None or isinstance(settings, Text):
-        name = settings or "new_and_retro"
-        params: Mapping[Text, Any] = {}
+    if settings is None or isinstance(settings, str):
+        name = settings or "standard_demand"
+        params: Mapping[str, Any] = {}
     else:
-        name = settings.get("name", "new_and_retro")
+        name = settings.get("name", "standard_demand")
         params = {k: v for k, v in settings.items() if k != "name"}
 
     function = DEMAND_SHARE[name]
@@ -110,20 +107,20 @@ def factory(
     return cast(DEMAND_SHARE_SIGNATURE, demand_share)
 
 
-@register_demand_share(name="default")
+@register_demand_share(name="new_and_retro")
 def new_and_retro(
     agents: Sequence[AbstractAgent],
     market: xr.Dataset,
     technologies: xr.Dataset,
-    production: Union[Text, Mapping, Callable] = "maximum_production",
+    production: Union[str, Mapping, Callable] = "maximum_production",
     current_year: Optional[int] = None,
     forecast: int = 5,
 ) -> xr.DataArray:
     r"""Splits demand across new and retro agents.
 
-    The input demand is split amongst both *new* and *retro* agents. *New* agents get a
-    share of the increase in demand for the forecast year, whereas *retrofi* agents are
-    assigned a share of the demand that occurs from decommissioned assets.
+    The input demand is split amongst both *new* and *retrofit* agents. *New* agents get
+    a share of the increase in demand for the forecast year, whereas *retrofit* agents
+    are assigned a share of the demand that occurs from decommissioned assets.
 
     Args:
         agents: a list of all agents. This list should mainly be used to determine the
@@ -134,6 +131,9 @@ def new_and_retro(
             to the production method. The ``consumption`` reflects the demand for the
             commodities produced by the current sector.
         technologies: quantities describing the technologies.
+        production: Production method
+        current_year: Current year of simulation
+        forecast: How many years to forecast ahead
 
     Pseudo-code:
 
@@ -318,19 +318,19 @@ def new_and_retro(
     return result
 
 
-@register_demand_share(name="standard_demand")
+@register_demand_share(name="default")
 def standard_demand(
     agents: Sequence[AbstractAgent],
     market: xr.Dataset,
     technologies: xr.Dataset,
-    production: Union[Text, Mapping, Callable] = "maximum_production",
+    production: Union[str, Mapping, Callable] = "maximum_production",
     current_year: Optional[int] = None,
     forecast: int = 5,
 ) -> xr.DataArray:
     r"""Splits demand across new agents.
 
     The input demand is split amongst *new* agents. *New* agents get a
-    share of the increase in demand for the forecast years well as the demand that
+    share of the increase in demand for the forecast years, as well as the demand that
     occurs from decommissioned assets.
 
     Args:
@@ -342,6 +342,9 @@ def standard_demand(
             to the production method. The ``consumption`` reflects the demand for the
             commodities produced by the current sector.
         technologies: quantities describing the technologies.
+        production: Production method
+        current_year: Current year of simulation
+        forecast: How many years to forecast ahead
 
     """
     from functools import partial
@@ -425,7 +428,7 @@ def unmet_forecasted_demand(
     market: xr.Dataset,
     technologies: xr.Dataset,
     current_year: Optional[int] = None,
-    production: Union[Text, Mapping, Callable] = "maximum_production",
+    production: Union[str, Mapping, Callable] = "maximum_production",
     forecast: int = 5,
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
@@ -464,7 +467,7 @@ def _inner_split(
     """
     from numpy import logical_and
 
-    shares = {
+    shares: Mapping[Hashable, xr.DataArray] = {
         key: method(capacity=capacity)
         .groupby("technology")
         .sum("asset")
@@ -472,13 +475,22 @@ def _inner_split(
         for key, capacity in assets.items()
     }
     try:
-        total = sum(shares.values()).sum("asset")  # type: ignore
+        summed_shares: xr.DataArray = xr.concat(shares.values(), dim="concat_dim").sum(
+            "concat_dim"
+        )
+
+        # Calculates the total demand assigned in the previous step with the "method"
+        # function across agents and assets.
+        total: xr.DataArray = summed_shares.sum("asset")
     except AttributeError:
         raise AgentWithNoAssetsInDemandShare()
 
-    unassigned = (
-        demand / (len(shares) * len(cast(xr.DataArray, sum(shares.values())).asset))
-    ).where(logical_and(demand > 1e-12, total <= 1e-12), 0)
+    # Calculates the demand divided by the number of assets times the number of agents
+    # if the demand is bigger than zero and the total demand assigned with the "method"
+    # function is zero.
+    unassigned = (demand / (len(shares) * len(summed_shares))).where(
+        logical_and(demand > 1e-12, total <= 1e-12), 0
+    )
 
     totals = {
         key: (share / share.sum("asset")).fillna(0) for key, share in shares.items()
@@ -496,7 +508,7 @@ def unmet_demand(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    production: Union[Text, Mapping, Callable] = "maximum_production",
+    production: Union[str, Mapping, Callable] = "maximum_production",
 ):
     r"""Share of the demand that cannot be serviced by the existing assets.
 
@@ -534,7 +546,7 @@ def new_consumption(
 ) -> xr.DataArray:
     r"""Computes share of the demand attributed to new agents.
 
-    The new agents service the demand that can be attributed specificaly to growth and
+    The new agents service the demand that can be attributed specifically to growth and
     that cannot be serviced by existing assets. In other words:
 
     .. math::
@@ -576,7 +588,7 @@ def new_and_retro_demands(
     capacity: xr.DataArray,
     market: xr.Dataset,
     technologies: xr.Dataset,
-    production: Union[Text, Mapping, Callable] = "maximum_production",
+    production: Union[str, Mapping, Callable] = "maximum_production",
     current_year: Optional[int] = None,
     forecast: int = 5,
 ) -> xr.Dataset:
@@ -646,7 +658,7 @@ def new_demand(
     capacity: xr.DataArray,
     market: xr.Dataset,
     technologies: xr.Dataset,
-    production: Union[Text, Mapping, Callable] = "maximum_production",
+    production: Union[str, Mapping, Callable] = "maximum_production",
     current_year: Optional[int] = None,
     forecast: int = 5,
 ) -> xr.DataArray:

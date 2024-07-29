@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Text
+from typing import Optional
 
 from pytest import approx, mark
 
@@ -44,7 +44,7 @@ def legacy_inputs():
     ]
 
 
-def legacy_input_file(sector: Text) -> Optional[Path]:
+def legacy_input_file(sector: str) -> Optional[Path]:
     """Gets the legacy sector settings file."""
     input_file = (
         Path(__file__).parent
@@ -59,7 +59,6 @@ def legacy_input_file(sector: Text) -> Optional[Path]:
 
 def update_settings(settings, sec_dir, out_dir):
     """Updates a settings namedtuple with temporal sectors and output directories."""
-
     sectors = settings.sectors
 
     for s in sectors.list:
@@ -87,7 +86,6 @@ def test_legacy_sector_creation(sector, filepath):
 
 def test_xarray_to_array(market):
     import numpy as np
-
     from muse.sectors.legacy_sector import xarray_to_ndarray
     from muse.timeslices import QuantityType
 
@@ -106,11 +104,10 @@ def test_xarray_to_array(market):
 
 
 def test_array_to_xarray(market):
-    from numpy import array
-    from xarray import broadcast
-
     from muse.sectors.legacy_sector import ndarray_to_xarray
     from muse.timeslices import QuantityType
+    from numpy import array
+    from xarray import broadcast
 
     dims = ("commodity", "region", "year", "timeslice")
     arr = market.supply.transpose(*dims).values
@@ -131,11 +128,10 @@ def test_array_to_xarray(market):
 
 
 def test_round_trip(market):
-    from numpy import array
-    from xarray import broadcast
-
     from muse.sectors.legacy_sector import ndarray_to_xarray, xarray_to_ndarray
     from muse.timeslices import QuantityType
+    from numpy import array
+    from xarray import broadcast
 
     dims = ("commodity", "region", "year", "timeslice")
 

@@ -6,42 +6,45 @@
     "configurations": [
         {
             "name": "Model: default",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "muse",
-            "args": [
-                "--model",
-                "default"
-            ]
+            "args": ["--model", "default"]
+        },
+        {
+            "name": "Model: default_retro",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "muse",
+            "args": ["--model", "default_retro"]
         },
         {
             "name": "Model: multiple_agents",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "muse",
-            "args": [
-                "--model",
-                "multiple_agents"
-            ]
+            "args": ["--model", "multiple_agents"]
+        },
+        {
+            "name": "Model: default_timeslice",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "muse",
+            "args": ["--model", "default_timeslice"]
         },
         {
             "name": "model/settings.toml",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "muse",
-            "args": [
-                "model/settings.toml",
-            ]
+            "args": ["model/settings.toml"]
         },
         {
             "name": "Model: minimum_service",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "muse",
-            "args": [
-                "--model",
-                "minimum_service"
-            ]
-        },
+            "args": ["--model", "minimum_service"]
+        }
     ]
 }

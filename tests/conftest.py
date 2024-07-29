@@ -1,11 +1,12 @@
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Callable, Mapping, Optional, Sequence, Text
+from typing import Callable, Optional
 
+import numpy as np
+from muse.agents import Agent
 from pandas import DataFrame
 from pytest import fixture, mark
 from xarray import DataArray, Dataset
-
-from muse.agents import Agent
 
 
 @fixture(autouse=True)
@@ -28,7 +29,7 @@ def cases_directory() -> Optional[Path]:
 
 
 @fixture(scope="session")
-def regression_directories(cases_directory) -> Mapping[Text, Path]:
+def regression_directories(cases_directory) -> Mapping[str, Path]:
     if cases_directory is None:
         return {}
     return {
@@ -78,9 +79,21 @@ def compare_df(
     for col in floats:
         actual_col = actual.loc[expected.index, col].values
         expected_col = expected[col].values
-        if actual_col != approx(expected_col, rel=rtol, abs=atol, nan_ok=equal_nan):
-            print(f"file: {msg}, column: {col}")
-        assert actual_col == approx(expected_col, rel=rtol, abs=atol, nan_ok=equal_nan)
+        try:
+            assert actual_col == approx(
+                expected_col, rel=rtol, abs=atol, nan_ok=equal_nan
+            )
+        except AssertionError:
+            # if the columns are not equal, we check if the sorted ones are equal as
+            # sometimes the order of the rows is different because of different sorting
+            # algorithms
+            try:
+                assert np.sort(actual_col) == approx(
+                    np.sort(expected_col), rel=rtol, abs=atol, nan_ok=equal_nan
+                )
+            except AssertionError:
+                print(f"file: {msg}, column: {col}")
+                raise
 
 
 @fixture
@@ -124,14 +137,14 @@ def pytest_collection_modifyitems(config, items):
     try:
         __import__("SGIModelData")
     except ImportError:
-        skip_sgi_data = mark.skip(reason="Test reqires private data")
+        skip_sgi_data = mark.skip(reason="Test requires private data")
         for item in items:
             if "sgidata" in item.keywords:
                 item.add_marker(skip_sgi_data)
     try:
         __import__("muse_legacy")
     except ImportError:
-        skip_legacy = mark.skip(reason="Test reqires legacy code")
+        skip_legacy = mark.skip(reason="Test requires legacy code")
         for item in items:
             if "legacy" in item.keywords:
                 item.add_marker(skip_legacy)
@@ -208,7 +221,7 @@ def coords() -> Mapping:
 
 @fixture
 def agent_args(coords) -> Mapping:
-    """some standard arguments defining an agent."""
+    """Some standard arguments defining an agent."""
     from numpy.random import choice, rand, randint
 
     return {
@@ -224,11 +237,10 @@ def agent_args(coords) -> Mapping:
 
 @fixture
 def technologies(coords) -> Dataset:
-    """randomly generated technology characteristics."""
+    """Randomly generated technology characteristics."""
+    from muse.commodities import CommodityUsage
     from numpy import nonzero, sum
     from numpy.random import choice, rand, randint
-
-    from muse.commodities import CommodityUsage
 
     result = Dataset(coords=coords)
 
@@ -353,9 +365,8 @@ def market(coords, technologies, timeslice) -> Dataset:
 
 
 def create_agent(agent_args, technologies, stock, agent_type="retrofit") -> Agent:
-    from numpy.random import choice
-
     from muse.agents.factories import create_agent
+    from numpy.random import choice
 
     agent = create_agent(
         agent_type=agent_type,
@@ -410,7 +421,7 @@ def stock_factory() -> Callable:
 def _stock(
     coords,
     technologies,
-    region: Optional[Sequence[Text]] = None,
+    region: Optional[Sequence[str]] = None,
     nassets: Optional[int] = None,
 ) -> Dataset:
     from numpy import cumprod, stack
@@ -532,7 +543,6 @@ def capacity(technologies: Dataset) -> DataArray:
 def settings(tmpdir) -> dict:
     """Creates a dummy settings dictionary out of the default settings."""
     import toml
-
     from muse.readers import DEFAULT_SETTINGS_PATH
     from muse.readers.toml import format_paths
 
@@ -595,7 +605,7 @@ def save_registries():
     from contextlib import contextmanager
 
     @contextmanager
-    def saveme(module_name: Text, registry_name: Text):
+    def saveme(module_name: str, registry_name: str):
         from copy import deepcopy
         from importlib import import_module
 

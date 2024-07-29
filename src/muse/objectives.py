@@ -55,6 +55,7 @@ Returns:
     Other dimensions can be present, as long as the subsequent decision function nows
     how to reduce them.
 """
+
 __all__ = [
     "register_objective",
     "comfort",
@@ -70,7 +71,8 @@ __all__ = [
     "factory",
 ]
 
-from typing import Any, Callable, Mapping, MutableMapping, Sequence, Text, Union, cast
+from collections.abc import Mapping, MutableMapping, Sequence
+from typing import Any, Callable, Union, cast
 
 import numpy as np
 import xarray as xr
@@ -79,6 +81,7 @@ from mypy_extensions import KwArg
 from muse.agents import Agent
 from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
+from muse.timeslices import drop_timeslice
 
 OBJECTIVE_SIGNATURE = Callable[
     [Agent, xr.DataArray, xr.DataArray, xr.Dataset, xr.Dataset, KwArg(Any)],
@@ -86,14 +89,14 @@ OBJECTIVE_SIGNATURE = Callable[
 ]
 """Objectives signature."""
 
-OBJECTIVES: MutableMapping[Text, OBJECTIVE_SIGNATURE] = {}
+OBJECTIVES: MutableMapping[str, OBJECTIVE_SIGNATURE] = {}
 """Dictionary of objectives when selecting replacement technology."""
 
 
-def objective_factory(settings=Union[Text, Mapping]):
+def objective_factory(settings=Union[str, Mapping]):
     from functools import partial
 
-    if isinstance(settings, Text):
+    if isinstance(settings, str):
         params = dict(name=settings)
     else:
         params = dict(**settings)
@@ -103,7 +106,7 @@ def objective_factory(settings=Union[Text, Mapping]):
 
 
 def factory(
-    settings: Union[Text, Mapping, Sequence[Union[Text, Mapping]]] = "LCOE"
+    settings: Union[str, Mapping, Sequence[Union[str, Mapping]]] = "LCOE",
 ) -> Callable:
     """Creates a function computing multiple objectives.
 
@@ -113,15 +116,14 @@ def factory(
     objectives defined by name or by dictionary.
     """
     from logging import getLogger
-    from typing import Dict, List
 
-    if isinstance(settings, Text):
-        params: List[Dict] = [{"name": settings}]
+    if isinstance(settings, str):
+        params: list[dict] = [{"name": settings}]
     elif isinstance(settings, Mapping):
         params = [dict(**settings)]
     else:
         params = [
-            {"name": param} if isinstance(param, Text) else dict(**param)
+            {"name": param} if isinstance(param, str) else dict(**param)
             for param in settings
         ]
 
@@ -139,7 +141,10 @@ def factory(
     ) -> xr.Dataset:
         result = xr.Dataset(coords=search_space.coords)
         for name, objective in functions:
-            result[name] = objective(agent, demand, search_space, *args, **kwargs)
+            obj = objective(agent, demand, search_space, *args, **kwargs)
+            if "timeslice" in obj.dims and "timeslice" in result.dims:
+                obj = drop_timeslice(obj)
+            result[name] = obj
         return result
 
     return objectives
@@ -174,10 +179,7 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
 
         dtype = result.values.dtype
         if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
-            msg = "dtype of objective %s is not a number (%s)" % (
-                function.__name__,
-                dtype,
-            )
+            msg = f"dtype of objective {function.__name__} is not a number ({dtype})"
             getLogger(function.__module__).warning(msg)
 
         if "technology" in result.dims:
@@ -228,6 +230,25 @@ def efficiency(
     return result
 
 
+def _represent_hours(market: xr.Dataset, search_space: xr.DataArray) -> xr.DataArray:
+    """Retrieves the appropriate value for represent_hours.
+
+    Args:
+        market: The simulation market.
+        search_space: The search space for new tehcnologies.
+
+    Returns:
+        DataArray with the hours of each timeslice.
+    """
+    from muse.timeslices import represent_hours
+
+    if "represent_hours" in market:
+        return market.represent_hours
+    if "represent_hours" in search_space.coords:
+        return search_space.represent_hours
+    return represent_hours(market.timeslice)
+
+
 @register_objective(name="capacity")
 def capacity_to_service_demand(
     agent: Agent,
@@ -239,21 +260,13 @@ def capacity_to_service_demand(
     **kwargs,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
-    from muse.timeslices import represent_hours
-
     params = agent.filter_input(
         technologies[["utilization_factor", "fixed_outputs"]],
         year=agent.forecast_year,
         region=agent.region,
         technology=search_space.replacement,
     ).drop_vars("technology")
-    if "represent_hours" in market:
-        hours = market.represent_hours
-    elif "represent_hours" in search_space.coords:
-        hours = search_space.represent_hours
-    else:
-        hours = represent_hours(market.timeslice)
-
+    hours = _represent_hours(market, search_space)
     max_hours = hours.max() / hours.sum()
 
     commodity_output = params.fixed_outputs.sel(commodity=demand.commodity)
@@ -478,15 +491,18 @@ def annual_levelized_cost_of_energy(
     **kwargs,
 ):
     """Annual cost of energy (LCOE) of technologies - not dependent on production.
-    It needs to be used for trade agents where the actual service is unknown
 
-    It follows the `simpified LCOE` given by NREL.
+    It needs to be used for trade agents where the actual service is unknown. It follows
+    the `simplified LCOE` given by NREL.
 
     Arguments:
         agent: The agent of interest
+        demand: Demand for commodities
         search_space: The search space space for replacement technologies
         technologies: All the technologies
         market: The market parameters
+        *args: Extra arguments (unused)
+        **kwargs: Extra keyword arguments (unused)
 
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
@@ -508,7 +524,7 @@ def capital_recovery_factor(
     Energy.
 
     .. _capital recovery factor:
-        https://www.homerenergy.com/products/pro/docs/3.11/capital_recovery_factor.html
+        https://www.homerenergy.com/products/pro/docs/3.15/capital_recovery_factor.html
 
     Arguments:
         agent: The agent of interest
@@ -518,7 +534,6 @@ def capital_recovery_factor(
     Return:
         xr.DataArray with the CRF calculated for the relevant technologies
     """
-
     tech = agent.filter_input(
         technologies[["technical_life", "interest_rate"]],
         technology=search_space.replacement,
@@ -541,13 +556,18 @@ def lifetime_levelized_cost_of_energy(
 ):
     """Levelized cost of energy (LCOE) of technologies over their lifetime.
 
-    It follows the `simpified LCOE` given by NREL.
+    It follows the `simplified LCOE` given by NREL. The LCOE is set to zero for those
+    timeslices where the production is zero, normally due to a zero utilisation
+    factor.
 
     Arguments:
         agent: The agent of interest
+        demand: Demand for commodities
         search_space: The search space space for replacement technologies
         technologies: All the technologies
         market: The market parameters
+        *args: Extra arguments (unused)
+        **kwargs: Extra keyword arguments (unused)
 
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
@@ -663,7 +683,7 @@ def lifetime_levelized_cost_of_energy(
         + fixed_and_variable_costs
     ) / (denominator.sel(commodity=products).sum("commodity") * rates).sum("year")
 
-    return results
+    return results.where(np.isfinite(results)).fillna(0.0)
 
 
 @register_objective(name="NPV")
@@ -682,7 +702,8 @@ def net_present_value(
     a Component earns over its lifetime minus all the costs of installing and operating
     it. Follows the definition of the `net present cost`_ given by HOMER Energy.
     Metrics are calculated
-    .. _net present cost: https://www.homerenergy.com/products/pro/docs/3.11/net_present_cost.html # noqa
+    .. _net present cost:
+    ..      https://www.homerenergy.com/products/pro/docs/3.15/net_present_cost.html
 
     - energy commodities INPUTS are related to fuel costs
     - environmental commodities OUTPUTS are related to environmental costs
@@ -700,9 +721,12 @@ def net_present_value(
 
     Arguments:
         agent: The agent of interest
+        demand: Demand for commodities
         search_space: The search space space for replacement technologies
         technologies: All the technologies
         market: The market parameters
+        *args: Extra arguments (unused)
+        **kwargs: Extra keyword arguments (unused)
 
     Return:
         xr.DataArray with the NPV calculated for the relevant technologies
@@ -887,13 +911,16 @@ def equivalent_annual_cost(
     `annualized cost`_ expression given by HOMER Energy.
 
     .. _annualized cost:
-        https://www.homerenergy.com/products/pro/docs/3.11/annualized_cost.html
+        https://www.homerenergy.com/products/pro/docs/3.15/annualized_cost.html
 
     Arguments:
         agent: The agent of interest
+        demand: Demand for commodities
         search_space: The search space space for replacement technologies
         technologies: All the technologies
         market: The market parameters
+        *args: Extra arguments (unused)
+        **kwargs: Extra keyword arguments (unused)
 
     Return:
         xr.DataArray with the EAC calculated for the relevant technologies

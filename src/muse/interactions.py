@@ -13,6 +13,7 @@ sequence of nets. It is expected each net of the sequence will be applied the sa
 interaction. The second registrator registers the interaction proper: it takes agents as
 arguments and returns nothing. It is expected to modify the agents in-place.
 """
+
 __all__ = [
     "register_interaction_net",
     "register_agent_interaction",
@@ -21,15 +22,16 @@ __all__ = [
     "transfer_assets",
 ]
 
-from typing import Callable, List, Mapping, Optional, Sequence, Text, Tuple, Union
+from collections.abc import Mapping, Sequence
+from typing import Callable, Optional, Union
 
 from muse.agents import AbstractAgent, Agent
 from muse.errors import NoInteractionsFound
 from muse.registration import registrator
 
-AGENT_INTERACTIONS: Mapping[Text, Callable] = {}
+AGENT_INTERACTIONS: Mapping[str, Callable] = {}
 """All interaction between a single agents and its interactees."""
-INTERACTION_NETS: Mapping[Text, Callable] = {}
+INTERACTION_NETS: Mapping[str, Callable] = {}
 """All functions to computes lists of agents interaction with each other."""
 
 INTERACTION_NET = Sequence[Sequence[Agent]]
@@ -85,10 +87,9 @@ def register_agent_interaction(function: AGENT_INTERACTION_SIGNATURE):
 
 
 def factory(
-    inputs: Optional[Sequence[Union[Mapping, Tuple[Text, Text]]]] = None
+    inputs: Optional[Sequence[Union[Mapping, tuple[str, str]]]] = None,
 ) -> Callable[[Sequence[AbstractAgent]], None]:
     """Creates an interaction functor."""
-
     if inputs is None:
         inputs = tuple()
 
@@ -100,10 +101,10 @@ def factory(
         else:
             net_params, action_params = params
 
-        if isinstance(net_params, Text):
+        if isinstance(net_params, str):
             net_params = {"name": net_params}
 
-        if isinstance(action_params, Text):
+        if isinstance(action_params, str):
             action_params = {"name": action_params}
 
         net = INTERACTION_NETS[net_params["name"]]
@@ -138,10 +139,10 @@ def factory(
 
 
 def agents_groupby(
-    agents: Sequence[Agent], attributes: Sequence[Text]
-) -> Mapping[Tuple, List[Agent]]:
+    agents: Sequence[Agent], attributes: Sequence[str]
+) -> Mapping[tuple, list[Agent]]:
     attr_list = [tuple(getattr(agent, attr) for attr in attributes) for agent in agents]
-    result: Mapping[Tuple, List[Agent]] = {tuple(n): [] for n in attr_list}
+    result: Mapping[tuple, list[Agent]] = {tuple(n): [] for n in attr_list}
     for attrs, agent in zip(attr_list, agents):
         result[attrs].append(agent)
     return result
@@ -149,7 +150,7 @@ def agents_groupby(
 
 @register_interaction_net(name=["default", "new_to_retro"])
 def new_to_retro_net(
-    agents: Sequence[Agent], first_category: Text = "newcapa"
+    agents: Sequence[Agent], first_category: str = "newcapa"
 ) -> INTERACTION_NET:
     """Interactions between new and retrofit agents."""
     groups = agents_groupby(agents, ("region", "name"))

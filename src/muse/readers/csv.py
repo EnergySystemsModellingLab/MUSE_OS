@@ -1,4 +1,5 @@
 """Ensemble of functions to read MUSE data."""
+
 __all__ = [
     "read_technodictionary",
     "read_io_technodata",
@@ -15,8 +16,9 @@ __all__ = [
     "read_csv_outputs",
 ]
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Hashable, List, Optional, Sequence, Text, Union, cast
+from typing import Optional, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -26,10 +28,25 @@ from muse.defaults import DEFAULT_SECTORS_DIRECTORY
 from muse.errors import UnitsConflictInCommodities
 
 
+def to_numeric(x):
+    """Converts a value to numeric if possible.
+
+    Args:
+        x: The value to convert.
+
+    Returns:
+        The value converted to numeric if possible, otherwise the original value.
+    """
+    try:
+        return pd.to_numeric(x)
+    except ValueError:
+        return x
+
+
 def find_sectors_file(
-    filename: Union[Text, Path],
-    sector: Optional[Text] = None,
-    sectors_directory: Union[Text, Path] = DEFAULT_SECTORS_DIRECTORY,
+    filename: Union[str, Path],
+    sector: Optional[str] = None,
+    sectors_directory: Union[str, Path] = DEFAULT_SECTORS_DIRECTORY,
 ) -> Path:
     """Looks through a few standard place for sector files."""
     filename = Path(filename)
@@ -46,13 +63,13 @@ def find_sectors_file(
         if path.is_file():
             return path
     if sector is not None:
-        msg = "Could not find sector %s file %s." % (sector.title(), filename)
+        msg = f"Could not find sector {sector.title()} file {filename}."
     else:
-        msg = "Could not find file %s." % filename
-    raise IOError(msg)
+        msg = f"Could not find file {filename}."
+    raise OSError(msg)
 
 
-def read_technodictionary(filename: Union[Text, Path]) -> xr.Dataset:
+def read_technodictionary(filename: Union[str, Path]) -> xr.Dataset:
     """Reads and formats technodata into a dataset.
 
     There are three axes: technologies, regions, and year.
@@ -81,19 +98,27 @@ def read_technodictionary(filename: Union[Text, Path]) -> xr.Dataset:
     data.columns.name = "technodata"
     data.index.name = "technology"
     data = data.drop(["process_name", "region_name", "time"], axis=1)
+    data = data.apply(to_numeric, axis=0)
 
-    data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"), axis=0)
+    check_utilization_and_minimum_service_factors(data, filename)
 
     result = xr.Dataset.from_dataframe(data.sort_index())
     if "fuel" in result.variables:
         result["fuel"] = result.fuel.isel(region=0, year=0)
+        result["fuel"].values = [camel_to_snake(name) for name in result["fuel"].values]
     if "type" in result.variables:
         result["tech_type"] = result.type.isel(region=0, year=0)
+        result["tech_type"].values = [
+            camel_to_snake(name) for name in result["tech_type"].values
+        ]
     if "enduse" in result.variables:
         result["enduse"] = result.enduse.isel(region=0, year=0)
+        result["enduse"].values = [
+            camel_to_snake(name) for name in result["enduse"].values
+        ]
 
     units = csv[csv.process_name == "Unit"].drop(
-        ["process_name", "region_name", "time", "level"], axis=1
+        ["process_name", "region_name", "time"], axis=1
     )
     for variable, value in units.items():
         if all(u not in {"-", "Retro", "New"} for u in value.values):
@@ -106,10 +131,11 @@ def read_technodictionary(filename: Union[Text, Path]) -> xr.Dataset:
 
     if "year" in result.dims and len(result.year) == 1:
         result = result.isel(year=0, drop=True)
+
     return result
 
 
-def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
+def read_technodata_timeslices(filename: Union[str, Path]) -> xr.Dataset:
     from muse.readers import camel_to_snake
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
@@ -120,8 +146,8 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
     )
     data = csv[csv.technology != "Unit"]
 
-    data = data.apply(lambda x: pd.to_numeric(x, errors="ignore"))
-    data = check_utilization_not_all_zero(data, filename)
+    data = data.apply(to_numeric)
+    check_utilization_and_minimum_service_factors(data, filename)
 
     ts = pd.MultiIndex.from_frame(
         data.drop(
@@ -147,18 +173,24 @@ def read_technodata_timeslices(filename: Union[Text, Path]) -> xr.Dataset:
     return result
 
 
-def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
-    """Reads process inputs or ouputs.
+def read_io_technodata(filename: Union[str, Path]) -> xr.Dataset:
+    """Reads process inputs or outputs.
 
     There are four axes: (technology, region, year, commodity)
     """
-    from functools import partial
-
     from muse.readers import camel_to_snake
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
-    data = csv[csv.ProcessName != "Unit"]
 
+    # Unspecified Level values default to "fixed"
+    if "Level" in csv.columns:
+        csv["Level"] = csv["Level"].fillna("fixed")
+    else:
+        # Particularly relevant to outputs files where the Level column is omitted by
+        # default, as only "fixed" outputs are allowed.
+        csv["Level"] = "fixed"
+
+    data = csv[csv.ProcessName != "Unit"]
     region = np.array(data.RegionName, dtype=str)
     process = data.ProcessName
     year = [int(u) for u in data.Time]
@@ -171,9 +203,8 @@ def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
     data.index = ts
     data.columns.name = "commodity"
     data.index.name = "technology"
-
     data = data.rename(columns=camel_to_snake)
-    data = data.apply(partial(pd.to_numeric, errors="ignore"), axis=0)
+    data = data.apply(to_numeric, axis=0)
 
     fixed_set = xr.Dataset.from_dataframe(data[data.level == "fixed"]).drop_vars(
         "level"
@@ -201,9 +232,8 @@ def read_io_technodata(filename: Union[Text, Path]) -> xr.Dataset:
     return result
 
 
-def read_initial_assets(filename: Union[Text, Path]) -> xr.DataArray:
+def read_initial_assets(filename: Union[str, Path]) -> xr.DataArray:
     """Reads and formats data about initial capacity into a dataframe."""
-
     data = pd.read_csv(filename, float_precision="high", low_memory=False)
     if "Time" in data.columns:
         result = cast(
@@ -219,7 +249,7 @@ def read_initial_assets(filename: Union[Text, Path]) -> xr.DataArray:
     return result
 
 
-def read_initial_capacity(data: Union[Text, Path, pd.DataFrame]) -> xr.DataArray:
+def read_initial_capacity(data: Union[str, Path, pd.DataFrame]) -> xr.DataArray:
     if not isinstance(data, pd.DataFrame):
         data = pd.read_csv(data, float_precision="high", low_memory=False)
     if "Unit" in data.columns:
@@ -237,19 +267,19 @@ def read_initial_capacity(data: Union[Text, Path, pd.DataFrame]) -> xr.DataArray
 
 
 def read_technologies(
-    technodata_path_or_sector: Optional[Union[Text, Path]] = None,
-    technodata_timeslices_path: Optional[Union[Text, Path]] = None,
-    comm_out_path: Optional[Union[Text, Path]] = None,
-    comm_in_path: Optional[Union[Text, Path]] = None,
-    commodities: Optional[Union[Text, Path, xr.Dataset]] = None,
-    sectors_directory: Union[Text, Path] = DEFAULT_SECTORS_DIRECTORY,
+    technodata_path_or_sector: Optional[Union[str, Path]] = None,
+    technodata_timeslices_path: Optional[Union[str, Path]] = None,
+    comm_out_path: Optional[Union[str, Path]] = None,
+    comm_in_path: Optional[Union[str, Path]] = None,
+    commodities: Optional[Union[str, Path, xr.Dataset]] = None,
+    sectors_directory: Union[str, Path] = DEFAULT_SECTORS_DIRECTORY,
 ) -> xr.Dataset:
     """Reads data characterising technologies from files.
 
     Arguments:
         technodata_path_or_sector: If `comm_out_path` and `comm_in_path` are not given,
             then this argument refers to the name of the sector. The three paths are
-            then determined using standard locations and name. Specifically, thechnodata
+            then determined using standard locations and name. Specifically, technodata
             looks for a "technodataSECTORNAME.csv" file in the standard location for
             that sector. However, if  `comm_out_path` and `comm_in_path` are given, then
             this should be the path to the the technodata file.
@@ -279,9 +309,11 @@ def read_technologies(
 
     if (not comm_out_path) and (not comm_in_path):
         sector = technodata_path_or_sector
-        assert sector is None or isinstance(sector, Text)
+        assert sector is None or isinstance(sector, str)
         tpath = find_sectors_file(
-            f"technodata{sector.title()}.csv", sector, sectors_directory  # type: ignore
+            f"technodata{sector.title()}.csv",
+            sector,
+            sectors_directory,  # type: ignore
         )
         opath = find_sectors_file(
             f"commOUTtechnodata{sector.title()}.csv",  # type: ignore
@@ -294,7 +326,7 @@ def read_technologies(
             sectors_directory,
         )
     else:
-        assert isinstance(technodata_path_or_sector, (Text, Path))
+        assert isinstance(technodata_path_or_sector, (str, Path))
         assert comm_out_path is not None
         assert comm_in_path is not None
         tpath = Path(technodata_path_or_sector)
@@ -307,7 +339,7 @@ def read_technologies(
     - inputs: {ipath}
     """
     if technodata_timeslices_path and isinstance(
-        technodata_timeslices_path, (Text, Path)
+        technodata_timeslices_path, (str, Path)
     ):
         ttpath = Path(technodata_timeslices_path)
         msg += f"""- technodata_timeslices: {ttpath}
@@ -315,7 +347,7 @@ def read_technologies(
     else:
         ttpath = None
 
-    if isinstance(commodities, (Text, Path)):
+    if isinstance(commodities, (str, Path)):
         msg += f"""- global commodities file: {commodities}"""
 
     logger = getLogger(__name__)
@@ -328,6 +360,12 @@ def read_technologies(
     outs = read_io_technodata(opath).rename(
         flexible="flexible_outputs", fixed="fixed_outputs"
     )
+    if not (outs["flexible_outputs"] == 0).all():
+        raise ValueError(
+            f"'flexible' outputs are not permitted in {opath}. "
+            "All outputs must be 'fixed'"
+        )
+    outs = outs.drop_vars("flexible_outputs")
     ins = read_io_technodata(ipath).rename(
         flexible="flexible_inputs", fixed="fixed_inputs"
     )
@@ -342,17 +380,17 @@ def read_technologies(
     except xr.core.merge.MergeError:
         raise UnitsConflictInCommodities
 
-    if isinstance(ttpath, (Text, Path)):
+    if isinstance(ttpath, (str, Path)):
         technodata_timeslice = read_technodata_timeslices(ttpath)
         result = result.drop_vars("utilization_factor")
         result = result.merge(technodata_timeslice)
     else:
         technodata_timeslice = None
     # try and add info about commodities
-    if isinstance(commodities, (Text, Path)):
+    if isinstance(commodities, (str, Path)):
         try:
             commodities = read_global_commodities(commodities)
-        except IOError:
+        except OSError:
             logger.warning("Could not load global commodities file.")
             commodities = None
 
@@ -361,7 +399,7 @@ def read_technologies(
             result = result.merge(commodities.sel(commodity=result.commodity))
 
         else:
-            raise IOError(
+            raise OSError(
                 "Commodities not found in global commodities file: check spelling."
             )
 
@@ -376,11 +414,11 @@ def read_technologies(
     return result
 
 
-def read_csv_timeslices(path: Union[Text, Path], **kwargs) -> xr.DataArray:
+def read_csv_timeslices(path: Union[str, Path], **kwargs) -> xr.DataArray:
     """Reads timeslice information from input."""
     from logging import getLogger
 
-    getLogger(__name__).info("Reading timeslices from %s" % path)
+    getLogger(__name__).info(f"Reading timeslices from {path}")
     data = pd.read_csv(path, float_precision="high", **kwargs)
 
     def snake_case(string):
@@ -405,7 +443,7 @@ def read_csv_timeslices(path: Union[Text, Path], **kwargs) -> xr.DataArray:
     return result.timeslice
 
 
-def read_global_commodities(path: Union[Text, Path]) -> xr.Dataset:
+def read_global_commodities(path: Union[str, Path]) -> xr.Dataset:
     """Reads commodities information from input."""
     from logging import getLogger
 
@@ -415,7 +453,7 @@ def read_global_commodities(path: Union[Text, Path]) -> xr.Dataset:
     if path.is_dir():
         path = path / "MuseGlobalCommodities.csv"
     if not path.is_file():
-        raise IOError(f"File {path} does not exist.")
+        raise OSError(f"File {path} does not exist.")
 
     getLogger(__name__).info(f"Reading global commodities from {path}.")
 
@@ -437,13 +475,13 @@ def read_global_commodities(path: Union[Text, Path]) -> xr.Dataset:
 
 
 def read_timeslice_shares(
-    path: Union[Text, Path] = DEFAULT_SECTORS_DIRECTORY,
-    sector: Optional[Text] = None,
-    timeslice: Union[Text, Path, xr.DataArray] = "Timeslices{sector}.csv",
+    path: Union[str, Path] = DEFAULT_SECTORS_DIRECTORY,
+    sector: Optional[str] = None,
+    timeslice: Union[str, Path, xr.DataArray] = "Timeslices{sector}.csv",
 ) -> xr.Dataset:
     """Reads sliceshare information into a xr.Dataset.
 
-    Additionaly, this function will try and recover the timeslice multi- index from a
+    Additionally, this function will try and recover the timeslice multi- index from a
     import file "Timeslices{sector}.csv" in the same directory as the timeslice shares.
     Pass `None` if this behaviour is not required.
     """
@@ -458,15 +496,15 @@ def read_timeslice_shares(
             path, filename = path.parent, path.name
             re = match(r"TimesliceShare(.*)\.csv", filename)
             sector = path.name if re is None else re.group(1)
-    if isinstance(timeslice, Text) and "{sector}" in timeslice:
+    if isinstance(timeslice, str) and "{sector}" in timeslice:
         timeslice = timeslice.format(sector=sector)
-    if isinstance(timeslice, (Text, Path)) and not Path(timeslice).is_file():
+    if isinstance(timeslice, (str, Path)) and not Path(timeslice).is_file():
         timeslice = find_sectors_file(timeslice, sector, path)
-    if isinstance(timeslice, (Text, Path)):
+    if isinstance(timeslice, (str, Path)):
         timeslice = read_csv_timeslices(timeslice, low_memory=False)
 
-    share_path = find_sectors_file("TimesliceShare%s.csv" % sector, sector, path)
-    getLogger(__name__).info("Reading timeslice shares from %s" % share_path)
+    share_path = find_sectors_file(f"TimesliceShare{sector}.csv", sector, path)
+    getLogger(__name__).info(f"Reading timeslice shares from {share_path}")
     data = pd.read_csv(share_path, float_precision="high", low_memory=False)
     data.index = pd.MultiIndex.from_arrays(
         (data.RegionName, data.SN), names=("region", "timeslice")
@@ -481,13 +519,12 @@ def read_timeslice_shares(
         result = result.drop_vars("timeslice")
     elif isinstance(timeslice, xr.DataArray) and hasattr(timeslice, "timeslice"):
         result["timeslice"] = timeslice.timeslice
-        result[cast(Hashable, timeslice.name)] = timeslice
     else:
         result["timeslice"] = timeslice
     return result.shares
 
 
-def read_csv_agent_parameters(filename) -> List:
+def read_csv_agent_parameters(filename) -> list:
     """Reads standard MUSE agent-declaration csv-files.
 
     Returns a list of dictionaries, where each dictionary can be used to instantiate an
@@ -496,7 +533,7 @@ def read_csv_agent_parameters(filename) -> List:
     from re import sub
 
     if (
-        isinstance(filename, Text)
+        isinstance(filename, str)
         and Path(filename).suffix != ".csv"
         and not Path(filename).is_file()
     ):
@@ -534,7 +571,7 @@ def read_csv_agent_parameters(filename) -> List:
             if not issubclass(type(u), (int, float)):
                 raise ValueError(f"Agent ObjData requires a float entry in {filename}")
         decision_params = [
-            u for u in zip(objectives, sorting, floats) if isinstance(u[0], Text)
+            u for u in zip(objectives, sorting, floats) if isinstance(u[0], str)
         ]
 
         agent_type = {
@@ -567,7 +604,7 @@ def read_csv_agent_parameters(filename) -> List:
     return result
 
 
-def read_macro_drivers(path: Union[Text, Path]) -> xr.Dataset:
+def read_macro_drivers(path: Union[str, Path]) -> xr.Dataset:
     """Reads a standard MUSE csv file for macro drivers."""
     from logging import getLogger
 
@@ -592,9 +629,9 @@ def read_macro_drivers(path: Union[Text, Path]) -> xr.Dataset:
 
 
 def read_initial_market(
-    projections: Union[xr.DataArray, Path, Text],
-    base_year_import: Optional[Union[Text, Path, xr.DataArray]] = None,
-    base_year_export: Optional[Union[Text, Path, xr.DataArray]] = None,
+    projections: Union[xr.DataArray, Path, str],
+    base_year_import: Optional[Union[str, Path, xr.DataArray]] = None,
+    base_year_export: Optional[Union[str, Path, xr.DataArray]] = None,
     timeslices: Optional[xr.DataArray] = None,
 ) -> xr.Dataset:
     """Read projections, import and export csv files."""
@@ -603,14 +640,14 @@ def read_initial_market(
     from muse.timeslices import QuantityType, convert_timeslice
 
     # Projections must always be present
-    if isinstance(projections, (Text, Path)):
+    if isinstance(projections, (str, Path)):
         getLogger(__name__).info(f"Reading projections from {projections}")
         projections = read_attribute_table(projections)
     if timeslices is not None:
         projections = convert_timeslice(projections, timeslices, QuantityType.INTENSIVE)
 
     # Base year export is optional. If it is not there, it's set to zero
-    if isinstance(base_year_export, (Text, Path)):
+    if isinstance(base_year_export, (str, Path)):
         getLogger(__name__).info(f"Reading base year export from {base_year_export}")
         base_year_export = read_attribute_table(base_year_export)
     elif base_year_export is None:
@@ -618,7 +655,7 @@ def read_initial_market(
         base_year_export = xr.zeros_like(projections)
 
     # Base year import is optional. If it is not there, it's set to zero
-    if isinstance(base_year_import, (Text, Path)):
+    if isinstance(base_year_import, (str, Path)):
         getLogger(__name__).info(f"Reading base year import from {base_year_import}")
         base_year_import = read_attribute_table(base_year_import)
     elif base_year_import is None:
@@ -650,12 +687,14 @@ def read_initial_market(
     result = result.rename(
         commodity_price="prices", units_commodity_price="units_prices"
     )
-    result["prices"] = result["prices"].expand_dims({"timeslice": timeslices})
+    result["prices"] = (
+        result["prices"].expand_dims({"timeslice": timeslices}).drop_vars("timeslice")
+    )
 
     return result
 
 
-def read_attribute_table(path: Union[Text, Path]) -> xr.DataArray:
+def read_attribute_table(path: Union[str, Path]) -> xr.DataArray:
     """Read a standard MUSE csv file for price projections."""
     from logging import getLogger
 
@@ -663,7 +702,7 @@ def read_attribute_table(path: Union[Text, Path]) -> xr.DataArray:
 
     path = Path(path)
     if not path.is_file():
-        raise IOError(f"{path} does not exist.")
+        raise OSError(f"{path} does not exist.")
 
     getLogger(__name__).info(f"Reading prices from {path}")
 
@@ -692,7 +731,7 @@ def read_attribute_table(path: Union[Text, Path]) -> xr.DataArray:
     return result
 
 
-def read_regression_parameters(path: Union[Text, Path]) -> xr.Dataset:
+def read_regression_parameters(path: Union[str, Path]) -> xr.Dataset:
     """Reads the regression parameters from a standard MUSE csv file."""
     from logging import getLogger
 
@@ -700,11 +739,11 @@ def read_regression_parameters(path: Union[Text, Path]) -> xr.Dataset:
 
     path = Path(path)
     if not path.is_file():
-        raise IOError(f"{path} does not exist or is not a file.")
+        raise OSError(f"{path} does not exist or is not a file.")
     getLogger(__name__).info(f"Reading regression parameters from {path}.")
     table = pd.read_csv(path, float_precision="high", low_memory=False)
 
-    # Normalize clumn names
+    # Normalize column names
     table.columns.name = "commodity"
     table = table.rename(
         columns={
@@ -750,10 +789,10 @@ def read_regression_parameters(path: Union[Text, Path]) -> xr.Dataset:
 
 
 def read_csv_outputs(
-    paths: Union[Text, Path, Sequence[Union[Text, Path]]],
-    columns: Text = "commodity",
-    indices: Sequence[Text] = ("RegionName", "ProcessName", "Timeslice"),
-    drop: Sequence[Text] = ("Unnamed: 0",),
+    paths: Union[str, Path, Sequence[Union[str, Path]]],
+    columns: str = "commodity",
+    indices: Sequence[str] = ("RegionName", "ProcessName", "Timeslice"),
+    drop: Sequence[str] = ("Unnamed: 0",),
 ) -> xr.Dataset:
     """Read standard MUSE output files for consumption or supply."""
     from re import match
@@ -763,16 +802,16 @@ def read_csv_outputs(
     def expand_paths(path):
         from glob import glob
 
-        if isinstance(paths, Text):
+        if isinstance(paths, str):
             return [Path(p) for p in glob(path)]
         return Path(path)
 
-    if isinstance(paths, Text):
+    if isinstance(paths, str):
         allfiles = expand_paths(paths)
     else:
         allfiles = [expand_paths(p) for p in cast(Sequence, paths)]
     if len(allfiles) == 0:
-        raise IOError(f"No files found with paths {paths}")
+        raise OSError(f"No files found with paths {paths}")
 
     datas = {}
     for path in allfiles:
@@ -787,10 +826,10 @@ def read_csv_outputs(
 
         reyear = match(r"\S*.(\d{4})\S*\.csv", path.name)
         if reyear is None:
-            raise IOError(f"Unexpected filename {path.name}")
+            raise OSError(f"Unexpected filename {path.name}")
         year = int(reyear.group(1))
         if year in datas:
-            raise IOError(f"Year f{year} was found twice")
+            raise OSError(f"Year f{year} was found twice")
         data.year = year
         datas[year] = xr.DataArray(data)
 
@@ -811,16 +850,14 @@ def read_csv_outputs(
 
 
 def read_trade(
-    data: Union[pd.DataFrame, Text, Path],
+    data: Union[pd.DataFrame, str, Path],
     columns_are_source: bool = True,
-    parameters: Optional[Text] = None,
+    parameters: Optional[str] = None,
     skiprows: Optional[Sequence[int]] = None,
-    name: Optional[Text] = None,
-    drop: Optional[Union[Text, Sequence[Text]]] = None,
+    name: Optional[str] = None,
+    drop: Optional[Union[str, Sequence[str]]] = None,
 ) -> Union[xr.DataArray, xr.Dataset]:
     """Read CSV table with source and destination regions."""
-    from functools import partial
-
     from muse.readers import camel_to_snake
 
     if not isinstance(data, pd.DataFrame):
@@ -834,8 +871,8 @@ def read_trade(
     else:
         row_region = "src_region"
         col_region = "dst_region"
-    data = data.apply(partial(pd.to_numeric, errors="ignore"), axis=0)
-    if isinstance(drop, Text):
+    data = data.apply(to_numeric, axis=0)
+    if isinstance(drop, str):
         drop = [drop]
     if drop:
         drop = list(set(drop).intersection(data.columns))
@@ -860,21 +897,20 @@ def read_trade(
     )
     if parameters is None:
         result: Union[xr.DataArray, xr.Dataset] = xr.DataArray.from_series(
-            data.set_index(indices + [col_region])["value"]
+            data.set_index([*indices, col_region])["value"]
         ).rename(name)
     else:
         result = xr.Dataset.from_dataframe(
             data.pivot_table(
-                values="value", columns=parameters, index=indices + [col_region]
+                values="value", columns=parameters, index=[*indices, col_region]
             ).rename(columns=camel_to_snake)
         )
 
     return result.rename(src_region="region")
 
 
-def read_finite_resources(path: Union[Text, Path]) -> xr.DataArray:
+def read_finite_resources(path: Union[str, Path]) -> xr.DataArray:
     """Reads finite resources from csv file.
-
 
     The CSV file is made up of columns "Region", "Year", as well
     as three timeslice columns ("Month", "Day", "Hour"). All three sets of columns are
@@ -900,26 +936,52 @@ def read_finite_resources(path: Union[Text, Path]) -> xr.DataArray:
     return xr.Dataset.from_dataframe(data).to_array(dim="commodity")
 
 
-def check_utilization_not_all_zero(data, filename):
+def check_utilization_and_minimum_service_factors(data, filename):
     if "utilization_factor" not in data.columns:
         raise ValueError(
-            """A technology needs to have a utilization factor defined for every
-             timeslice. Please check file {}.""".format(
-                filename
-            )
+            f"""A technology needs to have a utilization factor defined for every
+             timeslice. Please check file {filename}."""
         )
-    else:
-        utilization_sum = data.groupby(["technology", "region", "year"]).sum()
 
-        # Add small value to 0 utilization factors to avoid numerical problems
-        if utilization_sum.utilization_factor.any() == 0:
-            data.loc[data.utilization_factor == 0, "utilization_factor"] = (
-                data.loc[data.utilization_factor == 0, "utilization_factor"] + 0.01
-            )
-            raise ValueError(
-                """A technology can not have a utilization factor of 0 for every
-                 timeslice. Please check file {}.""".format(
-                    filename
-                )
-            )
-    return data
+    _check_utilization_not_all_zero(data, filename)
+    _check_utilization_in_range(data, filename)
+
+    if "minimum_service_factor" in data.columns:
+        _check_minimum_service_factors_in_range(data, filename)
+        _check_utilization_not_below_minimum(data, filename)
+
+
+def _check_utilization_not_all_zero(data, filename):
+    utilization_sum = data.groupby(["technology", "region", "year"]).sum()
+
+    if (utilization_sum.utilization_factor == 0).any():
+        raise ValueError(
+            f"""A technology can not have a utilization factor of 0 for every
+                timeslice. Please check file {filename}."""
+        )
+
+
+def _check_utilization_in_range(data, filename):
+    utilization = data["utilization_factor"]
+    if not np.all((0 <= utilization) & (utilization <= 1)):
+        raise ValueError(
+            f"""Utilization factor values must all be between 0 and 1 inclusive.
+            Please check file {filename}."""
+        )
+
+
+def _check_utilization_not_below_minimum(data, filename):
+    if (data["utilization_factor"] < data["minimum_service_factor"]).any():
+        raise ValueError(f"""Utilization factors must all be greater than or equal to
+                          their corresponding minimum service factors. Please check
+                         {filename}.""")
+
+
+def _check_minimum_service_factors_in_range(data, filename):
+    min_service_factor = data["minimum_service_factor"]
+
+    if not np.all((0 <= min_service_factor) & (min_service_factor <= 1)):
+        raise ValueError(
+            f"""Minimum service factor values must all be between 0 and 1 inclusive.
+             Please check file {filename}."""
+        )

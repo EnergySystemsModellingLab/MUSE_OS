@@ -2,6 +2,7 @@ from typing import cast
 
 import numpy as np
 import xarray as xr
+from muse.timeslices import drop_timeslice
 from pytest import approx, fixture
 
 
@@ -9,7 +10,8 @@ from pytest import approx, fixture
 def demand(
     technologies: xr.Dataset, capacity: xr.DataArray, market: xr.DataArray
 ) -> xr.DataArray:
-    from typing import Any, Hashable, Mapping
+    from collections.abc import Hashable, Mapping
+    from typing import Any
 
     region = xr.DataArray(list(set(capacity.region.values)), dims="region")
     coords: Mapping[Hashable, Any] = {
@@ -41,10 +43,9 @@ def make_array(array):
 
 def test_supply_enduse(technologies, capacity, timeslice):
     """End-use part of supply."""
-    from numpy.random import random
-
     from muse.commodities import is_enduse
     from muse.quantities import maximum_production, supply
+    from numpy.random import random
 
     production = maximum_production(technologies, capacity)
     share = xr.DataArray(
@@ -87,12 +88,18 @@ def test_gross_margin(technologies, capacity, market):
     from muse.commodities import is_enduse, is_fuel, is_pollutant
     from muse.quantities import gross_margin
 
+    """
+    Gross margin refers to the calculation
+    .. _here:
+    https://www.investopedia.com/terms/g/grossmargin.asp
+    """
     # we modify the variables to have just the values we want for the testing
-    technologies = technologies.sel(technology=technologies.technology == "soda_shaker")
-    capacity = capacity.sel(asset=capacity.technology == "soda_shaker")
-    capacity[:] = capa = 9
+    selected = capacity.technology.values[0]
 
-    # This will leave 2 environmental outputs and 4 fuel inputs.
+    technologies = technologies.sel(technology=technologies.technology == selected)
+    capa = capacity.where(capacity.technology == selected, drop=True)
+
+    # Filtering commodity outputs
     usage = technologies.comm_usage
 
     technologies.var_par[:] = vp = 2
@@ -104,13 +111,20 @@ def test_gross_margin(technologies, capacity, market):
     market.prices[:] = prices = 3
     market.prices[{"commodity": is_pollutant(usage)}] = env_prices = 6
     # We expect a xr.DataArray with 1 replacement technology
-    actual = gross_margin(technologies, capacity, market.prices)
+    actual = gross_margin(technologies, capa, market.prices)
 
     revenues = prices * prod * sum(is_enduse(usage))
     env_costs = env_prices * envs * sum(is_pollutant(usage))
     cons_costs = prices * fuels * sum(is_fuel(usage))
-    var_costs = vp * (capa**ve) * market.represent_hours / sum(market.represent_hours)
+    var_costs = (
+        vp
+        * ((prod * sum(is_enduse(usage))) ** ve)
+        * market.represent_hours
+        / sum(market.represent_hours)
+    )
+
     expected = revenues - env_costs - cons_costs - var_costs
+    expected *= 100 / revenues
 
     expected, actual = xr.broadcast(expected, actual)
     assert actual.values == approx(expected.values)
@@ -319,10 +333,9 @@ def test_capacity_in_use(production: xr.DataArray, technologies: xr.Dataset):
 
 
 def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
+    from muse.quantities import supply_cost
     from numpy import average
     from numpy.random import random
-
-    from muse.quantities import supply_cost
 
     timeslice = timeslice.timeslice
     production = production.sel(year=production.year.min(), drop=True)
@@ -339,29 +352,16 @@ def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
     for region in set(production.region.values):
         expected = average(
             lcoe.sel(asset=production.region == region),
-            weights=production.sel(asset=production.region == region)
-            / production.sel(asset=production.region == region).sum("asset"),
+            weights=production.sel(asset=production.region == region),
             axis=production.get_axis_num("asset"),
         )
 
-    for region in set(production.region.values):
-        weight = production / production.sel(asset=production.region == region).sum(
-            "asset"
-        ).sum("timeslice")
-
-        expected = lcoe * weight
-
-        assert actual.sel(region=region).values == approx(
-            expected.sel(asset=production.region == region).sum(
-                axis=production.get_axis_num("asset")
-            )
-        )
+        assert actual.sel(region=region).values == approx(expected)
 
 
 def test_supply_cost_zero_prod(production: xr.DataArray, timeslice: xr.Dataset):
-    from numpy.random import randn
-
     from muse.quantities import supply_cost
+    from numpy.random import randn
 
     timeslice = timeslice.timeslice
     production = production.sel(year=production.year.min(), drop=True)
@@ -449,7 +449,7 @@ def test_costed_production_exact_match(market, capacity, technologies):
         market,
         QuantityType.EXTENSIVE,
     )
-    market["consumption"] = maxdemand
+    market["consumption"] = drop_timeslice(maxdemand)
     result = costed_production(market.consumption, costs, capacity, technologies)
     assert isinstance(result, xr.DataArray)
     actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
@@ -476,7 +476,7 @@ def test_costed_production_single_region(market, capacity, technologies):
         market,
         QuantityType.EXTENSIVE,
     )
-    market["consumption"] = 0.9 * maxdemand
+    market["consumption"] = drop_timeslice(0.9 * maxdemand)
     technodata = broadcast_techs(technologies, capacity)
     costs = annual_levelized_cost_of_energy(
         market.prices.sel(region=technodata.region), technodata
@@ -509,7 +509,7 @@ def test_costed_production_single_year(market, capacity, technologies):
         market,
         QuantityType.EXTENSIVE,
     )
-    market["consumption"] = 0.9 * maxdemand
+    market["consumption"] = drop_timeslice(0.9 * maxdemand)
     technodata = broadcast_techs(technologies, capacity)
     costs = annual_levelized_cost_of_energy(
         market.prices.sel(region=technodata.region), technodata
@@ -545,7 +545,7 @@ def test_costed_production_over_capacity(market, capacity, technologies):
         market,
         QuantityType.EXTENSIVE,
     )
-    market["consumption"] = maxdemand * 0.9
+    market["consumption"] = drop_timeslice(maxdemand * 0.9)
     technodata = broadcast_techs(technologies, capacity)
     costs = annual_levelized_cost_of_energy(
         market.prices.sel(region=technodata.region), technodata
@@ -581,7 +581,7 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
     )
     minprod = maxprod * broadcast_techs(technologies.minimum_service_factor, maxprod)
     maxdemand = xr.Dataset(dict(mp=minprod)).groupby("region").sum("asset").mp
-    market["consumption"] = maxdemand * 0.9
+    market["consumption"] = drop_timeslice(maxdemand * 0.9)
     technodata = broadcast_techs(technologies, capacity)
     costs = annual_levelized_cost_of_energy(
         market.prices.sel(region=technodata.region), technodata

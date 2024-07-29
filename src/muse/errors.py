@@ -14,10 +14,10 @@ a new column needs to be added per agent."""
 
 
 class UnitsConflictInCommodities(Exception):
-    """Indicates that there is a conflcit in the commodity units between files."""
+    """Indicates that there is a conflict in the commodity units between files."""
 
     msg = """The units of “CommIn” “CommOut” and “GlobalCommodities” files must be the
-same, including the casing. Check the consistency of the units across those thre files.
+same, including the casing. Check the consistency of the units across those three files.
 """
 
     def __str__(self):
@@ -28,7 +28,7 @@ class GrowthOfCapacityTooConstrained(Exception):
     """Indicates that the investment step failed because capacity could not grow."""
 
     msg = """Error during the investment process. The capacity was not allowed to grow
-sufficiently in order to match the demand. Consider increating the MaxCapacityAddition
+sufficiently in order to match the demand. Consider increasing the MaxCapacityAddition
 and/or the MaxCapacityGrowth in the technodata."""
 
     def __str__(self):
@@ -36,7 +36,7 @@ and/or the MaxCapacityGrowth in the technodata."""
 
 
 class TechnologyNotDefined(Exception):
-    """Indicates that the initialisation fails because a technology is not found"""
+    """Indicates that the initialisation fails because a technology is not found."""
 
     msg = """Error during the initialisation of a sector.
 The model tries to assign a share of the total capacity to an agent but it
@@ -48,7 +48,7 @@ Check the spelling of the technology names."""
 
 
 class FailedInterpolation(Exception):
-    """Indicates that the initialisation fails due to interpolation"""
+    """Indicates that the initialisation fails due to interpolation."""
 
     msg = """Error during the initialisation of a sector.
 The model tries to interpolate values in time of the technologies.
@@ -71,7 +71,7 @@ demand share method that can handle both new and retro agents."""
 
 class AgentWithNoAssetsInDemandShare(Exception):
     msg = """This error refers to an agent with no assets. To fix this error, check the
-capacity assigment to the agents. One possibility is that you have decided not
+capacity assignment to the agents. One possibility is that you have decided not
 to use "Retrofit" agents, as such you may have already removed them from the
 agent definition file and the file of technodata, the system TOML file should
 change the demand_share to "standard_demand" function in each subsector
@@ -84,7 +84,7 @@ section for each of the selected sectors to model."""
 class NoInteractionsFound(Exception):
     msg = """A network with no interactions has been found. This might be the case if
 there are no retrofit agents and yet a 'new_to_retro' network has been defined for a
-particular sector. Asses the existance of both new and retrofit agents for all sectors
+particular sector. Asses the existence of both new and retrofit agents for all sectors
 and remove the new_to_retro interacton network if it is not needed """
 
     def __str__(self):

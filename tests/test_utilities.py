@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 import xarray as xr
 from pytest import approx, mark
@@ -16,7 +14,7 @@ def make_array(array):
     "coordinates",
     [("technology", "installed", "region"), ("technology", "installed"), ("region",)],
 )
-def test_reduce_assets(coordinates: Tuple, capacity: xr.DataArray):
+def test_reduce_assets(coordinates: tuple, capacity: xr.DataArray):
     from muse.utilities import reduce_assets
 
     actual = reduce_assets(capacity, coords=coordinates)
@@ -217,9 +215,8 @@ def test_lexical_nobin(order):
 
 
 def test_merge_assets():
-    from numpy import arange
-
     from muse.utilities import merge_assets
+    from numpy import arange
 
     def fake(year, order=("installed", "technology")):
         result = xr.Dataset()
@@ -230,7 +227,7 @@ def test_merge_assets():
             ("year", "asset"),
             np.random.rand(len(result.year), len(result.asset)),
         )
-        result = result[["capacity"] + list(order)].set_coords(order)
+        result = result[["capacity", *order]].set_coords(order)
         return result.capacity
 
     # checks order of coords does not interfere with merging

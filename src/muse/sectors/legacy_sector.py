@@ -1,12 +1,14 @@
-"""This module defines the LegacySector class, needed to interface the new MCA
-with the old MUSE sectors.
+"""This module defines the LegacySector class.
 
-It can be deleted once accessing those sectors is no longer needed.
+This is needed to interface the new MCA with the old MUSE sectors. It can be deleted
+once accessing those sectors is no longer needed.
 """
+
+from collections.abc import Sequence
 from dataclasses import dataclass
 from itertools import chain
 from logging import getLogger
-from typing import Any, Dict, Sequence, Text, Tuple, Union
+from typing import Any, Union
 
 import numpy as np
 import pandas as pd
@@ -19,7 +21,7 @@ from muse.timeslices import QuantityType, new_to_old_timeslice
 
 
 @dataclass
-class LegacyMarket(object):
+class LegacyMarket:
     BaseYear: int
     EndYear: int
     Foresight: np.ndarray
@@ -31,13 +33,13 @@ class LegacyMarket(object):
     macro_drivers: pd.DataFrame
     dfRegions: pd.DataFrame
     Regions: np.ndarray
-    interpolation_mode: Text
+    interpolation_mode: str
 
 
 @register_sector(name="legacy")
 class LegacySector(AbstractSector):  # type: ignore
     @classmethod
-    def factory(cls, name: Text, settings: Any, **kwargs) -> "LegacySector":
+    def factory(cls, name: str, settings: Any, **kwargs) -> "LegacySector":
         from pathlib import Path
 
         from muse_legacy.sectors import SECTORS
@@ -129,7 +131,7 @@ class LegacySector(AbstractSector):  # type: ignore
             name: global_commodities.isel(commodity=sector_comm),
         }
 
-        msg = "LegacySector {} created successfully.".format(name)
+        msg = f"LegacySector {name} created successfully."
         getLogger(__name__).info(msg)
         return cls(
             name,
@@ -149,19 +151,19 @@ class LegacySector(AbstractSector):  # type: ignore
 
     def __init__(
         self,
-        name: Text,
+        name: str,
         old_sector,
-        timeslices: Dict,
-        commodities: Dict,
+        timeslices: dict,
+        commodities: dict,
         commodity_price: DataArray,
         static_trade: DataArray,
         regions: Sequence,
         time_framework: np.ndarray,
-        mode: Text,
+        mode: str,
         excess: Union[int, float],
-        market_iterative: Text,
-        sectors_dir: Text,
-        output_dir: Text,
+        market_iterative: str,
+        sectors_dir: str,
+        output_dir: str,
     ):
         super().__init__()
         self.name = name
@@ -256,27 +258,27 @@ class LegacySector(AbstractSector):  # type: ignore
             self.mode,
         ]
 
-        inouts = {"output_dir": self.output_dir, "sectors_dir": self.sectors_dir}
+        inputs = {"output_dir": self.output_dir, "sectors_dir": self.sectors_dir}
 
         if self.name == "Power":
             if self.mode == "Calibration":
                 params += [self.market_iterative]
-                result = self.old_sector.power_calibration(*params, **inouts)
+                result = self.old_sector.power_calibration(*params, **inputs)
                 self.mode = "Iteration"
             else:
                 self.mode = "Iteration"
                 params += [self.old_sector.instance, self.market_iterative, self.excess]
-                result = self.old_sector.runprocessmodule(*params, **inouts)
+                result = self.old_sector.runprocessmodule(*params, **inputs)
         else:
             params += [self.market_iterative, self.excess]
-            result = self.old_sector.runprocessmodule(*params, **inouts)
+            result = self.old_sector.runprocessmodule(*params, **inputs)
 
         self.old_sector.report(result, t[1], self.output_dir)
 
         return result
 
     @staticmethod
-    def load_timeslices_and_aggregation(timeslices, sectors) -> Tuple[dict, str]:
+    def load_timeslices_and_aggregation(timeslices, sectors) -> tuple[dict, str]:
         """Loads all sector timeslices and finds the finest one."""
         timeslices = {"prices": timeslices.rename("prices timeslices")}
         finest = timeslices["prices"].copy()
@@ -319,7 +321,6 @@ class LegacySector(AbstractSector):  # type: ignore
 
     def _to(self, data: np.ndarray, data_ts, ts: pd.MultiIndex, qt: QuantityType):
         """From ndarray to dataarray."""
-
         return ndarray_to_xarray(
             years=self.time_framework,
             data=data,
@@ -334,7 +335,6 @@ class LegacySector(AbstractSector):  # type: ignore
 
     def _from(self, xdata: DataArray, ts: pd.MultiIndex, qt: QuantityType):
         """From dataarray to ndarray."""
-
         return xarray_to_ndarray(
             years=self.time_framework,
             xdata=xdata,
@@ -379,11 +379,11 @@ def ndarray_to_xarray(
     global_commodities: DataArray,
     sector_commodities: DataArray,
     data_ts: pd.MultiIndex,
-    dims: Sequence[Text],
-    regions: Sequence[Text],
+    dims: Sequence[str],
+    regions: Sequence[str],
 ) -> DataArray:
     """From ndarray to dataarray."""
-    from typing import Hashable, Mapping
+    from collections.abc import Hashable, Mapping
 
     from muse.timeslices import convert_timeslice
 
@@ -404,11 +404,11 @@ def xarray_to_ndarray(
     ts: pd.MultiIndex,
     qt: QuantityType,
     global_commodities: DataArray,
-    dims: Sequence[Text],
-    regions: Sequence[Text],
+    dims: Sequence[str],
+    regions: Sequence[str],
 ) -> np.ndarray:
     """From dataarray to ndarray."""
-    from typing import Hashable, Mapping
+    from collections.abc import Hashable, Mapping
 
     from muse.timeslices import convert_timeslice
 
@@ -425,9 +425,8 @@ def xarray_to_ndarray(
     return result.values
 
 
-def commodities_idx(sector, comm: Text) -> Sequence:
-    """Gets the indeces of the commodities involved in the processes of the
-    sector.
+def commodities_idx(sector, comm: str) -> Sequence:
+    """Gets the indices of the commodities involved in the processes of the sector.
 
     Arguments:
         sector: The old MUSE sector of interest
@@ -436,7 +435,6 @@ def commodities_idx(sector, comm: Text) -> Sequence:
     Returns:
         A list with the indexes
     """
-
     comm = {
         "OUT": "listIndexCommoditiesOUT",
         "IN": "listIndexCommoditiesIN",

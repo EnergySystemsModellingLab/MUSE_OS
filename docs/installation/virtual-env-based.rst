@@ -8,7 +8,7 @@ If the :ref:`pipx-based` does not work for you, you don't want to use ``pyenv`` 
 Installing Anaconda Python
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To install Anaconda, just go to the official `Anaconda webpage <https://www.anaconda.com/>`_ and download and install a version appropriate for your operative system. Do not worry about the Python version as ``conda`` will let you choose that when creating a virtual environment.
+To install Anaconda, just go to the official `Anaconda webpage <https://www.anaconda.com/>`_ and download and install a version appropriate for your operating system. Do not worry about the Python version as ``conda`` will let you choose that when creating a virtual environment.
 
 The installer should guide you step by step on the process of installing Anaconda and configuring your system to use it as your Python installation.
 
@@ -26,7 +26,7 @@ Using ``pipx`` ensures that each application it installs has its own virtual env
 Creating a ``conda`` virtual environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This option is available only if you installed Anaconda Python. Depending on the settings you used when installing Anaconda and your operative system, you might have ``conda`` available in your normal terminal or you might need to use the Anaconda Prompt.
+This option is available only if you installed Anaconda Python. Depending on the settings you used when installing Anaconda and your operating system, you might have ``conda`` available in your normal terminal or you might need to use the Anaconda Prompt.
 
 ``conda`` not only lets you create a virtual environment but also selecting which python version to use within, independently of the version of Anaconda Python installed, which means it can be an alternative to ``pyenv`` if it happens that you already have Anaconda installed in your system.
 
@@ -47,6 +47,9 @@ Later, to recover the system-wide "normal" python, deactivate the environment wi
 .. code-block:: bash
 
     conda deactivate
+
+
+.. _python_venv:
 
 Creating a virtual environment with ``venv``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -87,8 +90,24 @@ Later, to recover the system-wide "normal" python, deactivate the environment wi
 
     deactivate
 
-Installing MUSE in a virtual environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Creating a virtual environment with ``pyenv + venv``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Alternatively to creating virtual environments in ``conda``, you can also make use of two well-tested and maintained libraries.
+We met the first one, ``pyenv``, already in the :ref:`pipx-based <pipx-based>` under the section :ref:`Installing pyenv <pipx-based-installing-pyenv>` and the installation procedure is exactly the same.
+If you go down that route, please follow the steps outlined there and chose a recent version ``Python``, say 3.9.
+
+The second package we need to create virtual environments for any specific ``Python`` version is called
+``venv``, and it ships with ``Python`` by default. To create such an environment, we first need to ensure that the
+``Python`` version we wish to use is indeed the one we want. To do this, open the terminal and invoke ``pyenv versions``.
+To install different versions or set them to local or global scope, please refer again to
+:ref:`Installing pyenv <pipx-based-installing-pyenv>`.
+
+We can now create virtual environments using ``Python`` directly as explained in :ref:`python_venv`.
+
+
+Installing standalone MUSE in a virtual environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Regardless of the method used, **once it has been created and activated**, you can install ``MUSE`` within using:
 

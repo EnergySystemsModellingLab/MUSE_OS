@@ -1,7 +1,7 @@
 Installing MUSE
 ===============
 
-There are several ways of installing MUSE depending on your level of proficiency, your operative system and, specially, what you want to do with it (only using it or also developing it). In this section, you will find appropriate instructions for all of these use cases.
+There are several ways of installing MUSE depending on your level of proficiency, your operating system and, specially, what you want to do with it (only using it or also developing it). In this section, you will find appropriate instructions for all of these use cases.
 
 The following table summarises the different options to help you decide on the best one for you:
 
@@ -20,7 +20,7 @@ The following table summarises the different options to help you decide on the b
 +-----------------------------+--------------------------+------------------------+-------------------------+-----------------------+
 | **Access to source code**   | No                       | No                     | No                      | Yes                   |
 +-----------------------------+--------------------------+------------------------+-------------------------+-----------------------+
-| **Operative system**        | Windows only             | Win, Linux, MacOS      | Win, Linux, MacOS       | Win, Linux, MacOS     |
+| **Operating system**        | Windows only             | Win, Linux, MacOS      | Win, Linux, MacOS       | Win, Linux, MacOS     |
 +-----------------------------+--------------------------+------------------------+-------------------------+-----------------------+
 
 The :ref:`standalone-muse` and :ref:`pipx-based` installation methods should be the preferred ones for most users who just want to use MUSE *as is* or using custom plugins that only need dependencies already used by MUSE (eg. ``pandas``).

@@ -1,183 +1,76 @@
-name: QA, tests and publishing
+name: Tests
 
 on:
-    pull_request:
-        types: [opened, synchronize, reopened]
-    push:
-      branches: [main, develop]
-      tags:
-        - '*'
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main, develop]
+  workflow_call:
+
 jobs:
-  # Checks the style using the pre-commit hooks
-  qa:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pre-commit/action@v3.0.0
-
-  # Only then, normal testing proceeds
   unit-tests:
-    needs: qa
-    runs-on: ${{ matrix.os }}
-
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.8", "3.9"]
-
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip==22.1.2
-        pip install -U setuptools==62.6.0 wheel xlrd==1.2.0
-        pip install -e .[all]
-
-    # The unit tests, with coverage under linux
-    - name: Unit tests (linux)
-      if: (runner.os == 'Linux')
-      run: |
-        pip install pytest-cov
-        pytest -m "not regression and not notebook" --junitxml=junit/pytest.xml \
-            --cov=muse \
-            --cov-branch \
-            --cov-report=xml
-
-    - name: Upload coverage to Codecov
-      if: success() && (runner.os == 'Linux' && matrix.python-version == 3.9)
-      uses: codecov/codecov-action@v3
-
-    - name: Unit tests (not linux)
-      if: (runner.os != 'Linux')
-      run: pytest -m "not regression and not notebook"
-
-  regression-tests:
-    needs: qa
     runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.8", "3.9"]
+        # Test with the earliest and the latest python versions supported
+        python-version: ["3.9", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -e .[all]
+
+      # The unit tests, with coverage under linux
+      - name: Unit tests (linux)
+        if: (runner.os == 'Linux')
+        run: |
+          pip install pytest-cov
+          pytest -m "not regression and not notebook" --junitxml=junit/pytest.xml \
+              --cov=muse \
+              --cov-branch \
+              --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        if: success() && (runner.os == 'Linux' && matrix.python-version == 3.9)
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+
+      - name: Unit tests (not linux)
+        if: (runner.os != 'Linux')
+        run: pytest -m "not regression and not notebook"
+
+  regression-tests:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        # Test with the earliest and the latest python versions supported
+        python-version: ["3.9", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip==22.1.2
-          pip install -U setuptools==62.6.0 wheel xlrd==1.2.0
-          pip install -e .[all]
+        run: pip install -e .[all]
 
       # The regression tests (with non coverage)
       - name: Regression tests
         run: pytest tests/test_fullsim_regression.py
-
-  # If all tests pass, we try to build a wheel
-  build-wheel:
-    # needs: [regression-tests, unit-tests]
-    name: Build source distribution
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build sdist
-        run: |
-          python -m pip install --upgrade build
-          python -m build
-
-      - uses: actions/upload-artifact@v3
-        with:
-          path: dist/MUSE*
-
-  # And if we are pushing a tag, then we try to publish it
-  publish-TestPyPI:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-    needs: build-wheel
-    name: Publish MUSE to TestPyPI
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-
-    steps:
-
-      - name: Download sdist artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: artifact
-          path: dist
-
-      - name: Display structure of downloaded files
-        run: ls -R dist
-
-      - name: Publish package distributions to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
-          skip-existing: true
-
-  publish-PyPI:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-    needs: publish-TestPyPI
-    name: Publish MUSE to PyPI
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-
-    steps:
-
-      - name: Download sdist artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: artifact
-          path: dist
-
-      - name: Display structure of downloaded files
-        run: ls -R dist
-
-      - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-
-  build-standalone:
-    needs: publish-PyPI
-    name: Build standalone executables
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ windows-latest ]
-        python-version: [ "3.9" ]
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install pyinstaller
-          python -m pip install -e .[dev,gui]
-
-      - name: Build directory-based standalone
-        run: pyinstaller muse_dir.spec --distpath standalone
-
-      - uses: actions/upload-artifact@v3
-        with:
-          path: standalone/MUSE*
-          name: MUSE

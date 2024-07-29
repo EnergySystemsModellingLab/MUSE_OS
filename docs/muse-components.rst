@@ -23,7 +23,7 @@ Service Demand
 
 The energy service demand is a user input which defines the demand that an end-use sector has. An example of this is the service demand commodity of heat or cooling that the residential sector requires. End-use in this case, refers to the energy which is utilised at the very final stage, after both extraction and conversion.
 
-The estimate of the energy service is the first step. This estimate can be an exogenous input derived from the user, or correlations of GDP and population which reflect the socio-economic development of a region or country.
+The estimate of the energy service is the first step. This estimate can be an exogenous input derived from the user, or correlations of GDP and population which reflect the socioeconomic development of a region or country.
 
 
 
@@ -36,7 +36,7 @@ Each of the technologies are placed in their regions of interest, such as the US
 
 * Capital costs
 
-* Fixed costs 
+* Fixed costs
 
 * Maximum capacity limit
 
@@ -53,7 +53,7 @@ Technologies, and their parameters are defined in the Technodata.csv file. For a
 Sectors
 -------
 
-Sectors typically group areas of economic activity together, such as the residential sector, which might include all energy conusming activies of households. Possible examples of sectors are: 
+Sectors typically group areas of economic activity together, such as the residential sector, which might include all energy conusming activities of households. Possible examples of sectors are:
 
 - Gas sector
 
@@ -61,16 +61,16 @@ Sectors typically group areas of economic activity together, such as the residen
 
 - Residential sector
 
-- Industrial sector 
+- Industrial sector
 
 Each of these sectors contain their respective technologies which consume energy commodities. For example, the residential sector may consume electricity, gas or oil for a variety of different energy demands such as lighting, cooking and heating.
 
-Each of the technologies, which consume a commodity, also output a different commodity or service. For example, a gas boiler consumes gas, but outputs heat and hot water. 
+Each of the technologies, which consume a commodity, also output a different commodity or service. For example, a gas boiler consumes gas, but outputs heat and hot water.
 
 Agents
 ------
 
-Agents represent the investment decision makers in an energy system, for example consumers or companies. They invest in technologies that meet service demands, like heating, or produce other needed energy commodities, like electricity. These agents can be heterogenous, meaning that their investment priorities have the ability to differ. 
+Agents represent the investment decision makers in an energy system, for example consumers or companies. They invest in technologies that meet service demands, like heating, or produce other needed energy commodities, like electricity. These agents can be heterogeneous, meaning that their investment priorities have the ability to differ.
 
 As an example, a generation company could compare potential power generators based on their levelized cost of electricity, their net present value, by minimising the total capital cost, a mixture of these and/or any user-defined approach. This approach more closely matches the behaviour of real-life agents in the energy market, where companies, or people, have different priorities and constraints.
 
@@ -82,6 +82,3 @@ The market clearing algorithm (MCA) is the central component between the differe
 For a hypothetical example, the price of electricity is set in a first iteration to $70/MWh. However, at this price, the majority of residential agents prefer to heat their homes using gas. As a result of this, residential agents consume less electricity and more gas. This reduction in demand reduces the electricity price to $50/MWh in the second iteration. However, at this lower electricity price, some agents decide to invest in electric heating as opposed to gas. Eventually, the price converges on $60/MWh, where supply and demand for both electricity and gas are equal.
 
 This is the principle of the MCA. It finds an equilibrium by iterating through each of the different sectors until an overall equilibrium is reached for each of the commodities. It is possible to run the MCA in a carbon budget mode, as well as exogenous mode. The carbon budget mode ensures that an endogenous carbon price is calculated to limit the emissions of the energy system to be below a user-defined value. Whereas, the exogenous mode allows the carbon price to be set by the user.
-
-
-

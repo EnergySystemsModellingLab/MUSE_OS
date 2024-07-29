@@ -3,6 +3,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 import xarray as xr
+from muse.timeslices import drop_timeslice
 from pytest import approx, fixture
 
 
@@ -65,7 +66,7 @@ def lpcosts(technologies, market, costs):
 
 @fixture
 def assets(residential):
-    return next(a.assets for a in residential.agents if a.category == "retrofit")
+    return next(a.assets for a in residential.agents)
 
 
 @fixture
@@ -110,6 +111,15 @@ def max_capacity_expansion(market_demand, assets, search_space, market, technolo
     )
 
 
+@fixture
+def demand_limiting_capacity(market_demand, assets, search_space, market, technologies):
+    from muse.constraints import demand_limiting_capacity
+
+    return demand_limiting_capacity(
+        market_demand, assets, search_space, market, technologies
+    )
+
+
 @fixture(params=["timeslice_as_list", "timeslice_as_multindex"])
 def constraints(request, market_demand, assets, search_space, market, technologies):
     from muse import constraints as cs
@@ -127,7 +137,7 @@ def constraints(request, market_demand, assets, search_space, market, technologi
 
 
 def test_lp_constraints_matrix_b_is_scalar(constraint, lpcosts):
-    """b is a scalar.
+    """B is a scalar.
 
     When ``b`` is a scalar, the output should be equivalent to a single row matrix, or a
     single vector with only decision variables.
@@ -148,7 +158,7 @@ def test_lp_constraints_matrix_b_is_scalar(constraint, lpcosts):
 
 
 def test_max_production_constraint_diagonal(constraint, lpcosts):
-    """production side of max capacity production is diagonal.
+    """Production side of max capacity production is diagonal.
 
     The production for each timeslice, region, asset, and replacement technology should
     not outstrip the assigned for the asset and replacement technology. Hence, the
@@ -170,6 +180,9 @@ def test_max_production_constraint_diagonal(constraint, lpcosts):
     )
     decision_dims = {f"d({x})" for x in lpcosts.production.dims}
     assert set(result.dims) == decision_dims.union(constraint_dims)
+    result = result.reset_index("d(timeslice)", drop=True).assign_coords(
+        {"d(timeslice)": result["d(timeslice)"].values}
+    )
     stacked = result.stack(d=sorted(decision_dims), c=sorted(constraint_dims))
     assert stacked.shape[0] == stacked.shape[1]
     assert stacked.values == approx(np.eye(stacked.shape[0]))
@@ -403,9 +416,11 @@ def test_scipy_adapter_back_to_muse(technologies, costs, timeslices, rng):
 def _as_list(data: Union[xr.DataArray, xr.Dataset]) -> Union[xr.DataArray, xr.Dataset]:
     if "timeslice" in data.dims:
         data = data.copy(deep=False)
-        data["timeslice"] = pd.MultiIndex.from_tuples(
+        index = pd.MultiIndex.from_tuples(
             data.get_index("timeslice"), names=("month", "day", "hour")
         )
+        mindex_coords = xr.Coordinates.from_pandas_multiindex(index, "timeslice")
+        data = drop_timeslice(data).assign_coords(mindex_coords)
     return data
 
 
@@ -472,7 +487,7 @@ def test_max_capacity_expansion(max_capacity_expansion):
     assert max_capacity_expansion.production == 0
     assert max_capacity_expansion.b.dims == ("replacement",)
     assert max_capacity_expansion.b.shape == (4,)
-    assert max_capacity_expansion.b.values == approx([50, 3, 3, 50])
+    assert max_capacity_expansion.b.values == approx([50, 12, 12, 50])
     assert (
         max_capacity_expansion.replacement
         == ["estove", "gasboiler", "gasstove", "heatpump"]
@@ -485,3 +500,19 @@ def test_max_production(max_production):
     assert set(max_production.production.dims) == dims
     assert set(max_production.b.dims) == dims
     assert (max_production.capacity <= 0).all()
+
+
+def test_demand_limiting_capacity(
+    demand_limiting_capacity, max_production, demand_constraint
+):
+    assert demand_limiting_capacity.capacity.values == approx(
+        -max_production.capacity.max("timeslice").values
+        if "timeslice" in max_production.capacity.dims
+        else -max_production.capacity.values
+    )
+    assert demand_limiting_capacity.production == 0
+    assert demand_limiting_capacity.b.values == approx(
+        demand_constraint.b.max("timeslice").values
+        if "timeslice" in demand_constraint.b.dims
+        else demand_constraint.b.values
+    )

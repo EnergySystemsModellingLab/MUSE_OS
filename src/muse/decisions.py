@@ -12,7 +12,7 @@ the input, functions implementing decision methods should follow a specific sign
 
 Arguments:
     objectives: An dataset where each array is a separate objective
-    parameters: parameters, such as weigths, whether to minimize or maximize, the names
+    parameters: parameters, such as weights, whether to minimize or maximize, the names
         of objectives to consider, etc.
     kwargs: Extra input parameters. These parameters are expected to be set from the
         input file.
@@ -25,6 +25,7 @@ Arguments:
 Returns:
     A data array with ranked replacement technologies.
 """
+
 __all__ = [
     "register_decision",
     "mean",
@@ -36,15 +37,11 @@ __all__ = [
     "single_objective",
     "factory",
 ]
+from collections.abc import Mapping, MutableMapping, Sequence
 from typing import (
     Any,
     Callable,
-    Mapping,
-    MutableMapping,
     Optional,
-    Sequence,
-    Text,
-    Tuple,
     Union,
 )
 
@@ -52,7 +49,7 @@ from xarray import DataArray, Dataset
 
 from muse.registration import registrator
 
-PARAMS_TYPE = Sequence[Tuple[Text, bool, float]]
+PARAMS_TYPE = Sequence[tuple[str, bool, float]]
 """Standard decision parameter type.
 
 Until MUSE input is more flexible, we need to be able to translate from this
@@ -63,7 +60,7 @@ of tuples ('objective name', maximize if True else minimize, some float).
 DECISION_SIGNATURE = Callable[[Dataset, PARAMS_TYPE], DataArray]
 """Signature of functions implementing decisions."""
 
-DECISIONS: MutableMapping[Text, DECISION_SIGNATURE] = {}
+DECISIONS: MutableMapping[str, DECISION_SIGNATURE] = {}
 """Dictionary of decision functions.
 
 Decision functions aggregate separate objectives into a single number per
@@ -72,7 +69,7 @@ asset and replacement technology. They are also known as multi-objectives.
 
 
 @registrator(registry=DECISIONS, loglevel="info")
-def register_decision(function: DECISION_SIGNATURE, name: Text):
+def register_decision(function: DECISION_SIGNATURE, name: str):
     """Decorator to register a function as a decision.
 
     Registers a function as a decision so that it can be applied easily when aggregating
@@ -91,21 +88,19 @@ def register_decision(function: DECISION_SIGNATURE, name: Text):
     return decorated
 
 
-def coeff_sign(domin: bool, coeff: Any):
+def coeff_sign(minimise: bool, coeff: Any):
     """Adds sign to coefficient depending on minimizing or maximizing.
 
     This function standardizes across the decision methods.
     """
-    return coeff if domin else -coeff
+    return coeff if minimise else -coeff
 
 
-def factory(settings: Union[Text, Mapping] = "mean") -> Callable:
+def factory(settings: Union[str, Mapping] = "mean") -> Callable:
     """Creates a decision method based on the input settings."""
-    from typing import Dict
-
-    if isinstance(settings, Text):
+    if isinstance(settings, str):
         function = DECISIONS[settings]
-        params: Dict = {}
+        params: dict = {}
     else:
         function = DECISIONS[settings["name"]]
         params = {k: v for k, v in settings.items() if k != "name"}
@@ -126,7 +121,7 @@ def mean(objectives: Dataset, *args, **kwargs) -> DataArray:
 
 
 @register_decision
-def weighted_sum(objectives: Dataset, parameters: Mapping[Text, float]) -> DataArray:
+def weighted_sum(objectives: Dataset, parameters: Mapping[str, float]) -> DataArray:
     r"""Weighted sum over normalized objectives.
 
     The objectives are each normalized to [0, 1] over the `replacement`
@@ -140,7 +135,7 @@ def weighted_sum(objectives: Dataset, parameters: Mapping[Text, float]) -> DataA
         \sum_m c_m \frac{A_m - \min(A_m)}{\max(A_m) - \min(A_m)}
 
     where sum runs over the different objectives, c_m is a scalar coefficient,
-    A_m is a matrix with dimensions (existing tech, replacemnt tech). `max(A)`
+    A_m is a matrix with dimensions (existing tech, replacement tech). `max(A)`
     and `min(A)` return the largest and smallest component of the input matrix.
     If c_m is positive, then that particular objective is minimized, whereas if
     it is negative, that particular objective is maximized.
@@ -172,7 +167,7 @@ def weighted_sum(objectives: Dataset, parameters: Mapping[Text, float]) -> DataA
 
 @register_decision(name="lexo")
 def lexical_comparison(
-    objectives: Dataset, parameters: Union[PARAMS_TYPE, Sequence[Tuple[Text, float]]]
+    objectives: Dataset, parameters: Union[PARAMS_TYPE, Sequence[tuple[str, float]]]
 ) -> DataArray:
     """Lexical comparison over the objectives.
 
@@ -182,7 +177,7 @@ def lexical_comparison(
     Finally, the objectives are ranked lexographically, in the order given by the
     parameters.
 
-    The result is an array of tuples which can subsquently be compared
+    The result is an array of tuples which can subsequently be compared
     lexicographically.
     """
     from muse.utilities import lexical_comparison
@@ -200,7 +195,7 @@ def lexical_comparison(
 
 @register_decision(name="retro_lexo")
 def retro_lexical_comparison(
-    objectives: Dataset, parameters: Union[PARAMS_TYPE, Sequence[Tuple[Text, float]]]
+    objectives: Dataset, parameters: Union[PARAMS_TYPE, Sequence[tuple[str, float]]]
 ) -> DataArray:
     """Lexical comparison over the objectives.
 
@@ -210,7 +205,7 @@ def retro_lexical_comparison(
     largest constraint.  Finally, the objectives are ranked lexographically, in
     the order given by the parameters.
 
-    The result is an array of tuples which can subsquently be compared
+    The result is an array of tuples which can subsequently be compared
     lexicographically.
     """
     from muse.utilities import lexical_comparison
@@ -229,9 +224,9 @@ def retro_lexical_comparison(
 
 
 def _epsilon_constraints(
-    objectives: Dataset, optimize: Text, mask: Optional[Any] = None, **epsilons
+    objectives: Dataset, optimize: str, mask: Optional[Any] = None, **epsilons
 ) -> DataArray:
-    """minimizes one objective subject to constraints on other objectives."""
+    """Minimizes one objective subject to constraints on other objectives."""
     constraints = True
     for name, epsilon in epsilons.items():
         reduced_dims = set(objectives[name].dims) - {"asset", "replacement"}
@@ -245,13 +240,13 @@ def _epsilon_constraints(
 @register_decision(name=("epsilon", "epsilon_con"))
 def epsilon_constraints(
     objectives: Dataset,
-    parameters: Union[PARAMS_TYPE, Sequence[Tuple[Text, bool, float]]],
+    parameters: Union[PARAMS_TYPE, Sequence[tuple[str, bool, float]]],
     mask: Optional[Any] = None,
 ) -> DataArray:
     r"""Minimizes first objective subject to constraints on other objectives.
 
     The parameters are a sequence of tuples `(name, minimize, epsilon)`, where
-    `name` is the name of the objective, `minimze` is `True` if minimizing and
+    `name` is the name of the objective, `minimize` is `True` if minimizing and
     false if maximizing that objective, and `epsilon` is the constraint. The
     first objective is the one that will be minimized according to:
 
@@ -308,7 +303,7 @@ def retro_epsilon_constraints(
 @register_decision(name=("single", "singleObj"))
 def single_objective(
     objectives: Dataset,
-    parameters: Union[Text, Tuple[Text, bool], Tuple[Text, bool, float], PARAMS_TYPE],
+    parameters: Union[str, tuple[str, bool], tuple[str, bool, float], PARAMS_TYPE],
 ) -> DataArray:
     """Single objective decision method.
 
@@ -323,9 +318,9 @@ def single_objective(
     - A tuple (string, bool, factor): defaults to standard sequence
       `[(string, direction, factor)]`
     """
-    if isinstance(parameters, Text):
+    if isinstance(parameters, str):
         params = parameters, 1, 1
-    elif len(parameters) == 1 and isinstance(parameters[0], Text):
+    elif len(parameters) == 1 and isinstance(parameters[0], str):
         params = parameters[0], 1, 1
     elif len(parameters) == 1:
         params = parameters[0]

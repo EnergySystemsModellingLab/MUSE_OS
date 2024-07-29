@@ -1,319 +1,301 @@
-,agent,asset,category,comm_usage,commodity,consumption,dst_region,index,installed,region,sector,technology,timeslice,units_prices,year
-0,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,1.16000000000,R1,1,2020.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2020.00000000000
-1,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,1.74000000000,R1,9,2020.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2020.00000000000
-2,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,1.16000000000,R1,17,2020.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2020.00000000000
-3,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,1.74000000000,R1,25,2020.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2020.00000000000
-4,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,3.48000000000,R1,33,2020.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2020.00000000000
-5,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,2.32000000000,R1,41,2020.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2020.00000000000
-0,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.32222222222,R1,1,2020.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2025.00000000000
-1,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.42222222222,R1,4,2020.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2025.00000000000
-2,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.48333333333,R1,17,2020.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2025.00000000000
-3,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.63333333333,R1,20,2020.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2025.00000000000
-4,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.32222222222,R1,33,2020.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2025.00000000000
-5,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.42222222222,R1,36,2020.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2025.00000000000
-6,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.48333333333,R1,49,2020.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2025.00000000000
-7,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.63333333333,R1,52,2020.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2025.00000000000
-8,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.96666666667,R1,65,2020.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2025.00000000000
-9,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,1.26666666667,R1,68,2020.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2025.00000000000
-10,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.64444444444,R1,81,2020.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2025.00000000000
-11,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.84444444444,R1,84,2020.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2025.00000000000
-0,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.08350000000,R1,1,2020.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2025.00000000000
-1,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.22222222222,R1,9,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2025.00000000000
-2,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.15000000000,R1,13,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/kt,2025.00000000000
-3,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.12525000000,R1,26,2020.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2025.00000000000
-4,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.33333333333,R1,34,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2025.00000000000
-5,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.22500000000,R1,38,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2025.00000000000
-6,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.08350000000,R1,51,2020.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2025.00000000000
-7,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.22222222222,R1,59,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2025.00000000000
-8,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.15000000000,R1,63,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2025.00000000000
-9,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.12525000000,R1,76,2020.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2025.00000000000
-10,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.33333333333,R1,84,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2025.00000000000
-11,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.22500000000,R1,88,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2025.00000000000
-12,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.25050000000,R1,101,2020.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2025.00000000000
-13,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.66666666667,R1,109,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2025.00000000000
-14,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.45000000000,R1,113,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2025.00000000000
-15,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.16700000000,R1,126,2020.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2025.00000000000
-16,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.44444444444,R1,134,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2025.00000000000
-17,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.30000000000,R1,138,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2025.00000000000
-0,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.42222222222,R1,0,2020.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2030.00000000000
-1,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.26422222222,R1,5,2025.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2030.00000000000
-2,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.15333333333,R1,8,2025.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2030.00000000000
-3,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.63333333333,R1,16,2020.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2030.00000000000
-4,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.39633333333,R1,21,2025.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2030.00000000000
-5,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.23000000000,R1,24,2025.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2030.00000000000
-6,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.42222222222,R1,32,2020.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2030.00000000000
-7,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.26422222222,R1,37,2025.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2030.00000000000
-8,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.15333333333,R1,40,2025.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2030.00000000000
-9,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.63333333333,R1,48,2020.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2030.00000000000
-10,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.39633333333,R1,53,2025.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2030.00000000000
-11,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.23000000000,R1,56,2025.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2030.00000000000
-12,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,1.26666666667,R1,64,2020.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2030.00000000000
-13,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.79266666667,R1,69,2025.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2030.00000000000
-14,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.46000000000,R1,72,2025.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2030.00000000000
-15,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.84444444444,R1,80,2020.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2030.00000000000
-16,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.52844444444,R1,85,2025.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2030.00000000000
-17,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.30666666667,R1,88,2025.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2030.00000000000
-0,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.22222222222,R1,4,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2030.00000000000
-1,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.15000000000,R1,8,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/kt,2030.00000000000
-2,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.25050000000,R1,11,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2030.00000000000
-3,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.05333333333,R1,19,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2030.00000000000
-4,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.33333333333,R1,29,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2030.00000000000
-5,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.22500000000,R1,33,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2030.00000000000
-6,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.37575000000,R1,36,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2030.00000000000
-7,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.08000000000,R1,44,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2030.00000000000
-8,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.22222222222,R1,54,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2030.00000000000
-9,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.15000000000,R1,58,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2030.00000000000
-10,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.25050000000,R1,61,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2030.00000000000
-11,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.05333333333,R1,69,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2030.00000000000
-12,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.33333333333,R1,79,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2030.00000000000
-13,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.22500000000,R1,83,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2030.00000000000
-14,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.37575000000,R1,86,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2030.00000000000
-15,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.08000000000,R1,94,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2030.00000000000
-16,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.66666666667,R1,104,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2030.00000000000
-17,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.45000000000,R1,108,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2030.00000000000
-18,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.75150000000,R1,111,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2030.00000000000
-19,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.16000000000,R1,119,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2030.00000000000
-20,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.44444444444,R1,129,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2030.00000000000
-21,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.30000000000,R1,133,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2030.00000000000
-22,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.50100000000,R1,136,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2030.00000000000
-23,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.10666666667,R1,144,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2030.00000000000
-0,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.26422222222,R1,1,2025.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2035.00000000000
-1,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.15333333333,R1,4,2025.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2035.00000000000
-2,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.55555555556,R1,8,2030.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2035.00000000000
-3,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.39633333333,R1,21,2025.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2035.00000000000
-4,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.23000000000,R1,24,2025.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2035.00000000000
-5,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.83333333333,R1,28,2030.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2035.00000000000
-6,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.26422222222,R1,41,2025.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2035.00000000000
-7,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.15333333333,R1,44,2025.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2035.00000000000
-8,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.55555555556,R1,48,2030.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2035.00000000000
-9,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.39633333333,R1,61,2025.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2035.00000000000
-10,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.23000000000,R1,64,2025.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2035.00000000000
-11,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.83333333333,R1,68,2030.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2035.00000000000
-12,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.79266666667,R1,81,2025.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2035.00000000000
-13,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.46000000000,R1,84,2025.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2035.00000000000
-14,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,1.66666666667,R1,88,2030.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2035.00000000000
-15,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.52844444444,R1,101,2025.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2035.00000000000
-16,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.30666666667,R1,104,2025.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2035.00000000000
-17,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,1.11111111111,R1,108,2030.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2035.00000000000
-0,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.22222222222,R1,4,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2035.00000000000
-1,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.15000000000,R1,8,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/kt,2035.00000000000
-2,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.25050000000,R1,11,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2035.00000000000
-3,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.05333333333,R1,19,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2035.00000000000
-4,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.13333333333,R1,24,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2035.00000000000
-5,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.33333333333,R1,44,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2035.00000000000
-6,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.22500000000,R1,48,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2035.00000000000
-7,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.37575000000,R1,51,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2035.00000000000
-8,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.08000000000,R1,59,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2035.00000000000
-9,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.20000000000,R1,64,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2035.00000000000
-10,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.22222222222,R1,84,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2035.00000000000
-11,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.15000000000,R1,88,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2035.00000000000
-12,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.25050000000,R1,91,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2035.00000000000
-13,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.05333333333,R1,99,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2035.00000000000
-14,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.13333333333,R1,104,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2035.00000000000
-15,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.33333333333,R1,124,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2035.00000000000
-16,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.22500000000,R1,128,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2035.00000000000
-17,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.37575000000,R1,131,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2035.00000000000
-18,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.08000000000,R1,139,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2035.00000000000
-19,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.20000000000,R1,144,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2035.00000000000
-20,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.66666666667,R1,164,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2035.00000000000
-21,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.45000000000,R1,168,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2035.00000000000
-22,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.75150000000,R1,171,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2035.00000000000
-23,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.16000000000,R1,179,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2035.00000000000
-24,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.40000000000,R1,184,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2035.00000000000
-25,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.44444444444,R1,204,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2035.00000000000
-26,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.30000000000,R1,208,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2035.00000000000
-27,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.50100000000,R1,211,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2035.00000000000
-28,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.10666666667,R1,219,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2035.00000000000
-29,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.26666666667,R1,224,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2035.00000000000
-0,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.55555555556,R1,0,2030.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2040.00000000000
-1,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.05864444444,R1,5,2035.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2040.00000000000
-2,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.35755555556,R1,8,2035.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2040.00000000000
-3,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.83333333333,R1,16,2030.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2040.00000000000
-4,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.08796666667,R1,21,2035.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2040.00000000000
-5,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.53633333333,R1,24,2035.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2040.00000000000
-6,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.55555555556,R1,32,2030.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2040.00000000000
-7,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.05864444444,R1,37,2035.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2040.00000000000
-8,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.35755555556,R1,40,2035.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2040.00000000000
-9,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.83333333333,R1,48,2030.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2040.00000000000
-10,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.08796666667,R1,53,2035.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2040.00000000000
-11,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.53633333333,R1,56,2035.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2040.00000000000
-12,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,1.66666666667,R1,64,2030.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2040.00000000000
-13,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.17593333333,R1,69,2035.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2040.00000000000
-14,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,1.07266666667,R1,72,2035.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2040.00000000000
-15,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,1.11111111111,R1,80,2030.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2040.00000000000
-16,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.11728888889,R1,85,2035.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2040.00000000000
-17,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.71511111111,R1,88,2035.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2040.00000000000
-0,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.18160523292,R1,4,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2040.00000000000
-1,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.12258353222,R1,8,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/kt,2040.00000000000
-2,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.20471449881,R1,11,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2040.00000000000
-3,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.04358525590,R1,19,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2040.00000000000
-4,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.10896313975,R1,24,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2040.00000000000
-5,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.04943476045,R1,26,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2040.00000000000
-6,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.18160523292,R1,34,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2040.00000000000
-7,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.12258353222,R1,38,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/kt,2040.00000000000
-8,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.27240784938,R1,44,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2040.00000000000
-9,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.18387529833,R1,48,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2040.00000000000
-10,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.30707174821,R1,51,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2040.00000000000
-11,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.06537788385,R1,59,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2040.00000000000
-12,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.16344470963,R1,64,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2040.00000000000
-13,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.07415214068,R1,66,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2040.00000000000
-14,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.27240784938,R1,74,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2040.00000000000
-15,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.18387529833,R1,78,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2040.00000000000
-16,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.18160523292,R1,84,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2040.00000000000
-17,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.12258353222,R1,88,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2040.00000000000
-18,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.20471449881,R1,91,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2040.00000000000
-19,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.04358525590,R1,99,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2040.00000000000
-20,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.10896313975,R1,104,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2040.00000000000
-21,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.04943476045,R1,106,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2040.00000000000
-22,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.18160523292,R1,114,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2040.00000000000
-23,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.12258353222,R1,118,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2040.00000000000
-24,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.27240784938,R1,124,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2040.00000000000
-25,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.18387529833,R1,128,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2040.00000000000
-26,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.30707174821,R1,131,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2040.00000000000
-27,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.06537788385,R1,139,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2040.00000000000
-28,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.16344470963,R1,144,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2040.00000000000
-29,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.07415214068,R1,146,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2040.00000000000
-30,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.27240784938,R1,154,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2040.00000000000
-31,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.18387529833,R1,158,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2040.00000000000
-32,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.54481569875,R1,164,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2040.00000000000
-33,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.36775059666,R1,168,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2040.00000000000
-34,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.61414349642,R1,171,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2040.00000000000
-35,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.13075576770,R1,179,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2040.00000000000
-36,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.32688941925,R1,184,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2040.00000000000
-37,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.14830428136,R1,186,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2040.00000000000
-38,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.54481569875,R1,194,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2040.00000000000
-39,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.36775059666,R1,198,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2040.00000000000
-40,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.36321046584,R1,204,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2040.00000000000
-41,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.24516706444,R1,208,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2040.00000000000
-42,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.40942899761,R1,211,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2040.00000000000
-43,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.08717051180,R1,219,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2040.00000000000
-44,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.21792627950,R1,224,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2040.00000000000
-45,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.09886952091,R1,226,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2040.00000000000
-46,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.36321046584,R1,234,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2040.00000000000
-47,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.24516706444,R1,238,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2040.00000000000
-0,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.05864444444,R1,1,2035.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2045.00000000000
-1,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.35755555556,R1,4,2035.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2045.00000000000
-2,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.68888888889,R1,8,2040.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2045.00000000000
-3,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.08796666667,R1,17,2035.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2045.00000000000
-4,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.53633333333,R1,20,2035.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2045.00000000000
-5,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,1.03333333333,R1,24,2040.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2045.00000000000
-6,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.05864444444,R1,33,2035.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2045.00000000000
-7,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.35755555556,R1,36,2035.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2045.00000000000
-8,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.68888888889,R1,40,2040.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2045.00000000000
-9,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.08796666667,R1,49,2035.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2045.00000000000
-10,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.53633333333,R1,52,2035.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2045.00000000000
-11,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,1.03333333333,R1,56,2040.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2045.00000000000
-12,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.17593333333,R1,65,2035.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2045.00000000000
-13,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,1.07266666667,R1,68,2035.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2045.00000000000
-14,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,2.06666666667,R1,72,2040.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2045.00000000000
-15,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.11728888889,R1,81,2035.00000000000,R1,residential,gasboiler,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2045.00000000000
-16,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.71511111111,R1,84,2035.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2045.00000000000
-17,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,1.37777777778,R1,88,2040.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2045.00000000000
-0,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.20812339786,R1,4,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2045.00000000000
-1,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.14048329356,R1,8,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/kt,2045.00000000000
-2,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.23460710024,R1,11,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2045.00000000000
-3,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.04994961549,R1,19,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2045.00000000000
-4,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.12487403872,R1,24,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2045.00000000000
-5,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.05665327013,R1,26,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2045.00000000000
-6,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.20812339786,R1,34,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2045.00000000000
-7,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.14048329356,R1,38,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/kt,2045.00000000000
-8,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.31218509679,R1,54,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2045.00000000000
-9,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.21072494033,R1,58,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2045.00000000000
-10,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.35191065036,R1,61,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2045.00000000000
-11,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.07492442323,R1,69,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2045.00000000000
-12,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.18731105807,R1,74,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2045.00000000000
-13,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.08497990520,R1,76,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2045.00000000000
-14,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.31218509679,R1,84,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2045.00000000000
-15,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.21072494033,R1,88,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2045.00000000000
-16,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.20812339786,R1,104,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2045.00000000000
-17,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.14048329356,R1,108,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2045.00000000000
-18,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.23460710024,R1,111,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2045.00000000000
-19,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.04994961549,R1,119,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2045.00000000000
-20,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.12487403872,R1,124,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2045.00000000000
-21,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.05665327013,R1,126,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2045.00000000000
-22,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.20812339786,R1,134,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2045.00000000000
-23,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.14048329356,R1,138,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2045.00000000000
-24,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.31218509679,R1,154,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2045.00000000000
-25,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.21072494033,R1,158,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2045.00000000000
-26,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.35191065036,R1,161,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2045.00000000000
-27,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.07492442323,R1,169,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2045.00000000000
-28,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.18731105807,R1,174,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2045.00000000000
-29,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.08497990520,R1,176,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2045.00000000000
-30,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.31218509679,R1,184,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2045.00000000000
-31,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.21072494033,R1,188,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2045.00000000000
-32,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.62437019358,R1,204,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2045.00000000000
-33,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.42144988067,R1,208,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2045.00000000000
-34,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.70382130072,R1,211,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2045.00000000000
-35,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.14984884646,R1,219,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2045.00000000000
-36,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.37462211615,R1,224,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2045.00000000000
-37,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.16995981040,R1,226,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2045.00000000000
-38,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.62437019358,R1,234,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2045.00000000000
-39,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.42144988067,R1,238,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2045.00000000000
-40,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.41624679572,R1,254,2020.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2045.00000000000
-41,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.28096658711,R1,258,2020.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2045.00000000000
-42,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.46921420048,R1,261,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2045.00000000000
-43,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.09989923097,R1,269,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2045.00000000000
-44,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.24974807743,R1,274,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2045.00000000000
-45,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.11330654026,R1,276,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2045.00000000000
-46,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.41624679572,R1,284,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2045.00000000000
-47,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.28096658711,R1,288,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2045.00000000000
-0,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.68888888889,R1,0,2040.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2050.00000000000
-1,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.51111111111,R1,4,2045.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2050.00000000000
-2,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,1.03333333333,R1,12,2040.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2050.00000000000
-3,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.76666666667,R1,16,2045.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2050.00000000000
-4,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.68888888889,R1,24,2040.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2050.00000000000
-5,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.51111111111,R1,28,2045.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2050.00000000000
-6,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,1.03333333333,R1,36,2040.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2050.00000000000
-7,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,0.76666666667,R1,40,2045.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2050.00000000000
-8,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,2.06666666667,R1,48,2040.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2050.00000000000
-9,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,1.53333333333,R1,52,2045.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2050.00000000000
-10,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,1.37777777778,R1,60,2040.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2050.00000000000
-11,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,electricity,1.02222222222,R1,64,2045.00000000000,R1,residential,heatpump,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2050.00000000000
-0,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.25050000000,R1,1,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2050.00000000000
-1,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.05333333333,R1,9,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2050.00000000000
-2,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.13333333333,R1,14,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2050.00000000000
-3,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.06049111111,R1,16,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'night')",MUS$2010/PJ,2050.00000000000
-4,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.22222222222,R1,24,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2050.00000000000
-5,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.15000000000,R1,28,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/kt,2050.00000000000
-6,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.37577777778,R1,34,2045.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'night')",MUS$2010/kt,2050.00000000000
-7,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.07911111111,R1,38,2045.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'night')",MUS$2010/kt,2050.00000000000
-8,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.37575000000,R1,46,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2050.00000000000
-9,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.08000000000,R1,54,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2050.00000000000
-10,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.20000000000,R1,59,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2050.00000000000
-11,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.09073666667,R1,61,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'morning')",MUS$2010/PJ,2050.00000000000
-12,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.33333333333,R1,69,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2050.00000000000
-13,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.22500000000,R1,73,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2050.00000000000
-14,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.56366666667,R1,79,2045.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2050.00000000000
-15,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.11866666667,R1,83,2045.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'morning')",MUS$2010/kt,2050.00000000000
-16,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.25050000000,R1,91,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2050.00000000000
-17,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.05333333333,R1,99,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2050.00000000000
-18,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.13333333333,R1,104,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2050.00000000000
-19,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.06049111111,R1,106,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'afternoon')",MUS$2010/PJ,2050.00000000000
-20,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.22222222222,R1,114,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2050.00000000000
-21,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.15000000000,R1,118,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2050.00000000000
-22,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.37577777778,R1,124,2045.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2050.00000000000
-23,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.07911111111,R1,128,2045.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'afternoon')",MUS$2010/kt,2050.00000000000
-24,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.37575000000,R1,136,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2050.00000000000
-25,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.08000000000,R1,144,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2050.00000000000
-26,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.20000000000,R1,149,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2050.00000000000
-27,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.09073666667,R1,151,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'early-peak')",MUS$2010/PJ,2050.00000000000
-28,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.33333333333,R1,159,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2050.00000000000
-29,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.22500000000,R1,163,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2050.00000000000
-30,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.56366666667,R1,169,2045.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2050.00000000000
-31,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.11866666667,R1,173,2045.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'early-peak')",MUS$2010/kt,2050.00000000000
-32,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.75150000000,R1,181,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2050.00000000000
-33,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.16000000000,R1,189,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2050.00000000000
-34,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.40000000000,R1,194,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2050.00000000000
-35,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.18147333333,R1,196,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'late-peak')",MUS$2010/PJ,2050.00000000000
-36,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.66666666667,R1,204,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2050.00000000000
-37,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.45000000000,R1,208,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2050.00000000000
-38,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,1.12733333333,R1,214,2045.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2050.00000000000
-39,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.23733333333,R1,218,2045.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'late-peak')",MUS$2010/kt,2050.00000000000
-40,A1,0.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.50100000000,R1,226,2025.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2050.00000000000
-41,A1,1.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.10666666667,R1,234,2025.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2050.00000000000
-42,A1,2.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.26666666667,R1,239,2030.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2050.00000000000
-43,A1,3.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,gas,0.12098222222,R1,241,2035.00000000000,R1,power,gasCCGT,"('all-year', 'all-week', 'evening')",MUS$2010/PJ,2050.00000000000
-44,A1,4.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.44444444444,R1,249,2035.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2050.00000000000
-45,A1,5.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.30000000000,R1,253,2035.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2050.00000000000
-46,A1,6.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,solar,0.75155555556,R1,259,2045.00000000000,R1,power,solarPV,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2050.00000000000
-47,A1,7.00000000000,retrofit,CommodityUsage.ENERGY|CONSUMABLE,wind,0.15822222222,R1,263,2045.00000000000,R1,power,windturbine,"('all-year', 'all-week', 'evening')",MUS$2010/kt,2050.00000000000
+agent,asset,category,comm_usage,commodity,consumption,day,dst_region,hour,installed,month,region,sector,technology,timeslice,units_prices,year
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,1.16000000000,all-week,R1,night,2020,all-year,R1,residential,gasboiler,0,MUS$2010/PJ,2020
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,1.74000000000,all-week,R1,morning,2020,all-year,R1,residential,gasboiler,1,MUS$2010/PJ,2020
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,1.16000000000,all-week,R1,afternoon,2020,all-year,R1,residential,gasboiler,2,MUS$2010/PJ,2020
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,1.74000000000,all-week,R1,early-peak,2020,all-year,R1,residential,gasboiler,3,MUS$2010/PJ,2020
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,3.48000000000,all-week,R1,late-peak,2020,all-year,R1,residential,gasboiler,4,MUS$2010/PJ,2020
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,2.32000000000,all-week,R1,evening,2020,all-year,R1,residential,gasboiler,5,MUS$2010/PJ,2020
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.32222222222,all-week,R1,night,2020,all-year,R1,residential,gasboiler,0,MUS$2010/PJ,2025
+A1,1,newcapa,CONSUMABLE|ENERGY,electricity,0.42222222222,all-week,R1,night,2020,all-year,R1,residential,heatpump,0,MUS$2010/PJ,2025
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.48333333333,all-week,R1,morning,2020,all-year,R1,residential,gasboiler,1,MUS$2010/PJ,2025
+A1,1,newcapa,CONSUMABLE|ENERGY,electricity,0.63333333333,all-week,R1,morning,2020,all-year,R1,residential,heatpump,1,MUS$2010/PJ,2025
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.32222222222,all-week,R1,afternoon,2020,all-year,R1,residential,gasboiler,2,MUS$2010/PJ,2025
+A1,1,newcapa,CONSUMABLE|ENERGY,electricity,0.42222222222,all-week,R1,afternoon,2020,all-year,R1,residential,heatpump,2,MUS$2010/PJ,2025
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.48333333333,all-week,R1,early-peak,2020,all-year,R1,residential,gasboiler,3,MUS$2010/PJ,2025
+A1,1,newcapa,CONSUMABLE|ENERGY,electricity,0.63333333333,all-week,R1,early-peak,2020,all-year,R1,residential,heatpump,3,MUS$2010/PJ,2025
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.96666666667,all-week,R1,late-peak,2020,all-year,R1,residential,gasboiler,4,MUS$2010/PJ,2025
+A1,1,newcapa,CONSUMABLE|ENERGY,electricity,1.26666666667,all-week,R1,late-peak,2020,all-year,R1,residential,heatpump,4,MUS$2010/PJ,2025
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.64444444444,all-week,R1,evening,2020,all-year,R1,residential,gasboiler,5,MUS$2010/PJ,2025
+A1,1,newcapa,CONSUMABLE|ENERGY,electricity,0.84444444444,all-week,R1,evening,2020,all-year,R1,residential,heatpump,5,MUS$2010/PJ,2025
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.17151351351,all-week,R1,night,2020,all-year,R1,power,gasCCGT,0,MUS$2010/PJ,2025
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.22822822823,all-week,R1,night,2020,all-year,R1,power,solarPV,0,MUS$2010/kt,2025
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.09129129129,all-week,R1,night,2020,all-year,R1,power,windturbine,0,MUS$2010/kt,2025
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.25727027027,all-week,R1,morning,2020,all-year,R1,power,gasCCGT,1,MUS$2010/PJ,2025
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.34234234234,all-week,R1,morning,2020,all-year,R1,power,solarPV,1,MUS$2010/kt,2025
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.13693693694,all-week,R1,morning,2020,all-year,R1,power,windturbine,1,MUS$2010/kt,2025
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.17151351351,all-week,R1,afternoon,2020,all-year,R1,power,gasCCGT,2,MUS$2010/PJ,2025
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.22822822823,all-week,R1,afternoon,2020,all-year,R1,power,solarPV,2,MUS$2010/kt,2025
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.09129129129,all-week,R1,afternoon,2020,all-year,R1,power,windturbine,2,MUS$2010/kt,2025
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.25727027027,all-week,R1,early-peak,2020,all-year,R1,power,gasCCGT,3,MUS$2010/PJ,2025
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.34234234234,all-week,R1,early-peak,2020,all-year,R1,power,solarPV,3,MUS$2010/kt,2025
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.13693693694,all-week,R1,early-peak,2020,all-year,R1,power,windturbine,3,MUS$2010/kt,2025
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.51454054054,all-week,R1,late-peak,2020,all-year,R1,power,gasCCGT,4,MUS$2010/PJ,2025
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.68468468468,all-week,R1,late-peak,2020,all-year,R1,power,solarPV,4,MUS$2010/kt,2025
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.27387387387,all-week,R1,late-peak,2020,all-year,R1,power,windturbine,4,MUS$2010/kt,2025
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.34302702703,all-week,R1,evening,2020,all-year,R1,power,gasCCGT,5,MUS$2010/PJ,2025
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.45645645646,all-week,R1,evening,2020,all-year,R1,power,solarPV,5,MUS$2010/kt,2025
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.18258258258,all-week,R1,evening,2020,all-year,R1,power,windturbine,5,MUS$2010/kt,2025
+A1,1,newcapa,CONSUMABLE|ENERGY,electricity,0.43678160920,all-week,R1,night,2020,all-year,R1,residential,heatpump,0,MUS$2010/PJ,2030
+A1,2,newcapa,CONSUMABLE|ENERGY,electricity,0.22988505747,all-week,R1,night,2025,all-year,R1,residential,heatpump,0,MUS$2010/PJ,2030
+A1,1,newcapa,CONSUMABLE|ENERGY,electricity,0.65517241379,all-week,R1,morning,2020,all-year,R1,residential,heatpump,1,MUS$2010/PJ,2030
+A1,2,newcapa,CONSUMABLE|ENERGY,electricity,0.34482758621,all-week,R1,morning,2025,all-year,R1,residential,heatpump,1,MUS$2010/PJ,2030
+A1,1,newcapa,CONSUMABLE|ENERGY,electricity,0.43678160920,all-week,R1,afternoon,2020,all-year,R1,residential,heatpump,2,MUS$2010/PJ,2030
+A1,2,newcapa,CONSUMABLE|ENERGY,electricity,0.22988505747,all-week,R1,afternoon,2025,all-year,R1,residential,heatpump,2,MUS$2010/PJ,2030
+A1,1,newcapa,CONSUMABLE|ENERGY,electricity,0.65517241379,all-week,R1,early-peak,2020,all-year,R1,residential,heatpump,3,MUS$2010/PJ,2030
+A1,2,newcapa,CONSUMABLE|ENERGY,electricity,0.34482758621,all-week,R1,early-peak,2025,all-year,R1,residential,heatpump,3,MUS$2010/PJ,2030
+A1,1,newcapa,CONSUMABLE|ENERGY,electricity,1.31034482759,all-week,R1,late-peak,2020,all-year,R1,residential,heatpump,4,MUS$2010/PJ,2030
+A1,2,newcapa,CONSUMABLE|ENERGY,electricity,0.68965517241,all-week,R1,late-peak,2025,all-year,R1,residential,heatpump,4,MUS$2010/PJ,2030
+A1,1,newcapa,CONSUMABLE|ENERGY,electricity,0.87356321839,all-week,R1,evening,2020,all-year,R1,residential,heatpump,5,MUS$2010/PJ,2030
+A1,2,newcapa,CONSUMABLE|ENERGY,electricity,0.45977011494,all-week,R1,evening,2025,all-year,R1,residential,heatpump,5,MUS$2010/PJ,2030
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.08350000000,all-week,R1,night,2020,all-year,R1,power,gasCCGT,0,MUS$2010/PJ,2030
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.22222222222,all-week,R1,night,2020,all-year,R1,power,solarPV,0,MUS$2010/kt,2030
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.08888888889,all-week,R1,night,2020,all-year,R1,power,windturbine,0,MUS$2010/kt,2030
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.25050000000,all-week,R1,night,2025,all-year,R1,power,gasCCGT,0,MUS$2010/PJ,2030
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.15555555556,all-week,R1,night,2025,all-year,R1,power,solarPV,0,MUS$2010/kt,2030
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.12525000000,all-week,R1,morning,2020,all-year,R1,power,gasCCGT,1,MUS$2010/PJ,2030
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.33333333333,all-week,R1,morning,2020,all-year,R1,power,solarPV,1,MUS$2010/kt,2030
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.13333333333,all-week,R1,morning,2020,all-year,R1,power,windturbine,1,MUS$2010/kt,2030
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.37575000000,all-week,R1,morning,2025,all-year,R1,power,gasCCGT,1,MUS$2010/PJ,2030
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.23333333333,all-week,R1,morning,2025,all-year,R1,power,solarPV,1,MUS$2010/kt,2030
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.08350000000,all-week,R1,afternoon,2020,all-year,R1,power,gasCCGT,2,MUS$2010/PJ,2030
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.22222222222,all-week,R1,afternoon,2020,all-year,R1,power,solarPV,2,MUS$2010/kt,2030
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.08888888889,all-week,R1,afternoon,2020,all-year,R1,power,windturbine,2,MUS$2010/kt,2030
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.25050000000,all-week,R1,afternoon,2025,all-year,R1,power,gasCCGT,2,MUS$2010/PJ,2030
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.15555555556,all-week,R1,afternoon,2025,all-year,R1,power,solarPV,2,MUS$2010/kt,2030
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.12525000000,all-week,R1,early-peak,2020,all-year,R1,power,gasCCGT,3,MUS$2010/PJ,2030
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.33333333333,all-week,R1,early-peak,2020,all-year,R1,power,solarPV,3,MUS$2010/kt,2030
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.13333333333,all-week,R1,early-peak,2020,all-year,R1,power,windturbine,3,MUS$2010/kt,2030
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.37575000000,all-week,R1,early-peak,2025,all-year,R1,power,gasCCGT,3,MUS$2010/PJ,2030
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.23333333333,all-week,R1,early-peak,2025,all-year,R1,power,solarPV,3,MUS$2010/kt,2030
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.25050000000,all-week,R1,late-peak,2020,all-year,R1,power,gasCCGT,4,MUS$2010/PJ,2030
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.66666666667,all-week,R1,late-peak,2020,all-year,R1,power,solarPV,4,MUS$2010/kt,2030
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.26666666667,all-week,R1,late-peak,2020,all-year,R1,power,windturbine,4,MUS$2010/kt,2030
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.75150000000,all-week,R1,late-peak,2025,all-year,R1,power,gasCCGT,4,MUS$2010/PJ,2030
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.46666666667,all-week,R1,late-peak,2025,all-year,R1,power,solarPV,4,MUS$2010/kt,2030
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.16700000000,all-week,R1,evening,2020,all-year,R1,power,gasCCGT,5,MUS$2010/PJ,2030
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.44444444444,all-week,R1,evening,2020,all-year,R1,power,solarPV,5,MUS$2010/kt,2030
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.17777777778,all-week,R1,evening,2020,all-year,R1,power,windturbine,5,MUS$2010/kt,2030
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.50100000000,all-week,R1,evening,2025,all-year,R1,power,gasCCGT,5,MUS$2010/PJ,2030
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.31111111111,all-week,R1,evening,2025,all-year,R1,power,solarPV,5,MUS$2010/kt,2030
+A1,2,newcapa,CONSUMABLE|ENERGY,electricity,0.22222222222,all-week,R1,night,2025,all-year,R1,residential,heatpump,0,MUS$2010/PJ,2035
+A1,3,newcapa,CONSUMABLE|ENERGY,electricity,0.57777777778,all-week,R1,night,2030,all-year,R1,residential,heatpump,0,MUS$2010/PJ,2035
+A1,2,newcapa,CONSUMABLE|ENERGY,electricity,0.33333333333,all-week,R1,morning,2025,all-year,R1,residential,heatpump,1,MUS$2010/PJ,2035
+A1,3,newcapa,CONSUMABLE|ENERGY,electricity,0.86666666667,all-week,R1,morning,2030,all-year,R1,residential,heatpump,1,MUS$2010/PJ,2035
+A1,2,newcapa,CONSUMABLE|ENERGY,electricity,0.22222222222,all-week,R1,afternoon,2025,all-year,R1,residential,heatpump,2,MUS$2010/PJ,2035
+A1,3,newcapa,CONSUMABLE|ENERGY,electricity,0.57777777778,all-week,R1,afternoon,2030,all-year,R1,residential,heatpump,2,MUS$2010/PJ,2035
+A1,2,newcapa,CONSUMABLE|ENERGY,electricity,0.33333333333,all-week,R1,early-peak,2025,all-year,R1,residential,heatpump,3,MUS$2010/PJ,2035
+A1,3,newcapa,CONSUMABLE|ENERGY,electricity,0.86666666667,all-week,R1,early-peak,2030,all-year,R1,residential,heatpump,3,MUS$2010/PJ,2035
+A1,2,newcapa,CONSUMABLE|ENERGY,electricity,0.66666666667,all-week,R1,late-peak,2025,all-year,R1,residential,heatpump,4,MUS$2010/PJ,2035
+A1,3,newcapa,CONSUMABLE|ENERGY,electricity,1.73333333333,all-week,R1,late-peak,2030,all-year,R1,residential,heatpump,4,MUS$2010/PJ,2035
+A1,2,newcapa,CONSUMABLE|ENERGY,electricity,0.44444444444,all-week,R1,evening,2025,all-year,R1,residential,heatpump,5,MUS$2010/PJ,2035
+A1,3,newcapa,CONSUMABLE|ENERGY,electricity,1.15555555556,all-week,R1,evening,2030,all-year,R1,residential,heatpump,5,MUS$2010/PJ,2035
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.08350000000,all-week,R1,night,2020,all-year,R1,power,gasCCGT,0,MUS$2010/PJ,2035
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.22222222222,all-week,R1,night,2020,all-year,R1,power,solarPV,0,MUS$2010/kt,2035
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.08888888889,all-week,R1,night,2020,all-year,R1,power,windturbine,0,MUS$2010/kt,2035
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.25050000000,all-week,R1,night,2025,all-year,R1,power,gasCCGT,0,MUS$2010/PJ,2035
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.15555555556,all-week,R1,night,2025,all-year,R1,power,solarPV,0,MUS$2010/kt,2035
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.13333333333,all-week,R1,night,2030,all-year,R1,power,solarPV,0,MUS$2010/kt,2035
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.12525000000,all-week,R1,morning,2020,all-year,R1,power,gasCCGT,1,MUS$2010/PJ,2035
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.33333333333,all-week,R1,morning,2020,all-year,R1,power,solarPV,1,MUS$2010/kt,2035
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.13333333333,all-week,R1,morning,2020,all-year,R1,power,windturbine,1,MUS$2010/kt,2035
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.37575000000,all-week,R1,morning,2025,all-year,R1,power,gasCCGT,1,MUS$2010/PJ,2035
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.23333333333,all-week,R1,morning,2025,all-year,R1,power,solarPV,1,MUS$2010/kt,2035
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.20000000000,all-week,R1,morning,2030,all-year,R1,power,solarPV,1,MUS$2010/kt,2035
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.08350000000,all-week,R1,afternoon,2020,all-year,R1,power,gasCCGT,2,MUS$2010/PJ,2035
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.22222222222,all-week,R1,afternoon,2020,all-year,R1,power,solarPV,2,MUS$2010/kt,2035
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.08888888889,all-week,R1,afternoon,2020,all-year,R1,power,windturbine,2,MUS$2010/kt,2035
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.25050000000,all-week,R1,afternoon,2025,all-year,R1,power,gasCCGT,2,MUS$2010/PJ,2035
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.15555555556,all-week,R1,afternoon,2025,all-year,R1,power,solarPV,2,MUS$2010/kt,2035
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.13333333333,all-week,R1,afternoon,2030,all-year,R1,power,solarPV,2,MUS$2010/kt,2035
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.12525000000,all-week,R1,early-peak,2020,all-year,R1,power,gasCCGT,3,MUS$2010/PJ,2035
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.33333333333,all-week,R1,early-peak,2020,all-year,R1,power,solarPV,3,MUS$2010/kt,2035
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.13333333333,all-week,R1,early-peak,2020,all-year,R1,power,windturbine,3,MUS$2010/kt,2035
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.37575000000,all-week,R1,early-peak,2025,all-year,R1,power,gasCCGT,3,MUS$2010/PJ,2035
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.23333333333,all-week,R1,early-peak,2025,all-year,R1,power,solarPV,3,MUS$2010/kt,2035
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.20000000000,all-week,R1,early-peak,2030,all-year,R1,power,solarPV,3,MUS$2010/kt,2035
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.25050000000,all-week,R1,late-peak,2020,all-year,R1,power,gasCCGT,4,MUS$2010/PJ,2035
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.66666666667,all-week,R1,late-peak,2020,all-year,R1,power,solarPV,4,MUS$2010/kt,2035
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.26666666667,all-week,R1,late-peak,2020,all-year,R1,power,windturbine,4,MUS$2010/kt,2035
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.75150000000,all-week,R1,late-peak,2025,all-year,R1,power,gasCCGT,4,MUS$2010/PJ,2035
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.46666666667,all-week,R1,late-peak,2025,all-year,R1,power,solarPV,4,MUS$2010/kt,2035
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.40000000000,all-week,R1,late-peak,2030,all-year,R1,power,solarPV,4,MUS$2010/kt,2035
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.16700000000,all-week,R1,evening,2020,all-year,R1,power,gasCCGT,5,MUS$2010/PJ,2035
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.44444444444,all-week,R1,evening,2020,all-year,R1,power,solarPV,5,MUS$2010/kt,2035
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.17777777778,all-week,R1,evening,2020,all-year,R1,power,windturbine,5,MUS$2010/kt,2035
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.50100000000,all-week,R1,evening,2025,all-year,R1,power,gasCCGT,5,MUS$2010/PJ,2035
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.31111111111,all-week,R1,evening,2025,all-year,R1,power,solarPV,5,MUS$2010/kt,2035
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.26666666667,all-week,R1,evening,2030,all-year,R1,power,solarPV,5,MUS$2010/kt,2035
+A1,3,newcapa,CONSUMABLE|ENERGY,electricity,0.57777777778,all-week,R1,night,2030,all-year,R1,residential,heatpump,0,MUS$2010/PJ,2040
+A1,4,newcapa,CONSUMABLE|ENERGY,electricity,0.35555555556,all-week,R1,night,2035,all-year,R1,residential,heatpump,0,MUS$2010/PJ,2040
+A1,3,newcapa,CONSUMABLE|ENERGY,electricity,0.86666666667,all-week,R1,morning,2030,all-year,R1,residential,heatpump,1,MUS$2010/PJ,2040
+A1,4,newcapa,CONSUMABLE|ENERGY,electricity,0.53333333333,all-week,R1,morning,2035,all-year,R1,residential,heatpump,1,MUS$2010/PJ,2040
+A1,3,newcapa,CONSUMABLE|ENERGY,electricity,0.57777777778,all-week,R1,afternoon,2030,all-year,R1,residential,heatpump,2,MUS$2010/PJ,2040
+A1,4,newcapa,CONSUMABLE|ENERGY,electricity,0.35555555556,all-week,R1,afternoon,2035,all-year,R1,residential,heatpump,2,MUS$2010/PJ,2040
+A1,3,newcapa,CONSUMABLE|ENERGY,electricity,0.86666666667,all-week,R1,early-peak,2030,all-year,R1,residential,heatpump,3,MUS$2010/PJ,2040
+A1,4,newcapa,CONSUMABLE|ENERGY,electricity,0.53333333333,all-week,R1,early-peak,2035,all-year,R1,residential,heatpump,3,MUS$2010/PJ,2040
+A1,3,newcapa,CONSUMABLE|ENERGY,electricity,1.73333333333,all-week,R1,late-peak,2030,all-year,R1,residential,heatpump,4,MUS$2010/PJ,2040
+A1,4,newcapa,CONSUMABLE|ENERGY,electricity,1.06666666667,all-week,R1,late-peak,2035,all-year,R1,residential,heatpump,4,MUS$2010/PJ,2040
+A1,3,newcapa,CONSUMABLE|ENERGY,electricity,1.15555555556,all-week,R1,evening,2030,all-year,R1,residential,heatpump,5,MUS$2010/PJ,2040
+A1,4,newcapa,CONSUMABLE|ENERGY,electricity,0.71111111111,all-week,R1,evening,2035,all-year,R1,residential,heatpump,5,MUS$2010/PJ,2040
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.08553658537,all-week,R1,night,2020,all-year,R1,power,gasCCGT,0,MUS$2010/PJ,2040
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.22764227642,all-week,R1,night,2020,all-year,R1,power,solarPV,0,MUS$2010/kt,2040
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.09105691057,all-week,R1,night,2020,all-year,R1,power,windturbine,0,MUS$2010/kt,2040
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.25660975610,all-week,R1,night,2025,all-year,R1,power,gasCCGT,0,MUS$2010/PJ,2040
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.15934959350,all-week,R1,night,2025,all-year,R1,power,solarPV,0,MUS$2010/kt,2040
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.13658536585,all-week,R1,night,2030,all-year,R1,power,solarPV,0,MUS$2010/kt,2040
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.11382113821,all-week,R1,night,2035,all-year,R1,power,solarPV,0,MUS$2010/kt,2040
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.12830487805,all-week,R1,morning,2020,all-year,R1,power,gasCCGT,1,MUS$2010/PJ,2040
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.34146341463,all-week,R1,morning,2020,all-year,R1,power,solarPV,1,MUS$2010/kt,2040
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.13658536585,all-week,R1,morning,2020,all-year,R1,power,windturbine,1,MUS$2010/kt,2040
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.38491463415,all-week,R1,morning,2025,all-year,R1,power,gasCCGT,1,MUS$2010/PJ,2040
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.23902439024,all-week,R1,morning,2025,all-year,R1,power,solarPV,1,MUS$2010/kt,2040
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.20487804878,all-week,R1,morning,2030,all-year,R1,power,solarPV,1,MUS$2010/kt,2040
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.17073170732,all-week,R1,morning,2035,all-year,R1,power,solarPV,1,MUS$2010/kt,2040
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.08553658537,all-week,R1,afternoon,2020,all-year,R1,power,gasCCGT,2,MUS$2010/PJ,2040
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.22764227642,all-week,R1,afternoon,2020,all-year,R1,power,solarPV,2,MUS$2010/kt,2040
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.09105691057,all-week,R1,afternoon,2020,all-year,R1,power,windturbine,2,MUS$2010/kt,2040
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.25660975610,all-week,R1,afternoon,2025,all-year,R1,power,gasCCGT,2,MUS$2010/PJ,2040
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.15934959350,all-week,R1,afternoon,2025,all-year,R1,power,solarPV,2,MUS$2010/kt,2040
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.13658536585,all-week,R1,afternoon,2030,all-year,R1,power,solarPV,2,MUS$2010/kt,2040
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.11382113821,all-week,R1,afternoon,2035,all-year,R1,power,solarPV,2,MUS$2010/kt,2040
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.12830487805,all-week,R1,early-peak,2020,all-year,R1,power,gasCCGT,3,MUS$2010/PJ,2040
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.34146341463,all-week,R1,early-peak,2020,all-year,R1,power,solarPV,3,MUS$2010/kt,2040
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.13658536585,all-week,R1,early-peak,2020,all-year,R1,power,windturbine,3,MUS$2010/kt,2040
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.38491463415,all-week,R1,early-peak,2025,all-year,R1,power,gasCCGT,3,MUS$2010/PJ,2040
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.23902439024,all-week,R1,early-peak,2025,all-year,R1,power,solarPV,3,MUS$2010/kt,2040
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.20487804878,all-week,R1,early-peak,2030,all-year,R1,power,solarPV,3,MUS$2010/kt,2040
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.17073170732,all-week,R1,early-peak,2035,all-year,R1,power,solarPV,3,MUS$2010/kt,2040
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.25660975610,all-week,R1,late-peak,2020,all-year,R1,power,gasCCGT,4,MUS$2010/PJ,2040
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.68292682927,all-week,R1,late-peak,2020,all-year,R1,power,solarPV,4,MUS$2010/kt,2040
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.27317073171,all-week,R1,late-peak,2020,all-year,R1,power,windturbine,4,MUS$2010/kt,2040
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.76982926829,all-week,R1,late-peak,2025,all-year,R1,power,gasCCGT,4,MUS$2010/PJ,2040
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.47804878049,all-week,R1,late-peak,2025,all-year,R1,power,solarPV,4,MUS$2010/kt,2040
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.40975609756,all-week,R1,late-peak,2030,all-year,R1,power,solarPV,4,MUS$2010/kt,2040
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.34146341463,all-week,R1,late-peak,2035,all-year,R1,power,solarPV,4,MUS$2010/kt,2040
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.17107317073,all-week,R1,evening,2020,all-year,R1,power,gasCCGT,5,MUS$2010/PJ,2040
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.45528455285,all-week,R1,evening,2020,all-year,R1,power,solarPV,5,MUS$2010/kt,2040
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.18211382114,all-week,R1,evening,2020,all-year,R1,power,windturbine,5,MUS$2010/kt,2040
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.51321951220,all-week,R1,evening,2025,all-year,R1,power,gasCCGT,5,MUS$2010/PJ,2040
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.31869918699,all-week,R1,evening,2025,all-year,R1,power,solarPV,5,MUS$2010/kt,2040
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.27317073171,all-week,R1,evening,2030,all-year,R1,power,solarPV,5,MUS$2010/kt,2040
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.22764227642,all-week,R1,evening,2035,all-year,R1,power,solarPV,5,MUS$2010/kt,2040
+A1,4,newcapa,CONSUMABLE|ENERGY,electricity,0.35555555556,all-week,R1,night,2035,all-year,R1,residential,heatpump,0,MUS$2010/PJ,2045
+A1,5,newcapa,CONSUMABLE|ENERGY,electricity,0.71111111111,all-week,R1,night,2040,all-year,R1,residential,heatpump,0,MUS$2010/PJ,2045
+A1,4,newcapa,CONSUMABLE|ENERGY,electricity,0.53333333333,all-week,R1,morning,2035,all-year,R1,residential,heatpump,1,MUS$2010/PJ,2045
+A1,5,newcapa,CONSUMABLE|ENERGY,electricity,1.06666666667,all-week,R1,morning,2040,all-year,R1,residential,heatpump,1,MUS$2010/PJ,2045
+A1,4,newcapa,CONSUMABLE|ENERGY,electricity,0.35555555556,all-week,R1,afternoon,2035,all-year,R1,residential,heatpump,2,MUS$2010/PJ,2045
+A1,5,newcapa,CONSUMABLE|ENERGY,electricity,0.71111111111,all-week,R1,afternoon,2040,all-year,R1,residential,heatpump,2,MUS$2010/PJ,2045
+A1,4,newcapa,CONSUMABLE|ENERGY,electricity,0.53333333333,all-week,R1,early-peak,2035,all-year,R1,residential,heatpump,3,MUS$2010/PJ,2045
+A1,5,newcapa,CONSUMABLE|ENERGY,electricity,1.06666666667,all-week,R1,early-peak,2040,all-year,R1,residential,heatpump,3,MUS$2010/PJ,2045
+A1,4,newcapa,CONSUMABLE|ENERGY,electricity,1.06666666667,all-week,R1,late-peak,2035,all-year,R1,residential,heatpump,4,MUS$2010/PJ,2045
+A1,5,newcapa,CONSUMABLE|ENERGY,electricity,2.13333333333,all-week,R1,late-peak,2040,all-year,R1,residential,heatpump,4,MUS$2010/PJ,2045
+A1,4,newcapa,CONSUMABLE|ENERGY,electricity,0.71111111111,all-week,R1,evening,2035,all-year,R1,residential,heatpump,5,MUS$2010/PJ,2045
+A1,5,newcapa,CONSUMABLE|ENERGY,electricity,1.42222222222,all-week,R1,evening,2040,all-year,R1,residential,heatpump,5,MUS$2010/PJ,2045
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.08350000000,all-week,R1,night,2020,all-year,R1,power,gasCCGT,0,MUS$2010/PJ,2045
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.22222222222,all-week,R1,night,2020,all-year,R1,power,solarPV,0,MUS$2010/kt,2045
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.08888888889,all-week,R1,night,2020,all-year,R1,power,windturbine,0,MUS$2010/kt,2045
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.25050000000,all-week,R1,night,2025,all-year,R1,power,gasCCGT,0,MUS$2010/PJ,2045
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.15555555556,all-week,R1,night,2025,all-year,R1,power,solarPV,0,MUS$2010/kt,2045
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.13333333333,all-week,R1,night,2030,all-year,R1,power,solarPV,0,MUS$2010/kt,2045
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.11111111111,all-week,R1,night,2035,all-year,R1,power,solarPV,0,MUS$2010/kt,2045
+A1,7,newcapa,CONSUMABLE|ENERGY,solar,0.15555555556,all-week,R1,night,2040,all-year,R1,power,solarPV,0,MUS$2010/kt,2045
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.12525000000,all-week,R1,morning,2020,all-year,R1,power,gasCCGT,1,MUS$2010/PJ,2045
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.33333333333,all-week,R1,morning,2020,all-year,R1,power,solarPV,1,MUS$2010/kt,2045
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.13333333333,all-week,R1,morning,2020,all-year,R1,power,windturbine,1,MUS$2010/kt,2045
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.37575000000,all-week,R1,morning,2025,all-year,R1,power,gasCCGT,1,MUS$2010/PJ,2045
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.23333333333,all-week,R1,morning,2025,all-year,R1,power,solarPV,1,MUS$2010/kt,2045
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.20000000000,all-week,R1,morning,2030,all-year,R1,power,solarPV,1,MUS$2010/kt,2045
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.16666666667,all-week,R1,morning,2035,all-year,R1,power,solarPV,1,MUS$2010/kt,2045
+A1,7,newcapa,CONSUMABLE|ENERGY,solar,0.23333333333,all-week,R1,morning,2040,all-year,R1,power,solarPV,1,MUS$2010/kt,2045
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.08350000000,all-week,R1,afternoon,2020,all-year,R1,power,gasCCGT,2,MUS$2010/PJ,2045
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.22222222222,all-week,R1,afternoon,2020,all-year,R1,power,solarPV,2,MUS$2010/kt,2045
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.08888888889,all-week,R1,afternoon,2020,all-year,R1,power,windturbine,2,MUS$2010/kt,2045
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.25050000000,all-week,R1,afternoon,2025,all-year,R1,power,gasCCGT,2,MUS$2010/PJ,2045
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.15555555556,all-week,R1,afternoon,2025,all-year,R1,power,solarPV,2,MUS$2010/kt,2045
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.13333333333,all-week,R1,afternoon,2030,all-year,R1,power,solarPV,2,MUS$2010/kt,2045
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.11111111111,all-week,R1,afternoon,2035,all-year,R1,power,solarPV,2,MUS$2010/kt,2045
+A1,7,newcapa,CONSUMABLE|ENERGY,solar,0.15555555556,all-week,R1,afternoon,2040,all-year,R1,power,solarPV,2,MUS$2010/kt,2045
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.12525000000,all-week,R1,early-peak,2020,all-year,R1,power,gasCCGT,3,MUS$2010/PJ,2045
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.33333333333,all-week,R1,early-peak,2020,all-year,R1,power,solarPV,3,MUS$2010/kt,2045
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.13333333333,all-week,R1,early-peak,2020,all-year,R1,power,windturbine,3,MUS$2010/kt,2045
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.37575000000,all-week,R1,early-peak,2025,all-year,R1,power,gasCCGT,3,MUS$2010/PJ,2045
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.23333333333,all-week,R1,early-peak,2025,all-year,R1,power,solarPV,3,MUS$2010/kt,2045
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.20000000000,all-week,R1,early-peak,2030,all-year,R1,power,solarPV,3,MUS$2010/kt,2045
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.16666666667,all-week,R1,early-peak,2035,all-year,R1,power,solarPV,3,MUS$2010/kt,2045
+A1,7,newcapa,CONSUMABLE|ENERGY,solar,0.23333333333,all-week,R1,early-peak,2040,all-year,R1,power,solarPV,3,MUS$2010/kt,2045
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.25050000000,all-week,R1,late-peak,2020,all-year,R1,power,gasCCGT,4,MUS$2010/PJ,2045
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.66666666667,all-week,R1,late-peak,2020,all-year,R1,power,solarPV,4,MUS$2010/kt,2045
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.26666666667,all-week,R1,late-peak,2020,all-year,R1,power,windturbine,4,MUS$2010/kt,2045
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.75150000000,all-week,R1,late-peak,2025,all-year,R1,power,gasCCGT,4,MUS$2010/PJ,2045
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.46666666667,all-week,R1,late-peak,2025,all-year,R1,power,solarPV,4,MUS$2010/kt,2045
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.40000000000,all-week,R1,late-peak,2030,all-year,R1,power,solarPV,4,MUS$2010/kt,2045
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.33333333333,all-week,R1,late-peak,2035,all-year,R1,power,solarPV,4,MUS$2010/kt,2045
+A1,7,newcapa,CONSUMABLE|ENERGY,solar,0.46666666667,all-week,R1,late-peak,2040,all-year,R1,power,solarPV,4,MUS$2010/kt,2045
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.16700000000,all-week,R1,evening,2020,all-year,R1,power,gasCCGT,5,MUS$2010/PJ,2045
+A1,1,newcapa,CONSUMABLE|ENERGY,solar,0.44444444444,all-week,R1,evening,2020,all-year,R1,power,solarPV,5,MUS$2010/kt,2045
+A1,2,newcapa,CONSUMABLE|ENERGY,wind,0.17777777778,all-week,R1,evening,2020,all-year,R1,power,windturbine,5,MUS$2010/kt,2045
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.50100000000,all-week,R1,evening,2025,all-year,R1,power,gasCCGT,5,MUS$2010/PJ,2045
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.31111111111,all-week,R1,evening,2025,all-year,R1,power,solarPV,5,MUS$2010/kt,2045
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.26666666667,all-week,R1,evening,2030,all-year,R1,power,solarPV,5,MUS$2010/kt,2045
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.22222222222,all-week,R1,evening,2035,all-year,R1,power,solarPV,5,MUS$2010/kt,2045
+A1,7,newcapa,CONSUMABLE|ENERGY,solar,0.31111111111,all-week,R1,evening,2040,all-year,R1,power,solarPV,5,MUS$2010/kt,2045
+A1,5,newcapa,CONSUMABLE|ENERGY,electricity,0.71111111111,all-week,R1,night,2040,all-year,R1,residential,heatpump,0,MUS$2010/PJ,2050
+A1,6,newcapa,CONSUMABLE|ENERGY,electricity,0.48888888889,all-week,R1,night,2045,all-year,R1,residential,heatpump,0,MUS$2010/PJ,2050
+A1,5,newcapa,CONSUMABLE|ENERGY,electricity,1.06666666667,all-week,R1,morning,2040,all-year,R1,residential,heatpump,1,MUS$2010/PJ,2050
+A1,6,newcapa,CONSUMABLE|ENERGY,electricity,0.73333333333,all-week,R1,morning,2045,all-year,R1,residential,heatpump,1,MUS$2010/PJ,2050
+A1,5,newcapa,CONSUMABLE|ENERGY,electricity,0.71111111111,all-week,R1,afternoon,2040,all-year,R1,residential,heatpump,2,MUS$2010/PJ,2050
+A1,6,newcapa,CONSUMABLE|ENERGY,electricity,0.48888888889,all-week,R1,afternoon,2045,all-year,R1,residential,heatpump,2,MUS$2010/PJ,2050
+A1,5,newcapa,CONSUMABLE|ENERGY,electricity,1.06666666667,all-week,R1,early-peak,2040,all-year,R1,residential,heatpump,3,MUS$2010/PJ,2050
+A1,6,newcapa,CONSUMABLE|ENERGY,electricity,0.73333333333,all-week,R1,early-peak,2045,all-year,R1,residential,heatpump,3,MUS$2010/PJ,2050
+A1,5,newcapa,CONSUMABLE|ENERGY,electricity,2.13333333333,all-week,R1,late-peak,2040,all-year,R1,residential,heatpump,4,MUS$2010/PJ,2050
+A1,6,newcapa,CONSUMABLE|ENERGY,electricity,1.46666666667,all-week,R1,late-peak,2045,all-year,R1,residential,heatpump,4,MUS$2010/PJ,2050
+A1,5,newcapa,CONSUMABLE|ENERGY,electricity,1.42222222222,all-week,R1,evening,2040,all-year,R1,residential,heatpump,5,MUS$2010/PJ,2050
+A1,6,newcapa,CONSUMABLE|ENERGY,electricity,0.97777777778,all-week,R1,evening,2045,all-year,R1,residential,heatpump,5,MUS$2010/PJ,2050
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.08671153846,all-week,R1,night,2020,all-year,R1,power,gasCCGT,0,MUS$2010/PJ,2050
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.26013461538,all-week,R1,night,2025,all-year,R1,power,gasCCGT,0,MUS$2010/PJ,2050
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.16153846154,all-week,R1,night,2025,all-year,R1,power,solarPV,0,MUS$2010/kt,2050
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.13846153846,all-week,R1,night,2030,all-year,R1,power,solarPV,0,MUS$2010/kt,2050
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.11538461538,all-week,R1,night,2035,all-year,R1,power,solarPV,0,MUS$2010/kt,2050
+A1,7,newcapa,CONSUMABLE|ENERGY,solar,0.16153846154,all-week,R1,night,2040,all-year,R1,power,solarPV,0,MUS$2010/kt,2050
+A1,9,newcapa,CONSUMABLE|ENERGY,solar,0.23076923077,all-week,R1,night,2045,all-year,R1,power,solarPV,0,MUS$2010/kt,2050
+A1,10,newcapa,CONSUMABLE|ENERGY,wind,0.18461538462,all-week,R1,night,2045,all-year,R1,power,windturbine,0,MUS$2010/kt,2050
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.13006730769,all-week,R1,morning,2020,all-year,R1,power,gasCCGT,1,MUS$2010/PJ,2050
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.39020192308,all-week,R1,morning,2025,all-year,R1,power,gasCCGT,1,MUS$2010/PJ,2050
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.24230769231,all-week,R1,morning,2025,all-year,R1,power,solarPV,1,MUS$2010/kt,2050
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.20769230769,all-week,R1,morning,2030,all-year,R1,power,solarPV,1,MUS$2010/kt,2050
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.17307692308,all-week,R1,morning,2035,all-year,R1,power,solarPV,1,MUS$2010/kt,2050
+A1,7,newcapa,CONSUMABLE|ENERGY,solar,0.24230769231,all-week,R1,morning,2040,all-year,R1,power,solarPV,1,MUS$2010/kt,2050
+A1,9,newcapa,CONSUMABLE|ENERGY,solar,0.34615384615,all-week,R1,morning,2045,all-year,R1,power,solarPV,1,MUS$2010/kt,2050
+A1,10,newcapa,CONSUMABLE|ENERGY,wind,0.27692307692,all-week,R1,morning,2045,all-year,R1,power,windturbine,1,MUS$2010/kt,2050
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.08671153846,all-week,R1,afternoon,2020,all-year,R1,power,gasCCGT,2,MUS$2010/PJ,2050
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.26013461538,all-week,R1,afternoon,2025,all-year,R1,power,gasCCGT,2,MUS$2010/PJ,2050
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.16153846154,all-week,R1,afternoon,2025,all-year,R1,power,solarPV,2,MUS$2010/kt,2050
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.13846153846,all-week,R1,afternoon,2030,all-year,R1,power,solarPV,2,MUS$2010/kt,2050
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.11538461538,all-week,R1,afternoon,2035,all-year,R1,power,solarPV,2,MUS$2010/kt,2050
+A1,7,newcapa,CONSUMABLE|ENERGY,solar,0.16153846154,all-week,R1,afternoon,2040,all-year,R1,power,solarPV,2,MUS$2010/kt,2050
+A1,9,newcapa,CONSUMABLE|ENERGY,solar,0.23076923077,all-week,R1,afternoon,2045,all-year,R1,power,solarPV,2,MUS$2010/kt,2050
+A1,10,newcapa,CONSUMABLE|ENERGY,wind,0.18461538462,all-week,R1,afternoon,2045,all-year,R1,power,windturbine,2,MUS$2010/kt,2050
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.13006730769,all-week,R1,early-peak,2020,all-year,R1,power,gasCCGT,3,MUS$2010/PJ,2050
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.39020192308,all-week,R1,early-peak,2025,all-year,R1,power,gasCCGT,3,MUS$2010/PJ,2050
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.24230769231,all-week,R1,early-peak,2025,all-year,R1,power,solarPV,3,MUS$2010/kt,2050
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.20769230769,all-week,R1,early-peak,2030,all-year,R1,power,solarPV,3,MUS$2010/kt,2050
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.17307692308,all-week,R1,early-peak,2035,all-year,R1,power,solarPV,3,MUS$2010/kt,2050
+A1,7,newcapa,CONSUMABLE|ENERGY,solar,0.24230769231,all-week,R1,early-peak,2040,all-year,R1,power,solarPV,3,MUS$2010/kt,2050
+A1,9,newcapa,CONSUMABLE|ENERGY,solar,0.34615384615,all-week,R1,early-peak,2045,all-year,R1,power,solarPV,3,MUS$2010/kt,2050
+A1,10,newcapa,CONSUMABLE|ENERGY,wind,0.27692307692,all-week,R1,early-peak,2045,all-year,R1,power,windturbine,3,MUS$2010/kt,2050
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.26013461538,all-week,R1,late-peak,2020,all-year,R1,power,gasCCGT,4,MUS$2010/PJ,2050
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.78040384615,all-week,R1,late-peak,2025,all-year,R1,power,gasCCGT,4,MUS$2010/PJ,2050
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.48461538462,all-week,R1,late-peak,2025,all-year,R1,power,solarPV,4,MUS$2010/kt,2050
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.41538461538,all-week,R1,late-peak,2030,all-year,R1,power,solarPV,4,MUS$2010/kt,2050
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.34615384615,all-week,R1,late-peak,2035,all-year,R1,power,solarPV,4,MUS$2010/kt,2050
+A1,7,newcapa,CONSUMABLE|ENERGY,solar,0.48461538462,all-week,R1,late-peak,2040,all-year,R1,power,solarPV,4,MUS$2010/kt,2050
+A1,9,newcapa,CONSUMABLE|ENERGY,solar,0.69230769231,all-week,R1,late-peak,2045,all-year,R1,power,solarPV,4,MUS$2010/kt,2050
+A1,10,newcapa,CONSUMABLE|ENERGY,wind,0.55384615385,all-week,R1,late-peak,2045,all-year,R1,power,windturbine,4,MUS$2010/kt,2050
+A1,0,newcapa,CONSUMABLE|ENERGY,gas,0.17342307692,all-week,R1,evening,2020,all-year,R1,power,gasCCGT,5,MUS$2010/PJ,2050
+A1,3,newcapa,CONSUMABLE|ENERGY,gas,0.52026923077,all-week,R1,evening,2025,all-year,R1,power,gasCCGT,5,MUS$2010/PJ,2050
+A1,4,newcapa,CONSUMABLE|ENERGY,solar,0.32307692308,all-week,R1,evening,2025,all-year,R1,power,solarPV,5,MUS$2010/kt,2050
+A1,5,newcapa,CONSUMABLE|ENERGY,solar,0.27692307692,all-week,R1,evening,2030,all-year,R1,power,solarPV,5,MUS$2010/kt,2050
+A1,6,newcapa,CONSUMABLE|ENERGY,solar,0.23076923077,all-week,R1,evening,2035,all-year,R1,power,solarPV,5,MUS$2010/kt,2050
+A1,7,newcapa,CONSUMABLE|ENERGY,solar,0.32307692308,all-week,R1,evening,2040,all-year,R1,power,solarPV,5,MUS$2010/kt,2050
+A1,9,newcapa,CONSUMABLE|ENERGY,solar,0.46153846154,all-week,R1,evening,2045,all-year,R1,power,solarPV,5,MUS$2010/kt,2050
+A1,10,newcapa,CONSUMABLE|ENERGY,wind,0.36923076923,all-week,R1,evening,2045,all-year,R1,power,windturbine,5,MUS$2010/kt,2050

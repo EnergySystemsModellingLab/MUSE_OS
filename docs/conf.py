@@ -4,12 +4,11 @@
 # list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 # -- Project information -----------------------------------------------------
-from typing import List
 
 project = "MUSE"
-copyright = "2022, Sustainable Gas Institute"
+copyright = "2024, Imperial College London"
 author = "Imperial College London"
-release = "1.1.0"
+release = "1.2.0rc1"
 version = ".".join(release.split(".")[:2])
 
 # -- General configuration ---------------------------------------------------
@@ -54,7 +53,7 @@ intersphinx_mapping = {
     "xarray": ("http://xarray.pydata.org/en/stable/", None),
 }
 
-bibtex_bibfiles: List[str] = []
+bibtex_bibfiles: list[str] = []
 
 # -- GraphViz configuration ----------------------------------
 graphviz_output_format = "svg"

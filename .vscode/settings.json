@@ -1,11 +1,22 @@
 {
-    "python.linting.pylintEnabled": false,
-    "python.linting.flake8Enabled": true,
-    "python.linting.enabled": true,
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[yaml]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[toml]": {
+        "editor.formatOnSave": false
+    },
     "editor.formatOnSave": true,
-    "python.formatting.provider": "black",
-    "python.linting.mypyEnabled": true,
-    "python.testing.pytestEnabled": true,
-    "restructuredtext.confPath": "${workspaceFolder}/docs",
-    "python.pythonPath": "/opt/anaconda3/envs/muse/bin/python",
+    "editor.rulers": [88],
+
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }

@@ -72,6 +72,7 @@ Arguments:
 Returns:
     An initial search space
 """
+
 __all__ = [
     "factory",
     "register_filter",
@@ -89,14 +90,11 @@ __all__ = [
     "initialize_from_technologies",
 ]
 
+from collections.abc import Mapping, MutableMapping, Sequence
 from typing import (
     Any,
     Callable,
-    Mapping,
-    MutableMapping,
     Optional,
-    Sequence,
-    Text,
     Union,
     cast,
 )
@@ -110,14 +108,14 @@ from muse.registration import registrator
 SSF_SIGNATURE = Callable[[Agent, xr.DataArray, xr.Dataset, xr.Dataset], xr.DataArray]
 """ Search space filter signature """
 
-SEARCH_SPACE_FILTERS: MutableMapping[Text, SSF_SIGNATURE] = {}
+SEARCH_SPACE_FILTERS: MutableMapping[str, SSF_SIGNATURE] = {}
 """Filters for selecting technology search spaces."""
 
 
 SSI_SIGNATURE = Callable[[Agent, xr.DataArray, xr.Dataset, xr.Dataset], xr.DataArray]
 """ Search space initializer signature """
 
-SEARCH_SPACE_INITIALIZERS: MutableMapping[Text, SSI_SIGNATURE] = {}
+SEARCH_SPACE_INITIALIZERS: MutableMapping[str, SSI_SIGNATURE] = {}
 """Functions to create an initial search-space."""
 
 
@@ -164,8 +162,8 @@ def register_initializer(function: SSI_SIGNATURE) -> Callable:
 
 
 def factory(
-    settings: Optional[Union[Text, Mapping, Sequence[Union[Text, Mapping]]]] = None,
-    separator: Text = "->",
+    settings: Optional[Union[str, Mapping, Sequence[Union[str, Mapping]]]] = None,
+    separator: str = "->",
 ):
     """Creates filters from input TOML data.
 
@@ -197,17 +195,17 @@ def factory(
     from functools import partial
 
     if settings is None:
-        parameters: Sequence[Mapping[Text, Any]] = []
+        parameters: Sequence[Mapping[str, Any]] = []
     elif isinstance(settings, Mapping):
         parameters = [settings]
-    elif isinstance(settings, Text):
+    elif isinstance(settings, str):
         parameters = [{"name": name.strip()} for name in settings.split(separator)]
     else:
         parameters = [
-            {"name": item} if isinstance(item, Text) else item for item in settings
+            {"name": item} if isinstance(item, str) else item for item in settings
         ]
     if len(parameters) == 0 or parameters[0]["name"] not in SEARCH_SPACE_INITIALIZERS:
-        initial_settings: Mapping[Text, Text] = {"name": "initialize_from_technologies"}
+        initial_settings: Mapping[str, str] = {"name": "initialize_from_technologies"}
     else:
         initial_settings, parameters = cast(Mapping, parameters[0]), parameters[1:]
 
@@ -241,7 +239,7 @@ def same_enduse(
     search_space: xr.DataArray,
     technologies: xr.Dataset,
     *args,
-    enduse_label: Text = "service",
+    enduse_label: str = "service",
     **kwargs,
 ) -> xr.DataArray:
     """Only allow for technologies with at least the same end-use."""
@@ -334,7 +332,7 @@ def maturity(
     search_space: xr.DataArray,
     technologies: xr.Dataset,
     market: xr.Dataset,
-    enduse_label: Text = "service",
+    enduse_label: str = "service",
     **kwargs,
 ) -> xr.DataArray:
     """Only allows technologies that have achieve a given market share.
@@ -348,7 +346,15 @@ def maturity(
     techs = (
         condition.technology.where(condition, drop=True).drop_vars("technology").values
     )
-    replacement = search_space.sel(replacement=techs)
+
+    # Generate a boolean mask where 'True' corresponds to entries in
+    # 'search_space.replacement' that are in 'techs'
+    mask = search_space.replacement.isin(techs)
+
+    # Apply this mask to 'search_space', turning all fields where the condition is not
+    # met to False
+    replacement = search_space.where(mask, False)
+
     return search_space & replacement
 
 
@@ -358,7 +364,7 @@ def spend_limit(
     search_space: xr.DataArray,
     technologies: xr.Dataset,
     market: xr.Dataset,
-    enduse_label: Text = "service",
+    enduse_label: str = "service",
     **kwargs,
 ) -> xr.DataArray:
     """Only allows technologies that have achieve a given market share.
@@ -371,7 +377,15 @@ def spend_limit(
     techs = (
         condition.technology.where(condition, drop=True).drop_vars("technology").values
     )
-    replacement = search_space.sel(replacement=techs)
+
+    # Generate a boolean mask where 'True' corresponds to entries in
+    # 'search_space.replacement' that are in 'techs'
+    mask = search_space.replacement.isin(techs)
+
+    # Apply this mask to 'search_space', turning all fields where the condition is not
+    # met to False
+    replacement = search_space.where(mask, False)
+
     return search_space & replacement
 
 
@@ -446,7 +460,7 @@ def initialize_from_assets(
     demand: xr.DataArray,
     technologies: xr.Dataset,
     *args,
-    coords: Sequence[Text] = ("region", "technology"),
+    coords: Sequence[str] = ("region", "technology"),
     **kwargs,
 ):
     """Initialize a search space from existing technologies."""
@@ -459,7 +473,10 @@ def initialize_from_assets(
     )
     if "asset" not in agent.assets.dims or len(agent.assets.asset) == 0:
         return replacement
-    assets = xr.ones_like(
-        reduce_assets(agent.assets.asset, coords=coords), dtype=bool
-    ).rename(technology="asset")
+
+    assets = (
+        xr.ones_like(reduce_assets(agent.assets.asset, coords=coords), dtype=bool)
+        .rename(technology="asset")
+        .set_index()
+    )
     return (assets * replacement).transpose("asset", "replacement")

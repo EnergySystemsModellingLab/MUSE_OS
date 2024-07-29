@@ -1,4 +1,5 @@
 import xarray as xr
+from muse.timeslices import drop_timeslice
 from pytest import approx, fixture, raises
 
 
@@ -14,10 +15,9 @@ def matching_market(technologies, stock, timeslice):
 
 def _matching_market(technologies, stock, timeslice):
     """A market which matches stocks exactly."""
-    from numpy.random import random
-
     from muse.quantities import consumption, maximum_production
     from muse.timeslices import QuantityType, convert_timeslice
+    from numpy.random import random
 
     market = xr.Dataset()
     production = convert_timeslice(
@@ -26,7 +26,7 @@ def _matching_market(technologies, stock, timeslice):
         QuantityType.EXTENSIVE,
     )
     market["supply"] = production.sum("asset")
-    market["consumption"] = (
+    market["consumption"] = drop_timeslice(
         consumption(technologies, production).sum("asset") + market.supply
     )
     market["prices"] = market.supply.dims, random(market.supply.shape)
@@ -225,7 +225,6 @@ def test_demand_split_zero_share(technologies, stock, matching_market):
 
 def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_factory):
     from dataclasses import dataclass
-    from typing import Text
     from uuid import UUID, uuid4
 
     from muse.commodities import is_enduse
@@ -243,10 +242,10 @@ def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_f
     @dataclass
     class Agent:
         assets: xr.Dataset
-        category: Text
+        category: str
         uuid: UUID
-        name: Text
-        region: Text
+        name: str
+        region: str
         quantity: float
 
     agents = [
@@ -279,7 +278,6 @@ def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_f
 
 def test_standard_demand_share(technologies, coords, market, timeslice, stock_factory):
     from dataclasses import dataclass
-    from typing import Text
     from uuid import UUID, uuid4
 
     from muse.commodities import is_enduse
@@ -298,10 +296,10 @@ def test_standard_demand_share(technologies, coords, market, timeslice, stock_fa
     @dataclass
     class Agent:
         assets: xr.Dataset
-        category: Text
+        category: str
         uuid: UUID
-        name: Text
-        region: Text
+        name: str
+        region: str
         quantity: float
 
     agents = [
@@ -371,7 +369,7 @@ def test_unmet_forecast_demand(technologies, coords, timeslice, stock_factory):
     assert set(result.dims) == set(market.consumption.dims) - {"year"}
     assert result.values == approx(0)
 
-    # Then try too litte capacity
+    # Then try too little capacity
     agents = [
         Agent(0.5 * usa_stock.squeeze("region")),
         Agent(0.5 * asia_stock.squeeze("region")),

@@ -1,4 +1,5 @@
 """Pre and post hooks on agents."""
+
 __all__ = [
     "register_initial_asset_transform",
     "register_final_asset_transform",
@@ -10,20 +11,21 @@ __all__ = [
     "housekeeping_factory",
     "asset_merge_factory",
 ]
-from typing import Callable, Mapping, MutableMapping, Text, Union
+from collections.abc import Mapping, MutableMapping
+from typing import Callable, Union
 
 from xarray import Dataset
 
 from muse.agents import Agent
 from muse.registration import registrator
 
-INITIAL_ASSET_TRANSFORM: MutableMapping[Text, Callable] = {}
-""" Tranform at the start of each step. """
-FINAL_ASSET_TRANSFORM: MutableMapping[Text, Callable] = {}
-""" Tranform at the end of each step, including new assets. """
+INITIAL_ASSET_TRANSFORM: MutableMapping[str, Callable] = {}
+""" Transform at the start of each step. """
+FINAL_ASSET_TRANSFORM: MutableMapping[str, Callable] = {}
+""" Transform at the end of each step, including new assets. """
 
 
-def housekeeping_factory(settings: Union[Text, Mapping] = "noop") -> Callable:
+def housekeeping_factory(settings: Union[str, Mapping] = "noop") -> Callable:
     """Returns a function for performing initial housekeeping.
 
     For instance, remove technologies with no capacity now or in the future.
@@ -32,7 +34,7 @@ def housekeeping_factory(settings: Union[Text, Mapping] = "noop") -> Callable:
     """
     from muse.agents import AbstractAgent
 
-    if isinstance(settings, Text):
+    if isinstance(settings, str):
         name = settings
         params: Mapping = {}
     else:
@@ -47,7 +49,7 @@ def housekeeping_factory(settings: Union[Text, Mapping] = "noop") -> Callable:
     return initial_assets_transform
 
 
-def asset_merge_factory(settings: Union[Text, Mapping] = "new") -> Callable:
+def asset_merge_factory(settings: Union[str, Mapping] = "new") -> Callable:
     """Returns a function for merging new investments into assets.
 
     Available merging functions should be registered with
@@ -59,7 +61,7 @@ def asset_merge_factory(settings: Union[Text, Mapping] = "new") -> Callable:
     Available housekeeping functions should be registered with
     :py:func:`@register_initial_asset_transform<register_initial_asset_transform>`.
     """
-    if isinstance(settings, Text):
+    if isinstance(settings, str):
         name = settings
         params: Mapping = {}
     else:
@@ -77,7 +79,7 @@ def asset_merge_factory(settings: Union[Text, Mapping] = "new") -> Callable:
 
 @registrator(registry=INITIAL_ASSET_TRANSFORM, loglevel="info")
 def register_initial_asset_transform(
-    function: Callable[[Agent, Dataset], Dataset]
+    function: Callable[[Agent, Dataset], Dataset],
 ) -> Callable:
     """Decorator to register a function for cleaning or transforming assets.
 
@@ -91,7 +93,7 @@ def register_initial_asset_transform(
 
 @registrator(registry=FINAL_ASSET_TRANSFORM, loglevel="info")
 def register_final_asset_transform(
-    function: Callable[[Dataset, Dataset], Dataset]
+    function: Callable[[Dataset, Dataset], Dataset],
 ) -> Callable:
     """Decorator to register a function to merge new investments into current assets.
 
@@ -148,7 +150,7 @@ def old_assets_only(old_assets: Dataset, new_assets: Dataset) -> Dataset:
 def merge_assets(old_assets: Dataset, new_assets: Dataset) -> Dataset:
     """Adds new assets to old along asset dimension.
 
-    New assets are assumed to be unequivalent to any old_assets. Indeed,
+    New assets are assumed to be nonequivalent to any old_assets. Indeed,
     it is expected that the asset dimension does not have coordinates (i.e.
     it is a combination of coordinates, such as technology and installation
     year).

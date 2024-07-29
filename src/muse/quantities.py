@@ -4,7 +4,9 @@ This module is meant to collect functions computing quantities of interest to th
 e.g. lcoe, maximum production for a given capacity, etc, especially where these
 functions are used in different areas of the model.
 """
-from typing import Callable, Optional, Sequence, Text, Tuple, Union, cast
+
+from collections.abc import Sequence
+from typing import Callable, Optional, Union, cast
 
 import numpy as np
 import xarray as xr
@@ -14,7 +16,7 @@ def supply(
     capacity: xr.DataArray,
     demand: xr.DataArray,
     technologies: Union[xr.Dataset, xr.DataArray],
-    interpolation: Text = "linear",
+    interpolation: str = "linear",
     production_method: Optional[Callable] = None,
 ) -> xr.DataArray:
     """Production and emission for a given capacity servicing a given demand.
@@ -29,9 +31,11 @@ def supply(
     Arguments:
         capacity: number/quantity of assets that can service the demand
         demand: amount of each end-use required. The supply of each process will not
-            exceed it's share of the demand.
+            exceed its share of the demand.
         technologies: factors bindings the capacity of an asset with its production of
             commodities and environmental pollutants.
+        interpolation: Interpolation type
+        production_method: Production for a given capacity
 
     Return:
         A data array where the commodity dimension only contains actual outputs (i.e. no
@@ -132,12 +136,16 @@ def emission(production: xr.DataArray, fixed_outputs: xr.DataArray):
 def gross_margin(
     technologies: xr.Dataset, capacity: xr.DataArray, prices: xr.Dataset
 ) -> xr.DataArray:
-    """profit of increasing the production by one unit.
+    """The percentage of revenue after direct expenses have been subtracted.
 
+    .. _reference:
+    https://www.investopedia.com/terms/g/grossmargin.asp
+    We first calculate the revenues, which depend on prices
+    We then deduct the direct expenses
     - energy commodities INPUTS are related to fuel costs
     - environmental commodities OUTPUTS are related to environmental costs
     - variable costs is given as technodata inputs
-    - non-environmental commodities OUTPUTS are related to revenues
+    - non-environmental commodities OUTPUTS are related to revenues.
     """
     from muse.commodities import is_enduse, is_pollutant
     from muse.timeslices import QuantityType, convert_timeslice
@@ -164,28 +172,41 @@ def gross_margin(
     var_exp = tech.var_exp
     fixed_outputs = tech.fixed_outputs
     fixed_inputs = tech.fixed_inputs
+    # We separate the case where we have one or more regions
+    caparegions = np.array(capacity.region.values).reshape(-1)
+    if len(caparegions) > 1:
+        prices.sel(region=capacity.region)
+    else:
+        prices = prices.where(prices.region == capacity.region, drop=True)
+    prices = prices.interp(year=capacity.year.values)
 
-    # Hours ratio
-    variable_costs = convert_timeslice(
-        var_par * capacity**var_exp, prices.timeslice, QuantityType.EXTENSIVE
-    )
-
-    prices = prices.sel(region=capacity.region).interp(year=capacity.year)
-
-    # Filters
+    # Filters for pollutants and output commodities
     environmentals = is_pollutant(technologies.comm_usage)
     enduses = is_enduse(technologies.comm_usage)
 
-    # The individual prices
-    consumption_costs = (prices * fixed_inputs).sum("commodity")
-    production_costs = prices * fixed_outputs
-    environmental_costs = (production_costs.sel(commodity=environmentals)).sum(
-        ("commodity")
+    # Variable costs depend on factors such as labour
+    variable_costs = convert_timeslice(
+        var_par * ((fixed_outputs.sel(commodity=enduses)).sum("commodity")) ** var_exp,
+        prices.timeslice,
+        QuantityType.EXTENSIVE,
     )
 
+    # The individual prices are selected
+    # costs due to consumables, direct inputs
+    consumption_costs = (prices * fixed_inputs).sum("commodity")
+    # costs due to pollutants
+    production_costs = prices * fixed_outputs
+    environmental_costs = (production_costs.sel(commodity=environmentals)).sum(
+        "commodity"
+    )
+    # revenues due to product sales
     revenues = (production_costs.sel(commodity=enduses)).sum("commodity")
 
+    # Gross margin is the net between revenues and all costs
     result = revenues - environmental_costs - variable_costs - consumption_costs
+
+    # Gross margin is defined as a ratio on revenues and as a percentage
+    result *= 100 / revenues
     return result
 
 
@@ -292,8 +313,8 @@ def consumption(
 def annual_levelized_cost_of_energy(
     prices: xr.DataArray,
     technologies: xr.Dataset,
-    interpolation: Text = "linear",
-    fill_value: Union[int, Text] = "extrapolate",
+    interpolation: str = "linear",
+    fill_value: Union[int, str] = "extrapolate",
     **filters,
 ) -> xr.DataArray:
     """Undiscounted levelized cost of energy (LCOE) of technologies on each given year.
@@ -422,8 +443,9 @@ def maximum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
             shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
         filters: keyword arguments are used to filter down the capacity and
             technologies. Filters not relevant to the quantities of interest, i.e.
-            filters that are not a dimension of `capacity` or `techologies`, are
+            filters that are not a dimension of `capacity` or `technologies`, are
             silently ignored.
+
     Return:
         `capacity * fixed_outputs * utilization_factor`, whittled down according to the
         filters and the set of technologies in `capacity`.
@@ -457,6 +479,7 @@ def demand_matched_production(
         demand: demand to match.
         prices: price from which to compute the annual levelized cost of energy.
         capacity: capacity from which to obtain the maximum production constraints.
+        technologies: technologies we are looking at
         **filters: keyword arguments with which to filter the input datasets and
             data arrays., e.g. region, or year.
     """
@@ -478,7 +501,7 @@ def demand_matched_production(
 def capacity_in_use(
     production: xr.DataArray,
     technologies: xr.Dataset,
-    max_dim: Optional[Union[Text, Tuple[Text]]] = "commodity",
+    max_dim: Optional[Union[str, tuple[str]]] = "commodity",
     **filters,
 ):
     """Capacity-in-use for each asset, given production.
@@ -494,8 +517,9 @@ def capacity_in_use(
             None, then no reduction is performed.
         filters: keyword arguments are used to filter down the capacity and
             technologies. Filters not relevant to the quantities of interest, i.e.
-            filters that are not a dimension of `capacity` or `techologies`, are
+            filters that are not a dimension of `capacity` or `technologies`, are
             silently ignored.
+
     Return:
         Capacity-in-use for each technology, whittled down by the filters.
     """
@@ -526,7 +550,7 @@ def capacity_in_use(
 
 
 def supply_cost(
-    production: xr.DataArray, lcoe: xr.DataArray, asset_dim: Optional[Text] = "asset"
+    production: xr.DataArray, lcoe: xr.DataArray, asset_dim: Optional[str] = "asset"
 ) -> xr.DataArray:
     """Supply cost given production and the levelized cost of energy.
 
@@ -547,14 +571,10 @@ def supply_cost(
     if asset_dim is not None:
         if "region" not in data.coords or len(data.region.dims) == 0:
             data = data.sum(asset_dim)
-
         else:
             data = data.groupby("region").sum(asset_dim)
 
-    total = data.production.where(np.abs(data.production) > 1e-15, np.infty).sum(
-        "timeslice"
-    )
-    return data.prices / total
+    return data.prices / data.production.where(np.abs(data.production) > 1e-15, np.inf)
 
 
 def costed_production(
@@ -565,11 +585,11 @@ def costed_production(
     with_minimum_service: bool = True,
 ) -> xr.DataArray:
     """Computes production from ranked assets.
+
     The assets are ranked according to their cost. The asset with least cost are allowed
-    to service the demand first, up to the maximum production. By default, the mininum
+    to service the demand first, up to the maximum production. By default, the minimum
     service is applied first.
     """
-
     from muse.quantities import maximum_production
     from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs

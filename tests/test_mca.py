@@ -1,8 +1,8 @@
-from typing import Sequence
-
-from xarray import Dataset
+from collections.abc import Sequence
 
 from muse.commodities import CommodityUsage
+from muse.timeslices import drop_timeslice
+from xarray import Dataset
 
 
 def test_check_equilibrium(market: Dataset):
@@ -17,29 +17,29 @@ def test_check_equilibrium(market: Dataset):
     new_market = market.copy(deep=True)
 
     assert check_equilibrium(new_market, market, tol, equilibrium_variable)
-    new_market["supply"] += tol * 1.5
+    new_market["supply"] = drop_timeslice(new_market["supply"]) + tol * 1.5
 
     assert not check_equilibrium(new_market, market, tol, equilibrium_variable)
 
     equilibrium_variable = "prices"
 
     assert check_equilibrium(new_market, market, tol, equilibrium_variable)
-    new_market["prices"] += tol * 1.5
+    new_market["prices"] = drop_timeslice(new_market["prices"]) + tol * 1.5
     assert not check_equilibrium(new_market, market, tol, equilibrium_variable)
 
 
 def test_check_demand_fulfillment(market):
-    """Test for the demand fulfilment function of the MCA."""
+    """Test for the demand fulfillment function of the MCA."""
     from muse.mca import check_demand_fulfillment
 
     tolerance_unmet_demand = -0.1
 
-    market["supply"] = market.consumption.copy(deep=True)
+    market["supply"] = drop_timeslice(market.consumption.copy(deep=True))
     assert check_demand_fulfillment(
         market,
         tolerance_unmet_demand,
     )
-    market["supply"] += tolerance_unmet_demand * 1.5
+    market["supply"] = drop_timeslice(market["supply"]) + tolerance_unmet_demand * 1.5
     assert not check_demand_fulfillment(
         market,
         tolerance_unmet_demand,
@@ -48,10 +48,9 @@ def test_check_demand_fulfillment(market):
 
 def sector_market(market: Dataset, comm_usage: Sequence[CommodityUsage]) -> Dataset:
     """Creates a likely return market from a sector."""
+    from muse.commodities import is_consumable, is_enduse, is_other
     from numpy.random import randint
     from xarray import DataArray
-
-    from muse.commodities import is_consumable, is_enduse, is_other
 
     shape = (
         len(market.year),
@@ -85,12 +84,11 @@ def test_find_equilibrium(market: Dataset):
     from copy import deepcopy
     from unittest.mock import patch
 
+    from muse.commodities import is_enduse, is_other
+    from muse.mca import find_equilibrium
     from numpy.random import choice
     from pytest import approx
     from xarray import broadcast
-
-    from muse.commodities import is_enduse, is_other
-    from muse.mca import find_equilibrium
 
     market = market.interp(year=[2010, 2015])
     a_enduses = choice(market.commodity.values, 5, replace=False).tolist()

@@ -1,15 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Iterator, Mapping, Sequence
 from typing import (
     Any,
     Callable,
-    Iterator,
-    Mapping,
-    Optional,
-    Sequence,
-    Text,
-    Tuple,
-    Union,
     cast,
 )
 
@@ -28,7 +22,7 @@ class Sector(AbstractSector):  # type: ignore
     """Base class for all sectors."""
 
     @classmethod
-    def factory(cls, name: Text, settings: Any) -> Sector:
+    def factory(cls, name: str, settings: Any) -> Sector:
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory
         from muse.production import factory as pfactory
@@ -62,7 +56,7 @@ class Sector(AbstractSector):  # type: ignore
             ._asdict()
             .items()
         ]
-        are_disjoint_commodities = sum((len(s.commodities) for s in subsectors)) == len(
+        are_disjoint_commodities = sum(len(s.commodities) for s in subsectors) == len(
             set().union(*(set(s.commodities) for s in subsectors))  # type: ignore
         )
         if not are_disjoint_commodities:
@@ -73,7 +67,7 @@ class Sector(AbstractSector):  # type: ignore
         supply_args = sector_settings.pop(
             "supply", sector_settings.pop("dispatch_production", {})
         )
-        if isinstance(supply_args, Text):
+        if isinstance(supply_args, str):
             supply_args = {"name": supply_args}
         else:
             supply_args = nametuple_to_dict(supply_args)
@@ -96,32 +90,32 @@ class Sector(AbstractSector):  # type: ignore
 
     def __init__(
         self,
-        name: Text,
+        name: str,
         technologies: xr.Dataset,
         subsectors: Sequence[Subsector] = [],
-        timeslices: Optional[pd.MultiIndex] = None,
+        timeslices: pd.MultiIndex | None = None,
         technodata_timeslices: xr.Dataset = None,
-        interactions: Optional[Callable[[Sequence[AbstractAgent]], None]] = None,
-        interpolation: Text = "linear",
-        outputs: Optional[Callable] = None,
-        supply_prod: Optional[PRODUCTION_SIGNATURE] = None,
+        interactions: Callable[[Sequence[AbstractAgent]], None] | None = None,
+        interpolation: str = "linear",
+        outputs: Callable | None = None,
+        supply_prod: PRODUCTION_SIGNATURE | None = None,
     ):
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory
         from muse.production import maximum_production
 
-        self.name: Text = name
+        self.name: str = name
         """Name of the sector."""
         self.subsectors: Sequence[Subsector] = list(subsectors)
         """Subsectors controlled by this object."""
         self.technologies: xr.Dataset = technologies
         """Parameters describing the sector's technologies."""
-        self.timeslices: Optional[pd.MultiIndex] = timeslices
+        self.timeslices: pd.MultiIndex | None = timeslices
         """Timeslice at which this sector operates.
 
         If None, it will operate using the timeslice of the input market.
         """
-        self.interpolation: Mapping[Text, Any] = {
+        self.interpolation: Mapping[str, Any] = {
             "method": interpolation,
             "kwargs": {"fill_value": "extrapolate"},
         }
@@ -148,7 +142,7 @@ class Sector(AbstractSector):  # type: ignore
         self.outputs: Callable = (
             cast(Callable, ofactory()) if outputs is None else outputs
         )
-        """A function for outputing data for post-mortem analysis."""
+        """A function for outputting data for post-mortem analysis."""
         self.supply_prod = (
             supply_prod if supply_prod is not None else maximum_production
         )
@@ -177,8 +171,8 @@ class Sector(AbstractSector):  # type: ignore
     def next(
         self,
         mca_market: xr.Dataset,
-        time_period: Optional[int] = None,
-        current_year: Optional[int] = None,
+        time_period: int | None = None,
+        current_year: int | None = None,
     ) -> xr.Dataset:
         """Advance sector by one time period.
 
@@ -188,6 +182,7 @@ class Sector(AbstractSector):  # type: ignore
             time_period:
                 Length of the time period in the framework. Defaults to the range of
                 ``mca_market.year``.
+            current_year: Current year of the simulation
 
         Returns:
             A market containing the ``supply`` offered by the sector, it's attendant
@@ -409,12 +404,12 @@ class Sector(AbstractSector):  # type: ignore
     def convert_market_timeslice(
         market: xr.Dataset,
         timeslice: pd.MultiIndex,
-        intensive: Union[Text, Tuple[Text]] = "prices",
+        intensive: str | tuple[str] = "prices",
     ) -> xr.Dataset:
         """Converts market from one to another timeslice."""
         from muse.timeslices import QuantityType, convert_timeslice
 
-        if isinstance(intensive, Text):
+        if isinstance(intensive, str):
             intensive = (intensive,)
 
         timesliced = {d for d in market.data_vars if "timeslice" in market[d].dims}

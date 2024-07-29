@@ -8,8 +8,8 @@ except ImportError:
     raise ImportError(msg)
 
 os.environ["MUSE_COLOR_LOG"] = "False"
-from muse import VERSION  # noqa
-from muse.__main__ import muse_main  # noqa
+from muse import VERSION
+from muse.__main__ import muse_main
 
 parser = GooeyParser(description="Run a MUSE simulation")
 parser.add_argument(
@@ -57,7 +57,7 @@ menu = [
             {
                 "type": "Link",
                 "menuTitle": "Log a question in GitHub",
-                "url": "https://github.com/SGIModel/MUSE_OS/issues/new/choose",
+                "url": "https://github.com/EnergySystemsModellingLab/MUSE_OS/issues/new/choose",
             },
             {
                 "type": "AboutDialog",

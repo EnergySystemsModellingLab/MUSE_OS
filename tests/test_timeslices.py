@@ -1,8 +1,8 @@
 """Test timeslice utilities."""
-from pytest import approx, fixture
-from xarray import DataArray
 
 from muse.timeslices import QuantityType, convert_timeslice
+from pytest import approx, fixture
+from xarray import DataArray
 
 
 @fixture
@@ -40,7 +40,7 @@ def transforms(toml, reference):
 
 
 @fixture
-def rough(reference):
+def timeslice_dataarray(reference):
     from pandas import MultiIndex
 
     return DataArray(
@@ -59,28 +59,34 @@ def rough(reference):
     )
 
 
-def test_convert_extensive_timeslice(reference, rough, transforms):
-    z = convert_timeslice(rough, reference, finest=reference, transforms=transforms)
+def test_convert_extensive_timeslice(reference, timeslice_dataarray, transforms):
+    z = convert_timeslice(
+        timeslice_dataarray, reference, finest=reference, transforms=transforms
+    )
     assert z.shape == reference.shape
     assert z.values == approx(
         [
-            float(rough[0] * reference[0] / (reference[0] + reference[1])),
-            float(rough[0] * reference[1] / (reference[0] + reference[1])),
+            float(
+                timeslice_dataarray[0] * reference[0] / (reference[0] + reference[1])
+            ),
+            float(
+                timeslice_dataarray[0] * reference[1] / (reference[0] + reference[1])
+            ),
             0,
             0,
-            float(rough[1]),
+            float(timeslice_dataarray[1]),
             0,
             0,
             0,
-            float(rough[2]),
+            float(timeslice_dataarray[2]),
             0,
         ]
     )
 
 
-def test_convert_intensive_timeslice(reference, rough, transforms):
+def test_convert_intensive_timeslice(reference, timeslice_dataarray, transforms):
     z = convert_timeslice(
-        rough,
+        timeslice_dataarray,
         reference,
         finest=reference,
         transforms=transforms,
@@ -89,24 +95,23 @@ def test_convert_intensive_timeslice(reference, rough, transforms):
 
     assert z.values == approx(
         [
-            float(rough[0]),
-            float(rough[0]),
+            float(timeslice_dataarray[0]),
+            float(timeslice_dataarray[0]),
             0,
             0,
-            float(rough[1]),
+            float(timeslice_dataarray[1]),
             0,
             0,
             0,
-            float(rough[2]),
+            float(timeslice_dataarray[2]),
             0,
         ]
     )
 
 
 def test_reference_timeslice():
-    from toml import loads
-
     from muse.timeslices import reference_timeslice
+    from toml import loads
 
     inputs = loads(
         """
@@ -138,9 +143,8 @@ def test_reference_timeslice():
 
 
 def test_no_overlap():
-    from pytest import raises
-
     from muse.timeslices import reference_timeslice
+    from pytest import raises
 
     with raises(ValueError):
         reference_timeslice(
@@ -158,11 +162,9 @@ def test_no_overlap():
 
 def test_aggregate_transforms_no_aggregates():
     from itertools import product
-    from typing import Dict
-
-    from numpy import ndarray, zeros
 
     from muse.timeslices import aggregate_transforms, reference_timeslice
+    from numpy import ndarray, zeros
 
     reference = reference_timeslice(
         """
@@ -175,7 +177,7 @@ def test_aggregate_transforms_no_aggregates():
     )
 
     vectors = aggregate_transforms(timeslice=reference)
-    assert isinstance(vectors, Dict)
+    assert isinstance(vectors, dict)
     assert set(vectors) == set(product(["spring", "autumn"], ["weekday", "weekend"]))
     for i in range(reference.shape[0]):
         index = reference.timeslice[i].values.tolist()
@@ -188,11 +190,9 @@ def test_aggregate_transforms_no_aggregates():
 
 def test_aggregate_transforms_with_aggregates():
     from itertools import product
-    from typing import Dict
-
-    from toml import loads
 
     from muse.timeslices import aggregate_transforms, reference_timeslice
+    from toml import loads
 
     toml = loads(
         """
@@ -223,7 +223,7 @@ def test_aggregate_transforms_with_aggregates():
     reference = reference_timeslice(toml)
 
     vectors = aggregate_transforms(toml, reference)
-    assert isinstance(vectors, Dict)
+    assert isinstance(vectors, dict)
     assert set(vectors) == set(
         product(
             ["winter", "spring", "summer", "autumn", "springautumn"],
@@ -247,3 +247,17 @@ def test_aggregate_transforms_with_aggregates():
     assert (
         to_bitstring(vectors[("springautumn", "week", "night")]) == "0101000001010000"
     )
+
+
+def test_drop_timeslice(timeslice_dataarray):
+    from muse.timeslices import drop_timeslice
+
+    dropped = drop_timeslice(timeslice_dataarray)
+    coords_to_check = {"timeslice", "semester", "week", "day"}
+    assert coords_to_check.issubset(timeslice_dataarray.coords)
+    assert not coords_to_check.intersection(dropped.coords)
+
+    # Test on arrays without timeslice data
+    data_without_timeslice = DataArray([1, 2, 3], dims=["x"])
+    assert drop_timeslice(data_without_timeslice).equals(data_without_timeslice)
+    assert drop_timeslice(dropped).equals(dropped)

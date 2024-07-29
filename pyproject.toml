@@ -3,34 +3,38 @@ requires = ["setuptools>=61", "wheel", "setuptools_scm>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "MUSE_OS"
 authors = [
-    {name = "Sustainable Gas Institute", email = "sgi@imperial.ac.uk"},
+    {name = "Hawkes Research Group @ Chemical Engineering, Imperial College London", email = "a.hawkes@imperial.ac.uk"},
+    {name = "Imperial College London RSE Team", email = "ict-rse-team@imperial.ac.uk"}
 ]
+name = "MUSE_OS"
 description = "Energy System Model"
 readme = "README.md"
 license = {file = "LICENSE"}
-requires-python = ">= 3.8, <3.10"
+requires-python = ">= 3.9, <3.13"
 keywords = ["energy", "modelling"]
 classifiers = [
     "Development Status :: 4 - Beta",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Other Audience",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
 ]
 dependencies = [
-    "numpy==1.23.0",
-    "scipy",
-    "pandas<=1.3",
-    "xarray==2022.3.0",
-    "bottleneck",
+    "numpy>=2.0",
+    "scipy>=1.13",
+    "pandas>=2.2",
+    "xarray>=2024.6",
+    "bottleneck>=1.4",
     "coloredlogs",
     "toml",
-    "xlrd==1.2.0",
+    "xlrd",
     "mypy-extensions",
     "pypubsub",
+    "tomlkit"
 ]
 dynamic = ["version"]
 
@@ -38,15 +42,11 @@ dynamic = ["version"]
 all = ["MUSE_OS[dev,doc,excel]"]
 dev = [
     "pytest>4.0.2",
-    "flake8!=3.8.1,!=3.8.0,<4.0.0",
-    "black",
-    "pytest-flake8",
     "IPython",
     "jupyter",
     "nbconvert",
     "nbformat",
     "mypy",
-    "numpy>=1.17",
     "pytest-xdist",
     "bump2version",
     "pyinstaller",
@@ -63,12 +63,10 @@ doc = [
     "seaborn"
 ]
 excel = ["openpyxl"]
-gui = [
-    "gooey",
-]
+gui = ["gooey"]
 
 [project.urls]
-Homepage = "http://www.sustainablegasinstitute.org/home/muse-energy-model/"
+Homepage = "https://www.imperial.ac.uk/muse-energy/what-is-muse-/"
 
 [project.scripts]
 muse = "muse.__main__:run"
@@ -88,17 +86,16 @@ version = {attr = "muse.VERSION"}
 
 [tool.setuptools_scm]
 
-[tool.pyls]
-configurationsources = ["flake8"]
-
 [tool.pytest.ini_options]
 testpaths = ["tests", "src/muse"]
-addopts = "--doctest-modules --flake8 -rfE -n auto --dist=loadscope"
+addopts = "--doctest-modules -rfE -n auto --dist=loadscope"
 markers = [
     "sgidata: test that require legacy data",
     "legacy: test that require legacy modules",
-    "regression: a regression test",
+    "regression: a regression test, including examples and tutorials",
     "notebook: a test which consist in running a jupyter notebook",
+    "example: a test which consist in running an example",
+    "tutorial: a test which consist in running a tutorial"
 ]
 
 [tool.mypy]
@@ -110,7 +107,19 @@ files = ["src/**/*.py", "tests/**/*.py"]
 module = ["setup"]
 ignore_errors = true
 
-[tool.isort]
-line_length = 88
-multi_line_output = 3
-include_trailing_comma = true
+[tool.ruff]
+target-version = "py39"
+
+[tool.ruff.lint]
+select = [
+    "D",  # pydocstyle
+    "E",  # pycodestyle
+    "F",  # Pyflakes
+    "I",  # isort
+    "UP",  # Pyupgrade
+    "RUF"  # Ruff's own checks
+]
+ignore = [
+    "D1"  # missing docstring checks
+]
+pydocstyle.convention = "google"

@@ -1,4 +1,4 @@
-"""Output cached quantities
+"""Output cached quantities.
 
 Functions that output the state of diverse quantities at intermediate steps of the
 calculation.
@@ -15,7 +15,7 @@ Anywhere in the code, you can write:
     cache_quantity(quantity_name=some_data)
 
 If the quantity has been set as something to cache, the data will be stored and,
-eventually, save to disk after - possibly - agregating the data and removing those
+eventually, save to disk after - possibly - aggregating the data and removing those
 entries corresponding to non-convergent investment attempts. This process of cleaning
 and aggregation is quantity specific.
 
@@ -24,19 +24,15 @@ as how to setup the toml input file to cache quantities. Users can customize and
 further output quantities by registering with MUSE via
 :py:func:`muse.outputs.cache.register_cached_quantity`.
 """
+
 from __future__ import annotations
 
 from collections import ChainMap
+from collections.abc import Mapping, MutableMapping, Sequence
 from functools import reduce
 from operator import attrgetter
 from typing import (
     Callable,
-    List,
-    Mapping,
-    MutableMapping,
-    Optional,
-    Sequence,
-    Text,
     Union,
 )
 
@@ -48,11 +44,11 @@ from muse.registration import registrator
 from muse.sectors import AbstractSector
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
-    [List[xr.DataArray]], Union[xr.DataArray, pd.DataFrame]
+    [list[xr.DataArray]], Union[xr.DataArray, pd.DataFrame]
 ]
 """Signature of functions computing quantities for later analysis."""
 
-OUTPUT_QUANTITIES: MutableMapping[Text, OUTPUT_QUANTITY_SIGNATURE] = {}
+OUTPUT_QUANTITIES: MutableMapping[str, OUTPUT_QUANTITY_SIGNATURE] = {}
 """Quantity for post-simulation analysis."""
 
 CACHE_TOPIC_CHANNEL = "cache_quantity"
@@ -75,17 +71,17 @@ def register_cached_quantity(function: OUTPUT_QUANTITY_SIGNATURE) -> Callable:
 
 
 def cache_quantity(
-    function: Optional[Callable] = None,
-    quantity: Union[str, Sequence[str], None] = None,
+    function: Callable | None = None,
+    quantity: str | Sequence[str] | None = None,
     **kwargs: xr.DataArray,
-) -> Optional[Callable]:
+) -> Callable | None:
     """Cache one or more quantities to be post-processed later on.
 
     This function can be used as a decorator, in which case the quantity input argument
     must be set, or directly called with any number of keyword arguments. In the former
     case, the matching between quantities and values to cached is done by the function
     'match_quantities'. When used in combination with other decorators, care must be
-    taken to decide the order in which they are applied to make sure the approrpriate
+    taken to decide the order in which they are applied to make sure the appropriate
     output is cached.
 
     Note that if the quantity has NOT been selected to be cached when configuring the
@@ -174,8 +170,8 @@ def cache_quantity(
 
 
 def match_quantities(
-    quantity: Union[str, Sequence[str]],
-    data: Union[xr.DataArray, xr.Dataset, Sequence[xr.DataArray]],
+    quantity: str | Sequence[str],
+    data: xr.DataArray | xr.Dataset | Sequence[xr.DataArray],
 ) -> Mapping[str, xr.DataArray]:
     """Matches the quantities with the corresponding data.
 
@@ -195,10 +191,10 @@ def match_quantities(
         (Mapping[str, xr.DataArray]) A dictionary matching the quantity names with the
         corresponding data.
     """
-    if isinstance(quantity, Text) and isinstance(data, xr.DataArray):
+    if isinstance(quantity, str) and isinstance(data, xr.DataArray):
         return {quantity: data}
 
-    elif isinstance(quantity, Text) and isinstance(data, xr.Dataset):
+    elif isinstance(quantity, str) and isinstance(data, xr.Dataset):
         return {quantity: data[quantity]}
 
     elif isinstance(quantity, Sequence) and isinstance(data, xr.Dataset):
@@ -244,10 +240,8 @@ class OutputCache:
     def __init__(
         self,
         *parameters: Mapping,
-        output_quantities: Optional[
-            MutableMapping[Text, OUTPUT_QUANTITY_SIGNATURE]
-        ] = None,
-        sectors: Optional[List[AbstractSector]] = None,
+        output_quantities: MutableMapping[str, OUTPUT_QUANTITY_SIGNATURE] | None = None,
+        sectors: list[AbstractSector] | None = None,
         topic: str = CACHE_TOPIC_CHANNEL,
     ):
         from muse.outputs.sector import _factory
@@ -255,7 +249,7 @@ class OutputCache:
         output_quantities = (
             OUTPUT_QUANTITIES if output_quantities is None else output_quantities
         )
-        self.agents: MutableMapping[Text, MutableMapping[Text, Text]] = (
+        self.agents: MutableMapping[str, MutableMapping[str, str]] = (
             extract_agents(sectors) if sectors is not None else {}
         )
 
@@ -269,7 +263,7 @@ class OutputCache:
                 f"Valid quantities are: {list(output_quantities.keys())}"
             )
 
-        self.to_save: Mapping[str, List[xr.DataArray]] = {
+        self.to_save: Mapping[str, list[xr.DataArray]] = {
             p["quantity"]: [] for p in parameters if p["quantity"] in output_quantities
         }
 
@@ -325,9 +319,9 @@ class OutputCache:
 
 
 def extract_agents(
-    sectors: List[AbstractSector],
-) -> MutableMapping[Text, MutableMapping[Text, Text]]:
-    """_summary_
+    sectors: list[AbstractSector],
+) -> MutableMapping[str, MutableMapping[str, str]]:
+    """_summary_.
 
     Args:
         sectors (List[AbstractSector]): _description_
@@ -340,7 +334,7 @@ def extract_agents(
 
 def extract_agents_internal(
     sector: AbstractSector,
-) -> MutableMapping[Text, MutableMapping[Text, Text]]:
+) -> MutableMapping[str, MutableMapping[str, str]]:
     """Extract simple agent metadata from a sector.
 
     Args:
@@ -350,7 +344,7 @@ def extract_agents_internal(
         Mapping[Text, Text]: A dictionary with the uuid of each agent as keys and a
         dictionary with the name, agent type and agent sector as values.
     """
-    info: MutableMapping[Text, MutableMapping[Text, Text]] = {}
+    info: MutableMapping[str, MutableMapping[str, str]] = {}
     sector_name = getattr(sector, "name", "unnamed")
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
     for agent in agents:
@@ -366,22 +360,22 @@ def extract_agents_internal(
     return info
 
 
-def _aggregate_cache(quantity: Text, data: List[xr.DataArray]) -> pd.DataFrame:
+def _aggregate_cache(quantity: str, data: list[xr.DataArray]) -> pd.DataFrame:
     """Combine a list of DataArrays in a dataframe.
 
     The merging gives precedence to the last entries of the list over the first ones.
     I.e, the records of the arrays cached last will overwrite those of the ones cached
-    before in the case of having dientical index.
+    before in the case of having identical index.
 
     Args:
-        quantity (Text): The quantity to cache.
-        data List[xr.DataArray]: The list of DataArrays to combine.
+        quantity: The quantity to cache.
+        data: The list of DataArrays to combine.
 
     Returns:
         pd.DataFrame: A Dataframe with the data aggregated.
     """
     data = [da.to_dataframe().reset_index() for da in data]
-    cols = list(
+    cols = sorted(
         set.intersection(
             *map(set, [[c for c in d.columns if c != quantity] for d in data])
         )
@@ -394,16 +388,17 @@ def _aggregate_cache(quantity: Text, data: List[xr.DataArray]) -> pd.DataFrame:
 
     return reduce(
         lambda left, right: pd.DataFrame.merge(left, right, how="outer", on=cols)
-        .groupby(check_col, axis=1)
-        .last(),
+        .T.groupby(check_col)
+        .last()
+        .T,
         data,
     )
 
 
 def consolidate_quantity(
-    quantity: Text,
-    cached: List[xr.DataArray],
-    agents: MutableMapping[Text, MutableMapping[Text, Text]],
+    quantity: str,
+    cached: list[xr.DataArray],
+    agents: MutableMapping[str, MutableMapping[str, str]],
 ) -> pd.DataFrame:
     """Consolidates the cached quantity into a single DataFrame to save.
 
@@ -431,6 +426,7 @@ def consolidate_quantity(
     data = (
         data.groupby(group_cols)
         .sum()
+        .infer_objects()
         .fillna(0)
         .reset_index()
         .drop("asset", axis=1, errors="ignore")
@@ -441,8 +437,8 @@ def consolidate_quantity(
 
 @register_cached_quantity
 def capacity(
-    cached: List[xr.DataArray],
-    agents: MutableMapping[Text, MutableMapping[Text, Text]],
+    cached: list[xr.DataArray],
+    agents: MutableMapping[str, MutableMapping[str, str]],
 ) -> pd.DataFrame:
     """Consolidates the cached capacities into a single DataFrame to save.
 
@@ -458,8 +454,8 @@ def capacity(
 
 @register_cached_quantity
 def production(
-    cached: List[xr.DataArray],
-    agents: MutableMapping[Text, MutableMapping[Text, Text]],
+    cached: list[xr.DataArray],
+    agents: MutableMapping[str, MutableMapping[str, str]],
 ) -> pd.DataFrame:
     """Consolidates the cached production into a single DataFrame to save.
 
@@ -475,8 +471,8 @@ def production(
 
 @register_cached_quantity(name="lifetime_levelized_cost_of_energy")
 def lcoe(
-    cached: List[xr.DataArray],
-    agents: MutableMapping[Text, MutableMapping[Text, Text]],
+    cached: list[xr.DataArray],
+    agents: MutableMapping[str, MutableMapping[str, str]],
 ) -> pd.DataFrame:
     """Consolidates the cached LCOE into a single DataFrame to save.
 

@@ -1,7 +1,9 @@
 """Registrators that allow pluggable data to logic transforms."""
+
 __all__ = ["registrator"]
 
-from typing import Callable, MutableMapping, Optional, Sequence, Text, Union
+from collections.abc import MutableMapping, Sequence
+from typing import Callable, Optional, Union
 
 
 def name_variations(*args):
@@ -11,7 +13,7 @@ def name_variations(*args):
         comps = name.split("_")
         return comps[0] + "".join(x.title() for x in comps[1:])
 
-    def CamelCase(name):  # noqa
+    def CamelCase(name):
         return "".join(x.title() for x in name.split("_"))
 
     def kebab_case(name):
@@ -36,10 +38,10 @@ def name_variations(*args):
 
 
 def registrator(
-    decorator: Callable = None,
-    registry: MutableMapping = None,
-    logname: Optional[Text] = None,
-    loglevel: Optional[Text] = "Debug",
+    decorator: Optional[Callable] = None,
+    registry: Optional[MutableMapping] = None,
+    logname: Optional[str] = None,
+    loglevel: Optional[str] = "Debug",
 ) -> Callable:
     """A decorator to create a decorator that registers functions with MUSE.
 
@@ -54,7 +56,7 @@ def registrator(
     this function) will emit a standardized log-call.
 
     Example:
-        At it's simplest, creating a registrator and registrating happens by
+        At it's simplest, creating a registrator and registering happens by
         first declaring a registry.
 
         >>> REGISTRY = {}
@@ -131,7 +133,7 @@ def registrator(
     @wraps(decorator)
     def register(
         function=None,
-        name: Optional[Union[Text, Sequence[Text]]] = None,
+        name: Optional[Union[str, Sequence[str]]] = None,
         vary_name: bool = True,
         overwrite: bool = False,
     ):
@@ -139,7 +141,7 @@ def registrator(
         from itertools import chain
         from logging import getLogger
 
-        # allows specifyng the registered name as a keyword argument
+        # allows specifying the registered name as a keyword argument
         if function is None:
             return lambda x: register(
                 x, name=name, vary_name=vary_name, overwrite=overwrite
@@ -147,15 +149,15 @@ def registrator(
 
         if name is None:
             names = [function.__name__]
-        elif isinstance(name, Text):
+        elif isinstance(name, str):
             names = [name, function.__name__]
         else:
-            names = list(name) + [function.__name__]
+            names = [*name, function.__name__]
 
         # all registered filters will use the same logger, at least for the
         # default logging done in the decorated function
         logger = getLogger(function.__module__)
-        msg = "Computing {}: {}".format(logname, names[0])
+        msg = f"Computing {logname}: {names[0]}"
 
         assert decorator is not None
         if "name" in signature(decorator).parameters:

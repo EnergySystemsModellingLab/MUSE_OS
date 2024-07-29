@@ -19,7 +19,9 @@ technologies in the market. It returns a single xr.DataArray object.
 
 The function should never modify it's arguments.
 """
-from typing import Any, Callable, List, Mapping, MutableMapping, Optional, Text, Union
+
+from collections.abc import Mapping, MutableMapping
+from typing import Any, Callable, Optional, Union
 
 import pandas as pd
 import xarray as xr
@@ -33,10 +35,10 @@ OUTPUT_QUANTITY_SIGNATURE = Callable[
 ]
 """Signature of functions computing quantities for later analysis."""
 
-OUTPUT_QUANTITIES: MutableMapping[Text, OUTPUT_QUANTITY_SIGNATURE] = {}
+OUTPUT_QUANTITIES: MutableMapping[str, OUTPUT_QUANTITY_SIGNATURE] = {}
 """Quantity for post-simulation analysis."""
 
-OUTPUTS_PARAMETERS = Union[Text, Mapping]
+OUTPUTS_PARAMETERS = Union[str, Mapping]
 """Acceptable Datastructures for outputs parameters"""
 
 
@@ -58,7 +60,7 @@ def register_output_quantity(function: OUTPUT_QUANTITY_SIGNATURE = None) -> Call
 
 
 def _quantity_factory(
-    parameters: Mapping, registry: Mapping[Text, Callable]
+    parameters: Mapping, registry: Mapping[str, Callable]
 ) -> Callable:
     from functools import partial
     from inspect import isclass
@@ -81,25 +83,25 @@ def _quantity_factory(
 
 
 def _factory(
-    registry: Mapping[Text, Callable],
+    registry: Mapping[str, Callable],
     *parameters: OUTPUTS_PARAMETERS,
-    sector_name: Text = "default",
+    sector_name: str = "default",
 ) -> Callable:
     from muse.outputs.sinks import factory as sink_factory
 
-    if isinstance(parameters, Text):
-        params: List = [{"quantity": parameters}]
+    if isinstance(parameters, str):
+        params: list = [{"quantity": parameters}]
     elif isinstance(parameters, Mapping):
         params = [parameters]
     else:
         params = [  # type: ignore
-            {"quantity": o} if isinstance(o, Text) else o for o in parameters
+            {"quantity": o} if isinstance(o, str) else o for o in parameters
         ]
 
     quantities = [_quantity_factory(param, registry) for param in params]
     sinks = [sink_factory(param, sector_name=sector_name) for param in params]
 
-    def save_multiple_outputs(market, *args, year: Optional[int] = None) -> List[Any]:
+    def save_multiple_outputs(market, *args, year: Optional[int] = None) -> list[Any]:
         if year is None:
             year = int(market.year.min())
 
@@ -112,8 +114,8 @@ def _factory(
 
 
 def factory(
-    *parameters: OUTPUTS_PARAMETERS, sector_name: Text = "default"
-) -> Callable[[xr.Dataset, xr.DataArray, xr.Dataset], List[Any]]:
+    *parameters: OUTPUTS_PARAMETERS, sector_name: str = "default"
+) -> Callable[[xr.Dataset, xr.DataArray, xr.Dataset], list[Any]]:
     """Creates outputs functions for post-mortem analysis.
 
     Each parameter is a dictionary containing the following:
@@ -151,20 +153,22 @@ def capacity(
 
 def market_quantity(
     quantity: xr.DataArray,
-    sum_over: Optional[Union[Text, List[Text]]] = None,
-    drop: Optional[Union[Text, List[Text]]] = None,
+    sum_over: Optional[Union[str, list[str]]] = None,
+    drop: Optional[Union[str, list[str]]] = None,
 ) -> xr.DataArray:
     from pandas import MultiIndex
 
     from muse.utilities import multiindex_to_coords
 
-    if isinstance(sum_over, Text):
+    if isinstance(sum_over, str):
         sum_over = [sum_over]
     if sum_over:
         sum_over = [s for s in sum_over if s in quantity.coords]
     if sum_over:
         quantity = quantity.sum(sum_over)
-    if "timeslice" in quantity.dims and isinstance(quantity.timeslice, MultiIndex):
+    if "timeslice" in quantity.coords and isinstance(
+        quantity.indexes["timeslice"], MultiIndex
+    ):
         quantity = multiindex_to_coords(quantity, "timeslice")
     if drop:
         quantity = quantity.drop_vars([d for d in drop if d in quantity.coords])
@@ -176,8 +180,8 @@ def consumption(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    sum_over: Optional[List[Text]] = None,
-    drop: Optional[List[Text]] = None,
+    sum_over: Optional[list[str]] = None,
+    drop: Optional[list[str]] = None,
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current consumption."""
@@ -186,6 +190,7 @@ def consumption(
         market_quantity(moutput.consumption, sum_over=sum_over, drop=drop)
         .rename("consumption")
         .to_dataframe()
+        .reset_index()
         .round(rounding)
     )
     return result[result.consumption != 0]
@@ -196,17 +201,17 @@ def supply(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    sum_over: Optional[List[Text]] = None,
-    drop: Optional[List[Text]] = None,
+    sum_over: Optional[list[str]] = None,
+    drop: Optional[list[str]] = None,
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current supply."""
-
     moutput = market.copy(deep=True).reset_index("timeslice")
     result = (
         market_quantity(moutput.supply, sum_over=sum_over, drop=drop)
         .rename("supply")
         .to_dataframe()
+        .reset_index()
         .round(rounding)
     )
     return result[result.supply != 0]
@@ -217,8 +222,8 @@ def costs(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    sum_over: Optional[List[Text]] = None,
-    drop: Optional[List[Text]] = None,
+    sum_over: Optional[list[str]] = None,
+    drop: Optional[list[str]] = None,
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current costs."""
@@ -232,6 +237,7 @@ def costs(
         )
         .rename("costs")
         .to_dataframe()
+        .reset_index()
         .round(rounding)
     )
     return result[result.costs != 0]
