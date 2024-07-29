@@ -50,11 +50,13 @@ agents = '{path}/technodata/residential/Agents.csv'
 existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
 lpsolver = "scipy"
 constraints = [
+    # Optional, defaults to the constraints below
     "max_production",
     "max_capacity_expansion",
-    "minimum_service",
     "demand",
-    "search_space"
+    "search_space",
+    "minimum_service",
+    "demand_limiting_capacity"
 ]
 demand_share = "new_and_retro"
 forecast = 5
@@ -87,10 +89,13 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/power/ExistingTrade.csv'
 lpsolver = "scipy"
 constraints = [
+    # Optional, defaults to the constraints below
     "max_production",
     "max_capacity_expansion",
     "demand",
-    "search_space"
+    "search_space",
+    "minimum_service",
+    "demand_limiting_capacity"
 ]
 demand_share = "unmet_forecasted_demand"
 forecast = 5
@@ -127,10 +132,13 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/gas/ExistingTrade.csv'
 lpsolver = "scipy"
 constraints = [
+    # Optional, defaults to the constraints below
     "max_production",
     "max_capacity_expansion",
     "demand",
-    "search_space"
+    "search_space",
+    "minimum_service",
+    "demand_limiting_capacity"
 ]
 demand_share = "unmet_forecasted_demand"
 forecast = 5
