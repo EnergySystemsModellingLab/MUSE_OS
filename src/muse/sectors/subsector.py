@@ -175,6 +175,11 @@ class Subsector:
         from muse.commodities import is_enduse
         from muse.readers.toml import undo_damage
 
+        # Raise error for renamed asset_threshhold parameter (PR #447)
+        if hasattr(settings, "asset_threshhold"):
+            msg = "Invalid parameter asset_threshhold. Did you mean asset_threshold?"
+            raise ValueError(msg)
+
         agents = agents_factory(
             settings.agents,
             settings.existing_capacity,
