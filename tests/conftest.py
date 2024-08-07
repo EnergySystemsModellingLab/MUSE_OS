@@ -231,7 +231,7 @@ def agent_args(coords) -> Mapping:
             "space_heating": randint(0, 1000),
             "water_heating": randint(0, 1000),
         },
-        "maturity_threshhold": rand(),
+        "maturity_threshold": rand(),
     }
 
 

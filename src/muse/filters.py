@@ -341,7 +341,7 @@ def maturity(
     """
     capacity = agent.filter_input(market.capacity, year=agent.year)
     total_capacity = capacity.sum("technology")
-    enduse_market_share = agent.maturity_threshhold * total_capacity
+    enduse_market_share = agent.maturity_threshold * total_capacity
     condition = enduse_market_share <= capacity
     techs = (
         condition.technology.where(condition, drop=True).drop_vars("technology").values

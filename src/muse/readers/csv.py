@@ -593,7 +593,7 @@ def read_csv_agent_parameters(filename) -> list:
         if hasattr(row, "Quantity"):
             data["quantity"] = row.Quantity
         if hasattr(row, "MaturityThreshold"):
-            data["maturity_threshhold"] = row.MaturityThreshold
+            data["maturity_threshold"] = row.MaturityThreshold
         if hasattr(row, "SpendLimit"):
             data["spend_limit"] = row.SpendLimit
         # if agent_type != "newcapa":
