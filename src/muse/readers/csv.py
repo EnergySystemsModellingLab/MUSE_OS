@@ -795,6 +795,7 @@ def read_presets(
     drop: Sequence[str] = ("Unnamed: 0",),
 ) -> xr.Dataset:
     """Read consumption or supply files for preset sectors."""
+    from logging import getLogger
     from re import match
 
     from muse.readers import camel_to_snake
@@ -826,6 +827,12 @@ def read_presets(
                 .sum()
                 .reset_index()
             )
+            msg = (
+                f"The ProcessName column (in file {path}) is deprecated. "
+                "Data has been summed across processes, and this column has been "
+                "dropped."
+            )
+            getLogger(__name__).warning(msg)
 
         data = data.drop(columns=[k for k in drop if k in data.columns])
         data.index = pd.MultiIndex.from_arrays([data[u] for u in indices])
