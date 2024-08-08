@@ -816,13 +816,12 @@ def read_csv_outputs(
     datas = {}
     for path in allfiles:
         data = pd.read_csv(path, low_memory=False)
+        index_columns = [u for u in indices if u in data.columns]
         data = data.drop(columns=[k for k in drop if k in data.columns])
-        data.index = pd.MultiIndex.from_arrays(
-            [data[u] for u in indices if u in data.columns]
-        )
+        data.index = pd.MultiIndex.from_arrays([data[u] for u in index_columns])
         data.index.name = "asset"
         data.columns.name = columns
-        data = data.drop(columns=list(indices))
+        data = data.drop(columns=list(index_columns))
 
         reyear = match(r"\S*.(\d{4})\S*\.csv", path.name)
         if reyear is None:
@@ -839,7 +838,7 @@ def read_csv_outputs(
         .sortby("year")
         .fillna(0)
         .unstack("asset")
-        .rename({k: k.replace("Name", "").lower() for k in indices})
+        .rename({k: k.replace("Name", "").lower() for k in index_columns})
     )
 
     if "commodity" in result.coords:

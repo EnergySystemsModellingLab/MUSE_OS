@@ -111,12 +111,13 @@ class PresetSector(AbstractSector):  # type: ignore
         if len(presets.data_vars) == 0:
             raise OSError("None of supply, consumption, costs given")
 
-        # add missing data as zeros: we only need one of conumption, costs, supply
+        # add missing data as zeros: we only need one of consumption, costs, supply
         components = {"supply", "consumption", "costs"}
         for component in components:
             others = components.intersection(presets.data_vars).difference({component})
             if component not in presets and len(others) > 0:
                 presets[component] = drop_timeslice(zeros_like(presets[others.pop()]))
+
         # add timeslice, if missing
         for component in {"supply", "consumption"}:
             if "timeslice" not in presets[component].dims:
