@@ -591,7 +591,7 @@ def test_read_csv_agent_parameters(default_model):
             "decision": {"name": "singleObj", "parameters": [("LCOE", True, 1)]},
             "agent_type": "newcapa",
             "quantity": 1,
-            "maturity_threshhold": -1,
+            "maturity_threshold": -1,
             "spend_limit": np.inf,
             "share": "agent_share_1",
         },
