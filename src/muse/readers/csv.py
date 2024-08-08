@@ -13,7 +13,7 @@ __all__ = [
     "read_initial_market",
     "read_attribute_table",
     "read_regression_parameters",
-    "read_csv_outputs",
+    "read_presets",
 ]
 
 from collections.abc import Sequence
@@ -788,13 +788,14 @@ def read_regression_parameters(path: Union[str, Path]) -> xr.Dataset:
     return coeffs
 
 
-def read_csv_outputs(
+def read_presets(
     paths: Union[str, Path, Sequence[Union[str, Path]]],
     columns: str = "commodity",
-    indices: Sequence[str] = ("RegionName", "ProcessName", "Timeslice"),
+    indices: Sequence[str] = ("RegionName", "Timeslice"),
     drop: Sequence[str] = ("Unnamed: 0",),
 ) -> xr.Dataset:
-    """Read standard MUSE output files for consumption or supply."""
+    """Read consumption or supply files for preset sectors."""
+    from logging import getLogger
     from re import match
 
     from muse.readers import camel_to_snake
@@ -816,10 +817,25 @@ def read_csv_outputs(
     datas = {}
     for path in allfiles:
         data = pd.read_csv(path, low_memory=False)
+        assert all(u in data.columns for u in indices)
+
+        # Legacy: drop ProcessName column and sum data (PR #448)
+        if "ProcessName" in data.columns:
+            data = (
+                data.drop(columns=["ProcessName"])
+                .groupby(list(indices))
+                .sum()
+                .reset_index()
+            )
+            msg = (
+                f"The ProcessName column (in file {path}) is deprecated. "
+                "Data has been summed across processes, and this column has been "
+                "dropped."
+            )
+            getLogger(__name__).warning(msg)
+
         data = data.drop(columns=[k for k in drop if k in data.columns])
-        data.index = pd.MultiIndex.from_arrays(
-            [data[u] for u in indices if u in data.columns]
-        )
+        data.index = pd.MultiIndex.from_arrays([data[u] for u in indices])
         data.index.name = "asset"
         data.columns.name = columns
         data = data.drop(columns=list(indices))
