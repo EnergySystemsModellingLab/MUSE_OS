@@ -673,11 +673,11 @@ def test_read_attribute_table(default_model):
     )
 
 
-def test_read_csv_outputs(default_model):
-    from muse.readers.csv import read_csv_outputs
+def test_read_presets(default_model):
+    from muse.readers.csv import read_presets
 
     path = default_model / "technodata" / "preset" / "*Consumption.csv"
-    data = read_csv_outputs(str(path))
+    data = read_presets(str(path))
 
     assert isinstance(data, xr.DataArray)
     assert data.dtype == np.float64

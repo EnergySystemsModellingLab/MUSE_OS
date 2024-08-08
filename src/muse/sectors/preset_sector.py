@@ -24,8 +24,8 @@ class PresetSector(AbstractSector):  # type: ignore
         from muse.commodities import CommodityUsage
         from muse.readers import (
             read_attribute_table,
-            read_csv_outputs,
             read_macro_drivers,
+            read_presets,
             read_regression_parameters,
             read_timeslice_shares,
             read_timeslices,
@@ -40,7 +40,7 @@ class PresetSector(AbstractSector):  # type: ignore
             getattr(sector_conf, "timeslice_levels", None)
         ).timeslice
         if getattr(sector_conf, "consumption_path", None) is not None:
-            consumption = read_csv_outputs(sector_conf.consumption_path)
+            consumption = read_presets(sector_conf.consumption_path)
             presets["consumption"] = consumption.assign_coords(timeslice=timeslice)
         elif getattr(sector_conf, "demand_path", None) is not None:
             presets["consumption"] = read_attribute_table(sector_conf.demand_path)
@@ -89,7 +89,7 @@ class PresetSector(AbstractSector):  # type: ignore
             )
 
         if getattr(sector_conf, "supply_path", None) is not None:
-            supply = read_csv_outputs(sector_conf.supply_path)
+            supply = read_presets(sector_conf.supply_path)
             supply.coords["timeslice"] = presets.timeslice
             presets["supply"] = supply
 
@@ -99,9 +99,9 @@ class PresetSector(AbstractSector):  # type: ignore
             getattr(sector_conf, "lcoe_path", None) is not None and "supply" in presets
         ):
             costs = (
-                read_csv_outputs(
+                read_presets(
                     sector_conf.lcoe_path,
-                    indices=("RegionName", "ProcessName"),
+                    indices=("RegionName",),
                     columns="timeslices",
                 )
                 * presets["supply"]
@@ -131,9 +131,6 @@ class PresetSector(AbstractSector):  # type: ignore
             [CommodityUsage.PRODUCT if u else CommodityUsage.OTHER for u in comm_usage],
         )
         presets = presets.set_coords("comm_usage")
-        if "process" in presets.dims:
-            presets = presets.sum("process")
-
         interpolation_mode = getattr(sector_conf, "interpolation_mode", "linear")
         return cls(presets, interpolation_mode=interpolation_mode, name=name)
 

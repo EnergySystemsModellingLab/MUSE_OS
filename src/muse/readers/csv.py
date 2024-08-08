@@ -13,7 +13,7 @@ __all__ = [
     "read_initial_market",
     "read_attribute_table",
     "read_regression_parameters",
-    "read_csv_outputs",
+    "read_presets",
 ]
 
 from collections.abc import Sequence
@@ -788,13 +788,13 @@ def read_regression_parameters(path: Union[str, Path]) -> xr.Dataset:
     return coeffs
 
 
-def read_csv_outputs(
+def read_presets(
     paths: Union[str, Path, Sequence[Union[str, Path]]],
     columns: str = "commodity",
-    indices: Sequence[str] = ("RegionName", "ProcessName", "Timeslice"),
+    indices: Sequence[str] = ("RegionName", "Timeslice"),
     drop: Sequence[str] = ("Unnamed: 0",),
 ) -> xr.Dataset:
-    """Read standard MUSE output files for consumption or supply."""
+    """Read consumption or supply files for preset sectors."""
     from re import match
 
     from muse.readers import camel_to_snake
@@ -816,12 +816,22 @@ def read_csv_outputs(
     datas = {}
     for path in allfiles:
         data = pd.read_csv(path, low_memory=False)
-        index_columns = [u for u in indices if u in data.columns]
+        assert all(u in data.columns for u in indices)
+
+        # Legacy: drop ProcessName column and sum data (PR #448)
+        if "ProcessName" in data.columns:
+            data = (
+                data.drop(columns=["ProcessName"])
+                .groupby(list(indices))
+                .sum()
+                .reset_index()
+            )
+
         data = data.drop(columns=[k for k in drop if k in data.columns])
-        data.index = pd.MultiIndex.from_arrays([data[u] for u in index_columns])
+        data.index = pd.MultiIndex.from_arrays([data[u] for u in indices])
         data.index.name = "asset"
         data.columns.name = columns
-        data = data.drop(columns=list(index_columns))
+        data = data.drop(columns=list(indices))
 
         reyear = match(r"\S*.(\d{4})\S*\.csv", path.name)
         if reyear is None:
@@ -838,7 +848,7 @@ def read_csv_outputs(
         .sortby("year")
         .fillna(0)
         .unstack("asset")
-        .rename({k: k.replace("Name", "").lower() for k in index_columns})
+        .rename({k: k.replace("Name", "").lower() for k in indices})
     )
 
     if "commodity" in result.coords:
