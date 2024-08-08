@@ -682,9 +682,8 @@ def test_read_csv_outputs(default_model):
     assert isinstance(data, xr.DataArray)
     assert data.dtype == np.float64
 
-    assert set(data.dims) == {"year", "commodity", "region", "process", "timeslice"}
+    assert set(data.dims) == {"year", "commodity", "region", "timeslice"}
     assert list(data.coords["region"].values) == ["R1"]
-    assert list(data.coords["process"].values) == ["gasboiler"]
     assert list(data.coords["timeslice"].values) == list(range(1, 7))
     assert list(data.coords["year"].values) == [2020, 2050]
     assert list(data.coords["commodity"].values) == [
