@@ -124,9 +124,9 @@ def mean(objectives: Dataset, *args, **kwargs) -> DataArray:
 def weighted_sum(objectives: Dataset, parameters: Mapping[str, float]) -> DataArray:
     r"""Weighted sum over normalized objectives.
 
-    The objectives are each normalized to [0, 1] over the `replacement`
-    dimension. Furthermore, the dimensions other than `asset` and `replacement`
-    are reduced by taking the mean.
+    The objectives are each normalized to [-1, 1] over the `replacement`
+    dimension by dividing by the maximum absolute value. Furthermore, the dimensions
+    other than `asset` and `replacement` are reduced by taking the mean.
 
     More specifically, the objective function is:
 
@@ -145,12 +145,12 @@ def weighted_sum(objectives: Dataset, parameters: Mapping[str, float]) -> DataAr
     # normalize input if given in DECISION_PARAMETERS format
     if not isinstance(parameters, Mapping):
         parameters = {u[0]: coeff_sign(u[1], u[2]) for u in parameters}
+
     # normalize objectives
     if len(objectives.replacement):
-        minimum = objectives.min("replacement")
-        norm = objectives.max("replacement") - minimum
-        norm = norm.where(norm.map(fabs) > 1e-12, 1)
-        normalized = (objectives - minimum) / norm
+        norm = objectives.map(fabs).max("replacement")
+        norm = norm.where(norm > 1e-12, 1)
+        normalized = objectives / norm
     else:
         normalized = objectives
 
