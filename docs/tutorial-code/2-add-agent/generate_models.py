@@ -31,6 +31,12 @@ def generate_model_1():
         agentshare_new="Agent2",
     )
 
+    # Change objective for agent A2
+    agents_file = model_path / "technodata/Agents.csv"
+    df = pd.read_csv(agents_file)
+    df.loc[df["Name"] == "A2", "Objective1"] = "fuel_consumption_cost"
+    df.to_csv(agents_file, index=False)
+
     # Split population between the two agents
     agents_file = model_path / "technodata/Agents.csv"
     df = pd.read_csv(agents_file)
@@ -65,7 +71,7 @@ def generate_model_2():
     # Add second objective for agent A2
     agents_file = model_path / "technodata/Agents.csv"
     df = pd.read_csv(agents_file)
-    df.loc[df["Name"] == "A2", "Objective2"] = "EAC"
+    df.loc[df["Name"] == "A2", "Objective2"] = "LCOE"
     df.loc[df["Name"] == "A2", "DecisionMethod"] = "weighted_sum"
     df.loc[df["Name"] == "A2", ["ObjData1", "ObjData2"]] = 0.5
     df.loc[df["Name"] == "A2", "Objsort2"] = True
