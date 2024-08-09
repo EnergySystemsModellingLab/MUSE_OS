@@ -1,7 +1,9 @@
+import os
 import shutil
 from pathlib import Path
 
 import pandas as pd
+from muse import examples
 from muse.wizard import add_agent, get_sectors
 
 parent_path = Path(__file__).parent
@@ -18,10 +20,9 @@ def generate_model_1():
     if model_path.exists():
         shutil.rmtree(model_path)
 
-    # Starting point: copy model from previous tutorial
-    shutil.copytree(parent_path / "../1-add-new-technology/2-scenario", model_path)
-    if (model_path / "Results").exists():
-        shutil.rmtree(model_path / "Results")
+    # Starting point: copy default model
+    examples.copy_model(name="default", path=parent_path, overwrite=True)
+    os.rename(parent_path / "model", model_path)
 
     # Copy agent A1 -> A2
     add_agent(
