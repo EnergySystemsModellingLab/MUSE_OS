@@ -270,7 +270,6 @@ See section on `Timeslices_`.
       quantity = "production"
       sink = "aggregate"
       filename = "{cwd}/{default_output_dir}/Cache{Quantity}.csv"
-      index = false
 
 ----------------
 Standard sectors
@@ -519,18 +518,17 @@ to define the timeslice simply by referring to the slices it will use at each le
 
     *demand_share*
         A method used to split the MCA demand into separate parts to be serviced by
-        specific agents. A basic distinction is between *new* and *retrofit* agents: the
-        former asked to respond to an increase of commodity demand investing in new
-        assets; the latter asked to invest in new asset to balance the decommissined
-        assets.
+        specific agents. The appropriate choice depends on the type of agents being used
+        in the simulation. There are currently two options:
 
-        There are currently two options:
-
-        - :py:func:`~muse.demand_share.new_and_retro`: the demand is split into a
-          retrofit demand corresponding to demand that used to be serviced by
-          decommisioned assets, and the *new* demand.
-        - :py:func:`~muse.demand_share.market_demand`: simply the consumption for the
-          forecast year.
+        - :py:func:`~muse.demand_share.standard_demand` (default): The input demand is
+          split amongst *new* agents. *New* agents get a share of the increase in demand
+          for the forecast years, as well as the demand that occurs from decommissioned
+          assets.
+        - :py:func:`~muse.demand_share.new_and_retro`: The input demand is split amongst
+          both *new* and *retrofit* agents. *New* agents get a share of the increase in
+          demand for the forecast year, whereas *retrofit* agents are assigned a share
+          of the demand that occurs from decommissioned assets.
 
     *constraints*
         The list of constraints to apply to the LP problem solved by the sector. By
@@ -672,27 +670,19 @@ The following attributes are accepted:
    The CSV format should follow the following format:
 
    .. csv-table:: Consumption
-      :header: " ", "RegionName", "ProcessName", "Timeslice", "electricity", "diesel", "algae"
-      :stub-columns: 4
+      :header: "RegionName", "Timeslice", "electricity", "diesel", "algae"
+      :stub-columns: 2
 
-      0,USA,fluorescent light,1,1.9, 0, 0
-      1,USA,fluorescent light,2,1.8, 0, 0
+      USA,1,1.9,0,0
+      USA,2,1.8,0,0
 
-
-   The index column as well as "RegionName", "ProcessName", and "Timeslice" must be
-   present. Further columns are reserved for commodities. "Timeslice" refers to the
+   The "RegionName" and "Timeslice" columns must be present.
+   Further columns are reserved for commodities. "Timeslice" refers to the
    index of the timeslice. Timeslices should be defined consistently to the sectoral
    level timeslices.
-   The column "ProcessName" needs to be present and filled in, in order for the data
-   to be read properly but it does not affect the simulation.
-
 
 *supply_path*
-   CSV file, one per year, indicating the amount of a commodities produced. It follows
-   the same format as :ref:`consumption_path <preset-consumption>`.
-
-*supply_path*
-   CSV file, one per year, indicating the amount of a commodities produced. It follows
+   CSV file, one per year, indicating the amount of commodities produced. It follows
    the same format as :ref:`consumption_path <preset-consumption>`.
 
 *prices_path*

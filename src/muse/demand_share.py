@@ -107,7 +107,7 @@ def factory(
     return cast(DEMAND_SHARE_SIGNATURE, demand_share)
 
 
-@register_demand_share(name="default")
+@register_demand_share(name="new_and_retro")
 def new_and_retro(
     agents: Sequence[AbstractAgent],
     market: xr.Dataset,
@@ -118,9 +118,9 @@ def new_and_retro(
 ) -> xr.DataArray:
     r"""Splits demand across new and retro agents.
 
-    The input demand is split amongst both *new* and *retro* agents. *New* agents get a
-    share of the increase in demand for the forecast year, whereas *retrofi* agents are
-    assigned a share of the demand that occurs from decommissioned assets.
+    The input demand is split amongst both *new* and *retrofit* agents. *New* agents get
+    a share of the increase in demand for the forecast year, whereas *retrofit* agents
+    are assigned a share of the demand that occurs from decommissioned assets.
 
     Args:
         agents: a list of all agents. This list should mainly be used to determine the
@@ -318,7 +318,7 @@ def new_and_retro(
     return result
 
 
-@register_demand_share(name="standard_demand")
+@register_demand_share(name="default")
 def standard_demand(
     agents: Sequence[AbstractAgent],
     market: xr.Dataset,
@@ -330,7 +330,7 @@ def standard_demand(
     r"""Splits demand across new agents.
 
     The input demand is split amongst *new* agents. *New* agents get a
-    share of the increase in demand for the forecast years well as the demand that
+    share of the increase in demand for the forecast years, as well as the demand that
     occurs from decommissioned assets.
 
     Args:

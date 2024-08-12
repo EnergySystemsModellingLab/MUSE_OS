@@ -3,7 +3,9 @@
 Installation for developers
 ---------------------------
 
-Developers of MUSE will need to have the version control tool ``git`` installed in their system and be familiar with its usage. The `Introduction to Git and GitHub for software development <https://imperialcollegelondon.github.io/introductory_grad_school_git_course/>`_ course created by `Imperial RSE Team <https://www.imperial.ac.uk/admin-services/ict/self-service/research-support/rcs/service-offering/research-software-engineering/>`_ can be a good place to start.
+Developers of MUSE will need to have the version control tool ``git`` installed in their system and be familiar with its usage.
+The `Introduction to Git and GitHub for software development <https://imperialcollegelondon.github.io/introductory_grad_school_git_course/>`_ and `Further Git and GitHub for effective collaboration <https://imperialcollegelondon.github.io/intermediate_grad_school_git_course/index.html/>`_ courses by the `Imperial RSE Team <https://www.imperial.ac.uk/admin-services/ict/self-service/research-support/rcs/service-offering/research-software-engineering/>`_ are excellent starting points.
+
 
 Installing MUSE source code in editable mode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -14,20 +16,27 @@ Once you have ``git`` in your system, clone the MUSE repository with:
 
     git clone https://github.com/EnergySystemsModellingLab/MUSE_OS.git
 
+For developing MUSE, **it is highly recommended to do so in a virtual Python environment**. This is to isolate dependencies and to avoid version conflicts on other Python libraries.
+Moreover, this allows for unconstrained experimentation with the code without breaking system dependencies, which, as least as far as ``Linux`` is concerned, is an issue.
 
-For developing MUSE, **it is highly recommended to use virtual environments**, so that you have more control on the versions of the dependencies being used, making easy to change them without affecting other tools using Python, or even to have several environments in parallel for different purposes (Eg. new features, bug fixing...). You can either use ``conda`` or ``venv`` as explained in :ref:`virtual-environments`.
+Also, any operating system allows for multiple Python versions being installed in parallel for different purposes like creating new features and bug fixing.
+You can either use ``conda`` or ``pyenv`` in conjunction with ``venv`` as explained in :ref:`virtual-environments`.
 
 Once you have your environment created, **activate it** and install MUSE within the environment:
 
 .. code-block:: bash
 
     cd MUSE_OS
-    # 1- Create virtual environment
-    # 2- Activate virtual environment
-    # 3- Finally, install MUSE in editable mode with:
-    python -m pip install -e .[dev,doc]
+    # 1 - Create a virtual environment
+    # 2 - Activate that virtual environment
+    # 3 - Install MUSE in editable mode with: python -m pip install -e .[dev,doc]
 
-Depending on your system, you might need to add quotation marks around ``[dev,doc]`` as in ``"[dev,doc]"``. This will install MUSE and all the dependencies required for its development. The downloaded code can be modified and the changes will be automatically reflected in the environment.
+.. note::
+
+    Depending on your system, you might need to add quotation marks around ``[dev,doc]`` as in ``"[dev,doc]"``.
+
+    For example on ``Windows``, the command will read `python -m pip install -e .[dev,doc]`. On Ubuntu Linux, it will be `python -m pip install -e ."[dev,doc]"`.
+    This will install MUSE including its dependencies for development. The downloaded code can be modified and the changes will be automatically reflected in the virtual environment.
 
 .. note::
 
@@ -48,9 +57,11 @@ To ensure the consistency of the code with other developers, install the pre-com
 Running tests
 ~~~~~~~~~~~~~
 
-In the developing phase, MUSE can also be used to run test cases to check that the model would reproduce expected results from a defined set of input data. Tests can be run with the command [pytest](https://docs.pytest.org/en/latest/), from the testing framework of the same name.
+If you followed the **Installation for developers** guide, you are likely developing your own tests for MUSE.
+These tests ensure that a model produces reproducible results for a defined set of input data.
+Tests can be run with the command [pytest](https://docs.pytest.org/en/latest/), using the testing framework of the same name.
 
-Within the ``MUSE-OS`` directory, just run:
+To run tests, within the ``MUSE-OS`` directory, activate the virtual environment where you installed ``MUSE`` and run:
 
 .. code-block:: bash
 

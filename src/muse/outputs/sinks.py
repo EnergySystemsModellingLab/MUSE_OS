@@ -237,8 +237,12 @@ def to_csv(
         params: A configuration dictionary accepting any argument to `pandas.to_csv`
     """
     params.update({"float_format": "%.11f"})
+    if "index" not in params:
+        params["index"] = False
+
     if isinstance(quantity, xr.DataArray):
         quantity = quantity.to_dataframe()
+
     par_list = [i for i in params.keys()]
     if len(par_list) > 0:
         if "columns" in par_list:
