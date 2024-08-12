@@ -151,6 +151,8 @@ class Sector(AbstractSector):  # type: ignore
         It can be anything registered with
         :py:func:`@register_production<muse.production.register_production>`.
         """
+        self.output_data: xr.Dataset | None = None
+        """Full supply, consumption and costs data for the most recent year."""
 
     @property
     def forecast(self):
@@ -232,10 +234,9 @@ class Sector(AbstractSector):  # type: ignore
                 technologies, market, time_period=time_period, current_year=current_year
             )
 
-        # > output to mca
+        # Full output data
         supply, consume, costs = self.market_variables(market, technologies)
-
-        output_data = xr.Dataset(
+        self.output_data = xr.Dataset(
             dict(
                 supply=supply,
                 consumption=consume,
@@ -243,18 +244,9 @@ class Sector(AbstractSector):  # type: ignore
             )
         )
 
-        # < output to mca
-        self.outputs(output_data, self.capacity, technologies)
-
+        # Output data for MCA (aggregated over assets)
         if len(supply.region.dims) == 0:
-            output_data = xr.Dataset(
-                dict(
-                    supply=supply,
-                    consumption=consume,
-                    costs=costs,
-                )
-            )
-            output_data = output_data.sum("asset")
+            output_data = self.output_data.sum("asset")
             output_data = output_data.expand_dims(region=[output_data.region.values])
         else:
             output_data = xr.Dataset(
@@ -265,9 +257,7 @@ class Sector(AbstractSector):  # type: ignore
                 )
             )
 
-        # > to mca timeslices
         result = output_data.copy(deep=True)
-
         if "dst_region" in result:
             exclude = ["dst_region", "commodity", "year", "timeslice"]
             prices = market.prices.expand_dims(dst_region=market.prices.region.values)
@@ -299,8 +289,11 @@ class Sector(AbstractSector):  # type: ignore
         result = self.convert_market_timeslice(result, mca_market.timeslice)
         result["comm_usage"] = technologies.comm_usage.sel(commodity=result.commodity)
         result.set_coords("comm_usage")
-        # < to mca timeslices
         return result
+
+    def save_outputs(self) -> None:
+        """Calls the outputs function with the current output data."""
+        self.outputs(self.output_data, self.capacity)
 
     def market_variables(self, market: xr.Dataset, technologies: xr.Dataset) -> Any:
         """Computes resulting market: production, consumption, and costs."""
