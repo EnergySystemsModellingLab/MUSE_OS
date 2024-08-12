@@ -190,6 +190,7 @@ def consumption(
         market_quantity(moutput.consumption, sum_over=sum_over, drop=drop)
         .rename("consumption")
         .to_dataframe()
+        .reset_index()
         .round(rounding)
     )
     return result[result.consumption != 0]
@@ -210,6 +211,7 @@ def supply(
         market_quantity(moutput.supply, sum_over=sum_over, drop=drop)
         .rename("supply")
         .to_dataframe()
+        .reset_index()
         .round(rounding)
     )
     return result[result.supply != 0]
@@ -235,6 +237,7 @@ def costs(
         )
         .rename("costs")
         .to_dataframe()
+        .reset_index()
         .round(rounding)
     )
     return result[result.costs != 0]

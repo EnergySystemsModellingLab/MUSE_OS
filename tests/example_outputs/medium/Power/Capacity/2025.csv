@@ -5,12 +5,7 @@ asset,year,region,technology,installed,capacity
 1,2035,R1,gasCCGT,2025,3
 1,2040,R1,gasCCGT,2025,3
 1,2045,R1,gasCCGT,2025,3
-1,2049,R1,gasCCGT,2025,3
 1,2050,R1,gasCCGT,2025,3
+1,2059,R1,gasCCGT,2025,3
+1,2060,R1,gasCCGT,2025,3
 1,2064,R1,gasCCGT,2025,3
-2,2025,R1,windturbine,2020,1
-2,2030,R1,windturbine,2020,1
-2,2035,R1,windturbine,2020,1
-2,2040,R1,windturbine,2020,1
-2,2045,R1,windturbine,2020,1
-2,2049,R1,windturbine,2020,1

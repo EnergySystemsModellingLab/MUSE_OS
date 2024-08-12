@@ -15,6 +15,7 @@ from muse.outputs.cache import OutputCache
 from muse.readers import read_initial_market
 from muse.sectors import SECTORS_REGISTERED, AbstractSector
 from muse.timeslices import drop_timeslice
+from muse.utilities import future_propagation
 
 
 class MCA:
@@ -302,8 +303,6 @@ class MCA:
         from numpy import where
         from xarray import DataArray
 
-        from muse.utilities import future_propagation
-
         _, self.sectors, hist_years = self.calibrate_legacy_sectors()
         if len(hist_years) > 0:
             hist = where(self.time_framework <= hist_years[-1])[0]
@@ -373,7 +372,7 @@ class MCA:
         from copy import deepcopy
         from logging import getLogger
 
-        from numpy import clip, where
+        from numpy import where
 
         hist_years = []
         if len([s for s in self.sectors if "LegacySector" in str(type(s))]) == 0:
@@ -406,12 +405,9 @@ class MCA:
 
                 dims = {i: sector_market[i] for i in sector_market.consumption.dims}
 
-                sector_market.consumption.loc[dims] = clip(
-                    sector_market.consumption.loc[dims]
-                    - sector_market.supply.loc[dims],
-                    0.0,
-                    None,
-                )
+                sector_market.consumption.loc[dims] = (
+                    sector_market.consumption.loc[dims] - sector_market.supply.loc[dims]
+                ).clip(min=0.0, max=None)
                 new_market.consumption.loc[dims] += sector_market.consumption
 
                 dims = {i: sector_market[i] for i in sector_market.supply.dims}
@@ -451,8 +447,6 @@ def single_year_iteration(
     """
     from copy import deepcopy
 
-    from numpy import clip
-
     from muse.commodities import is_enduse
 
     sectors = deepcopy(sectors)
@@ -470,11 +464,9 @@ def single_year_iteration(
 
         dims = {i: sector_market[i] for i in sector_market.consumption.dims}
 
-        sector_market.consumption.loc[dims] = clip(
-            sector_market.consumption.loc[dims] - sector_market.supply.loc[dims],
-            0.0,
-            None,
-        )
+        sector_market.consumption.loc[dims] = (
+            sector_market.consumption.loc[dims] - sector_market.supply.loc[dims]
+        ).clip(min=0.0, max=None)
 
         market.consumption.loc[dims] += sector_market.consumption
 
@@ -538,95 +530,50 @@ def find_equilibrium(
 
     from numpy import ones
 
-    from muse.utilities import future_propagation
-
     market = market.copy(deep=True)
     if excluded_commodities:
         included = ~market.commodity.isin(excluded_commodities)
     else:
         included = ones(len(market.commodity), dtype=bool)
 
-    market["updated_prices"] = drop_timeslice(market.prices.copy())
-    prior_market = market.copy(deep=True)
     converged = False
-    equilibrium_sectors = sectors
-    for i in range(maxiter):
-        market["prices"] = drop_timeslice(market.updated_prices)
-        prior_market, market = market, prior_market
+    iteration = 0
+    while iteration < maxiter and not converged:
+        prior_market = market.copy(deep=True)
         market.consumption[:] = 0.0
         market.supply[:] = 0.0
         market, equilibrium_sectors = single_year_iteration(market, sectors)
 
-        check_demand_fulfillment(market.sel(commodity=included), tol_unmet_demand)
+        if maxiter == 1 or not equilibrium:
+            converged = True
+            break
 
-        equilibrium_reached = check_equilibrium(
+        # Update prices
+        market["prices"] = drop_timeslice(
+            future_propagation(
+                market["prices"], market["updated_prices"].sel(year=market.year[1])
+            )
+        )
+
+        # Check convergence
+        converged = check_equilibrium(
             market.sel(commodity=included),
             prior_market.sel(commodity=included),
             tol,
             equilibrium_variable,
             market.year[1],
         )
+        iteration += 1
 
-        if equilibrium_reached:
-            converged = True
-            new_price = prior_market["prices"].sel(year=market.year[1]).copy()
-            new_price.loc[dict(commodity=included)] = market.updated_prices.sel(
-                commodity=included, year=market.year[1]
-            )
-            market["prices"] = drop_timeslice(
-                future_propagation(  # type: ignore
-                    market["prices"], new_price
-                )
-            )
-
-            break
-
-        if equilibrium and not converged:
-            new_price = prior_market["prices"].sel(year=market.year[1]).copy()
-            new_price.loc[dict(commodity=included)] = (  # type: ignore
-                0.8 * new_price.loc[dict(commodity=included)]  # type: ignore
-            )
-            new_price.loc[dict(commodity=included)] += (
-                0.2
-                * market.updated_prices.loc[
-                    dict(year=market.year[1], commodity=included)
-                ]
-            )
-            market["prices"] = drop_timeslice(
-                future_propagation(  # type: ignore
-                    market["prices"], new_price
-                )
-            )
-        if not equilibrium:
-            equilibrium_reached = True
-            converged = True
-            break
-
-        if maxiter == 1:
-            equilibrium_reached = True
-            converged = True
-            break
-
-    else:
-        # We didn't reached convergence and the loop is over: the simulation failed!
+    if not converged:
         msg = (
             f"CONVERGENCE ERROR: Maximum number of iterations ({maxiter}) reached "
             f"in year {int(market.year[0])}"
         )
-        new_price = prior_market["prices"].sel(year=market.year[1]).copy()
-        new_price.loc[dict(commodity=included)] = (
-            0.8 * new_price.loc[dict(commodity=included)]  # type: ignore
-        )
-        new_price.loc[dict(commodity=included)] += (
-            0.2
-            * market.updated_prices.loc[dict(year=market.year[1], commodity=included)]
-        )
-        market["prices"] = drop_timeslice(
-            future_propagation(  # type: ignore
-                market["prices"], new_price
-            )
-        )
         getLogger(__name__).critical(msg)
+
+    # Check that demand is fulfilled (raises a warning if not)
+    check_demand_fulfillment(market.sel(commodity=included), tol_unmet_demand)
 
     return FindEquilibriumResults(
         converged, market.drop_vars("updated_prices"), equilibrium_sectors
