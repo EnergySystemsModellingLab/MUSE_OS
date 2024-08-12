@@ -571,14 +571,10 @@ def supply_cost(
     if asset_dim is not None:
         if "region" not in data.coords or len(data.region.dims) == 0:
             data = data.sum(asset_dim)
-
         else:
             data = data.groupby("region").sum(asset_dim)
 
-    total = data.production.where(np.abs(data.production) > 1e-15, np.infty).sum(
-        "timeslice"
-    )
-    return data.prices / total
+    return data.prices / data.production.where(np.abs(data.production) > 1e-15, np.inf)
 
 
 def costed_production(

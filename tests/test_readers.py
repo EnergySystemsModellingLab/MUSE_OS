@@ -591,7 +591,7 @@ def test_read_csv_agent_parameters(default_model):
             "decision": {"name": "singleObj", "parameters": [("LCOE", True, 1)]},
             "agent_type": "newcapa",
             "quantity": 1,
-            "maturity_threshhold": -1,
+            "maturity_threshold": -1,
             "spend_limit": np.inf,
             "share": "agent_share_1",
         },
@@ -673,18 +673,17 @@ def test_read_attribute_table(default_model):
     )
 
 
-def test_read_csv_outputs(default_model):
-    from muse.readers.csv import read_csv_outputs
+def test_read_presets(default_model):
+    from muse.readers.csv import read_presets
 
     path = default_model / "technodata" / "preset" / "*Consumption.csv"
-    data = read_csv_outputs(str(path))
+    data = read_presets(str(path))
 
     assert isinstance(data, xr.DataArray)
     assert data.dtype == np.float64
 
-    assert set(data.dims) == {"year", "commodity", "region", "process", "timeslice"}
+    assert set(data.dims) == {"year", "commodity", "region", "timeslice"}
     assert list(data.coords["region"].values) == ["R1"]
-    assert list(data.coords["process"].values) == ["gasboiler"]
     assert list(data.coords["timeslice"].values) == list(range(1, 7))
     assert list(data.coords["year"].values) == [2020, 2050]
     assert list(data.coords["commodity"].values) == [

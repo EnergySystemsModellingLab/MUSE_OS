@@ -256,14 +256,14 @@ def test_yearly_aggregate_file(tmpdir):
     data["year"] = 2010
     assert sink(data, 2010) == path
     dataframe = pd.read_csv(path)
-    assert set(dataframe.columns) == {"a", "year", "georges"}
+    assert set(dataframe.columns) == {"year", "georges"}
     assert dataframe.shape[0] == 2
 
     data = xr.DataArray([0, 1], coords=dict(a=[2, 4]), dims="a", name="georges")
     data["year"] = 2020
     assert sink(data, 2020) == path
     dataframe = pd.read_csv(path)
-    assert set(dataframe.columns) == {"a", "year", "georges"}
+    assert set(dataframe.columns) == {"year", "georges"}
     assert dataframe.shape[0] == 4
 
 

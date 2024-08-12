@@ -155,7 +155,10 @@ def test_refine_new_price(market):
     price = market.prices.sel(year=future, commodity=commodities).mean(
         ["region", "commodity"]
     )
-    sample = np.linspace(price, 4 * price, 4)
+
+    # ensure price is a scalar before using it in np.linspace
+    price_value = price.item() if isinstance(price, xr.DataArray) else price
+    sample = np.linspace(price_value, 4 * price_value, 4)
 
     carbon_price = market.prices.sel(
         year=market.year < future, commodity=commodities

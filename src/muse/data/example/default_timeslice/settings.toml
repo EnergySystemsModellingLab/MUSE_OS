@@ -22,19 +22,16 @@ filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 quantity = "capacity"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-index = false
 
 [[outputs]]
 quantity = "timeslice_supply"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-index = false
 
 [[outputs]]
 quantity = "timeslice_consumption"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-index = false
 
 # Carbon budget control
 [carbon_budget_control]
@@ -73,7 +70,6 @@ filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "capacity"
 sink = 'csv'
 overwrite = true
-index = false
 
 [[sectors.residential.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
@@ -103,7 +99,6 @@ filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "capacity"
 sink = 'csv'
 overwrite = true
-index = false
 
 [[sectors.power.outputs]]
 filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
@@ -131,7 +126,6 @@ filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
 quantity = "capacity"
 sink = 'csv'
 overwrite = true
-index = false
 
 [sectors.residential_presets]
 type = 'presets'
