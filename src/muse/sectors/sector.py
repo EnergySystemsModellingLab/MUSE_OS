@@ -151,7 +151,7 @@ class Sector(AbstractSector):  # type: ignore
         It can be anything registered with
         :py:func:`@register_production<muse.production.register_production>`.
         """
-        self.output_data: xr.Dataset | None = None
+        self.output_data: xr.Dataset
         """Full supply, consumption and costs data for the most recent year."""
 
     @property
