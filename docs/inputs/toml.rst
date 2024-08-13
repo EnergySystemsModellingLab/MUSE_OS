@@ -670,27 +670,19 @@ The following attributes are accepted:
    The CSV format should follow the following format:
 
    .. csv-table:: Consumption
-      :header: " ", "RegionName", "ProcessName", "Timeslice", "electricity", "diesel", "algae"
-      :stub-columns: 4
+      :header: "RegionName", "Timeslice", "electricity", "diesel", "algae"
+      :stub-columns: 2
 
-      0,USA,fluorescent light,1,1.9, 0, 0
-      1,USA,fluorescent light,2,1.8, 0, 0
+      USA,1,1.9,0,0
+      USA,2,1.8,0,0
 
-
-   The index column as well as "RegionName", "ProcessName", and "Timeslice" must be
-   present. Further columns are reserved for commodities. "Timeslice" refers to the
+   The "RegionName" and "Timeslice" columns must be present.
+   Further columns are reserved for commodities. "Timeslice" refers to the
    index of the timeslice. Timeslices should be defined consistently to the sectoral
    level timeslices.
-   The column "ProcessName" needs to be present and filled in, in order for the data
-   to be read properly but it does not affect the simulation.
-
 
 *supply_path*
-   CSV file, one per year, indicating the amount of a commodities produced. It follows
-   the same format as :ref:`consumption_path <preset-consumption>`.
-
-*supply_path*
-   CSV file, one per year, indicating the amount of a commodities produced. It follows
+   CSV file, one per year, indicating the amount of commodities produced. It follows
    the same format as :ref:`consumption_path <preset-consumption>`.
 
 *prices_path*
