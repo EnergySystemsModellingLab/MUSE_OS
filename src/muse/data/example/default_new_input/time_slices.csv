@@ -1,7 +1,0 @@
-season,day,time_of_day,fraction
-all,all,night,0.1667
-all,all,morning,0.1667
-all,all,afternoon,0.1667
-all,all,early-peak,0.1667
-all,all,late-peak,0.1667
-all,all,evening,0.1667

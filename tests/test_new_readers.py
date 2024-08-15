@@ -57,7 +57,7 @@ def populate_demand(default_new_input, con, populate_regions, populate_commoditi
 
 @fixture
 def populate_demand_slicing(
-    default_new_input, con, populate_regions, populate_commodities
+    default_new_input, con, populate_regions, populate_commodities, populate_demand
 ):
     from muse.new_input.readers import read_demand_slicing_csv
 
@@ -71,6 +71,28 @@ def populate_regions(default_new_input, con):
 
     with open(default_new_input / "regions.csv") as f:
         return read_regions_csv(f, con)
+
+
+@fixture
+def populate_timeslices(default_new_input, con):
+    from muse.new_input.readers import read_timeslices_csv
+
+    with open(default_new_input / "timeslices.csv") as f:
+        return read_timeslices_csv(f, con)
+
+
+def test_read_timeslices_csv(populate_timeslices):
+    data = populate_timeslices
+    assert len(data["id"]) == 6
+    assert next(iter(data["id"])) == "1"
+    assert next(iter(data["season"])) == "all"
+    assert next(iter(data["day"])) == "all"
+    assert next(iter(data["time_of_day"])) == "night"
+    assert next(iter(data["fraction"])) == approx(0.1667)
+
+
+def test_read_regions_csv(populate_regions):
+    assert populate_regions["id"] == np.array(["R1"])
 
 
 def test_read_commodities_csv(populate_commodities):
@@ -106,8 +128,41 @@ def test_read_demand_csv(populate_demand):
     assert np.all(data["demand"] == np.array([10, 30]))
 
 
-def test_read_regions_csv(populate_regions):
-    assert populate_regions["id"] == np.array(["R1"])
+def test_read_demand_slicing_csv(populate_demand_slicing):
+    data = populate_demand_slicing
+    assert np.all(data["commodity"] == "heat")
+    assert np.all(data["region"] == "R1")
+    # assert np.all(data["timeslice"] == np.array([0, 1]))
+    assert np.all(
+        data["fraction"]
+        == np.array([0.1, 0.15, 0.1, 0.15, 0.3, 0.2, 0.1, 0.15, 0.1, 0.15, 0.3, 0.2])
+    )
+
+
+def test_read_commodities_csv_type_constraint(con):
+    from muse.new_input.readers import read_commodities_csv
+
+    csv = StringIO("id,type,unit\nfoo,invalid,bar\n")
+    with raises(duckdb.ConstraintException):
+        read_commodities_csv(csv, con)
+
+
+def test_read_demand_csv_commodity_constraint(
+    con, populate_commodities, populate_regions
+):
+    from muse.new_input.readers import read_demand_csv
+
+    csv = StringIO("year,commodity_id,region_id,demand\n2020,invalid,R1,0\n")
+    with raises(duckdb.ConstraintException, match=".*foreign key.*"):
+        read_demand_csv(csv, con)
+
+
+def test_read_demand_csv_region_constraint(con, populate_commodities, populate_regions):
+    from muse.new_input.readers import read_demand_csv
+
+    csv = StringIO("year,commodity_id,region_id,demand\n2020,heat,invalid,0\n")
+    with raises(duckdb.ConstraintException, match=".*foreign key.*"):
+        read_demand_csv(csv, con)
 
 
 def test_calculate_global_commodities(populate_commodities):
@@ -125,51 +180,29 @@ def test_calculate_global_commodities(populate_commodities):
     assert list(data.data_vars["unit"].values) == list(populate_commodities["unit"])
 
 
-def test_read_global_commodities_type_constraint(default_new_input, con):
-    from muse.new_input.readers import read_commodities_csv
-
-    csv = StringIO("id,type,unit\nfoo,invalid,bar\n")
-    with raises(duckdb.ConstraintException):
-        read_commodities_csv(csv, con)
-
-
-def test_read_demand_csv_commodity_constraint(
-    default_new_input, con, populate_commodities, populate_regions
+def test_calculate_demand(
+    populate_commodities,
+    populate_regions,
+    populate_timeslices,
+    populate_demand,
+    populate_demand_slicing,
 ):
-    from muse.new_input.readers import read_demand_csv
+    from muse.new_input.readers import calculate_demand
 
-    csv = StringIO("year,commodity_id,region_id,demand\n2020,invalid,R1,0\n")
-    with raises(duckdb.ConstraintException, match=".*foreign key.*"):
-        read_demand_csv(csv, con)
-
-
-def test_read_demand_csv_region_constraint(
-    default_new_input, con, populate_commodities, populate_regions
-):
-    from muse.new_input.readers import read_demand_csv
-
-    csv = StringIO("year,commodity_id,region_id,demand\n2020,heat,invalid,0\n")
-    with raises(duckdb.ConstraintException, match=".*foreign key.*"):
-        read_demand_csv(csv, con)
-
-
-@mark.xfail
-def test_demand_dataset(default_new_input):
-    import duckdb
-    from muse.new_input.readers import read_commodities, read_demand, read_regions
-
-    con = duckdb.connect(":memory:")
-
-    read_regions(default_new_input, con)
-    read_commodities(default_new_input, con)
-    data = read_demand(default_new_input, con)
+    data = calculate_demand(
+        populate_commodities,
+        populate_regions,
+        populate_timeslices,
+        populate_demand,
+        populate_demand_slicing,
+    )
 
     assert isinstance(data, xr.DataArray)
     assert data.dtype == np.float64
 
     assert set(data.dims) == {"year", "commodity", "region", "timeslice"}
     assert list(data.coords["region"].values) == ["R1"]
-    assert list(data.coords["timeslice"].values) == list(range(1, 7))
+    assert list(data.coords["timeslice"].values) == ["1", "2", "3", "4", "5", "6"]
     assert list(data.coords["year"].values) == [2020, 2050]
     assert set(data.coords["commodity"].values) == {
         "electricity",
@@ -179,15 +212,26 @@ def test_demand_dataset(default_new_input):
         "CO2f",
     }
 
-    assert data.sel(year=2020, commodity="electricity", region="R1", timeslice=0) == 1
+    assert data.sel(year=2020, commodity="heat", region="R1", timeslice="1") == 1
 
 
 @mark.xfail
-def test_new_read_initial_market(default_new_input):
-    from muse.new_input.readers import read_inputs
+def test_calculate_initial_market(
+    populate_commodities,
+    populate_regions,
+    populate_timeslices,
+    populate_commodity_trade,
+    populate_commodity_costs,
+):
+    from muse.new_input.readers import calculate_initial_market
 
-    all_data = read_inputs(default_new_input)
-    data = all_data["initial_market"]
+    data = calculate_initial_market(
+        populate_commodities,
+        populate_regions,
+        populate_timeslices,
+        populate_commodity_trade,
+        populate_commodity_costs,
+    )
 
     assert isinstance(data, xr.Dataset)
     assert set(data.dims) == {"region", "year", "commodity", "timeslice"}
@@ -197,15 +241,15 @@ def test_new_read_initial_market(default_new_input):
         imports=np.float64,
         static_trade=np.float64,
     )
-    assert list(data.coords["region"].values) == ["R1"]
-    assert list(data.coords["year"].values) == list(range(2010, 2105, 5))
-    assert list(data.coords["commodity"].values) == [
+    assert set(data.coords["region"].values) == {"R1"}
+    assert set(data.coords["year"].values) == set(range(2010, 2105, 5))
+    assert set(data.coords["commodity"].values) == {
         "electricity",
         "gas",
         "heat",
         "CO2f",
         "wind",
-    ]
+    }
     month_values = ["all-year"] * 6
     day_values = ["all-week"] * 6
     hour_values = [
