@@ -554,11 +554,18 @@ def demand_limiting_capacity(
             else capacity
         )
 
-    # This constraint is independent of the production
-    production = 0
+    # Calculate commodity output ratios for each technology
+    output_ratios = capacity / capacity.rename({"commodity": "commodity2"})
+    output_ratios = output_ratios.where(np.isfinite(output_ratios), 0)
+
+    # Maximum output ratios across technologies
+    max_output_ratio = output_ratios.max("replacement")
+
+    # Demand limiting capacity
+    b = (max_output_ratio * b).sum("commodity").rename({"commodity2": "commodity"})
 
     return xr.Dataset(
-        dict(capacity=capacity, production=production, b=b),
+        dict(capacity=capacity, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
     )
 
