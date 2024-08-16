@@ -1,7 +1,9 @@
+import os
 import shutil
 from pathlib import Path
 
 import pandas as pd
+from muse import examples
 from muse.wizard import add_agent, get_sectors
 
 parent_path = Path(__file__).parent
@@ -18,10 +20,9 @@ def generate_model_1():
     if model_path.exists():
         shutil.rmtree(model_path)
 
-    # Starting point: copy model from previous tutorial
-    shutil.copytree(parent_path / "../1-add-new-technology/2-scenario", model_path)
-    if (model_path / "Results").exists():
-        shutil.rmtree(model_path / "Results")
+    # Starting point: copy default model
+    examples.copy_model(name="default", path=parent_path, overwrite=True)
+    os.rename(parent_path / "model", model_path)
 
     # Copy agent A1 -> A2
     add_agent(
@@ -30,6 +31,12 @@ def generate_model_1():
         copy_from="A1",
         agentshare_new="Agent2",
     )
+
+    # Change objective for agent A2
+    agents_file = model_path / "technodata/Agents.csv"
+    df = pd.read_csv(agents_file)
+    df.loc[df["Name"] == "A2", "Objective1"] = "fuel_consumption_cost"
+    df.to_csv(agents_file, index=False)
 
     # Split population between the two agents
     agents_file = model_path / "technodata/Agents.csv"
@@ -65,17 +72,11 @@ def generate_model_2():
     # Add second objective for agent A2
     agents_file = model_path / "technodata/Agents.csv"
     df = pd.read_csv(agents_file)
-    df.loc[df["Name"] == "A2", "Objective2"] = "EAC"
+    df.loc[df["Name"] == "A2", "Objective2"] = "LCOE"
     df.loc[df["Name"] == "A2", "DecisionMethod"] = "weighted_sum"
     df.loc[df["Name"] == "A2", ["ObjData1", "ObjData2"]] = 0.5
     df.loc[df["Name"] == "A2", "Objsort2"] = True
     df.to_csv(agents_file, index=False)
-
-    # Modify residential sector MaxCapacityGrowth
-    technodata_file = model_path / "technodata/residential/Technodata.csv"
-    df = pd.read_csv(technodata_file)
-    df.loc[1:, "MaxCapacityGrowth"] = 0.4
-    df.to_csv(technodata_file, index=False)
 
 
 if __name__ == "__main__":
