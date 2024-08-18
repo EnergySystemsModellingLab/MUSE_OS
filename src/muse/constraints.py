@@ -554,15 +554,25 @@ def demand_limiting_capacity(
             else capacity
         )
 
+    # Some technologies may have multiple output commodities, not all of which will be
+    # demanded in accordance with their output ratios. We therefore need to adjust the
+    # commodity-level DLC based on the commodity output ratios of the available
+    # technologies to allow for appropriate production of these additional commodities.
+
     # Calculate commodity output ratios for each technology
     output_ratios = capacity / capacity.rename({"commodity": "commodity2"})
     output_ratios = output_ratios.where(np.isfinite(output_ratios), 0)
 
-    # Maximum output ratios across technologies
-    max_output_ratio = output_ratios.max("replacement")
+    # Calculate the full outputs of each technology required to meet each commodity
+    # demand. Where a technology cannot meet the demand for a commodity (i.e. does not
+    # produce that commodity), all values will be zero due to the line above
+    outputs = output_ratios * b
 
-    # Demand limiting capacity
-    b = (max_output_ratio * b).sum("commodity").rename({"commodity2": "commodity"})
+    # Maximum potential outputs for each technology
+    max_outputs = outputs.max("commodity")
+
+    # Maximum potential production of each commodity -> demand-limiting capacity
+    b = max_outputs.max("replacement").rename({"commodity2": "commodity"})
 
     return xr.Dataset(
         dict(capacity=capacity, b=b),
