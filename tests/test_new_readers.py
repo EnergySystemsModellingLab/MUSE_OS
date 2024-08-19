@@ -57,7 +57,12 @@ def populate_demand(default_new_input, con, populate_regions, populate_commoditi
 
 @fixture
 def populate_demand_slicing(
-    default_new_input, con, populate_regions, populate_commodities, populate_demand
+    default_new_input,
+    con,
+    populate_regions,
+    populate_commodities,
+    populate_demand,
+    populate_timeslices,
 ):
     from muse.new_input.readers import read_demand_slicing_csv
 
@@ -84,7 +89,7 @@ def populate_timeslices(default_new_input, con):
 def test_read_timeslices_csv(populate_timeslices):
     data = populate_timeslices
     assert len(data["id"]) == 6
-    assert next(iter(data["id"])) == "1"
+    assert next(iter(data["id"])) == 1
     assert next(iter(data["season"])) == "all"
     assert next(iter(data["day"])) == "all"
     assert next(iter(data["time_of_day"])) == "night"
@@ -202,7 +207,7 @@ def test_calculate_demand(
 
     assert set(data.dims) == {"year", "commodity", "region", "timeslice"}
     assert list(data.coords["region"].values) == ["R1"]
-    assert list(data.coords["timeslice"].values) == ["1", "2", "3", "4", "5", "6"]
+    assert set(data.coords["timeslice"].values) == set(range(1, 7))
     assert list(data.coords["year"].values) == [2020, 2050]
     assert set(data.coords["commodity"].values) == {
         "electricity",
@@ -212,7 +217,7 @@ def test_calculate_demand(
         "CO2f",
     }
 
-    assert data.sel(year=2020, commodity="heat", region="R1", timeslice="1") == 1
+    assert data.sel(year=2020, commodity="heat", region="R1", timeslice=1) == 1
 
 
 @mark.xfail
