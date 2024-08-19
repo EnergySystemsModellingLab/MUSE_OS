@@ -9,7 +9,6 @@ follow the same signature:
     def quantity(
         capacity: xr.DataArray,
         market: xr.Dataset,
-        technologies: xr.Dataset
     ) -> Union[xr.DataArray, DataFrame]:
         pass
 
@@ -142,7 +141,6 @@ def factory(
 def capacity(
     market: xr.Dataset,
     capacity: xr.DataArray,
-    technologies: xr.Dataset,
     rounding: int = 4,
 ) -> pd.DataFrame:
     """Current capacity."""
@@ -179,7 +177,6 @@ def market_quantity(
 def consumption(
     market: xr.Dataset,
     capacity: xr.DataArray,
-    technologies: xr.Dataset,
     sum_over: Optional[list[str]] = None,
     drop: Optional[list[str]] = None,
     rounding: int = 4,
@@ -200,7 +197,6 @@ def consumption(
 def supply(
     market: xr.Dataset,
     capacity: xr.DataArray,
-    technologies: xr.Dataset,
     sum_over: Optional[list[str]] = None,
     drop: Optional[list[str]] = None,
     rounding: int = 4,
@@ -221,7 +217,6 @@ def supply(
 def costs(
     market: xr.Dataset,
     capacity: xr.DataArray,
-    technologies: xr.Dataset,
     sum_over: Optional[list[str]] = None,
     drop: Optional[list[str]] = None,
     rounding: int = 4,
