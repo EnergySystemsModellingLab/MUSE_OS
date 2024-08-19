@@ -35,8 +35,8 @@ def test_weighted_sum(objectives):
     weights = {"a": -1, "c": 2}
 
     def normalize(objective):
-        min, max = objective.min("replacement"), objective.max("replacement")
-        return (objective - min) / (max - min)
+        norm = abs(objective).max("replacement")
+        return objective / norm
 
     expected = (
         normalize(objectives.a) * weights["a"]
