@@ -90,9 +90,9 @@ def test_read_timeslices_csv(populate_timeslices):
     data = populate_timeslices
     assert len(data["id"]) == 6
     assert next(iter(data["id"])) == 1
-    assert next(iter(data["season"])) == "all"
-    assert next(iter(data["day"])) == "all"
-    assert next(iter(data["time_of_day"])) == "night"
+    assert next(iter(data["month"])) == "all-year"
+    assert next(iter(data["day"])) == "all-week"
+    assert next(iter(data["hour"])) == "night"
     assert next(iter(data["fraction"])) == approx(0.1667)
 
 
