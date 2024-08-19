@@ -41,7 +41,7 @@ def read_inputs(data_dir):
 
 def read_timeslices_csv(buffer_, con):
     sql = """CREATE TABLE timeslices (
-      id VARCHAR PRIMARY KEY,
+      id BIGINT PRIMARY KEY,
       season VARCHAR,
       day VARCHAR,
       time_of_day VARCHAR,
@@ -133,7 +133,7 @@ def read_demand_slicing_csv(buffer_, con):
     commodity VARCHAR REFERENCES commodities(id),
     region VARCHAR REFERENCES regions(id),
     year BIGINT,
-    timeslice VARCHAR REFERENCES timeslices(id),
+    timeslice BIGINT REFERENCES timeslices(id),
     fraction DOUBLE CHECK (fraction >= 0 AND fraction <= 1),
     PRIMARY KEY (commodity, region, year, timeslice),
     FOREIGN KEY (commodity, region, year) REFERENCES demand(commodity, region, year)
@@ -201,7 +201,7 @@ def calculate_demand(
     all_commodities = commodities["id"].astype(np.dtype("str"))
     all_regions = regions["id"].astype(np.dtype("str"))
     all_years = df_demand.index.get_level_values("year").unique()
-    all_timeslices = timeslices["id"].astype(np.dtype("str"))
+    all_timeslices = timeslices["id"].astype(np.dtype("int"))
 
     # CHECK: all years are specified for each commodity/region combination
     check_all_values_specified(df_demand, ["commodity", "region"], "year", all_years)
