@@ -405,7 +405,7 @@ def convert_timeslice(
 ) -> Union[DataArray, Dataset]:
     '''Adjusts the timeslice of x to match that of ts.
 
-    The conversion can be done in on of two ways, depending on whether the
+    The conversion can be done in one of two ways, depending on whether the
     quantity is extensive or intensive. See `QuantityType`.
 
     Example:

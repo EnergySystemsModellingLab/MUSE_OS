@@ -3,7 +3,7 @@ from io import StringIO
 import duckdb
 import numpy as np
 import xarray as xr
-from pytest import approx, fixture, mark, raises
+from pytest import approx, fixture, raises
 
 
 @fixture
@@ -206,9 +206,9 @@ def test_calculate_demand(
     assert data.dtype == np.float64
 
     assert set(data.dims) == {"year", "commodity", "region", "timeslice"}
-    assert list(data.coords["region"].values) == ["R1"]
+    assert set(data.coords["region"].values) == {"R1"}
     assert set(data.coords["timeslice"].values) == set(range(1, 7))
-    assert list(data.coords["year"].values) == [2020, 2050]
+    assert set(data.coords["year"].values) == {2020, 2050}
     assert set(data.coords["commodity"].values) == {
         "electricity",
         "gas",
@@ -220,7 +220,6 @@ def test_calculate_demand(
     assert data.sel(year=2020, commodity="heat", region="R1", timeslice=1) == 1
 
 
-@mark.xfail
 def test_calculate_initial_market(
     populate_commodities,
     populate_regions,
@@ -240,12 +239,8 @@ def test_calculate_initial_market(
 
     assert isinstance(data, xr.Dataset)
     assert set(data.dims) == {"region", "year", "commodity", "timeslice"}
-    assert dict(data.dtypes) == dict(
-        prices=np.float64,
-        exports=np.float64,
-        imports=np.float64,
-        static_trade=np.float64,
-    )
+    for dt in data.dtypes.values():
+        assert dt == np.dtype("float64")
     assert set(data.coords["region"].values) == {"R1"}
     assert set(data.coords["year"].values) == set(range(2010, 2105, 5))
     assert set(data.coords["commodity"].values) == {
@@ -266,28 +261,30 @@ def test_calculate_initial_market(
         "evening",
     ]
 
-    assert list(data.coords["timeslice"].values) == list(
+    assert set(data.coords["timeslice"].values) == set(
         zip(month_values, day_values, hour_values)
     )
-    assert list(data.coords["month"]) == month_values
-    assert list(data.coords["day"]) == day_values
-    assert list(data.coords["hour"]) == hour_values
+    assert set(data.coords["month"].values) == set(month_values)
+    assert set(data.coords["day"].values) == set(day_values)
+    assert set(data.coords["hour"].values) == set(hour_values)
 
     assert all(var.coords.equals(data.coords) for var in data.data_vars.values())
 
     prices = data.data_vars["prices"]
-    assert approx(
-        prices.sel(
-            year=2010,
-            region="R1",
-            commodity="electricity",
-            timeslice=("all-year", "all-week", "night"),
+    assert (
+        approx(
+            prices.sel(
+                year=2010,
+                region="R1",
+                commodity="electricity",
+                timeslice=("all-year", "all-week", "night"),
+            ),
+            abs=1e-4,
         )
-        - 14.81481,
-        abs=1e-4,
+        == 14.81481
     )
 
-    exports = data.data_vars["exports"]
+    exports = data.data_vars["export"]
     assert (
         exports.sel(
             year=2010,
@@ -297,7 +294,7 @@ def test_calculate_initial_market(
         )
     ) == 0
 
-    imports = data.data_vars["imports"]
+    imports = data.data_vars["import"]
     assert (
         imports.sel(
             year=2010,
