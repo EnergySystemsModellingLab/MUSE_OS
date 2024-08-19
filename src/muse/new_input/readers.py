@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from muse.timeslices import QuantityType
+
 
 def read_inputs(data_dir):
     data = {}
@@ -42,17 +44,15 @@ def read_inputs(data_dir):
 def read_timeslices_csv(buffer_, con):
     sql = """CREATE TABLE timeslices (
       id BIGINT PRIMARY KEY,
-      season VARCHAR,
+      month VARCHAR,
       day VARCHAR,
-      time_of_day VARCHAR,
+      hour VARCHAR,
       fraction DOUBLE CHECK (fraction >= 0 AND fraction <= 1),
     );
     """
     con.sql(sql)
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    con.sql(
-        "INSERT INTO timeslices SELECT id, season, day, time_of_day, fraction FROM rel;"
-    )
+    con.sql("INSERT INTO timeslices SELECT id, month, day, hour, fraction FROM rel;")
     return con.sql("SELECT * from timeslices").fetchnumpy()
 
 
@@ -278,9 +278,11 @@ def calculate_initial_market(
     - If price data is not specified for a commodity/region combination, the price is
     zero
 
-    """
-    from muse.timeslices import QuantityType, convert_timeslice
+    Todo:
+    - Allow data to be specified on a timeslice level (optional)
+    - Interpolation, missing year field, flexible timeslice specification as above
 
+    """
     # Prepare dataframes
     df_trade = pd.DataFrame(commodity_trade).set_index(["commodity", "region", "year"])
     df_costs = (
@@ -288,7 +290,7 @@ def calculate_initial_market(
         .set_index(["commodity", "region", "year"])
         .rename(columns={"value": "prices"})
     )
-    df_timeslices = pd.DataFrame(timeslices).set_index(["season", "day", "time_of_day"])
+    df_timeslices = pd.DataFrame(timeslices).set_index(["month", "day", "hour"])
 
     # DataArray dimensions
     all_commodities = commodities["id"].astype(np.dtype("str"))
@@ -320,13 +322,17 @@ def calculate_initial_market(
     # Calculate static trade
     df_trade["static_trade"] = df_trade["export"] - df_trade["import"]
 
-    # Create Data
-    df_full = df_costs.join(df_trade)
-    data = df_full.to_xarray()
-    ts = df_timeslices.to_xarray()["fraction"]
-    ts = ts.stack(timeslice=("season", "day", "time_of_day"))
-    convert_timeslice(data, ts, QuantityType.EXTENSIVE)
+    # Create xarray datasets
+    xr_costs = df_costs.to_xarray()
+    xr_trade = df_trade.to_xarray()
 
+    # Project over timeslices
+    ts = df_timeslices.to_xarray()["fraction"].stack(timeslice=("month", "day", "hour"))
+    xr_costs = project_timeslice(xr_costs, ts, QuantityType.EXTENSIVE)
+    xr_trade = project_timeslice(xr_trade, ts, QuantityType.INTENSIVE)
+
+    # Combine data
+    data = xr.merge([xr_costs, xr_trade])
     return data
 
 
@@ -353,3 +359,30 @@ def check_all_values_specified(
     ).all():
         msg = ""  # TODO
         raise DataValidationError(msg)
+
+
+def project_timeslice(
+    data: xr.Dataset, timeslices: xr.DataArray, quantity_type: QuantityType
+) -> xr.Dataset:
+    """Project a dataset over a new timeslice dimension.
+
+    The projection can be done in one of two ways, depending on whether the
+    quantity type is extensive or intensive. See `QuantityType`.
+
+    Args:
+        data: Dataset to project
+        timeslices: DataArray of timeslice levels, with values between 0 and 1
+            representing the timeslice length (fraction of the year)
+        quantity_type: Type of projection to perform. QuantityType.EXTENSIVE or
+            QuantityType.INTENSIVE
+
+    Returns:
+        Projected dataset
+    """
+    assert "timeslice" in timeslices.dims
+    assert "timeslice" not in data.dims
+
+    if quantity_type is QuantityType.INTENSIVE:
+        return data * timeslices
+    if quantity_type is QuantityType.EXTENSIVE:
+        return data * xr.ones_like(timeslices)

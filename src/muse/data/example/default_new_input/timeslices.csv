@@ -1,7 +1,7 @@
-id,season,day,time_of_day,fraction
-1,all,all,night,0.1667
-2,all,all,morning,0.1667
-3,all,all,afternoon,0.1667
-4,all,all,early-peak,0.1667
-5,all,all,late-peak,0.1667
-6,all,all,evening,0.1667
+id,month,day,hour,fraction
+1,all-year,all-week,night,0.1667
+2,all-year,all-week,morning,0.1667
+3,all-year,all-week,afternoon,0.1667
+4,all-year,all-week,early-peak,0.1667
+5,all-year,all-week,late-peak,0.1667
+6,all-year,all-week,evening,0.1667
