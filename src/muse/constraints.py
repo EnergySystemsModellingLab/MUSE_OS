@@ -577,6 +577,10 @@ def modify_dlc(technologies: xr.DataArray, demand: xr.DataArray) -> xr.DataArray
         demand: DataArray with dimension "commodity", which defines the demand for each
             commodity.
 
+    Returns:
+        DataArray with dimension "commodity", which defines the new demand-limiting
+        capacity constraint for each commodity.
+
     Example:
         Let's consider a simple example of a refinery sector with two alternative
         technologies that each produce two commodities: gasoline and diesel.
