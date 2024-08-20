@@ -554,13 +554,165 @@ def demand_limiting_capacity(
             else capacity
         )
 
-    # This constraint is independent of the production
-    production = 0
+    # An adjustment is required to account for technologies that have multiple output
+    # commodities
+    b = modify_dlc(technologies=capacity, demand=b)
 
     return xr.Dataset(
-        dict(capacity=capacity, production=production, b=b),
+        dict(capacity=capacity, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
     )
+
+
+def modify_dlc(technologies: xr.DataArray, demand: xr.DataArray) -> xr.DataArray:
+    """Modifies DLC constraint to account for techs with multiple output commodities.
+
+    Adjusts the commodity-level DLC based on the commodity output ratios of the
+    available technologies, to allow for appropriate production of side-products.
+
+    Args:
+        technologies: DataArray with dimensions "commodity" and "replacement". This
+            defines the fixed commodity outputs for each potential replacement
+            technology.
+        demand: DataArray with dimension "commodity", which defines the demand for each
+            commodity.
+
+    Returns:
+        DataArray with dimension "commodity", which defines the new demand-limiting
+        capacity constraint for each commodity.
+
+    Example:
+        Let's consider a simple example of a refinery sector with two alternative
+        technologies that each produce two commodities: gasoline and diesel.
+
+        We define the technologies DataArray as follows:
+        >>> import xarray as xr
+        >>> technologies = xr.DataArray(
+        ...     data=[[1, 5], [0.5, 1]],
+        ...     dims=['replacement', 'commodity'],
+        ...     coords={'replacement': ['technology1', 'technology2'],
+        ...             'commodity': ['gasoline', 'diesel']},
+        ... )
+
+        technology1 produces 1 unit of gasoline and 5 units of diesel (per unit of
+        activity), whereas technology2 produces 0.5 units of gasoline and 1 unit of
+        diesel.
+
+        In this scenario, let's also define the demand for gasoline and diesel as
+        follows (1 unit of demand for gasoline and 0 units for diesel):
+        >>> demand = xr.DataArray(
+        ...     data=[1, 0],
+        ...     dims=['commodity'],
+        ...     coords={'commodity': ['gasoline', 'diesel']},
+        ... )
+
+        The aim of the demand-limiting capacity (DLC) constraint is to limit the
+        capacity of each technology so that supply is sufficient to meet the demand for
+        each commodity, and no more.
+
+        However, in this case we have a problem. The demand for gasoline can be met by
+        either technology1 or technology2 (as both produce gasoline), but doing so would
+        require producing up to 5 units of diesel (if all demand was met by
+        technology1), which would exceed the diesel demand (0). Therefore, to allow the
+        model to meet the demand for gasoline via either technology, we must relax the
+        DLC constraint on diesel (to 5 units).
+
+        In general, for an arbitrary set of technologies and commodity demands, the
+        DLC of each commodity needs to be sufficiently high to permit any technology to
+        act in service of any appropriate commodity demand, and no higher.
+
+        The first step is to calculate the commodity output ratios for each technology:
+        >>> output_ratios = technologies.rename({"commodity": "commodity2"}) / technologies
+        >>> output_ratios
+        <xarray.DataArray (replacement: 2, commodity2: 2, commodity: 2)> Size: 64B
+        array([[[1. , 0.2],
+                [5. , 1. ]],
+        <BLANKLINE>
+               [[1. , 0.5],
+                [2. , 1. ]]])
+        Coordinates:
+          * replacement  (replacement) <U11 88B 'technology1' 'technology2'
+          * commodity2   (commodity2) <U8 64B 'gasoline' 'diesel'
+          * commodity    (commodity) <U8 64B 'gasoline' 'diesel'
+
+        We introduce the dimension "commodity2" to compare the outputs of each commodity
+        against every other commodity. For example, for technology1, producing 1 unit of
+        gasoline leads to 5 units of diesel, whereas producing 1 unit of diesel leads to
+        0.2 units of gasoline.
+
+        Multiplying these output ratios by the demand, we get the full outputs that each
+        technology would produce whilst acting in service of each commodity-level
+        demand:
+        >>> outputs = output_ratios * demand
+        >>> outputs
+        <xarray.DataArray (replacement: 2, commodity2: 2, commodity: 2)> Size: 64B
+        array([[[1., 0.],
+                [5., 0.]],
+        <BLANKLINE>
+               [[1., 0.],
+                [2., 0.]]])
+        Coordinates:
+          * replacement  (replacement) <U11 88B 'technology1' 'technology2'
+          * commodity2   (commodity2) <U8 64B 'gasoline' 'diesel'
+          * commodity    (commodity) <U8 64B 'gasoline' 'diesel'
+
+        In this case, meeting the gasoline demand with technology1 would require
+        producing 1 unit of gasoline and 5 units of diesel, whereas meeting the gasoline
+        demand with technology2 would require producing 1 unit of gasoline and 2 units
+        of diesel. Since there is no diesel demand, all values for commodity = "diesel"
+        are zero.
+
+        Then, taking a maximum over the "commodity" dimension, we get the maximum
+        potential outputs of each technology:
+        >>> max_outputs = outputs.max("commodity")
+        >>> max_outputs
+        <xarray.DataArray (replacement: 2, commodity2: 2)> Size: 32B
+        array([[1., 5.],
+               [1., 2.]])
+        Coordinates:
+          * replacement  (replacement) <U11 88B 'technology1' 'technology2'
+          * commodity2   (commodity2) <U8 64B 'gasoline' 'diesel'
+
+        In this case, this is just the outputs of each technology when acting in service
+        of the gasoline demand.
+
+        Finally, summing over the "replacement" dimension, we get the maximum potential
+        outputs of each commodity:
+        >>> dlc = max_outputs.max("replacement").rename({"commodity2": "commodity"})
+        >>> dlc
+        <xarray.DataArray (commodity: 2)> Size: 16B
+        array([1., 5.])
+        Coordinates:
+          * commodity  (commodity) <U8 64B 'gasoline' 'diesel'
+
+        In this case, we get the maximum potential production of diesel as 5 units,
+        which would occur as a side-product when technology1 is acting in service of the
+        gasoline demand. This becomes the new DLC constraint.
+
+        Putting this all together:
+        >>> from muse.constraints import modify_dlc
+        >>> modify_dlc(technologies, demand)
+        <xarray.DataArray (commodity: 2)> Size: 16B
+        array([1., 5.])
+        Coordinates:
+          * commodity  (commodity) <U8 64B 'gasoline' 'diesel'
+    """  # noqa: E501
+    # Calculate commodity output ratios for each technology
+    output_ratios = technologies.rename({"commodity": "commodity2"}) / technologies
+    output_ratios = output_ratios.where(np.isfinite(output_ratios), 0)  # this is
+    # necessary for technologies that do not produce every commodity, which would lead
+    # to an "infinite" ratio between commodities
+
+    # Calculate the full outputs of each technology acting in service of each commodity
+    # demand
+    outputs = output_ratios * demand
+
+    # Maximum potential outputs for each technology
+    max_outputs = outputs.max("commodity")
+
+    # Maximum potential production of each commodity -> demand-limiting capacity
+    b = max_outputs.max("replacement").rename({"commodity2": "commodity"})
+    return b
 
 
 @register_constraints
