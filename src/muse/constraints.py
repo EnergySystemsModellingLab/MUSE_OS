@@ -618,17 +618,18 @@ def modify_dlc(technologies: xr.DataArray, demand: xr.DataArray) -> xr.DataArray
         act in service of any appropriate commodity demand, and no higher.
 
         The first step is to calculate the commodity output ratios for each technology:
-        >>> output_ratios = technologies.rename({"commodity": "commodity2"}) / technologies  # noqa: E501
+        >>> output_ratios = technologies.rename({"commodity": "commodity2"}) / technologies
         >>> output_ratios
         <xarray.DataArray (replacement: 2, commodity2: 2, commodity: 2)> Size: 64B
         array([[[1. , 0.2],
                 [5. , 1. ]],
+        <BLANKLINE>
                [[1. , 0.5],
                 [2. , 1. ]]])
         Coordinates:
-        * replacement  (replacement) <U11 88B 'technology1' 'technology2'
-        * commodity2    (commodity2) <U8 64B 'gasoline' 'diesel'
-        * commodity   (commodity) <U8 64B 'gasoline' 'diesel'
+          * replacement  (replacement) <U11 88B 'technology1' 'technology2'
+          * commodity2   (commodity2) <U8 64B 'gasoline' 'diesel'
+          * commodity    (commodity) <U8 64B 'gasoline' 'diesel'
 
         We introduce the dimension "commodity2" to compare the outputs of each commodity
         against every other commodity. For example, for technology1, producing 1 unit of
@@ -641,14 +642,15 @@ def modify_dlc(technologies: xr.DataArray, demand: xr.DataArray) -> xr.DataArray
         >>> outputs = output_ratios * demand
         >>> outputs
         <xarray.DataArray (replacement: 2, commodity2: 2, commodity: 2)> Size: 64B
-        array([[[1. , 0. ],
-                [5. , 0. ]],
-               [[1. , 0. ],
-                [2. , 0. ]]])
+        array([[[1., 0.],
+                [5., 0.]],
+        <BLANKLINE>
+               [[1., 0.],
+                [2., 0.]]])
         Coordinates:
-        * replacement  (replacement) <U11 88B 'technology1' 'technology2'
-        * commodity2    (commodity2) <U8 64B 'gasoline' 'diesel'
-        * commodity   (commodity) <U8 64B 'gasoline' 'diesel'
+          * replacement  (replacement) <U11 88B 'technology1' 'technology2'
+          * commodity2   (commodity2) <U8 64B 'gasoline' 'diesel'
+          * commodity    (commodity) <U8 64B 'gasoline' 'diesel'
 
         In this case, meeting the gasoline demand with technology1 would require
         producing 1 unit of gasoline and 5 units of diesel, whereas meeting the gasoline
@@ -664,8 +666,8 @@ def modify_dlc(technologies: xr.DataArray, demand: xr.DataArray) -> xr.DataArray
         array([[1., 5.],
                [1., 2.]])
         Coordinates:
-        * replacement  (replacement) <U11 88B 'technology1' 'technology2'
-        * commodity2   (commodity2) <U8 64B 'gasoline' 'diesel'
+          * replacement  (replacement) <U11 88B 'technology1' 'technology2'
+          * commodity2   (commodity2) <U8 64B 'gasoline' 'diesel'
 
         In this case, this is just the outputs of each technology when acting in service
         of the gasoline demand.
@@ -677,7 +679,7 @@ def modify_dlc(technologies: xr.DataArray, demand: xr.DataArray) -> xr.DataArray
         <xarray.DataArray (commodity: 2)> Size: 16B
         array([1., 5.])
         Coordinates:
-        * commodity  (commodity) <U8 64B 'gasoline' 'diesel'
+          * commodity  (commodity) <U8 64B 'gasoline' 'diesel'
 
         In this case, we get the maximum potential production of diesel as 5 units,
         which would occur as a side-product when technology1 is acting in service of the
@@ -689,8 +691,8 @@ def modify_dlc(technologies: xr.DataArray, demand: xr.DataArray) -> xr.DataArray
         <xarray.DataArray (commodity: 2)> Size: 16B
         array([1., 5.])
         Coordinates:
-        * commodity  (commodity) <U8 64B 'gasoline' 'diesel'
-    """
+          * commodity  (commodity) <U8 64B 'gasoline' 'diesel'
+    """  # noqa: E501
     # Calculate commodity output ratios for each technology
     output_ratios = technologies.rename({"commodity": "commodity2"}) / technologies
     output_ratios = output_ratios.where(np.isfinite(output_ratios), 0)  # this is
