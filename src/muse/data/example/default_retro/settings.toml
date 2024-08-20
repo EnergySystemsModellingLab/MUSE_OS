@@ -56,15 +56,13 @@ demand_share = "new_and_retro"  # Optional, default to standard_demand
 forecast = 5  # Optional, defaults to 5
 
 [[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
 quantity = "capacity"
-sink = 'csv'
-overwrite = true
+sink = 'aggregate'
 
 [[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-sink = 'csv'
-overwrite = true
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
+sink = 'aggregate'
 quantity.name = "supply"
 quantity.sum_over = "timeslice"
 quantity.drop = ["comm_usage", "units_prices"]
@@ -88,10 +86,9 @@ lpsolver = "scipy"
 demand_share = "new_and_retro"
 
 [[sectors.power.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
 quantity = "capacity"
-sink = 'csv'
-overwrite = true
+sink = 'aggregate'
 
 [[sectors.power.interactions]]
 net = 'new_to_retro'
@@ -112,10 +109,9 @@ lpsolver = "scipy"
 demand_share = "new_and_retro"
 
 [[sectors.gas.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
 quantity = "capacity"
-sink = 'csv'
-overwrite = true
+sink = 'aggregate'
 
 [[sectors.gas.interactions]]
 net = 'new_to_retro'

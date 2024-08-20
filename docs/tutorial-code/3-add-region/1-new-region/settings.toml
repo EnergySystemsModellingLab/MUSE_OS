@@ -56,15 +56,13 @@ demand_share = "standard_demand"  # Optional, default to standard_demand
 forecast = 5  # Optional, defaults to 5
 
 [[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
 quantity = "capacity"
-sink = 'csv'
-overwrite = true
+sink = 'aggregate'
 
 [[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-sink = 'csv'
-overwrite = true
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
+sink = 'aggregate'
 quantity.name = "supply"
 quantity.sum_over = "timeslice"
 quantity.drop = ["comm_usage", "units_prices"]
@@ -84,10 +82,9 @@ lpsolver = "scipy"
 demand_share = "standard_demand"
 
 [[sectors.power.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
 quantity = "capacity"
-sink = 'csv'
-overwrite = true
+sink = 'aggregate'
 
 [sectors.gas]
 type = 'default'
@@ -104,10 +101,9 @@ lpsolver = "scipy"
 demand_share = "standard_demand"
 
 [[sectors.gas.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
 quantity = "capacity"
-sink = 'csv'
-overwrite = true
+sink = 'aggregate'
 
 [sectors.residential_presets]
 type = 'presets'

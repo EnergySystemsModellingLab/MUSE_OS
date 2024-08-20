@@ -63,10 +63,9 @@ forecast = 5
 asset_threshold = 1e-4
 
 [[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
 quantity = "capacity"
-sink = 'csv'
-overwrite = true
+sink = 'aggregate'
 columns = ["asset", "year", "region", "technology", "installed", "capacity"]
 
 [[sectors.residential.interactions]]
@@ -102,10 +101,9 @@ forecast = 5
 asset_threshold = 1e-4
 
 [[sectors.power.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
 quantity = "capacity"
-sink = 'csv'
-overwrite = true
+sink = 'aggregate'
 columns = [
     "dst_region",
     "year",
@@ -145,10 +143,9 @@ forecast = 5
 asset_threshold = 1e-4
 
 [[sectors.gas.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
+filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
 quantity = "capacity"
-sink = 'csv'
-overwrite = true
+sink = 'aggregate'
 columns = [
     "dst_region",
     "year",
