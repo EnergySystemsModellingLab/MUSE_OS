@@ -951,8 +951,6 @@ def capacity_to_service_demand(
     return max_demand / technologies.utilization_factor / max_hours
 
 
-
-
 def capital_recovery_factor(technologies: xr.Dataset) -> xr.DataArray:
     """Capital recovery factor using interest rate and expected lifetime.
 
