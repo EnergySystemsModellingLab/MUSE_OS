@@ -315,8 +315,7 @@ def lifetime_levelized_cost_of_energy(
     technologies: xr.Dataset,
     capacity,
     production,
-    years,
-    forecast_year,
+    year,
 ):
     """Levelized cost of energy (LCOE) of technologies over their lifetime.
 
@@ -357,18 +356,26 @@ def lifetime_levelized_cost_of_energy(
         ]
     ]
 
+    # Years
+    life = techs.technical_life.astype(int)
+    iyears = range(
+        year,
+        max(year + life.values.max(), year),
+    )
+    years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
+
+    # Evolution of rates with time
+    rates = discount_factor(
+        years=years - year + 1,
+        interest_rate=techs.interest_rate,
+        mask=years <= year + life,
+    )
+
     # Filters
     environmentals = is_pollutant(technologies.comm_usage)
     material = is_material(technologies.comm_usage)
     products = is_enduse(technologies.comm_usage)
     fuels = is_fuel(technologies.comm_usage)
-
-    # Evolution of rates with time
-    rates = discount_factor(
-        years=years - forecast_year + 1,
-        interest_rate=techs.interest_rate,
-        mask=years <= forecast_year + techs.technical_life.astype(int),
-    )
 
     # Cost of installed capacity
     installed_capacity_costs = convert_timeslice(
@@ -379,17 +386,14 @@ def lifetime_levelized_cost_of_energy(
 
     # Cost related to environmental products
     prices_environmental = filter_input(
-        prices, commodity=environmentals, year=years.values, region=techs.region
+        prices, commodity=environmentals, year=years.values
     ).ffill("year")
     environmental_costs = (production * prices_environmental * rates).sum(
         ("commodity", "year")
     )
 
     # Fuel/energy costs
-    prices_fuel = filter_input(
-        prices, commodity=fuels, year=years.values, region=techs.region
-    ).ffill("year")
-    prices = filter_input(prices, year=years.values, region=techs.region).ffill("year")
+    prices_fuel = filter_input(prices, commodity=fuels, year=years.values).ffill("year")
     fuel = consumption(technologies=techs, production=production, prices=prices)
     fuel_costs = (fuel * prices_fuel * rates).sum(("commodity", "year"))
 
@@ -410,7 +414,7 @@ def lifetime_levelized_cost_of_energy(
     ).sum("commodity")
     fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
     denominator = production.where(production > 0.0, 1e-6)
-    results = (
+    result = (
         installed_capacity_costs
         + fuel_costs
         + environmental_costs
@@ -418,7 +422,7 @@ def lifetime_levelized_cost_of_energy(
         + fixed_and_variable_costs
     ) / (denominator.sel(commodity=products).sum("commodity") * rates).sum("year")
 
-    return results.where(np.isfinite(results)).fillna(0.0)
+    return result
 
 
 def annual_levelized_cost_of_energy(

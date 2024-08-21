@@ -580,6 +580,7 @@ def lifetime_levelized_cost_of_energy(
         technology=search_space.replacement,
         year=agent.forecast_year,
     ).drop_vars("technology")
+    prices = cast(xr.DataArray, agent.filter_input(market.prices))
 
     capacity = capacity_to_service_demand(
         agent, demand, search_space, technologies, market
@@ -587,22 +588,12 @@ def lifetime_levelized_cost_of_energy(
     production = capacity * techs.fixed_outputs * techs.utilization_factor
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
-    iyears = range(
-        agent.forecast_year,
-        max(
-            agent.forecast_year + techs.technical_life.astype(int).values.max(),
-            agent.forecast_year,
-        ),
-    )
-    years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
-
     results = lifetime_levelized_cost_of_energy(
-        prices=market.prices,
+        prices=prices,
         technologies=techs,
         capacity=capacity,
         production=production,
-        years=years,
-        forecast_year=agent.forecast_year,
+        year=agent.forecast_year,
     )
 
     return results.where(np.isfinite(results)).fillna(0.0)

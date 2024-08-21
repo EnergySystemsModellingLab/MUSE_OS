@@ -286,12 +286,8 @@ def test_net_present_value(
     """
     import xarray
     from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
-    from muse.objectives import (
-        capacity_to_service_demand,
-        discount_factor,
-        net_present_value,
-    )
-    from muse.quantities import consumption
+    from muse.objectives import capacity_to_service_demand, net_present_value
+    from muse.quantities import consumption, discount_factor
 
     technologies.technical_life.loc[{"region": retro_agent.region}] = 10
 
