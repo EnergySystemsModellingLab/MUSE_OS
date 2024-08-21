@@ -1,9 +1,0 @@
-timeslice,asset,year,commodity,month,day,hour,region,technology,installed,supply
-0,1,2025,electricity,all-year,all-week,night,R1,windturbine,2020,0.42220000000
-1,1,2025,electricity,all-year,all-week,morning,R1,windturbine,2020,0.63330000000
-2,1,2025,electricity,all-year,all-week,afternoon,R1,windturbine,2020,0.42220000000
-3,1,2025,electricity,all-year,all-week,early-peak,R1,windturbine,2020,0.63330000000
-4,0,2025,electricity,all-year,all-week,late-peak,R1,gasCCGT,2020,0.26670000000
-4,0,2025,CO2f,all-year,all-week,late-peak,R1,gasCCGT,2020,24.44530000000
-4,1,2025,electricity,all-year,all-week,late-peak,R1,windturbine,2020,1.00000000000
-5,1,2025,electricity,all-year,all-week,evening,R1,windturbine,2020,0.84440000000
