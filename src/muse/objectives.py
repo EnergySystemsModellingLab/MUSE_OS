@@ -260,23 +260,16 @@ def capacity_to_service_demand(
     **kwargs,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
-    params = agent.filter_input(
+    from muse.quantities import capacity_to_service_demand
+
+    techs = agent.filter_input(
         technologies[["utilization_factor", "fixed_outputs"]],
         year=agent.forecast_year,
         region=agent.region,
         technology=search_space.replacement,
     ).drop_vars("technology")
     hours = _represent_hours(market, search_space)
-    max_hours = hours.max() / hours.sum()
-
-    commodity_output = params.fixed_outputs.sel(commodity=demand.commodity)
-
-    max_demand = (
-        demand.where(commodity_output > 0, 0)
-        / commodity_output.where(commodity_output > 0, 1)
-    ).max(("commodity", "timeslice"))
-
-    return max_demand / params.utilization_factor / max_hours
+    return capacity_to_service_demand(demand=demand, technologies=techs, hours=hours)
 
 
 @register_objective
@@ -361,7 +354,7 @@ def emission_cost(
     *args,
     **kwargs,
 ) -> xr.DataArray:
-    r"""Emission cost for each technology when fultfilling whole demand.
+    r"""Emission cost for each technology when fulfilling whole demand.
 
     Given the demand share :math:`D`, the emissions per amount produced :math:`E`, and
     the prices per emittant :math:`P`, then emissions costs :math:`C` are computed
@@ -399,14 +392,8 @@ def capacity_in_use(
     **kwargs,
 ):
     from muse.commodities import is_enduse
-    from muse.timeslices import represent_hours
 
-    if "represent_hours" in market:
-        hours = market.represent_hours
-    elif "represent_hours" in search_space.coords:
-        hours = search_space.represent_hours
-    else:
-        hours = represent_hours(market.timeslice)
+    hours = _represent_hours(market, search_space)
 
     ufac = agent.filter_input(
         technologies.utilization_factor,

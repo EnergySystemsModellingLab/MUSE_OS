@@ -884,23 +884,10 @@ def metric_lcoe(
 
 def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Levelized cost of energy () of technologies over their lifetime."""
-    from muse.quantities import lifetime_levelized_cost_of_energy
-
-    def capacity_to_service_demand(demand, technologies):
-        from muse.timeslices import represent_hours
-
-        hours = represent_hours(demand.timeslice)
-
-        max_hours = hours.max() / hours.sum()
-
-        commodity_output = technologies.fixed_outputs.sel(commodity=demand.commodity)
-
-        max_demand = (
-            demand.where(commodity_output > 0, 0)
-            / commodity_output.where(commodity_output > 0, 1)
-        ).max(("commodity", "timeslice"))
-
-        return max_demand / technologies.utilization_factor / max_hours
+    from muse.quantities import (
+        lifetime_levelized_cost_of_energy,
+        capacity_to_service_demand,
+    )
 
     # Filtering of the inputs
     data_sector: list[xr.DataArray] = []
@@ -978,23 +965,7 @@ def metric_eac(
 def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Net Present Value of technologies over their lifetime."""
     from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
-    from muse.quantities import consumption, discount_factor
-
-    def capacity_to_service_demand(demand, technologies):
-        from muse.timeslices import represent_hours
-
-        hours = represent_hours(demand.timeslice)
-
-        max_hours = hours.max() / hours.sum()
-
-        commodity_output = technologies.fixed_outputs.sel(commodity=demand.commodity)
-
-        max_demand = (
-            demand.where(commodity_output > 0, 0)
-            / commodity_output.where(commodity_output > 0, 1)
-        ).max(("commodity", "timeslice"))
-
-        return max_demand / technologies.utilization_factor / max_hours
+    from muse.quantities import consumption, discount_factor, capacity_to_service_demand
 
     # Filtering of the inputs
     data_sector: list[xr.DataArray] = []

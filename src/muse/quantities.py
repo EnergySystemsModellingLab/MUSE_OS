@@ -324,11 +324,7 @@ def lifetime_levelized_cost_of_energy(
     factor.
 
     Arguments:
-        agent: The agent of interest
-        demand: Demand for commodities
-        search_space: The search space space for replacement technologies
         technologies: All the technologies
-        market: The market parameters
         *args: Extra arguments (unused)
         **kwargs: Extra keyword arguments (unused)
 
@@ -771,6 +767,25 @@ def costed_production(
     result = xr.zeros_like(maxprod)
     result[dict(commodity=commodity)] = result[dict(commodity=commodity)] + production
     return result
+
+
+def capacity_to_service_demand(
+    demand: xr.DataArray,
+    technologies: xr.Dataset,
+    hours=None,
+) -> xr.DataArray:
+    """Minimum capacity required to fulfill the demand."""
+    from muse.timeslices import represent_hours
+
+    if hours is None:
+        hours = represent_hours(demand.timeslice)
+    max_hours = hours.max() / hours.sum()
+    commodity_output = technologies.fixed_outputs.sel(commodity=demand.commodity)
+    max_demand = (
+        demand.where(commodity_output > 0, 0)
+        / commodity_output.where(commodity_output > 0, 1)
+    ).max(("commodity", "timeslice"))
+    return max_demand / technologies.utilization_factor / max_hours
 
 
 def discount_factor(years, interest_rate, mask=1.0):
