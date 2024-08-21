@@ -502,35 +502,6 @@ def annual_levelized_cost_of_energy(
     return aLCOE(prices, techs).rename(technology="replacement").max("timeslice")
 
 
-def capital_recovery_factor(
-    agent: Agent, search_space: xr.DataArray, technologies: xr.Dataset
-) -> xr.DataArray:
-    """Capital recovery factor using interest rate and expected lifetime.
-
-    The `capital recovery factor`_ is computed using the expression given by HOMER
-    Energy.
-
-    .. _capital recovery factor:
-        https://www.homerenergy.com/products/pro/docs/3.15/capital_recovery_factor.html
-
-    Arguments:
-        agent: The agent of interest
-        search_space: The search space space for replacement technologies
-        technologies: All the technologies
-
-    Return:
-        xr.DataArray with the CRF calculated for the relevant technologies
-    """
-    tech = agent.filter_input(
-        technologies[["technical_life", "interest_rate"]],
-        technology=search_space.replacement,
-        year=agent.forecast_year,
-    ).drop_vars("technology")
-    nyears = tech.technical_life.astype(int)
-
-    return tech.interest_rate / (1 - (1 / (1 + tech.interest_rate) ** nyears))
-
-
 @register_objective(name=["LCOE", "LLCOE"])
 def lifetime_levelized_cost_of_energy(
     agent: Agent,
@@ -631,136 +602,29 @@ def net_present_value(
     Return:
         xr.DataArray with the NPV calculated for the relevant technologies
     """
-    from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
-    from muse.quantities import consumption, discount_factor
+    from muse.quantities import net_present_value
     from muse.timeslices import QuantityType, convert_timeslice
 
-    # Filtering of the inputs
-    tech = agent.filter_input(
-        technologies[
-            [
-                "technical_life",
-                "interest_rate",
-                "cap_par",
-                "cap_exp",
-                "var_par",
-                "var_exp",
-                "fix_par",
-                "fix_exp",
-                "fixed_outputs",
-                "fixed_inputs",
-                "flexible_inputs",
-                "utilization_factor",
-            ]
-        ],
+    techs = agent.filter_input(
+        technologies,
         technology=search_space.replacement,
         year=agent.forecast_year,
     ).drop_vars("technology")
-    nyears = tech.technical_life.astype(int)
-    interest_rate = tech.interest_rate
-    cap_par = tech.cap_par
-    cap_exp = tech.cap_exp
-    var_par = tech.var_par
-    var_exp = tech.var_exp
-    fix_par = tech.fix_par
-    fix_exp = tech.fix_exp
-    fixed_outputs = tech.fixed_outputs
-    utilization_factor = tech.utilization_factor
+    prices = cast(xr.DataArray, agent.filter_input(market.prices))
 
-    # All years the simulation is running
-    # NOTE: see docstring about installation year
-    iyears = range(
-        agent.forecast_year,
-        max(agent.forecast_year + nyears.values.max(), agent.forecast_year + 1),
-    )
-    years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
-
-    # Filters
-    environmentals = is_pollutant(technologies.comm_usage)
-    material = is_material(technologies.comm_usage)
-    products = is_enduse(technologies.comm_usage)
-    fuels = is_fuel(technologies.comm_usage)
-    # Capacity
     capacity = capacity_to_service_demand(
         agent, demand, search_space, technologies, market
     )
-
-    # Evolution of rates with time
-    rates = discount_factor(
-        years - agent.forecast_year + 1,
-        interest_rate,
-        years <= agent.forecast_year + nyears,
-    )
-
-    # raw revenues --> Make the NPV more positive
-    # This production is the absolute maximum production, given the capacity
-    prices_non_env = agent.filter_input(
-        market.prices, commodity=products, year=years.values
-    ).ffill("year")
-
-    production = capacity * fixed_outputs * utilization_factor
+    production = capacity * techs.fixed_outputs * techs.utilization_factor
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
-    raw_revenues = (production * prices_non_env * rates).sum(("commodity", "year"))
-
-    # raw costs --> make the NPV more negative
-    # Cost of installed capacity
-    installed_capacity_costs = convert_timeslice(
-        cap_par * (capacity**cap_exp),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
+    results = net_present_value(
+        prices=prices,
+        technologies=techs,
+        capacity=capacity,
+        production=production,
+        year=agent.forecast_year,
     )
-
-    # Cost related to environmental products
-    prices_environmental = agent.filter_input(
-        market.prices, commodity=environmentals, year=years.values
-    ).ffill("year")
-    environmental_costs = (production * prices_environmental * rates).sum(
-        ("commodity", "year")
-    )
-
-    # Fuel/energy costs
-    prices_fuel = agent.filter_input(
-        market.prices, commodity=fuels, year=years.values
-    ).ffill("year")
-    prices = agent.filter_input(market.prices, year=years.values).ffill("year")
-    fuel = consumption(technologies=tech, production=production, prices=prices).sel(
-        commodity=fuels
-    )
-    fuel_costs = (fuel * prices_fuel * rates).sum(("commodity", "year"))
-
-    # Cost related to material other than fuel/energy and environmentals
-    prices_material = agent.filter_input(
-        market.prices, commodity=material, year=years.values
-    ).ffill("year")
-    material_costs = (production * prices_material * rates).sum(("commodity", "year"))
-
-    # Fixed and Variable costs
-    fixed_costs = convert_timeslice(
-        fix_par * (capacity**fix_exp),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
-    )
-    variable_costs = var_par * (
-        (production.sel(commodity=products).sum("commodity")) ** var_exp
-    )
-    assert set(fixed_costs.dims) == set(variable_costs.dims)
-    fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
-
-    assert set(raw_revenues.dims) == set(installed_capacity_costs.dims)
-    assert set(raw_revenues.dims) == set(environmental_costs.dims)
-    assert set(raw_revenues.dims) == set(fuel_costs.dims)
-    assert set(raw_revenues.dims) == set(material_costs.dims)
-    assert set(raw_revenues.dims) == set(fixed_and_variable_costs.dims)
-
-    results = raw_revenues - (
-        +installed_capacity_costs
-        + environmental_costs
-        + material_costs
-        + fixed_and_variable_costs
-        + fuel_costs
-    )
-
     return results
 
 
@@ -783,9 +647,30 @@ def net_present_cost(
     .. seealso::
         :py:func:`net_present_value`.
     """
-    return -net_present_value(
-        agent, demand, search_space, technologies, market, *args, **kwargs
+    from muse.quantities import net_present_cost
+    from muse.timeslices import QuantityType, convert_timeslice
+
+    techs = agent.filter_input(
+        technologies,
+        technology=search_space.replacement,
+        year=agent.forecast_year,
+    ).drop_vars("technology")
+    prices = cast(xr.DataArray, agent.filter_input(market.prices))
+
+    capacity = capacity_to_service_demand(
+        agent, demand, search_space, technologies, market
     )
+    production = capacity * techs.fixed_outputs * techs.utilization_factor
+    production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
+
+    results = net_present_cost(
+        prices=prices,
+        technologies=techs,
+        capacity=capacity,
+        production=production,
+        year=agent.forecast_year,
+    )
+    return results
 
 
 @register_objective(name="EAC")
@@ -820,6 +705,27 @@ def equivalent_annual_cost(
     Return:
         xr.DataArray with the EAC calculated for the relevant technologies
     """
-    npv = net_present_cost(agent, demand, search_space, technologies, market)
-    crf = capital_recovery_factor(agent, search_space, technologies)
-    return npv * crf
+    from muse.quantities import equivalent_annual_cost
+    from muse.timeslices import QuantityType, convert_timeslice
+
+    techs = agent.filter_input(
+        technologies,
+        technology=search_space.replacement,
+        year=agent.forecast_year,
+    ).drop_vars("technology")
+    prices = cast(xr.DataArray, agent.filter_input(market.prices))
+
+    capacity = capacity_to_service_demand(
+        agent, demand, search_space, technologies, market
+    )
+    production = capacity * techs.fixed_outputs * techs.utilization_factor
+    production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
+
+    results = equivalent_annual_cost(
+        prices=prices,
+        technologies=techs,
+        capacity=capacity,
+        production=production,
+        year=agent.forecast_year,
+    )
+    return results

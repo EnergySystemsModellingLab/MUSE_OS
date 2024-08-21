@@ -310,6 +310,174 @@ def consumption(
     return consumption + flex * production
 
 
+def net_present_value(prices, technologies: xr.Dataset, capacity, production, year):
+    """Net present value (NPV) of the relevant technologies.
+
+    The net present value of a Component is the present value  of all the revenues that
+    a Component earns over its lifetime minus all the costs of installing and operating
+    it. Follows the definition of the `net present cost`_ given by HOMER Energy.
+    Metrics are calculated
+    .. _net present cost:
+    ..      https://www.homerenergy.com/products/pro/docs/3.15/net_present_cost.html
+
+    - energy commodities INPUTS are related to fuel costs
+    - environmental commodities OUTPUTS are related to environmental costs
+    - material and service commodities INPUTS are related to consumable costs
+    - fixed and variable costs are given as technodata inputs and depend on the
+      installed capacity and production (non-environmental), respectively
+    - capacity costs are given as technodata inputs and depend on the installed capacity
+
+    Note:
+        Here, the installation year is always agent.forecast_year,
+        since objectives compute the
+        NPV for technologies to be installed in the current year. A more general NPV
+        computation (which would then live in quantities.py) would have to refer to
+        installation year of the technology.
+
+    Arguments:
+        technologies: All the technologies
+
+    Return:
+        xr.DataArray with the NPV calculated for the relevant technologies
+    """
+    from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
+    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.utilities import filter_input
+
+    # Filtering of the inputs
+    techs = technologies[
+        [
+            "technical_life",
+            "interest_rate",
+            "cap_par",
+            "cap_exp",
+            "var_par",
+            "var_exp",
+            "fix_par",
+            "fix_exp",
+            "fixed_outputs",
+            "fixed_inputs",
+            "flexible_inputs",
+            "utilization_factor",
+        ]
+    ]
+
+    # Years
+    life = techs.technical_life.astype(int)
+    iyears = range(year, max(year + life.values.max(), year + 1))
+    years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
+
+    # Evolution of rates with time
+    rates = discount_factor(
+        years - year + 1,
+        interest_rate=techs.interest_rate,
+        mask=years <= year + life,
+    )
+
+    # Filters
+    environmentals = is_pollutant(technologies.comm_usage)
+    material = is_material(technologies.comm_usage)
+    products = is_enduse(technologies.comm_usage)
+    fuels = is_fuel(technologies.comm_usage)
+
+    # Revenue
+    prices_non_env = filter_input(prices, commodity=products, year=years.values).ffill(
+        "year"
+    )
+    raw_revenues = (production * prices_non_env * rates).sum(("commodity", "year"))
+
+    # Cost of installed capacity
+    installed_capacity_costs = convert_timeslice(
+        techs.cap_par * (capacity**techs.cap_exp),
+        prices.timeslice,
+        QuantityType.EXTENSIVE,
+    )
+
+    # Cost related to environmental products
+    prices_environmental = filter_input(
+        prices, commodity=environmentals, year=years.values
+    ).ffill("year")
+    environmental_costs = (production * prices_environmental * rates).sum(
+        ("commodity", "year")
+    )
+
+    # Fuel/energy costs
+    prices_fuel = filter_input(prices, commodity=fuels, year=years.values).ffill("year")
+    fuel = consumption(technologies=techs, production=production, prices=prices)
+    fuel_costs = (fuel * prices_fuel * rates).sum(("commodity", "year"))
+
+    # Cost related to material other than fuel/energy and environmentals
+    prices_material = filter_input(prices, commodity=material, year=years.values).ffill(
+        "year"
+    )
+    material_costs = (production * prices_material * rates).sum(("commodity", "year"))
+
+    # Fixed and Variable costs
+    fixed_costs = convert_timeslice(
+        techs.fix_par * (capacity**techs.fix_exp),
+        prices.timeslice,
+        QuantityType.EXTENSIVE,
+    )
+    variable_costs = techs.var_par * (
+        (production.sel(commodity=products).sum("commodity")) ** techs.var_exp
+    )
+    assert set(fixed_costs.dims) == set(variable_costs.dims)
+    fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
+
+    assert set(raw_revenues.dims) == set(installed_capacity_costs.dims)
+    assert set(raw_revenues.dims) == set(environmental_costs.dims)
+    assert set(raw_revenues.dims) == set(fuel_costs.dims)
+    assert set(raw_revenues.dims) == set(material_costs.dims)
+    assert set(raw_revenues.dims) == set(fixed_and_variable_costs.dims)
+
+    results = raw_revenues - (
+        installed_capacity_costs
+        + fuel_costs
+        + environmental_costs
+        + material_costs
+        + fixed_and_variable_costs
+    )
+
+    return results
+
+
+def net_present_cost(prices, technologies: xr.Dataset, capacity, production, year):
+    """Net present cost (NPC) of the relevant technologies.
+
+    The net present cost of a Component is the present value of all the costs of
+    installing and operating the Component over the project lifetime, minus the present
+    value of all the revenues that it earns over the project lifetime.
+
+    .. seealso::
+        :py:func:`net_present_value`.
+    """
+    return -net_present_value(prices, technologies, capacity, production, year)
+
+
+def equivalent_annual_cost(
+    prices, technologies: xr.Dataset, capacity, production, year
+):
+    """Equivalent annual costs (or annualized cost) of a technology.
+
+    This is the cost that, if it were to occur equally in every year of the
+    project lifetime, would give the same net present cost as the actual cash
+    flow sequence associated with that component. The cost is computed using the
+    `annualized cost`_ expression given by HOMER Energy.
+
+    .. _annualized cost:
+        https://www.homerenergy.com/products/pro/docs/3.15/annualized_cost.html
+
+    Arguments:
+        technologies: All the technologies
+
+    Return:
+        xr.DataArray with the EAC calculated for the relevant technologies
+    """
+    npc = net_present_cost(prices, technologies, capacity, production, year)
+    crf = capital_recovery_factor(technologies)
+    return npc * crf
+
+
 def lifetime_levelized_cost_of_energy(
     prices: xr.DataArray,
     technologies: xr.Dataset,
@@ -325,8 +493,6 @@ def lifetime_levelized_cost_of_energy(
 
     Arguments:
         technologies: All the technologies
-        *args: Extra arguments (unused)
-        **kwargs: Extra keyword arguments (unused)
 
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
@@ -354,10 +520,7 @@ def lifetime_levelized_cost_of_energy(
 
     # Years
     life = techs.technical_life.astype(int)
-    iyears = range(
-        year,
-        max(year + life.values.max(), year),
-    )
+    iyears = range(year, max(year + life.values.max(), year))
     years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
 
     # Evolution of rates with time
@@ -786,6 +949,29 @@ def capacity_to_service_demand(
         / commodity_output.where(commodity_output > 0, 1)
     ).max(("commodity", "timeslice"))
     return max_demand / technologies.utilization_factor / max_hours
+
+
+
+
+def capital_recovery_factor(technologies: xr.Dataset) -> xr.DataArray:
+    """Capital recovery factor using interest rate and expected lifetime.
+
+    The `capital recovery factor`_ is computed using the expression given by HOMER
+    Energy.
+
+    .. _capital recovery factor:
+        https://www.homerenergy.com/products/pro/docs/3.15/capital_recovery_factor.html
+
+    Arguments:
+        technologies: All the technologies
+
+    Return:
+        xr.DataArray with the CRF calculated for the relevant technologies
+    """
+    nyears = technologies.technical_life.astype(int)
+    return technologies.interest_rate / (
+        1 - (1 / (1 + technologies.interest_rate) ** nyears)
+    )
 
 
 def discount_factor(years, interest_rate, mask=1.0):
