@@ -310,6 +310,117 @@ def consumption(
     return consumption + flex * production
 
 
+def lifetime_levelized_cost_of_energy(
+    prices: xr.DataArray,
+    technologies: xr.Dataset,
+    capacity,
+    production,
+    years,
+    forecast_year,
+):
+    """Levelized cost of energy (LCOE) of technologies over their lifetime.
+
+    It follows the `simplified LCOE` given by NREL. The LCOE is set to zero for those
+    timeslices where the production is zero, normally due to a zero utilisation
+    factor.
+
+    Arguments:
+        agent: The agent of interest
+        demand: Demand for commodities
+        search_space: The search space space for replacement technologies
+        technologies: All the technologies
+        market: The market parameters
+        *args: Extra arguments (unused)
+        **kwargs: Extra keyword arguments (unused)
+
+    Return:
+        xr.DataArray with the LCOE calculated for the relevant technologies
+    """
+    from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
+    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.utilities import filter_input
+
+    techs = technologies[
+        [
+            "technical_life",
+            "interest_rate",
+            "cap_par",
+            "cap_exp",
+            "var_par",
+            "var_exp",
+            "fix_par",
+            "fix_exp",
+            "fixed_outputs",
+            "fixed_inputs",
+            "flexible_inputs",
+            "utilization_factor",
+        ]
+    ]
+
+    # Filters
+    environmentals = is_pollutant(technologies.comm_usage)
+    material = is_material(technologies.comm_usage)
+    products = is_enduse(technologies.comm_usage)
+    fuels = is_fuel(technologies.comm_usage)
+
+    # Evolution of rates with time
+    rates = discount_factor(
+        years=years - forecast_year + 1,
+        interest_rate=techs.interest_rate,
+        mask=years <= forecast_year + techs.technical_life.astype(int),
+    )
+
+    # Cost of installed capacity
+    installed_capacity_costs = convert_timeslice(
+        techs.cap_par * (capacity**techs.cap_exp),
+        prices.timeslice,
+        QuantityType.EXTENSIVE,
+    )
+
+    # Cost related to environmental products
+    prices_environmental = filter_input(
+        prices, commodity=environmentals, year=years.values, region=techs.region
+    ).ffill("year")
+    environmental_costs = (production * prices_environmental * rates).sum(
+        ("commodity", "year")
+    )
+
+    # Fuel/energy costs
+    prices_fuel = filter_input(
+        prices, commodity=fuels, year=years.values, region=techs.region
+    ).ffill("year")
+    prices = filter_input(prices, year=years.values, region=techs.region).ffill("year")
+    fuel = consumption(technologies=techs, production=production, prices=prices)
+    fuel_costs = (fuel * prices_fuel * rates).sum(("commodity", "year"))
+
+    # Cost related to material other than fuel/energy and environmentals
+    prices_material = filter_input(prices, commodity=material, year=years.values).ffill(
+        "year"
+    )
+    material_costs = (production * prices_material * rates).sum(("commodity", "year"))
+
+    # Fixed and Variable costs
+    fixed_costs = convert_timeslice(
+        techs.fix_par * (capacity**techs.fix_exp),
+        prices.timeslice,
+        QuantityType.EXTENSIVE,
+    )
+    variable_costs = (
+        techs.var_par * production.sel(commodity=products) ** techs.var_exp
+    ).sum("commodity")
+    fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
+    denominator = production.where(production > 0.0, 1e-6)
+    results = (
+        installed_capacity_costs
+        + fuel_costs
+        + environmental_costs
+        + material_costs
+        + fixed_and_variable_costs
+    ) / (denominator.sel(commodity=products).sum("commodity") * rates).sum("year")
+
+    return results.where(np.isfinite(results)).fillna(0.0)
+
+
 def annual_levelized_cost_of_energy(
     prices: xr.DataArray,
     technologies: xr.Dataset,
@@ -380,11 +491,11 @@ def annual_levelized_cost_of_energy(
 
     life = techs.technical_life.astype(int)
 
+    rates = techs.interest_rate / (1 - (1 + techs.interest_rate) ** (-life))
+
     annualized_capital_costs = (
         convert_timeslice(
-            techs.cap_par
-            * techs.interest_rate
-            / (1 - (1 + techs.interest_rate) ** (-life)),
+            techs.cap_par * rates,
             prices.timeslice,
             QuantityType.EXTENSIVE,
         )
@@ -656,3 +767,8 @@ def costed_production(
     result = xr.zeros_like(maxprod)
     result[dict(commodity=commodity)] = result[dict(commodity=commodity)] + production
     return result
+
+
+def discount_factor(years, interest_rate, mask=1.0):
+    """Calculate an array with the rate (aka discount factor) values over the years."""
+    return mask / (1 + interest_rate) ** years
