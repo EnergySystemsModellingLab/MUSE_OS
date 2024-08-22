@@ -49,7 +49,7 @@ def test_objective_registration():
 
 
 @mark.usefixtures("save_registries")
-def test_computing_objectives(_technologies, _demand):
+def test_computing_objectives(_technologies, _demand, _prices):
     from muse.objectives import factory, register_objective
 
     @register_objective
@@ -71,15 +71,23 @@ def test_computing_objectives(_technologies, _demand):
         return result
 
     # Test first objective with/without switch
-    objectives = factory("first")(technologies=_technologies, switch=True)
+    objectives = factory("first")(
+        technologies=_technologies, demand=_demand, prices=_prices, switch=True
+    )
     assert set(objectives.data_vars) == {"first"}
     assert (objectives.first == 1).all()
-    objectives = factory("first")(technologies=_technologies, switch=False)
+    objectives = factory("first")(
+        technologies=_technologies, demand=_demand, prices=_prices, switch=False
+    )
     assert (objectives.first == 2).all()
 
     # Test multiple objectives
     objectives = factory(["first", "second"])(
-        technologies=_technologies, demand=_demand, switch=False, assets=0
+        technologies=_technologies,
+        demand=_demand,
+        prices=_prices,
+        switch=False,
+        assets=0,
     )
     assert set(objectives.data_vars) == {"first", "second"}
     assert (objectives.first == 2).all()
