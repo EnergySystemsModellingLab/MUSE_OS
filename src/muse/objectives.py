@@ -208,35 +208,19 @@ def efficiency(
     return technologies.efficiency
 
 
-def _represent_hours(market: xr.Dataset) -> xr.DataArray:
-    """Retrieves the appropriate value for represent_hours.
-
-    Args:
-        market: The simulation market.
-
-    Returns:
-        DataArray with the hours of each timeslice.
-    """
-    from muse.timeslices import represent_hours
-
-    if "represent_hours" in market:
-        return market.represent_hours
-    return represent_hours(market.timeslice)
-
-
 @register_objective(name="capacity")
 def capacity_to_service_demand(
     agent: Agent,
     demand: xr.DataArray,
     technologies: xr.Dataset,
-    market: xr.Dataset,
     *args,
     **kwargs,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
     from muse.quantities import capacity_to_service_demand
+    from muse.timeslices import represent_hours
 
-    hours = _represent_hours(market)
+    hours = represent_hours(demand.timeslice)
     return capacity_to_service_demand(
         demand=demand, technologies=technologies, hours=hours
     )
@@ -247,13 +231,13 @@ def capacity_in_use(
     agent: Agent,
     demand: xr.DataArray,
     technologies: xr.Dataset,
-    market: xr.Dataset,
     *args,
     **kwargs,
 ):
     from muse.commodities import is_enduse
+    from muse.timeslices import represent_hours
 
-    hours = _represent_hours(market)
+    hours = represent_hours(demand.timeslice)
 
     enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
     return (
@@ -268,7 +252,7 @@ def consumption(
     agent: Agent,
     demand: xr.DataArray,
     technologies: xr.Dataset,
-    market: xr.Dataset,
+    prices: xr.DataArray,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -278,7 +262,7 @@ def consumption(
     """
     from muse.quantities import consumption
 
-    prices = agent.filter_input(market.prices, year=agent.forecast_year)
+    prices = agent.filter_input(prices, year=agent.forecast_year)
     result = consumption(technologies=technologies, prices=prices, production=demand)
     return result.sum("commodity")
 
@@ -288,7 +272,6 @@ def fixed_costs(
     agent: Agent,
     demand: xr.DataArray,
     technologies: xr.Dataset,
-    market: xr.Dataset,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -307,9 +290,7 @@ def fixed_costs(
     """
     from muse.timeslices import QuantityType, convert_timeslice
 
-    capacity = capacity_to_service_demand(
-        agent, demand, technologies, market, *args, **kwargs
-    )
+    capacity = capacity_to_service_demand(agent, demand, technologies, *args, **kwargs)
 
     result = convert_timeslice(
         technologies.fix_par * (capacity**technologies.fix_exp),
@@ -349,7 +330,7 @@ def emission_cost(
     agent: Agent,
     demand: xr.DataArray,
     technologies: xr.Dataset,
-    market: xr.Dataset,
+    prices: xr.DataArray,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -370,7 +351,7 @@ def emission_cost(
     enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
     total = demand.sel(commodity=enduses).sum("commodity")
     envs = is_pollutant(technologies.comm_usage)
-    prices = agent.filter_input(market.prices, year=agent.forecast_year, commodity=envs)
+    prices = agent.filter_input(prices, year=agent.forecast_year, commodity=envs)
     return total * (technologies.fixed_outputs * prices).sum("commodity")
 
 
@@ -379,7 +360,7 @@ def fuel_consumption_cost(
     agent: Agent,
     demand: xr.DataArray,
     technologies: xr.Dataset,
-    market: xr.Dataset,
+    prices: xr.DataArray,
     *args,
     **kwargs,
 ):
@@ -387,8 +368,8 @@ def fuel_consumption_cost(
     from muse.commodities import is_fuel
     from muse.quantities import consumption
 
-    commodity = is_fuel(technologies.comm_usage.sel(commodity=market.commodity))
-    prices = agent.filter_input(market.prices, year=agent.forecast_year)
+    commodity = is_fuel(technologies.comm_usage.sel(commodity=demand.commodity))
+    prices = agent.filter_input(prices, year=agent.forecast_year)
     fcons = consumption(technologies=technologies, prices=prices, production=demand)
 
     return (fcons * prices).sel(commodity=commodity).sum("commodity")
@@ -399,7 +380,7 @@ def annual_levelized_cost_of_energy(
     agent: Agent,
     demand: xr.DataArray,
     technologies: xr.Dataset,
-    market: xr.Dataset,
+    prices: xr.DataArray,
     *args,
     **kwargs,
 ):
@@ -412,7 +393,7 @@ def annual_levelized_cost_of_energy(
         agent: The agent of interest
         demand: Demand for commodities
         technologies: All the technologies
-        market: The market parameters
+        prices: Commodity prices
         *args: Extra arguments (unused)
         **kwargs: Extra keyword arguments (unused)
 
@@ -421,7 +402,7 @@ def annual_levelized_cost_of_energy(
     """
     from muse.costs import annual_levelized_cost_of_energy as aLCOE
 
-    prices = cast(xr.DataArray, agent.filter_input(market.prices))
+    prices = cast(xr.DataArray, agent.filter_input(prices))
     return aLCOE(prices, technologies).max("timeslice")
 
 
@@ -430,7 +411,7 @@ def lifetime_levelized_cost_of_energy(
     agent: Agent,
     demand: xr.DataArray,
     technologies: xr.Dataset,
-    market: xr.Dataset,
+    prices: xr.DataArray,
     *args,
     **kwargs,
 ):
@@ -444,7 +425,7 @@ def lifetime_levelized_cost_of_energy(
         agent: The agent of interest
         demand: Demand for commodities
         technologies: All the technologies
-        market: The market parameters
+        prices: Commodity prices
         *args: Extra arguments (unused)
         **kwargs: Extra keyword arguments (unused)
 
@@ -454,9 +435,9 @@ def lifetime_levelized_cost_of_energy(
     from muse.costs import lifetime_levelized_cost_of_energy as LCOE
     from muse.timeslices import QuantityType, convert_timeslice
 
-    prices = cast(xr.DataArray, agent.filter_input(market.prices))
+    prices = cast(xr.DataArray, agent.filter_input(prices))
 
-    capacity = capacity_to_service_demand(agent, demand, technologies, market)
+    capacity = capacity_to_service_demand(agent, demand, technologies, prices)
     production = capacity * technologies.fixed_outputs * technologies.utilization_factor
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
@@ -476,7 +457,7 @@ def net_present_value(
     agent: Agent,
     demand: xr.DataArray,
     technologies: xr.Dataset,
-    market: xr.Dataset,
+    prices: xr.DataArray,
     *args,
     **kwargs,
 ):
@@ -507,7 +488,7 @@ def net_present_value(
         agent: The agent of interest
         demand: Demand for commodities
         technologies: All the technologies
-        market: The market parameters
+        prices: Commodity prices
         *args: Extra arguments (unused)
         **kwargs: Extra keyword arguments (unused)
 
@@ -517,9 +498,9 @@ def net_present_value(
     from muse.costs import net_present_value as NPV
     from muse.timeslices import QuantityType, convert_timeslice
 
-    prices = cast(xr.DataArray, agent.filter_input(market.prices))
+    prices = cast(xr.DataArray, agent.filter_input(prices))
 
-    capacity = capacity_to_service_demand(agent, demand, technologies, market)
+    capacity = capacity_to_service_demand(agent, demand, technologies)
     production = capacity * technologies.fixed_outputs * technologies.utilization_factor
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
@@ -538,7 +519,7 @@ def net_present_cost(
     agent: Agent,
     demand: xr.DataArray,
     technologies: xr.Dataset,
-    market: xr.Dataset,
+    prices: xr.DataArray,
     *args,
     **kwargs,
 ):
@@ -554,9 +535,9 @@ def net_present_cost(
     from muse.costs import net_present_cost as NPC
     from muse.timeslices import QuantityType, convert_timeslice
 
-    prices = cast(xr.DataArray, agent.filter_input(market.prices))
+    prices = cast(xr.DataArray, agent.filter_input(prices))
 
-    capacity = capacity_to_service_demand(agent, demand, technologies, market)
+    capacity = capacity_to_service_demand(agent, demand, technologies)
     production = capacity * technologies.fixed_outputs * technologies.utilization_factor
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
@@ -575,7 +556,7 @@ def equivalent_annual_cost(
     agent: Agent,
     demand: xr.DataArray,
     technologies: xr.Dataset,
-    market: xr.Dataset,
+    prices: xr.DataArray,
     *args,
     **kwargs,
 ):
@@ -593,7 +574,7 @@ def equivalent_annual_cost(
         agent: The agent of interest
         demand: Demand for commodities
         technologies: All the technologies
-        market: The market parameters
+        prices: Commodity prices
         *args: Extra arguments (unused)
         **kwargs: Extra keyword arguments (unused)
 
@@ -603,9 +584,9 @@ def equivalent_annual_cost(
     from muse.costs import equivalent_annual_cost as EAC
     from muse.timeslices import QuantityType, convert_timeslice
 
-    prices = cast(xr.DataArray, agent.filter_input(market.prices))
+    prices = cast(xr.DataArray, agent.filter_input(prices))
 
-    capacity = capacity_to_service_demand(agent, demand, technologies, market)
+    capacity = capacity_to_service_demand(agent, demand, technologies, prices)
     production = capacity * technologies.fixed_outputs * technologies.utilization_factor
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
