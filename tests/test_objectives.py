@@ -49,31 +49,38 @@ def test_objective_registration():
 
 
 @mark.usefixtures("save_registries")
-def test_computing_objectives(_technologies, _demand, search_space):
+def test_computing_objectives(_technologies, _demand):
     from muse.objectives import factory, register_objective
 
     @register_objective
-    def first(technologies, demand, switch=True, assets=None):
-        return 1 if switch else 2
+    def first(technologies, switch=True, *args, **kwargs):
+        from xarray import full_like
+
+        value = 1 if switch else 2
+        result = full_like(technologies["replacement"], value, dtype=float)
+        return result
 
     @register_objective
-    def second(technologies, demand, switch=True, assets=None):
-        from numpy import full
-        from xarray import DataArray
+    def second(technologies, demand, assets=None, *args, **kwargs):
+        from xarray import broadcast, full_like
 
-        shape = len(search_space.asset), len(search_space.replacement)
-        result = DataArray(full(shape, 5), dims=search_space.coords)
+        result = full_like(
+            broadcast(technologies["replacement"], demand["asset"])[0], 5, dtype=float
+        )
         result[{"asset": assets}] = 3
         return result
 
-    objectives = factory("first")(_technologies, _demand, True)
+    # Test first objective with/without switch
+    objectives = factory("first")(technologies=_technologies, switch=True)
     assert set(objectives.data_vars) == {"first"}
     assert (objectives.first == 1).all()
-
-    objectives = factory("first")(_technologies, _demand, False)
+    objectives = factory("first")(technologies=_technologies, switch=False)
     assert (objectives.first == 2).all()
 
-    objectives = factory(["first", "second"])(_technologies, _demand, False, 0)
+    # Test multiple objectives
+    objectives = factory(["first", "second"])(
+        technologies=_technologies, demand=_demand, switch=False, assets=0
+    )
     assert set(objectives.data_vars) == {"first", "second"}
     assert (objectives.first == 2).all()
     if len(objectives.asset) > 0:

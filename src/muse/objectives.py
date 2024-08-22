@@ -158,6 +158,8 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
             msg = f"dtype of objective {function.__name__} is not a number ({dtype})"
             getLogger(function.__module__).warning(msg)
 
+        if "replacement" not in result.dims:
+            raise RuntimeError("Objective should return a dimension 'replacement'")
         if "technology" in result.dims:
             raise RuntimeError("Objective should not return a dimension 'technology'")
         if "technology" in result.coords:
