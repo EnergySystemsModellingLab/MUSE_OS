@@ -273,6 +273,60 @@ def capacity_to_service_demand(
 
 
 @register_objective
+def capacity_in_use(
+    agent: Agent,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
+    market: xr.Dataset,
+    *args,
+    **kwargs,
+):
+    from muse.commodities import is_enduse
+
+    hours = _represent_hours(market, search_space)
+
+    ufac = agent.filter_input(
+        technologies.utilization_factor,
+        technology=search_space.replacement,
+        year=agent.forecast_year,
+    ).drop_vars("technology")
+    enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
+    return (
+        (demand.sel(commodity=enduses).sum("commodity") / hours).sum("timeslice")
+        * hours.sum()
+        / ufac
+    )
+
+
+@register_objective
+def consumption(
+    agent: Agent,
+    demand: xr.DataArray,
+    search_space: xr.DataArray,
+    technologies: xr.Dataset,
+    market: xr.Dataset,
+    *args,
+    **kwargs,
+) -> xr.DataArray:
+    """Commodity consumption when fulfilling the whole demand.
+
+    Currently, the consumption is implemented for commodity_max == +infinity.
+    """
+    from muse.quantities import consumption
+
+    params = agent.filter_input(
+        technologies[["fixed_inputs", "flexible_inputs"]],
+        year=agent.forecast_year,
+        technology=search_space.replacement.values,
+    )
+    prices = agent.filter_input(market.prices, year=agent.forecast_year)
+    demand = demand.where(search_space, 0).rename(replacement="technology")
+    result = consumption(technologies=params, prices=prices, production=demand)
+    return result.sum("commodity").rename(technology="replacement")
+
+
+@register_objective
 def fixed_costs(
     agent: Agent,
     demand: xr.DataArray,
@@ -382,60 +436,6 @@ def emission_cost(
 
 
 @register_objective
-def capacity_in_use(
-    agent: Agent,
-    demand: xr.DataArray,
-    search_space: xr.DataArray,
-    technologies: xr.Dataset,
-    market: xr.Dataset,
-    *args,
-    **kwargs,
-):
-    from muse.commodities import is_enduse
-
-    hours = _represent_hours(market, search_space)
-
-    ufac = agent.filter_input(
-        technologies.utilization_factor,
-        technology=search_space.replacement,
-        year=agent.forecast_year,
-    ).drop_vars("technology")
-    enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
-    return (
-        (demand.sel(commodity=enduses).sum("commodity") / hours).sum("timeslice")
-        * hours.sum()
-        / ufac
-    )
-
-
-@register_objective
-def consumption(
-    agent: Agent,
-    demand: xr.DataArray,
-    search_space: xr.DataArray,
-    technologies: xr.Dataset,
-    market: xr.Dataset,
-    *args,
-    **kwargs,
-) -> xr.DataArray:
-    """Commodity consumption when fulfilling the whole demand.
-
-    Currently, the consumption is implemented for commodity_max == +infinity.
-    """
-    from muse.quantities import consumption
-
-    params = agent.filter_input(
-        technologies[["fixed_inputs", "flexible_inputs"]],
-        year=agent.forecast_year,
-        technology=search_space.replacement.values,
-    )
-    prices = agent.filter_input(market.prices, year=agent.forecast_year)
-    demand = demand.where(search_space, 0).rename(replacement="technology")
-    result = consumption(technologies=params, prices=prices, production=demand)
-    return result.sum("commodity").rename(technology="replacement")
-
-
-@register_objective
 def fuel_consumption_cost(
     agent: Agent,
     demand: xr.DataArray,
@@ -494,7 +494,7 @@ def annual_levelized_cost_of_energy(
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
     """
-    from muse.quantities import annual_levelized_cost_of_energy as aLCOE
+    from muse.costs import annual_levelized_cost_of_energy as aLCOE
 
     techs = agent.filter_input(technologies, technology=search_space.replacement.values)
     assert isinstance(techs, xr.Dataset)
@@ -530,7 +530,7 @@ def lifetime_levelized_cost_of_energy(
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
     """
-    from muse.quantities import lifetime_levelized_cost_of_energy
+    from muse.costs import lifetime_levelized_cost_of_energy as LCOE
     from muse.timeslices import QuantityType, convert_timeslice
 
     techs = agent.filter_input(
@@ -546,7 +546,7 @@ def lifetime_levelized_cost_of_energy(
     production = capacity * techs.fixed_outputs * techs.utilization_factor
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
-    results = lifetime_levelized_cost_of_energy(
+    results = LCOE(
         prices=prices,
         technologies=techs,
         capacity=capacity,
@@ -602,7 +602,7 @@ def net_present_value(
     Return:
         xr.DataArray with the NPV calculated for the relevant technologies
     """
-    from muse.quantities import net_present_value
+    from muse.costs import net_present_value as NPV
     from muse.timeslices import QuantityType, convert_timeslice
 
     techs = agent.filter_input(
@@ -618,7 +618,7 @@ def net_present_value(
     production = capacity * techs.fixed_outputs * techs.utilization_factor
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
-    results = net_present_value(
+    results = NPV(
         prices=prices,
         technologies=techs,
         capacity=capacity,
@@ -647,7 +647,7 @@ def net_present_cost(
     .. seealso::
         :py:func:`net_present_value`.
     """
-    from muse.quantities import net_present_cost
+    from muse.costs import net_present_cost as NPC
     from muse.timeslices import QuantityType, convert_timeslice
 
     techs = agent.filter_input(
@@ -663,7 +663,7 @@ def net_present_cost(
     production = capacity * techs.fixed_outputs * techs.utilization_factor
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
-    results = net_present_cost(
+    results = NPC(
         prices=prices,
         technologies=techs,
         capacity=capacity,
@@ -705,7 +705,7 @@ def equivalent_annual_cost(
     Return:
         xr.DataArray with the EAC calculated for the relevant technologies
     """
-    from muse.quantities import equivalent_annual_cost
+    from muse.costs import equivalent_annual_cost as EAC
     from muse.timeslices import QuantityType, convert_timeslice
 
     techs = agent.filter_input(
@@ -721,7 +721,7 @@ def equivalent_annual_cost(
     production = capacity * techs.fixed_outputs * techs.utilization_factor
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
-    results = equivalent_annual_cost(
+    results = EAC(
         prices=prices,
         technologies=techs,
         capacity=capacity,

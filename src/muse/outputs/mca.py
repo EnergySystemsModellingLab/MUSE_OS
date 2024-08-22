@@ -884,10 +884,8 @@ def metric_lcoe(
 
 def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Levelized cost of energy () of technologies over their lifetime."""
-    from muse.quantities import (
-        capacity_to_service_demand,
-        lifetime_levelized_cost_of_energy,
-    )
+    from muse.costs import lifetime_levelized_cost_of_energy as LCOE
+    from muse.quantities import capacity_to_service_demand
 
     # Filtering of the inputs
     data_sector: list[xr.DataArray] = []
@@ -927,7 +925,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
                 QuantityType.EXTENSIVE,
             )
 
-            result = lifetime_levelized_cost_of_energy(
+            result = LCOE(
                 prices=prices,
                 technologies=techs,
                 capacity=capacity,
@@ -964,7 +962,8 @@ def metric_eac(
 
 def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Net Present Value of technologies over their lifetime."""
-    from muse.quantities import capacity_to_service_demand, equivalent_annual_cost
+    from muse.costs import equivalent_annual_cost as EAC
+    from muse.quantities import capacity_to_service_demand
 
     # Filtering of the inputs
     data_sector: list[xr.DataArray] = []
@@ -1004,7 +1003,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
                 QuantityType.EXTENSIVE,
             )
 
-            result = equivalent_annual_cost(
+            result = EAC(
                 prices=prices,
                 technologies=techs,
                 capacity=capacity,
