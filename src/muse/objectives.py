@@ -124,12 +124,10 @@ def factory(
 
     functions = [(param["name"], objective_factory(param)) for param in params]
 
-    def objectives(
-        technologies: xr.Dataset, demand: xr.DataArray, *args, **kwargs
-    ) -> xr.Dataset:
+    def objectives(technologies: xr.Dataset, *args, **kwargs) -> xr.Dataset:
         result = xr.Dataset()
         for name, objective in functions:
-            obj = objective(technologies=technologies, demand=demand, *args, **kwargs)
+            obj = objective(technologies=technologies, *args, **kwargs)
             result[name] = obj
         return result
 
@@ -150,12 +148,10 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
     from functools import wraps
 
     @wraps(function)
-    def decorated_objective(
-        technologies: xr.Dataset, demand: xr.DataArray, *args, **kwargs
-    ) -> xr.DataArray:
+    def decorated_objective(technologies: xr.Dataset, *args, **kwargs) -> xr.DataArray:
         from logging import getLogger
 
-        result = function(technologies, demand, *args, **kwargs)
+        result = function(technologies, *args, **kwargs)
 
         dtype = result.values.dtype
         if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
@@ -178,7 +174,6 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
 @register_objective
 def comfort(
     technologies: xr.Dataset,
-    demand: xr.DataArray,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -189,7 +184,6 @@ def comfort(
 @register_objective
 def efficiency(
     technologies: xr.Dataset,
-    demand: xr.DataArray,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -280,7 +274,6 @@ def fixed_costs(
 @register_objective
 def capital_costs(
     technologies: xr.Dataset,
-    demand: xr.DataArray,
     *args,
     **kwargs,
 ) -> xr.DataArray:

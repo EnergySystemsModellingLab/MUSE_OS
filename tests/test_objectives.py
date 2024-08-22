@@ -82,19 +82,19 @@ def test_computing_objectives(_technologies, _demand, search_space):
         assert (objectives.second.isel(asset=1) == 5).all()
 
 
-def test_comfort(_technologies, _demand):
+def test_comfort(_technologies):
     from muse.objectives import comfort
 
     _technologies["comfort"] = add_var(_technologies, "replacement")
-    result = comfort(_technologies, _demand)
+    result = comfort(_technologies)
     assert set(result.dims) == {"replacement"}
 
 
-def test_efficiency(_technologies, _demand):
+def test_efficiency(_technologies):
     from muse.objectives import efficiency
 
     _technologies["efficiency"] = add_var(_technologies, "replacement")
-    result = efficiency(_technologies, _demand)
+    result = efficiency(_technologies)
     assert set(result.dims) == {"replacement"}
 
 
@@ -126,11 +126,11 @@ def test_fixed_costs(_technologies, _demand):
     assert set(result.dims) == {"replacement", "asset"}
 
 
-def test_capital_costs(_technologies, _demand):
+def test_capital_costs(_technologies):
     from muse.objectives import capital_costs
 
     _technologies["scaling_size"] = add_var(_technologies, "replacement")
-    result = capital_costs(_technologies, _demand)
+    result = capital_costs(_technologies)
     assert set(result.dims) == {"replacement"}
 
 
