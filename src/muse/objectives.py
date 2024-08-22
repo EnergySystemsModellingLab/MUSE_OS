@@ -20,19 +20,18 @@ conform the following signatures:
 
     @register_objective
     def comfort(
-        demand: xr.DataArray,
         technologies: xr.Dataset,
-        market: xr.Dataset,
+        demand: xr.DataArray,
+        prices: xr.DataArray,
         **kwargs
     ) -> xr.DataArray:
         pass
 
 Arguments:
-    demand: Demand to fulfill.
     technologies: A data set characterising the technologies from which the
         agent can draw assets.
-    market: Market variables, such as prices or current capacity and retirement
-        profile.
+    demand: Demand to fulfill.
+    prices: Commodity prices.
     kwargs: Extra input parameters. These parameters are expected to be set from the
         input file.
 
@@ -42,10 +41,8 @@ Arguments:
             these parameters.
 
 Returns:
-    A dataArray with at least one dimension corresponding to ``replacement``.  Only the
-    technologies in ``search_space.replacement`` should be present.  Furthermore, if an
-    ``asset`` dimension is present, then it should correspond to ``search_space.asset``.
-    Other dimensions can be present, as long as the subsequent decision function nows
+    A dataArray with at least one dimension corresponding to ``replacement``.
+    Other dimensions can be present, as long as the subsequent decision function knows
     how to reduce them.
 """
 
@@ -71,14 +68,12 @@ import numpy as np
 import xarray as xr
 from mypy_extensions import KwArg
 
-from muse.agents import Agent
 from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
-from muse.timeslices import drop_timeslice
+from muse.utilities import filter_input
 
 OBJECTIVE_SIGNATURE = Callable[
-    [Agent, xr.DataArray, xr.DataArray, xr.Dataset, xr.Dataset, KwArg(Any)],
-    xr.DataArray,
+    [xr.Dataset, xr.DataArray, xr.DataArray, KwArg(Any)], xr.DataArray
 ]
 """Objectives signature."""
 
@@ -130,13 +125,11 @@ def factory(
     functions = [(param["name"], objective_factory(param)) for param in params]
 
     def objectives(
-        demand: xr.DataArray, technologies: xr.Dataset, *args, **kwargs
+        technologies: xr.Dataset, demand: xr.DataArray, *args, **kwargs
     ) -> xr.Dataset:
         result = xr.Dataset()
         for name, objective in functions:
-            obj = objective(demand, technologies, *args, **kwargs)
-            if "timeslice" in obj.dims and "timeslice" in result.dims:
-                obj = drop_timeslice(obj)
+            obj = objective(technologies=technologies, demand=demand, *args, **kwargs)
             result[name] = obj
         return result
 
@@ -158,11 +151,11 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
 
     @wraps(function)
     def decorated_objective(
-        demand: xr.DataArray, technologies: xr.Dataset, *args, **kwargs
+        technologies: xr.Dataset, demand: xr.DataArray, *args, **kwargs
     ) -> xr.DataArray:
         from logging import getLogger
 
-        result = function(demand, technologies, *args, **kwargs)
+        result = function(technologies, demand, *args, **kwargs)
 
         dtype = result.values.dtype
         if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
@@ -173,6 +166,8 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
             raise RuntimeError("Objective should not return a dimension 'technology'")
         if "technology" in result.coords:
             raise RuntimeError("Objective should not return a coordinate 'technology'")
+        if "year" in result.dims:
+            raise RuntimeError("Objective should not return a dimension 'year'")
         result.name = function.__name__
         cache_quantity(**{result.name: result})
         return result
@@ -182,8 +177,8 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
 
 @register_objective
 def comfort(
-    demand: xr.DataArray,
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -193,8 +188,8 @@ def comfort(
 
 @register_objective
 def efficiency(
-    demand: xr.DataArray,
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -204,8 +199,8 @@ def efficiency(
 
 @register_objective(name="capacity")
 def capacity_to_service_demand(
-    demand: xr.DataArray,
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -221,8 +216,8 @@ def capacity_to_service_demand(
 
 @register_objective
 def capacity_in_use(
-    demand: xr.DataArray,
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     *args,
     **kwargs,
 ):
@@ -241,8 +236,8 @@ def capacity_in_use(
 
 @register_objective
 def consumption(
-    demand: xr.DataArray,
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     prices: xr.DataArray,
     *args,
     **kwargs,
@@ -252,7 +247,6 @@ def consumption(
     Currently, the consumption is implemented for commodity_max == +infinity.
     """
     from muse.quantities import consumption
-    from muse.utilities import filter_input
 
     result = consumption(technologies=technologies, prices=prices, production=demand)
     return result.sum("commodity")
@@ -260,8 +254,8 @@ def consumption(
 
 @register_objective
 def fixed_costs(
-    demand: xr.DataArray,
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -278,22 +272,15 @@ def fixed_costs(
     :math:`\alpha` and :math:`\beta` are "fix_par" and "fix_exp" in
     :ref:`inputs-technodata`, respectively.
     """
-    from muse.timeslices import QuantityType, convert_timeslice
-
-    capacity = capacity_to_service_demand(demand, technologies)
-
-    result = convert_timeslice(
-        technologies.fix_par * (capacity**technologies.fix_exp),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
-    )
-    return xr.DataArray(result)
+    capacity = capacity_to_service_demand(technologies, demand)
+    result = technologies.fix_par * (capacity**technologies.fix_exp)
+    return result
 
 
 @register_objective
 def capital_costs(
-    demand: xr.DataArray,
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -304,20 +291,14 @@ def capital_costs(
     :math:`\alpha` is "cap_exp". In other words, capital costs are constant across the
     simulation for each technology.
     """
-    from muse.timeslices import QuantityType, convert_timeslice
-
-    result = convert_timeslice(
-        technologies.cap_par * (technologies.scaling_size**technologies.cap_exp),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
-    )
-    return xr.DataArray(result)
+    result = technologies.cap_par * (technologies.scaling_size**technologies.cap_exp)
+    return result
 
 
 @register_objective(name="emissions")
 def emission_cost(
-    demand: xr.DataArray,
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     prices: xr.DataArray,
     *args,
     **kwargs,
@@ -335,7 +316,6 @@ def emission_cost(
     with :math:`s` the timeslices and :math:`c` the commodity.
     """
     from muse.commodities import is_enduse, is_pollutant
-    from muse.utilities import filter_input
 
     enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
     total = demand.sel(commodity=enduses).sum("commodity")
@@ -346,8 +326,8 @@ def emission_cost(
 
 @register_objective
 def fuel_consumption_cost(
-    demand: xr.DataArray,
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     prices: xr.DataArray,
     *args,
     **kwargs,
@@ -355,7 +335,6 @@ def fuel_consumption_cost(
     """Cost of fuels when fulfilling whole demand."""
     from muse.commodities import is_fuel
     from muse.quantities import consumption
-    from muse.utilities import filter_input
 
     commodity = is_fuel(technologies.comm_usage.sel(commodity=demand.commodity))
     fcons = consumption(technologies=technologies, prices=prices, production=demand)
@@ -365,8 +344,8 @@ def fuel_consumption_cost(
 
 @register_objective(name=["ALCOE"])
 def annual_levelized_cost_of_energy(
-    demand: xr.DataArray,
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     prices: xr.DataArray,
     *args,
     **kwargs,
@@ -388,13 +367,15 @@ def annual_levelized_cost_of_energy(
     """
     from muse.costs import annual_levelized_cost_of_energy as aLCOE
 
-    return aLCOE(prices, technologies).max("timeslice")
+    return filter_input(
+        aLCOE(prices, technologies).max("timeslice"), year=demand.year.item()
+    )
 
 
 @register_objective(name=["LCOE", "LLCOE"])
 def lifetime_levelized_cost_of_energy(
-    demand: xr.DataArray,
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     prices: xr.DataArray,
     *args,
     **kwargs,
@@ -418,7 +399,7 @@ def lifetime_levelized_cost_of_energy(
     from muse.costs import lifetime_levelized_cost_of_energy as LCOE
     from muse.timeslices import QuantityType, convert_timeslice
 
-    capacity = capacity_to_service_demand(demand, technologies)
+    capacity = capacity_to_service_demand(technologies, demand)
     production = capacity * technologies.fixed_outputs * technologies.utilization_factor
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
@@ -435,8 +416,8 @@ def lifetime_levelized_cost_of_energy(
 
 @register_objective(name="NPV")
 def net_present_value(
-    demand: xr.DataArray,
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     prices: xr.DataArray,
     *args,
     **kwargs,
@@ -477,7 +458,7 @@ def net_present_value(
     from muse.costs import net_present_value as NPV
     from muse.timeslices import QuantityType, convert_timeslice
 
-    capacity = capacity_to_service_demand(demand, technologies)
+    capacity = capacity_to_service_demand(technologies, demand)
     production = capacity * technologies.fixed_outputs * technologies.utilization_factor
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
@@ -493,8 +474,8 @@ def net_present_value(
 
 @register_objective(name="NPC")
 def net_present_cost(
-    demand: xr.DataArray,
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     prices: xr.DataArray,
     *args,
     **kwargs,
@@ -511,7 +492,7 @@ def net_present_cost(
     from muse.costs import net_present_cost as NPC
     from muse.timeslices import QuantityType, convert_timeslice
 
-    capacity = capacity_to_service_demand(demand, technologies)
+    capacity = capacity_to_service_demand(technologies, demand)
     production = capacity * technologies.fixed_outputs * technologies.utilization_factor
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
@@ -527,8 +508,8 @@ def net_present_cost(
 
 @register_objective(name="EAC")
 def equivalent_annual_cost(
-    demand: xr.DataArray,
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     prices: xr.DataArray,
     *args,
     **kwargs,
@@ -556,7 +537,7 @@ def equivalent_annual_cost(
     from muse.costs import equivalent_annual_cost as EAC
     from muse.timeslices import QuantityType, convert_timeslice
 
-    capacity = capacity_to_service_demand(demand, technologies)
+    capacity = capacity_to_service_demand(technologies, demand)
     production = capacity * technologies.fixed_outputs * technologies.utilization_factor
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 

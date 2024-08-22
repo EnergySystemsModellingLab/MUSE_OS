@@ -299,7 +299,7 @@ class Agent(AbstractAgent):
 
         # Compute the objective
         decision = self._compute_objective(
-            demand=reduced_demand, technologies=techs, prices=prices
+            technologies=techs, demand=reduced_demand, prices=prices
         )
 
         self.year += time_period
@@ -307,11 +307,13 @@ class Agent(AbstractAgent):
 
     def _compute_objective(
         self,
-        demand: xr.DataArray,
         technologies: xr.Dataset,
+        demand: xr.DataArray,
         prices: xr.DataArray,
     ) -> xr.DataArray:
-        objectives = self.objectives(demand, technologies, prices)
+        objectives = self.objectives(
+            technologies=technologies, demand=demand, prices=prices
+        )
         decision = self.decision(objectives)
         return decision
 
