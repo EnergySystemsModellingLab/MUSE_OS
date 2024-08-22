@@ -221,7 +221,6 @@ def capacity_in_use(
     from muse.timeslices import represent_hours
 
     hours = represent_hours(demand.timeslice)
-
     enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
     return (
         (demand.sel(commodity=enduses).sum("commodity") / hours).sum("timeslice")

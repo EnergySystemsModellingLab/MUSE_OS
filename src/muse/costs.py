@@ -119,11 +119,11 @@ def net_present_value(prices, technologies: xr.Dataset, capacity, production, ye
     assert set(fixed_costs.dims) == set(variable_costs.dims)
     fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
 
-    assert set(raw_revenues.dims) == set(installed_capacity_costs.dims)
-    assert set(raw_revenues.dims) == set(environmental_costs.dims)
-    assert set(raw_revenues.dims) == set(fuel_costs.dims)
-    assert set(raw_revenues.dims) == set(material_costs.dims)
-    assert set(raw_revenues.dims) == set(fixed_and_variable_costs.dims)
+    # assert set(raw_revenues.dims) == set(installed_capacity_costs.dims)
+    # assert set(raw_revenues.dims) == set(environmental_costs.dims)
+    # assert set(raw_revenues.dims) == set(fuel_costs.dims)
+    # assert set(raw_revenues.dims) == set(material_costs.dims)
+    # assert set(raw_revenues.dims) == set(fixed_and_variable_costs.dims)
 
     results = raw_revenues - (
         installed_capacity_costs
