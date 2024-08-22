@@ -294,9 +294,12 @@ class Agent(AbstractAgent):
             }
         )
 
+        # Filter prices
+        prices = self.filter_input(market.prices)
+
         # Compute the objective
         decision = self._compute_objective(
-            demand=reduced_demand, technologies=techs, prices=market.prices
+            demand=reduced_demand, technologies=techs, prices=prices
         )
 
         self.year += time_period
@@ -308,7 +311,7 @@ class Agent(AbstractAgent):
         technologies: xr.Dataset,
         prices: xr.DataArray,
     ) -> xr.DataArray:
-        objectives = self.objectives(self, demand, technologies, prices)
+        objectives = self.objectives(demand, technologies, prices)
         decision = self.decision(objectives)
         return decision
 
