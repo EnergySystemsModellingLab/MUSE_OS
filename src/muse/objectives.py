@@ -373,7 +373,8 @@ def annual_levelized_cost_of_energy(
     from muse.costs import annual_levelized_cost_of_energy as aLCOE
 
     return filter_input(
-        aLCOE(prices, technologies).max("timeslice"), year=demand.year.item()
+        aLCOE(technologies=technologies, prices=prices).max("timeslice"),
+        year=demand.year.item(),
     )
 
 
@@ -409,8 +410,8 @@ def lifetime_levelized_cost_of_energy(
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
     results = LCOE(
-        prices=prices,
         technologies=technologies,
+        prices=prices,
         capacity=capacity,
         production=production,
         year=demand.year.item(),
@@ -468,8 +469,8 @@ def net_present_value(
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
     results = NPV(
-        prices=prices,
         technologies=technologies,
+        prices=prices,
         capacity=capacity,
         production=production,
         year=demand.year.item(),
@@ -502,8 +503,8 @@ def net_present_cost(
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
     results = NPC(
-        prices=prices,
         technologies=technologies,
+        prices=prices,
         capacity=capacity,
         production=production,
         year=demand.year.item(),
@@ -547,8 +548,8 @@ def equivalent_annual_cost(
     production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
 
     results = EAC(
-        prices=prices,
         technologies=technologies,
+        prices=prices,
         capacity=capacity,
         production=production,
         year=demand.year.item(),

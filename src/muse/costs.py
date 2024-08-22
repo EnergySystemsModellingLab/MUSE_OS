@@ -10,8 +10,8 @@ from muse.utilities import filter_input
 
 
 def net_present_value(
-    prices: xr.DataArray,
     technologies: xr.Dataset,
+    prices: xr.DataArray,
     capacity: xr.DataArray,
     production: xr.DataArray,
     year: int,
@@ -85,9 +85,7 @@ def net_present_value(
     fuels = is_fuel(technologies.comm_usage)
 
     # Revenue
-    prices_non_env = filter_input(prices, commodity=products, year=years.values).ffill(
-        "year"
-    )
+    prices_non_env = filter_input(prices, commodity=products, year=years.values)
     raw_revenues = (production * prices_non_env * rates).sum(("commodity", "year"))
 
     # Cost of installed capacity
@@ -100,20 +98,18 @@ def net_present_value(
     # Cost related to environmental products
     prices_environmental = filter_input(
         prices, commodity=environmentals, year=years.values
-    ).ffill("year")
+    )
     environmental_costs = (production * prices_environmental * rates).sum(
         ("commodity", "year")
     )
 
     # Fuel/energy costs
-    prices_fuel = filter_input(prices, commodity=fuels, year=years.values).ffill("year")
+    prices_fuel = filter_input(prices, commodity=fuels, year=years.values)
     fuel = consumption(technologies=techs, production=production, prices=prices)
     fuel_costs = (fuel * prices_fuel * rates).sum(("commodity", "year"))
 
     # Cost related to material other than fuel/energy and environmentals
-    prices_material = filter_input(prices, commodity=material, year=years.values).ffill(
-        "year"
-    )
+    prices_material = filter_input(prices, commodity=material, year=years.values)
     material_costs = (production * prices_material * rates).sum(("commodity", "year"))
 
     # Fixed and Variable costs
@@ -146,8 +142,8 @@ def net_present_value(
 
 
 def net_present_cost(
-    prices: xr.DataArray,
     technologies: xr.Dataset,
+    prices: xr.DataArray,
     capacity: xr.DataArray,
     production: xr.DataArray,
     year: int,
@@ -171,12 +167,12 @@ def net_present_cost(
     Return:
         xr.DataArray with the NPC calculated for the relevant technologies
     """
-    return -net_present_value(prices, technologies, capacity, production, year)
+    return -net_present_value(technologies, prices, capacity, production, year)
 
 
 def equivalent_annual_cost(
-    prices: xr.DataArray,
     technologies: xr.Dataset,
+    prices: xr.DataArray,
     capacity: xr.DataArray,
     production: xr.DataArray,
     year: int,
@@ -201,14 +197,14 @@ def equivalent_annual_cost(
     Return:
         xr.DataArray with the EAC calculated for the relevant technologies
     """
-    npc = net_present_cost(prices, technologies, capacity, production, year)
+    npc = net_present_cost(technologies, prices, capacity, production, year)
     crf = capital_recovery_factor(technologies)
     return npc * crf
 
 
 def lifetime_levelized_cost_of_energy(
-    prices: xr.DataArray,
     technologies: xr.Dataset,
+    prices: xr.DataArray,
     capacity: xr.DataArray,
     production: xr.DataArray,
     year: int,
@@ -274,20 +270,18 @@ def lifetime_levelized_cost_of_energy(
     # Cost related to environmental products
     prices_environmental = filter_input(
         prices, commodity=environmentals, year=years.values
-    ).ffill("year")
+    )
     environmental_costs = (production * prices_environmental * rates).sum(
         ("commodity", "year")
     )
 
     # Fuel/energy costs
-    prices_fuel = filter_input(prices, commodity=fuels, year=years.values).ffill("year")
+    prices_fuel = filter_input(prices, commodity=fuels, year=years.values)
     fuel = consumption(technologies=techs, production=production, prices=prices)
     fuel_costs = (fuel * prices_fuel * rates).sum(("commodity", "year"))
 
     # Cost related to material other than fuel/energy and environmentals
-    prices_material = filter_input(prices, commodity=material, year=years.values).ffill(
-        "year"
-    )
+    prices_material = filter_input(prices, commodity=material, year=years.values)
     material_costs = (production * prices_material * rates).sum(("commodity", "year"))
 
     # Fixed and Variable costs
@@ -313,8 +307,8 @@ def lifetime_levelized_cost_of_energy(
 
 
 def annual_levelized_cost_of_energy(
-    prices: xr.DataArray,
     technologies: xr.Dataset,
+    prices: xr.DataArray,
     interpolation: str = "linear",
     fill_value: Union[int, str] = "extrapolate",
     **filters,
