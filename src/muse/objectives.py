@@ -70,6 +70,7 @@ from mypy_extensions import KwArg
 
 from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
+from muse.timeslices import drop_timeslice
 from muse.utilities import filter_input
 
 OBJECTIVE_SIGNATURE = Callable[
@@ -124,10 +125,20 @@ def factory(
 
     functions = [(param["name"], objective_factory(param)) for param in params]
 
-    def objectives(technologies: xr.Dataset, *args, **kwargs) -> xr.Dataset:
+    def objectives(
+        technologies: xr.Dataset,
+        demand: xr.DataArray,
+        prices: xr.DataArray,
+        *args,
+        **kwargs,
+    ) -> xr.Dataset:
         result = xr.Dataset()
         for name, objective in functions:
-            obj = objective(technologies=technologies, *args, **kwargs)
+            obj = objective(
+                technologies=technologies, demand=demand, prices=prices, *args, **kwargs
+            )
+            if "timeslice" in obj.dims and "timeslice" in result.dims:
+                obj = drop_timeslice(obj)
             result[name] = obj
         return result
 
