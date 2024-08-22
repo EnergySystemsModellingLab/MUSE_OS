@@ -380,7 +380,7 @@ def demand_matched_production(
     from muse.utilities import broadcast_techs
 
     technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
-    cost = ALCOE(prices, technodata, **filters)
+    cost = ALCOE(prices=prices, technologies=technodata, **filters)
     max_production = maximum_production(technodata, capacity, **filters)
     assert ("timeslice" in demand.dims) == ("timeslice" in cost.dims)
     if "timeslice" in demand.dims and "timeslice" not in max_production.dims:

@@ -186,7 +186,9 @@ def costed_production(
         raise ValueError(f"Unknown cost {costs}")
     if callable(costs):
         technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
-        costs = costs(market.prices.sel(region=technodata.region), technodata)
+        costs = costs(
+            prices=market.prices.sel(region=technodata.region), technologies=technodata
+        )
     else:
         costs = costs
     assert isinstance(costs, xr.DataArray)
