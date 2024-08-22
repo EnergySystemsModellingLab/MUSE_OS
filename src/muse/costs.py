@@ -124,12 +124,6 @@ def net_present_value(
     assert set(fixed_costs.dims) == set(variable_costs.dims)
     fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
 
-    # assert set(raw_revenues.dims) == set(installed_capacity_costs.dims)
-    # assert set(raw_revenues.dims) == set(environmental_costs.dims)
-    # assert set(raw_revenues.dims) == set(fuel_costs.dims)
-    # assert set(raw_revenues.dims) == set(material_costs.dims)
-    # assert set(raw_revenues.dims) == set(fixed_and_variable_costs.dims)
-
     results = raw_revenues - (
         installed_capacity_costs
         + fuel_costs
@@ -456,9 +450,10 @@ def capital_recovery_factor(technologies: xr.Dataset) -> xr.DataArray:
         xr.DataArray with the CRF calculated for the relevant technologies
     """
     nyears = technologies.technical_life.astype(int)
-    return technologies.interest_rate / (
+    crf = technologies.interest_rate / (
         1 - (1 / (1 + technologies.interest_rate) ** nyears)
     )
+    return crf
 
 
 def discount_factor(years, interest_rate, mask=1.0):

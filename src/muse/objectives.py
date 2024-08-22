@@ -359,16 +359,6 @@ def annual_levelized_cost_of_energy(
 
     It needs to be used for trade agents where the actual service is unknown. It follows
     the `simplified LCOE` given by NREL.
-
-    Arguments:
-        demand: Demand for commodities
-        technologies: All the technologies
-        prices: Commodity prices
-        *args: Extra arguments (unused)
-        **kwargs: Extra keyword arguments (unused)
-
-    Return:
-        xr.DataArray with the LCOE calculated for the relevant technologies
     """
     from muse.costs import annual_levelized_cost_of_energy as aLCOE
 
@@ -391,16 +381,6 @@ def lifetime_levelized_cost_of_energy(
     It follows the `simplified LCOE` given by NREL. The LCOE is set to zero for those
     timeslices where the production is zero, normally due to a zero utilisation
     factor.
-
-    Arguments:
-        demand: Demand for commodities
-        technologies: All the technologies
-        prices: Commodity prices
-        *args: Extra arguments (unused)
-        **kwargs: Extra keyword arguments (unused)
-
-    Return:
-        xr.DataArray with the LCOE calculated for the relevant technologies
     """
     from muse.costs import lifetime_levelized_cost_of_energy as LCOE
     from muse.timeslices import QuantityType, convert_timeslice
@@ -428,39 +408,7 @@ def net_present_value(
     *args,
     **kwargs,
 ):
-    """Net present value (NPV) of the relevant technologies.
-
-    The net present value of a Component is the present value  of all the revenues that
-    a Component earns over its lifetime minus all the costs of installing and operating
-    it. Follows the definition of the `net present cost`_ given by HOMER Energy.
-    Metrics are calculated
-    .. _net present cost:
-    ..      https://www.homerenergy.com/products/pro/docs/3.15/net_present_cost.html
-
-    - energy commodities INPUTS are related to fuel costs
-    - environmental commodities OUTPUTS are related to environmental costs
-    - material and service commodities INPUTS are related to consumable costs
-    - fixed and variable costs are given as technodata inputs and depend on the
-      installed capacity and production (non-environmental), respectively
-    - capacity costs are given as technodata inputs and depend on the installed capacity
-
-    Note:
-        Here, the installation year is always agent.forecast_year,
-        since objectives compute the
-        NPV for technologies to be installed in the current year. A more general NPV
-        computation (which would then live in quantities.py) would have to refer to
-        installation year of the technology.
-
-    Arguments:
-        demand: Demand for commodities
-        technologies: All the technologies
-        prices: Commodity prices
-        *args: Extra arguments (unused)
-        **kwargs: Extra keyword arguments (unused)
-
-    Return:
-        xr.DataArray with the NPV calculated for the relevant technologies
-    """
+    """Net present value (NPV) of the relevant technologies."""
     from muse.costs import net_present_value as NPV
     from muse.timeslices import QuantityType, convert_timeslice
 
@@ -486,15 +434,7 @@ def net_present_cost(
     *args,
     **kwargs,
 ):
-    """Net present cost (NPC) of the relevant technologies.
-
-    The net present cost of a Component is the present value of all the costs of
-    installing and operating the Component over the project lifetime, minus the present
-    value of all the revenues that it earns over the project lifetime.
-
-    .. seealso::
-        :py:func:`net_present_value`.
-    """
+    """Net present cost (NPC) of the relevant technologies."""
     from muse.costs import net_present_cost as NPC
     from muse.timeslices import QuantityType, convert_timeslice
 
@@ -520,26 +460,7 @@ def equivalent_annual_cost(
     *args,
     **kwargs,
 ):
-    """Equivalent annual costs (or annualized cost) of a technology.
-
-    This is the cost that, if it were to occur equally in every year of the
-    project lifetime, would give the same net present cost as the actual cash
-    flow sequence associated with that component. The cost is computed using the
-    `annualized cost`_ expression given by HOMER Energy.
-
-    .. _annualized cost:
-        https://www.homerenergy.com/products/pro/docs/3.15/annualized_cost.html
-
-    Arguments:
-        demand: Demand for commodities
-        technologies: All the technologies
-        prices: Commodity prices
-        *args: Extra arguments (unused)
-        **kwargs: Extra keyword arguments (unused)
-
-    Return:
-        xr.DataArray with the EAC calculated for the relevant technologies
-    """
+    """Equivalent annual costs (or annualized cost) of a technology."""
     from muse.costs import equivalent_annual_cost as EAC
     from muse.timeslices import QuantityType, convert_timeslice
 
