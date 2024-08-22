@@ -203,12 +203,12 @@ def comfort(
     **kwargs,
 ) -> xr.DataArray:
     """Comfort value provided by technologies."""
-    output = agent.filter_input(
-        technologies.comfort,
-        year=agent.forecast_year,
+    techs = agent.filter_input(
+        technologies,
         technology=search_space.replacement,
+        year=agent.forecast_year,
     ).drop_vars("technology")
-    return output
+    return techs.comfort
 
 
 @register_objective
@@ -221,13 +221,12 @@ def efficiency(
     **kwargs,
 ) -> xr.DataArray:
     """Efficiency of the technologies."""
-    result = agent.filter_input(
-        technologies.efficiency,
-        year=agent.forecast_year,
+    techs = agent.filter_input(
+        technologies,
         technology=search_space.replacement,
+        year=agent.forecast_year,
     ).drop_vars("technology")
-    assert isinstance(result, xr.DataArray)
-    return result
+    return techs.efficiency
 
 
 def _represent_hours(market: xr.Dataset, search_space: xr.DataArray) -> xr.DataArray:
@@ -263,10 +262,9 @@ def capacity_to_service_demand(
     from muse.quantities import capacity_to_service_demand
 
     techs = agent.filter_input(
-        technologies[["utilization_factor", "fixed_outputs"]],
-        year=agent.forecast_year,
-        region=agent.region,
+        technologies,
         technology=search_space.replacement,
+        year=agent.forecast_year,
     ).drop_vars("technology")
     hours = _represent_hours(market, search_space)
     return capacity_to_service_demand(demand=demand, technologies=techs, hours=hours)
@@ -286,16 +284,16 @@ def capacity_in_use(
 
     hours = _represent_hours(market, search_space)
 
-    ufac = agent.filter_input(
-        technologies.utilization_factor,
+    techs = agent.filter_input(
+        technologies,
         technology=search_space.replacement,
         year=agent.forecast_year,
     ).drop_vars("technology")
-    enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
+    enduses = is_enduse(techs.comm_usage.sel(commodity=demand.commodity))
     return (
         (demand.sel(commodity=enduses).sum("commodity") / hours).sum("timeslice")
         * hours.sum()
-        / ufac
+        / techs.utilization_factor
     )
 
 
@@ -315,15 +313,15 @@ def consumption(
     """
     from muse.quantities import consumption
 
-    params = agent.filter_input(
-        technologies[["fixed_inputs", "flexible_inputs"]],
+    techs = agent.filter_input(
+        technologies,
+        technology=search_space.replacement,
         year=agent.forecast_year,
-        technology=search_space.replacement.values,
-    )
+    ).drop_vars("technology")
     prices = agent.filter_input(market.prices, year=agent.forecast_year)
-    demand = demand.where(search_space, 0).rename(replacement="technology")
-    result = consumption(technologies=params, prices=prices, production=demand)
-    return result.sum("commodity").rename(technology="replacement")
+    demand = demand.where(search_space, 0)
+    result = consumption(technologies=techs, prices=prices, production=demand)
+    return result.sum("commodity")
 
 
 @register_objective
@@ -351,16 +349,18 @@ def fixed_costs(
     """
     from muse.timeslices import QuantityType, convert_timeslice
 
-    cfd = capacity_to_service_demand(
-        agent, demand, search_space, technologies, market, *args, **kwargs
-    )
-    data = agent.filter_input(
-        technologies[["fix_par", "fix_exp"]],
+    techs = agent.filter_input(
+        technologies,
         technology=search_space.replacement,
         year=agent.forecast_year,
     ).drop_vars("technology")
+
+    capacity = capacity_to_service_demand(
+        agent, demand, search_space, techs, market, *args, **kwargs
+    )
+
     result = convert_timeslice(
-        data.fix_par * (cfd**data.fix_exp),
+        techs.fix_par * (capacity**techs.fix_exp),
         demand.timeslice,
         QuantityType.EXTENSIVE,
     )
@@ -385,13 +385,13 @@ def capital_costs(
     """
     from muse.timeslices import QuantityType, convert_timeslice
 
-    data = agent.filter_input(
-        technologies[["cap_par", "scaling_size", "cap_exp"]],
+    techs = agent.filter_input(
+        technologies,
         technology=search_space.replacement,
         year=agent.forecast_year,
     ).drop_vars("technology")
     result = convert_timeslice(
-        data.cap_par * (data.scaling_size**data.cap_exp),
+        techs.cap_par * (techs.scaling_size**techs.cap_exp),
         demand.timeslice,
         QuantityType.EXTENSIVE,
     )
@@ -422,17 +422,17 @@ def emission_cost(
     """
     from muse.commodities import is_enduse, is_pollutant
 
-    enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
-    total = demand.sel(commodity=enduses).sum("commodity")
-    allemissions = agent.filter_input(
-        technologies.fixed_outputs,
-        commodity=is_pollutant(technologies.comm_usage),
+    techs = agent.filter_input(
+        technologies,
         technology=search_space.replacement,
         year=agent.forecast_year,
     ).drop_vars("technology")
+
+    enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
+    total = demand.sel(commodity=enduses).sum("commodity")
     envs = is_pollutant(technologies.comm_usage)
     prices = agent.filter_input(market.prices, year=agent.forecast_year, commodity=envs)
-    return total * (allemissions * prices).sum("commodity")
+    return total * (techs.fixed_outputs * prices).sum("commodity")
 
 
 @register_objective
@@ -449,22 +449,18 @@ def fuel_consumption_cost(
     from muse.commodities import is_fuel
     from muse.quantities import consumption
 
-    commodity = is_fuel(technologies.comm_usage.sel(commodity=market.commodity))
-    params = agent.filter_input(
-        technologies[["fixed_inputs", "flexible_inputs"]],
+    techs = agent.filter_input(
+        technologies,
+        technology=search_space.replacement,
         year=agent.forecast_year,
-        technology=search_space.replacement.values,
-    )
-    prices = agent.filter_input(market.prices, year=agent.forecast_year)
-    demand = demand.where(search_space, 0).rename(replacement="technology")
-    fcons = consumption(technologies=params, prices=prices, production=demand)
+    ).drop_vars("technology")
 
-    return (
-        (fcons * prices)
-        .sel(commodity=commodity)
-        .sum("commodity")
-        .rename(technology="replacement")
-    )
+    commodity = is_fuel(techs.comm_usage.sel(commodity=market.commodity))
+    prices = agent.filter_input(market.prices, year=agent.forecast_year)
+    demand = demand.where(search_space, 0)
+    fcons = consumption(technologies=techs, prices=prices, production=demand)
+
+    return (fcons * prices).sel(commodity=commodity).sum("commodity")
 
 
 @register_objective(name=["ALCOE"])
@@ -496,10 +492,14 @@ def annual_levelized_cost_of_energy(
     """
     from muse.costs import annual_levelized_cost_of_energy as aLCOE
 
-    techs = agent.filter_input(technologies, technology=search_space.replacement.values)
-    assert isinstance(techs, xr.Dataset)
+    techs = agent.filter_input(
+        technologies,
+        technology=search_space.replacement,
+        year=agent.forecast_year,
+    ).drop_vars("technology")
+
     prices = cast(xr.DataArray, agent.filter_input(market.prices))
-    return aLCOE(prices, techs).rename(technology="replacement").max("timeslice")
+    return aLCOE(prices, techs).max("timeslice")
 
 
 @register_objective(name=["LCOE", "LLCOE"])

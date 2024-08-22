@@ -333,7 +333,7 @@ def test_capacity_in_use(production: xr.DataArray, technologies: xr.Dataset):
 
 
 def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
-    from muse.quantities import supply_cost
+    from muse.costs import supply_cost
     from numpy import average
     from numpy.random import random
 
@@ -360,7 +360,7 @@ def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
 
 
 def test_supply_cost_zero_prod(production: xr.DataArray, timeslice: xr.Dataset):
-    from muse.quantities import supply_cost
+    from muse.costs import supply_cost
     from numpy.random import randn
 
     timeslice = timeslice.timeslice
@@ -425,8 +425,8 @@ def test_demand_matched_production(
 
 
 def test_costed_production_exact_match(market, capacity, technologies):
+    from muse.costs import annual_levelized_cost_of_energy
     from muse.quantities import (
-        annual_levelized_cost_of_energy,
         costed_production,
         maximum_production,
     )
@@ -460,8 +460,8 @@ def test_costed_production_exact_match(market, capacity, technologies):
 
 
 def test_costed_production_single_region(market, capacity, technologies):
+    from muse.costs import annual_levelized_cost_of_energy
     from muse.quantities import (
-        annual_levelized_cost_of_energy,
         costed_production,
         maximum_production,
     )
@@ -491,8 +491,8 @@ def test_costed_production_single_region(market, capacity, technologies):
 
 
 def test_costed_production_single_year(market, capacity, technologies):
+    from muse.costs import annual_levelized_cost_of_energy
     from muse.quantities import (
-        annual_levelized_cost_of_energy,
         costed_production,
         maximum_production,
     )
@@ -524,8 +524,8 @@ def test_costed_production_single_year(market, capacity, technologies):
 
 
 def test_costed_production_over_capacity(market, capacity, technologies):
+    from muse.costs import annual_levelized_cost_of_energy
     from muse.quantities import (
-        annual_levelized_cost_of_energy,
         costed_production,
         maximum_production,
     )
@@ -560,8 +560,8 @@ def test_costed_production_over_capacity(market, capacity, technologies):
 
 
 def test_costed_production_with_minimum_service(market, capacity, technologies, rng):
+    from muse.costs import annual_levelized_cost_of_energy
     from muse.quantities import (
-        annual_levelized_cost_of_energy,
         costed_production,
         maximum_production,
     )

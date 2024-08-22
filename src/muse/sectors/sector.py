@@ -298,11 +298,8 @@ class Sector(AbstractSector):  # type: ignore
     def market_variables(self, market: xr.Dataset, technologies: xr.Dataset) -> Any:
         """Computes resulting market: production, consumption, and costs."""
         from muse.commodities import is_pollutant
-        from muse.quantities import (
-            annual_levelized_cost_of_energy,
-            consumption,
-            supply_cost,
-        )
+        from muse.costs import annual_levelized_cost_of_energy, supply_cost
+        from muse.quantities import consumption
         from muse.timeslices import QuantityType, convert_timeslice
         from muse.utilities import broadcast_techs
 
