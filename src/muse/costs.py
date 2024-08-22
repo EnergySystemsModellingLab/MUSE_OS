@@ -9,13 +9,18 @@ from muse.timeslices import QuantityType, convert_timeslice
 from muse.utilities import filter_input
 
 
-def net_present_value(prices, technologies: xr.Dataset, capacity, production, year):
+def net_present_value(
+    prices: xr.DataArray,
+    technologies: xr.Dataset,
+    capacity: xr.DataArray,
+    production: xr.DataArray,
+    year: int,
+) -> xr.DataArray:
     """Net present value (NPV) of the relevant technologies.
 
-    The net present value of a Component is the present value  of all the revenues that
-    a Component earns over its lifetime minus all the costs of installing and operating
+    The net present value of a technology is the present value  of all the revenues that
+    a technology earns over its lifetime minus all the costs of installing and operating
     it. Follows the definition of the `net present cost`_ given by HOMER Energy.
-    Metrics are calculated
     .. _net present cost:
     ..      https://www.homerenergy.com/products/pro/docs/3.15/net_present_cost.html
 
@@ -34,7 +39,11 @@ def net_present_value(prices, technologies: xr.Dataset, capacity, production, ye
         installation year of the technology.
 
     Arguments:
-        technologies: All the technologies
+        prices: xr.DataArray with commodity prices
+        technologies: xr.Dataset of technology parameters
+        capacity: xr.DataArray with the capacity of the relevant technologies
+        production: xr.DataArray with the production of the relevant technologies
+        year: int, the year of the forecast
 
     Return:
         xr.DataArray with the NPV calculated for the relevant technologies
@@ -136,7 +145,13 @@ def net_present_value(prices, technologies: xr.Dataset, capacity, production, ye
     return results
 
 
-def net_present_cost(prices, technologies: xr.Dataset, capacity, production, year):
+def net_present_cost(
+    prices: xr.DataArray,
+    technologies: xr.Dataset,
+    capacity: xr.DataArray,
+    production: xr.DataArray,
+    year: int,
+) -> xr.DataArray:
     """Net present cost (NPC) of the relevant technologies.
 
     The net present cost of a Component is the present value of all the costs of
@@ -145,13 +160,27 @@ def net_present_cost(prices, technologies: xr.Dataset, capacity, production, yea
 
     .. seealso::
         :py:func:`net_present_value`.
+
+    Arguments:
+        prices: xr.DataArray with commodity prices
+        technologies: xr.Dataset of technology parameters
+        capacity: xr.DataArray with the capacity of the relevant technologies
+        production: xr.DataArray with the production of the relevant technologies
+        year: int, the year of the forecast
+
+    Return:
+        xr.DataArray with the NPC calculated for the relevant technologies
     """
     return -net_present_value(prices, technologies, capacity, production, year)
 
 
 def equivalent_annual_cost(
-    prices, technologies: xr.Dataset, capacity, production, year
-):
+    prices: xr.DataArray,
+    technologies: xr.Dataset,
+    capacity: xr.DataArray,
+    production: xr.DataArray,
+    year: int,
+) -> xr.DataArray:
     """Equivalent annual costs (or annualized cost) of a technology.
 
     This is the cost that, if it were to occur equally in every year of the
@@ -163,7 +192,11 @@ def equivalent_annual_cost(
         https://www.homerenergy.com/products/pro/docs/3.15/annualized_cost.html
 
     Arguments:
-        technologies: All the technologies
+        prices: xr.DataArray with commodity prices
+        technologies: xr.Dataset of technology parameters
+        capacity: xr.DataArray with the capacity of the relevant technologies
+        production: xr.DataArray with the production of the relevant technologies
+        year: int, the year of the forecast
 
     Return:
         xr.DataArray with the EAC calculated for the relevant technologies
@@ -176,10 +209,10 @@ def equivalent_annual_cost(
 def lifetime_levelized_cost_of_energy(
     prices: xr.DataArray,
     technologies: xr.Dataset,
-    capacity,
-    production,
-    year,
-):
+    capacity: xr.DataArray,
+    production: xr.DataArray,
+    year: int,
+) -> xr.DataArray:
     """Levelized cost of energy (LCOE) of technologies over their lifetime.
 
     It follows the `simplified LCOE` given by NREL. The LCOE is set to zero for those
@@ -187,7 +220,11 @@ def lifetime_levelized_cost_of_energy(
     factor.
 
     Arguments:
-        technologies: All the technologies
+        prices: xr.DataArray with commodity prices
+        technologies: xr.Dataset of technology parameters
+        capacity: xr.DataArray with the capacity of the relevant technologies
+        production: xr.DataArray with the production of the relevant technologies
+        year: int, the year of the forecast
 
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies

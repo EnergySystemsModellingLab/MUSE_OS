@@ -83,7 +83,7 @@ def test_annual_levelized_cost_of_energy(_prices, technologies):
 
 
 def test_supply_cost(_production, _prices, technologies):
-    from muse.costs import supply_cost, annual_levelized_cost_of_energy
+    from muse.costs import annual_levelized_cost_of_energy, supply_cost
 
     lcoe = annual_levelized_cost_of_energy(_prices, technologies)
     result = supply_cost(_production, lcoe)
