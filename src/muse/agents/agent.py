@@ -284,7 +284,6 @@ class Agent(AbstractAgent):
             technologies,
             technology=search_space.replacement,
             year=self.forecast_year,
-            region=self.region,
         ).drop_vars("technology")
 
         # Reduce dimensions of the demand array
@@ -296,7 +295,7 @@ class Agent(AbstractAgent):
         )
 
         # Filter prices according to the region
-        prices = self.filter_input(market.prices, region=self.region)
+        prices = self.filter_input(market.prices)
 
         # Compute the objective
         decision = self._compute_objective(
