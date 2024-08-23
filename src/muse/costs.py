@@ -1,3 +1,11 @@
+"""Collection of functions for calculating cost metrics (e.g. LCOE, EAC).
+
+In general, these functions take a Dataset of technology parameters, and return a
+DataArray of the calculated cost for each technology. Functions may also take additional
+data such as commodity prices, capacity of the technologies, and commodity-production
+data for the technologies, where appropriate.
+"""
+
 from typing import Optional, Union
 
 import numpy as np
@@ -35,12 +43,11 @@ def net_present_value(
         Here, the installation year is always agent.forecast_year,
         since objectives compute the
         NPV for technologies to be installed in the current year. A more general NPV
-        computation (which would then live in quantities.py) would have to refer to
-        installation year of the technology.
+        computation would have to refer to installation year of the technology.
 
     Arguments:
-        prices: xr.DataArray with commodity prices
         technologies: xr.Dataset of technology parameters
+        prices: xr.DataArray with commodity prices
         capacity: xr.DataArray with the capacity of the relevant technologies
         production: xr.DataArray with the production of the relevant technologies
         year: int, the year of the forecast
@@ -152,8 +159,8 @@ def net_present_cost(
         :py:func:`net_present_value`.
 
     Arguments:
-        prices: xr.DataArray with commodity prices
         technologies: xr.Dataset of technology parameters
+        prices: xr.DataArray with commodity prices
         capacity: xr.DataArray with the capacity of the relevant technologies
         production: xr.DataArray with the production of the relevant technologies
         year: int, the year of the forecast
@@ -182,8 +189,8 @@ def equivalent_annual_cost(
         https://www.homerenergy.com/products/pro/docs/3.15/annualized_cost.html
 
     Arguments:
-        prices: xr.DataArray with commodity prices
         technologies: xr.Dataset of technology parameters
+        prices: xr.DataArray with commodity prices
         capacity: xr.DataArray with the capacity of the relevant technologies
         production: xr.DataArray with the production of the relevant technologies
         year: int, the year of the forecast
@@ -210,8 +217,8 @@ def lifetime_levelized_cost_of_energy(
     factor.
 
     Arguments:
-        prices: xr.DataArray with commodity prices
         technologies: xr.Dataset of technology parameters
+        prices: xr.DataArray with commodity prices
         capacity: xr.DataArray with the capacity of the relevant technologies
         production: xr.DataArray with the production of the relevant technologies
         year: int, the year of the forecast
@@ -319,11 +326,7 @@ def annual_levelized_cost_of_energy(
     * [1]: dimensionless
 
     Arguments:
-        prices: [$/(Eh)] the price of all commodities, including consumables and fuels.
-            This dataarray contains at least timeslice and commodity dimensions.
-
         technologies: Describe the technologies, with at least the following parameters:
-
             * cap_par: [$/E] overnight capital cost
             * interest_rate: [1]
             * fix_par: [$/(Eh)] fixed costs of operation and maintenance costs
@@ -332,7 +335,8 @@ def annual_levelized_cost_of_energy(
                 consumed per units of energy created.
             * fixed_outputs: [1] == [(Eh)/(Eh)] ration indicating the amount of
                 environmental pollutants produced per units of energy created.
-
+        prices: [$/(Eh)] the price of all commodities, including consumables and fuels.
+            This dataarray contains at least timeslice and commodity dimensions.
         interpolation: interpolation method.
         fill_value: Fill value for values outside the extrapolation range.
         **filters: Anything by which prices can be filtered.

@@ -29,7 +29,8 @@ conform the following signatures:
 
 Arguments:
     technologies: A data set characterising the technologies from which the
-        agent can draw assets.
+        agent can draw assets. This has been pre-filtered according to the agent's
+        search space.
     demand: Demand to fulfill.
     prices: Commodity prices.
     kwargs: Extra input parameters. These parameters are expected to be set from the
@@ -41,7 +42,7 @@ Arguments:
             these parameters.
 
 Returns:
-    A dataArray with at least one dimension corresponding to ``replacement``.
+    A DataArray with at least one dimension corresponding to ``replacement``.
     Other dimensions can be present, as long as the subsequent decision function knows
     how to reduce them.
 """
@@ -359,6 +360,9 @@ def annual_levelized_cost_of_energy(
 
     It needs to be used for trade agents where the actual service is unknown. It follows
     the `simplified LCOE` given by NREL.
+
+    See :py:func:`muse.costs.annual_levelized_cost_of_energy` for more details.
+
     """
     from muse.costs import annual_levelized_cost_of_energy as aLCOE
 
@@ -378,9 +382,10 @@ def lifetime_levelized_cost_of_energy(
 ):
     """Levelized cost of energy (LCOE) of technologies over their lifetime.
 
-    It follows the `simplified LCOE` given by NREL. The LCOE is set to zero for those
-    timeslices where the production is zero, normally due to a zero utilisation
-    factor.
+    See :py:func:`muse.costs.lifetime_levelized_cost_of_energy` for more details.
+
+    The LCOE is set to zero for those timeslices where the production is zero, normally
+    due to a zero utilisation factor.
     """
     from muse.costs import lifetime_levelized_cost_of_energy as LCOE
     from muse.timeslices import QuantityType, convert_timeslice
@@ -408,7 +413,10 @@ def net_present_value(
     *args,
     **kwargs,
 ):
-    """Net present value (NPV) of the relevant technologies."""
+    """Net present value (NPV) of the relevant technologies.
+
+    See :py:func:`muse.costs.net_present_value` for more details.
+    """
     from muse.costs import net_present_value as NPV
     from muse.timeslices import QuantityType, convert_timeslice
 
@@ -434,7 +442,10 @@ def net_present_cost(
     *args,
     **kwargs,
 ):
-    """Net present cost (NPC) of the relevant technologies."""
+    """Net present cost (NPC) of the relevant technologies.
+
+    See :py:func:`muse.costs.net_present_cost` for more details.
+    """
     from muse.costs import net_present_cost as NPC
     from muse.timeslices import QuantityType, convert_timeslice
 
@@ -460,7 +471,10 @@ def equivalent_annual_cost(
     *args,
     **kwargs,
 ):
-    """Equivalent annual costs (or annualized cost) of a technology."""
+    """Equivalent annual costs (or annualized cost) of a technology.
+
+    See :py:func:`muse.costs.equivalent_annual_cost` for more details.
+    """
     from muse.costs import equivalent_annual_cost as EAC
     from muse.timeslices import QuantityType, convert_timeslice
 

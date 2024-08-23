@@ -279,14 +279,15 @@ class Agent(AbstractAgent):
             self.year += time_period
             return None
 
-        # Filter technologies according to the search space
+        # Filter technologies according to the search space, forecast year and region
         techs = self.filter_input(
             technologies,
             technology=search_space.replacement,
             year=self.forecast_year,
+            region=self.region,
         ).drop_vars("technology")
 
-        # Filter demand according to the search space
+        # Reduce dimensions of the demand array
         reduced_demand = demand.sel(
             {
                 k: search_space[k]
@@ -294,8 +295,8 @@ class Agent(AbstractAgent):
             }
         )
 
-        # Filter prices
-        prices = self.filter_input(market.prices)
+        # Filter prices according to the region
+        prices = self.filter_input(market.prices, region=self.region)
 
         # Compute the objective
         decision = self._compute_objective(

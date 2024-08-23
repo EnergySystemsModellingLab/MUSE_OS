@@ -1,8 +1,10 @@
 """Collection of functions to compute model quantities.
 
 This module is meant to collect functions computing quantities of interest to the model,
-e.g. lcoe, maximum production for a given capacity, etc, especially where these
+e.g. maximum production for a given capacity, etc, especially where these
 functions are used in different areas of the model.
+
+Functions for calculating costs (e.g. LCOE, EAC) are in the `costs` module.
 """
 
 from collections.abc import Sequence
