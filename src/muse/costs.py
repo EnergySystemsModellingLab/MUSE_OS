@@ -212,9 +212,7 @@ def lifetime_levelized_cost_of_energy(
 ) -> xr.DataArray:
     """Levelized cost of energy (LCOE) of technologies over their lifetime.
 
-    It follows the `simplified LCOE` given by NREL. The LCOE is set to zero for those
-    timeslices where the production is zero, normally due to a zero utilisation
-    factor.
+    It follows the `simplified LCOE` given by NREL.
 
     Arguments:
         technologies: xr.Dataset of technology parameters
