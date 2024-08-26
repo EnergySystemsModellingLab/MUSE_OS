@@ -226,8 +226,9 @@ def test_format_paths_path():
 
 
 def test_split_toml_one_down(tmpdir):
-    from muse.readers.toml import read_split_toml
     from toml import dumps
+
+    from muse.readers.toml import read_split_toml
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -250,8 +251,9 @@ def test_split_toml_one_down(tmpdir):
 
 
 def test_split_toml_nested(tmpdir):
-    from muse.readers.toml import read_split_toml
     from toml import dumps
+
+    from muse.readers.toml import read_split_toml
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -275,9 +277,10 @@ def test_split_toml_nested(tmpdir):
 
 
 def test_split_toml_too_manyops_in_outer(tmpdir):
-    from muse.readers.toml import IncorrectSettings, read_split_toml
     from pytest import raises
     from toml import dumps
+
+    from muse.readers.toml import IncorrectSettings, read_split_toml
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -298,9 +301,10 @@ def test_split_toml_too_manyops_in_outer(tmpdir):
 
 
 def test_split_toml_too_manyops_in_inner(tmpdir):
-    from muse.readers.toml import IncorrectSettings, read_split_toml
     from pytest import raises
     from toml import dumps
+
+    from muse.readers.toml import IncorrectSettings, read_split_toml
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -321,9 +325,10 @@ def test_split_toml_too_manyops_in_inner(tmpdir):
 
 
 def test_split_toml_incorrect_inner_name(tmpdir):
-    from muse.readers.toml import MissingSettings, read_split_toml
     from pytest import raises
     from toml import dumps
+
+    from muse.readers.toml import MissingSettings, read_split_toml
 
     (tmpdir / "outer.toml").write(
         dumps(
@@ -697,6 +702,7 @@ def test_read_presets(default_model):
 
 def test_check_utilization_not_all_zero_success():
     import pandas as pd
+
     from muse.readers.csv import _check_utilization_not_all_zero
 
     df = pd.DataFrame(
@@ -712,6 +718,7 @@ def test_check_utilization_not_all_zero_success():
 
 def test_check_utilization_in_range_success():
     import pandas as pd
+
     from muse.readers.csv import _check_utilization_in_range
 
     df = pd.DataFrame({"utilization_factor": (0, 1)})
@@ -723,6 +730,7 @@ def test_check_utilization_in_range_success():
 )
 def test_check_utilization_in_range_fail(values):
     import pandas as pd
+
     from muse.readers.csv import _check_utilization_in_range
 
     df = pd.DataFrame({"utilization_factor": values})
@@ -732,6 +740,7 @@ def test_check_utilization_in_range_fail(values):
 
 def test_check_utilization_not_below_minimum_success():
     import pandas as pd
+
     from muse.readers.csv import _check_utilization_not_below_minimum
 
     df = pd.DataFrame({"utilization_factor": (0, 1), "minimum_service_factor": (0, 0)})
@@ -740,6 +749,7 @@ def test_check_utilization_not_below_minimum_success():
 
 def test_check_utilization_not_below_minimum_fail():
     import pandas as pd
+
     from muse.readers.csv import _check_utilization_not_below_minimum
 
     df = pd.DataFrame(
@@ -751,6 +761,7 @@ def test_check_utilization_not_below_minimum_fail():
 
 def test_check_utilization_not_all_zero_fail_all_zero():
     import pandas as pd
+
     from muse.readers.csv import _check_utilization_not_all_zero
 
     df = pd.DataFrame(
@@ -768,6 +779,7 @@ def test_check_utilization_not_all_zero_fail_all_zero():
 
 def test_check_minimum_service_factors_in_range_success():
     import pandas as pd
+
     from muse.readers.csv import _check_minimum_service_factors_in_range
 
     df = pd.DataFrame({"minimum_service_factor": (0, 1)})
@@ -779,6 +791,7 @@ def test_check_minimum_service_factors_in_range_success():
 )
 def test_check_minimum_service_factors_in_range_fail(values):
     import pandas as pd
+
     from muse.readers.csv import _check_minimum_service_factors_in_range
 
     df = pd.DataFrame({"minimum_service_factor": values})
@@ -793,6 +806,7 @@ def test_check_minimum_service_factors_in_range_fail(values):
 @patch("muse.readers.csv._check_minimum_service_factors_in_range")
 def test_check_utilization_and_minimum_service_factors(*mocks):
     import pandas as pd
+
     from muse.readers.csv import check_utilization_and_minimum_service_factors
 
     df = pd.DataFrame(
@@ -811,6 +825,7 @@ def test_check_utilization_and_minimum_service_factors_no_min(
     min_service_factor_mock, utilization_below_min_mock, *mocks
 ):
     import pandas as pd
+
     from muse.readers.csv import check_utilization_and_minimum_service_factors
 
     df = pd.DataFrame({"utilization_factor": (0, 0, 1)})
@@ -827,6 +842,7 @@ def test_check_utilization_and_minimum_service_factors_no_min(
 @patch("muse.readers.csv._check_minimum_service_factors_in_range")
 def test_check_utilization_and_minimum_service_factors_fail_missing_utilization(*mocks):
     import pandas as pd
+
     from muse.readers.csv import check_utilization_and_minimum_service_factors
 
     # NB: Required utilization_factor column is missing

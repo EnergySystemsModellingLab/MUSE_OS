@@ -60,9 +60,10 @@ def dataset(timeslice):
 
 
 def test_cost_order(dataset):
-    from muse.demand_matching import demand_matching
     from numpy import arange
     from xarray import broadcast
+
+    from muse.demand_matching import demand_matching
 
     # simplify dataset. bail out if size is too small for test.
     ds = dataset.sum(set(dataset.dims).difference(("dm", "cm")))
@@ -99,8 +100,9 @@ def test_cost_order(dataset):
 
 
 def test_no_constraints_no_i_dims(demand, cost):
-    from muse.demand_matching import demand_matching
     from xarray import broadcast
+
+    from muse.demand_matching import demand_matching
 
     x = demand_matching(demand, cost.sum("b"))
     assert set(x.dims) == set(demand.dims)
@@ -119,8 +121,9 @@ def test_no_constraints_no_i_dims(demand, cost):
 
 
 def test_no_constraints_i_dims(demand, cost):
-    from muse.demand_matching import demand_matching
     from xarray import broadcast
+
+    from muse.demand_matching import demand_matching
 
     x = demand_matching(demand.sum("a"), cost, protected_dims={"a"})
     assert set(x.dims) == set(demand.dims)
@@ -135,8 +138,9 @@ def test_no_constraints_i_dims(demand, cost):
 
 def test_one_non_binding_constraint(demand, cost):
     """Constraint where excess is always 0."""
-    from muse.demand_matching import demand_matching
     from xarray import broadcast
+
+    from muse.demand_matching import demand_matching
 
     x = demand_matching(demand, cost, 2 * demand)
     assert set(x.dims) == set(demand.dims)
@@ -151,8 +155,9 @@ def test_one_non_binding_constraint(demand, cost):
 
 def test_one_cutting_constraint(demand, cost):
     """Constraint where excess is not always 0."""
-    from muse.demand_matching import demand_matching
     from xarray import broadcast
+
+    from muse.demand_matching import demand_matching
 
     constraint = demand.sum("a") * 0.5
 

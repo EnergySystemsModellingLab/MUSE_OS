@@ -1,8 +1,9 @@
 """Test timeslice utilities."""
 
-from muse.timeslices import QuantityType, convert_timeslice
 from pytest import approx, fixture
 from xarray import DataArray
+
+from muse.timeslices import QuantityType, convert_timeslice
 
 
 @fixture
@@ -110,8 +111,9 @@ def test_convert_intensive_timeslice(reference, timeslice_dataarray, transforms)
 
 
 def test_reference_timeslice():
-    from muse.timeslices import reference_timeslice
     from toml import loads
+
+    from muse.timeslices import reference_timeslice
 
     inputs = loads(
         """
@@ -143,8 +145,9 @@ def test_reference_timeslice():
 
 
 def test_no_overlap():
-    from muse.timeslices import reference_timeslice
     from pytest import raises
+
+    from muse.timeslices import reference_timeslice
 
     with raises(ValueError):
         reference_timeslice(
@@ -163,8 +166,9 @@ def test_no_overlap():
 def test_aggregate_transforms_no_aggregates():
     from itertools import product
 
-    from muse.timeslices import aggregate_transforms, reference_timeslice
     from numpy import ndarray, zeros
+
+    from muse.timeslices import aggregate_transforms, reference_timeslice
 
     reference = reference_timeslice(
         """
@@ -191,8 +195,9 @@ def test_aggregate_transforms_no_aggregates():
 def test_aggregate_transforms_with_aggregates():
     from itertools import product
 
-    from muse.timeslices import aggregate_transforms, reference_timeslice
     from toml import loads
+
+    from muse.timeslices import aggregate_transforms, reference_timeslice
 
     toml = loads(
         """
