@@ -1,7 +1,8 @@
 from typing import Any
 
-from muse.decisions import register_decision
 from xarray import DataArray, Dataset
+
+from muse.decisions import register_decision
 
 
 @register_decision

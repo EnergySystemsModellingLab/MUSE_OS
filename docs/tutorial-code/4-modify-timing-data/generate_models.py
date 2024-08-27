@@ -2,8 +2,9 @@ import shutil
 from pathlib import Path
 
 import pandas as pd
-from muse.wizard import add_timeslice, get_sectors, modify_toml
 from tomlkit import dumps, parse
+
+from muse.wizard import add_timeslice, get_sectors, modify_toml
 
 parent_path = Path(__file__).parent
 
