@@ -3,6 +3,7 @@ import shutil
 from pathlib import Path
 
 import pandas as pd
+
 from muse import examples
 
 parent_path = Path(__file__).parent

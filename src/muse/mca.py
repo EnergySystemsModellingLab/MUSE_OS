@@ -13,7 +13,7 @@ from xarray import Dataset, zeros_like
 
 from muse.outputs.cache import OutputCache
 from muse.readers import read_initial_market
-from muse.sectors import SECTORS_REGISTERED, AbstractSector
+from muse.sectors import SECTORS_REGISTERED, AbstractSector, Sector
 from muse.timeslices import drop_timeslice
 from muse.utilities import future_propagation
 
@@ -341,6 +341,11 @@ class MCA:
                     )
 
             _, new_market, self.sectors = self.find_equilibrium(new_market)
+
+            # Save sector outputs
+            for sector in self.sectors:
+                if type(sector) is Sector:
+                    sector.save_outputs()
 
             # If we need to account for the carbon budget, we might need to change
             # the budget for the future, too.

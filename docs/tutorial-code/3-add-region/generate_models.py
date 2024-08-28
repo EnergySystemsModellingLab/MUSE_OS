@@ -2,6 +2,7 @@ import shutil
 from pathlib import Path
 
 import pandas as pd
+
 from muse.wizard import add_region
 
 parent_path = Path(__file__).parent

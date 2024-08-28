@@ -278,23 +278,44 @@ class Agent(AbstractAgent):
             getLogger(__name__).critical("Search space is empty")
             self.year += time_period
             return None
-        decision = self._compute_objective(demand, search_space, technologies, market)
+
+        # Filter technologies according to the search space, forecast year and region
+        techs = self.filter_input(
+            technologies,
+            technology=search_space.replacement,
+            year=self.forecast_year,
+        ).drop_vars("technology")
+
+        # Reduce dimensions of the demand array
+        reduced_demand = demand.sel(
+            {
+                k: search_space[k]
+                for k in set(demand.dims).intersection(search_space.dims)
+            }
+        )
+
+        # Filter prices according to the region
+        prices = self.filter_input(market.prices)
+
+        # Compute the objective
+        decision = self._compute_objective(
+            technologies=techs, demand=reduced_demand, prices=prices
+        )
 
         self.year += time_period
         return xr.Dataset(dict(search_space=search_space, decision=decision))
 
     def _compute_objective(
         self,
-        demand: xr.DataArray,
-        search_space: xr.DataArray,
         technologies: xr.Dataset,
-        market: xr.Dataset,
+        demand: xr.DataArray,
+        prices: xr.DataArray,
     ) -> xr.DataArray:
-        objectives = self.objectives(self, demand, search_space, technologies, market)
+        objectives = self.objectives(
+            technologies=technologies, demand=demand, prices=prices
+        )
         decision = self.decision(objectives)
-        nobroadcast_dims = [d for d in decision.dims if d not in search_space.dims]
-        decision = xr.broadcast(decision, search_space, exclude=nobroadcast_dims)[0]
-        return decision.sel({k: search_space[k] for k in search_space.dims})
+        return decision
 
     def add_investments(
         self,

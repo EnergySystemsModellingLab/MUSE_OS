@@ -1,6 +1,7 @@
 from typing import Optional
 
 import xarray as xr
+
 from muse.outputs.sector import market_quantity, register_output_quantity
 
 
