@@ -76,9 +76,9 @@ lpsolver = "scipy"
 demand_share = "standard_demand"
 
 [[sectors.power.outputs]]
-filename = "{cwd}/{default_output_dir}/{Sector}_{Quantity}.csv"
-sink = "aggregate"
 quantity = "supply"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/{Sector}_{Quantity}.csv"
 
 [sectors.gas]
 type = 'default'
