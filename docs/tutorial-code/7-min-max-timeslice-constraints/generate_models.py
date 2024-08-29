@@ -5,7 +5,6 @@ from pathlib import Path
 import pandas as pd
 
 from muse import examples
-from muse.wizard import modify_toml
 
 parent_path = Path(__file__).parent
 
@@ -38,23 +37,6 @@ def generate_model_1() -> None:
         1,
     ]
     df.to_csv(timeslices_file, index=False)
-
-    # Add supply output for power sector
-    settings_file = model_path / "settings.toml"
-    modify_toml(
-        settings_file,
-        lambda settings: settings["sectors"]["power"].update(
-            {
-                "outputs": [
-                    {
-                        "quantity": "supply",
-                        "sink": "aggregate",
-                        "filename": "{cwd}/{default_output_dir}/{Sector}_{Quantity}.csv",  # noqa: E501
-                    },
-                ]
-            }
-        ),
-    )
 
 
 def generate_model_2() -> None:

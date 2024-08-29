@@ -19,11 +19,6 @@ sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
-quantity = "supply"
-sink = "aggregate"
-filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-
-[[outputs]]
 quantity = "prices"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
@@ -74,6 +69,11 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
 lpsolver = "scipy"
 demand_share = "standard_demand"
+
+[[sectors.power.outputs]]
+quantity = "supply"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/{Sector}_{Quantity}.csv"
 
 [sectors.gas]
 type = 'default'

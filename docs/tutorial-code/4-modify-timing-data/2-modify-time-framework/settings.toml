@@ -19,11 +19,6 @@ sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
-quantity = "supply"
-sink = "aggregate"
-filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-
-[[outputs]]
 quantity = "prices"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
