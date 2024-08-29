@@ -51,8 +51,7 @@ A1,5.88890000000,R1,2025,R1,power,gasCCGT,newcapa,2050
 A1,6.00000000000,R1,2030,R1,power,solarPV,newcapa,2050
 A1,6.00000000000,R1,2035,R1,power,solarPV,newcapa,2050
 A1,6.00000000000,R1,2040,R1,power,solarPV,newcapa,2050
-A1,10.00000000000,R1,2045,R1,power,solarPV,newcapa,2050
-A1,1.50000000000,R1,2045,R1,power,windturbine,newcapa,2050
+A1,11.50000000000,R1,2045,R1,power,solarPV,newcapa,2050
 A1,1.46440000000,R1,2020,R1,gas,gassupply1,newcapa,2050
 A1,9.22000000000,R1,2025,R1,gas,gassupply1,newcapa,2050
 A1,7.50000000000,R1,2030,R1,gas,gassupply1,newcapa,2050
