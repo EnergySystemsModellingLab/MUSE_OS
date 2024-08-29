@@ -14,22 +14,17 @@ tolerance = 0.1
 tolerance_unmet_demand = -0.1
 
 [[outputs]]
-quantity = "prices"
-sink = "aggregate"
-filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-
-[[outputs]]
 quantity = "capacity"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
-quantity = "timeslice_supply"
+quantity = "supply"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
-quantity = "timeslice_consumption"
+quantity = "prices"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
@@ -65,18 +60,6 @@ constraints = [
 demand_share = "standard_demand"  # Optional, default to standard_demand
 forecast = 5  # Optional, defaults to 5
 
-[[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
-quantity = "capacity"
-sink = 'aggregate'
-
-[[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
-sink = 'aggregate'
-quantity.name = "supply"
-quantity.sum_over = "timeslice"
-quantity.drop = ["comm_usage", "units_prices"]
-
 [sectors.power]
 type = 'default'
 priority = 2
@@ -92,17 +75,6 @@ existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
 lpsolver = "scipy"
 demand_share = "standard_demand"
 
-[[sectors.power.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
-quantity = "capacity"
-sink = 'aggregate'
-
-[[sectors.power.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
-sink = 'aggregate'
-quantity.name = "supply"
-quantity.drop = ["comm_usage", "units_prices"]
-
 [sectors.gas]
 type = 'default'
 priority = 3
@@ -117,11 +89,6 @@ existing_capacity = '{path}/technodata/gas/ExistingCapacity.csv'
 lpsolver = "scipy"
 demand_share = "standard_demand"
 
-[[sectors.gas.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
-quantity = "capacity"
-sink = 'aggregate'
-
 [sectors.residential_presets]
 type = 'presets'
 priority = 0
@@ -129,9 +96,11 @@ consumption_path = "{path}/technodata/preset/*Consumption.csv"
 
 [timeslices]
 level_names = ["month", "day", "hour"]
-all-year.all-week.night = 1460
-all-year.all-week.morning = 1460
-all-year.all-week.afternoon = 1460
-all-year.all-week.early-peak = 1460
-all-year.all-week.late-peak = 1460
-all-year.all-week.evening = 1460
+
+[timeslices.all-year.all-week]
+night = 1460
+morning = 1460
+afternoon = 1460
+early-peak = 1460
+late-peak = 1460
+evening = 1460
