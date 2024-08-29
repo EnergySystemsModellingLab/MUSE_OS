@@ -2,7 +2,7 @@
 
 time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
 foresight = 5  # Has to be a multiple of the minimum separation between the years in time framework
-regions = ["R1", "R2"]
+regions = ["R1"]
 interest_rate = 0.1
 interpolation_mode = 'Active'
 log_level = 'info'
@@ -97,11 +97,9 @@ consumption_path = "{path}/technodata/preset/*Consumption.csv"
 level_names = ["month", "day", "hour"]
 
 [timeslices.all-year.all-week]
-night = 1095
-morning = 1095
-mid-afternoon = 1095
-early-peak = 1095
-late-peak = 1095
-evening = 1095
-early-morning = 1095
-late-afternoon = 1095
+night = 1460
+morning = 1460
+afternoon = 1460
+early-peak = 1460
+late-peak = 1460
+evening = 1460
