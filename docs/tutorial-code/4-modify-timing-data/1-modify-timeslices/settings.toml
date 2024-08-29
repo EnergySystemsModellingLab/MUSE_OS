@@ -6,7 +6,7 @@ regions = ["R1", "R2"]
 interest_rate = 0.1
 interpolation_mode = 'Active'
 log_level = 'info'
-excluded_commodities = ["wind", "solar"]
+excluded_commodities = ["wind"]
 # Convergence parameters
 equilibrium_variable = 'demand'
 maximum_iterations = 100
@@ -14,12 +14,17 @@ tolerance = 0.1
 tolerance_unmet_demand = -0.1
 
 [[outputs]]
+quantity = "capacity"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+
+[[outputs]]
 quantity = "prices"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
-quantity = "capacity"
+quantity = "supply"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
@@ -55,18 +60,6 @@ constraints = [
 demand_share = "standard_demand"  # Optional, default to standard_demand
 forecast = 5  # Optional, defaults to 5
 
-[[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
-quantity = "capacity"
-sink = 'aggregate'
-
-[[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
-sink = 'aggregate'
-quantity.name = "supply"
-quantity.sum_over = "timeslice"
-quantity.drop = ["comm_usage", "units_prices"]
-
 [sectors.power]
 type = 'default'
 priority = 2
@@ -81,11 +74,6 @@ existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
 lpsolver = "scipy"
 demand_share = "standard_demand"
 
-[[sectors.power.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
-quantity = "capacity"
-sink = 'aggregate'
-
 [sectors.gas]
 type = 'default'
 priority = 3
@@ -99,11 +87,6 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/gas/ExistingCapacity.csv'
 lpsolver = "scipy"
 demand_share = "standard_demand"
-
-[[sectors.gas.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv'
-quantity = "capacity"
-sink = 'aggregate'
 
 [sectors.residential_presets]
 type = 'presets'
