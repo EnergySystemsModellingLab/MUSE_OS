@@ -42,10 +42,10 @@ We have also provided links to the input and results files for each of the tutor
       - `[4] <https://github.com/EnergySystemsModellingLab/MUSE_OS/tree/main/docs/tutorial-code/4-modify-timing-data>`_
    *  - 5
       - :ref:`/user-guide/min-max-timeslice-constraints.ipynb`
-      - `[5] <https://github.com/EnergySystemsModellingLab/MUSE_OS/tree/main/docs/tutorial-code/7-min-max-timeslice-constraints>`_
+      - `[5] <https://github.com/EnergySystemsModellingLab/MUSE_OS/tree/main/docs/tutorial-code/5-min-max-timeslice-constraints>`_
    *  - 6
       - :ref:`/user-guide/additional-service-demand.ipynb`
-      - `[6] <https://github.com/EnergySystemsModellingLab/MUSE_OS/tree/main/docs/tutorial-code/5-add-service-demand>`_
+      - `[6] <https://github.com/EnergySystemsModellingLab/MUSE_OS/tree/main/docs/tutorial-code/6-add-service-demand>`_
    *  - 7
       - :ref:`/user-guide/add-gdp-correlation-demand.ipynb`
-      - `[7] <https://github.com/EnergySystemsModellingLab/MUSE_OS/tree/main/docs/tutorial-code/6-add-correlation-demand>`_
+      - `[7] <https://github.com/EnergySystemsModellingLab/MUSE_OS/tree/main/docs/tutorial-code/7-add-correlation-demand>`_
