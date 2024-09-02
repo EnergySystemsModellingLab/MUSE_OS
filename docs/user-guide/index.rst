@@ -16,7 +16,7 @@ We have also provided links to the input and results files for each of the tutor
       - Description
       - Files
    *  - 1
-   *  - :ref:`add-solar`
+      - :ref:`add-solar`
       - `[1] <https://github.com/EnergySystemsModellingLab/MUSE_OS/tree/main/docs/tutorial-code/1-add-new-technology>`_
    *  - 2
       - :ref:`add-agent`
