@@ -1,9 +1,11 @@
+import os
 import shutil
 from pathlib import Path
 
 import pandas as pd
 from tomlkit import dumps, parse
 
+from muse import examples
 from muse.wizard import add_timeslice, get_sectors, modify_toml
 
 parent_path = Path(__file__).parent
@@ -20,10 +22,9 @@ def generate_model_1():
     if model_path.exists():
         shutil.rmtree(model_path)
 
-    # Starting point: copy model from tutorial 3
-    shutil.copytree(parent_path / "../3-add-region/1-new-region", model_path)
-    if (model_path / "Results").exists():
-        shutil.rmtree(model_path / "Results")
+    # Starting point: copy default model
+    examples.copy_model(name="default", path=parent_path, overwrite=True)
+    os.rename(parent_path / "model", model_path)
 
     # Add timeslices
     add_timeslice(model_path, timeslice_name="early-morning", copy_from="evening")
@@ -43,14 +44,6 @@ def generate_model_1():
 
     # Change consumption profile
     consumption_values = [
-        0.7,
-        1.0,
-        0.7,
-        1.0,
-        2.1,
-        1.4,
-        1.4,
-        1.4,
         0.7,
         1.0,
         0.7,

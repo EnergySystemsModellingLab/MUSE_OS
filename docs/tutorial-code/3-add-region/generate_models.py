@@ -1,8 +1,10 @@
+import os
 import shutil
 from pathlib import Path
 
 import pandas as pd
 
+from muse import examples
 from muse.wizard import add_region
 
 parent_path = Path(__file__).parent
@@ -19,20 +21,18 @@ def generate_model_1():
     if model_path.exists():
         shutil.rmtree(model_path)
 
-    # Starting point: copy model from tutorial 1
-    shutil.copytree(parent_path / "../1-add-new-technology/2-scenario", model_path)
-    if (model_path / "Results").exists():
-        shutil.rmtree(model_path / "Results")
+    # Starting point: copy default model
+    examples.copy_model(name="default", path=parent_path, overwrite=True)
+    os.rename(parent_path / "model", model_path)
 
     # Add region R2
     add_region(model_path, region_name="R2", copy_from="R1")
 
-    # Change growth/capacity limits for windturbine in R2
-    technodata_file = model_path / "technodata/power/Technodata.csv"
+    # Reduce capacity limit for heatpump in R2
+    technodata_file = model_path / "technodata/residential/Technodata.csv"
     df = pd.read_csv(technodata_file)
-    mask = (df["RegionName"] == "R2") & (df["ProcessName"] == "windturbine")
-    df.loc[mask, "MaxCapacityAddition"] = 5
-    df.loc[mask, "TotalCapacityLimit"] = 100
+    mask = (df["RegionName"] == "R2") & (df["ProcessName"] == "heatpump")
+    df.loc[mask, "TotalCapacityLimit"] = 20
     df.to_csv(technodata_file, index=False)
 
 
