@@ -257,24 +257,26 @@ class MCA:
         """
         from numpy import median
 
-        future = market.year[-1]
-
+        # Solve market with current carbon price
         market, _ = single_year_iteration(market, self.sectors)
 
-        threshold = self.carbon_budget.interp(
-            year=future, kwargs=dict(fill_value=self.carbon_budget.isel(year=-1).values)
-        ).values
+        # Calculate emissions and threshold
+        future = market.year[-1]
         emissions = (
             market.supply.sel(year=future, commodity=self.carbon_commodities)
             .sum(["region", "timeslice", "commodity"])
             .values
         )
+        threshold = self.carbon_budget.interp(
+            year=future, kwargs=dict(fill_value=self.carbon_budget.isel(year=-1).values)
+        ).values
 
-        # Future emissions are OK, so we move on
+        # Exit if emissions are within budget, and price cannot be decreased further
         cp = median(market.prices.sel(commodity=self.carbon_commodities, year=future))
         if emissions < threshold and not self.debug and cp == 0.0:
             return None
 
+        # Update carbon price
         new_carbon_price = self.carbon_method(  # type: ignore
             market,
             self.sectors,

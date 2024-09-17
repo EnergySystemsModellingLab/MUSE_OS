@@ -400,17 +400,16 @@ def bisection(
         Value of global carbon price
     """
     # We estimate carbon price, and emission threshold in forecast year
-    current = carbon_price.year.min() + sectors[-1].forecast
     future = market.year[-1]
     threshold = carbon_budget.sel(year=future).values
     price = market.prices.sel(year=future, commodity=commodities).mean().values
 
     # We create a 2-price sample being lower and upper bound of bisection
-    time_exp = max(0, (int(future - current)))
-    small = round((1 + 0.01) ** time_exp, 4)
-    large = round((1 + 0.02) ** time_exp, 4)
-
-    sample_prices = price * np.linspace(small, large, 2, endpoint=True)
+    current = market.year[0]
+    time_exp = future - current
+    small = round((1 + 0.01) ** time_exp, 4)  # i.e. 1% yearly increase
+    large = round((1 + 0.02) ** time_exp, 4)  # i.e. 2% yearly increase
+    sample_prices = max(price, 1e-2) * np.linspace(small, large, 2, endpoint=True)
 
     # Out of the sample_prices, we apply bisection on max and min
     # carbon prices estimated
@@ -478,6 +477,7 @@ def bisection(
                 up0 = up
                 lb = bisect_loop(market, sectors, equilibrium, commodities, up)
             new_price = round((low + up) / 2.0, 7)
+
     # We apply a minimum value greater than zero with a negative carbon price
     if new_price <= 0:
         new_price = 1e-2
