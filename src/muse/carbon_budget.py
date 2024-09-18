@@ -404,7 +404,7 @@ def bisection(
     """
     # We calculate the carbon price and emissions threshold in the forecast year
     future = market.year[-1]
-    threshold = carbon_budget.sel(year=future).values
+    threshold = carbon_budget.sel(year=future).values.item()
     price = market.prices.sel(year=future, commodity=commodities).mean().values
 
     # Initial lower and upper bounds on carbon price for the bisection algorithm
@@ -433,12 +433,6 @@ def bisection(
             )
         lb = emissions_cache[up]
 
-        # Exit loop if emissions are identical at both prices
-        # (i.e. changing the carbon price has no impact on emissions)
-        # In this case we'll take the lower price
-        if ub == lb:
-            return low
-
         # Exit loop if lower or upper bound on emissions is close to threshold
         if abs(ub - threshold) <= abs(tolerance * threshold):
             return low
@@ -459,8 +453,9 @@ def bisection(
             emissions_cache=emissions_cache,
         )
 
-    # If convergence isn't reached, take an average of the final bounds
-    return (low + up) / 2.0
+    # If convergence isn't reached, new price is that with emissions closest to
+    # threshold. If multiple prices are equally close, it returns the lowest price
+    return min(emissions_cache, key=lambda k: (abs(emissions_cache[k] - threshold), k))
 
 
 def min_max_bisect(
@@ -503,12 +498,14 @@ def min_max_bisect(
         # Both prices are too high (emissions too low) -> decrease the lower bound
         exp = (lb - threshold) / abs(denominator)  # will be negative
         exp = max(exp, -1)  # cap exponent at -1
+        up = low if (ub > lb) else up  # new upper bound is price with higher emissions
         low = low * np.exp(exp)
 
     if ub > threshold and lb > threshold:
         # Both prices are too low (emissions too high) -> increase the upper bound
         exp = 2 * (lb - threshold) / abs(denominator)  # will be positive
         exp = min(exp, 1)  # cap exponent at 1
+        low = up if (lb < ub) else low  # new lower bound is price with lower emissions
         up = up * np.exp(exp)
 
     if ub > threshold and lb < threshold:
