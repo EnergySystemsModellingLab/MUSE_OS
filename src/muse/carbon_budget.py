@@ -405,7 +405,7 @@ def bisection(
     # We calculate the carbon price and emissions threshold in the forecast year
     future = market.year[-1]
     threshold = carbon_budget.sel(year=future).values.item()
-    price = market.prices.sel(year=future, commodity=commodities).mean().values
+    price = market.prices.sel(year=future, commodity=commodities).mean().values.item()
 
     # Initial lower and upper bounds on carbon price for the bisection algorithm
     current = market.year[0]
@@ -569,6 +569,6 @@ def bisect_loop(
         new_market.supply.sel(year=future, commodity=commodities)
         .sum(["region", "timeslice", "commodity"])
         .round(decimals=3)
-    ).values
+    ).values.item()
 
     return new_emissions
