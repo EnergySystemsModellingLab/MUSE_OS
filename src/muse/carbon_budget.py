@@ -435,6 +435,12 @@ def bisection(
             )
         lb = emissions_cache[up]
 
+        # Terminate early if the last 5 solutions are the same
+        if len(emissions_cache) > 5:
+            last_five = list(emissions_cache.values())[-5:]
+            if all(x == last_five[0] for x in last_five):
+                break
+
         # Exit loop if lower or upper bound on emissions is close to threshold
         if abs(ub - threshold) <= abs(tolerance * threshold):
             return low
@@ -457,7 +463,10 @@ def bisection(
 
     # If convergence isn't reached, new price is that with emissions closest to
     # threshold. If multiple prices are equally close, it returns the lowest price
-    message = f"Carbon budget not matched for year {future}."
+    message = (
+        f"Carbon budget could not be matched for year {future}. "
+        "Try increasing the tolerance or sample size."
+    )
     getLogger(__name__).warning(message)
     return min(emissions_cache, key=lambda k: (abs(emissions_cache[k] - threshold), k))
 
