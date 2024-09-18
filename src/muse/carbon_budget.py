@@ -402,6 +402,8 @@ def bisection(
     Returns:
         New value of global carbon price
     """
+    from logging import getLogger
+
     # We calculate the carbon price and emissions threshold in the forecast year
     future = market.year[-1]
     threshold = carbon_budget.sel(year=future).values.item()
@@ -455,6 +457,8 @@ def bisection(
 
     # If convergence isn't reached, new price is that with emissions closest to
     # threshold. If multiple prices are equally close, it returns the lowest price
+    message = f"Carbon budget not matched for year {future}."
+    getLogger(__name__).warning(message)
     return min(emissions_cache, key=lambda k: (abs(emissions_cache[k] - threshold), k))
 
 
