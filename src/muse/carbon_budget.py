@@ -414,6 +414,7 @@ def bisection(
     up = max(price, 1e-2) * 1.1**time_exp  # i.e. 10% yearly increase
 
     # Bisection loop
+    emissions_cache: dict[float, float] = {}  # caches emissions for different prices
     for _ in range(sample_size):  # maximum number of iterations before terminating
         # Cap prices between 0.01 and price_too_high_threshold
         if refine_price:
@@ -421,8 +422,16 @@ def bisection(
         low = max(low, 1e-2)
 
         # Calculate carbon emissions at new bounds
-        ub = bisect_loop(market, sectors, equilibrium, commodities, low)
-        lb = bisect_loop(market, sectors, equilibrium, commodities, up)
+        if low not in emissions_cache:
+            emissions_cache[low] = bisect_loop(
+                market, sectors, equilibrium, commodities, low
+            )
+        ub = emissions_cache[low]
+        if up not in emissions_cache:
+            emissions_cache[up] = bisect_loop(
+                market, sectors, equilibrium, commodities, up
+            )
+        lb = emissions_cache[up]
 
         # Exit loop if emissions are identical at both prices
         # (i.e. changing the carbon price has no impact on emissions)
@@ -447,6 +456,7 @@ def bisection(
             equilibrium,
             commodities,
             threshold,  # type: ignore
+            emissions_cache=emissions_cache,
         )
 
     # If convergence isn't reached, take an average of the final bounds
@@ -465,6 +475,7 @@ def min_max_bisect(
     ],
     commodities: list,
     threshold: float,
+    emissions_cache: dict[float, float] = {},
 ):
     """Refines bisection algorithm to escalate carbon price and meet the budget.
 
@@ -482,6 +493,7 @@ def min_max_bisect(
         equilibrium: Method for searching market equilibrium
         commodities: List of carbon-related commodities
         threshold: Carbon budget
+        emissions_cache: Cache of emissions for carbon prices
 
     Returns:
         Value of lower and upper global carbon price
@@ -491,20 +503,19 @@ def min_max_bisect(
         # Both prices are too high (emissions too low) -> decrease the lower bound
         exp = (lb - threshold) / abs(denominator)  # will be negative
         exp = max(exp, -1)  # cap exponent at -1
-        up = low if (ub > lb) else up  # new upper bound is price with higher emissions
-        low = low * np.exp(exp)  # decrease lower bound price
+        low = low * np.exp(exp)
 
     if ub > threshold and lb > threshold:
         # Both prices are too low (emissions too high) -> increase the upper bound
         exp = 2 * (lb - threshold) / abs(denominator)  # will be positive
         exp = min(exp, 1)  # cap exponent at 1
-        low = up if (lb < ub) else low  # new lower bound is price with lower emissions
-        up = up * np.exp(exp)  # increase upper bound price
+        up = up * np.exp(exp)
 
     if ub > threshold and lb < threshold:
         # Threshold is between bounds -> perform bisection
         midpoint = (low + up) / 2.0
         m = bisect_loop(market, sectors, equilibrium, commodities, midpoint)
+        emissions_cache[midpoint] = m
         if m < threshold:
             # Midpoint price is too high -> becomes new upper bound
             up = midpoint
@@ -517,6 +528,7 @@ def min_max_bisect(
     if ub < threshold and lb > threshold:
         midpoint = (low + up) / 2.0
         m = bisect_loop(market, sectors, equilibrium, commodities, midpoint)
+        emissions_cache[midpoint] = m
         if m > threshold:
             # Midpoint price is too high -> becomes new upper bound
             up = midpoint
