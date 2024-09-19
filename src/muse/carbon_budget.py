@@ -527,7 +527,7 @@ def min_max_bisect(
 
     if ub > threshold and lb < threshold:
         # Threshold is between bounds -> perform bisection
-        midpoint = (low + up) / 2.0
+        midpoint = round((low + up) / 2.0, 2)
         m = bisect_loop(market, sectors, equilibrium, commodities, midpoint)
         emissions_cache[midpoint] = m
         if m < threshold:
@@ -540,7 +540,7 @@ def min_max_bisect(
     # Inverted bounds (i.e. increasing price leads to increasing emissions)
     # Unlikely case, but included for completeness
     if ub < threshold and lb > threshold:
-        midpoint = (low + up) / 2.0
+        midpoint = round((low + up) / 2.0, 2)
         m = bisect_loop(market, sectors, equilibrium, commodities, midpoint)
         emissions_cache[midpoint] = m
         if m > threshold:
