@@ -413,7 +413,7 @@ def bisection(
     current = market.year[0]
     time_exp = int(future - current)
     low = 0.01
-    up = max(price, 1e-2) * 1.1**time_exp  # i.e. 10% yearly increase on current price
+    up = max(price, 0.01) * 1.1**time_exp  # i.e. 10% yearly increase on current price
 
     # Bisection loop
     emissions_cache: dict[float, float] = {}  # caches emissions for different prices
@@ -423,9 +423,9 @@ def bisection(
             up = min(up, price_too_high_threshold)
         low = max(low, 0.01)
 
-        # Round prices to 3dp
-        low = round(low, 3)
-        up = round(up, 3)
+        # Round prices to 2dp
+        low = round(low, 2)
+        up = round(up, 2)
 
         # Calculate carbon emissions at new bounds
         if low not in emissions_cache:
@@ -513,17 +513,17 @@ def min_max_bisect(
     denominator = max(threshold, 1e-3)
     if lb < threshold and ub < threshold:
         # Both prices are too high (emissions too low) -> decrease the lower bound
-        exp = (lb - threshold) / abs(denominator)  # will be negative
-        exp = max(exp, -1)  # cap exponent at -1
+        exponent = (ub - threshold) / abs(denominator)  # will be negative
+        exponent = max(exponent, -1)  # cap exponent at -1
         up = low if (ub >= lb) else up  # new upper bound is price with higher emissions
-        low = low * np.exp(exp)
+        low = low * np.exp(exponent)
 
     if ub > threshold and lb > threshold:
         # Both prices are too low (emissions too high) -> increase the upper bound
-        exp = 2 * (lb - threshold) / abs(denominator)  # will be positive
-        exp = min(exp, 1)  # cap exponent at 1
+        exponent = (lb - threshold) / abs(denominator)  # will be positive
+        exponent = min(exponent, 1)  # cap exponent at 1
         low = up if (ub >= lb) else low  # new lower bound is price with lower emissions
-        up = up * np.exp(exp)
+        up = up * np.exp(exponent)
 
     if ub > threshold and lb < threshold:
         # Threshold is between bounds -> perform bisection
