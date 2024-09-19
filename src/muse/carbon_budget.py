@@ -412,8 +412,8 @@ def bisection(
     # Initial lower and upper bounds on carbon price for the bisection algorithm
     current = market.year[0]
     time_exp = int(future - current)
-    low = max(price, 1e-2)  # i.e. current price
-    up = max(price, 1e-2) * 1.1**time_exp  # i.e. 10% yearly increase
+    low = 0.01
+    up = max(price, 1e-2) * 1.1**time_exp  # i.e. 10% yearly increase on current price
 
     # Bisection loop
     emissions_cache: dict[float, float] = {}  # caches emissions for different prices
@@ -421,7 +421,11 @@ def bisection(
         # Cap prices between 0.01 and price_too_high_threshold
         if refine_price:
             up = min(up, price_too_high_threshold)
-        low = max(low, 1e-2)
+        low = max(low, 0.01)
+
+        # Round prices to 3dp
+        low = round(low, 3)
+        up = round(up, 3)
 
         # Calculate carbon emissions at new bounds
         if low not in emissions_cache:
@@ -436,7 +440,7 @@ def bisection(
         lb = emissions_cache[up]
 
         # Terminate early if the last 5 solutions are the same
-        if len(emissions_cache) > 5:
+        if len(emissions_cache) >= 7:
             last_five = list(emissions_cache.values())[-5:]
             if all(x == last_five[0] for x in last_five):
                 break
@@ -464,7 +468,7 @@ def bisection(
     # If convergence isn't reached, new price is that with emissions closest to
     # threshold. If multiple prices are equally close, it returns the lowest price
     message = (
-        f"Carbon budget could not be matched for year {future}. "
+        f"Carbon budget could not be matched for year {int(future)}. "
         "Try increasing the tolerance or sample size."
     )
     getLogger(__name__).warning(message)
@@ -511,14 +515,14 @@ def min_max_bisect(
         # Both prices are too high (emissions too low) -> decrease the lower bound
         exp = (lb - threshold) / abs(denominator)  # will be negative
         exp = max(exp, -1)  # cap exponent at -1
-        up = low if (ub > lb) else up  # new upper bound is price with higher emissions
+        up = low if (ub >= lb) else up  # new upper bound is price with higher emissions
         low = low * np.exp(exp)
 
     if ub > threshold and lb > threshold:
         # Both prices are too low (emissions too high) -> increase the upper bound
         exp = 2 * (lb - threshold) / abs(denominator)  # will be positive
         exp = min(exp, 1)  # cap exponent at 1
-        low = up if (lb < ub) else low  # new lower bound is price with lower emissions
+        low = up if (ub >= lb) else low  # new lower bound is price with lower emissions
         up = up * np.exp(exp)
 
     if ub > threshold and lb < threshold:
@@ -577,7 +581,7 @@ def bisect_loop(
 
     # Assign new carbon price and solve market
     new_market.prices.loc[{"year": future, "commodity": commodities}] = new_price
-    new_market = equilibrium(new_market, sectors, 1).market
+    new_market = equilibrium(new_market, sectors).market
     new_emissions = (
         new_market.supply.sel(year=future, commodity=commodities)
         .sum(["region", "timeslice", "commodity"])
