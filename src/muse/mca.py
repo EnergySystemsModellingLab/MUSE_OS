@@ -253,10 +253,8 @@ class MCA:
         """
         new_carbon_price = self.carbon_method(  # type: ignore
             market,
-            self.sectors,
             self.find_equilibrium,
             self.carbon_budget,
-            self.carbon_price,
             self.carbon_commodities,
             **self.method_options,
         )

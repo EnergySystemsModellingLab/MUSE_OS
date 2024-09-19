@@ -7,10 +7,9 @@ from scipy.optimize import curve_fit
 
 from muse.mca import FindEquilibriumResults
 from muse.registration import registrator
-from muse.sectors import AbstractSector
 
 CARBON_BUDGET_METHODS_SIGNATURE = Callable[
-    [xr.Dataset, list, Callable, xr.DataArray, xr.DataArray], float
+    [xr.Dataset, Callable, xr.DataArray, list], float
 ]
 """carbon budget fitters signature."""
 
@@ -71,17 +70,13 @@ def update_carbon_budget(
 @register_carbon_budget_method
 def fitting(
     market: xr.Dataset,
-    sectors: list,
-    equilibrium: Callable[
-        [xr.Dataset, Sequence[AbstractSector]], FindEquilibriumResults
-    ],
+    equilibrium: Callable[[xr.Dataset], FindEquilibriumResults],
     carbon_budget: xr.DataArray,
-    carbon_price: xr.DataArray,
     commodities: list,
     sample_size: int = 4,
     refine_price: bool = True,
     price_too_high_threshold: float = 10,
-    fitter: str = "slinear",
+    fitter: str = "linear",
 ) -> float:
     """Used to solve the carbon market.
 
@@ -91,45 +86,54 @@ def fitting(
     a fitting of the emission-carbon price relation.
 
     Arguments:
-        market: Market, with the prices, supply, and consumption,
-        sectors: list of market sectors,
-        equilibrium: Method for searching market equilibrium,
-        carbon_budget: limit on emissions,
+        market: Market, with the prices, supply, and consumption
+        equilibrium: Method for searching market equilibrium
+        carbon_budget: limit on emissions
         carbon_price: current carbon price
-        commodities: list of commodities to limit (ie. emissions),
-        sample_size: sample size for fitting,
-        refine_price: if True, performs checks on estimated carbon price,
-        price_too_high_threshold: threshold on carbon price,
-        fitter: method to fit emissions with carbon price.
+        commodities: list of commodities to limit (ie. emissions)
+        sample_size: sample size for fitting
+        refine_price: Boolean to decide on whether carbon price should be capped, with
+            the upper bound given by price_too_high_threshold
+        price_too_high_threshold: threshold on carbon price
+        fitter: method to fit emissions with carbon price
 
     Returns:
         new_price: adjusted carbon price to meet budget
     """
+    # Calculate the carbon price and emissions threshold in the forecast year
     future = market.year[-1]
+    threshold = carbon_budget.sel(year=future).values.item()
+    price = market.prices.sel(year=future, commodity=commodities).mean().values.item()
 
-    threshold = carbon_budget.sel(year=future).values
-    emissions = market.supply.sel(year=future, commodity=commodities).sum().values
-    price = market.prices.sel(year=future, commodity=commodities).mean().values
+    # Solve market with current carbon price
+    new_market = market.copy(deep=True)
+    new_market = equilibrium(new_market).market
+    emissions = (
+        new_market.supply.sel(year=future, commodity=commodities)
+        .sum(["region", "timeslice", "commodity"])
+        .round(decimals=3)
+        .values.item()
+    )
 
-    # We create a sample of prices at which we want to calculate emissions
+    # Create a sample of prices at which we want to calculate emissions
     sample_prices = create_sample(price, emissions, threshold, sample_size)
     sample_emissions = np.zeros_like(sample_prices)
     sample_emissions[0] = emissions
 
     # For each sample price, we calculate the new emissions
-    new_market = None
     for i, new_price in enumerate(sample_prices[1:]):
-        # Reset market and sectors
+        # Create copy of the market with new carbon price
         new_market = market.copy(deep=True)
-
-        # Assign new carbon price
         new_market.prices.loc[{"year": future, "commodity": commodities}] = new_price
 
-        new_market = equilibrium(new_market, sectors).market
-
-        sample_emissions[i + 1] = new_market.supply.sel(
-            year=future, commodity=commodities
-        ).sum(["region", "timeslice", "commodity"])
+        # Solve the market
+        new_market = equilibrium(new_market).market
+        sample_emissions[i + 1] = (
+            new_market.supply.sel(year=future, commodity=commodities)
+            .sum(["region", "timeslice", "commodity"])
+            .round(decimals=3)
+            .values.item()
+        )
 
     # Based on these results, we finally adjust the carbon price
     new_price = CARBON_BUDGET_FITTERS[fitter](
@@ -138,70 +142,12 @@ def fitting(
         threshold,  # type: ignore
     )
 
-    if refine_price and new_market is not None:
-        new_price = refine_new_price(
-            new_market,
-            carbon_price,
-            carbon_budget,
-            sample_prices,
-            new_price,
-            commodities,
-            price_too_high_threshold,
-        )
+    # Cap price between 0.01 and price_too_high_threshold
+    if refine_price:
+        new_price = min(new_price, price_too_high_threshold)
+    new_price = max(new_price, 0.01)
 
     return new_price
-
-
-def refine_new_price(
-    market: xr.Dataset,
-    historic_price: xr.DataArray,
-    carbon_budget: xr.DataArray,
-    sample: np.ndarray,
-    price: float,
-    commodities: list,
-    price_too_high_threshold: float,
-) -> float:
-    """Refine the value of the carbon price.
-
-    Ensure it is not too high or low compared to heuristic values.
-
-    Arguments:
-        market: Market, with prices, supply, and consumption,
-        historic_price: DataArray with the historic carbon prices,
-        carbon_budget: DataArray with the carbon budget,
-        sample: Sample carbon price points,
-        price: Current carbon price, to be refined,
-        commodities: List of carbon-related commodities,
-        price_too_high_threshold: Threshold to decide what is a price too high.
-
-    Returns:
-        The new carbon price
-    """
-    future = market.year[-1]
-
-    emissions = (
-        market.supply.sel(year=future, commodity=commodities)
-        .sum(["region", "timeslice", "commodity"])
-        .values
-    )
-
-    carbon_price = historic_price.sel(year=historic_price.year < future).values
-
-    if (carbon_price[-2:] > 0).all():
-        relative_price_increase = np.diff(carbon_price) / carbon_price[-1]
-        average = np.mean(relative_price_increase)
-    else:
-        average = 0.2
-
-    if price > price_too_high_threshold:  # * max(min(carbon_price), 0.1):
-        price = min(price_too_high_threshold, max(sample) * (1 + average))
-    elif price <= 0:
-        threshold = carbon_budget.sel(year=future).values
-        exponent = (emissions - threshold) / threshold
-        magnitude = max(1 - np.exp(exponent), -0.1)
-        price = min(sample) * (1 + magnitude)
-
-    return price
 
 
 def linear_fun(x, a, b):
@@ -230,9 +176,7 @@ def create_sample(carbon_price, current_emissions, budget, size=4):
     """
     exponent = (current_emissions - budget) / budget
     magnitude = max(1 - np.exp(-exponent), -0.1)
-
     sample = carbon_price * (1 + np.linspace(0, 1, size) * magnitude)
-
     return np.abs(sample)
 
 
@@ -278,7 +222,6 @@ def linear_guess_and_weights(
         The initial guess and weights
     """
     weights = np.abs(emissions - budget)
-
     idx = np.argsort(weights)
 
     p = prices[idx][:2]
@@ -363,17 +306,13 @@ def exp_guess_and_weights(
 @register_carbon_budget_method
 def bisection(
     market: xr.Dataset,
-    sectors: list,
-    equilibrium: Callable[
-        [xr.Dataset, Sequence[AbstractSector], int], FindEquilibriumResults
-    ],
+    equilibrium: Callable[[xr.Dataset], FindEquilibriumResults],
     carbon_budget: xr.DataArray,
-    carbon_price: xr.DataArray,
     commodities: list,
     sample_size: int = 2,
     refine_price: bool = True,
     price_too_high_threshold: float = 10,
-    fitter: str = "slinear",
+    fitter: str = "linear",
     tolerance: float = 0.1,
 ) -> float:
     """Applies bisection algorithm to escalate carbon price and meet the budget.
@@ -387,7 +326,6 @@ def bisection(
 
     Arguments:
         market: Market, with the prices, supply, consumption and demand
-        sectors: List of sectors
         equilibrium: Method for searching market equilibrium
         carbon_budget: DataArray with the carbon budget
         carbon_price: DataArray with the carbon price
@@ -429,14 +367,10 @@ def bisection(
 
         # Calculate carbon emissions at new bounds
         if low not in emissions_cache:
-            emissions_cache[low] = bisect_loop(
-                market, sectors, equilibrium, commodities, low
-            )
+            emissions_cache[low] = bisect_loop(market, equilibrium, commodities, low)
         ub = emissions_cache[low]
         if up not in emissions_cache:
-            emissions_cache[up] = bisect_loop(
-                market, sectors, equilibrium, commodities, up
-            )
+            emissions_cache[up] = bisect_loop(market, equilibrium, commodities, up)
         lb = emissions_cache[up]
 
         # Terminate early if the last 5 solutions are the same
@@ -458,7 +392,6 @@ def bisection(
             up,
             ub,
             market,
-            sectors,
             equilibrium,
             commodities,
             threshold,  # type: ignore
@@ -481,10 +414,7 @@ def min_max_bisect(
     up: float,
     ub: float,
     market: xr.Dataset,
-    sectors: list,
-    equilibrium: Callable[
-        [xr.Dataset, Sequence[AbstractSector], int], FindEquilibriumResults
-    ],
+    equilibrium: Callable[[xr.Dataset], FindEquilibriumResults],
     commodities: list,
     threshold: float,
     emissions_cache: dict[float, float] = {},
@@ -501,7 +431,6 @@ def min_max_bisect(
         up: Value of carbon price at upper bound
         ub: Value of emissions at upper bound
         market: Market, with the prices, supply, consumption and demand
-        sectors: List of sectors
         equilibrium: Method for searching market equilibrium
         commodities: List of carbon-related commodities
         threshold: Carbon budget
@@ -520,7 +449,7 @@ def min_max_bisect(
 
     if ub > threshold and lb > threshold:
         # Both prices are too low (emissions too high) -> increase the upper bound
-        exp = 2 * (lb - threshold) / abs(denominator)  # will be positive
+        exp = (lb - threshold) / abs(denominator)  # will be positive
         exp = min(exp, 1)  # cap exponent at 1
         low = up if (ub >= lb) else low  # new lower bound is price with lower emissions
         up = up * np.exp(exp)
@@ -528,7 +457,7 @@ def min_max_bisect(
     if ub > threshold and lb < threshold:
         # Threshold is between bounds -> perform bisection
         midpoint = (low + up) / 2.0
-        m = bisect_loop(market, sectors, equilibrium, commodities, midpoint)
+        m = bisect_loop(market, equilibrium, commodities, midpoint)
         emissions_cache[midpoint] = m
         if m < threshold:
             # Midpoint price is too high -> becomes new upper bound
@@ -541,7 +470,7 @@ def min_max_bisect(
     # Unlikely case, but included for completeness
     if ub < threshold and lb > threshold:
         midpoint = (low + up) / 2.0
-        m = bisect_loop(market, sectors, equilibrium, commodities, midpoint)
+        m = bisect_loop(market, equilibrium, commodities, midpoint)
         emissions_cache[midpoint] = m
         if m > threshold:
             # Midpoint price is too high -> becomes new upper bound
@@ -555,10 +484,7 @@ def min_max_bisect(
 
 def bisect_loop(
     market: xr.Dataset,
-    sectors: list,
-    equilibrium: Callable[
-        [xr.Dataset, Sequence[AbstractSector], int], FindEquilibriumResults
-    ],
+    equilibrium: Callable[[xr.Dataset], FindEquilibriumResults],
     commodities: list,
     new_price: float,
 ) -> float:
@@ -568,7 +494,6 @@ def bisect_loop(
 
     Arguments:
         market: Market, with the prices, supply, consumption and demand,
-        sectors: List of sectors,
         equilibrium: Method for searching market equilibrium,
         commodities: List of carbon-related commodities,
         new_price: New carbon price from bisection,
@@ -581,7 +506,7 @@ def bisect_loop(
 
     # Assign new carbon price and solve market
     new_market.prices.loc[{"year": future, "commodity": commodities}] = new_price
-    new_market = equilibrium(new_market, sectors).market
+    new_market = equilibrium(new_market).market
     new_emissions = (
         new_market.supply.sel(year=future, commodity=commodities)
         .sum(["region", "timeslice", "commodity"])
