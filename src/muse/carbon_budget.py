@@ -373,8 +373,8 @@ def bisection(
     sample_size: int = 2,
     refine_price: bool = True,
     price_too_high_threshold: float = 10,
-    fitter: str = "slinear",
     tolerance: float = 0.1,
+    early_termination_count: int = 5,
 ) -> float:
     """Applies bisection algorithm to escalate carbon price and meet the budget.
 
@@ -396,8 +396,9 @@ def bisection(
         refine_price: Boolean to decide on whether carbon price should be capped, with
             the upper bound given by price_too_high_threshold
         price_too_high_threshold: Upper limit for carbon price
-        fitter: Not used in this method
         tolerance: Maximum permitted deviation of emissions from the budget
+        early_termination_count: Will terminate the loop early if the last n solutions
+            are the same
 
     Returns:
         New value of global carbon price
@@ -439,10 +440,10 @@ def bisection(
             )
         lb = emissions_cache[up]
 
-        # Terminate early if the last 5 solutions are the same
-        if len(emissions_cache) >= 7:
-            last_five = list(emissions_cache.values())[-5:]
-            if all(x == last_five[0] for x in last_five):
+        # Terminate early if many consecutive emissions are the same
+        if len(emissions_cache) >= early_termination_count + 2:
+            recent_values = list(emissions_cache.values())[-early_termination_count:]
+            if all(x == recent_values[0] for x in recent_values):
                 break
 
         # Exit loop if lower or upper bound on emissions is close to threshold
