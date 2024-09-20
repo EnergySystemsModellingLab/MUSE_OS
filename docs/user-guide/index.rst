@@ -19,6 +19,7 @@ We have also provided links to the input and results files for each of the tutor
    min-max-timeslice-constraints
    additional-service-demand
    add-gdp-correlation-demand
+   carbon-budget
 
 
 .. list-table::
@@ -49,3 +50,6 @@ We have also provided links to the input and results files for each of the tutor
    *  - 7
       - :ref:`/user-guide/add-gdp-correlation-demand.ipynb`
       - `[7] <https://github.com/EnergySystemsModellingLab/MUSE_OS/tree/main/docs/tutorial-code/7-add-correlation-demand>`_
+   *  - 8
+      - :ref:`/user-guide/carbon-budget.ipynb`
+      - `[7] <https://github.com/EnergySystemsModellingLab/MUSE_OS/tree/main/docs/tutorial-code/8-carbon-budget>`_
