@@ -89,7 +89,6 @@ def fitting(
         market: Market, with the prices, supply, and consumption
         equilibrium: Method for searching market equilibrium
         carbon_budget: limit on emissions
-        carbon_price: current carbon price
         commodities: list of commodities to limit (ie. emissions)
         sample_size: sample size for fitting
         refine_price: Boolean to decide on whether carbon price should be capped, with
@@ -106,14 +105,7 @@ def fitting(
     price = market.prices.sel(year=future, commodity=commodities).mean().values.item()
 
     # Solve market with current carbon price
-    new_market = market.copy(deep=True)
-    new_market = equilibrium(new_market).market
-    emissions = (
-        new_market.supply.sel(year=future, commodity=commodities)
-        .sum(["region", "timeslice", "commodity"])
-        .round(decimals=3)
-        .values.item()
-    )
+    emissions = solve_market(market, equilibrium, commodities, price)
 
     # Create a sample of prices at which we want to calculate emissions
     sample_prices = create_sample(price, emissions, threshold, sample_size)
@@ -122,17 +114,8 @@ def fitting(
 
     # For each sample price, we calculate the new emissions
     for i, new_price in enumerate(sample_prices[1:]):
-        # Create copy of the market with new carbon price
-        new_market = market.copy(deep=True)
-        new_market.prices.loc[{"year": future, "commodity": commodities}] = new_price
-
-        # Solve the market
-        new_market = equilibrium(new_market).market
-        sample_emissions[i + 1] = (
-            new_market.supply.sel(year=future, commodity=commodities)
-            .sum(["region", "timeslice", "commodity"])
-            .round(decimals=3)
-            .values.item()
+        sample_emissions[i + 1] = solve_market(
+            market, equilibrium, commodities, new_price
         )
 
     # Based on these results, we finally adjust the carbon price
@@ -309,12 +292,11 @@ def bisection(
     equilibrium: Callable[[xr.Dataset], FindEquilibriumResults],
     carbon_budget: xr.DataArray,
     commodities: list,
-    sample_size: int = 2,
-    refine_price: bool = True,
+    sample_size: int = 5,
+    refine_price: bool = False,
     price_too_high_threshold: float = 10,
     tolerance: float = 0.1,
     early_termination_count: int = 5,
-    **kwargs,
 ) -> float:
     """Applies bisection algorithm to escalate carbon price and meet the budget.
 
@@ -329,7 +311,6 @@ def bisection(
         market: Market, with the prices, supply, consumption and demand
         equilibrium: Method for searching market equilibrium
         carbon_budget: DataArray with the carbon budget
-        carbon_price: DataArray with the carbon price
         commodities: List of carbon-related commodities
         sample_size: Maximum number of iterations for bisection
         refine_price: Boolean to decide on whether carbon price should be capped, with
@@ -338,7 +319,6 @@ def bisection(
         tolerance: Maximum permitted deviation of emissions from the budget
         early_termination_count: Will terminate the loop early if the last n solutions
             are the same
-        kwargs: Additional arguments (unused)
 
     Returns:
         New value of global carbon price
@@ -408,7 +388,7 @@ class EmissionsCache(dict):
     """Cache of emissions at different price points for bisection algorithm.
 
     If a price is queried that is not in the cache, it calculates the emissions at that
-    price using bisect_solve_market and stores the result in the cache.
+    price using solve_market and stores the result in the cache.
     """
 
     def __init__(self, market, equilibrium, commodities):
@@ -418,9 +398,7 @@ class EmissionsCache(dict):
         self.commodities = commodities
 
     def __missing__(self, price):
-        value = bisect_solve_market(
-            self.market, self.equilibrium, self.commodities, price
-        )
+        value = solve_market(self.market, self.equilibrium, self.commodities, price)
         self[price] = value
         return value
 
@@ -537,30 +515,28 @@ def bisect_bounds_inverted(
     return lb_price, ub_price
 
 
-def bisect_solve_market(
+def solve_market(
     market: xr.Dataset,
     equilibrium: Callable[[xr.Dataset], FindEquilibriumResults],
     commodities: list,
-    new_price: float,
+    carbon_price: float,
 ) -> float:
-    """Calls market equilibrium iteration in bisection.
-
-    This updates emissions during iterations.
+    """Solves the market with a new carbon price and returns the emissions.
 
     Arguments:
         market: Market, with the prices, supply, consumption and demand
         equilibrium: Method for searching market equilibrium
         commodities: List of carbon-related commodities
-        new_price: New carbon price from bisection
+        carbon_price: New carbon price
 
     Returns:
-        Emissions estimated at the new carbon price.
+        Emissions at the new carbon price.
     """
     future = market.year[-1]
     new_market = market.copy(deep=True)
 
     # Assign new carbon price and solve market
-    new_market.prices.loc[{"year": future, "commodity": commodities}] = new_price
+    new_market.prices.loc[{"year": future, "commodity": commodities}] = carbon_price
     new_market = equilibrium(new_market).market
     new_emissions = (
         new_market.supply.sel(year=future, commodity=commodities)
