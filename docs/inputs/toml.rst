@@ -135,7 +135,7 @@ Example
 
    Parameters for the `bisection` method:
 
-   - `max_iterations`: maximum number of iterations. Defaults to 5
+   - `max_iterations`: maximum number of iterations. Defaults to 10
    - `tolerance`: tolerance for convergence. E.g. 0.1 means that the algorithm will terminate when emissions are within 10% of the carbon budget. Defaults to 0.1.
    - `early_termination_count`: number of iterations with no change in the carbon price before the algorithm will terminate. Defaults to 5.
 
