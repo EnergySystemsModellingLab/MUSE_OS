@@ -73,8 +73,8 @@ def fitting(
     equilibrium: Callable[[xr.Dataset], FindEquilibriumResults],
     carbon_budget: xr.DataArray,
     commodities: list,
-    sample_size: int = 4,
-    refine_price: bool = True,
+    sample_size: int = 5,
+    refine_price: bool = False,
     price_too_high_threshold: float = 10,
     fitter: str = "linear",
 ) -> float:

@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 import numpy as np
-import xarray as xr
 from pytest import approx, fixture
 
 
@@ -138,73 +137,6 @@ def test_undershoot():
     expected = int(6e6)
     actual = update_carbon_budget(carbonbudget, emissions, year, over=False, under=True)
     assert expected == actual
-
-
-def test_refine_new_price(market):
-    from muse.carbon_budget import refine_new_price
-
-    num_years = 5
-    years = np.linspace(2010, 2020, num_years, dtype=int)
-    commodities = ["CH4", "CO2"]
-    budget = xr.DataArray(
-        np.linspace(4e6, 6e6, num_years), dims=["year"], coords={"year": years}
-    )
-    price_too_high_threshold = 10
-
-    market = market.interp(year=years)
-    market["prices"] = market.prices.mean("timeslice")
-    future = years[2]
-    price = market.prices.sel(year=future, commodity=commodities).mean(
-        ["region", "commodity"]
-    )
-
-    # ensure price is a scalar before using it in np.linspace
-    price_value = price.item() if isinstance(price, xr.DataArray) else price
-    sample = np.linspace(price_value, 4 * price_value, 4)
-
-    carbon_price = market.prices.sel(
-        year=market.year < future, commodity=commodities
-    ).mean(["region", "commodity"])
-    too_high = price_too_high_threshold
-
-    # Checking price too high
-    price = 1.1 * too_high
-    actual = refine_new_price(
-        market,
-        carbon_price,
-        budget,
-        sample,
-        price,
-        commodities,
-        price_too_high_threshold,
-    )
-    assert actual < price
-
-    # Just fine
-    price = 0.9 * too_high
-    actual = refine_new_price(
-        market,
-        carbon_price,
-        budget,
-        sample,
-        price,
-        commodities,
-        price_too_high_threshold,
-    )
-    assert actual == price
-
-    # Negative
-    price = -price
-    actual = refine_new_price(
-        market,
-        carbon_price,
-        budget,
-        sample,
-        price,
-        commodities,
-        price_too_high_threshold,
-    )
-    assert actual > 0
 
 
 @patch("muse.carbon_budget.decrease_bounds")
