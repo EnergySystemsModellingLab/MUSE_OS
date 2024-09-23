@@ -36,7 +36,7 @@ control_undershoot = false
 control_overshoot = false
 
 [carbon_budget_control.method_options]
-sample_size = 5
+max_iterations = 5
 tolerance = 0.2
 
 [global_input_files]

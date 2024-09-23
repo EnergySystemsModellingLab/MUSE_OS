@@ -50,7 +50,7 @@ def generate_model_1() -> None:
         "control_undershoot": False,
         "control_overshoot": False,
         "method_options": {
-            "sample_size": 5,
+            "max_iterations": 5,
             "tolerance": 0.2,
         },
     }
