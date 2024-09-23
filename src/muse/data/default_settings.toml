@@ -19,8 +19,6 @@ excluded_commodities = []
 # Carbon budget control
 [carbon_budget_control]
 budget = []  # Same length as time_framework
-commodities = []
-method = "bisection"
 
 # Custom modules
 # Rather than a section, it can also be a list, e.g.:

@@ -100,8 +100,8 @@ class MCA:
             for k, v in settings.carbon_budget_control._asdict().items()
         }
         for key in {"budget", "commodities", "method"}:
-            carbon_kw[f"carbon_{key}"] = carbon_kw[key]
-            carbon_kw.pop(key)
+            if key in carbon_kw:
+                carbon_kw[f"carbon_{key}"] = carbon_kw.pop(key)
         return cls(
             sectors=sectors,
             market=market,
@@ -128,9 +128,9 @@ class MCA:
         carbon_price: Sequence | None = None,
         carbon_commodities: Sequence[str] | None = None,
         debug: bool = False,
-        control_undershoot: bool = True,
-        control_overshoot: bool = True,
-        carbon_method: str = "fitting",
+        control_undershoot: bool = False,
+        control_overshoot: bool = False,
+        carbon_method: str = "bisection",
         method_options: Mapping | None = None,
     ):
         """Market clearing algorithm class which rules the whole MUSE."""
@@ -242,21 +242,19 @@ class MCA:
             self.control_undershoot,
         )
 
-    def update_carbon_price(self, market) -> float | None:
+    def update_carbon_price(self, market) -> float:
         """Calculates the updated carbon price.
 
         Arguments:
             market: Market with the prices, supply, consumption and demand.
 
         Returns:
-            The new carbon price. If None, the price is not updated.
+            The new carbon price.
         """
         new_carbon_price = self.carbon_method(  # type: ignore
             market,
-            self.sectors,
             self.find_equilibrium,
             self.carbon_budget,
-            self.carbon_price,
             self.carbon_commodities,
             **self.method_options,
         )
@@ -303,18 +301,14 @@ class MCA:
             # If we need to account for the carbon budget, we do it now.
             if check_carbon_budget:
                 new_price = self.update_carbon_price(new_market)
-                if new_price is not None:
-                    future_price = DataArray(new_price, coords=dict(year=years[1]))
-
-                    new_market.prices.loc[dict(commodity=self.carbon_commodities)] = (
-                        future_propagation(
-                            new_market.prices.sel(commodity=self.carbon_commodities),
-                            future_price,
-                        )
+                future_price = DataArray(new_price, coords=dict(year=years[1]))
+                new_market.prices.loc[dict(commodity=self.carbon_commodities)] = (
+                    future_propagation(
+                        new_market.prices.sel(commodity=self.carbon_commodities),
+                        future_price,
                     )
-                    self.carbon_price = future_propagation(
-                        self.carbon_price, future_price
-                    )
+                )
+                self.carbon_price = future_propagation(self.carbon_price, future_price)
 
             _, new_market, self.sectors = self.find_equilibrium(new_market)
 
