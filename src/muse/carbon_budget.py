@@ -73,9 +73,9 @@ def fitting(
     equilibrium: Callable[[xr.Dataset], FindEquilibriumResults],
     carbon_budget: xr.DataArray,
     commodities: list,
-    sample_size: int = 5,
     refine_price: bool = False,
     price_too_high_threshold: float = 10,
+    sample_size: int = 5,
     fitter: str = "linear",
 ) -> float:
     """Used to solve the carbon market.
@@ -90,10 +90,10 @@ def fitting(
         equilibrium: Method for searching market equilibrium
         carbon_budget: limit on emissions
         commodities: list of commodities to limit (ie. emissions)
-        sample_size: sample size for fitting
         refine_price: Boolean to decide on whether carbon price should be capped, with
             the upper bound given by price_too_high_threshold
         price_too_high_threshold: threshold on carbon price
+        sample_size: sample size for fitting
         fitter: method to fit emissions with carbon price
 
     Returns:
@@ -292,9 +292,9 @@ def bisection(
     equilibrium: Callable[[xr.Dataset], FindEquilibriumResults],
     carbon_budget: xr.DataArray,
     commodities: list,
-    sample_size: int = 5,
     refine_price: bool = False,
     price_too_high_threshold: float = 10,
+    max_iterations: int = 5,
     tolerance: float = 0.1,
     early_termination_count: int = 5,
 ) -> float:
@@ -312,10 +312,10 @@ def bisection(
         equilibrium: Method for searching market equilibrium
         carbon_budget: DataArray with the carbon budget
         commodities: List of carbon-related commodities
-        sample_size: Maximum number of iterations for bisection
         refine_price: Boolean to decide on whether carbon price should be capped, with
             the upper bound given by price_too_high_threshold
         price_too_high_threshold: Upper limit for carbon price
+        max_iterations: Maximum number of iterations for bisection
         tolerance: Maximum permitted deviation of emissions from the budget
         early_termination_count: Will terminate the loop early if the last n solutions
             are the same
@@ -340,7 +340,7 @@ def bisection(
 
     # Bisection loop
     emissions_cache = EmissionsCache(market, equilibrium, commodities)
-    for _ in range(sample_size):  # maximum number of iterations before terminating
+    for _ in range(max_iterations):  # maximum number of iterations before terminating
         # Cap prices between 0.01 and price_too_high_threshold
         if refine_price:
             ub_price = min(ub_price, price_too_high_threshold)
