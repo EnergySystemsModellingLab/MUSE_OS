@@ -243,38 +243,14 @@ class MCA:
         )
 
     def update_carbon_price(self, market) -> float | None:
-        """Calculates the updated carbon price, if required.
-
-        If the emission calculated for the next time period is larger than the
-        limit, then the carbon price needs to be updated to ensure that whatever the
-        sectors do, the carbon budget limit is not exceeded.
+        """Calculates the updated carbon price.
 
         Arguments:
-            market: Market, with the prices, supply, consumption and demand.
+            market: Market with the prices, supply, consumption and demand.
 
         Returns:
-            The new carbon price or None
+            The new carbon price. If None, the price is not updated.
         """
-        from numpy import median
-
-        future = market.year[-1]
-
-        market, _ = single_year_iteration(market, self.sectors)
-
-        threshold = self.carbon_budget.interp(
-            year=future, kwargs=dict(fill_value=self.carbon_budget.isel(year=-1).values)
-        ).values
-        emissions = (
-            market.supply.sel(year=future, commodity=self.carbon_commodities)
-            .sum(["region", "timeslice", "commodity"])
-            .values
-        )
-
-        # Future emissions are OK, so we move on
-        cp = median(market.prices.sel(commodity=self.carbon_commodities, year=future))
-        if emissions < threshold and not self.debug and cp == 0.0:
-            return None
-
         new_carbon_price = self.carbon_method(  # type: ignore
             market,
             self.sectors,
