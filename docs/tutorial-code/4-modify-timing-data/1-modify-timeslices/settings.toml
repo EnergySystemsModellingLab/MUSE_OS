@@ -23,7 +23,6 @@ quantity = "prices"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
-# Carbon budget control
 [carbon_budget_control]
 budget = []
 
