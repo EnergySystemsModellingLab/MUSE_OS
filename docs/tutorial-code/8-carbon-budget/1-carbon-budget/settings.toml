@@ -1,12 +1,12 @@
-plugins = "{path}/new_decision.py"
 # Global settings - most REQUIRED
-time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
+
+time_framework = [2020, 2025, 2030, 2035]
 foresight = 5  # Has to be a multiple of the minimum separation between the years in time framework
 regions = ["R1"]
 interest_rate = 0.1
 interpolation_mode = 'Active'
 log_level = 'info'
-excluded_commodities = ["wind", "solar"]
+excluded_commodities = ["wind"]
 # Convergence parameters
 equilibrium_variable = 'demand'
 maximum_iterations = 100
@@ -14,27 +14,30 @@ tolerance = 0.1
 tolerance_unmet_demand = -0.1
 
 [[outputs]]
-quantity = "prices"
-sink = "aggregate"
-filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-
-[[outputs]]
 quantity = "capacity"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
-quantity = "timeslice_consumption"
+quantity = "prices"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
-quantity = "timeslice_supply"
+quantity = "supply"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [carbon_budget_control]
-budget = []
+budget = [300, 300, 300, 300]
+commodities = ["CO2f"]
+method = "bisection"
+control_undershoot = false
+control_overshoot = false
+
+[carbon_budget_control.method_options]
+max_iterations = 5
+tolerance = 0.2
 
 [global_input_files]
 projections = '{path}/input/Projections.csv'
@@ -57,7 +60,9 @@ constraints = [
     "max_production",
     "max_capacity_expansion",
     "demand",
-    "search_space"
+    "search_space",
+    "minimum_service",
+    "demand_limiting_capacity"
 ]
 demand_share = "standard_demand"  # Optional, default to standard_demand
 forecast = 5  # Optional, defaults to 5
@@ -97,9 +102,11 @@ consumption_path = "{path}/technodata/preset/*Consumption.csv"
 
 [timeslices]
 level_names = ["month", "day", "hour"]
-all-year.all-week.night = 1460
-all-year.all-week.morning = 1460
-all-year.all-week.afternoon = 1460
-all-year.all-week.early-peak = 1460
-all-year.all-week.late-peak = 1460
-all-year.all-week.evening = 1460
+
+[timeslices.all-year.all-week]
+night = 1460
+morning = 1460
+afternoon = 1460
+early-peak = 1460
+late-peak = 1460
+evening = 1460
