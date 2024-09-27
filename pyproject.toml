@@ -24,10 +24,10 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
 ]
 dependencies = [
-    "numpy>=2.0",
-    "scipy>=1.13",
+    "numpy>=2.1",
+    "scipy>=1.14",
     "pandas>=2.2",
-    "xarray>=2024.6",
+    "xarray>=2024.9",
     "bottleneck>=1.4",
     "coloredlogs",
     "toml",
