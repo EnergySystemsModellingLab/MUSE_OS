@@ -103,12 +103,12 @@ Objective1
 
 .. _Objective2:
 
-Objective2
+Objective2 (optional)
    Second objective. See :ref:`Objective1 <Objective1>`.
 
 .. _Objective3:
 
-Objective3:
+Objective3 (optional)
    Third objective. See :ref:`Objective1 <Objective1>`.
 
 .. _ObjData1:
@@ -117,11 +117,11 @@ ObjData1
    A weight associated with the :ref:`first objective <Objective1>`. Whether it is used
    will depend in large part on the :ref:`decision method <DecisionMethod>`.
 
-ObjData2
+ObjData2 (optional)
    A weight associated with the :ref:`second objective <Objective2>`. See :ref:`ObjData1
    <ObjData1>`.
 
-ObjData3
+ObjData3 (optional)
    A weight associated with the :ref:`third objective <Objective3>`. See :ref:`ObjData1
    <ObjData1>`.
 
@@ -132,15 +132,13 @@ Objsort1
    "adhoc" and "scipy" solvers this should be set to "True" for minimization and
    "False" for maximisation.
 
-Objsort2
-   Sets whether :ref:`second objective <Objective2>` is maximized or minimized. For both
-   "adhoc" and "scipy" solvers this should be set to "True" for minimization and
-   "False" for maximisation.
+Objsort2 (optional)
+   Objsort parameter for :ref:`second objective <Objective2>`. See :ref:`Objsort1
+   <Objsort1>`.
 
-Objsort3
-   Sets whether :ref:`third objective <Objective3>` is maximized or minimized. For both
-   "adhoc" and "scipy" solvers this should be set to "True" for minimization and
-   "False" for maximisation.
+Objsort3 (optional)
+   Objsort parameter for :ref:`third objective <Objective3>`. See :ref:`Objsort1
+   <Objsort1>`.
 
 .. py:currentmodule:: muse.filters
 
@@ -161,7 +159,7 @@ SearchRule
 
    - :py:func:`similar_technology <similar_technology>`: Only allows technologies that
      have the same type as current crop of technologies in the agent, as determined by
-     "tech_type" in :ref:`inputs-technodata`. Aliased to "similar".
+     "Type" in :ref:`inputs-technodata`. Aliased to "similar".
 
    - :py:func:`same_fuels <same_fuels>`: Only allows technologies that consume the same
      fuels as the current crop of technologies in the agent. Aliased to
@@ -219,8 +217,8 @@ DecisionMethod
 Quantity
    A factor used to determine the demand share of "New" agents.
 
-MaturityThreshold
-   Parameter for the search rule :py:func:`maturity <muse.filters.maturity>`.
+MaturityThreshold (optional)
+   Required when using the :py:func:`maturity <muse.filters.maturity>` search rule.
 
-SpendLimit
-   Parameter for the search rule :py:func:`spend_limit <muse.filters.spend_limit>`.
+SpendLimit (optional)
+   Required when using the :py:func:`spend_limit <muse.filters.spend_limit>` search rule.
