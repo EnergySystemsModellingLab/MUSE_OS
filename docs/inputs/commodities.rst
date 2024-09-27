@@ -47,5 +47,5 @@ HeatRate (optional)
    for any subsequent development of the code.
 
 Unit (optional)
-   is the unit used as a basis for all the input data. More specifically the model allows
-   a totally flexible way of defining the commodities.
+   is the unit used to represent quantities of the commodity (e.g "PJ").
+   This parameter does not need to be included, as it isn't used in the model, but care should be taken to ensure that units are consistent across all input files.
