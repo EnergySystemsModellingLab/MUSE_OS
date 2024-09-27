@@ -506,9 +506,12 @@ def convert_timeslice(
         default):
 
         >>> from numpy import all
-        >>> all(zfine.sum("timeslice").round(6) == zrough.sum("timeslice").round(6))
-        <xarray.DataArray ()> Size: 1B
-        np.True_
+        >>> bool(
+        ...     all(
+        ...         zfine.sum("timeslice").round(6) == zrough.sum("timeslice").round(6)
+        ...     )
+        ... )
+        True
 
         Or that the ratio of weekdays to weekends makes sense:
         >>> weekdays = (
