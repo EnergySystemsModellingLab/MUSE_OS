@@ -125,10 +125,10 @@ def fitting(
         threshold,  # type: ignore
     )
 
-    # Cap price between 0.01 and price_too_high_threshold
+    # Cap price between 0.0 and price_too_high_threshold
     if refine_price:
         new_price = min(new_price, price_too_high_threshold)
-    new_price = max(new_price, 0.01)
+    new_price = max(new_price, 0.0)
 
     return new_price
 
@@ -333,7 +333,7 @@ def bisection(
     # Initial lower and upper bounds on carbon price for the bisection algorithm
     current = market.year[0]
     time_exp = int(future - current)
-    lb_price = 0.01
+    lb_price = 0.0
     ub_price = (
         max(price, 0.01) * 1.1**time_exp
     )  # i.e. 10% yearly increase on current price
@@ -341,10 +341,10 @@ def bisection(
     # Bisection loop
     emissions_cache = EmissionsCache(market, equilibrium, commodities)
     for _ in range(max_iterations):  # maximum number of iterations before terminating
-        # Cap prices between 0.01 and price_too_high_threshold
+        # Cap prices between 0.0 and price_too_high_threshold
         if refine_price:
             ub_price = min(ub_price, price_too_high_threshold)
-        lb_price = max(lb_price, 0.01)
+        lb_price = max(lb_price, 0.0)
 
         # Round prices to 2dp
         lb_price = round(lb_price, 2)
