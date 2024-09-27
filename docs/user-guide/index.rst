@@ -13,12 +13,12 @@ We have also provided links to the input and results files for each of the tutor
    :hidden:
 
    add-solar
+   additional-service-demand
+   add-gdp-correlation-demand
    add-agent
    add-region
    modify-timing-data
    min-max-timeslice-constraints
-   additional-service-demand
-   add-gdp-correlation-demand
    carbon-budget
 
 
