@@ -77,6 +77,7 @@ def fitting(
     price_too_high_threshold: float = 10,
     sample_size: int = 5,
     fitter: str = "linear",
+    resolution: int = 2,
 ) -> float:
     """Used to solve the carbon market.
 
@@ -95,6 +96,7 @@ def fitting(
         price_too_high_threshold: threshold on carbon price
         sample_size: sample size for fitting
         fitter: method to fit emissions with carbon price
+        resolution: Number of decimal places to solve the carbon price to
 
     Returns:
         new_price: adjusted carbon price to meet budget
@@ -130,7 +132,7 @@ def fitting(
         new_price = min(new_price, price_too_high_threshold)
     new_price = max(new_price, 0.0)
 
-    return new_price
+    return round(new_price, resolution)
 
 
 def linear_fun(x, a, b):
@@ -297,6 +299,7 @@ def bisection(
     max_iterations: int = 5,
     tolerance: float = 0.1,
     early_termination_count: int = 5,
+    resolution: int = 2,
 ) -> float:
     """Applies bisection algorithm to escalate carbon price and meet the budget.
 
@@ -319,6 +322,7 @@ def bisection(
         tolerance: Maximum permitted deviation of emissions from the budget
         early_termination_count: Will terminate the loop early if the last n solutions
             are the same
+        resolution: Number of decimal places to solve the carbon price to
 
     Returns:
         New value of global carbon price
@@ -334,8 +338,9 @@ def bisection(
     current = market.year[0]
     time_exp = int(future - current)
     lb_price = 0.0
-    ub_price = (
-        max(price, 0.01) * 1.1**time_exp
+    epsilon = 10**-resolution  # smallest nonzero price
+    ub_price = round(
+        (max(price, epsilon) * 1.1**time_exp), resolution
     )  # i.e. 10% yearly increase on current price
 
     # Bisection loop
@@ -345,10 +350,6 @@ def bisection(
         if refine_price:
             ub_price = min(ub_price, price_too_high_threshold)
         lb_price = max(lb_price, 0.0)
-
-        # Round prices to 2dp
-        lb_price = round(lb_price, 2)
-        ub_price = round(ub_price, 2)
 
         # Calculate/retrieve carbon emissions at new bounds
         lb_price_emissions = emissions_cache[lb_price]
@@ -372,6 +373,7 @@ def bisection(
             ub_price,
             emissions_cache,
             target,
+            resolution,
         )
 
     # If convergence isn't reached, new price is that with emissions closest to
@@ -408,6 +410,7 @@ def adjust_bounds(
     ub_price: float,
     emissions_cache: dict[float, float],
     target: float,
+    resolution: int,
 ) -> tuple[float, float]:
     """Adjust the bounds of the carbon price for the bisection algorithm.
 
@@ -420,6 +423,7 @@ def adjust_bounds(
         ub_price: Value of carbon price at upper bound
         emissions_cache: Dictionary of emissions at different price points
         target: Carbon budget
+        resolution: Number of decimal places to solve the carbon price to
 
     Returns:
         New lower and upper bounds for the carbon price.
@@ -454,11 +458,16 @@ def adjust_bounds(
         ub_price,
         emissions_cache,
         target,
+        resolution,
     )
 
 
 def decrease_bounds(
-    lb_price: float, ub_price: float, emissions_cache: dict[float, float], target: float
+    lb_price: float,
+    ub_price: float,
+    emissions_cache: dict[float, float],
+    target: float,
+    resolution: int,
 ) -> tuple[float, float]:
     """Decreases the lb of the carbon price, and sets the ub to the previous lb."""
     denominator = max(target, 1e-3)
@@ -466,12 +475,16 @@ def decrease_bounds(
     exponent = (lb_price_emissions - target) / abs(denominator)  # will be negative
     exponent = max(exponent, -1)  # cap exponent at -1
     ub_price = lb_price
-    lb_price = lb_price * np.exp(exponent)
+    lb_price = round(lb_price * np.exp(exponent), resolution)
     return lb_price, ub_price
 
 
 def increase_bounds(
-    lb_price: float, ub_price: float, emissions_cache: dict[float, float], target: float
+    lb_price: float,
+    ub_price: float,
+    emissions_cache: dict[float, float],
+    target: float,
+    resolution: int,
 ) -> tuple[float, float]:
     """Increases the ub of the carbon price, and sets the lb to the previous ub."""
     denominator = max(target, 1e-3)
@@ -479,7 +492,7 @@ def increase_bounds(
     exponent = (ub_price_emissions - target) / abs(denominator)  # will be positive
     exponent = min(exponent, 1)  # cap exponent at 1
     lb_price = ub_price
-    ub_price = ub_price * np.exp(exponent)
+    ub_price = round(ub_price * np.exp(exponent), resolution)
     return lb_price, ub_price
 
 
@@ -488,9 +501,10 @@ def bisect_bounds(
     ub_price: float,
     emissions_cache: dict[float, float],
     target: float,
+    resolution: int = 2,
 ) -> tuple[float, float]:
     """Bisects the bounds of the carbon price."""
-    midpoint = round((lb_price + ub_price) / 2.0, 2)
+    midpoint = round((lb_price + ub_price) / 2.0, resolution)
     midpoint_emissions = emissions_cache[midpoint]
     if midpoint_emissions < target:
         ub_price = midpoint
@@ -504,9 +518,10 @@ def bisect_bounds_inverted(
     ub_price: float,
     emissions_cache: dict[float, float],
     target: float,
+    resolution: int = 2,
 ) -> tuple[float, float]:
     """Bisects the bounds of the carbon price, in the case of inverted bounds."""
-    midpoint = round((lb_price + ub_price) / 2.0, 2)
+    midpoint = round((lb_price + ub_price) / resolution)
     midpoint_emissions = emissions_cache[midpoint]
     if midpoint_emissions > target:
         ub_price = midpoint
