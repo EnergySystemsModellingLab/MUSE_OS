@@ -378,12 +378,33 @@ def bisection(
 
     # If convergence isn't reached, new price is that with emissions closest to
     # threshold. If multiple prices are equally close, it returns the lowest price
-    message = (
-        f"Carbon budget could not be matched for year {int(future)}. "
-        "Try increasing the tolerance or sample size."
+    new_price = min(
+        emissions_cache, key=lambda k: (abs(emissions_cache[k] - target), k)
     )
+
+    # Raise warning message
+    if all(emissions_cache[k] > target for k in emissions_cache):
+        message = (
+            f"Carbon budget could not be met for the year {int(future)} "
+            f"(budget: {target}, emissions: {emissions_cache[new_price]}). "
+            "This may be because there are no processes available that can meet the "
+            "budget, or because emissions from capacity installed earlier in the time "
+            "horizon is preventing the budget from being met. "
+            "The CO2 price in this year should be interpreted with caution."
+        )
+    elif all(emissions_cache[k] < target for k in emissions_cache):
+        message = (
+            f"Emissions for the year {int(future)} are already below the carbon budget "
+            "without imposing a carbon price. The carbon price has been set to zero."
+        )
+    else:
+        message = (
+            f"Carbon budget could not be matched for the year {int(future)} to within "
+            "the specified tolerance. "
+            "Try increasing the tolerance or sample size."
+        )
     getLogger(__name__).warning(message)
-    return min(emissions_cache, key=lambda k: (abs(emissions_cache[k] - target), k))
+    return new_price
 
 
 class EmissionsCache(dict):
