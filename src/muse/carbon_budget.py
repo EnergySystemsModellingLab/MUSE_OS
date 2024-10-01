@@ -329,10 +329,22 @@ def bisection(
     """
     from logging import getLogger
 
+    # Create cache for emissions at different price points
+    emissions_cache = EmissionsCache(market, equilibrium, commodities)
+
     # Carbon price and emissions threshold in the forecast year
     future = market.year[-1]
     target = carbon_budget.sel(year=future).values.item()
     price = market.prices.sel(year=future, commodity=commodities).mean().values.item()
+
+    # Test if emissions are already below the budget without imposing a carbon price
+    if emissions_cache[0.0] < target:
+        message = (
+            f"Emissions for the year {int(future)} are already below the carbon budget "
+            "without imposing a carbon price. The carbon price has been set to zero."
+        )
+        getLogger(__name__).warning(message)
+        return 0.0
 
     # Initial lower and upper bounds on carbon price for the bisection algorithm
     current = market.year[0]
@@ -344,7 +356,6 @@ def bisection(
     )  # i.e. 10% yearly increase on current price
 
     # Bisection loop
-    emissions_cache = EmissionsCache(market, equilibrium, commodities)
     for _ in range(max_iterations):  # maximum number of iterations before terminating
         # Cap prices between 0.0 and price_too_high_threshold
         if refine_price:
@@ -391,11 +402,6 @@ def bisection(
             "budget, or because emissions from capacity installed earlier in the time "
             "horizon is preventing the budget from being met. "
             "The CO2 price in this year should be interpreted with caution."
-        )
-    elif all(emissions_cache[k] < target for k in emissions_cache):
-        message = (
-            f"Emissions for the year {int(future)} are already below the carbon budget "
-            "without imposing a carbon price. The carbon price has been set to zero."
         )
     else:
         message = (
