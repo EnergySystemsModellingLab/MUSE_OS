@@ -431,7 +431,7 @@ def adjust_bounds(
     ub_price: float,
     emissions_cache: dict[float, float],
     target: float,
-    resolution: int,
+    resolution: int = 2,
 ) -> tuple[float, float]:
     """Adjust the bounds of the carbon price for the bisection algorithm.
 
@@ -488,7 +488,7 @@ def decrease_bounds(
     ub_price: float,
     emissions_cache: dict[float, float],
     target: float,
-    resolution: int,
+    resolution: int = 2,
 ) -> tuple[float, float]:
     """Decreases the lb of the carbon price, and sets the ub to the previous lb."""
     denominator = max(target, 1e-3)
@@ -505,7 +505,7 @@ def increase_bounds(
     ub_price: float,
     emissions_cache: dict[float, float],
     target: float,
-    resolution: int,
+    resolution: int = 2,
 ) -> tuple[float, float]:
     """Increases the ub of the carbon price, and sets the lb to the previous ub."""
     denominator = max(target, 1e-3)
@@ -542,7 +542,7 @@ def bisect_bounds_inverted(
     resolution: int = 2,
 ) -> tuple[float, float]:
     """Bisects the bounds of the carbon price, in the case of inverted bounds."""
-    midpoint = round((lb_price + ub_price) / resolution)
+    midpoint = round((lb_price + ub_price) / 2.0, resolution)
     midpoint_emissions = emissions_cache[midpoint]
     if midpoint_emissions > target:
         ub_price = midpoint
