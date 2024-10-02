@@ -148,6 +148,7 @@ Example
 
    - `refine_price`: If True, applies an upper limit on the carbon price. Defaults to False.
    - `price_too_high_threshold`: upper limit on the carbon price. Defaults to 10.
+   - `resolution`: Number of decimal places to solve the carbon price to. When using the bisection method, increasing this value may increase the time taken to solve the carbon market. Defaults to 2.
 
 
 ------------------
