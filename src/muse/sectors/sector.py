@@ -26,17 +26,12 @@ class Sector(AbstractSector):  # type: ignore
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory
         from muse.production import factory as pfactory
-        from muse.readers import read_timeslices
         from muse.readers.toml import read_technodata
         from muse.utilities import nametuple_to_dict
 
         sector_settings = getattr(settings.sectors, name)._asdict()
         for attribute in ("name", "type", "priority", "path"):
             sector_settings.pop(attribute, None)
-
-        timeslices = read_timeslices(
-            sector_settings.pop("timeslice_levels", None)
-        ).get_index("timeslice")
 
         technologies = read_technodata(settings, name, settings.time_framework)
 
@@ -81,7 +76,6 @@ class Sector(AbstractSector):  # type: ignore
             name,
             technologies,
             subsectors=subsectors,
-            timeslices=timeslices,
             supply_prod=supply,
             outputs=outputs,
             interactions=interactions,
@@ -93,8 +87,6 @@ class Sector(AbstractSector):  # type: ignore
         name: str,
         technologies: xr.Dataset,
         subsectors: Sequence[Subsector] = [],
-        timeslices: pd.MultiIndex | None = None,
-        technodata_timeslices: xr.Dataset = None,
         interactions: Callable[[Sequence[AbstractAgent]], None] | None = None,
         interpolation: str = "linear",
         outputs: Callable | None = None,
@@ -110,11 +102,6 @@ class Sector(AbstractSector):  # type: ignore
         """Subsectors controlled by this object."""
         self.technologies: xr.Dataset = technologies
         """Parameters describing the sector's technologies."""
-        self.timeslices: pd.MultiIndex | None = timeslices
-        """Timeslice at which this sector operates.
-
-        If None, it will operate using the timeslice of the input market.
-        """
         self.interpolation: Mapping[str, Any] = {
             "method": interpolation,
             "kwargs": {"fill_value": "extrapolate"},
@@ -201,41 +188,25 @@ class Sector(AbstractSector):  # type: ignore
             current_year = int(mca_market.year.min())
         getLogger(__name__).info(f"Running {self.name} for year {current_year}")
 
-        # > to sector timeslice
-        market = self.convert_market_timeslice(
-            mca_market.sel(
-                commodity=self.technologies.commodity, region=self.technologies.region
-            ).interp(
-                year=sorted(
-                    {
-                        current_year,
-                        current_year + time_period,
-                        current_year + self.forecast,
-                    }
-                ),
-                **self.interpolation,
-            ),
-            self.timeslices,
-        )
-        # > agent interactions
+        # Agent interactions
         self.interactions(list(self.agents))
-        # > investment
-        years = sorted(
-            set(
-                market.year.data.tolist()
-                + self.capacity.installed.data.tolist()
-                + self.technologies.year.data.tolist()
-            )
-        )
-        technologies = self.technologies.interp(year=years, **self.interpolation)
 
+        # Select appropriate data from the market
+        market = mca_market.sel(
+            commodity=self.technologies.commodity, region=self.technologies.region
+        )
+
+        # Investments
         for subsector in self.subsectors:
             subsector.invest(
-                technologies, market, time_period=time_period, current_year=current_year
+                self.technologies,
+                market,
+                time_period=time_period,
+                current_year=current_year,
             )
 
         # Full output data
-        supply, consume, costs = self.market_variables(market, technologies)
+        supply, consume, costs = self.market_variables(market, self.technologies)
         self.output_data = xr.Dataset(
             dict(
                 supply=supply,
@@ -287,7 +258,9 @@ class Sector(AbstractSector):  # type: ignore
                 dict(supply=supply, consumption=consumption, costs=costs)
             )
         result = self.convert_market_timeslice(result, mca_market.timeslice)
-        result["comm_usage"] = technologies.comm_usage.sel(commodity=result.commodity)
+        result["comm_usage"] = self.technologies.comm_usage.sel(
+            commodity=result.commodity
+        )
         result.set_coords("comm_usage")
         return result
 
@@ -306,15 +279,17 @@ class Sector(AbstractSector):  # type: ignore
         years = market.year.values
         capacity = self.capacity.interp(year=years, **self.interpolation)
 
+        # Calculate supply
         supply = self.supply_prod(
             market=market, capacity=capacity, technologies=technologies
         )
-
         if "timeslice" in market.prices.dims and "timeslice" not in supply.dims:
             supply = convert_timeslice(supply, market.timeslice, QuantityType.EXTENSIVE)
 
+        # Calculate consumption
         consume = consumption(technologies, supply, market.prices)
 
+        # Calculate commodity prices
         technodata = cast(xr.Dataset, broadcast_techs(technologies, supply))
         costs = supply_cost(
             supply.where(~is_pollutant(supply.comm_usage), 0),
