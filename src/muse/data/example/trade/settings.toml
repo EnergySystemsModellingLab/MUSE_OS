@@ -14,12 +14,12 @@ tolerance = 0.1
 tolerance_unmet_demand = -0.1
 
 [[outputs]]
-quantity = "prices"
+quantity = "capacity"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
-quantity = "capacity"
+quantity = "prices"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
@@ -62,13 +62,6 @@ demand_share = "new_and_retro"
 forecast = 5
 asset_threshold = 1e-4
 
-[[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "capacity"
-sink = 'csv'
-overwrite = true
-columns = ["asset", "year", "region", "technology", "installed", "capacity"]
-
 [[sectors.residential.interactions]]
 net = 'new_to_retro'
 interaction = 'transfer'
@@ -101,21 +94,6 @@ demand_share = "unmet_forecasted_demand"
 forecast = 5
 asset_threshold = 1e-4
 
-[[sectors.power.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "capacity"
-sink = 'csv'
-overwrite = true
-columns = [
-    "dst_region",
-    "year",
-    "asset",
-    "region",
-    "technology",
-    "installed",
-    "capacity"
-]
-
 [sectors.gas]
 type = 'default'
 priority = 3
@@ -143,21 +121,6 @@ constraints = [
 demand_share = "unmet_forecasted_demand"
 forecast = 5
 asset_threshold = 1e-4
-
-[[sectors.gas.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "capacity"
-sink = 'csv'
-overwrite = true
-columns = [
-    "dst_region",
-    "year",
-    "asset",
-    "region",
-    "technology",
-    "installed",
-    "capacity"
-]
 
 [timeslices]
 level_names = ["month", "day", "hour"]

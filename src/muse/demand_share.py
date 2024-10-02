@@ -665,8 +665,8 @@ def new_demand(
     """Calculates the new demand that needs to be covered.
 
     It groups the demand related to an increase in consumption as well as the existing
-    demand associated with decomissoned assets. Internally, it just call `new_and_retro`
-    demands and adds together both components.
+    demand associated with decommissoned assets. Internally, it just calls
+    `new_and_retro` demands and adds together both components.
     """
     demand = new_and_retro_demands(
         capacity, market, technologies, production, current_year, forecast

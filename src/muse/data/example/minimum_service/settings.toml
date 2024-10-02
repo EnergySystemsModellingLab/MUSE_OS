@@ -22,12 +22,17 @@ projections = '{path}/input/Projections.csv'
 global_commodities = '{path}/input/GlobalCommodities.csv'
 
 [[outputs]]
-quantity = "timeslice_supply"
+quantity = "capacity"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
-quantity = "capacity"
+quantity = "supply"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+
+[[outputs]]
+quantity = "prices"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
@@ -54,20 +59,6 @@ constraints = [
 ]
 demand_share = "standard_demand"  # Optional, default to standard_demand
 forecast = 5  # Optional, defaults to 5
-
-[[sectors.industry.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "capacity"
-sink = 'csv'
-overwrite = true
-
-[[sectors.industry.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-sink = 'csv'
-overwrite = true
-quantity.name = "supply"
-quantity.sum_over = "timeslice"
-quantity.drop = ["comm_usage", "units_prices"]
 
 [sectors.industry_presets]
 type = 'presets'

@@ -16,18 +16,8 @@ tolerance = 0.1
 tolerance_unmet_demand = -0.1
 excluded_commodities = []
 
-# Carbon budget control
 [carbon_budget_control]
 budget = []  # Same length as time_framework
-commodities = []
-method = 'fitting'
-debug = true
-control_undershoot = true
-control_overshoot = true
-method_options.sample_size = 4
-method_options.refine_price = true
-method_options.price_too_high_threshold = 10
-method_options.fitter = 'slinear'
 
 # Custom modules
 # Rather than a section, it can also be a list, e.g.:

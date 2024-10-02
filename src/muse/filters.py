@@ -239,7 +239,6 @@ def same_enduse(
     search_space: xr.DataArray,
     technologies: xr.Dataset,
     *args,
-    enduse_label: str = "service",
     **kwargs,
 ) -> xr.DataArray:
     """Only allow for technologies with at least the same end-use."""
