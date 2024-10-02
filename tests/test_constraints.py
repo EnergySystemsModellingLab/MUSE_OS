@@ -3,8 +3,9 @@ from typing import Union
 import numpy as np
 import pandas as pd
 import xarray as xr
-from muse.timeslices import drop_timeslice
 from pytest import approx, fixture
+
+from muse.timeslices import drop_timeslice
 
 
 @fixture

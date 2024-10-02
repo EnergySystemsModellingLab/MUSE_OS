@@ -24,7 +24,7 @@ ProcessName
 RegionName
    represents the region ID and needs to be consistent across all the data inputs.
 
-Unit
+Unit (optional)
    reports the unit of the technology capacity; it is for the user internal reference only.
 
 2010,..., 2050

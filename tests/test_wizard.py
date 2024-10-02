@@ -1,5 +1,7 @@
 import pandas as pd
 import pytest
+from tomlkit import dumps, parse
+
 from muse import examples
 from muse.wizard import (
     add_agent,
@@ -11,7 +13,6 @@ from muse.wizard import (
     get_sectors,
     modify_toml,
 )
-from tomlkit import dumps, parse
 
 
 @pytest.fixture
