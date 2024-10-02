@@ -407,9 +407,9 @@ def bisection(
         message = (
             f"Carbon budget could not be matched for the year {int(future)} to within "
             "the specified tolerance. "
-            "This can often occur due to a stepwise emissions landscape "
+            "This is sometimes unavoidable due to a discontinuous emissions landscape "
             "which can make the budget unreachable, but can sometimes be "
-            "fixed by increasing max_iterations or early_termination_count."
+            "fixed by increasing max_iterations, early_termination_count or resolution."
         )
     getLogger(__name__).warning(message)
     return new_price
