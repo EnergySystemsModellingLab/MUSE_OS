@@ -8,6 +8,7 @@ from muse.examples import available_examples
 MODELS = available_examples()
 MODELS.pop(MODELS.index("default_new_input"))
 
+
 @mark.usefixtures("save_timeslice_globals")
 @mark.regression
 @mark.example
