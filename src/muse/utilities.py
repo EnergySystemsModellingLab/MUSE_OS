@@ -385,41 +385,29 @@ def merge_assets(
     dimension: str = "asset",
 ) -> xr.DataArray:
     """Merge two capacity arrays."""
+    # Interpolate capacity arrays to a common time framework
     years = sorted(set(capa_a.year.values).union(capa_b.year.values))
-
     if len(capa_a.year) == 1:
-        result = xr.concat(
-            (
-                capa_a,
-                capa_b.interp(year=years, method=interpolation).fillna(0),
-            ),
-            dim=dimension,
-        ).fillna(0)
+        capa_a_interp = capa_a
+        capa_b_interp = capa_b.interp(year=years, method=interpolation).fillna(0)
     elif len(capa_b.year) == 1:
-        result = xr.concat(
-            (
-                capa_a.interp(year=years, method=interpolation).fillna(0),
-                capa_b,
-            ),
-            dim=dimension,
-        ).fillna(0)
+        capa_a_interp = capa_a.interp(year=years, method=interpolation).fillna(0)
+        capa_b_interp = capa_b
     else:
-        result = xr.concat(
-            (
-                capa_a.interp(year=years, method=interpolation).fillna(0),
-                capa_b.interp(year=years, method=interpolation).fillna(0),
-            ),
-            dim=dimension,
-        )
-    forgroup = result.pipe(coords_to_multiindex, dimension=dimension)
-    if len(forgroup[dimension]) != len(set(forgroup[dimension].values)):
-        result = (
-            forgroup.groupby(dimension)
-            .sum(dimension)
-            .clip(min=0)
-            .pipe(multiindex_to_coords, dimension=dimension)
-        )
-    return result
+        capa_a_interp = capa_a.interp(year=years, method=interpolation).fillna(0)
+        capa_b_interp = capa_b.interp(year=years, method=interpolation).fillna(0)
+
+    # Concatenate the two capacity arrays
+    result = xr.concat((capa_a_interp, capa_b_interp), dim=dimension)
+
+    # forgroup = result.pipe(coords_to_multiindex, dimension=dimension)
+    # result = (
+    #     forgroup.groupby(dimension)
+    #     .sum(dimension)
+    #     .clip(min=0)
+    #     .pipe(multiindex_to_coords, dimension=dimension)
+    # )
+    return result.clip(min=0)
 
 
 def avoid_repetitions(data: xr.DataArray, dim: str = "year") -> xr.DataArray:

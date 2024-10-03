@@ -402,10 +402,10 @@ class InvestingAgent(Agent):
         time_period: int,
     ):
         """Add new assets to the agent."""
+        # Calculate retirement profile of new assets
         new_capacity = self.retirement_profile(
             technologies, investments, current_year, time_period
         )
-
         if new_capacity is None:
             return
         new_capacity = new_capacity.drop_vars(
@@ -413,6 +413,7 @@ class InvestingAgent(Agent):
         )
         new_assets = xr.Dataset(dict(capacity=new_capacity))
 
+        # Merge new assets with existing assets
         self.assets = self.merge_transform(self.assets, new_assets)
 
     def retirement_profile(
