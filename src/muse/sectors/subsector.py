@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Hashable, MutableMapping, Sequence
+from collections.abc import Sequence
 from typing import (
     Any,
     Callable,
-    cast,
 )
 
 import numpy as np
@@ -51,35 +50,35 @@ class Subsector:
         self,
         technologies: xr.Dataset,
         market: xr.Dataset,
-        time_period: int = 5,
-        current_year: int | None = None,
+        time_period: int,
+        current_year: int,
     ) -> None:
-        if current_year is None:
-            current_year = market.year.min()
+        # Expand prices to include destination region (for trade models)
         if self.expand_market_prices:
             market = market.copy()
             market["prices"] = drop_timeslice(
                 np.maximum(market.prices, market.prices.rename(region="dst_region"))
             )
 
+        # Agent housekeeping
         for agent in self.agents:
             agent.asset_housekeeping()
 
-        lp_problem = self.aggregate_lp(
-            technologies, market, time_period, current_year=current_year
-        )
-        if lp_problem is None:
-            return
+        # Perform the investment
+        self.aggregate_lp(technologies, market, time_period, current_year=current_year)
+        # if lp_problem is None:
+        #     return
 
-        years = technologies.year
-        techs = technologies.interp(year=years)
-        techs = techs.sel(year=current_year + time_period)
+        # # If there is a problem with the LP...
+        # years = technologies.year
+        # techs = technologies.interp(year=years)
+        # techs = techs.sel(year=current_year + time_period)
 
-        solution = self.investment(
-            search=lp_problem[0], technologies=techs, constraints=lp_problem[1]
-        )
+        # solution = self.investment(
+        #     search=lp_problem[0], technologies=techs, constraints=lp_problem[1]
+        # )
 
-        self.assign_back_to_agents(technologies, solution, current_year, time_period)
+        # self.assign_back_to_agents(technologies, solution, current_year, time_period)
 
     def assign_back_to_agents(
         self,
@@ -99,14 +98,12 @@ class Subsector:
         self,
         technologies: xr.Dataset,
         market: xr.Dataset,
-        time_period: int = 5,
-        current_year: int | None = None,
-    ) -> tuple[xr.Dataset, Sequence[xr.Dataset]] | None:
+        time_period,
+        current_year,
+    ):
         from muse.utilities import agent_concatenation, reduce_assets
 
-        if current_year is None:
-            current_year = market.year.min()
-
+        # Split demand across agents
         demands = self.demand_share(
             self.agents,
             market,
@@ -122,42 +119,46 @@ class Subsector:
                 dimension.
             """
             raise ValueError(msg)
-        agent_market = market.copy()
+
+        # Concatenate assets
         assets = agent_concatenation(
             {agent.uuid: agent.assets for agent in self.agents}
         )
+
+        # Calculate existing capacity
+        agent_market = market.copy()
         agent_market["capacity"] = (
             reduce_assets(assets.capacity, coords=("region", "technology"))
             .interp(year=market.year, method="linear", kwargs={"fill_value": 0.0})
             .swap_dims(dict(asset="technology"))
         )
 
-        agent_lps: MutableMapping[Hashable, xr.Dataset] = {}
+        # agent_lps: MutableMapping[Hashable, xr.Dataset] = {}
         for agent in self.agents:
             if "agent" in demands.coords:
                 share = demands.sel(asset=demands.agent == agent.uuid)
             else:
                 share = demands
-            result = agent.next(
-                technologies, agent_market, share, time_period=time_period
-            )
-            if result is not None:
-                agent_lps[agent.uuid] = result
 
-        if len(agent_lps) == 0:
-            return None
+            # Compute investments for the agent
+            agent.next(technologies, agent_market, share, time_period=time_period)
+        #     if result is not None:
+        #         agent_lps[agent.uuid] = result
 
-        lps = cast(xr.Dataset, agent_concatenation(agent_lps, dim="agent"))
-        coords = {"agent", "technology", "region"}.intersection(assets.asset.coords)
-        constraints = self.constraints(
-            demand=demands,
-            assets=reduce_assets(assets, coords=coords).set_coords(coords),
-            search_space=lps.search_space,
-            market=market,
-            technologies=technologies,
-            year=current_year,
-        )
-        return lps, constraints
+        # if len(agent_lps) == 0:
+        #     return None
+
+        # lps = cast(xr.Dataset, agent_concatenation(agent_lps, dim="agent"))
+        # coords = {"agent", "technology", "region"}.intersection(assets.asset.coords)
+        # constraints = self.constraints(
+        #     demand=demands,
+        #     assets=reduce_assets(assets, coords=coords).set_coords(coords),
+        #     search_space=lps.search_space,
+        #     market=market,
+        #     technologies=technologies,
+        #     year=current_year,
+        # )
+        # return lps, constraints
 
     @classmethod
     def factory(

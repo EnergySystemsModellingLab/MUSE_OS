@@ -29,16 +29,19 @@ class Sector(AbstractSector):  # type: ignore
         from muse.readers.toml import read_technodata
         from muse.utilities import nametuple_to_dict
 
+        # Read sector settings
         sector_settings = getattr(settings.sectors, name)._asdict()
         for attribute in ("name", "type", "priority", "path"):
             sector_settings.pop(attribute, None)
-
-        technologies = read_technodata(settings, name, settings.time_framework)
-
         if "subsectors" not in sector_settings:
             raise RuntimeError(f"Missing 'subsectors' section in sector {name}")
         if len(sector_settings["subsectors"]._asdict()) == 0:
             raise RuntimeError(f"Empty 'subsectors' section in sector {name}")
+
+        # Read technologies
+        technologies = read_technodata(settings, name, settings.time_framework)
+
+        # Create subsectors
         subsectors = [
             Subsector.factory(
                 subsec_settings,
@@ -51,14 +54,18 @@ class Sector(AbstractSector):  # type: ignore
             ._asdict()
             .items()
         ]
+
+        # Check that subsector commodities are disjoint
         are_disjoint_commodities = sum(len(s.commodities) for s in subsectors) == len(
             set().union(*(set(s.commodities) for s in subsectors))  # type: ignore
         )
         if not are_disjoint_commodities:
             raise RuntimeError("Subsector commodities are not disjoint")
 
+        # Create outputs
         outputs = ofactory(*sector_settings.pop("outputs", []), sector_name=name)
 
+        #
         supply_args = sector_settings.pop(
             "supply", sector_settings.pop("dispatch_production", {})
         )
@@ -68,8 +75,10 @@ class Sector(AbstractSector):  # type: ignore
             supply_args = nametuple_to_dict(supply_args)
         supply = pfactory(**supply_args)
 
+        # Create interactions
         interactions = interaction_factory(sector_settings.pop("interactions", None))
 
+        # Create sector
         for attr in ("technodata", "commodities_out", "commodities_in"):
             sector_settings.pop(attr, None)
         return cls(
