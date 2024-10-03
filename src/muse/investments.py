@@ -175,8 +175,7 @@ def factory(settings: Optional[Union[str, Mapping]] = None) -> Callable:
 
 def cliff_retirement_profile(
     technical_life: xr.DataArray,
-    current_year: int = 0,
-    protected: int = 0,
+    investment_year: int,
     interpolation: str = "linear",
     **kwargs,
 ) -> xr.DataArray:
@@ -186,19 +185,13 @@ def cliff_retirement_profile(
     Assets with a technical life smaller than the input time-period should automatically
     be renewed.
 
-    Hence, if ``technical_life <= protected``, then effectively, the technical life is
-    rewritten as ``technical_life * n`` with ``n = int(protected // technical_life) +
-    1``.
-
     We could just return an array where each year is represented. Instead, to save
     memory, we return a compact view of the same where years where no change happens are
     removed.
 
     Arguments:
         technical_life: lifetimes for each technology
-        current_year: current year
-        protected: The technologies are assumed to be renewed between years
-            `current_year` and `current_year + protected`
+        investment_year: The year in which the investment is made
         interpolation: Interpolation type
         **kwargs: arguments by which to filter technical_life, if any.
 
@@ -211,26 +204,26 @@ def cliff_retirement_profile(
     if kwargs:
         technical_life = technical_life.sel(**kwargs)
     if "year" in technical_life.dims:
-        technical_life = technical_life.interp(year=current_year, method=interpolation)
-    technical_life = (1 + protected // technical_life) * technical_life  # type:ignore
+        technical_life = technical_life.interp(
+            year=investment_year, method=interpolation
+        )
 
+    # Create profile across all years
     if len(technical_life) > 0:
-        max_year = int(current_year + technical_life.max())
+        max_year = int(investment_year + technical_life.max())
     else:
-        max_year = int(current_year + protected)
+        max_year = investment_year
     allyears = xr.DataArray(
-        range(current_year, max_year + 1),
+        range(investment_year, max_year + 1),
         dims="year",
-        coords={"year": range(current_year, max_year + 1)},
+        coords={"year": range(investment_year, max_year + 1)},
     )
+    profile = allyears < (investment_year + technical_life)  # type: ignore
 
-    profile = allyears < (current_year + technical_life)  # type: ignore
-
-    # now we minimize the number of years needed to represent the profile fully
-    # this is done by removing the central year of any three repeating year, ensuring
-    # the removed year can be recovered by a linear interpolation.
+    # Minimize the number of years needed to represent the profile fully
+    # This is done by removing the central year of any three repeating years, ensuring
+    # the removed year can be recovered by linear interpolation.
     goodyears = avoid_repetitions(profile.astype(int))
-
     return profile.sel(year=goodyears).astype(bool)
 
 

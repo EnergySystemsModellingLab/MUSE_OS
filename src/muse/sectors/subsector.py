@@ -64,21 +64,8 @@ class Subsector:
         for agent in self.agents:
             agent.asset_housekeeping()
 
-        # Perform the investment
+        # Perform the investments
         self.aggregate_lp(technologies, market, time_period, current_year=current_year)
-        # if lp_problem is None:
-        #     return
-
-        # # If there is a problem with the LP...
-        # years = technologies.year
-        # techs = technologies.interp(year=years)
-        # techs = techs.sel(year=current_year + time_period)
-
-        # solution = self.investment(
-        #     search=lp_problem[0], technologies=techs, constraints=lp_problem[1]
-        # )
-
-        # self.assign_back_to_agents(technologies, solution, current_year, time_period)
 
     def assign_back_to_agents(
         self,
@@ -133,32 +120,13 @@ class Subsector:
             .swap_dims(dict(asset="technology"))
         )
 
-        # agent_lps: MutableMapping[Hashable, xr.Dataset] = {}
+        # Increment each agent (perform investments)
         for agent in self.agents:
             if "agent" in demands.coords:
                 share = demands.sel(asset=demands.agent == agent.uuid)
             else:
                 share = demands
-
-            # Compute investments for the agent
             agent.next(technologies, agent_market, share, time_period=time_period)
-        #     if result is not None:
-        #         agent_lps[agent.uuid] = result
-
-        # if len(agent_lps) == 0:
-        #     return None
-
-        # lps = cast(xr.Dataset, agent_concatenation(agent_lps, dim="agent"))
-        # coords = {"agent", "technology", "region"}.intersection(assets.asset.coords)
-        # constraints = self.constraints(
-        #     demand=demands,
-        #     assets=reduce_assets(assets, coords=coords).set_coords(coords),
-        #     search_space=lps.search_space,
-        #     market=market,
-        #     technologies=technologies,
-        #     year=current_year,
-        # )
-        # return lps, constraints
 
     @classmethod
     def factory(

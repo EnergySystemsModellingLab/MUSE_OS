@@ -75,7 +75,7 @@ def test_cliff_retirement_random_profile(protected):
 
     current = 5
     profile = cliff_retirement_profile(
-        lifetime, current_year=current, protected=protected
+        lifetime, investment_year=current, protected=protected
     )
     assert profile.year.min() == current
     assert profile.year.max() <= current + effective_lifetime.max() + 1
