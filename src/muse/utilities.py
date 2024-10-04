@@ -141,6 +141,8 @@ def reduce_assets(
     """
     from copy import copy
 
+    assets = copy(assets)
+
     if operation is None:
 
         def operation(x):
@@ -148,23 +150,31 @@ def reduce_assets(
 
     assert operation is not None
 
+    # Concatenate assets if a sequence is given
     if not isinstance(assets, (xr.Dataset, xr.DataArray)):
         assets = xr.concat(assets, dim=dim)
     assert isinstance(assets, (xr.Dataset, xr.DataArray))
+
+    # If there are no assets, nothing needs to be done
     if assets[dim].size == 0:
         return assets
+
+    # Coordinates to reduce over (e.g. technology, installed)
     if coords is None:
         coords = [cast(str, k) for k, v in assets.coords.items() if v.dims == (dim,)]
     elif isinstance(coords, str):
         coords = (coords,)
     coords = [k for k in coords if k in assets.coords and assets[k].dims == (dim,)]
-    assets = copy(assets)
+
+    # Create a new dimension to group by
     dtypes = [(d, assets[d].dtype) for d in coords]
     grouper = np.array(
         list(zip(*(cast(Iterator, assets[d].values) for d in coords))), dtype=dtypes
     )
     assert "grouper" not in assets.coords
     assets["grouper"] = "asset", grouper
+
+    # Perform the operation
     result = operation(assets.groupby("grouper")).rename(grouper=dim)
     for i, d in enumerate(coords):
         result[d] = dim, [u[i] for u in result[dim].values]
@@ -400,14 +410,16 @@ def merge_assets(
     # Concatenate the two capacity arrays
     result = xr.concat((capa_a_interp, capa_b_interp), dim=dimension)
 
-    # forgroup = result.pipe(coords_to_multiindex, dimension=dimension)
-    # result = (
-    #     forgroup.groupby(dimension)
-    #     .sum(dimension)
-    #     .clip(min=0)
-    #     .pipe(multiindex_to_coords, dimension=dimension)
-    # )
-    return result.clip(min=0)
+    #
+    forgroup = result.pipe(coords_to_multiindex, dimension=dimension)
+    if len(forgroup[dimension]) != len(set(forgroup[dimension].values)):
+        result = (
+            forgroup.groupby(dimension)
+            .sum(dimension)
+            .clip(min=0)
+            .pipe(multiindex_to_coords, dimension=dimension)
+        )
+    return result
 
 
 def avoid_repetitions(data: xr.DataArray, dim: str = "year") -> xr.DataArray:
