@@ -174,30 +174,18 @@ class Sector(AbstractSector):  # type: ignore
         If no agents with a "forecast" attribute are found, defaults to 5. It cannot be
         lower than 1 year.
         """
-        forecasts = [
-            getattr(agent, "forecast")
-            for agent in self.agents
-            if hasattr(agent, "forecast")
-        ]
-        if len(forecasts) == 0:
-            return 5
+        forecasts = [getattr(agent, "forecast") for agent in self.agents]
         return max(1, max(forecasts))
 
     def next(
         self,
         mca_market: xr.Dataset,
-        time_period: int | None = None,
-        current_year: int | None = None,
     ) -> xr.Dataset:
         """Advance sector by one time period.
 
         Args:
             mca_market:
                 Market with ``demand``, ``supply``, and ``prices``.
-            time_period:
-                Length of the time period in the framework. Defaults to the range of
-                ``mca_market.year``.
-            current_year: Current year of the simulation
 
         Returns:
             A market containing the ``supply`` offered by the sector, it's attendant
@@ -208,10 +196,8 @@ class Sector(AbstractSector):  # type: ignore
         def group_assets(x: xr.DataArray) -> xr.DataArray:
             return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
 
-        if time_period is None:
-            time_period = int(mca_market.year.max() - mca_market.year.min())
-        if current_year is None:
-            current_year = int(mca_market.year.min())
+        time_period = int(mca_market.year.max() - mca_market.year.min())
+        current_year = int(mca_market.year.min())
         getLogger(__name__).info(f"Running {self.name} for year {current_year}")
 
         # Agent interactions
@@ -347,6 +333,8 @@ class Sector(AbstractSector):  # type: ignore
             for u in self.agents
             if "dst_region" not in u.assets.capacity.dims
         ]
+
+        # Only nontraded assets
         if not traded:
             full_list = [
                 list(nontraded[i].year.values)
@@ -361,7 +349,9 @@ class Sector(AbstractSector):  # type: ignore
                 if "dst_region" not in u.assets.capacity.dims
             ]
             return reduce_assets(nontraded)
-        if not nontraded:
+
+        # Only traded assets
+        elif not nontraded:
             full_list = [
                 list(traded[i].year.values)
                 for i in range(len(traded))
@@ -375,15 +365,18 @@ class Sector(AbstractSector):  # type: ignore
                 if "dst_region" in u.assets.capacity.dims
             ]
             return reduce_assets(traded)
-        traded_results = reduce_assets(traded)
-        nontraded_results = reduce_assets(nontraded)
-        return reduce_assets(
-            [
-                traded_results,
-                nontraded_results
-                * (nontraded_results.region == traded_results.dst_region),
-            ]
-        )
+
+        # Both traded and nontraded assets
+        else:
+            traded_results = reduce_assets(traded)
+            nontraded_results = reduce_assets(nontraded)
+            return reduce_assets(
+                [
+                    traded_results,
+                    nontraded_results
+                    * (nontraded_results.region == traded_results.dst_region),
+                ]
+            )
 
     @property
     def agents(self) -> Iterator[AbstractAgent]:
