@@ -80,14 +80,9 @@ class AbstractAgent(ABC):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        time_period: int = 1,
+        time_period: int,
     ):
-        """Iterates agent one turn.
-
-        The goal is to figure out from market variables which technologies to invest in
-        and by how much.
-        """
-        pass
+        """Increments agent to the next time point (e.g. performing investments)."""
 
     def __repr__(self):
         return (
@@ -124,7 +119,7 @@ class Agent(AbstractAgent):
         spend_limit: int = 0,
         **kwargs,
     ):
-        """Creates a standard buildings agent.
+        """Creates a standard agent.
 
         Arguments:
             name: Name of the agent, used for cross-refencing external tables
@@ -166,10 +161,7 @@ class Agent(AbstractAgent):
         )
 
         self.year = year
-        """ Current year.
-
-        The year is incremented by one every time next is called.
-        """
+        """ Current year. Incremented by one every time next is called."""
         self.forecast = forecast
         """Number of years to look into the future for forecating purposed."""
         if search_rules is None:
@@ -250,35 +242,17 @@ class Agent(AbstractAgent):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        time_period: int = 1,
-    ) -> Optional[xr.Dataset]:
-        """Iterates agent one turn.
+        time_period: int,
+    ):
+        self.year += time_period
 
-        The goal is to figure out from market variables which technologies to
-        invest in and by how much.
-
-        This function will modify `self.assets` and increment `self.year`.
-        Other attributes are left unchanged. Arguments to the function are
-        never modified.
-        """
-        from logging import getLogger
-
-        # dataset with intermediate computational results from search
-        # makes it easier to pass intermediate results to functions, as well as
-        # filter them when inside a function
-        if demand.size == 0 or demand.sum() < 1e-12:
-            self.year += time_period
-            return None
-
-        search_space = (
-            self.search_rules(self, demand, technologies, market).fillna(0).astype(int)
-        )
-
-        if any(u == 0 for u in search_space.shape):
-            getLogger(__name__).critical("Search space is empty")
-            self.year += time_period
-            return None
-
+    def compute_decision(
+        self,
+        technologies: xr.Dataset,
+        market: xr.Dataset,
+        demand: xr.DataArray,
+        search_space,
+    ):
         # Filter technologies according to the search space, forecast year and region
         techs = self.filter_input(
             technologies,
@@ -297,92 +271,14 @@ class Agent(AbstractAgent):
         # Filter prices according to the region
         prices = self.filter_input(market.prices)
 
-        # Compute the objective
-        decision = self._compute_objective(
+        # Compute the objectives
+        objectives = self.objectives(
             technologies=techs, demand=reduced_demand, prices=prices
         )
 
-        self.year += time_period
-        return xr.Dataset(dict(search_space=search_space, decision=decision))
-
-    def _compute_objective(
-        self,
-        technologies: xr.Dataset,
-        demand: xr.DataArray,
-        prices: xr.DataArray,
-    ) -> xr.DataArray:
-        objectives = self.objectives(
-            technologies=technologies, demand=demand, prices=prices
-        )
+        # Compute the decision metric
         decision = self.decision(objectives)
         return decision
-
-    def add_investments(
-        self,
-        technologies: xr.Dataset,
-        investments: xr.DataArray,
-        current_year: int,
-        time_period: int,
-    ):
-        """Add new assets to the agent."""
-        new_capacity = self.retirement_profile(
-            technologies, investments, current_year, time_period
-        )
-
-        if new_capacity is None:
-            return
-        new_capacity = new_capacity.drop_vars(
-            set(new_capacity.coords) - set(self.assets.coords)
-        )
-        new_assets = xr.Dataset(dict(capacity=new_capacity))
-
-        self.assets = self.merge_transform(self.assets, new_assets)
-
-    def retirement_profile(
-        self,
-        technologies: xr.Dataset,
-        investments: xr.DataArray,
-        current_year: int,
-        time_period: int,
-    ) -> Optional[xr.DataArray]:
-        from muse.investments import cliff_retirement_profile
-
-        if "asset" in investments.dims:
-            investments = investments.sum("asset")
-        if "agent" in investments.dims:
-            investments = investments.squeeze("agent", drop=True)
-        investments = investments.sel(
-            replacement=(investments > self.asset_threshold).any(
-                [d for d in investments.dims if d != "replacement"]
-            )
-        )
-        if investments.size == 0:
-            return None
-
-        # figures out the retirement profile for the new investments
-        lifetime = self.filter_input(
-            technologies.technical_life,
-            year=current_year,
-            technology=investments.replacement,
-        )
-        profile = cliff_retirement_profile(
-            lifetime.clip(min=time_period),
-            current_year=current_year + time_period,
-            protected=max(self.forecast - time_period - 1, 0),
-        )
-        if "dst_region" in investments.coords:
-            investments = investments.reindex_like(profile, method="ffill")
-
-        new_assets = (investments * profile).rename(replacement="asset")
-
-        new_assets["installed"] = "asset", [current_year] * len(new_assets.asset)
-
-        # The new assets have picked up quite a few coordinates along the way.
-        # we try and keep only those that were there originally.
-        if set(new_assets.dims) != set(self.assets.dims):
-            new, old = new_assets.dims, self.assets.dims
-            raise RuntimeError(f"Asset dimensions do not match: {new} vs {old}")
-        return new_assets
 
 
 class InvestingAgent(Agent):
@@ -395,7 +291,7 @@ class InvestingAgent(Agent):
         investment: Optional[Callable] = None,
         **kwargs,
     ):
-        """Creates a standard buildings agent.
+        """Creates an investing agent.
 
         Arguments:
             *args: See :py:class:`~muse.agents.agent.Agent`
@@ -422,7 +318,7 @@ class InvestingAgent(Agent):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        time_period: int = 1,
+        time_period: int,
     ):
         """Iterates agent one turn.
 
@@ -433,20 +329,42 @@ class InvestingAgent(Agent):
         Other attributes are left unchanged. Arguments to the function are
         never modified.
         """
+        from logging import getLogger
+
         current_year = self.year
-        search = super().next(technologies, market, demand, time_period=time_period)
-        if search is None:
+
+        # Skip forward if demand is zero
+        if demand.size == 0 or demand.sum() < 1e-12:
+            self.year += time_period
             return None
 
+        # Calculate the search space
+        search_space = (
+            self.search_rules(self, demand, technologies, market).fillna(0).astype(int)
+        )
+
+        # Skip forward if the search space is empty
+        if any(u == 0 for u in search_space.shape):
+            getLogger(__name__).critical("Search space is empty")
+            self.year += time_period
+            return None
+
+        # Calculate the decision metric
+        decision = self.compute_decision(technologies, market, demand, search_space)
+        search = xr.Dataset(dict(search_space=search_space, decision=decision))
         if "timeslice" in search.dims:
             search["demand"] = drop_timeslice(demand)
         else:
             search["demand"] = demand
+
+        # Filter assets with demand
         not_assets = [u for u in search.demand.dims if u != "asset"]
         condtechs = (
             search.demand.sum(not_assets) > getattr(self, "tolerance", 1e-8)
         ).values
         search = search.sel(asset=condtechs)
+
+        # Calculate constraints
         constraints = self.constraints(
             search.demand,
             self.assets,
@@ -456,6 +374,7 @@ class InvestingAgent(Agent):
             year=current_year,
         )
 
+        # Calculate investments
         investments = self.invest(
             search[["search_space", "decision"]],
             technologies,
@@ -463,9 +382,84 @@ class InvestingAgent(Agent):
             year=current_year,
         )
 
+        # Add investments
         self.add_investments(
             technologies,
             investments,
-            current_year=self.year - time_period,
+            current_year=current_year,
             time_period=time_period,
         )
+
+        # Increment the year
+        self.year += time_period
+
+    def add_investments(
+        self,
+        technologies: xr.Dataset,
+        investments: xr.DataArray,
+        current_year: int,
+        time_period: int,
+    ):
+        """Add new assets to the agent."""
+        # Calculate retirement profile of new assets
+        new_capacity = self.retirement_profile(
+            technologies, investments, current_year, time_period
+        )
+        if new_capacity is None:
+            return
+        new_capacity = new_capacity.drop_vars(
+            set(new_capacity.coords) - set(self.assets.coords)
+        )
+        new_assets = xr.Dataset(dict(capacity=new_capacity))
+
+        # Merge new assets with existing assets
+        self.assets = self.merge_transform(self.assets, new_assets)
+
+    def retirement_profile(
+        self,
+        technologies: xr.Dataset,
+        investments: xr.DataArray,
+        current_year: int,
+        time_period: int,
+    ) -> Optional[xr.DataArray]:
+        from muse.investments import cliff_retirement_profile
+
+        # Sum investments
+        if "asset" in investments.dims:
+            investments = investments.sum("asset")
+        if "agent" in investments.dims:
+            investments = investments.squeeze("agent", drop=True)
+
+        # Filter out investments below the threshold
+        investments = investments.sel(
+            replacement=(investments > self.asset_threshold).any(
+                [d for d in investments.dims if d != "replacement"]
+            )
+        )
+        if investments.size == 0:
+            return None
+
+        # Calculate the retirement profile for new investments
+        # Note: technical life must be at least the length of the time period
+        lifetime = self.filter_input(
+            technologies.technical_life,
+            year=current_year,
+            technology=investments.replacement,
+        ).clip(min=time_period)
+        profile = cliff_retirement_profile(
+            lifetime,
+            investment_year=current_year + time_period,
+        )
+        if "dst_region" in investments.coords:
+            investments = investments.reindex_like(profile, method="ffill")
+
+        # Apply the retirement profile to the investments
+        new_assets = (investments * profile).rename(replacement="asset")
+        new_assets["installed"] = "asset", [current_year] * len(new_assets.asset)
+
+        # The new assets have picked up quite a few coordinates along the way.
+        # we try and keep only those that were there originally.
+        if set(new_assets.dims) != set(self.assets.dims):
+            new, old = new_assets.dims, self.assets.dims
+            raise RuntimeError(f"Asset dimensions do not match: {new} vs {old}")
+        return new_assets
