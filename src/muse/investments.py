@@ -177,7 +177,7 @@ def factory(settings: Optional[Union[str, Mapping]] = None) -> Callable:
 
 def cliff_retirement_profile(
     technical_life: xr.DataArray,
-    investment_year: int,
+    investment_year: int = 0,
     interpolation: str = "linear",
     **kwargs,
 ) -> xr.DataArray:

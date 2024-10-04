@@ -26,6 +26,7 @@ class Sector(AbstractSector):  # type: ignore
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory
         from muse.production import factory as pfactory
+        from muse.readers import read_timeslices
         from muse.readers.toml import read_technodata
         from muse.utilities import nametuple_to_dict
 
@@ -37,6 +38,11 @@ class Sector(AbstractSector):  # type: ignore
             raise RuntimeError(f"Missing 'subsectors' section in sector {name}")
         if len(sector_settings["subsectors"]._asdict()) == 0:
             raise RuntimeError(f"Empty 'subsectors' section in sector {name}")
+
+        # Timeslices
+        timeslices = read_timeslices(
+            sector_settings.pop("timeslice_levels", None)
+        ).get_index("timeslice")
 
         # Read technologies
         technologies = read_technodata(settings, name, settings.time_framework)
@@ -79,12 +85,18 @@ class Sector(AbstractSector):  # type: ignore
         interactions = interaction_factory(sector_settings.pop("interactions", None))
 
         # Create sector
-        for attr in ("technodata", "commodities_out", "commodities_in"):
+        for attr in (
+            "technodata",
+            "commodities_out",
+            "commodities_in",
+            "technodata_timeslices",
+        ):
             sector_settings.pop(attr, None)
         return cls(
             name,
             technologies,
             subsectors=subsectors,
+            timeslices=timeslices,
             supply_prod=supply,
             outputs=outputs,
             interactions=interactions,
@@ -96,6 +108,7 @@ class Sector(AbstractSector):  # type: ignore
         name: str,
         technologies: xr.Dataset,
         subsectors: Sequence[Subsector] = [],
+        timeslices: pd.MultiIndex | None = None,
         interactions: Callable[[Sequence[AbstractAgent]], None] | None = None,
         interpolation: str = "linear",
         outputs: Callable | None = None,
@@ -111,6 +124,10 @@ class Sector(AbstractSector):  # type: ignore
         """Subsectors controlled by this object."""
         self.technologies: xr.Dataset = technologies
         """Parameters describing the sector's technologies."""
+        self.timeslices: pd.MultiIndex | None = timeslices
+        """Timeslice at which this sector operates.
+        If None, it will operate using the timeslice of the input market.
+        """
         self.interpolation: Mapping[str, Any] = {
             "method": interpolation,
             "kwargs": {"fill_value": "extrapolate"},

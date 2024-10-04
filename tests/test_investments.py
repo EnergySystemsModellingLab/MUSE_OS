@@ -44,7 +44,7 @@ def test_cliff_retirement_known_profile():
         name="technical_life",
     )
 
-    profile = cliff_retirement_profile(lifetime)
+    profile = cliff_retirement_profile(technical_life=lifetime)
     expected = array(
         [
             [True, False, False, False],
@@ -73,12 +73,12 @@ def test_cliff_retirement_random_profile(protected):
     )
     effective_lifetime = (protected // lifetime + 1) * lifetime
 
-    current = 5
+    investment_year = 5
     profile = cliff_retirement_profile(
-        lifetime, investment_year=current, protected=protected
+        technical_life=lifetime, investment_year=investment_year, protected=protected
     )
-    assert profile.year.min() == current
-    assert profile.year.max() <= current + effective_lifetime.max() + 1
-    assert profile.astype(int).interp(year=current).all()
-    assert profile.astype(int).interp(year=current + protected).all()
+    assert profile.year.min() == investment_year
+    assert profile.year.max() <= investment_year + effective_lifetime.max() + 1
+    assert profile.astype(int).interp(year=investment_year).all()
+    assert profile.astype(int).interp(year=investment_year + protected).all()
     assert not profile.astype(int).interp(year=profile.year.max()).any()

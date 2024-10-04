@@ -473,6 +473,7 @@ def _inner_split(
     """
     from numpy import logical_and
 
+    # Find decrease in capacity production by each asset over time
     shares: Mapping[Hashable, xr.DataArray] = {
         key: method(capacity=capacity)
         .groupby("technology")
@@ -480,24 +481,24 @@ def _inner_split(
         .rename(technology="asset")
         for key, capacity in assets.items()
     }
+
+    # Total decrease in production across assets
     try:
         summed_shares: xr.DataArray = xr.concat(shares.values(), dim="concat_dim").sum(
             "concat_dim"
         )
-
-        # Calculates the total demand assigned in the previous step with the "method"
-        # function across agents and assets.
         total: xr.DataArray = summed_shares.sum("asset")
     except AttributeError:
         raise AgentWithNoAssetsInDemandShare()
 
     # Calculates the demand divided by the number of assets times the number of agents
     # if the demand is bigger than zero and the total demand assigned with the "method"
-    # function is zero.
+    # function is zero (i.e. no decrease in production).
     unassigned = (demand / (len(shares) * len(summed_shares))).where(
         logical_and(demand > 1e-12, total <= 1e-12), 0
     )
 
+    # ???
     totals = {
         key: (share / share.sum("asset")).fillna(0) for key, share in shares.items()
     }
