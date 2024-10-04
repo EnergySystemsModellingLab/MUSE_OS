@@ -75,10 +75,10 @@ def test_cliff_retirement_random_profile(protected):
 
     investment_year = 5
     profile = cliff_retirement_profile(
-        technical_life=lifetime, investment_year=investment_year, protected=protected
+        technical_life=lifetime.clip(min=protected), investment_year=investment_year
     )
     assert profile.year.min() == investment_year
     assert profile.year.max() <= investment_year + effective_lifetime.max() + 1
     assert profile.astype(int).interp(year=investment_year).all()
-    assert profile.astype(int).interp(year=investment_year + protected).all()
+    assert profile.astype(int).interp(year=investment_year + protected - 1).all()
     assert not profile.astype(int).interp(year=profile.year.max()).any()
