@@ -676,23 +676,3 @@ def new_and_retro_demands(
         retro_demand = retro_demand.squeeze("year")
 
     return xr.Dataset({"new": new_demand, "retrofit": retro_demand})
-
-
-# def new_demand(
-#     capacity: xr.DataArray,
-#     market: xr.Dataset,
-#     technologies: xr.Dataset,
-#     production: Union[str, Mapping, Callable] = "maximum_production",
-#     current_year: Optional[int] = None,
-#     forecast: int = 5,
-# ) -> xr.DataArray:
-#     """Calculates the new demand that needs to be covered.
-
-#     It groups the demand related to an increase in consumption as well as the existing
-#     demand associated with decommissoned assets. Internally, it just calls
-#     `new_and_retro` demands and adds together both components.
-#     """
-#     demand = new_and_retro_demands(
-#         capacity, market, technologies, production, current_year, forecast
-#     )
-#     return (demand["new"] + demand["retrofit"]).rename("demand")
