@@ -59,6 +59,5 @@ __all__ = [
     "objectives",
     "outputs",
     "sectors",
-    "legacy_sectors",
     VERSION,
 ]
