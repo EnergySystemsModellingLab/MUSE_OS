@@ -18,8 +18,6 @@ from numpy import ndarray
 from pandas import MultiIndex
 from xarray import DataArray, Dataset
 
-from muse.readers import kebab_to_camel
-
 TIMESLICE: DataArray = None  # type: ignore
 """Array with the finest timeslice."""
 TRANSFORMS: dict[tuple, ndarray] = None  # type: ignore
@@ -563,24 +561,6 @@ def convert_timeslice(
         c: c.replace("_ts", "") for c in P.final_ts.coords if c != "final_ts"
     }
     return (P * x).sum("timeslice").rename(**final_names)
-
-
-def new_to_old_timeslice(ts: DataArray, ag_level="Month") -> dict:
-    """Transforms timeslices defined as DataArray to a pandas dataframe.
-
-    This function is used in the LegacySector class to adapt the new MCA timeslices to
-    the format required by the old sectors.
-    """
-    length = len(ts.month.values)
-    converted_ts = {
-        "Month": [kebab_to_camel(w) for w in ts.month.values],
-        "Day": [kebab_to_camel(w) for w in ts.day.values],
-        "Hour": [kebab_to_camel(w) for w in ts.hour.values],
-        "RepresentHours": list(ts.represent_hours.values.astype(float)),
-        "SN": list(range(1, length + 1)),
-        "AgLevel": [ag_level] * length,
-    }
-    return converted_ts
 
 
 def represent_hours(
