@@ -363,8 +363,15 @@ def standard_demand(
     if current_year is None:
         current_year = market.year.min()
 
+    # Make sure there are no retrofit agents
+    for agent in agents:
+        if agent.category == "retrofit":
+            raise RetrofitAgentInStandardDemandShare()
+
+    # Calculate existing capacity
     capacity = reduce_assets([agent.assets.capacity for agent in agents])
 
+    # Calculate new and retrofit demands
     demands = new_and_retro_demands(
         capacity,
         market,
@@ -374,34 +381,32 @@ def standard_demand(
         forecast=forecast,
     )
 
+    # Only consider end-use commodities
     demands = demands.where(
         is_enduse(technologies.comm_usage.sel(commodity=demands.commodity)), 0
     )
 
-    for agent in agents:
-        if agent.category == "retrofit":
-            raise RetrofitAgentInStandardDemandShare()
-
     id_to_share: MutableMapping[Hashable, xr.DataArray] = {}
     for region in demands.region.values:
+        # Calculate current capacity
         current_capacity: MutableMapping[Hashable, xr.DataArray] = {
             agent.uuid: agent.assets.capacity
             for agent in agents
             if agent.region == region
         }
+
+        # Split demands between agents
         id_to_quantity = {
             agent.uuid: (agent.name, agent.region, agent.quantity)
             for agent in agents
             if agent.region == region
         }
-
         retro_demands: MutableMapping[Hashable, xr.DataArray] = _inner_split(
             current_capacity,
             demands.retrofit.sel(region=region),
             decommissioning,
             id_to_quantity,
         )
-
         new_demands = _inner_split(
             current_capacity,
             demands.new.sel(region=region),
@@ -413,6 +418,7 @@ def standard_demand(
             id_to_quantity,
         )
 
+        # Sum new and retrofit demands
         total_demands = {
             k: new_demands[k] + retro_demands[k] for k in new_demands.keys()
         }
@@ -527,14 +533,21 @@ def unmet_demand(
 
     prod_method = production if callable(production) else prod_factory(production)
     assert callable(prod_method)
+
+    # Calculate production by existing assets
     produced = prod_method(market=market, capacity=capacity, technologies=technologies)
+
+    # Total commodity production by summing over assets
     if "dst_region" in produced.dims:
         produced = produced.sum("asset").rename(dst_region="region")
     elif "region" in produced.coords and produced.region.dims:
         produced = produced.groupby("region").sum("asset")
     else:
         produced = produced.sum("asset")
-    return (market.consumption - produced).clip(min=0)
+
+    # Unmet demand is the difference between the consumption and the production
+    unmet_demand = (market.consumption - produced).clip(min=0)
+    return unmet_demand
 
 
 def new_consumption(
@@ -565,20 +578,23 @@ def new_consumption(
     if current_year is None:
         current_year = market.year.min()
 
-    ts_capa = convert_timeslice(
-        capacity.interp(year=current_year), market.timeslice, QuantityType.EXTENSIVE
-    )
+    # Interpolate market to forecast year
+    market = market.interp(year=[current_year, current_year + forecast])
+    current = market.sel(year=current_year, drop=True)
+    forecasted = market.sel(year=current_year + forecast, drop=True)
+
+    # Calculate the increase in consumption over the forecast period
+    delta = (forecasted.consumption - current.consumption).clip(min=0)
+
+    # Capacity in the forecast year
     ts_capa = convert_timeslice(
         capacity.interp(year=current_year + forecast),
         market.timeslice,
         QuantityType.EXTENSIVE,
     )
     assert isinstance(ts_capa, xr.DataArray)
-    market = market.interp(year=[current_year, current_year + forecast])
-    current = market.sel(year=current_year, drop=True)
-    forecasted = market.sel(year=current_year + forecast, drop=True)
 
-    delta = (forecasted.consumption - current.consumption).clip(min=0)
+    #
     missing = unmet_demand(current, ts_capa, technologies)
     consumption = minimum(delta, missing)
     return consumption
@@ -612,23 +628,28 @@ def new_and_retro_demands(
     if current_year is None:
         current_year = market.year.min()
 
+    # Interpolate market to forecast year
     smarket: xr.Dataset = market.interp(year=[current_year, current_year + forecast])
+
+    # Split capacity between timeslices
     ts_capa = convert_timeslice(
         capacity.interp(year=[current_year, current_year + forecast]),
         market.timeslice,
         QuantityType.EXTENSIVE,
     )
-
     assert isinstance(ts_capa, xr.DataArray)
+
     if hasattr(ts_capa, "region") and ts_capa.region.dims == ():
         ts_capa["region"] = "asset", [str(ts_capa.region.values)] * len(ts_capa.asset)
 
+    # Calculate demand to allocate to "new" agents
     new_demand = new_consumption(
         ts_capa, smarket, technologies, current_year=current_year, forecast=forecast
     )
     if "year" in new_demand.dims:
         new_demand = new_demand.squeeze("year")
 
+    # Total production in the forecast year by existing assets
     service = (
         production_method(
             smarket.sel(year=current_year + forecast),
@@ -638,37 +659,39 @@ def new_and_retro_demands(
         .groupby("region")
         .sum("asset")
     )
-    # existing asset should not execute beyond demand
+
+    # Existing asset should not execute beyond demand
     service = minimum(
         service, smarket.consumption.sel(year=current_year + forecast, drop=True)
     )
+
+    # Leftover demand that cannot be serviced by existing assets or "new" agents
     retro_demand = (
         smarket.consumption.sel(year=current_year + forecast, drop=True)
         - new_demand
         - service
     ).clip(min=0)
-
     if "year" in retro_demand.dims:
         retro_demand = retro_demand.squeeze("year")
 
     return xr.Dataset({"new": new_demand, "retrofit": retro_demand})
 
 
-def new_demand(
-    capacity: xr.DataArray,
-    market: xr.Dataset,
-    technologies: xr.Dataset,
-    production: Union[str, Mapping, Callable] = "maximum_production",
-    current_year: Optional[int] = None,
-    forecast: int = 5,
-) -> xr.DataArray:
-    """Calculates the new demand that needs to be covered.
+# def new_demand(
+#     capacity: xr.DataArray,
+#     market: xr.Dataset,
+#     technologies: xr.Dataset,
+#     production: Union[str, Mapping, Callable] = "maximum_production",
+#     current_year: Optional[int] = None,
+#     forecast: int = 5,
+# ) -> xr.DataArray:
+#     """Calculates the new demand that needs to be covered.
 
-    It groups the demand related to an increase in consumption as well as the existing
-    demand associated with decommissoned assets. Internally, it just calls
-    `new_and_retro` demands and adds together both components.
-    """
-    demand = new_and_retro_demands(
-        capacity, market, technologies, production, current_year, forecast
-    )
-    return (demand["new"] + demand["retrofit"]).rename("demand")
+#     It groups the demand related to an increase in consumption as well as the existing
+#     demand associated with decommissoned assets. Internally, it just calls
+#     `new_and_retro` demands and adds together both components.
+#     """
+#     demand = new_and_retro_demands(
+#         capacity, market, technologies, production, current_year, forecast
+#     )
+#     return (demand["new"] + demand["retrofit"]).rename("demand")

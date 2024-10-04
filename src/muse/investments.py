@@ -154,6 +154,7 @@ def factory(settings: Optional[Union[str, Mapping]] = None) -> Callable:
         """
         from numpy import zeros
 
+        # Skip the investment step if no assets or replacements are available
         if any(u == 0 for u in search.decision.shape):
             return xr.DataArray(
                 zeros((len(search.asset), len(search.replacement))),
@@ -161,6 +162,7 @@ def factory(settings: Optional[Union[str, Mapping]] = None) -> Callable:
                 dims=("asset", "replacement"),
             )
 
+        # Otherwise, compute the investment
         return investment(
             search.decision,
             search.search_space,
@@ -305,18 +307,24 @@ def scipy_match_demand(
 
     if "timeslice" in costs.dims and timeslice_op is not None:
         costs = timeslice_op(costs)
+
+    timeslice = next(cs.timeslice for cs in constraints if "timeslice" in cs.dims)
+
+    # Select technodata for the current year
     if "year" in technologies.dims and year is None:
         raise ValueError("Missing year argument")
     elif "year" in technologies.dims:
         techs = technologies.sel(year=year).drop_vars("year")
     else:
         techs = technologies
-    timeslice = next(cs.timeslice for cs in constraints if "timeslice" in cs.dims)
 
+    # Run scipy optimization with highs solver
     adapter = ScipyAdapter.factory(
         techs, cast(np.ndarray, costs), timeslice, *constraints
     )
     res = linprog(**adapter.kwargs, method="highs")
+
+    # Backup: try with highs-ipm
     if not res.success and (res.status != 0):
         res = linprog(
             **adapter.kwargs,
@@ -338,7 +346,9 @@ def scipy_match_demand(
             getLogger(__name__).critical(msg)
             raise GrowthOfCapacityTooConstrained
 
-    return cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(res.x)
+    # Convert results to a MUSE friendly format
+    result = cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(res.x)
+    return result
 
 
 @register_investment(name=["cvxopt"])
