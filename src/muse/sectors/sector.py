@@ -397,15 +397,14 @@ class Sector(AbstractSector):  # type: ignore
             intensive = (intensive,)
 
         timesliced = {d for d in market.data_vars if "timeslice" in market[d].dims}
-        intensives = convert_timeslice(
-            market[list(timesliced.intersection(intensive))],
-            timeslice,
-            QuantityType.INTENSIVE,
-        )
-        extensives = convert_timeslice(
-            market[list(timesliced.difference(intensives.data_vars))],
-            timeslice,
-            QuantityType.EXTENSIVE,
-        )
+
+        intensives = market[list(timesliced.intersection(intensive))]
+        if "timeslice" not in intensives.dims:
+            intensives = convert_timeslice(
+                intensives,
+                timeslice,
+                QuantityType.INTENSIVE,
+            )
+        extensives = market[list(timesliced.difference(intensives.data_vars))]
         others = market[list(set(market.data_vars).difference(timesliced))]
         return xr.merge([intensives, extensives, others])
