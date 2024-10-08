@@ -285,7 +285,7 @@ class Sector(AbstractSector):  # type: ignore
         from muse.commodities import is_pollutant
         from muse.costs import annual_levelized_cost_of_energy, supply_cost
         from muse.quantities import consumption
-        from muse.timeslices import QuantityType, convert_timeslice
+        from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
         from muse.utilities import broadcast_techs
 
         years = market.year.values
@@ -296,7 +296,7 @@ class Sector(AbstractSector):  # type: ignore
             market=market, capacity=capacity, technologies=technologies
         )
         if "timeslice" in market.prices.dims and "timeslice" not in supply.dims:
-            supply = convert_timeslice(supply, market.timeslice, QuantityType.EXTENSIVE)
+            supply = convert_timeslice(supply, TIMESLICE, QuantityType.EXTENSIVE)
 
         # Calculate consumption
         consume = consumption(technologies, supply, market.prices)
@@ -391,7 +391,7 @@ class Sector(AbstractSector):  # type: ignore
         intensive: str | tuple[str] = "prices",
     ) -> xr.Dataset:
         """Converts market from one to another timeslice."""
-        from muse.timeslices import QuantityType, convert_timeslice
+        from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
 
         if isinstance(intensive, str):
             intensive = (intensive,)
@@ -402,7 +402,7 @@ class Sector(AbstractSector):  # type: ignore
         if "timeslice" not in intensives.dims:
             intensives = convert_timeslice(
                 intensives,
-                timeslice,
+                TIMESLICE,
                 QuantityType.INTENSIVE,
             )
         extensives = market[list(timesliced.difference(intensives.data_vars))]

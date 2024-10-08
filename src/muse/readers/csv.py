@@ -637,14 +637,14 @@ def read_initial_market(
     """Read projections, import and export csv files."""
     from logging import getLogger
 
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
 
     # Projections must always be present
     if isinstance(projections, (str, Path)):
         getLogger(__name__).info(f"Reading projections from {projections}")
         projections = read_attribute_table(projections)
     if timeslices is not None:
-        projections = convert_timeslice(projections, timeslices, QuantityType.INTENSIVE)
+        projections = convert_timeslice(projections, TIMESLICE, QuantityType.INTENSIVE)
 
     # Base year export is optional. If it is not there, it's set to zero
     if isinstance(base_year_export, (str, Path)):
@@ -664,10 +664,10 @@ def read_initial_market(
 
     if timeslices is not None:
         base_year_export = convert_timeslice(
-            base_year_export, timeslices, QuantityType.EXTENSIVE
+            base_year_export, TIMESLICE, QuantityType.EXTENSIVE
         )
         base_year_import = convert_timeslice(
-            base_year_import, timeslices, QuantityType.EXTENSIVE
+            base_year_import, TIMESLICE, QuantityType.EXTENSIVE
         )
     base_year_export.name = "exports"
     base_year_import.name = "imports"

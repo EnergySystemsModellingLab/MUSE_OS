@@ -247,7 +247,7 @@ def adhoc_match_demand(
 ) -> xr.DataArray:
     from muse.demand_matching import demand_matching
     from muse.quantities import capacity_in_use, maximum_production
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
 
     demand = next(c for c in constraints if c.name == "demand").b
 
@@ -260,7 +260,7 @@ def adhoc_match_demand(
         commodity=demand.commodity,
     ).drop_vars("technology")
     if "timeslice" in demand.dims and "timeslice" not in max_prod.dims:
-        max_prod = convert_timeslice(max_prod, demand, QuantityType.EXTENSIVE)
+        max_prod = convert_timeslice(max_prod, TIMESLICE, QuantityType.EXTENSIVE)
 
     # Push disabled techs to last rank.
     # Any production assigned to them by the demand-matching algorithm will be removed.
