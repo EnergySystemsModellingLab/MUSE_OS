@@ -308,8 +308,6 @@ def scipy_match_demand(
     if "timeslice" in costs.dims and timeslice_op is not None:
         costs = timeslice_op(costs)
 
-    timeslice = next(cs.timeslice for cs in constraints if "timeslice" in cs.dims)
-
     # Select technodata for the current year
     if "year" in technologies.dims and year is None:
         raise ValueError("Missing year argument")
@@ -319,9 +317,7 @@ def scipy_match_demand(
         techs = technologies
 
     # Run scipy optimization with highs solver
-    adapter = ScipyAdapter.factory(
-        techs, cast(np.ndarray, costs), timeslice, *constraints
-    )
+    adapter = ScipyAdapter.factory(techs, cast(np.ndarray, costs), *constraints)
     res = linprog(**adapter.kwargs, method="highs")
 
     # Backup: try with highs-ipm

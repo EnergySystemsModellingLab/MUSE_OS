@@ -766,9 +766,7 @@ def minimum_service(
     )
 
 
-def lp_costs(
-    technologies: xr.Dataset, costs: xr.DataArray, timeslices: xr.DataArray
-) -> xr.Dataset:
+def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
     """Creates costs for solving with scipy's LP solver.
 
     Example:
@@ -789,7 +787,7 @@ def lp_costs(
 
         >>> from muse.constraints import lp_costs
         >>> lpcosts = lp_costs(
-        ...     technologies.sel(year=2020, region="R1"), costs, timeslices
+        ...     technologies.sel(year=2020, region="R1"), costs
         ... )
         >>> assert "capacity" in lpcosts.data_vars
         >>> assert "production" in lpcosts.data_vars
@@ -1163,7 +1161,7 @@ class ScipyAdapter:
         In practice, :py:func:`~muse.constraints.lp_costs` helps us define the decision
         variables (and ``c``). We can verify that the sizes are consistent:
 
-        >>> lpcosts = cs.lp_costs(technologies, costs, market.timeslice)
+        >>> lpcosts = cs.lp_costs(technologies, costs)
         >>> capsize = lpcosts.capacity.size
         >>> prodsize = lpcosts.production.size
         >>> assert inputs.c.size == capsize + prodsize
@@ -1198,10 +1196,9 @@ class ScipyAdapter:
         cls,
         technologies: xr.Dataset,
         costs: xr.DataArray,
-        timeslices: pd.Index,
         *constraints: Constraint,
     ) -> ScipyAdapter:
-        lpcosts = lp_costs(technologies, costs, timeslices)
+        lpcosts = lp_costs(technologies, costs)
 
         data = cls._unified_dataset(technologies, lpcosts, *constraints)
 

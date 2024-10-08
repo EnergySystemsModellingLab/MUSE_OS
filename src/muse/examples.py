@@ -190,7 +190,6 @@ def mca_market(model: str = "default") -> xr.Dataset:
                 base_year_import=getattr(
                     settings.global_input_files, "base_year_import", None
                 ),
-                timeslices=settings.timeslices,
             )
             .sel(region=settings.regions)
             .interp(year=settings.time_framework, method=settings.interpolation_mode)
