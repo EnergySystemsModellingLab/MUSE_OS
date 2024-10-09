@@ -36,7 +36,6 @@ from muse.outputs.sector import market_quantity
 from muse.registration import registrator
 from muse.sectors import AbstractSector
 from muse.timeslices import (
-    TIMESLICE,
     QuantityType,
     convert_timeslice,
     drop_timeslice,
@@ -357,7 +356,6 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             result = convert_timeslice(
                 supply(
                     agent_market,
-                    TIMESLICE,
                     technologies,
                 ),
                 agent_market["consumption"].timeslice,
@@ -588,7 +586,6 @@ def sector_consumption(
             production = convert_timeslice(
                 supply(
                     agent_market,
-                    TIMESLICE,
                     technologies,
                 ),
                 agent_market["consumption"].timeslice,
@@ -725,7 +722,6 @@ def sector_fuel_costs(
             production = convert_timeslice(
                 supply(
                     agent_market,
-                    TIMESLICE,
                     technologies,
                 ),
                 agent_market["consumption"].timeslice,
@@ -783,7 +779,6 @@ def sector_capital_costs(
             result = data.cap_par * (capacity**data.cap_exp)
             data_agent = convert_timeslice(
                 result,
-                TIMESLICE,
                 QuantityType.EXTENSIVE,
             )
             data_agent["agent"] = a.name
@@ -845,7 +840,6 @@ def sector_emission_costs(
             production = convert_timeslice(
                 supply(
                     agent_market,
-                    TIMESLICE,
                     technologies,
                 ),
                 agent_market["consumption"].timeslice,
@@ -918,7 +912,6 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             production = capacity * techs.fixed_outputs * techs.utilization_factor
             production = convert_timeslice(
                 production,
-                TIMESLICE,
                 QuantityType.EXTENSIVE,
             )
 
@@ -996,7 +989,6 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             production = capacity * techs.fixed_outputs * techs.utilization_factor
             production = convert_timeslice(
                 production,
-                TIMESLICE,
                 QuantityType.EXTENSIVE,
             )
 

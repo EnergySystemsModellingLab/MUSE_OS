@@ -446,7 +446,7 @@ def max_production(
     from xarray import ones_like, zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+    from muse.timeslices import QuantityType, convert_timeslice
 
     if year is None:
         year = int(market.year.min())
@@ -467,7 +467,6 @@ def max_production(
     )
     capacity = convert_timeslice(
         techs.fixed_outputs * techs.utilization_factor,
-        TIMESLICE,
         QuantityType.EXTENSIVE,
     )
     if "asset" not in capacity.dims and "asset" in search_space.dims:
@@ -728,7 +727,7 @@ def minimum_service(
     from xarray import ones_like, zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+    from muse.timeslices import QuantityType, convert_timeslice
 
     if "minimum_service_factor" not in technologies.data_vars:
         return None
@@ -753,7 +752,6 @@ def minimum_service(
     )
     capacity = convert_timeslice(
         techs.fixed_outputs * techs.minimum_service_factor,
-        TIMESLICE,
         QuantityType.EXTENSIVE,
     )
     if "asset" not in capacity.dims:
@@ -817,11 +815,11 @@ def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
     from xarray import zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+    from muse.timeslices import QuantityType, convert_timeslice
 
     assert "year" not in technologies.dims
 
-    ts_costs = convert_timeslice(costs, TIMESLICE, QuantityType.EXTENSIVE)
+    ts_costs = convert_timeslice(costs, QuantityType.EXTENSIVE)
     selection = dict(
         commodity=is_enduse(technologies.comm_usage),
         technology=technologies.technology.isin(costs.replacement),

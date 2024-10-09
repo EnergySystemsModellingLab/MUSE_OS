@@ -388,8 +388,11 @@ class QuantityType(Enum):
     EXTENSIVE = "extensive"
 
 
-def convert_timeslice(x, ts, quantity):
+def convert_timeslice(x, quantity, ts=None):
     from xarray import Coordinates
+
+    if ts is None:
+        ts = TIMESLICE
 
     if hasattr(x, "timeslice"):
         return x
@@ -435,7 +438,7 @@ def represent_hours(
             average number of hours in year.
     """
     return convert_timeslice(
-        DataArray([nhours]), timeslices, QuantityType.EXTENSIVE
+        DataArray([nhours]), QuantityType.EXTENSIVE, timeslices
     ).squeeze()
 
 
