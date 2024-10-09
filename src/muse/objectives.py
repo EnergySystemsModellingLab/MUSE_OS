@@ -388,11 +388,11 @@ def lifetime_levelized_cost_of_energy(
     due to a zero utilisation factor.
     """
     from muse.costs import lifetime_levelized_cost_of_energy as LCOE
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice_new
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = capacity * technologies.fixed_outputs * technologies.utilization_factor
-    production = convert_timeslice(production, TIMESLICE, QuantityType.EXTENSIVE)
+    production = convert_timeslice_new(production, TIMESLICE, QuantityType.EXTENSIVE)
 
     results = LCOE(
         technologies=technologies,
@@ -418,11 +418,11 @@ def net_present_value(
     See :py:func:`muse.costs.net_present_value` for more details.
     """
     from muse.costs import net_present_value as NPV
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice_new
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = capacity * technologies.fixed_outputs * technologies.utilization_factor
-    production = convert_timeslice(production, TIMESLICE, QuantityType.EXTENSIVE)
+    production = convert_timeslice_new(production, TIMESLICE, QuantityType.EXTENSIVE)
 
     results = NPV(
         technologies=technologies,
@@ -447,11 +447,11 @@ def net_present_cost(
     See :py:func:`muse.costs.net_present_cost` for more details.
     """
     from muse.costs import net_present_cost as NPC
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice_new
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = capacity * technologies.fixed_outputs * technologies.utilization_factor
-    production = convert_timeslice(production, TIMESLICE, QuantityType.EXTENSIVE)
+    production = convert_timeslice_new(production, TIMESLICE, QuantityType.EXTENSIVE)
 
     results = NPC(
         technologies=technologies,
@@ -476,11 +476,11 @@ def equivalent_annual_cost(
     See :py:func:`muse.costs.equivalent_annual_cost` for more details.
     """
     from muse.costs import equivalent_annual_cost as EAC
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice_new
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = capacity * technologies.fixed_outputs * technologies.utilization_factor
-    production = convert_timeslice(production, TIMESLICE, QuantityType.EXTENSIVE)
+    production = convert_timeslice_new(production, TIMESLICE, QuantityType.EXTENSIVE)
 
     results = EAC(
         technologies=technologies,

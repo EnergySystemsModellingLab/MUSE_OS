@@ -13,7 +13,7 @@ import xarray as xr
 
 from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
 from muse.quantities import consumption
-from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice_new
 from muse.utilities import filter_input
 
 
@@ -96,7 +96,7 @@ def net_present_value(
     raw_revenues = (production * prices_non_env * rates).sum(("commodity", "year"))
 
     # Cost of installed capacity
-    installed_capacity_costs = convert_timeslice(
+    installed_capacity_costs = convert_timeslice_new(
         techs.cap_par * (capacity**techs.cap_exp),
         TIMESLICE,
         QuantityType.EXTENSIVE,
@@ -120,7 +120,7 @@ def net_present_value(
     material_costs = (production * prices_material * rates).sum(("commodity", "year"))
 
     # Fixed and Variable costs
-    fixed_costs = convert_timeslice(
+    fixed_costs = convert_timeslice_new(
         techs.fix_par * (capacity**techs.fix_exp),
         TIMESLICE,
         QuantityType.EXTENSIVE,
@@ -260,7 +260,7 @@ def lifetime_levelized_cost_of_energy(
     fuels = is_fuel(technologies.comm_usage)
 
     # Cost of installed capacity
-    installed_capacity_costs = convert_timeslice(
+    installed_capacity_costs = convert_timeslice_new(
         techs.cap_par * (capacity**techs.cap_exp),
         TIMESLICE,
         QuantityType.EXTENSIVE,
@@ -284,7 +284,7 @@ def lifetime_levelized_cost_of_energy(
     material_costs = (production * prices_material * rates).sum(("commodity", "year"))
 
     # Fixed and Variable costs
-    fixed_costs = convert_timeslice(
+    fixed_costs = convert_timeslice_new(
         techs.fix_par * (capacity**techs.fix_exp),
         TIMESLICE,
         QuantityType.EXTENSIVE,
@@ -372,7 +372,7 @@ def annual_levelized_cost_of_energy(
     rates = techs.interest_rate / (1 - (1 + techs.interest_rate) ** (-life))
 
     annualized_capital_costs = (
-        convert_timeslice(
+        convert_timeslice_new(
             techs.cap_par * rates,
             TIMESLICE,
             QuantityType.EXTENSIVE,
@@ -381,7 +381,7 @@ def annual_levelized_cost_of_energy(
     )
 
     o_and_e_costs = (
-        convert_timeslice(
+        convert_timeslice_new(
             (techs.fix_par + techs.var_par),
             TIMESLICE,
             QuantityType.EXTENSIVE,

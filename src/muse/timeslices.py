@@ -391,15 +391,16 @@ class QuantityType(Enum):
 
 
 def convert_timeslice_new(x, ts, quantity):
+    from xarray import Coordinates
+
     if hasattr(x, "timeslice"):
         return x
 
     if hasattr(ts, "timeslice"):
         ts = ts.timeslice
 
-    extensive = x.expand_dims(timeslice=ts["timeslice"]).assign_coords(
-        timeslice=ts.indexes["timeslice"]
-    )
+    mindex_coords = Coordinates.from_pandas_multiindex(ts, "timeslice")
+    extensive = x.expand_dims(timeslice=ts["timeslice"]).assign_coords(mindex_coords)
     if quantity is QuantityType.EXTENSIVE:
         return extensive
 
