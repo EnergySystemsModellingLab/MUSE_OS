@@ -639,7 +639,6 @@ def read_initial_market(
     from muse.timeslices import (
         TIMESLICE,
         QuantityType,
-        convert_timeslice,
         convert_timeslice_new,
     )
 
@@ -647,7 +646,6 @@ def read_initial_market(
     if isinstance(projections, (str, Path)):
         getLogger(__name__).info(f"Reading projections from {projections}")
         projections = read_attribute_table(projections)
-    projections = convert_timeslice(projections, TIMESLICE, QuantityType.INTENSIVE)
 
     # Base year export is optional. If it is not there, it's set to zero
     if isinstance(base_year_export, (str, Path)):
