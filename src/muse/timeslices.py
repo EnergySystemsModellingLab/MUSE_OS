@@ -3,7 +3,6 @@
 __all__ = [
     "reference_timeslice",
     "aggregate_transforms",
-    "convert_timeslice",
     "timeslice_projector",
     "setup_module",
     "represent_hours",
@@ -13,10 +12,9 @@ from collections.abc import Mapping, Sequence
 from enum import Enum, unique
 from typing import Optional, Union
 
-import xarray as xr
 from numpy import ndarray
 from pandas import MultiIndex
-from xarray import DataArray, Dataset
+from xarray import DataArray
 
 from muse.readers import kebab_to_camel
 
@@ -408,174 +406,6 @@ def convert_timeslice_new(x, ts, quantity):
         return extensive * (ts / ts.sum())
 
 
-def convert_timeslice(
-    x: Union[DataArray, Dataset],
-    ts: Union[DataArray, Dataset, MultiIndex],
-    quantity: Union[QuantityType, str] = QuantityType.EXTENSIVE,
-) -> Union[DataArray, Dataset]:
-    '''Adjusts the timeslice of x to match that of ts.
-
-    The conversion can be done in on of two ways, depending on whether the
-    quantity is extensive or intensive. See `QuantityType`.
-
-    Example:
-        Lets define three timeslices from finest, to fine, to rough:
-
-        >>> toml = """
-        ...     ["timeslices"]
-        ...     winter.weekday.day = 5
-        ...     winter.weekday.night = 5
-        ...     winter.weekend.day = 2
-        ...     winter.weekend.night = 2
-        ...     summer.weekday.day = 5
-        ...     summer.weekday.night = 5
-        ...     summer.weekend.day = 2
-        ...     summer.weekend.night = 2
-        ...     level_names = ["semester", "week", "day"]
-        ...     aggregates.allday = ["day", "night"]
-        ...     aggregates.allweek = ["weekend", "weekday"]
-        ...     aggregates.allyear = ["winter", "summer"]
-        ... """
-        >>> from muse.timeslices import setup_module
-        >>> from muse.readers import read_timeslices
-        >>> setup_module(toml)
-        >>> finest_ts = read_timeslices()
-        >>> fine_ts = read_timeslices(dict(week=["allweek"]))
-        >>> rough_ts = read_timeslices(dict(semester=["allyear"], day=["allday"]))
-
-        Lets also define to other data-arrays to demonstrate how we can play with
-        dimensions:
-
-        >>> from numpy import array
-        >>> x = DataArray(
-        ...     [5, 2, 3],
-        ...     coords={'a': array([1, 2, 3], dtype="int64")},
-        ...     dims='a'
-        ... )
-        >>> y = DataArray([1, 1, 2], coords={'b': ["d", "e", "f"]}, dims='b')
-
-        We can now easily convert arrays with different dimensions. First, lets check
-        conversion from an array with no timeslices:
-
-        >>> from xarray import ones_like
-        >>> from muse.timeslices import convert_timeslice, QuantityType
-        >>> z = convert_timeslice(x, finest_ts, QuantityType.EXTENSIVE)
-        >>> z.round(6)
-        <xarray.DataArray (timeslice: 8, a: 3)> Size: 192B
-        array([[0.892857, 0.357143, 0.535714],
-               [0.892857, 0.357143, 0.535714],
-               [0.357143, 0.142857, 0.214286],
-               [0.357143, 0.142857, 0.214286],
-               [0.892857, 0.357143, 0.535714],
-               [0.892857, 0.357143, 0.535714],
-               [0.357143, 0.142857, 0.214286],
-               [0.357143, 0.142857, 0.214286]])
-        Coordinates:
-          * timeslice  (timeslice) object 64B MultiIndex
-          * semester   (timeslice) object 64B 'winter' 'winter' ... 'summer' 'summer'
-          * week       (timeslice) object 64B 'weekday' 'weekday' ... 'weekend'
-          * day        (timeslice) object 64B 'day' 'night' 'day' ... 'day' 'night'
-          * a          (a) int64 24B 1 2 3
-        >>> z.sum("timeslice")
-        <xarray.DataArray (a: 3)> Size: 24B
-        array([5., 2., 3.])
-        Coordinates:
-          * a        (a) int64 24B 1 2 3
-
-        As expected, the sum over timeslices recovers the original array.
-
-        In the case of an intensive quantity without a timeslice dimension, the
-        operation does not do anything:
-
-        >>> convert_timeslice([1, 2], rough_ts, QuantityType.INTENSIVE)
-        [1, 2]
-
-        More interesting is the conversion between different timeslices:
-
-        >>> from xarray import zeros_like
-        >>> zfine = x + y + zeros_like(fine_ts.timeslice, dtype=int)
-        >>> zrough = convert_timeslice(zfine, rough_ts)
-        >>> zrough.round(6)
-        <xarray.DataArray (timeslice: 2, a: 3, b: 3)> Size: 144B
-        array([[[17.142857, 17.142857, 20.      ],
-                [ 8.571429,  8.571429, 11.428571],
-                [11.428571, 11.428571, 14.285714]],
-        <BLANKLINE>
-               [[ 6.857143,  6.857143,  8.      ],
-                [ 3.428571,  3.428571,  4.571429],
-                [ 4.571429,  4.571429,  5.714286]]])
-        Coordinates:
-          * timeslice  (timeslice) object 16B MultiIndex
-          * semester   (timeslice) object 16B 'allyear' 'allyear'
-          * week       (timeslice) object 16B 'weekday' 'weekend'
-          * day        (timeslice) object 16B 'allday' 'allday'
-          * a          (a) int64 24B 1 2 3
-          * b          (b) <U1 12B 'd' 'e' 'f'
-
-        We can check that nothing has been added to z (the quantity is ``EXTENSIVE`` by
-        default):
-
-        >>> from numpy import all
-        >>> all(zfine.sum("timeslice").round(6) == zrough.sum("timeslice").round(6))
-        <xarray.DataArray ()> Size: 1B
-        array(True)
-
-        Or that the ratio of weekdays to weekends makes sense:
-        >>> weekdays = (
-        ...    zrough
-        ...    .unstack("timeslice")
-        ...    .sel(week="weekday")
-        ...    .stack(timeslice=["semester", "day"])
-        ...    .squeeze()
-        ... )
-        >>> weekend = (
-        ...    zrough
-        ...    .unstack("timeslice")
-        ...    .sel(week="weekend")
-        ...    .stack(timeslice=["semester", "day"])
-        ...    .squeeze()
-        ... )
-        >>> bool(all((weekend * 5).round(6) == (weekdays * 2).round(6)))
-        True
-    '''
-    finest = TIMESLICE
-
-    if hasattr(x, "timeslice"):
-        return x
-
-    if hasattr(ts, "timeslice"):
-        ts = ts.timeslice
-
-    has_ts = "timeslice" in getattr(x, "dims", ())
-    same_ts = has_ts and len(ts) == len(x.timeslice) and x.timeslice.equals(ts)
-    if same_ts or ((not has_ts) and quantity == QuantityType.INTENSIVE):
-        return x
-
-    proj0 = timeslice_projector(x)
-    proj1 = timeslice_projector(ts)
-
-    if quantity is QuantityType.EXTENSIVE:
-        finest = finest.rename(timeslice="finest_timeslice")
-        index = finest.get_index("finest_timeslice")
-        index = index.set_names(f"finest_{u}" for u in index.names)
-        mindex_coords = xr.Coordinates.from_pandas_multiindex(index, "finest_timeslice")
-        finest = finest.drop_vars(list(finest.coords)).assign_coords(mindex_coords)
-        proj0 = proj0 * finest
-        proj0 = proj0 / proj0.sum("finest_timeslice")
-    elif quantity is QuantityType.INTENSIVE:
-        proj1 = proj1 / proj1.sum("finest_timeslice")
-
-    new_names = {"timeslice": "final_ts"} | {
-        c: f"{c}_ts" for c in proj1.timeslice.coords if c != "timeslice"
-    }
-    P = (proj1.rename(**new_names) * proj0).sum("finest_timeslice")
-
-    final_names = {"final_ts": "timeslice"} | {
-        c: c.replace("_ts", "") for c in P.final_ts.coords if c != "final_ts"
-    }
-    return (P * x).sum("timeslice").rename(**final_names)
-
-
 def new_to_old_timeslice(ts: DataArray, ag_level="Month") -> dict:
     """Transforms timeslices defined as DataArray to a pandas dataframe.
 
@@ -604,7 +434,9 @@ def represent_hours(
         nhours: The total number of hours represented in the timeslice. Defaults to the
             average number of hours in year.
     """
-    return convert_timeslice(DataArray([nhours]), timeslices).squeeze()
+    return convert_timeslice_new(
+        DataArray([nhours]), timeslices, QuantityType.EXTENSIVE
+    ).squeeze()
 
 
 def drop_timeslice(data: DataArray) -> DataArray:
