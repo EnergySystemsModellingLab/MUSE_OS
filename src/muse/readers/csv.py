@@ -639,7 +639,7 @@ def read_initial_market(
     from muse.timeslices import (
         TIMESLICE,
         QuantityType,
-        convert_timeslice_new,
+        convert_timeslice,
     )
 
     # Projections must always be present
@@ -663,10 +663,10 @@ def read_initial_market(
         getLogger(__name__).info("Base year import not provided. Set to zero.")
         base_year_import = xr.zeros_like(projections)
 
-    base_year_export = convert_timeslice_new(
+    base_year_export = convert_timeslice(
         base_year_export, TIMESLICE, QuantityType.EXTENSIVE
     )
-    base_year_import = convert_timeslice_new(
+    base_year_import = convert_timeslice(
         base_year_import, TIMESLICE, QuantityType.EXTENSIVE
     )
     base_year_export.name = "exports"

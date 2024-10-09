@@ -446,7 +446,7 @@ def max_production(
     from xarray import ones_like, zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice_new
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
 
     if year is None:
         year = int(market.year.min())
@@ -465,7 +465,7 @@ def max_production(
         .sel(**kwargs)
         .drop_vars("technology")
     )
-    capacity = convert_timeslice_new(
+    capacity = convert_timeslice(
         techs.fixed_outputs * techs.utilization_factor,
         TIMESLICE,
         QuantityType.EXTENSIVE,
@@ -728,7 +728,7 @@ def minimum_service(
     from xarray import ones_like, zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice_new
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
 
     if "minimum_service_factor" not in technologies.data_vars:
         return None
@@ -751,7 +751,7 @@ def minimum_service(
         .sel(**kwargs)
         .drop_vars("technology")
     )
-    capacity = convert_timeslice_new(
+    capacity = convert_timeslice(
         techs.fixed_outputs * techs.minimum_service_factor,
         TIMESLICE,
         QuantityType.EXTENSIVE,
@@ -817,11 +817,11 @@ def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
     from xarray import zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice_new
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
 
     assert "year" not in technologies.dims
 
-    ts_costs = convert_timeslice_new(costs, TIMESLICE, QuantityType.EXTENSIVE)
+    ts_costs = convert_timeslice(costs, TIMESLICE, QuantityType.EXTENSIVE)
     selection = dict(
         commodity=is_enduse(technologies.comm_usage),
         technology=technologies.technology.isin(costs.replacement),
@@ -1089,7 +1089,7 @@ class ScipyAdapter:
 
         >>> from muse import examples
         >>> from muse.quantities import maximum_production
-        >>> from muse.timeslices import convert_timeslice_new
+        >>> from muse.timeslices import convert_timeslice
         >>> from muse import constraints as cs
         >>> res = examples.sector("residential", model="medium")
         >>> market = examples.residential_market("medium")
@@ -1097,7 +1097,7 @@ class ScipyAdapter:
         >>> assets = next(a.assets for a in res.agents)
         >>> market_demand =  0.8 * maximum_production(
         ...     res.technologies.interp(year=2025),
-        ...     convert_timeslice_new(
+        ...     convert_timeslice(
         ...         assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
         ...         market.timeslice,
         ...     ),
