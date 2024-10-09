@@ -385,7 +385,7 @@ def ndarray_to_xarray(
     """From ndarray to dataarray."""
     from collections.abc import Hashable, Mapping
 
-    from muse.timeslices import convert_timeslice
+    from muse.timeslices import convert_timeslice_new
 
     coords: Mapping[Hashable, Any] = {
         "year": years,
@@ -393,7 +393,7 @@ def ndarray_to_xarray(
         "region": regions,
         "timeslice": data_ts,
     }
-    result = convert_timeslice(DataArray(data, coords=coords, dims=dims), ts, qt)
+    result = convert_timeslice_new(DataArray(data, coords=coords, dims=dims), ts, qt)
     assert isinstance(result, DataArray)
     return result.sel(commodity=sector_commodities).transpose(*dims)
 
@@ -410,7 +410,7 @@ def xarray_to_ndarray(
     """From dataarray to ndarray."""
     from collections.abc import Hashable, Mapping
 
-    from muse.timeslices import convert_timeslice
+    from muse.timeslices import convert_timeslice_new
 
     coords: Mapping[Hashable, Any] = {
         "year": years,
@@ -420,7 +420,9 @@ def xarray_to_ndarray(
     }
     warp = np.zeros((len(global_commodities), len(regions), len(years), len(ts)))
     result = DataArray(warp, coords=coords, dims=dims)
-    result.loc[{"year": xdata.year}] = convert_timeslice(xdata, ts, qt).transpose(*dims)
+    result.loc[{"year": xdata.year}] = convert_timeslice_new(xdata, ts, qt).transpose(
+        *dims
+    )
 
     return result.values
 
