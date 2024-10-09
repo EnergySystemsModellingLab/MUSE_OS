@@ -22,10 +22,11 @@ def _production(technologies, _capacity, demand_share):
     from muse.timeslices import QuantityType, convert_timeslice
 
     production = (
-        _capacity * technologies.fixed_outputs * technologies.utilization_factor
-    )
-    production = convert_timeslice(
-        production, demand_share.timeslice, QuantityType.EXTENSIVE
+        _capacity
+        * convert_timeslice(
+            technologies.fixed_outputs, demand_share.timeslice, QuantityType.EXTENSIVE
+        )
+        * technologies.utilization_factor
     )
     return production
 
