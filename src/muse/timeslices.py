@@ -247,8 +247,6 @@ def setup_module(settings: Union[str, Mapping]):
 
 def timeslice_projector(
     x: Union[DataArray, MultiIndex],
-    finest: Optional[DataArray] = None,
-    transforms: Optional[dict[tuple, ndarray]] = None,
 ) -> DataArray:
     '''Project time-slice to standardized finest time-slices.
 
@@ -347,12 +345,8 @@ def timeslice_projector(
     from numpy import concatenate, ones_like
     from xarray import DataArray
 
-    if finest is None:
-        global TIMESLICE
-        finest = TIMESLICE
-    if transforms is None:
-        global TRANSFORMS
-        transforms = TRANSFORMS
+    finest = TIMESLICE
+    transforms = TRANSFORMS
 
     index = finest.get_index("timeslice")
     index = index.set_names(f"finest_{u}" for u in index.names)
@@ -396,12 +390,27 @@ class QuantityType(Enum):
     EXTENSIVE = "extensive"
 
 
+def convert_timeslice_new(x, ts, quantity):
+    if hasattr(x, "timeslice"):
+        return x
+
+    if hasattr(ts, "timeslice"):
+        ts = ts.timeslice
+
+    extensive = x.expand_dims(timeslice=ts["timeslice"]).assign_coords(
+        timeslice=ts.indexes["timeslice"]
+    )
+    if quantity is QuantityType.EXTENSIVE:
+        return extensive
+
+    if quantity is QuantityType.INTENSIVE:
+        return extensive * (ts / ts.sum())
+
+
 def convert_timeslice(
     x: Union[DataArray, Dataset],
     ts: Union[DataArray, Dataset, MultiIndex],
     quantity: Union[QuantityType, str] = QuantityType.EXTENSIVE,
-    finest: Optional[DataArray] = None,
-    transforms: Optional[dict[tuple, ndarray]] = None,
 ) -> Union[DataArray, Dataset]:
     '''Adjusts the timeslice of x to match that of ts.
 
@@ -528,21 +537,22 @@ def convert_timeslice(
         >>> bool(all((weekend * 5).round(6) == (weekdays * 2).round(6)))
         True
     '''
-    if finest is None:
-        global TIMESLICE
-        finest = TIMESLICE
-    if transforms is None:
-        global TRANSFORMS
-        transforms = TRANSFORMS
+    finest = TIMESLICE
+
+    if hasattr(x, "timeslice"):
+        return x
+
     if hasattr(ts, "timeslice"):
         ts = ts.timeslice
+
     has_ts = "timeslice" in getattr(x, "dims", ())
     same_ts = has_ts and len(ts) == len(x.timeslice) and x.timeslice.equals(ts)
     if same_ts or ((not has_ts) and quantity == QuantityType.INTENSIVE):
         return x
-    quantity = QuantityType(quantity)
-    proj0 = timeslice_projector(x, finest=finest, transforms=transforms)
-    proj1 = timeslice_projector(ts, finest=finest, transforms=transforms)
+
+    proj0 = timeslice_projector(x)
+    proj1 = timeslice_projector(ts)
+
     if quantity is QuantityType.EXTENSIVE:
         finest = finest.rename(timeslice="finest_timeslice")
         index = finest.get_index("finest_timeslice")
