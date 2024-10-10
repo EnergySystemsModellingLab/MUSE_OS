@@ -392,7 +392,7 @@ def lifetime_levelized_cost_of_energy(
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = capacity * technologies.fixed_outputs * technologies.utilization_factor
-    production = convert_timeslice(production, QuantityType.EXTENSIVE)
+    production = convert_timeslice(production, QuantityType.INTENSIVE)
 
     results = LCOE(
         technologies=technologies,
@@ -422,7 +422,7 @@ def net_present_value(
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = capacity * technologies.fixed_outputs * technologies.utilization_factor
-    production = convert_timeslice(production, QuantityType.EXTENSIVE)
+    production = convert_timeslice(production, QuantityType.INTENSIVE)
 
     results = NPV(
         technologies=technologies,
@@ -451,7 +451,7 @@ def net_present_cost(
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = capacity * technologies.fixed_outputs * technologies.utilization_factor
-    production = convert_timeslice(production, QuantityType.EXTENSIVE)
+    production = convert_timeslice(production, QuantityType.INTENSIVE)
 
     results = NPC(
         technologies=technologies,
@@ -480,7 +480,7 @@ def equivalent_annual_cost(
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = capacity * technologies.fixed_outputs * technologies.utilization_factor
-    production = convert_timeslice(production, QuantityType.EXTENSIVE)
+    production = convert_timeslice(production, QuantityType.INTENSIVE)
 
     results = EAC(
         technologies=technologies,

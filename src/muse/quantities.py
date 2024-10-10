@@ -189,7 +189,7 @@ def gross_margin(
     # Variable costs depend on factors such as labour
     variable_costs = convert_timeslice(
         var_par * ((fixed_outputs.sel(commodity=enduses)).sum("commodity")) ** var_exp,
-        QuantityType.EXTENSIVE,
+        QuantityType.INTENSIVE,
     )
 
     # The individual prices are selected
@@ -283,7 +283,7 @@ def consumption(
 
     if prices is not None and "timeslice" in prices.dims:
         production = convert_timeslice(  # type: ignore
-            production, QuantityType.EXTENSIVE
+            production, QuantityType.INTENSIVE
         )
 
     params_fuels = is_fuel(params.comm_usage)
@@ -387,7 +387,7 @@ def demand_matched_production(
     max_production = maximum_production(technodata, capacity, **filters)
     assert ("timeslice" in demand.dims) == ("timeslice" in cost.dims)
     if "timeslice" in demand.dims and "timeslice" not in max_production.dims:
-        max_production = convert_timeslice(max_production, QuantityType.EXTENSIVE)
+        max_production = convert_timeslice(max_production, QuantityType.INTENSIVE)
     return demand_matching(demand, cost, max_production)
 
 
@@ -474,7 +474,7 @@ def costed_production(
     ranking = costs.rank("asset")
     maxprod = convert_timeslice(
         maximum_production(technodata, capacity),
-        QuantityType.EXTENSIVE,
+        QuantityType.INTENSIVE,
     )
     commodity = (maxprod > 0).any([i for i in maxprod.dims if i != "commodity"])
     commodity = commodity.drop_vars(

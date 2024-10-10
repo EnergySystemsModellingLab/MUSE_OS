@@ -442,7 +442,7 @@ def unmet_forecasted_demand(
     capacity = reduce_assets([u.assets.capacity.interp(year=year) for u in agents])
     ts_capacity = cast(
         xr.DataArray,
-        convert_timeslice(capacity, QuantityType.EXTENSIVE),
+        convert_timeslice(capacity, QuantityType.INTENSIVE),
     )
 
     result = unmet_demand(smarket, ts_capacity, technologies, production)
@@ -578,7 +578,7 @@ def new_consumption(
     # Capacity in the forecast year
     ts_capa = convert_timeslice(
         capacity.interp(year=current_year + forecast),
-        QuantityType.EXTENSIVE,
+        QuantityType.INTENSIVE,
     )
     assert isinstance(ts_capa, xr.DataArray)
 
@@ -620,7 +620,7 @@ def new_and_retro_demands(
     # Split capacity between timeslices
     ts_capa = convert_timeslice(
         capacity.interp(year=[current_year, current_year + forecast]),
-        QuantityType.EXTENSIVE,
+        QuantityType.INTENSIVE,
     )
     assert isinstance(ts_capa, xr.DataArray)
 

@@ -467,7 +467,7 @@ def max_production(
     )
     capacity = convert_timeslice(
         techs.fixed_outputs * techs.utilization_factor,
-        QuantityType.EXTENSIVE,
+        QuantityType.INTENSIVE,
     )
     if "asset" not in capacity.dims and "asset" in search_space.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
@@ -752,7 +752,7 @@ def minimum_service(
     )
     capacity = convert_timeslice(
         techs.fixed_outputs * techs.minimum_service_factor,
-        QuantityType.EXTENSIVE,
+        QuantityType.INTENSIVE,
     )
     if "asset" not in capacity.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
@@ -819,7 +819,7 @@ def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
 
     assert "year" not in technologies.dims
 
-    ts_costs = convert_timeslice(costs, QuantityType.EXTENSIVE)
+    ts_costs = convert_timeslice(costs, QuantityType.INTENSIVE)
     selection = dict(
         commodity=is_enduse(technologies.comm_usage),
         technology=technologies.technology.isin(costs.replacement),

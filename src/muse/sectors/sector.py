@@ -296,7 +296,7 @@ class Sector(AbstractSector):  # type: ignore
             market=market, capacity=capacity, technologies=technologies
         )
         if "timeslice" in market.prices.dims and "timeslice" not in supply.dims:
-            supply = convert_timeslice(supply, QuantityType.EXTENSIVE)
+            supply = convert_timeslice(supply, QuantityType.INTENSIVE)
 
         # Calculate consumption
         consume = consumption(technologies, supply, market.prices)

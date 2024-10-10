@@ -659,8 +659,8 @@ def read_initial_market(
         getLogger(__name__).info("Base year import not provided. Set to zero.")
         base_year_import = xr.zeros_like(projections)
 
-    base_year_export = convert_timeslice(base_year_export, QuantityType.EXTENSIVE)
-    base_year_import = convert_timeslice(base_year_import, QuantityType.EXTENSIVE)
+    base_year_export = convert_timeslice(base_year_export, QuantityType.INTENSIVE)
+    base_year_import = convert_timeslice(base_year_import, QuantityType.INTENSIVE)
     base_year_export.name = "exports"
     base_year_import.name = "imports"
 

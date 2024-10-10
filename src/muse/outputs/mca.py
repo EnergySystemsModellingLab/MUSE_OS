@@ -359,7 +359,7 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
                     technologies,
                 ),
                 agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
+                QuantityType.INTENSIVE,
             )
 
             if "year" in result.dims:
@@ -589,7 +589,7 @@ def sector_consumption(
                     technologies,
                 ),
                 agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
+                QuantityType.INTENSIVE,
             )
             prices = a.filter_input(market.prices, year=output_year)
             result = consumption(
@@ -725,7 +725,7 @@ def sector_fuel_costs(
                     technologies,
                 ),
                 agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
+                QuantityType.INTENSIVE,
             )
 
             prices = a.filter_input(market.prices, year=output_year)
@@ -779,7 +779,7 @@ def sector_capital_costs(
             result = data.cap_par * (capacity**data.cap_exp)
             data_agent = convert_timeslice(
                 result,
-                QuantityType.EXTENSIVE,
+                QuantityType.INTENSIVE,
             )
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
@@ -843,7 +843,7 @@ def sector_emission_costs(
                     technologies,
                 ),
                 agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
+                QuantityType.INTENSIVE,
             )
             total = production.sel(commodity=enduses).sum("commodity")
             data_agent = total * (allemissions * prices).sum("commodity")
@@ -912,7 +912,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             production = capacity * techs.fixed_outputs * techs.utilization_factor
             production = convert_timeslice(
                 production,
-                QuantityType.EXTENSIVE,
+                QuantityType.INTENSIVE,
             )
 
             result = LCOE(
@@ -989,7 +989,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             production = capacity * techs.fixed_outputs * techs.utilization_factor
             production = convert_timeslice(
                 production,
-                QuantityType.EXTENSIVE,
+                QuantityType.INTENSIVE,
             )
 
             result = EAC(

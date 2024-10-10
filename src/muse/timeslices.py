@@ -399,7 +399,7 @@ def convert_timeslice(x, quantity, ts=None):
 
     mindex_coords = Coordinates.from_pandas_multiindex(ts.timeslice, "timeslice")
     extensive = x.expand_dims(timeslice=ts["timeslice"]).assign_coords(mindex_coords)
-    if quantity is QuantityType.EXTENSIVE:
+    if quantity is QuantityType.INTENSIVE:
         return extensive
 
     if quantity is QuantityType.INTENSIVE:
@@ -435,7 +435,7 @@ def represent_hours(
             average number of hours in year.
     """
     return convert_timeslice(
-        DataArray([nhours]), QuantityType.EXTENSIVE, timeslices
+        DataArray([nhours]), QuantityType.INTENSIVE, timeslices
     ).squeeze()
 
 

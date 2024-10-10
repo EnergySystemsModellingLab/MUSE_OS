@@ -252,7 +252,7 @@ def matching_market(sector: str, model: str = "default") -> xr.Dataset:
         xr.DataArray,
         convert_timeslice(
             maximum_production(loaded_sector.technologies, assets.capacity),
-            QuantityType.EXTENSIVE,
+            QuantityType.INTENSIVE,
         ),
     )
     market["supply"] = production.sum("asset")

@@ -129,7 +129,7 @@ def factory(settings: Optional[Union[str, Mapping]] = None) -> Callable:
                 from muse.timeslices import QuantityType, convert_timeslice
 
                 return (
-                    x / convert_timeslice(xr.DataArray(1), QuantityType.EXTENSIVE, x)
+                    x / convert_timeslice(xr.DataArray(1), QuantityType.INTENSIVE, x)
                 ).max("timeslice")
 
         elif top.lower() == "sum":
@@ -262,7 +262,7 @@ def adhoc_match_demand(
         commodity=demand.commodity,
     ).drop_vars("technology")
     if "timeslice" in demand.dims and "timeslice" not in max_prod.dims:
-        max_prod = convert_timeslice(max_prod, QuantityType.EXTENSIVE)
+        max_prod = convert_timeslice(max_prod, QuantityType.INTENSIVE)
 
     # Push disabled techs to last rank.
     # Any production assigned to them by the demand-matching algorithm will be removed.
