@@ -25,7 +25,7 @@ def _production(technologies, _capacity, demand_share):
         _capacity * technologies.fixed_outputs * technologies.utilization_factor
     )
     production = convert_timeslice(
-        production, demand_share.timeslice, QuantityType.EXTENSIVE
+        production, demand_share.timeslice, QuantityType.INTENSIVE
     )
     return production
 

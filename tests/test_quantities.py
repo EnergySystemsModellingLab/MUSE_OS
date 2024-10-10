@@ -417,7 +417,7 @@ def test_demand_matched_production(
     max_prod = convert_timeslice(
         maximum_production(technologies, capacity),
         demand.timeslice,
-        QuantityType.EXTENSIVE,
+        QuantityType.INTENSIVE,
     )
     demand = max_prod.sum("asset")
     demand[:] *= np.random.choice([0, 1, 1 / 2, 1 / 3, 1 / 10], demand.shape)
@@ -451,7 +451,7 @@ def test_costed_production_exact_match(market, capacity, technologies):
         .sum("asset")
         .mp,
         market,
-        QuantityType.EXTENSIVE,
+        QuantityType.INTENSIVE,
     )
     market["consumption"] = drop_timeslice(maxdemand)
     result = costed_production(market.consumption, costs, capacity, technologies)
@@ -478,7 +478,7 @@ def test_costed_production_single_region(market, capacity, technologies):
     maxdemand = convert_timeslice(
         maximum_production(technologies, capacity).sum("asset"),
         market,
-        QuantityType.EXTENSIVE,
+        QuantityType.INTENSIVE,
     )
     market["consumption"] = drop_timeslice(0.9 * maxdemand)
     technodata = broadcast_techs(technologies, capacity)
@@ -511,7 +511,7 @@ def test_costed_production_single_year(market, capacity, technologies):
         .sum("asset")
         .mp,
         market,
-        QuantityType.EXTENSIVE,
+        QuantityType.INTENSIVE,
     )
     market["consumption"] = drop_timeslice(0.9 * maxdemand)
     technodata = broadcast_techs(technologies, capacity)
@@ -547,7 +547,7 @@ def test_costed_production_over_capacity(market, capacity, technologies):
         .sum("asset")
         .mp,
         market,
-        QuantityType.EXTENSIVE,
+        QuantityType.INTENSIVE,
     )
     market["consumption"] = drop_timeslice(maxdemand * 0.9)
     technodata = broadcast_techs(technologies, capacity)
@@ -581,7 +581,7 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
         rng.uniform(low=0.5, high=0.9, size=technologies.utilization_factor.shape),
     )
     maxprod = convert_timeslice(
-        maximum_production(technologies, capacity), market, QuantityType.EXTENSIVE
+        maximum_production(technologies, capacity), market, QuantityType.INTENSIVE
     )
     minprod = maxprod * broadcast_techs(technologies.minimum_service_factor, maxprod)
     maxdemand = xr.Dataset(dict(mp=minprod)).groupby("region").sum("asset").mp

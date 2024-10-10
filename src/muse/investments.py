@@ -126,9 +126,11 @@ def factory(settings: Optional[Union[str, Mapping]] = None) -> Callable:
         if top.lower() == "max":
 
             def timeslice_op(x: xr.DataArray) -> xr.DataArray:
-                from muse.timeslices import convert_timeslice
+                from muse.timeslices import QuantityType, convert_timeslice
 
-                return (x / convert_timeslice(xr.DataArray(1), x)).max("timeslice")
+                return (
+                    x / convert_timeslice(xr.DataArray(1), QuantityType.INTENSIVE, x)
+                ).max("timeslice")
 
         elif top.lower() == "sum":
 
@@ -260,7 +262,7 @@ def adhoc_match_demand(
         commodity=demand.commodity,
     ).drop_vars("technology")
     if "timeslice" in demand.dims and "timeslice" not in max_prod.dims:
-        max_prod = convert_timeslice(max_prod, demand, QuantityType.EXTENSIVE)
+        max_prod = convert_timeslice(max_prod, QuantityType.INTENSIVE)
 
     # Push disabled techs to last rank.
     # Any production assigned to them by the demand-matching algorithm will be removed.
@@ -308,8 +310,6 @@ def scipy_match_demand(
     if "timeslice" in costs.dims and timeslice_op is not None:
         costs = timeslice_op(costs)
 
-    timeslice = next(cs.timeslice for cs in constraints if "timeslice" in cs.dims)
-
     # Select technodata for the current year
     if "year" in technologies.dims and year is None:
         raise ValueError("Missing year argument")
@@ -319,9 +319,7 @@ def scipy_match_demand(
         techs = technologies
 
     # Run scipy optimization with highs solver
-    adapter = ScipyAdapter.factory(
-        techs, cast(np.ndarray, costs), timeslice, *constraints
-    )
+    adapter = ScipyAdapter.factory(techs, cast(np.ndarray, costs), *constraints)
     res = linprog(**adapter.kwargs, method="highs")
 
     # Backup: try with highs-ipm

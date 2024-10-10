@@ -25,7 +25,7 @@ def _matching_market(technologies, stock, timeslice):
     production = convert_timeslice(
         maximum_production(technologies, stock.capacity),
         timeslice,
-        QuantityType.EXTENSIVE,
+        QuantityType.INTENSIVE,
     )
     market["supply"] = production.sum("asset")
     market["consumption"] = drop_timeslice(
@@ -141,7 +141,7 @@ def test_new_retro_accounting_identity(technologies, stock, market):
         .groupby("region")
         .sum("asset"),
         market.timeslice,
-        QuantityType.EXTENSIVE,
+        QuantityType.INTENSIVE,
     )
     consumption = market.consumption.interp(year=2015)
 

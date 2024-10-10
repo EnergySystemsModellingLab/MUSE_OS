@@ -467,8 +467,7 @@ def max_production(
     )
     capacity = convert_timeslice(
         techs.fixed_outputs * techs.utilization_factor,
-        market.timeslice,
-        QuantityType.EXTENSIVE,
+        QuantityType.INTENSIVE,
     )
     if "asset" not in capacity.dims and "asset" in search_space.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
@@ -753,8 +752,7 @@ def minimum_service(
     )
     capacity = convert_timeslice(
         techs.fixed_outputs * techs.minimum_service_factor,
-        market.timeslice,
-        QuantityType.EXTENSIVE,
+        QuantityType.INTENSIVE,
     )
     if "asset" not in capacity.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
@@ -766,9 +764,7 @@ def minimum_service(
     )
 
 
-def lp_costs(
-    technologies: xr.Dataset, costs: xr.DataArray, timeslices: xr.DataArray
-) -> xr.Dataset:
+def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
     """Creates costs for solving with scipy's LP solver.
 
     Example:
@@ -789,7 +785,7 @@ def lp_costs(
 
         >>> from muse.constraints import lp_costs
         >>> lpcosts = lp_costs(
-        ...     technologies.sel(year=2020, region="R1"), costs, timeslices
+        ...     technologies.sel(year=2020, region="R1"), costs
         ... )
         >>> assert "capacity" in lpcosts.data_vars
         >>> assert "production" in lpcosts.data_vars
@@ -819,11 +815,11 @@ def lp_costs(
     from xarray import zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import convert_timeslice
+    from muse.timeslices import QuantityType, convert_timeslice
 
     assert "year" not in technologies.dims
 
-    ts_costs = convert_timeslice(costs, timeslices)
+    ts_costs = convert_timeslice(costs, QuantityType.INTENSIVE)
     selection = dict(
         commodity=is_enduse(technologies.comm_usage),
         technology=technologies.technology.isin(costs.replacement),
@@ -1163,7 +1159,7 @@ class ScipyAdapter:
         In practice, :py:func:`~muse.constraints.lp_costs` helps us define the decision
         variables (and ``c``). We can verify that the sizes are consistent:
 
-        >>> lpcosts = cs.lp_costs(technologies, costs, market.timeslice)
+        >>> lpcosts = cs.lp_costs(technologies, costs)
         >>> capsize = lpcosts.capacity.size
         >>> prodsize = lpcosts.production.size
         >>> assert inputs.c.size == capsize + prodsize
@@ -1198,10 +1194,9 @@ class ScipyAdapter:
         cls,
         technologies: xr.Dataset,
         costs: xr.DataArray,
-        timeslices: pd.Index,
         *constraints: Constraint,
     ) -> ScipyAdapter:
-        lpcosts = lp_costs(technologies, costs, timeslices)
+        lpcosts = lp_costs(technologies, costs)
 
         data = cls._unified_dataset(technologies, lpcosts, *constraints)
 

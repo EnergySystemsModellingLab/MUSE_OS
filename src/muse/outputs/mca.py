@@ -35,7 +35,11 @@ from mypy_extensions import KwArg
 from muse.outputs.sector import market_quantity
 from muse.registration import registrator
 from muse.sectors import AbstractSector
-from muse.timeslices import QuantityType, convert_timeslice, drop_timeslice
+from muse.timeslices import (
+    QuantityType,
+    convert_timeslice,
+    drop_timeslice,
+)
 from muse.utilities import multiindex_to_coords
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
@@ -334,7 +338,6 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
     if len(techs) > 0:
         for a in agents:
             output_year = a.year - a.forecast
-            capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             technologies = a.filter_input(techs, year=output_year).fillna(0.0)
             agent_market = market.sel(year=output_year).copy()
             agent_market["consumption"] = drop_timeslice(
@@ -353,11 +356,10 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             result = convert_timeslice(
                 supply(
                     agent_market,
-                    capacity,
                     technologies,
                 ),
                 agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
+                QuantityType.INTENSIVE,
             )
 
             if "year" in result.dims:
@@ -566,7 +568,6 @@ def sector_consumption(
     if len(techs) > 0:
         for a in agents:
             output_year = a.year - a.forecast
-            capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             technologies = a.filter_input(techs, year=output_year).fillna(0.0)
             agent_market = market.sel(year=output_year).copy()
             agent_market["consumption"] = drop_timeslice(
@@ -585,11 +586,10 @@ def sector_consumption(
             production = convert_timeslice(
                 supply(
                     agent_market,
-                    capacity,
                     technologies,
                 ),
                 agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
+                QuantityType.INTENSIVE,
             )
             prices = a.filter_input(market.prices, year=output_year)
             result = consumption(
@@ -719,19 +719,13 @@ def sector_fuel_costs(
             )
             commodity = is_fuel(technologies.comm_usage)
 
-            capacity = a.filter_input(
-                a.assets.capacity,
-                year=output_year,
-            ).fillna(0.0)
-
             production = convert_timeslice(
                 supply(
                     agent_market,
-                    capacity,
                     technologies,
                 ),
                 agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
+                QuantityType.INTENSIVE,
             )
 
             prices = a.filter_input(market.prices, year=output_year)
@@ -775,7 +769,6 @@ def sector_capital_costs(
 
     if len(technologies) > 0:
         for a in agents:
-            demand = market.consumption * a.quantity
             output_year = a.year - a.forecast
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             data = a.filter_input(
@@ -786,8 +779,7 @@ def sector_capital_costs(
             result = data.cap_par * (capacity**data.cap_exp)
             data_agent = convert_timeslice(
                 result,
-                demand.timeslice,
-                QuantityType.EXTENSIVE,
+                QuantityType.INTENSIVE,
             )
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
@@ -848,11 +840,10 @@ def sector_emission_costs(
             production = convert_timeslice(
                 supply(
                     agent_market,
-                    capacity,
                     technologies,
                 ),
                 agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
+                QuantityType.INTENSIVE,
             )
             total = production.sel(commodity=enduses).sum("commodity")
             data_agent = total * (allemissions * prices).sum("commodity")
@@ -921,8 +912,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             production = capacity * techs.fixed_outputs * techs.utilization_factor
             production = convert_timeslice(
                 production,
-                demand.timeslice,
-                QuantityType.EXTENSIVE,
+                QuantityType.INTENSIVE,
             )
 
             result = LCOE(
@@ -999,8 +989,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             production = capacity * techs.fixed_outputs * techs.utilization_factor
             production = convert_timeslice(
                 production,
-                demand.timeslice,
-                QuantityType.EXTENSIVE,
+                QuantityType.INTENSIVE,
             )
 
             result = EAC(

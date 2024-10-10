@@ -632,19 +632,16 @@ def read_initial_market(
     projections: Union[xr.DataArray, Path, str],
     base_year_import: Optional[Union[str, Path, xr.DataArray]] = None,
     base_year_export: Optional[Union[str, Path, xr.DataArray]] = None,
-    timeslices: Optional[xr.DataArray] = None,
 ) -> xr.Dataset:
     """Read projections, import and export csv files."""
     from logging import getLogger
 
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
 
     # Projections must always be present
     if isinstance(projections, (str, Path)):
         getLogger(__name__).info(f"Reading projections from {projections}")
         projections = read_attribute_table(projections)
-    if timeslices is not None:
-        projections = convert_timeslice(projections, timeslices, QuantityType.INTENSIVE)
 
     # Base year export is optional. If it is not there, it's set to zero
     if isinstance(base_year_export, (str, Path)):
@@ -662,13 +659,8 @@ def read_initial_market(
         getLogger(__name__).info("Base year import not provided. Set to zero.")
         base_year_import = xr.zeros_like(projections)
 
-    if timeslices is not None:
-        base_year_export = convert_timeslice(
-            base_year_export, timeslices, QuantityType.EXTENSIVE
-        )
-        base_year_import = convert_timeslice(
-            base_year_import, timeslices, QuantityType.EXTENSIVE
-        )
+    base_year_export = convert_timeslice(base_year_export, QuantityType.INTENSIVE)
+    base_year_import = convert_timeslice(base_year_import, QuantityType.INTENSIVE)
     base_year_export.name = "exports"
     base_year_import.name = "imports"
 
@@ -688,7 +680,7 @@ def read_initial_market(
         commodity_price="prices", units_commodity_price="units_prices"
     )
     result["prices"] = (
-        result["prices"].expand_dims({"timeslice": timeslices}).drop_vars("timeslice")
+        result["prices"].expand_dims({"timeslice": TIMESLICE}).drop_vars("timeslice")
     )
 
     return result
