@@ -214,12 +214,8 @@ def capacity_to_service_demand(
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
     from muse.quantities import capacity_to_service_demand
-    from muse.timeslices import represent_hours
 
-    hours = represent_hours(demand.timeslice)
-    return capacity_to_service_demand(
-        demand=demand, technologies=technologies, hours=hours
-    )
+    return capacity_to_service_demand(demand=demand, technologies=technologies)
 
 
 @register_objective
@@ -230,13 +226,12 @@ def capacity_in_use(
     **kwargs,
 ):
     from muse.commodities import is_enduse
-    from muse.timeslices import represent_hours
+    from muse.timeslices import TIMESLICE
 
-    hours = represent_hours(demand.timeslice)
     enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
     return (
-        (demand.sel(commodity=enduses).sum("commodity") / hours).sum("timeslice")
-        * hours.sum()
+        (demand.sel(commodity=enduses).sum("commodity") / TIMESLICE).sum("timeslice")
+        * TIMESLICE.sum()
         / technologies.utilization_factor
     )
 

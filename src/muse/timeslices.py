@@ -6,7 +6,6 @@ __all__ = [
     "convert_timeslice",
     "timeslice_projector",
     "setup_module",
-    "represent_hours",
 ]
 
 from collections.abc import Mapping, Sequence
@@ -586,19 +585,6 @@ def new_to_old_timeslice(ts: DataArray, ag_level="Month") -> dict:
         "AgLevel": [ag_level] * length,
     }
     return converted_ts
-
-
-def represent_hours(
-    timeslices: DataArray, nhours: Union[int, float] = 8765.82
-) -> DataArray:
-    """Number of hours per timeslice.
-
-    Arguments:
-        timeslices: The timeslice for which to compute the number of hours
-        nhours: The total number of hours represented in the timeslice. Defaults to the
-            average number of hours in year.
-    """
-    return convert_timeslice(DataArray([nhours]), timeslices).squeeze()
 
 
 def drop_timeslice(data: DataArray) -> DataArray:

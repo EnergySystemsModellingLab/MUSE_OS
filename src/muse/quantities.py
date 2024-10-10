@@ -529,14 +529,11 @@ def costed_production(
 def capacity_to_service_demand(
     demand: xr.DataArray,
     technologies: xr.Dataset,
-    hours=None,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
-    from muse.timeslices import represent_hours
+    from muse.timeslices import TIMESLICE
 
-    if hours is None:
-        hours = represent_hours(demand.timeslice)
-    max_hours = hours.max() / hours.sum()
+    max_hours = TIMESLICE.max() / TIMESLICE.sum()
     commodity_output = technologies.fixed_outputs.sel(commodity=demand.commodity)
     max_demand = (
         demand.where(commodity_output > 0, 0)
