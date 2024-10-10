@@ -636,7 +636,12 @@ def read_initial_market(
     """Read projections, import and export csv files."""
     from logging import getLogger
 
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+    from muse.timeslices import (
+        TIMESLICE,
+        QuantityType,
+        convert_timeslice,
+        convert_timeslice_new,
+    )
 
     # Projections must always be present
     if isinstance(projections, (str, Path)):
@@ -660,11 +665,11 @@ def read_initial_market(
         getLogger(__name__).info("Base year import not provided. Set to zero.")
         base_year_import = xr.zeros_like(projections)
 
-    base_year_export = convert_timeslice(
-        base_year_export, TIMESLICE, QuantityType.EXTENSIVE
+    base_year_export = convert_timeslice_new(
+        base_year_export, TIMESLICE, QuantityType.INTENSIVE
     )
-    base_year_import = convert_timeslice(
-        base_year_import, TIMESLICE, QuantityType.EXTENSIVE
+    base_year_import = convert_timeslice_new(
+        base_year_import, TIMESLICE, QuantityType.INTENSIVE
     )
     base_year_export.name = "exports"
     base_year_import.name = "imports"
