@@ -61,7 +61,6 @@ def lpcosts(technologies, market, costs):
     return lp_costs(
         technologies.interp(year=market.year.min() + 5).drop_vars("year"),
         costs=costs,
-        timeslices=market.timeslice,
     )
 
 
@@ -73,13 +72,14 @@ def assets(residential):
 @fixture
 def market_demand(assets, technologies, market):
     from muse.quantities import maximum_production
-    from muse.timeslices import convert_timeslice
+    from muse.timeslices import QuantityType, convert_timeslice_new
 
     return 0.8 * maximum_production(
         technologies.interp(year=2025),
-        convert_timeslice(
+        convert_timeslice_new(
             assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
             market,
+            QuantityType.INTENSIVE,
         ),
     ).rename(technology="asset")
 
@@ -227,7 +227,7 @@ def test_to_scipy_adapter_maxprod(technologies, costs, max_production, timeslice
     assert adapter.b_ub.size == adapter.A_ub.shape[0]
     assert adapter.c.size == adapter.A_ub.shape[1]
 
-    lpcosts = lp_costs(technologies, costs, timeslices)
+    lpcosts = lp_costs(technologies, costs)
     capsize = lpcosts.capacity.size
     prodsize = lpcosts.production.size
     assert adapter.c.size == capsize + prodsize
@@ -254,7 +254,7 @@ def test_to_scipy_adapter_demand(technologies, costs, demand_constraint, timesli
     assert adapter.b_ub.size == adapter.A_ub.shape[0]
     assert adapter.c.size == adapter.A_ub.shape[1]
 
-    lpcosts = lp_costs(technologies, costs, timeslices)
+    lpcosts = lp_costs(technologies, costs)
     capsize = lpcosts.capacity.size
     prodsize = lpcosts.production.size
     assert adapter.c.size == capsize + prodsize
@@ -290,7 +290,7 @@ def test_to_scipy_adapter_max_capacity_expansion(
     assert adapter.c.size == adapter.A_ub.shape[1]
     assert adapter.c.ndim == 1
 
-    lpcosts = lp_costs(technologies, costs, timeslices)
+    lpcosts = lp_costs(technologies, costs)
     capsize = lpcosts.capacity.size
     prodsize = lpcosts.production.size
     assert adapter.c.size == capsize + prodsize
@@ -314,7 +314,7 @@ def test_to_scipy_adapter_no_constraint(technologies, costs, timeslices):
     assert adapter.b_eq is None
     assert adapter.c.ndim == 1
 
-    lpcosts = lp_costs(technologies, costs, timeslices)
+    lpcosts = lp_costs(technologies, costs)
     capsize = lpcosts.capacity.size
     prodsize = lpcosts.production.size
     assert adapter.c.size == capsize + prodsize
@@ -325,7 +325,7 @@ def test_back_to_muse_capacity(technologies, costs, timeslices):
 
     technologies = technologies.interp(year=2025)
 
-    lpcosts = lp_costs(technologies, costs, timeslices)
+    lpcosts = lp_costs(technologies, costs)
     data = ScipyAdapter._unified_dataset(technologies, lpcosts)
     lpquantity = ScipyAdapter._selected_quantity(data, "capacity")
     assert set(lpquantity.dims) == {"d(asset)", "d(replacement)"}
@@ -340,7 +340,7 @@ def test_back_to_muse_production(technologies, costs, timeslices):
 
     technologies = technologies.interp(year=2025)
 
-    lpcosts = lp_costs(technologies, costs, timeslices)
+    lpcosts = lp_costs(technologies, costs)
     data = ScipyAdapter._unified_dataset(technologies, lpcosts)
     lpquantity = ScipyAdapter._selected_quantity(data, "production")
     assert set(lpquantity.dims) == {
@@ -359,7 +359,7 @@ def test_back_to_muse_all(technologies, costs, timeslices, rng: np.random.Genera
     from muse.constraints import ScipyAdapter, lp_costs
 
     technologies = technologies.interp(year=2025)
-    lpcosts = lp_costs(technologies, costs, timeslices)
+    lpcosts = lp_costs(technologies, costs)
 
     data = ScipyAdapter._unified_dataset(technologies, lpcosts)
     lpcapacity = ScipyAdapter._selected_quantity(data, "capacity")
@@ -390,7 +390,7 @@ def test_scipy_adapter_back_to_muse(technologies, costs, timeslices, rng):
     from muse.constraints import ScipyAdapter, lp_costs
 
     technologies = technologies.interp(year=2025)
-    lpcosts = lp_costs(technologies, costs, timeslices)
+    lpcosts = lp_costs(technologies, costs)
 
     data = ScipyAdapter._unified_dataset(technologies, lpcosts)
     lpcapacity = ScipyAdapter._selected_quantity(data, "capacity")

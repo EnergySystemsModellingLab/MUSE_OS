@@ -3,8 +3,6 @@
 from pytest import approx, fixture
 from xarray import DataArray
 
-from muse.timeslices import QuantityType, convert_timeslice
-
 
 @fixture
 def toml():
@@ -57,56 +55,6 @@ def timeslice_dataarray(reference):
             )
         },
         dims="timeslice",
-    )
-
-
-def test_convert_extensive_timeslice(reference, timeslice_dataarray, transforms):
-    z = convert_timeslice(
-        timeslice_dataarray, reference, finest=reference, transforms=transforms
-    )
-    assert z.shape == reference.shape
-    assert z.values == approx(
-        [
-            float(
-                timeslice_dataarray[0] * reference[0] / (reference[0] + reference[1])
-            ),
-            float(
-                timeslice_dataarray[0] * reference[1] / (reference[0] + reference[1])
-            ),
-            0,
-            0,
-            float(timeslice_dataarray[1]),
-            0,
-            0,
-            0,
-            float(timeslice_dataarray[2]),
-            0,
-        ]
-    )
-
-
-def test_convert_intensive_timeslice(reference, timeslice_dataarray, transforms):
-    z = convert_timeslice(
-        timeslice_dataarray,
-        reference,
-        finest=reference,
-        transforms=transforms,
-        quantity=QuantityType.INTENSIVE,
-    )
-
-    assert z.values == approx(
-        [
-            float(timeslice_dataarray[0]),
-            float(timeslice_dataarray[0]),
-            0,
-            0,
-            float(timeslice_dataarray[1]),
-            0,
-            0,
-            0,
-            float(timeslice_dataarray[2]),
-            0,
-        ]
     )
 
 
