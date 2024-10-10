@@ -31,7 +31,7 @@ class PresetSector(AbstractSector):  # type: ignore
             read_timeslices,
         )
         from muse.regressions import endogenous_demand
-        from muse.timeslices import QuantityType, convert_timeslice
+        from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice_new
 
         sector_conf = getattr(settings.sectors, name)
         presets = Dataset()
@@ -121,8 +121,8 @@ class PresetSector(AbstractSector):  # type: ignore
         # add timeslice, if missing
         for component in {"supply", "consumption"}:
             if "timeslice" not in presets[component].dims:
-                presets[component] = convert_timeslice(
-                    presets[component], timeslice, QuantityType.EXTENSIVE
+                presets[component] = convert_timeslice_new(
+                    presets[component], TIMESLICE, QuantityType.INTENSIVE
                 )
 
         comm_usage = (presets.costs > 0).any(set(presets.costs.dims) - {"commodity"})
@@ -151,21 +151,13 @@ class PresetSector(AbstractSector):  # type: ignore
 
     def next(self, mca_market: Dataset) -> Dataset:
         """Advance sector by one time period."""
-        from muse.timeslices import QuantityType, convert_timeslice
-
         presets = self.presets.sel(region=mca_market.region)
         supply = self._interpolate(presets.supply, mca_market.year)
         consumption = self._interpolate(presets.consumption, mca_market.year)
         costs = self._interpolate(presets.costs, mca_market.year)
 
-        result = convert_timeslice(
-            Dataset({"supply": supply, "consumption": consumption}),
-            mca_market.timeslice,
-            QuantityType.EXTENSIVE,
-        )
-        result["costs"] = drop_timeslice(
-            convert_timeslice(costs, mca_market.timeslice, QuantityType.INTENSIVE)
-        )
+        result = Dataset({"supply": supply, "consumption": consumption})
+        result["costs"] = drop_timeslice(costs)
         assert isinstance(result, Dataset)
         return result
 
