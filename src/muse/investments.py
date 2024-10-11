@@ -126,9 +126,9 @@ def factory(settings: Optional[Union[str, Mapping]] = None) -> Callable:
         if top.lower() == "max":
 
             def timeslice_op(x: xr.DataArray) -> xr.DataArray:
-                from muse.timeslices import convert_timeslice
+                from muse.timeslices import TIMESLICE
 
-                return (x / convert_timeslice(xr.DataArray(1), x)).max("timeslice")
+                return (x / (TIMESLICE / sum(TIMESLICE))).max("timeslice")
 
         elif top.lower() == "sum":
 
