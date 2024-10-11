@@ -433,7 +433,7 @@ def unmet_forecasted_demand(
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
     from muse.commodities import is_enduse
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice_new
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
     from muse.utilities import reduce_assets
 
     year = current_year + forecast
@@ -442,7 +442,7 @@ def unmet_forecasted_demand(
     capacity = reduce_assets([u.assets.capacity.interp(year=year) for u in agents])
     ts_capacity = cast(
         xr.DataArray,
-        convert_timeslice_new(capacity, TIMESLICE, QuantityType.INTENSIVE),
+        convert_timeslice(capacity, TIMESLICE, QuantityType.INTENSIVE),
     )
 
     result = unmet_demand(smarket, ts_capacity, technologies, production)
@@ -565,7 +565,7 @@ def new_consumption(
     """
     from numpy import minimum
 
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice_new
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
 
     # Interpolate market to forecast year
     market = market.interp(year=[current_year, current_year + forecast])
@@ -576,7 +576,7 @@ def new_consumption(
     delta = (forecasted.consumption - current.consumption).clip(min=0)
 
     # Capacity in the forecast year
-    ts_capa = convert_timeslice_new(
+    ts_capa = convert_timeslice(
         capacity.interp(year=current_year + forecast),
         TIMESLICE,
         QuantityType.INTENSIVE,
@@ -610,7 +610,7 @@ def new_and_retro_demands(
     from numpy import minimum
 
     from muse.production import factory as prod_factory
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice_new
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
 
     production_method = production if callable(production) else prod_factory(production)
     assert callable(production_method)
@@ -619,7 +619,7 @@ def new_and_retro_demands(
     smarket: xr.Dataset = market.interp(year=[current_year, current_year + forecast])
 
     # Split capacity between timeslices
-    ts_capa = convert_timeslice_new(
+    ts_capa = convert_timeslice(
         capacity.interp(year=[current_year, current_year + forecast]),
         TIMESLICE,
         QuantityType.INTENSIVE,

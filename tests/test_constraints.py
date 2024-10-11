@@ -72,11 +72,11 @@ def assets(residential):
 @fixture
 def market_demand(assets, technologies, market):
     from muse.quantities import maximum_production
-    from muse.timeslices import QuantityType, convert_timeslice_new
+    from muse.timeslices import QuantityType, convert_timeslice
 
     return 0.8 * maximum_production(
         technologies.interp(year=2025),
-        convert_timeslice_new(
+        convert_timeslice(
             assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
             market,
             QuantityType.INTENSIVE,
