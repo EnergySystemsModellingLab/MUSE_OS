@@ -27,8 +27,8 @@ class Sector(AbstractSector):  # type: ignore
         from muse.outputs.sector import factory as ofactory
         from muse.production import factory as pfactory
         from muse.readers.toml import read_technodata
-        from muse.utilities import nametuple_to_dict
         from muse.timeslices import TIMESLICE
+        from muse.utilities import nametuple_to_dict
 
         # Read sector settings
         sector_settings = getattr(settings.sectors, name)._asdict()

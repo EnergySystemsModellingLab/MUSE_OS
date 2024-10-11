@@ -15,8 +15,6 @@ from numpy import ndarray
 from pandas import MultiIndex
 from xarray import DataArray
 
-from muse.readers import kebab_to_camel
-
 TIMESLICE: DataArray = None  # type: ignore
 """Array with the finest timeslice."""
 TRANSFORMS: dict[tuple, ndarray] = None  # type: ignore
