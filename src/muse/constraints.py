@@ -446,7 +446,11 @@ def max_production(
     from xarray import ones_like, zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+    from muse.timeslices import (
+        TIMESLICE,
+        QuantityType,
+        convert_timeslice_new,
+    )
 
     if year is None:
         year = int(market.year.min())
@@ -465,10 +469,10 @@ def max_production(
         .sel(**kwargs)
         .drop_vars("technology")
     )
-    capacity = convert_timeslice(
+    capacity = convert_timeslice_new(
         techs.fixed_outputs * techs.utilization_factor,
         TIMESLICE,
-        QuantityType.EXTENSIVE,
+        QuantityType.INTENSIVE,
     )
     if "asset" not in capacity.dims and "asset" in search_space.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)

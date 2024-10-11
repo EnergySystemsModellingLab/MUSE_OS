@@ -393,6 +393,7 @@ def convert_timeslice_new(x, ts, quantity):
     from xarray import Coordinates
 
     if hasattr(x, "timeslice"):
+        x = x.sel(timeslice=ts["timeslice"])
         return x
 
     mindex_coords = Coordinates.from_pandas_multiindex(ts.timeslice, "timeslice")
