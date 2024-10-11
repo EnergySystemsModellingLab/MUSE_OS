@@ -2,15 +2,14 @@
 
 __all__ = [
     "reference_timeslice",
-    "aggregate_transforms",
     "convert_timeslice",
-    "timeslice_projector",
+    "drop_timeslice",
     "setup_module",
 ]
 
 from collections.abc import Mapping, Sequence
 from enum import Enum, unique
-from typing import Optional, Union
+from typing import Union
 
 from numpy import ndarray
 from pandas import MultiIndex
@@ -144,228 +143,10 @@ def reference_timeslice(
     return DataArray(ts, coords={"timeslice": indices}, dims=name)
 
 
-def aggregate_transforms(
-    settings: Optional[Union[Mapping, str]] = None,
-    timeslice: Optional[DataArray] = None,
-) -> dict[tuple, ndarray]:
-    '''Creates dictionary of transforms for aggregate levels.
-
-    The transforms are used to create the projectors towards the finest timeslice.
-
-    Arguments:
-        timeslice: a ``DataArray`` with the timeslice dimension.
-        settings: A dictionary mapping the name of an aggregate with the values it
-            aggregates, or a string that toml will parse as such. If not given, only the
-            unit transforms are returned.
-
-    Return:
-        A dictionary of transforms for each possible slice to it's corresponding finest
-        timeslices.
-
-    Example:
-        >>> toml = """
-        ...     [timeslices]
-        ...     spring.weekday = 5
-        ...     spring.weekend = 2
-        ...     autumn.weekday = 5
-        ...     autumn.weekend = 2
-        ...     winter.weekday = 5
-        ...     winter.weekend = 2
-        ...     summer.weekday = 5
-        ...     summer.weekend = 2
-        ...
-        ...     [timeslices.aggregates]
-        ...     spautumn = ["spring", "autumn"]
-        ...     week = ["weekday", "weekend"]
-        ... """
-        >>> from muse.timeslices import reference_timeslice, aggregate_transforms
-        >>> ref = reference_timeslice(toml)
-        >>> transforms = aggregate_transforms(toml, ref)
-        >>> transforms[("spring", "weekend")]
-        array([0, 1, 0, 0, 0, 0, 0, 0])
-        >>> transforms[("spautumn", "weekday")]
-        array([1, 0, 1, 0, 0, 0, 0, 0])
-        >>> transforms[("autumn", "week")].T
-        array([0, 0, 1, 1, 0, 0, 0, 0])
-        >>> transforms[("spautumn", "week")].T
-        array([1, 1, 1, 1, 0, 0, 0, 0])
-    '''
-    from itertools import product
-
-    from numpy import identity, sum
-    from toml import loads
-
-    if timeslice is None:
-        timeslice = TIMESLICE
-    if settings is None:
-        settings = {}
-    elif isinstance(settings, str):
-        settings = loads(settings)
-
-    # get timeslice dimension
-    Id = identity(len(timeslice), dtype=int)
-    indices = timeslice.get_index("timeslice")
-    unitvecs: dict[tuple, ndarray] = {index: Id[i] for (i, index) in enumerate(indices)}
-    if "timeslices" in settings or "aggregates" in settings:
-        settings = settings.get("timeslices", settings).get("aggregates", {})
-    assert isinstance(settings, Mapping)
-
-    assert set(settings).intersection(unitvecs) == set()
-    levels = [list(level) for level in indices.levels]
-    for name, equivalent in settings.items():
-        matching_levels = [
-            set(level).issuperset(equivalent) for level in indices.levels
-        ]
-        if sum(matching_levels) == 0:
-            raise ValueError(f"Could not find matching level for {equivalent}")
-        elif sum(matching_levels) > 1:
-            raise ValueError(f"Found more than one matching level for {equivalent}")
-        level = matching_levels.index(True)
-        levels[level].append(name)
-
-    result: dict[tuple, ndarray] = {}
-    for index in set(product(*levels)).difference(unitvecs):
-        if not any(level in settings for level in index):
-            continue
-        agglevels = set(product(*(settings.get(level, [level]) for level in index)))
-        result[index] = sum(
-            [unitvecs[agg] for agg in unitvecs if agg in agglevels], axis=0
-        )
-    result.update(unitvecs)
-    return result
-
-
 def setup_module(settings: Union[str, Mapping]):
     """Sets up module singletons."""
     global TIMESLICE
-    global TRANSFORMS
     TIMESLICE = reference_timeslice(settings)
-    TRANSFORMS = aggregate_transforms(settings, TIMESLICE)
-
-
-def timeslice_projector(
-    x: Union[DataArray, MultiIndex],
-) -> DataArray:
-    '''Project time-slice to standardized finest time-slices.
-
-    Returns a matrix from the input timeslice ``x`` to the ``finest`` timeslice, using
-    the input ``transforms``. The latter are a set of transforms that map indices from
-    one timeslice to indices in another.
-
-    Example:
-        Lets define the following timeslices and aggregates:
-
-        >>> toml = """
-        ...     ["timeslices"]
-        ...     winter.weekday.day = 5
-        ...     winter.weekday.night = 5
-        ...     winter.weekend.day = 2
-        ...     winter.weekend.night = 2
-        ...     winter.weekend.dusk = 1
-        ...     summer.weekday.day = 5
-        ...     summer.weekday.night = 5
-        ...     summer.weekend.day = 2
-        ...     summer.weekend.night = 2
-        ...     summer.weekend.dusk = 1
-        ...     level_names = ["semester", "week", "day"]
-        ...     aggregates.allday = ["day", "night"]
-        ... """
-        >>> from muse.timeslices import (
-        ...     reference_timeslice,  aggregate_transforms
-        ... )
-        >>> ref = reference_timeslice(toml)
-        >>> transforms = aggregate_transforms(toml, ref)
-        >>> from pandas import MultiIndex
-        >>> input_ts = DataArray(
-        ...     [1, 2, 3],
-        ...     coords={
-        ...         "timeslice": MultiIndex.from_tuples(
-        ...             [
-        ...                 ("winter", "weekday", "allday"),
-        ...                 ("winter", "weekend", "dusk"),
-        ...                 ("summer", "weekend", "night"),
-        ...             ],
-        ...             names=ref.get_index("timeslice").names,
-        ...         ),
-        ...     },
-        ...     dims="timeslice"
-        ... )
-        >>> input_ts  # doctest: +SKIP
-        <xarray.DataArray (timeslice: 3)> Size: 12B
-        array([1, 2, 3])
-        Coordinates:
-          * timeslice  (timeslice) object 24B MultiIndex
-          * semester   (timeslice) object 24B 'winter' 'winter' 'summer'
-          * week       (timeslice) object 24B 'weekday' 'weekend' 'weekend'
-          * day        (timeslice) object 24B 'allday' 'dusk' 'night'
-
-        The input timeslice does not have to be complete. In any case, we can now
-        compute a transform, i.e. a matrix that will take this timeslice and transform
-        it to the equivalent times in the finest timeslice:
-
-        >>> from muse.timeslices import timeslice_projector
-        >>> timeslice_projector(input_ts, ref, transforms)  # doctest: +SKIP
-        <xarray.DataArray 'projector' (finest_timeslice: 10, timeslice: 3)> Size: 120B
-        array([[1, 0, 0],
-               [1, 0, 0],
-               [0, 0, 0],
-               [0, 0, 0],
-               [0, 1, 0],
-               [0, 0, 0],
-               [0, 0, 0],
-               [0, 0, 0],
-               [0, 0, 1],
-               [0, 0, 0]])
-        Coordinates:
-          * finest_timeslice  (finest_timeslice) object 80B MultiIndex
-          * finest_semester   (finest_timeslice) object 80B 'winter' ... 'summer'
-          * finest_week       (finest_timeslice) object 80B 'weekday' ... 'weekend'
-          * finest_day        (finest_timeslice) object 80B 'day' 'night' ... 'dusk'
-          * timeslice         (timeslice) object 24B MultiIndex
-          * semester          (timeslice) object 24B 'winter' 'winter' 'summer'
-          * week              (timeslice) object 24B 'weekday' 'weekend' 'weekend'
-          * day               (timeslice) object 24B 'allday' 'dusk' 'night'
-
-        It is possible to give as input an array which does not have a timeslice of its
-        own:
-
-        >>> nots = DataArray([5.0, 1.0, 2.0], dims="a", coords={'a': [1, 2, 3]})
-        >>> timeslice_projector(nots, ref, transforms).T  # doctest: +SKIP
-        <xarray.DataArray (timeslice: 1, finest_timeslice: 10)> Size: 40B
-        array([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
-        Coordinates:
-          * finest_timeslice  (finest_timeslice) object 80B MultiIndex
-          * finest_semester   (finest_timeslice) object 80B 'winter' ... 'summer'
-          * finest_week       (finest_timeslice) object 80B 'weekday' ... 'weekend'
-          * finest_day        (finest_timeslice) object 80B 'day' 'night' ... 'dusk'
-        Dimensions without coordinates: timeslice
-    '''
-    from numpy import concatenate, ones_like
-    from xarray import DataArray
-
-    finest = TIMESLICE
-    transforms = TRANSFORMS
-
-    index = finest.get_index("timeslice")
-    index = index.set_names(f"finest_{u}" for u in index.names)
-
-    if isinstance(x, MultiIndex):
-        timeslices = x
-    elif "timeslice" in x.dims:
-        timeslices = x.get_index("timeslice")
-    else:
-        return DataArray(
-            ones_like(finest, dtype=int)[:, None],
-            coords={"finest_timeslice": index},
-            dims=("finest_timeslice", "timeslice"),
-        )
-
-    return DataArray(
-        concatenate([transforms[index][:, None] for index in timeslices], axis=1),
-        coords={"finest_timeslice": index, "timeslice": timeslices},
-        dims=("finest_timeslice", "timeslice"),
-        name="projector",
-    )
 
 
 @unique

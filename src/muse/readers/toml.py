@@ -16,7 +16,6 @@ from typing import (
 )
 
 import numpy as np
-import pandas as pd
 import xarray as xr
 
 from muse.decorators import SETTINGS_CHECKS, register_settings_check
@@ -395,103 +394,7 @@ def read_settings(
     return convert(settings)
 
 
-def read_ts_multiindex(
-    settings: Optional[Union[Mapping, str]] = None,
-    timeslice: Optional[xr.DataArray] = None,
-    transforms: Optional[dict[tuple, np.ndarray]] = None,
-) -> pd.MultiIndex:
-    '''Read multiindex for a timeslice from TOML.
-
-    Example:
-        The timeslices are read from ``timeslice_levels``. The levels (keyword) and
-        slice (list of values) correspond to the level, slices and slice aggregates
-        defined  in the the ``timeslices`` section.
-
-        >>> toml = """
-        ...     ["timeslices"]
-        ...     winter.weekday.day = 5
-        ...     winter.weekday.night = 5
-        ...     winter.weekend.day = 2
-        ...     winter.weekend.night = 2
-        ...     winter.weekend.dusk = 1
-        ...     summer.weekday.day = 5
-        ...     summer.weekday.night = 5
-        ...     summer.weekend.day = 2
-        ...     summer.weekend.night = 2
-        ...     summer.weekend.dusk = 1
-        ...     level_names = ["semester", "week", "day"]
-        ...     aggregates.allday = ["day", "night"]
-        ...     [timeslice_levels]
-        ...     day = ["dusk", "allday"]
-        ... """
-        >>> from muse.timeslices import (
-        ...     reference_timeslice,  aggregate_transforms
-        ... )
-        >>> from muse.readers.toml import read_ts_multiindex
-        >>> ref = reference_timeslice(toml)
-        >>> transforms = aggregate_transforms(toml, ref)
-        >>> read_ts_multiindex(toml, ref, transforms)
-        MultiIndex([('summer', 'weekday', 'allday'),
-                    ('summer', 'weekend',   'dusk'),
-                    ('summer', 'weekend', 'allday'),
-                    ('winter', 'weekday', 'allday'),
-                    ('winter', 'weekend',   'dusk'),
-                    ('winter', 'weekend', 'allday')],
-                   names=['semester', 'week', 'day'])
-
-        It is an error to refer to a level or a slice that does not exist:
-
-        >>> read_ts_multiindex(dict(days=["dusk", "allday"]), ref, transforms)
-        Traceback (most recent call last):
-        ...
-        muse.readers.toml.IncorrectSettings: Unexpected level name(s): ...
-        >>> read_ts_multiindex(dict(day=["usk", "allday"]), ref, transforms)
-        Traceback (most recent call last):
-        ...
-        muse.readers.toml.IncorrectSettings: Unexpected slice(s): ...
-    '''
-    from itertools import product
-
-    from toml import loads
-
-    from muse.timeslices import TIMESLICE, TRANSFORMS
-
-    indices = (TIMESLICE if timeslice is None else timeslice).get_index("timeslice")
-    if transforms is None:
-        transforms = TRANSFORMS
-    if isinstance(settings, str):
-        settings = loads(settings)
-    elif settings is None:
-        return indices
-    elif not isinstance(settings, Mapping):
-        settings = undo_damage(settings)
-    settings = settings.get("timeslice_levels", settings)
-    assert isinstance(settings, Mapping)
-    if not set(settings).issubset(indices.names):
-        msg = "Unexpected level name(s): " + ", ".join(
-            set(settings).difference(indices.names)
-        )
-        raise IncorrectSettings(msg)
-    levels = [
-        settings.get(name, level) for name, level in zip(indices.names, indices.levels)
-    ]
-    levels = [[level] if isinstance(level, str) else level for level in levels]
-    for i, level in enumerate(levels):
-        known = [index[i] for index in transforms if len(index) > i]
-        unexpected = set(level).difference(known)
-        if unexpected:
-            raise IncorrectSettings("Unexpected slice(s): " + ", ".join(unexpected))
-    return pd.MultiIndex.from_tuples(
-        [index for index in product(*levels) if index in transforms],
-        names=indices.names,
-    )
-
-
-def read_timeslices(
-    settings: Optional[Union[str, Mapping]] = None,
-    timeslice: Optional[xr.DataArray] = None,
-    transforms: Optional[dict[tuple, np.ndarray]] = None,
-) -> xr.Dataset:
+def read_timeslices() -> xr.Dataset:
     '''Reads timeslice levels and create resulting timeslice coordinate.
 
     Args:
@@ -542,26 +445,10 @@ def read_timeslices(
         >>> assert set(ts.coords["week"].data) == {"weekday", "weekend"}
         >>> assert set(ts.coords["semester"].data) == {"summer", "winter"}
     '''
-    from muse.timeslices import TIMESLICE, timeslice_projector
+    from muse.timeslices import TIMESLICE
 
-    if timeslice is None:
-        timeslice = TIMESLICE
-    if settings is None:
-        return xr.Dataset({"represent_hours": timeslice}).set_coords("represent_hours")
-    indices = read_ts_multiindex(settings, timeslice=timeslice, transforms=transforms)
-    units = xr.DataArray(
-        np.ones(len(indices)), coords={"timeslice": indices}, dims="timeslice"
-    )
-    proj = timeslice_projector(units, finest=timeslice, transforms=transforms)
-    proj *= xr.DataArray(
-        timeslice.values,
-        coords={"finest_timeslice": proj.finest_timeslice},
-        dims="finest_timeslice",
-    )
-
-    return xr.Dataset({"represent_hours": proj.sum("finest_timeslice")}).set_coords(
-        "represent_hours"
-    )
+    timeslice = TIMESLICE
+    return xr.Dataset({"represent_hours": timeslice}).set_coords("represent_hours")
 
 
 def add_known_parameters(dd, u, parent=None):
@@ -770,9 +657,7 @@ def check_time_slices(settings: dict) -> None:
     from muse.timeslices import setup_module
 
     setup_module(settings)
-    settings["timeslices"] = read_timeslices(
-        settings.get("mca", settings).get("timeslice_levels", None)
-    ).timeslice
+    settings["timeslices"] = read_timeslices().timeslice
 
 
 @register_settings_check(vary_name=False)

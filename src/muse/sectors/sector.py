@@ -40,9 +40,7 @@ class Sector(AbstractSector):  # type: ignore
             raise RuntimeError(f"Empty 'subsectors' section in sector {name}")
 
         # Timeslices
-        timeslices = read_timeslices(
-            sector_settings.pop("timeslice_levels", None)
-        ).get_index("timeslice")
+        timeslices = read_timeslices().get_index("timeslice")
 
         # Read technologies
         technologies = read_technodata(settings, name, settings.time_framework)

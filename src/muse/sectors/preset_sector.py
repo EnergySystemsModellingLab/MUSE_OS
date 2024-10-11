@@ -36,9 +36,7 @@ class PresetSector(AbstractSector):  # type: ignore
         sector_conf = getattr(settings.sectors, name)
         presets = Dataset()
 
-        timeslice = read_timeslices(
-            getattr(sector_conf, "timeslice_levels", None)
-        ).timeslice
+        timeslice = read_timeslices().timeslice
         if getattr(sector_conf, "consumption_path", None) is not None:
             consumption = read_presets(sector_conf.consumption_path)
             presets["consumption"] = consumption.assign_coords(timeslice=timeslice)
