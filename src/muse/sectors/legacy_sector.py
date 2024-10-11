@@ -14,10 +14,10 @@ import numpy as np
 import pandas as pd
 from xarray import DataArray, Dataset
 
-from muse.readers import read_csv_timeslices, read_initial_market
+from muse.readers import read_initial_market
 from muse.sectors.abstract import AbstractSector
 from muse.sectors.register import register_sector
-from muse.timeslices import QuantityType, new_to_old_timeslice
+from muse.timeslices import QuantityType
 
 
 @dataclass

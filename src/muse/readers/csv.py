@@ -5,7 +5,6 @@ __all__ = [
     "read_io_technodata",
     "read_initial_assets",
     "read_technologies",
-    "read_csv_timeslices",
     "read_global_commodities",
     "read_timeslice_shares",
     "read_csv_agent_parameters",
@@ -414,35 +413,6 @@ def read_technologies(
     return result
 
 
-def read_csv_timeslices(path: Union[str, Path], **kwargs) -> xr.DataArray:
-    """Reads timeslice information from input."""
-    from logging import getLogger
-
-    getLogger(__name__).info(f"Reading timeslices from {path}")
-    data = pd.read_csv(path, float_precision="high", **kwargs)
-
-    def snake_case(string):
-        from re import sub
-
-        result = sub(r"((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))", r"-\1", string)
-        return result.lower().strip()
-
-    months = [snake_case(u) for u in data.Month.dropna()]
-    days = [snake_case(u) for u in data.Day.dropna()]
-    hours = [snake_case(u) for u in data.Hour.dropna()]
-    ts_index = pd.MultiIndex.from_arrays(
-        (months, days, hours), names=("month", "day", "hour")
-    )
-    result = xr.DataArray(
-        data.RepresentHours.dropna().astype(int),
-        coords={"timeslice": ts_index},
-        dims="timeslice",
-        name="represent_hours",
-    )
-    result.coords["represent_hours"] = result
-    return result.timeslice
-
-
 def read_global_commodities(path: Union[str, Path]) -> xr.Dataset:
     """Reads commodities information from input."""
     from logging import getLogger
@@ -500,8 +470,6 @@ def read_timeslice_shares(
         timeslice = timeslice.format(sector=sector)
     if isinstance(timeslice, (str, Path)) and not Path(timeslice).is_file():
         timeslice = find_sectors_file(timeslice, sector, path)
-    if isinstance(timeslice, (str, Path)):
-        timeslice = read_csv_timeslices(timeslice, low_memory=False)
 
     share_path = find_sectors_file(f"TimesliceShare{sector}.csv", sector, path)
     getLogger(__name__).info(f"Reading timeslice shares from {share_path}")

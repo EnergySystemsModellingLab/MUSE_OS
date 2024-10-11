@@ -359,6 +359,8 @@ def read_settings(
     Returns:
         A dictionary with the settings
     """
+    from muse.timeslices import setup_module
+
     getLogger(__name__).info("Reading MUSE settings")
 
     # The user data
@@ -388,67 +390,14 @@ def read_settings(
     settings = add_known_parameters(default_settings, user_settings)
     settings = add_unknown_parameters(settings, user_settings)
 
+    # Set up timeslices
+    setup_module(settings)
+    settings.pop("timeslices", None)
+
     # Finally, we run some checks to make sure all makes sense and files exist.
     validate_settings(settings)
 
     return convert(settings)
-
-
-def read_timeslices() -> xr.Dataset:
-    '''Reads timeslice levels and create resulting timeslice coordinate.
-
-    Args:
-        settings: TOML dictionary. It should contain a ``timeslice_levels`` section.
-            Otherwise, the timeslices will default to the global (finest) timeslices.
-        timeslice: Finest timeslices. Defaults to the global in
-            :py:mod:`~muse.timeslices`. If using the default, then this function
-            should be called *after* the timeslice module has been setup with a call to
-            :py:func:`~muse.timeslice.setup_module`.
-        transforms: Transforms from desired timeslices to the finest timeslice. Defaults
-            to the global in :py:mod:`~muse.timeslices`. If using the default,
-            then this function should be called *after* the timeslice module has been
-            setup with a call to :py:func:`~muse.timeslice.setup_module`.
-
-    Returns:
-        A xr.Dataset with the timeslice coordinates.
-
-    Example:
-        >>> toml = """
-        ...     ["timeslices"]
-        ...     winter.weekday.day = 5
-        ...     winter.weekday.night = 5
-        ...     winter.weekend.day = 2
-        ...     winter.weekend.night = 2
-        ...     winter.weekend.dusk = 1
-        ...     summer.weekday.day = 5
-        ...     summer.weekday.night = 5
-        ...     summer.weekend.day = 2
-        ...     summer.weekend.night = 2
-        ...     summer.weekend.dusk = 1
-        ...     level_names = ["semester", "week", "day"]
-        ...     aggregates.allday = ["day", "night"]
-        ...     [timeslice_levels]
-        ...     day = ["dusk", "allday"]
-        ... """
-        >>> from muse.timeslices import (
-        ...     reference_timeslice,  aggregate_transforms
-        ... )
-        >>> from muse.readers.toml import read_timeslices
-        >>> ref = reference_timeslice(toml)
-        >>> transforms = aggregate_transforms(toml, ref)
-        >>> ts = read_timeslices(toml, ref, transforms)
-        >>> assert "semester" in ts.coords
-        >>> assert "week" in ts.coords
-        >>> assert "day" in ts.coords
-        >>> assert "represent_hours" in ts.coords
-        >>> assert set(ts.coords["day"].data) == {"dusk", "allday"}
-        >>> assert set(ts.coords["week"].data) == {"weekday", "weekend"}
-        >>> assert set(ts.coords["semester"].data) == {"summer", "winter"}
-    '''
-    from muse.timeslices import TIMESLICE
-
-    timeslice = TIMESLICE
-    return xr.Dataset({"represent_hours": timeslice}).set_coords("represent_hours")
 
 
 def add_known_parameters(dd, u, parent=None):
@@ -646,18 +595,6 @@ def check_iteration_control(settings: dict) -> None:
 
         msg = "ERROR - The convergence tolerance must be a positive number."
         assert settings["tolerance"] > 0, msg
-
-
-@register_settings_check(vary_name=False)
-def check_time_slices(settings: dict) -> None:
-    """Check the time slices.
-
-    If there is no error, they are transformed into a xr.DataArray
-    """
-    from muse.timeslices import setup_module
-
-    setup_module(settings)
-    settings["timeslices"] = read_timeslices().timeslice
 
 
 @register_settings_check(vary_name=False)

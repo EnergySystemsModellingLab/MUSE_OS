@@ -28,7 +28,6 @@ class PresetSector(AbstractSector):  # type: ignore
             read_presets,
             read_regression_parameters,
             read_timeslice_shares,
-            read_timeslices,
         )
         from muse.regressions import endogenous_demand
         from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
@@ -36,7 +35,7 @@ class PresetSector(AbstractSector):  # type: ignore
         sector_conf = getattr(settings.sectors, name)
         presets = Dataset()
 
-        timeslice = read_timeslices().timeslice
+        timeslice = TIMESLICE.timeslice
         if getattr(sector_conf, "consumption_path", None) is not None:
             consumption = read_presets(sector_conf.consumption_path)
             presets["consumption"] = consumption.assign_coords(timeslice=timeslice)

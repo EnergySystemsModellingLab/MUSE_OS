@@ -185,24 +185,6 @@ def convert_timeslice(x, ts, quantity):
         return extensive * (ts / ts.sum())
 
 
-def new_to_old_timeslice(ts: DataArray, ag_level="Month") -> dict:
-    """Transforms timeslices defined as DataArray to a pandas dataframe.
-
-    This function is used in the LegacySector class to adapt the new MCA timeslices to
-    the format required by the old sectors.
-    """
-    length = len(ts.month.values)
-    converted_ts = {
-        "Month": [kebab_to_camel(w) for w in ts.month.values],
-        "Day": [kebab_to_camel(w) for w in ts.day.values],
-        "Hour": [kebab_to_camel(w) for w in ts.hour.values],
-        "RepresentHours": list(ts.represent_hours.values.astype(float)),
-        "SN": list(range(1, length + 1)),
-        "AgLevel": [ag_level] * length,
-    }
-    return converted_ts
-
-
 def drop_timeslice(data: DataArray) -> DataArray:
     """Drop the timeslice variable from a DataArray.
 

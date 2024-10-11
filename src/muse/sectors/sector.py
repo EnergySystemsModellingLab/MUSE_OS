@@ -26,9 +26,9 @@ class Sector(AbstractSector):  # type: ignore
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory
         from muse.production import factory as pfactory
-        from muse.readers import read_timeslices
         from muse.readers.toml import read_technodata
         from muse.utilities import nametuple_to_dict
+        from muse.timeslices import TIMESLICE
 
         # Read sector settings
         sector_settings = getattr(settings.sectors, name)._asdict()
@@ -40,7 +40,7 @@ class Sector(AbstractSector):  # type: ignore
             raise RuntimeError(f"Empty 'subsectors' section in sector {name}")
 
         # Timeslices
-        timeslices = read_timeslices().get_index("timeslice")
+        timeslices = TIMESLICE.timeslice
 
         # Read technologies
         technologies = read_technodata(settings, name, settings.time_framework)
