@@ -13,7 +13,7 @@ import xarray as xr
 
 from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
 from muse.quantities import consumption
-from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+from muse.timeslices import convert_timeslice
 from muse.utilities import filter_input
 
 
@@ -98,8 +98,6 @@ def net_present_value(
     # Cost of installed capacity
     installed_capacity_costs = convert_timeslice(
         techs.cap_par * (capacity**techs.cap_exp),
-        TIMESLICE,
-        QuantityType.INTENSIVE,
     )
 
     # Cost related to environmental products
@@ -122,8 +120,6 @@ def net_present_value(
     # Fixed and Variable costs
     fixed_costs = convert_timeslice(
         techs.fix_par * (capacity**techs.fix_exp),
-        TIMESLICE,
-        QuantityType.INTENSIVE,
     )
     variable_costs = techs.var_par * (
         (production.sel(commodity=products).sum("commodity")) ** techs.var_exp
@@ -262,8 +258,6 @@ def lifetime_levelized_cost_of_energy(
     # Cost of installed capacity
     installed_capacity_costs = convert_timeslice(
         techs.cap_par * (capacity**techs.cap_exp),
-        TIMESLICE,
-        QuantityType.INTENSIVE,
     )
 
     # Cost related to environmental products
@@ -286,8 +280,6 @@ def lifetime_levelized_cost_of_energy(
     # Fixed and Variable costs
     fixed_costs = convert_timeslice(
         techs.fix_par * (capacity**techs.fix_exp),
-        TIMESLICE,
-        QuantityType.INTENSIVE,
     )
     variable_costs = (
         techs.var_par * production.sel(commodity=products) ** techs.var_exp
@@ -374,8 +366,6 @@ def annual_levelized_cost_of_energy(
     annualized_capital_costs = (
         convert_timeslice(
             techs.cap_par * rates,
-            TIMESLICE,
-            QuantityType.INTENSIVE,
         )
         / techs.utilization_factor
     )
@@ -383,8 +373,6 @@ def annual_levelized_cost_of_energy(
     o_and_e_costs = (
         convert_timeslice(
             (techs.fix_par + techs.var_par),
-            TIMESLICE,
-            QuantityType.INTENSIVE,
         )
         / techs.utilization_factor
     )

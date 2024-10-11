@@ -283,7 +283,7 @@ class Sector(AbstractSector):  # type: ignore
         from muse.commodities import is_pollutant
         from muse.costs import annual_levelized_cost_of_energy, supply_cost
         from muse.quantities import consumption
-        from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+        from muse.timeslices import convert_timeslice
         from muse.utilities import broadcast_techs
 
         years = market.year.values
@@ -294,7 +294,7 @@ class Sector(AbstractSector):  # type: ignore
             market=market, capacity=capacity, technologies=technologies
         )
         if "timeslice" in market.prices.dims and "timeslice" not in supply.dims:
-            supply = convert_timeslice(supply, TIMESLICE, QuantityType.INTENSIVE)
+            supply = convert_timeslice(supply)
 
         # Calculate consumption
         consume = consumption(technologies, supply, market.prices)

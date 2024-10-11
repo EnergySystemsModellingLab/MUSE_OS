@@ -167,8 +167,11 @@ class QuantityType(Enum):
     EXTENSIVE = "extensive"
 
 
-def convert_timeslice(x, ts, quantity):
+def convert_timeslice(x, ts=None, quantity=QuantityType.INTENSIVE):
     from xarray import Coordinates
+
+    if ts is None:
+        ts = TIMESLICE
 
     if hasattr(x, "timeslice"):
         x = x.sel(timeslice=ts["timeslice"])

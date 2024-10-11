@@ -30,7 +30,7 @@ class PresetSector(AbstractSector):  # type: ignore
             read_timeslice_shares,
         )
         from muse.regressions import endogenous_demand
-        from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+        from muse.timeslices import TIMESLICE, convert_timeslice
 
         sector_conf = getattr(settings.sectors, name)
         presets = Dataset()
@@ -118,9 +118,7 @@ class PresetSector(AbstractSector):  # type: ignore
         # add timeslice, if missing
         for component in {"supply", "consumption"}:
             if "timeslice" not in presets[component].dims:
-                presets[component] = convert_timeslice(
-                    presets[component], TIMESLICE, QuantityType.INTENSIVE
-                )
+                presets[component] = convert_timeslice(presets[component])
 
         comm_usage = (presets.costs > 0).any(set(presets.costs.dims) - {"commodity"})
         presets["comm_usage"] = (
