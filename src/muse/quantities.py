@@ -446,7 +446,6 @@ def costed_production(
     service is applied first.
     """
     from muse.quantities import maximum_production
-    from muse.timeslices import convert_timeslice
     from muse.utilities import broadcast_techs
 
     technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
@@ -462,9 +461,7 @@ def costed_production(
             return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
 
     ranking = costs.rank("asset")
-    maxprod = convert_timeslice(
-        maximum_production(technodata, capacity),
-    )
+    maxprod = maximum_production(technodata, capacity)
     commodity = (maxprod > 0).any([i for i in maxprod.dims if i != "commodity"])
     commodity = commodity.drop_vars(
         [u for u in commodity.coords if u not in commodity.dims]

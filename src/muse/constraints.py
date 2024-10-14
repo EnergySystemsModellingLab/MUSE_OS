@@ -743,7 +743,7 @@ def minimum_service(
     if "region" in search_space.coords and "region" in technologies.dims:
         kwargs["region"] = assets.region
     techs = (
-        technologies[["fixed_outputs", "utilization_factor", "minimum_service_factor"]]
+        technologies[["fixed_outputs", "minimum_service_factor"]]
         .sel(**kwargs)
         .drop_vars("technology")
     )
