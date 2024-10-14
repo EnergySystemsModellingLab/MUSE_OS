@@ -776,10 +776,7 @@ def sector_capital_costs(
                 year=output_year,
                 technology=capacity.technology,
             )
-            result = data.cap_par * (capacity**data.cap_exp)
-            data_agent = convert_timeslice(
-                result,
-            )
+            data_agent = convert_timeslice(data.cap_par * (capacity**data.cap_exp))
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
@@ -907,8 +904,11 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             prices = agent_market["prices"].sel(commodity=techs.commodity)
             demand = agent_market.consumption.sel(commodity=included)
             capacity = agent.filter_input(capacity_to_service_demand(demand, techs))
-            production = capacity * techs.fixed_outputs
-            production = convert_timeslice(production) * techs.utilization_factor
+            production = (
+                capacity
+                * convert_timeslice(techs.fixed_outputs)
+                * techs.utilization_factor
+            )
 
             result = LCOE(
                 prices=prices,
@@ -981,8 +981,11 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             prices = agent_market["prices"].sel(commodity=techs.commodity)
             demand = agent_market.consumption.sel(commodity=included)
             capacity = agent.filter_input(capacity_to_service_demand(demand, techs))
-            production = capacity * techs.fixed_outputs
-            production = convert_timeslice(production) * techs.utilization_factor
+            production = (
+                capacity
+                * convert_timeslice(techs.fixed_outputs)
+                * techs.utilization_factor
+            )
 
             result = EAC(
                 prices=prices,

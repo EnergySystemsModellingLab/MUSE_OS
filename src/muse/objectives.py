@@ -386,8 +386,11 @@ def lifetime_levelized_cost_of_energy(
     from muse.timeslices import convert_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
-    production = capacity * technologies.fixed_outputs
-    production = convert_timeslice(production) * technologies.utilization_factor
+    production = (
+        capacity
+        * convert_timeslice(technologies.fixed_outputs)
+        * technologies.utilization_factor
+    )
 
     results = LCOE(
         technologies=technologies,
@@ -416,8 +419,11 @@ def net_present_value(
     from muse.timeslices import convert_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
-    production = capacity * technologies.fixed_outputs
-    production = convert_timeslice(production) * technologies.utilization_factor
+    production = (
+        capacity
+        * convert_timeslice(technologies.fixed_outputs)
+        * technologies.utilization_factor
+    )
 
     results = NPV(
         technologies=technologies,
@@ -445,8 +451,11 @@ def net_present_cost(
     from muse.timeslices import convert_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
-    production = capacity * technologies.fixed_outputs
-    production = convert_timeslice(production) * technologies.utilization_factor
+    production = (
+        capacity
+        * convert_timeslice(technologies.fixed_outputs)
+        * technologies.utilization_factor
+    )
 
     results = NPC(
         technologies=technologies,
@@ -474,8 +483,11 @@ def equivalent_annual_cost(
     from muse.timeslices import convert_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
-    production = capacity * technologies.fixed_outputs
-    production = convert_timeslice(production) * technologies.utilization_factor
+    production = (
+        capacity
+        * convert_timeslice(technologies.fixed_outputs)
+        * technologies.utilization_factor
+    )
 
     results = EAC(
         technologies=technologies,
