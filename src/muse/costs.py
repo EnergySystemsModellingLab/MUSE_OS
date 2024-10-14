@@ -364,17 +364,11 @@ def annual_levelized_cost_of_energy(
     rates = techs.interest_rate / (1 - (1 + techs.interest_rate) ** (-life))
 
     annualized_capital_costs = (
-        convert_timeslice(
-            techs.cap_par * rates,
-        )
-        / techs.utilization_factor
+        convert_timeslice(techs.cap_par * rates) / techs.utilization_factor
     )
 
     o_and_e_costs = (
-        convert_timeslice(
-            (techs.fix_par + techs.var_par),
-        )
-        / techs.utilization_factor
+        convert_timeslice(techs.fix_par + techs.var_par) / techs.utilization_factor
     )
 
     fuel_costs = (techs.fixed_inputs * prices).sum("commodity")

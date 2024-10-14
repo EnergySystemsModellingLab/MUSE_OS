@@ -907,10 +907,8 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             prices = agent_market["prices"].sel(commodity=techs.commodity)
             demand = agent_market.consumption.sel(commodity=included)
             capacity = agent.filter_input(capacity_to_service_demand(demand, techs))
-            production = capacity * techs.fixed_outputs * techs.utilization_factor
-            production = convert_timeslice(
-                production,
-            )
+            production = capacity * techs.fixed_outputs
+            production = convert_timeslice(production) * techs.utilization_factor
 
             result = LCOE(
                 prices=prices,
@@ -983,10 +981,8 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             prices = agent_market["prices"].sel(commodity=techs.commodity)
             demand = agent_market.consumption.sel(commodity=included)
             capacity = agent.filter_input(capacity_to_service_demand(demand, techs))
-            production = capacity * techs.fixed_outputs * techs.utilization_factor
-            production = convert_timeslice(
-                production,
-            )
+            production = capacity * techs.fixed_outputs
+            production = convert_timeslice(production) * techs.utilization_factor
 
             result = EAC(
                 prices=prices,
