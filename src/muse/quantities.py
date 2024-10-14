@@ -523,12 +523,11 @@ def capacity_to_service_demand(
     technologies: xr.Dataset,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
-    from muse.timeslices import TIMESLICE
+    from muse.timeslices import convert_timeslice
 
-    max_hours = TIMESLICE.max() / TIMESLICE.sum()
-    commodity_output = technologies.fixed_outputs.sel(commodity=demand.commodity)
-    max_demand = (
-        demand.where(commodity_output > 0, 0)
-        / commodity_output.where(commodity_output > 0, 1)
-    ).max(("commodity", "timeslice"))
-    return max_demand / technologies.utilization_factor / max_hours
+    timeslice_outputs = (
+        convert_timeslice(technologies.fixed_outputs.sel(commodity=demand.commodity))
+        * technologies.utilization_factor
+    )
+    capa_to_service_demand = demand / timeslice_outputs
+    return capa_to_service_demand.max(("commodity", "timeslice"))
