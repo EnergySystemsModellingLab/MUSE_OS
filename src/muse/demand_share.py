@@ -112,9 +112,9 @@ def new_and_retro(
     agents: Sequence[AbstractAgent],
     market: xr.Dataset,
     technologies: xr.Dataset,
+    current_year: int,
+    forecast: int,
     production: Union[str, Mapping, Callable] = "maximum_production",
-    current_year: Optional[int] = None,
-    forecast: int = 5,
 ) -> xr.DataArray:
     r"""Splits demand across new and retro agents.
 
@@ -236,9 +236,6 @@ def new_and_retro(
             technologies, capacity, year=[current_year, current_year + forecast]
         ).squeeze("year")
 
-    if current_year is None:
-        current_year = market.year.min()
-
     capacity = reduce_assets([u.assets.capacity for u in agents])
 
     demands = new_and_retro_demands(
@@ -323,9 +320,9 @@ def standard_demand(
     agents: Sequence[AbstractAgent],
     market: xr.Dataset,
     technologies: xr.Dataset,
+    current_year: int,
+    forecast: int,
     production: Union[str, Mapping, Callable] = "maximum_production",
-    current_year: Optional[int] = None,
-    forecast: int = 5,
 ) -> xr.DataArray:
     r"""Splits demand across new agents.
 
@@ -359,9 +356,6 @@ def standard_demand(
         return decommissioning_demand(
             technologies, capacity, year=[current_year, current_year + forecast]
         ).squeeze("year")
-
-    if current_year is None:
-        current_year = market.year.min()
 
     # Make sure there are no retrofit agents
     for agent in agents:
@@ -433,17 +427,14 @@ def unmet_forecasted_demand(
     agents: Sequence[AbstractAgent],
     market: xr.Dataset,
     technologies: xr.Dataset,
-    current_year: Optional[int] = None,
+    current_year: int,
+    forecast: int,
     production: Union[str, Mapping, Callable] = "maximum_production",
-    forecast: int = 5,
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
     from muse.commodities import is_enduse
     from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import reduce_assets
-
-    if current_year is None:
-        current_year = market.year.min()
 
     year = current_year + forecast
     comm_usage = technologies.comm_usage.sel(commodity=market.commodity)
@@ -555,8 +546,8 @@ def new_consumption(
     capacity: xr.DataArray,
     market: xr.Dataset,
     technologies: xr.Dataset,
-    current_year: Optional[int] = None,
-    forecast: int = 5,
+    current_year: int,
+    forecast: int,
 ) -> xr.DataArray:
     r"""Computes share of the demand attributed to new agents.
 
@@ -575,9 +566,6 @@ def new_consumption(
     from numpy import minimum
 
     from muse.timeslices import QuantityType, convert_timeslice
-
-    if current_year is None:
-        current_year = market.year.min()
 
     # Interpolate market to forecast year
     market = market.interp(year=[current_year, current_year + forecast])
@@ -605,9 +593,9 @@ def new_and_retro_demands(
     capacity: xr.DataArray,
     market: xr.Dataset,
     technologies: xr.Dataset,
+    current_year: int,
+    forecast: int,
     production: Union[str, Mapping, Callable] = "maximum_production",
-    current_year: Optional[int] = None,
-    forecast: int = 5,
 ) -> xr.Dataset:
     """Splits demand into *new* and *retrofit* demand.
 
@@ -626,8 +614,6 @@ def new_and_retro_demands(
 
     production_method = production if callable(production) else prod_factory(production)
     assert callable(production_method)
-    if current_year is None:
-        current_year = market.year.min()
 
     # Interpolate market to forecast year
     smarket: xr.Dataset = market.interp(year=[current_year, current_year + forecast])
