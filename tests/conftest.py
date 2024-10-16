@@ -152,16 +152,7 @@ def pytest_collection_modifyitems(config, items):
 
 
 @fixture
-def save_timeslice_globals():
-    from muse import timeslices
-
-    old = timeslices.TIMESLICE, timeslices.TRANSFORMS
-    yield
-    timeslices.TIMESLICE, timeslices.TRANSFORMS = old
-
-
-@fixture
-def default_timeslice_globals(save_timeslice_globals):
+def default_timeslice_globals():
     from muse import timeslices
 
     timeslices.setup_module(timeslices.DEFAULT_TIMESLICE_DESCRIPTION)
@@ -172,22 +163,6 @@ def timeslice(default_timeslice_globals) -> Dataset:
     from muse.timeslices import TIMESLICE
 
     return TIMESLICE
-
-
-@fixture
-def other_timeslice() -> Dataset:
-    from pandas import MultiIndex
-
-    months = ["winter", "spring-autumn", "summer"]
-    days = ["all-week", "all-week", "all-week"]
-    hour = ["all-day", "all-day", "all-day"]
-    coordinates = MultiIndex.from_arrays(
-        [months, days, hour], names=("month", "day", "hour")
-    )
-    result = Dataset(coords={"timeslice": coordinates})
-    result["represent_hours"] = ("timeslice", [2920, 2920, 2920])
-    result = result.set_coords("represent_hours")
-    return result
 
 
 @fixture
