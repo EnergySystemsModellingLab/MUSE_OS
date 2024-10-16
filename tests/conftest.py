@@ -490,7 +490,6 @@ def demand_share(coords, timeslice):
     }
     shape = len(axes["commodity"]), len(axes["asset"]), len(axes["timeslice"])
     result = DataArray(rand(*shape), coords=axes, dims=axes.keys(), name="demand_share")
-    result.coords["represent_hours"] = timeslice.represent_hours
     return result
 
 

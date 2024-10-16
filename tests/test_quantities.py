@@ -89,6 +89,7 @@ def test_supply_emissions(technologies, capacity):
 def test_gross_margin(technologies, capacity, market):
     from muse.commodities import is_enduse, is_fuel, is_pollutant
     from muse.quantities import gross_margin
+    from muse.timeslices import convert_timeslice
 
     """
     Gross margin refers to the calculation
@@ -118,12 +119,7 @@ def test_gross_margin(technologies, capacity, market):
     revenues = prices * prod * sum(is_enduse(usage))
     env_costs = env_prices * envs * sum(is_pollutant(usage))
     cons_costs = prices * fuels * sum(is_fuel(usage))
-    var_costs = (
-        vp
-        * ((prod * sum(is_enduse(usage))) ** ve)
-        * market.represent_hours
-        / sum(market.represent_hours)
-    )
+    var_costs = convert_timeslice(vp * ((prod * sum(is_enduse(usage))) ** ve))
 
     expected = revenues - env_costs - cons_costs - var_costs
     expected *= 100 / revenues
@@ -177,7 +173,6 @@ def test_consumption_no_flex(technologies, production, market):
 
     technologies.flexible_inputs[:] = 0
     actual = consumption(technologies, production, market.prices)
-    expected = expected * market.represent_hours / market.represent_hours.sum()
     actual, expected = xr.broadcast(actual, expected)
     assert actual.values == approx(expected.values)
 
