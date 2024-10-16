@@ -39,9 +39,9 @@ electricity,all-week,early-peak,all-year,0.66670000000,R1,3,MUS$2010/PJ,2025
 gas,all-week,early-peak,all-year,0.47220000000,R1,3,MUS$2010/PJ,2025
 heat,all-week,early-peak,all-year,2.15580000000,R1,3,MUS$2010/PJ,2025
 CO2f,all-week,early-peak,all-year,0.12010000000,R1,3,MUS$2010/kt,2025
-electricity,all-week,late-peak,all-year,3.09610000000,R1,4,MUS$2010/PJ,2025
+electricity,all-week,late-peak,all-year,2.31520000000,R1,4,MUS$2010/PJ,2025
 gas,all-week,late-peak,all-year,0.47220000000,R1,4,MUS$2010/PJ,2025
-heat,all-week,late-peak,all-year,3.77510000000,R1,4,MUS$2010/PJ,2025
+heat,all-week,late-peak,all-year,3.25460000000,R1,4,MUS$2010/PJ,2025
 CO2f,all-week,late-peak,all-year,0.12010000000,R1,4,MUS$2010/kt,2025
 electricity,all-week,evening,all-year,0.66670000000,R1,5,MUS$2010/PJ,2025
 gas,all-week,evening,all-year,0.47220000000,R1,5,MUS$2010/PJ,2025
@@ -65,7 +65,7 @@ heat,all-week,early-peak,all-year,0.50720000000,R1,3,MUS$2010/PJ,2030
 CO2f,all-week,early-peak,all-year,0.15700000000,R1,3,MUS$2010/kt,2030
 electricity,all-week,late-peak,all-year,0.66670000000,R1,4,MUS$2010/PJ,2030
 gas,all-week,late-peak,all-year,0.47220000000,R1,4,MUS$2010/PJ,2030
-heat,all-week,late-peak,all-year,1.47890000000,R1,4,MUS$2010/PJ,2030
+heat,all-week,late-peak,all-year,0.50720000000,R1,4,MUS$2010/PJ,2030
 CO2f,all-week,late-peak,all-year,0.15700000000,R1,4,MUS$2010/kt,2030
 electricity,all-week,evening,all-year,0.66670000000,R1,5,MUS$2010/PJ,2030
 gas,all-week,evening,all-year,0.47220000000,R1,5,MUS$2010/PJ,2030
