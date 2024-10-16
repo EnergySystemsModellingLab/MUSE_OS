@@ -8,7 +8,7 @@ from muse.timeslices import drop_timeslice
 def matching_market(technologies, stock, timeslice):
     """A market which matches stocks exactly."""
     return (
-        _matching_market(technologies, stock, timeslice)
+        _matching_market(technologies, stock)
         .interp(year=[2010, 2015, 2020, 2025])
         .transpose("timeslice", "region", "commodity", "year")
     )
