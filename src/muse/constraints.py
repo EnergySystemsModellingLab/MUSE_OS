@@ -745,7 +745,7 @@ def minimum_service(
     if "region" in search_space.coords and "region" in technologies.dims:
         kwargs["region"] = assets.region
     techs = (
-        technologies[["fixed_outputs", "utilization_factor", "minimum_service_factor"]]
+        technologies[["fixed_outputs", "minimum_service_factor"]]
         .sel(**kwargs)
         .drop_vars("technology")
     )
@@ -817,25 +817,16 @@ def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
 
     assert "year" not in technologies.dims
 
-    ts_costs = convert_timeslice(costs)
     selection = dict(
         commodity=is_enduse(technologies.comm_usage),
         technology=technologies.technology.isin(costs.replacement),
     )
 
-    if "region" in technologies.fixed_outputs.dims and "region" in ts_costs.coords:
-        selection["region"] = ts_costs.region
+    if "region" in technologies.fixed_outputs.dims and "region" in costs.coords:
+        selection["region"] = costs.region
     fouts = technologies.fixed_outputs.sel(selection).rename(technology="replacement")
 
-    # lpcosts.dims = Frozen({'asset': 2,
-    #                   'replacement': 2,
-    #                   'timeslice': 3,
-    #                   'commodity': 1})
-    # muse38: lpcosts.dims = Frozen({'asset': 2, ,
-    #                                'commodity': 1
-    #                                'replacement': 2,
-    #                                'timeslice': 3})
-    production = zeros_like(ts_costs * fouts)
+    production = zeros_like(costs * convert_timeslice(fouts))
     for dim in production.dims:
         if isinstance(production.get_index(dim), pd.MultiIndex):
             production = drop_timeslice(production)

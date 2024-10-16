@@ -776,10 +776,7 @@ def sector_capital_costs(
                 year=output_year,
                 technology=capacity.technology,
             )
-            result = data.cap_par * (capacity**data.cap_exp)
-            data_agent = convert_timeslice(
-                result,
-            )
+            data_agent = convert_timeslice(data.cap_par * (capacity**data.cap_exp))
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
