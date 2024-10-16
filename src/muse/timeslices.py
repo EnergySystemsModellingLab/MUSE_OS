@@ -20,48 +20,6 @@ TIMESLICE: DataArray = None  # type: ignore
 TRANSFORMS: dict[tuple, ndarray] = None  # type: ignore
 """Transforms from each aggregate to the finest timeslice."""
 
-DEFAULT_TIMESLICE_DESCRIPTION = """
-    [timeslices]
-    winter.weekday.night = 396
-    winter.weekday.morning = 396
-    winter.weekday.afternoon = 264
-    winter.weekday.early-peak = 66
-    winter.weekday.late-peak = 66
-    winter.weekday.evening = 396
-    winter.weekend.night = 156
-    winter.weekend.morning = 156
-    winter.weekend.afternoon = 156
-    winter.weekend.evening = 156
-    spring-autumn.weekday.night = 792
-    spring-autumn.weekday.morning = 792
-    spring-autumn.weekday.afternoon = 528
-    spring-autumn.weekday.early-peak = 132
-    spring-autumn.weekday.late-peak = 132
-    spring-autumn.weekday.evening = 792
-    spring-autumn.weekend.night = 300
-    spring-autumn.weekend.morning = 300
-    spring-autumn.weekend.afternoon = 300
-    spring-autumn.weekend.evening = 300
-    summer.weekday.night = 396
-    summer.weekday.morning  = 396
-    summer.weekday.afternoon = 264
-    summer.weekday.early-peak = 66
-    summer.weekday.late-peak = 66
-    summer.weekday.evening = 396
-    summer.weekend.night = 150
-    summer.weekend.morning = 150
-    summer.weekend.afternoon = 150
-    summer.weekend.evening = 150
-    level_names = ["month", "day", "hour"]
-
-    [timeslices.aggregates]
-    all-day = [
-        "night", "morning", "afternoon", "early-peak", "late-peak", "evening", "night"
-    ]
-    all-week = ["weekday", "weekend"]
-    all-year = ["winter", "summer", "spring-autumn"]
-    """
-
 
 def read_timeslices(
     settings: Union[Mapping, str],
@@ -195,6 +153,3 @@ def drop_timeslice(data: DataArray) -> DataArray:
         return data
 
     return data.drop_vars(data.timeslice.indexes)
-
-
-setup_module(DEFAULT_TIMESLICE_DESCRIPTION)
