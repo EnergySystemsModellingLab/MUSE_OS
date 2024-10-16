@@ -489,12 +489,12 @@ def test_read_technodata_timeslices(tmp_path):
     month_values = ["all-year"] * 6
     day_values = ["all-week"] * 6
     hour_values = [
+        "night",
+        "morning",
         "afternoon",
         "early-peak",
-        "evening",
         "late-peak",
-        "morning",
-        "night",
+        "evening",
     ]
 
     assert list(data.coords["timeslice"].values) == list(
@@ -598,11 +598,9 @@ def test_read_csv_agent_parameters(default_model):
 
 def test_read_initial_market(default_model):
     from muse.readers.csv import read_initial_market
-    from muse.readers.toml import read_settings
 
-    settings = read_settings(default_model / "settings.toml")
     path = default_model / "input" / "Projections.csv"
-    data = read_initial_market(path, timeslices=settings.timeslices)
+    data = read_initial_market(path)
 
     assert isinstance(data, xr.Dataset)
     assert set(data.dims) == {"region", "year", "commodity", "timeslice"}

@@ -139,7 +139,7 @@ def test_decommissioning_demand(technologies, capacity):
     technologies.fixed_outputs[:] = fouts = 0.5
     technologies.utilization_factor[:] = ufac = 0.4
     decom = decommissioning_demand(technologies, capacity, years)
-    assert set(decom.dims) == {"asset", "commodity", "year"}
+    assert set(decom.dims) == {"asset", "commodity", "year", "timeslice"}
     assert decom.sel(commodity=is_enduse(technologies.comm_usage)).values == approx(
         ufac * fouts * (current - forecast)
     )
