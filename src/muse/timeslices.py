@@ -1,7 +1,7 @@
 """Timeslice utility functions."""
 
 __all__ = [
-    "reference_timeslice",
+    "read_timeslices",
     "convert_timeslice",
     "drop_timeslice",
     "setup_module",
@@ -63,7 +63,7 @@ DEFAULT_TIMESLICE_DESCRIPTION = """
     """
 
 
-def reference_timeslice(
+def read_timeslices(
     settings: Union[Mapping, str],
     level_names: Sequence[str] = ("month", "day", "hour"),
     name: str = "timeslice",
@@ -144,7 +144,7 @@ def reference_timeslice(
 def setup_module(settings: Union[str, Mapping]):
     """Sets up module singletons."""
     global TIMESLICE
-    TIMESLICE = reference_timeslice(settings)
+    TIMESLICE = read_timeslices(settings)
 
 
 @unique

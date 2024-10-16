@@ -152,16 +152,7 @@ def pytest_collection_modifyitems(config, items):
 
 
 @fixture
-def save_timeslice_globals():
-    from muse import timeslices
-
-    old = timeslices.TIMESLICE, timeslices.TRANSFORMS
-    yield
-    timeslices.TIMESLICE, timeslices.TRANSFORMS = old
-
-
-@fixture
-def default_timeslice_globals(save_timeslice_globals):
+def default_timeslice_globals():
     from muse import timeslices
 
     timeslices.setup_module(timeslices.DEFAULT_TIMESLICE_DESCRIPTION)
@@ -169,25 +160,9 @@ def default_timeslice_globals(save_timeslice_globals):
 
 @fixture
 def timeslice(default_timeslice_globals) -> Dataset:
-    from muse.readers.toml import read_timeslices
+    from muse.timeslices import TIMESLICE
 
-    return read_timeslices(dict(hour=["all-day"]))
-
-
-@fixture
-def other_timeslice() -> Dataset:
-    from pandas import MultiIndex
-
-    months = ["winter", "spring-autumn", "summer"]
-    days = ["all-week", "all-week", "all-week"]
-    hour = ["all-day", "all-day", "all-day"]
-    coordinates = MultiIndex.from_arrays(
-        [months, days, hour], names=("month", "day", "hour")
-    )
-    result = Dataset(coords={"timeslice": coordinates})
-    result["represent_hours"] = ("timeslice", [2920, 2920, 2920])
-    result = result.set_coords("represent_hours")
-    return result
+    return TIMESLICE
 
 
 @fixture
@@ -328,7 +303,7 @@ def technologies(coords) -> Dataset:
 def agent_market(coords, technologies, timeslice) -> Dataset:
     from numpy.random import rand
 
-    result = timeslice.copy()
+    result = Dataset(coords=timeslice.coords)
     result["commodity"] = "commodity", coords["commodity"]
     result["region"] = "region", coords["region"]
     result["technology"] = "technology", coords["technology"]
@@ -350,7 +325,7 @@ def agent_market(coords, technologies, timeslice) -> Dataset:
 def market(coords, technologies, timeslice) -> Dataset:
     from numpy.random import rand
 
-    result = timeslice.copy()
+    result = Dataset(coords=timeslice.coords)
     result["commodity"] = "commodity", coords["commodity"]
     result["region"] = "region", coords["region"]
     result["year"] = "year", coords["year"]
@@ -515,7 +490,6 @@ def demand_share(coords, timeslice):
     }
     shape = len(axes["commodity"]), len(axes["asset"]), len(axes["timeslice"])
     result = DataArray(rand(*shape), coords=axes, dims=axes.keys(), name="demand_share")
-    result.coords["represent_hours"] = timeslice.represent_hours
     return result
 
 

@@ -89,6 +89,7 @@ def test_supply_emissions(technologies, capacity):
 def test_gross_margin(technologies, capacity, market):
     from muse.commodities import is_enduse, is_fuel, is_pollutant
     from muse.quantities import gross_margin
+    from muse.timeslices import convert_timeslice
 
     """
     Gross margin refers to the calculation
@@ -118,12 +119,7 @@ def test_gross_margin(technologies, capacity, market):
     revenues = prices * prod * sum(is_enduse(usage))
     env_costs = env_prices * envs * sum(is_pollutant(usage))
     cons_costs = prices * fuels * sum(is_fuel(usage))
-    var_costs = (
-        vp
-        * ((prod * sum(is_enduse(usage))) ** ve)
-        * market.represent_hours
-        / sum(market.represent_hours)
-    )
+    var_costs = convert_timeslice(vp * ((prod * sum(is_enduse(usage))) ** ve))
 
     expected = revenues - env_costs - cons_costs - var_costs
     expected *= 100 / revenues
@@ -177,7 +173,6 @@ def test_consumption_no_flex(technologies, production, market):
 
     technologies.flexible_inputs[:] = 0
     actual = consumption(technologies, production, market.prices)
-    expected = expected * market.represent_hours / market.represent_hours.sum()
     actual, expected = xr.broadcast(actual, expected)
     assert actual.values == approx(expected.values)
 
@@ -403,7 +398,6 @@ def test_demand_matched_production(
 ):
     from muse.commodities import CommodityUsage, is_enduse
     from muse.quantities import demand_matched_production, maximum_production
-    from muse.timeslices import QuantityType, convert_timeslice
 
     # try and make sure we have a few more outputs than the default fixture
     technologies.comm_usage[:] = np.random.choice(
@@ -414,11 +408,8 @@ def test_demand_matched_production(
     technologies.fixed_outputs[:] *= is_enduse(technologies.comm_usage)
 
     capacity = capacity.sel(year=capacity.year.min(), drop=True)
-    max_prod = convert_timeslice(
-        maximum_production(technologies, capacity),
-        demand.timeslice,
-        QuantityType.INTENSIVE,
-    )
+    max_prod = maximum_production(technologies, capacity)
+
     demand = max_prod.sum("asset")
     demand[:] *= np.random.choice([0, 1, 1 / 2, 1 / 3, 1 / 10], demand.shape)
     prices = xr.zeros_like(demand)
@@ -434,7 +425,6 @@ def test_costed_production_exact_match(market, capacity, technologies):
         costed_production,
         maximum_production,
     )
-    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
 
     if set(capacity.region.values) != set(market.region.values):
@@ -445,13 +435,11 @@ def test_costed_production_exact_match(market, capacity, technologies):
     costs = annual_levelized_cost_of_energy(
         prices=market.prices.sel(region=technodata.region), technologies=technodata
     )
-    maxdemand = convert_timeslice(
+    maxdemand = (
         xr.Dataset(dict(mp=maximum_production(technologies, capacity)))
         .groupby("region")
         .sum("asset")
-        .mp,
-        market,
-        QuantityType.INTENSIVE,
+        .mp
     )
     market["consumption"] = drop_timeslice(maxdemand)
     result = costed_production(market.consumption, costs, capacity, technologies)
@@ -469,17 +457,12 @@ def test_costed_production_single_region(market, capacity, technologies):
         costed_production,
         maximum_production,
     )
-    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
 
     capacity = capacity.drop_vars("region")
     capacity["region"] = "USA"
     market = market.sel(region=[capacity.region.values])
-    maxdemand = convert_timeslice(
-        maximum_production(technologies, capacity).sum("asset"),
-        market,
-        QuantityType.INTENSIVE,
-    )
+    maxdemand = maximum_production(technologies, capacity).sum("asset")
     market["consumption"] = drop_timeslice(0.9 * maxdemand)
     technodata = broadcast_techs(technologies, capacity)
     costs = annual_levelized_cost_of_energy(
@@ -500,18 +483,15 @@ def test_costed_production_single_year(market, capacity, technologies):
         costed_production,
         maximum_production,
     )
-    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
 
     capacity = capacity.sel(year=2010)
     market = market.sel(year=2010)
-    maxdemand = convert_timeslice(
+    maxdemand = (
         xr.Dataset(dict(mp=maximum_production(technologies, capacity)))
         .groupby("region")
         .sum("asset")
-        .mp,
-        market,
-        QuantityType.INTENSIVE,
+        .mp
     )
     market["consumption"] = drop_timeslice(0.9 * maxdemand)
     technodata = broadcast_techs(technologies, capacity)
@@ -533,7 +513,6 @@ def test_costed_production_over_capacity(market, capacity, technologies):
         costed_production,
         maximum_production,
     )
-    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
 
     capacity = capacity.isel(asset=[0, 1, 2])
@@ -541,13 +520,11 @@ def test_costed_production_over_capacity(market, capacity, technologies):
         capacity.region.values[: len(set(market.region.values))] = list(
             set(market.region.values)
         )
-    maxdemand = convert_timeslice(
+    maxdemand = (
         xr.Dataset(dict(mp=maximum_production(technologies, capacity)))
         .groupby("region")
         .sum("asset")
-        .mp,
-        market,
-        QuantityType.INTENSIVE,
+        .mp
     )
     market["consumption"] = drop_timeslice(maxdemand * 0.9)
     technodata = broadcast_techs(technologies, capacity)
@@ -569,7 +546,6 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
         costed_production,
         maximum_production,
     )
-    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
 
     if set(capacity.region.values) != set(market.region.values):
@@ -580,9 +556,7 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
         technologies.utilization_factor.dims,
         rng.uniform(low=0.5, high=0.9, size=technologies.utilization_factor.shape),
     )
-    maxprod = convert_timeslice(
-        maximum_production(technologies, capacity), market, QuantityType.INTENSIVE
-    )
+    maxprod = maximum_production(technologies, capacity)
     minprod = maxprod * broadcast_techs(technologies.minimum_service_factor, maxprod)
     maxdemand = xr.Dataset(dict(mp=minprod)).groupby("region").sum("asset").mp
     market["consumption"] = drop_timeslice(maxdemand * 0.9)
