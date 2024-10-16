@@ -26,9 +26,9 @@ def toml():
 
 @fixture
 def reference(toml):
-    from muse.timeslices import reference_timeslice
+    from muse.timeslices import read_timeslices
 
-    return reference_timeslice(toml)
+    return read_timeslices(toml)
 
 
 @fixture
@@ -54,7 +54,7 @@ def timeslice_dataarray(reference):
 def test_reference_timeslice():
     from toml import loads
 
-    from muse.timeslices import reference_timeslice
+    from muse.timeslices import read_timeslices
 
     inputs = loads(
         """
@@ -80,7 +80,7 @@ def test_reference_timeslice():
         """
     )
 
-    ts = reference_timeslice(inputs)
+    ts = read_timeslices(inputs)
     assert isinstance(ts, DataArray)
     assert "timeslice" in ts.coords
 
@@ -88,10 +88,10 @@ def test_reference_timeslice():
 def test_no_overlap():
     from pytest import raises
 
-    from muse.timeslices import reference_timeslice
+    from muse.timeslices import read_timeslices
 
     with raises(ValueError):
-        reference_timeslice(
+        read_timeslices(
             """
             [timeslices]
             winter.weekday.night = 396

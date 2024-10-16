@@ -134,13 +134,6 @@ def test_check_foresight(settings: dict):
     check_foresight(settings)
 
 
-def test_check_time_slices(settings: dict):
-    """Tests the check_budget_parameters function."""
-    from muse.readers.toml import check_time_slices
-
-    check_time_slices(settings)
-
-
 def test_check_global_data_files(settings: dict, user_data_files):
     """Tests the check_global_data_files function."""
     from muse.readers.toml import check_global_data_files
