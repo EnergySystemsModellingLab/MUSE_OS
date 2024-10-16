@@ -169,9 +169,9 @@ def default_timeslice_globals(save_timeslice_globals):
 
 @fixture
 def timeslice(default_timeslice_globals) -> Dataset:
-    from muse.readers.toml import read_timeslices
+    from muse.timeslices import TIMESLICE
 
-    return read_timeslices(dict(hour=["all-day"]))
+    return TIMESLICE
 
 
 @fixture
