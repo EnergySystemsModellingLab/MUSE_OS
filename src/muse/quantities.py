@@ -267,7 +267,6 @@ def consumption(
     are not given, then flexible consumption is *not* considered.
     """
     from muse.commodities import is_enduse, is_fuel
-    from muse.timeslices import convert_timeslice
     from muse.utilities import filter_with_template
 
     params = filter_with_template(
@@ -279,10 +278,6 @@ def consumption(
     comm_usage = technologies.comm_usage.sel(commodity=production.commodity)
 
     production = production.sel(commodity=is_enduse(comm_usage)).sum("commodity")
-
-    if prices is not None and "timeslice" in prices.dims:
-        production = convert_timeslice(production)  # type: ignore
-
     params_fuels = is_fuel(params.comm_usage)
     consumption = production * params.fixed_inputs.where(params_fuels, 0)
 
@@ -376,15 +371,12 @@ def demand_matched_production(
     """
     from muse.costs import annual_levelized_cost_of_energy as ALCOE
     from muse.demand_matching import demand_matching
-    from muse.timeslices import convert_timeslice
     from muse.utilities import broadcast_techs
 
     technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
     cost = ALCOE(prices=prices, technologies=technodata, **filters)
     max_production = maximum_production(technodata, capacity, **filters)
     assert ("timeslice" in demand.dims) == ("timeslice" in cost.dims)
-    if "timeslice" in demand.dims and "timeslice" not in max_production.dims:
-        max_production = convert_timeslice(max_production)
     return demand_matching(demand, cost, max_production)
 
 
@@ -523,12 +515,11 @@ def capacity_to_service_demand(
     technologies: xr.Dataset,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
-    from muse.timeslices import TIMESLICE
+    from muse.timeslices import convert_timeslice
 
-    max_hours = TIMESLICE.max() / TIMESLICE.sum()
-    commodity_output = technologies.fixed_outputs.sel(commodity=demand.commodity)
-    max_demand = (
-        demand.where(commodity_output > 0, 0)
-        / commodity_output.where(commodity_output > 0, 1)
-    ).max(("commodity", "timeslice"))
-    return max_demand / technologies.utilization_factor / max_hours
+    timeslice_outputs = (
+        convert_timeslice(technologies.fixed_outputs.sel(commodity=demand.commodity))
+        * technologies.utilization_factor
+    )
+    capa_to_service_demand = demand / timeslice_outputs
+    return capa_to_service_demand.max(("commodity", "timeslice"))
