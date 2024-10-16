@@ -303,7 +303,7 @@ def technologies(coords) -> Dataset:
 def agent_market(coords, technologies, timeslice) -> Dataset:
     from numpy.random import rand
 
-    result = timeslice.copy()
+    result = Dataset(coords=timeslice.coords)
     result["commodity"] = "commodity", coords["commodity"]
     result["region"] = "region", coords["region"]
     result["technology"] = "technology", coords["technology"]
@@ -325,7 +325,7 @@ def agent_market(coords, technologies, timeslice) -> Dataset:
 def market(coords, technologies, timeslice) -> Dataset:
     from numpy.random import rand
 
-    result = timeslice.copy()
+    result = Dataset(coords=timeslice.coords)
     result["commodity"] = "commodity", coords["commodity"]
     result["region"] = "region", coords["region"]
     result["year"] = "year", coords["year"]
