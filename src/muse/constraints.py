@@ -772,7 +772,6 @@ def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
         >>> from muse import examples
         >>> technologies = examples.technodata("residential", model="medium")
         >>> search_space = examples.search_space("residential", model="medium")
-        >>> timeslices = examples.sector("residential", model="medium").timeslices
         >>> costs = (
         ...     search_space
         ...     * np.arange(np.prod(search_space.shape)).reshape(search_space.shape)
@@ -808,7 +807,7 @@ def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
         which production occurs and the ``commodity`` produced.
 
         >>> lpcosts.production.dims
-        ('timeslice', 'asset', 'replacement', 'commodity')
+        ('asset', 'replacement', 'timeslice', 'commodity')
     """
     from xarray import zeros_like
 
@@ -956,7 +955,6 @@ def lp_constraint_matrix(
          ...         .sel(region=assets.region)
          ...     ),
          ...     costs=search * np.arange(np.prod(search.shape)).reshape(search.shape),
-         ...     timeslices=market.timeslice,
          ... )
 
          For a simple example, we can first check the case where b is scalar. The result
@@ -1076,7 +1074,6 @@ class ScipyAdapter:
 
         >>> from muse import examples
         >>> from muse.quantities import maximum_production
-        >>> from muse.timeslices import convert_timeslice
         >>> from muse import constraints as cs
         >>> res = examples.sector("residential", model="medium")
         >>> market = examples.residential_market("medium")
@@ -1084,10 +1081,7 @@ class ScipyAdapter:
         >>> assets = next(a.assets for a in res.agents)
         >>> market_demand =  0.8 * maximum_production(
         ...     res.technologies.interp(year=2025),
-        ...     convert_timeslice(
-        ...         assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
-        ...         market.timeslice,
-        ...     ),
+        ...     assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
         ... ).rename(technology="asset")
         >>> costs = search * np.arange(np.prod(search.shape)).reshape(search.shape)
         >>> constraint = cs.max_capacity_expansion(
@@ -1123,7 +1117,7 @@ class ScipyAdapter:
 
         >>> technologies = res.technologies.interp(year=market.year.min() + 5)
         >>> inputs = cs.ScipyAdapter.factory(
-        ...     technologies, costs, market.timeslice, constraint
+        ...     technologies, costs, constraint
         ... )
 
         The decision variables are always constrained between zero and infinity:
