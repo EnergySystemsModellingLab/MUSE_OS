@@ -81,7 +81,7 @@ class AbstractAgent(ABC):
         market: xr.Dataset,
         demand: xr.DataArray,
         time_period: int,
-    ):
+    ) -> None:
         """Increments agent to the next time point (e.g. performing investments)."""
 
     def __repr__(self):
@@ -243,7 +243,7 @@ class Agent(AbstractAgent):
         market: xr.Dataset,
         demand: xr.DataArray,
         time_period: int,
-    ):
+    ) -> None:
         self.year += time_period
 
     def compute_decision(
@@ -251,8 +251,8 @@ class Agent(AbstractAgent):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        search_space,
-    ):
+        search_space: xr.DataArray,
+    ) -> xr.DataArray:
         # Filter technologies according to the search space, forecast year and region
         techs = self.filter_input(
             technologies,
@@ -319,7 +319,7 @@ class InvestingAgent(Agent):
         market: xr.Dataset,
         demand: xr.DataArray,
         time_period: int,
-    ):
+    ) -> None:
         """Iterates agent one turn.
 
         The goal is to figure out from market variables which technologies to
@@ -399,7 +399,7 @@ class InvestingAgent(Agent):
         investments: xr.DataArray,
         current_year: int,
         time_period: int,
-    ):
+    ) -> None:
         """Add new assets to the agent."""
         # Calculate retirement profile of new assets
         new_capacity = self.retirement_profile(

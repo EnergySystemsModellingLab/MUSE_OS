@@ -484,7 +484,7 @@ def _inner_split(
 
     # Calculates the demand divided by the number of assets times the number of agents
     # if the demand is bigger than zero and the total demand assigned with the "method"
-    # function is zero (i.e. no decrease in production).
+    # function is zero.
     unassigned = (demand / (len(shares) * len(summed_shares))).where(
         logical_and(demand > 1e-12, total <= 1e-12), 0
     )
@@ -583,7 +583,6 @@ def new_consumption(
     )
     assert isinstance(ts_capa, xr.DataArray)
 
-    #
     missing = unmet_demand(current, ts_capa, technologies)
     consumption = minimum(delta, missing)
     return consumption
