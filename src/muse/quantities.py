@@ -548,7 +548,7 @@ def minimum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
             refer to asset capacity, the max capacity, or the capacity-in-use.
         technologies: xr.Dataset describing the features of the technologies of
             interests.  It should contain `fixed_outputs` and `minimum_service_factor`.
-            It's shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
+            Its shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
         filters: keyword arguments are used to filter down the capacity and
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are
@@ -571,21 +571,14 @@ def minimum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
     btechs = broadcast_techs(  # type: ignore
         cast(
             xr.Dataset,
-            technologies[
-                ["fixed_outputs", "minimum_service_factor", "utilization_factor"]
-            ],
+            technologies[["fixed_outputs", "minimum_service_factor"]],
         ),
         capa,
     )
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
     )
-    result = (
-        capa
-        * ftechs.fixed_outputs
-        * ftechs.minimum_service_factor
-        * ftechs.utilization_factor
-    )
+    result = capa * ftechs.fixed_outputs * ftechs.minimum_service_factor
     return result.where(is_enduse(result.comm_usage), 0)
 
 
