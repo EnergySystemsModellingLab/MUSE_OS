@@ -49,6 +49,7 @@ def supply(
         production_method = maximum_production
 
     maxprod = production_method(technologies, capacity)
+    minprod = minimum_production(technologies, capacity)
     size = np.array(maxprod.region).size
     # in presence of trade demand needs to map maxprod dst_region
     if (
@@ -88,12 +89,14 @@ def supply(
         expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
 
     expanded_maxprod = (maxprod * demand / demand.sum(prodsum)).fillna(0)
-
+    expanded_minprod = (minprod * demand / demand.sum(prodsum)).fillna(0)
     expanded_demand = expanded_demand.reindex_like(maxprod)
+    expanded_minprod = expanded_minprod.reindex_like(maxprod)
 
     result = expanded_demand.where(
         expanded_demand <= expanded_maxprod, expanded_maxprod
     )
+    result = result.where(result >= expanded_minprod, expanded_minprod)
 
     # add production of environmental pollutants
     env = is_pollutant(technologies.comm_usage)
@@ -522,6 +525,61 @@ def costed_production(
     result = xr.zeros_like(maxprod)
     result[dict(commodity=commodity)] = result[dict(commodity=commodity)] + production
     return result
+
+
+def minimum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filters):
+    r"""Minimum production for a given capacity.
+
+    Given a capacity :math:`\mathcal{A}_{t, \iota}^r`, the minimum service factor
+    :math:`\alpha^r_{t, \iota}` and the the fixed outputs of each technology
+    :math:`\beta^r_{t, \iota, c}`, then the result production is:
+
+    .. math::
+
+        P_{t, \iota}^r =
+            \alpha^r_{t, \iota}\beta^r_{t, \iota, c}\mathcal{A}_{t, \iota}^r
+
+    The dimensions above are only indicative. The function should work with many
+    different input values, e.g. with capacities expanded over time-slices :math:`t` or
+    agents :math:`i`.
+
+    Arguments:
+        capacity: Capacity of each technology of interest. In practice, the capacity can
+            refer to asset capacity, the max capacity, or the capacity-in-use.
+        technologies: xr.Dataset describing the features of the technologies of
+            interests.  It should contain `fixed_outputs` and `minimum_service_factor`.
+            Its shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
+        filters: keyword arguments are used to filter down the capacity and
+            technologies. Filters not relevant to the quantities of interest, i.e.
+            filters that are not a dimension of `capacity` or `technologies`, are
+            silently ignored.
+
+    Return:
+        `capacity * fixed_outputs * minimum_service_factor`, whittled down according to
+        the filters and the set of technologies in `capacity`.
+    """
+    from muse.commodities import is_enduse
+    from muse.utilities import broadcast_techs, filter_input
+
+    capa = filter_input(
+        capacity, **{k: v for k, v in filters.items() if k in capacity.dims}
+    )
+
+    if "minimum_service_factor" not in technologies:
+        return xr.zeros_like(capa)
+
+    btechs = broadcast_techs(  # type: ignore
+        cast(
+            xr.Dataset,
+            technologies[["fixed_outputs", "minimum_service_factor"]],
+        ),
+        capa,
+    )
+    ftechs = filter_input(
+        btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
+    )
+    result = capa * ftechs.fixed_outputs * ftechs.minimum_service_factor
+    return result.where(is_enduse(result.comm_usage), 0)
 
 
 def capacity_to_service_demand(
