@@ -23,16 +23,6 @@ quantity = "capacity"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
-[[outputs]]
-quantity = "timeslice_consumption"
-sink = "aggregate"
-filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-
-[[outputs]]
-quantity = "timeslice_supply"
-sink = "aggregate"
-filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-
 [carbon_budget_control]
 budget = []
 
