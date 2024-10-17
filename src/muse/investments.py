@@ -121,25 +121,6 @@ def factory(settings: Optional[Union[str, Mapping]] = None) -> Callable:
         name = settings["name"]
         params = {k: v for k, v in settings.items() if k != "name"}
 
-    top = params.get("timeslice_op", "max")
-    if isinstance(top, str):
-        if top.lower() == "max":
-
-            def timeslice_op(x: xr.DataArray) -> xr.DataArray:
-                from muse.timeslices import convert_timeslice
-
-                return (x / convert_timeslice(xr.DataArray(1), x)).max("timeslice")
-
-        elif top.lower() == "sum":
-
-            def timeslice_op(x: xr.DataArray) -> xr.DataArray:
-                return x.sum("timeslice")
-
-        else:
-            raise ValueError(f"Unknown timeslice transform {top}")
-
-        params["timeslice_op"] = timeslice_op
-
     investment = INVESTMENTS[name]
 
     def compute_investment(
@@ -243,11 +224,9 @@ def adhoc_match_demand(
     technologies: xr.Dataset,
     constraints: list[Constraint],
     year: int,
-    timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
 ) -> xr.DataArray:
     from muse.demand_matching import demand_matching
     from muse.quantities import capacity_in_use, maximum_production
-    from muse.timeslices import QuantityType, convert_timeslice
 
     demand = next(c for c in constraints if c.name == "demand").b
 
@@ -259,13 +238,11 @@ def adhoc_match_demand(
         technology=costs.replacement,
         commodity=demand.commodity,
     ).drop_vars("technology")
-    if "timeslice" in demand.dims and "timeslice" not in max_prod.dims:
-        max_prod = convert_timeslice(max_prod, demand, QuantityType.EXTENSIVE)
 
     # Push disabled techs to last rank.
     # Any production assigned to them by the demand-matching algorithm will be removed.
 
-    if "timeslice" in costs.dims and timeslice_op is not None:
+    if "timeslice" in costs.dims:
         costs = costs.mean("timeslice").mean("asset")  # timeslice_op(costs)
 
     minobj = costs.min()
@@ -282,7 +259,7 @@ def adhoc_match_demand(
     capacity = capacity_in_use(
         production, technologies, year=year, technology=production.replacement
     ).drop_vars("technology")
-    if "timeslice" in capacity.dims and timeslice_op is not None:
+    if "timeslice" in capacity.dims:
         capacity = timeslice_op(capacity)
 
     result = xr.Dataset({"capacity": capacity, "production": production})
@@ -296,7 +273,6 @@ def scipy_match_demand(
     technologies: xr.Dataset,
     constraints: list[Constraint],
     year: Optional[int] = None,
-    timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
     **options,
 ) -> xr.DataArray:
     from logging import getLogger
@@ -305,10 +281,8 @@ def scipy_match_demand(
 
     from muse.constraints import ScipyAdapter
 
-    if "timeslice" in costs.dims and timeslice_op is not None:
+    if "timeslice" in costs.dims:
         costs = timeslice_op(costs)
-
-    timeslice = next(cs.timeslice for cs in constraints if "timeslice" in cs.dims)
 
     # Select technodata for the current year
     if "year" in technologies.dims and year is None:
@@ -319,9 +293,7 @@ def scipy_match_demand(
         techs = technologies
 
     # Run scipy optimization with highs solver
-    adapter = ScipyAdapter.factory(
-        techs, cast(np.ndarray, costs), timeslice, *constraints
-    )
+    adapter = ScipyAdapter.factory(techs, cast(np.ndarray, costs), *constraints)
     res = linprog(**adapter.kwargs, method="highs")
 
     # Backup: try with highs-ipm
@@ -358,7 +330,6 @@ def cvxopt_match_demand(
     technologies: xr.Dataset,
     constraints: list[Constraint],
     year: Optional[int] = None,
-    timeslice_op: Optional[Callable[[xr.DataArray], xr.DataArray]] = None,
     **options,
 ) -> xr.DataArray:
     from importlib import import_module
@@ -374,9 +345,7 @@ def cvxopt_match_demand(
         techs = technologies
 
     def default_to_scipy():
-        return scipy_match_demand(
-            costs, search_space, techs, constraints, timeslice_op=timeslice_op
-        )
+        return scipy_match_demand(costs, search_space, techs, constraints)
 
     try:
         cvxopt = import_module("cvxopt")
@@ -389,7 +358,7 @@ def cvxopt_match_demand(
         getLogger(__name__).critical(msg)
         return default_to_scipy()
 
-    if "timeslice" in costs.dims and timeslice_op is not None:
+    if "timeslice" in costs.dims:
         costs = timeslice_op(costs)
     timeslice = next(cs.timeslice for cs in constraints if "timeslice" in cs.dims)
     adapter = ScipyAdapter.factory(
@@ -416,3 +385,9 @@ def cvxopt_match_demand(
 
     solution = cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(list(res["x"]))
     return solution
+
+
+def timeslice_op(x: xr.DataArray) -> xr.DataArray:
+    from muse.timeslices import TIMESLICE
+
+    return (x / (TIMESLICE / sum(TIMESLICE))).max("timeslice")

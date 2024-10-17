@@ -152,42 +152,59 @@ def pytest_collection_modifyitems(config, items):
 
 
 @fixture
-def save_timeslice_globals():
-    from muse import timeslices
+def default_timeslice_globals():
+    from muse.timeslices import setup_module
 
-    old = timeslices.TIMESLICE, timeslices.TRANSFORMS
-    yield
-    timeslices.TIMESLICE, timeslices.TRANSFORMS = old
+    default_timeslices = """
+    [timeslices]
+    winter.weekday.night = 396
+    winter.weekday.morning = 396
+    winter.weekday.afternoon = 264
+    winter.weekday.early-peak = 66
+    winter.weekday.late-peak = 66
+    winter.weekday.evening = 396
+    winter.weekend.night = 156
+    winter.weekend.morning = 156
+    winter.weekend.afternoon = 156
+    winter.weekend.evening = 156
+    spring-autumn.weekday.night = 792
+    spring-autumn.weekday.morning = 792
+    spring-autumn.weekday.afternoon = 528
+    spring-autumn.weekday.early-peak = 132
+    spring-autumn.weekday.late-peak = 132
+    spring-autumn.weekday.evening = 792
+    spring-autumn.weekend.night = 300
+    spring-autumn.weekend.morning = 300
+    spring-autumn.weekend.afternoon = 300
+    spring-autumn.weekend.evening = 300
+    summer.weekday.night = 396
+    summer.weekday.morning  = 396
+    summer.weekday.afternoon = 264
+    summer.weekday.early-peak = 66
+    summer.weekday.late-peak = 66
+    summer.weekday.evening = 396
+    summer.weekend.night = 150
+    summer.weekend.morning = 150
+    summer.weekend.afternoon = 150
+    summer.weekend.evening = 150
+    level_names = ["month", "day", "hour"]
 
+    [timeslices.aggregates]
+    all-day = [
+        "night", "morning", "afternoon", "early-peak", "late-peak", "evening", "night"
+    ]
+    all-week = ["weekday", "weekend"]
+    all-year = ["winter", "summer", "spring-autumn"]
+    """
 
-@fixture
-def default_timeslice_globals(save_timeslice_globals):
-    from muse import timeslices
-
-    timeslices.setup_module(timeslices.DEFAULT_TIMESLICE_DESCRIPTION)
+    setup_module(default_timeslices)
 
 
 @fixture
 def timeslice(default_timeslice_globals) -> Dataset:
-    from muse.readers.toml import read_timeslices
+    from muse.timeslices import TIMESLICE
 
-    return read_timeslices(dict(hour=["all-day"]))
-
-
-@fixture
-def other_timeslice() -> Dataset:
-    from pandas import MultiIndex
-
-    months = ["winter", "spring-autumn", "summer"]
-    days = ["all-week", "all-week", "all-week"]
-    hour = ["all-day", "all-day", "all-day"]
-    coordinates = MultiIndex.from_arrays(
-        [months, days, hour], names=("month", "day", "hour")
-    )
-    result = Dataset(coords={"timeslice": coordinates})
-    result["represent_hours"] = ("timeslice", [2920, 2920, 2920])
-    result = result.set_coords("represent_hours")
-    return result
+    return TIMESLICE
 
 
 @fixture
@@ -328,7 +345,7 @@ def technologies(coords) -> Dataset:
 def agent_market(coords, technologies, timeslice) -> Dataset:
     from numpy.random import rand
 
-    result = timeslice.copy()
+    result = Dataset(coords=timeslice.coords)
     result["commodity"] = "commodity", coords["commodity"]
     result["region"] = "region", coords["region"]
     result["technology"] = "technology", coords["technology"]
@@ -350,7 +367,7 @@ def agent_market(coords, technologies, timeslice) -> Dataset:
 def market(coords, technologies, timeslice) -> Dataset:
     from numpy.random import rand
 
-    result = timeslice.copy()
+    result = Dataset(coords=timeslice.coords)
     result["commodity"] = "commodity", coords["commodity"]
     result["region"] = "region", coords["region"]
     result["year"] = "year", coords["year"]
@@ -515,7 +532,6 @@ def demand_share(coords, timeslice):
     }
     shape = len(axes["commodity"]), len(axes["asset"]), len(axes["timeslice"])
     result = DataArray(rand(*shape), coords=axes, dims=axes.keys(), name="demand_share")
-    result.coords["represent_hours"] = timeslice.represent_hours
     return result
 
 

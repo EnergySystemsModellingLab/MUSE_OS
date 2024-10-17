@@ -150,7 +150,7 @@ def gross_margin(
     - non-environmental commodities OUTPUTS are related to revenues.
     """
     from muse.commodities import is_enduse, is_pollutant
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import convert_timeslice
     from muse.utilities import broadcast_techs
 
     tech = broadcast_techs(  # type: ignore
@@ -189,8 +189,6 @@ def gross_margin(
     # Variable costs depend on factors such as labour
     variable_costs = convert_timeslice(
         var_par * ((fixed_outputs.sel(commodity=enduses)).sum("commodity")) ** var_exp,
-        prices.timeslice,
-        QuantityType.EXTENSIVE,
     )
 
     # The individual prices are selected
@@ -269,7 +267,6 @@ def consumption(
     are not given, then flexible consumption is *not* considered.
     """
     from muse.commodities import is_enduse, is_fuel
-    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import filter_with_template
 
     params = filter_with_template(
@@ -281,12 +278,6 @@ def consumption(
     comm_usage = technologies.comm_usage.sel(commodity=production.commodity)
 
     production = production.sel(commodity=is_enduse(comm_usage)).sum("commodity")
-
-    if prices is not None and "timeslice" in prices.dims:
-        production = convert_timeslice(  # type: ignore
-            production, prices, QuantityType.EXTENSIVE
-        )
-
     params_fuels = is_fuel(params.comm_usage)
     consumption = production * params.fixed_inputs.where(params_fuels, 0)
 
@@ -380,17 +371,12 @@ def demand_matched_production(
     """
     from muse.costs import annual_levelized_cost_of_energy as ALCOE
     from muse.demand_matching import demand_matching
-    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
 
     technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
     cost = ALCOE(prices=prices, technologies=technodata, **filters)
     max_production = maximum_production(technodata, capacity, **filters)
     assert ("timeslice" in demand.dims) == ("timeslice" in cost.dims)
-    if "timeslice" in demand.dims and "timeslice" not in max_production.dims:
-        max_production = convert_timeslice(
-            max_production, demand.timeslice, QuantityType.EXTENSIVE
-        )
     return demand_matching(demand, cost, max_production)
 
 
@@ -459,7 +445,7 @@ def costed_production(
     service is applied first.
     """
     from muse.quantities import maximum_production
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import convert_timeslice
     from muse.utilities import broadcast_techs
 
     technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
@@ -477,8 +463,6 @@ def costed_production(
     ranking = costs.rank("asset")
     maxprod = convert_timeslice(
         maximum_production(technodata, capacity),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
     )
     commodity = (maxprod > 0).any([i for i in maxprod.dims if i != "commodity"])
     commodity = commodity.drop_vars(
@@ -529,17 +513,13 @@ def costed_production(
 def capacity_to_service_demand(
     demand: xr.DataArray,
     technologies: xr.Dataset,
-    hours=None,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
-    from muse.timeslices import represent_hours
+    from muse.timeslices import convert_timeslice
 
-    if hours is None:
-        hours = represent_hours(demand.timeslice)
-    max_hours = hours.max() / hours.sum()
-    commodity_output = technologies.fixed_outputs.sel(commodity=demand.commodity)
-    max_demand = (
-        demand.where(commodity_output > 0, 0)
-        / commodity_output.where(commodity_output > 0, 1)
-    ).max(("commodity", "timeslice"))
-    return max_demand / technologies.utilization_factor / max_hours
+    timeslice_outputs = (
+        convert_timeslice(technologies.fixed_outputs.sel(commodity=demand.commodity))
+        * technologies.utilization_factor
+    )
+    capa_to_service_demand = demand / timeslice_outputs
+    return capa_to_service_demand.max(("commodity", "timeslice"))

@@ -35,7 +35,7 @@ from mypy_extensions import KwArg
 from muse.outputs.sector import market_quantity
 from muse.registration import registrator
 from muse.sectors import AbstractSector
-from muse.timeslices import QuantityType, convert_timeslice, drop_timeslice
+from muse.timeslices import convert_timeslice, drop_timeslice
 from muse.utilities import multiindex_to_coords
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
@@ -356,8 +356,6 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
                     capacity,
                     technologies,
                 ),
-                agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
             )
 
             if "year" in result.dims:
@@ -588,8 +586,6 @@ def sector_consumption(
                     capacity,
                     technologies,
                 ),
-                agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
             )
             prices = a.filter_input(market.prices, year=output_year)
             result = consumption(
@@ -730,8 +726,6 @@ def sector_fuel_costs(
                     capacity,
                     technologies,
                 ),
-                agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
             )
 
             prices = a.filter_input(market.prices, year=output_year)
@@ -775,7 +769,6 @@ def sector_capital_costs(
 
     if len(technologies) > 0:
         for a in agents:
-            demand = market.consumption * a.quantity
             output_year = a.year - a.forecast
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             data = a.filter_input(
@@ -783,12 +776,7 @@ def sector_capital_costs(
                 year=output_year,
                 technology=capacity.technology,
             )
-            result = data.cap_par * (capacity**data.cap_exp)
-            data_agent = convert_timeslice(
-                result,
-                demand.timeslice,
-                QuantityType.EXTENSIVE,
-            )
+            data_agent = convert_timeslice(data.cap_par * (capacity**data.cap_exp))
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
@@ -851,8 +839,6 @@ def sector_emission_costs(
                     capacity,
                     technologies,
                 ),
-                agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
             )
             total = production.sel(commodity=enduses).sum("commodity")
             data_agent = total * (allemissions * prices).sum("commodity")
@@ -921,8 +907,6 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             production = capacity * techs.fixed_outputs * techs.utilization_factor
             production = convert_timeslice(
                 production,
-                demand.timeslice,
-                QuantityType.EXTENSIVE,
             )
 
             result = LCOE(
@@ -999,8 +983,6 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             production = capacity * techs.fixed_outputs * techs.utilization_factor
             production = convert_timeslice(
                 production,
-                demand.timeslice,
-                QuantityType.EXTENSIVE,
             )
 
             result = EAC(
