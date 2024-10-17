@@ -489,7 +489,6 @@ def _inner_split(
         logical_and(demand > 1e-12, total <= 1e-12), 0
     )
 
-    # ???
     totals = {
         key: (share / share.sum("asset")).fillna(0) for key, share in shares.items()
     }
