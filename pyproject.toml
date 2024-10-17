@@ -24,11 +24,11 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
 ]
 dependencies = [
-    "numpy<2.0",
-    "scipy",
-    "pandas",
-    "xarray",
-    "bottleneck",
+    "numpy==2.0",
+    "scipy>=1.13",
+    "pandas>=2.2",
+    "xarray>=2024.6",
+    "bottleneck>=1.4",
     "coloredlogs",
     "toml",
     "xlrd",
@@ -47,7 +47,6 @@ dev = [
     "nbconvert",
     "nbformat",
     "mypy",
-    "numpy>=1.17",
     "pytest-xdist",
     "bump2version",
     "pyinstaller",
@@ -67,7 +66,7 @@ excel = ["openpyxl"]
 gui = ["gooey"]
 
 [project.urls]
-Homepage = "http://www.sustainablegasinstitute.org/home/muse-energy-model/"
+Homepage = "https://www.imperial.ac.uk/muse-energy/what-is-muse-/"
 
 [project.scripts]
 muse = "muse.__main__:run"

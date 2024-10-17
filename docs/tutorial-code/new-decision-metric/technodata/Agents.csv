@@ -1,0 +1,2 @@
+AgentShare,Name,AgentNumber,RegionName,Objective1,Objective2,Objective3,ObjData1,ObjData2,ObjData3,Objsort1,Objsort2,Objsort3,SearchRule,DecisionMethod,Quantity,MaturityThreshold,Budget,Type
+Agent1,A1,1,R1,LCOE,EAC,NPV,1,,,TRUE,TRUE,FALSE,all,median_objective,1,-1,inf,New

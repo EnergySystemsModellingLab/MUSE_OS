@@ -16,9 +16,10 @@ def commercial_path():
 
 @mark.legacy
 def test_presets_fails_on_missing_data(commercial_path):
+    from pytest import raises
+
     from muse.readers.toml import convert
     from muse.sectors import PresetSector
-    from pytest import raises
 
     nested = convert(dict(sectors=dict(preset=dict())))
     with raises(IOError):
@@ -39,9 +40,10 @@ def test_presets_from_single(commercial_path):
 
 @mark.legacy
 def test_presets_from_outputs(commercial_path):
+    from xarray import Dataset
+
     from muse.readers.toml import convert
     from muse.sectors import PresetSector
-    from xarray import Dataset
 
     settings = dict(
         consumption_path=str(commercial_path / "*Consumption.csv"),
@@ -61,9 +63,10 @@ def test_presets_from_outputs(commercial_path):
 @mark.sgidata
 @mark.legacy
 def test_presets_from_regression(sectors_dir, commercial_path):
+    from xarray import Dataset
+
     from muse.readers.toml import convert
     from muse.sectors import PresetSector
-    from xarray import Dataset
 
     settings = dict(
         macrodrivers_path=sectors_dir.join("Macrodrivers.csv"),
@@ -82,9 +85,10 @@ def test_presets_from_regression(sectors_dir, commercial_path):
 @mark.sgidata
 @mark.legacy
 def test_presets_from_regression_with_forecast(sectors_dir, commercial_path):
+    from xarray import Dataset
+
     from muse.readers.toml import convert
     from muse.sectors import PresetSector
-    from xarray import Dataset
 
     settings = dict(
         macrodrivers_path=sectors_dir.join("Macrodrivers.csv"),
@@ -105,9 +109,10 @@ def test_presets_from_regression_with_forecast(sectors_dir, commercial_path):
 
 @mark.legacy
 def test_presets_from_projection(commercial_path):
+    from xarray import Dataset
+
     from muse.readers.toml import convert
     from muse.sectors import PresetSector
-    from xarray import Dataset
 
     settings = dict(costs_path=str(commercial_path / "prices.csv"))
     nested = convert(dict(sectors=dict(residential=settings)))

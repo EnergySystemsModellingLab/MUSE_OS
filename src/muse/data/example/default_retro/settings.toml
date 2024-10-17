@@ -1,0 +1,111 @@
+# Global settings - most REQUIRED
+
+time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
+foresight = 5  # Has to be a multiple of the minimum separation between the years in time framework
+regions = ["R1"]
+interest_rate = 0.1
+interpolation_mode = 'Active'
+log_level = 'info'
+excluded_commodities = ["wind"]
+# Convergence parameters
+equilibrium_variable = 'demand'
+maximum_iterations = 100
+tolerance = 0.1
+tolerance_unmet_demand = -0.1
+
+[[outputs]]
+quantity = "capacity"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+
+[[outputs]]
+quantity = "prices"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+
+[carbon_budget_control]
+budget = []
+
+[global_input_files]
+projections = '{path}/input/Projections.csv'
+global_commodities = '{path}/input/GlobalCommodities.csv'
+
+[sectors.residential]
+type = 'default'
+priority = 1
+dispatch_production = 'share'
+technodata = '{path}/technodata/residential/Technodata.csv'
+commodities_in = '{path}/technodata/residential/CommIn.csv'
+commodities_out = '{path}/technodata/residential/CommOut.csv'
+
+[sectors.residential.subsectors.retro_and_new]
+agents = '{path}/technodata/Agents.csv'
+existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
+lpsolver = "scipy"  # Optional, defaults to "adhoc"
+constraints = [
+    # Optional, defaults to the constraints below
+    "max_production",
+    "max_capacity_expansion",
+    "demand",
+    "search_space",
+    "minimum_service",
+    "demand_limiting_capacity"
+]
+demand_share = "new_and_retro"  # Optional, default to standard_demand
+forecast = 5  # Optional, defaults to 5
+
+[[sectors.residential.interactions]]
+net = 'new_to_retro'
+interaction = 'transfer'
+
+[sectors.power]
+type = 'default'
+priority = 2
+dispatch_production = 'share'
+technodata = '{path}/technodata/power/Technodata.csv'
+commodities_in = '{path}/technodata/power/CommIn.csv'
+commodities_out = '{path}/technodata/power/CommOut.csv'
+
+[sectors.power.subsectors.retro_and_new]
+agents = '{path}/technodata/Agents.csv'
+existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
+lpsolver = "scipy"
+demand_share = "new_and_retro"
+
+[[sectors.power.interactions]]
+net = 'new_to_retro'
+interaction = 'transfer'
+
+[sectors.gas]
+type = 'default'
+priority = 3
+dispatch_production = 'share'
+technodata = '{path}/technodata/gas/Technodata.csv'
+commodities_in = '{path}/technodata/gas/CommIn.csv'
+commodities_out = '{path}/technodata/gas/CommOut.csv'
+
+[sectors.gas.subsectors.retro_and_new]
+agents = '{path}/technodata/Agents.csv'
+existing_capacity = '{path}/technodata/gas/ExistingCapacity.csv'
+lpsolver = "scipy"
+demand_share = "new_and_retro"
+
+[[sectors.gas.interactions]]
+net = 'new_to_retro'
+interaction = 'transfer'
+
+[sectors.residential_presets]
+type = 'presets'
+priority = 0
+consumption_path = "{path}/technodata/preset/*Consumption.csv"
+
+[timeslices]
+level_names = ["month", "day", "hour"]
+
+[timeslices.all-year.all-week]
+night = 1460
+morning = 1460
+afternoon = 1460
+early-peak = 1460
+late-peak = 1460
+evening = 1460

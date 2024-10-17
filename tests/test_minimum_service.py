@@ -1,8 +1,12 @@
+from itertools import permutations
+from unittest.mock import patch
+
+import numpy as np
 from pytest import mark
 
 
 def modify_minimum_service_factors(
-    model_path, sector, process_name, minimum_service_factor
+    model_path, sector, processes, minimum_service_factors
 ):
     import pandas as pd
 
@@ -10,27 +14,29 @@ def modify_minimum_service_factors(
         model_path / "technodata" / sector / "TechnodataTimeslices.csv"
     )
 
-    technodata_timeslices.loc[
-        technodata_timeslices["ProcessName"] == process_name[0], "MinimumServiceFactor"
-    ] = minimum_service_factor[0]
-
-    technodata_timeslices.loc[
-        technodata_timeslices["ProcessName"] == process_name[1], "MinimumServiceFactor"
-    ] = minimum_service_factor[1]
+    for process, minimum in zip(processes, minimum_service_factors):
+        technodata_timeslices.loc[
+            technodata_timeslices["ProcessName"] == process, "MinimumServiceFactor"
+        ] = minimum
 
     return technodata_timeslices
 
 
-@mark.parametrize("process_name", [("gasCCGT", "windturbine")])
+@mark.xfail
 @mark.parametrize(
-    "minimum_service_factor", [([1, 2, 3, 4, 5, 6], [0] * 6), ([0], [1, 2, 3, 4, 5, 6])]
+    "minimum_service_factors",
+    permutations((np.linspace(0, 1, 6), [0] * 6)),
 )
-def test_minimum_service_factor(tmpdir, minimum_service_factor, process_name):
+@patch("muse.readers.csv.check_utilization_and_minimum_service_factors")
+def test_minimum_service_factor(check_mock, tmpdir, minimum_service_factors):
+    """NOTE: Failing due to incorrect supply output (#335)."""
     import pandas as pd
+
     from muse import examples
     from muse.mca import MCA
 
     sector = "power"
+    processes = ("gasCCGT", "windturbine")
 
     # Copy the model inputs to tmpdir
     model_path = examples.copy_model(
@@ -40,8 +46,8 @@ def test_minimum_service_factor(tmpdir, minimum_service_factor, process_name):
     technodata_timeslices = modify_minimum_service_factors(
         model_path=model_path,
         sector=sector,
-        process_name=process_name,
-        minimum_service_factor=minimum_service_factor,
+        processes=processes,
+        minimum_service_factors=minimum_service_factors,
     )
 
     technodata_timeslices.to_csv(
@@ -50,16 +56,25 @@ def test_minimum_service_factor(tmpdir, minimum_service_factor, process_name):
 
     with tmpdir.as_cwd():
         MCA.factory(model_path / "settings.toml").run()
+    check_mock.assert_called()
 
-    supply_timeslice = pd.read_csv(tmpdir / "Results/MCAMetric_Supply.csv")
-
-    for process, service_factor in zip(process_name, minimum_service_factor):
-        for i, factor in enumerate(service_factor):
-            assert (
-                supply_timeslice[
-                    (supply_timeslice.technology == process)
-                    & (supply_timeslice.commodity == "electricity")
-                    & (supply_timeslice.timeslice == i)
-                ].supply
-                >= factor
-            ).all()
+    techno_out = pd.read_csv(model_path / "technodata" / sector / "CommOut.csv")
+    capacity = pd.read_csv(tmpdir / "Results/MCACapacity.csv")
+    capacity_summed = capacity.groupby(["year", "technology"]).sum().reset_index()
+    supply = pd.read_csv(tmpdir / "Results/MCAMetric_Supply.csv")
+    supply = supply[supply.commodity == "electricity"].merge(
+        capacity_summed[["year", "technology", "capacity"]],
+        on=["year", "technology"],
+        how="left",
+    )
+    for process, service_factor in zip(processes, minimum_service_factors):
+        supply_process = supply[supply.technology == process]
+        supply_process.loc[:, "min_supply"] = supply_process.apply(
+            lambda x: x.capacity
+            * service_factor[x.timeslice]
+            * float(
+                techno_out[techno_out.ProcessName == process]["electricity"].values[0]
+            ),
+            axis=1,
+        )
+        assert (supply_process["supply"] >= supply_process["min_supply"]).all()

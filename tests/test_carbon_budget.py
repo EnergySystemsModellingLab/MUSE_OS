@@ -1,5 +1,6 @@
+from unittest.mock import patch
+
 import numpy as np
-import xarray as xr
 from pytest import approx, fixture
 
 
@@ -138,65 +139,108 @@ def test_undershoot():
     assert expected == actual
 
 
-def test_refine_new_price(market):
-    from muse.carbon_budget import refine_new_price
+@patch("muse.carbon_budget.decrease_bounds")
+@patch("muse.carbon_budget.increase_bounds")
+@patch("muse.carbon_budget.bisect_bounds")
+@patch("muse.carbon_budget.bisect_bounds_inverted")
+def test_adjust_bounds(
+    mock_decrease_bounds,
+    mock_increase_bounds,
+    mock_bisect_bounds,
+    mock_bisect_bounds_inverted,
+):
+    from muse.carbon_budget import adjust_bounds
 
-    num_years = 5
-    years = np.linspace(2010, 2020, num_years, dtype=int)
-    commodities = ["CH4", "CO2"]
-    budget = xr.DataArray(
-        np.linspace(4e6, 6e6, num_years), dims=["year"], coords={"year": years}
+    lb_price = 1.0
+    ub_price = 2.0
+    target = 20.0
+
+    # Test 1: lb_price_emissions < target and ub_price_emissions < target
+    emissions = {lb_price: 10.0, ub_price: 15.0}
+    adjust_bounds(lb_price, ub_price, emissions, target)
+    mock_decrease_bounds.asset_called_once()
+
+    # Test 2: lb_price_emissions > target and ub_price_emissions > target
+    emissions = {lb_price: 25.0, ub_price: 30.0}
+    adjust_bounds(lb_price, ub_price, emissions, target)
+    mock_increase_bounds.asset_called_once()
+
+    # Test 3: lb_price_emissions > target and ub_price_emissions < target
+    emissions = {lb_price: 25.0, ub_price: 15.0}
+    adjust_bounds(lb_price, ub_price, emissions, target)
+    mock_bisect_bounds.asset_called_once()
+
+    # Test 4: lb_price_emissions < target and ub_price_emissions > target
+    emissions = {lb_price: 10.0, ub_price: 30.0}
+    adjust_bounds(lb_price, ub_price, emissions, target)
+    mock_bisect_bounds_inverted.asset_called_once()
+
+
+def test_decrease_bounds():
+    from muse.carbon_budget import decrease_bounds
+
+    lb_price = 1.0
+    ub_price = 2.0
+    emissions = {lb_price: 10.0, ub_price: 30.0}
+    target = 20.0
+    new_lb_price, new_ub_price = decrease_bounds(lb_price, ub_price, emissions, target)
+    assert new_lb_price < lb_price
+    assert new_ub_price == lb_price
+
+
+def test_increase_bounds():
+    from muse.carbon_budget import increase_bounds
+
+    lb_price = 1.0
+    ub_price = 2.0
+    emissions = {lb_price: 10.0, ub_price: 30.0}
+    target = 5.0
+    new_lb_price, new_ub_price = increase_bounds(lb_price, ub_price, emissions, target)
+    assert new_lb_price == ub_price
+    assert new_ub_price > ub_price
+
+
+def test_bisect_bounds():
+    from muse.carbon_budget import bisect_bounds
+
+    lb_price = 1.0
+    ub_price = 2.0
+    midpoint_price = (lb_price + ub_price) / 2
+    target = 20.0
+
+    # Test 1: midpoint emissions < target
+    emissions = {lb_price: 10.0, ub_price: 30.0, midpoint_price: 12.0}
+    new_lb_price, new_ub_price = bisect_bounds(lb_price, ub_price, emissions, target)
+    assert new_lb_price == lb_price
+    assert new_ub_price == midpoint_price
+
+    # Test 2: midpoint emissions > target
+    emissions = {lb_price: 10.0, ub_price: 30.0, midpoint_price: 22.0}
+    new_lb_price, new_ub_price = bisect_bounds(lb_price, ub_price, emissions, target)
+    assert new_lb_price == midpoint_price
+    assert new_ub_price == ub_price
+
+
+def test_bisect_bounds_inverted():
+    from muse.carbon_budget import bisect_bounds_inverted
+
+    lb_price = 1.0
+    ub_price = 2.0
+    midpoint_price = (lb_price + ub_price) / 2
+    target = 20.0
+
+    # Test 1: midpoint emissions < target
+    emissions = {lb_price: 10.0, ub_price: 30.0, midpoint_price: 12.0}
+    new_lb_price, new_ub_price = bisect_bounds_inverted(
+        lb_price, ub_price, emissions, target
     )
-    price_too_high_threshold = 10
+    assert new_lb_price == midpoint_price
+    assert new_ub_price == ub_price
 
-    market = market.interp(year=years)
-    market["prices"] = market.prices.mean("timeslice")
-    future = years[2]
-    price = market.prices.sel(year=future, commodity=commodities).mean(
-        ["region", "commodity"]
+    # Test 2: midpoint emissions > target
+    emissions = {lb_price: 10.0, ub_price: 30.0, midpoint_price: 22.0}
+    new_lb_price, new_ub_price = bisect_bounds_inverted(
+        lb_price, ub_price, emissions, target
     )
-    sample = np.linspace(price, 4 * price, 4)
-
-    carbon_price = market.prices.sel(
-        year=market.year < future, commodity=commodities
-    ).mean(["region", "commodity"])
-    too_high = price_too_high_threshold
-
-    # Checking price too high
-    price = 1.1 * too_high
-    actual = refine_new_price(
-        market,
-        carbon_price,
-        budget,
-        sample,
-        price,
-        commodities,
-        price_too_high_threshold,
-    )
-    assert actual < price
-
-    # Just fine
-    price = 0.9 * too_high
-    actual = refine_new_price(
-        market,
-        carbon_price,
-        budget,
-        sample,
-        price,
-        commodities,
-        price_too_high_threshold,
-    )
-    assert actual == price
-
-    # Negative
-    price = -price
-    actual = refine_new_price(
-        market,
-        carbon_price,
-        budget,
-        sample,
-        price,
-        commodities,
-        price_too_high_threshold,
-    )
-    assert actual > 0
+    assert new_lb_price == lb_price
+    assert new_ub_price == midpoint_price

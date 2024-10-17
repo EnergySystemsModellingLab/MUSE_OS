@@ -1,6 +1,6 @@
 r"""Investment constraints.
 
-Constraints on investements ensure that investements match some given criteria. For
+Constraints on investments ensure that investments match some given criteria. For
 instance, the constraints could ensure that only so much of a new asset can be built
 every year.
 
@@ -8,7 +8,7 @@ Functions to compute constraints should be registered via the decorator
 :py:meth:`~muse.constraints.register_constraints`. This registration step makes it
 possible for constraints to be declared in the TOML file.
 
-Generally, LP solvers accept linear constraint defined as:
+Generally, LP solvers accept linear constraints defined as:
 
 .. math::
 
@@ -16,8 +16,8 @@ Generally, LP solvers accept linear constraint defined as:
 
 with :math:`A` a matrix, :math:`x` the decision variables, and :math:`b` a vector.
 However, these quantities are dimensionless. They do no have timeslices, assets, or
-replacement technologies, or any other dimensions that users have set-up in their model.
-The crux is to translates from MUSE's data-structures to a consistent dimensionless
+replacement technologies, or any other dimensions that users have set up in their model.
+The crux is to translate from MUSE's data-structures to a consistent dimensionless
 format.
 
 In MUSE, users can register constraints functions that return fully dimensional
@@ -44,8 +44,8 @@ happens as described below.
 - Any dimension in :math:`A_c .* x_c` (:math:`A_p .* x_p`) that is also in :math:`b`
   defines diagonal entries into the left (right) submatrix of :math:`A`.
 - Any dimension in :math:`A_c .* x_c` (:math:`A_p .* x_b`) and missing from
-  :math:`b` is reduce by summation over a row in the left (right) submatrix of
-  :math:`A`. In other words, those dimension do become part of a standard tensor
+  :math:`b` is reduced by summation over a row in the left (right) submatrix of
+  :math:`A`. In other words, those dimensions become part of a standard tensor
   reduction or matrix multiplication.
 
 There are two additional rules. However, they are likely to be the result of an
@@ -115,6 +115,7 @@ import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.registration import registrator
+from muse.timeslices import drop_timeslice
 
 CAPACITY_DIMS = "asset", "replacement", "region"
 """Default dimensions for capacity decision variables."""
@@ -225,7 +226,7 @@ def factory(
             "demand",
             "search_space",
             "minimum_service",
-            "demand_limitting_capacity",
+            "demand_limiting_capacity",
         )
 
     def normalize(x) -> MutableMapping:
@@ -282,7 +283,7 @@ def max_capacity_expansion(
     :math:`y=y_1` is the year marking the end of the investment period.
 
     Let :math:`\mathcal{A}^{i, r}_{t, \iota}(y)` be the current assets, before
-    invesment, and let :math:`\Delta\mathcal{A}^{i,r}_t` be the future investements.
+    investment, and let :math:`\Delta\mathcal{A}^{i,r}_t` be the future investments.
     The the constraint on agent :math:`i` are given as:
 
     .. math::
@@ -495,7 +496,7 @@ def max_production(
 
 
 @register_constraints
-def demand_limitting_capacity(
+def demand_limiting_capacity(
     demand_: xr.DataArray,
     assets: xr.Dataset,
     search_space: xr.DataArray,
@@ -523,33 +524,195 @@ def demand_limitting_capacity(
         demand_, assets, search_space, market, technologies, year=year
     )
 
-    # We need to find the most demanding timeslice and use as the demand constraint
-    b = (
-        demand_constraint.b.max("timeslice")
-        if "timeslice" in demand_constraint.b.dims
-        else demand_constraint.b
-    )
-
-    # Now we need to find the maximum capacity constraint (as the capacity here is
-    # negative), and switch the sign to make it positive. In practice, we want to
-    # capture the utilisation factor of the technologies.
-    capacity = (
-        -capacity_constraint.capacity.max("timeslice")
-        if "timeslice" in capacity_constraint.capacity.dims
-        else -capacity_constraint.capacity
-    )
+    # We are interested in the demand of the demand constraint and the capacity of the
+    # capacity constraint.
+    b = demand_constraint.b
+    capacity = -capacity_constraint.capacity
 
     # Drop 'year' so there's no conflict with the 'year' in the capacity constraint
     if "year" in b.coords and "year" in capacity.coords:
         b = b.drop_vars("year")
 
-    # This constraint is independent on the production
-    production = 0
+    # If there are timeslices, we need to find the one where more capacity is needed to
+    # meet the demand which would be a combination of a high demand and a low
+    # utilization factor.
+    if "timeslice" in b.dims or "timeslice" in capacity.dims:
+        ratio = b / capacity
+        ts = ratio.timeslice.isel(
+            timeslice=ratio.min("replacement").argmax("timeslice")
+        )
+        # We select this timeslice for each array - don't trust the indices:
+        # search for the right timeslice in the array and select it.
+        b = (
+            b.isel(timeslice=(b.timeslice == ts).argmax("timeslice"))
+            if "timeslice" in b.dims
+            else b
+        )
+        capacity = (
+            capacity.isel(timeslice=(capacity.timeslice == ts).argmax("timeslice"))
+            if "timeslice" in capacity.dims
+            else capacity
+        )
+
+    # An adjustment is required to account for technologies that have multiple output
+    # commodities
+    b = modify_dlc(technologies=capacity, demand=b)
 
     return xr.Dataset(
-        dict(capacity=capacity, production=production, b=b),
+        dict(capacity=capacity, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
     )
+
+
+def modify_dlc(technologies: xr.DataArray, demand: xr.DataArray) -> xr.DataArray:
+    """Modifies DLC constraint to account for techs with multiple output commodities.
+
+    Adjusts the commodity-level DLC based on the commodity output ratios of the
+    available technologies, to allow for appropriate production of side-products.
+
+    Args:
+        technologies: DataArray with dimensions "commodity" and "replacement". This
+            defines the fixed commodity outputs for each potential replacement
+            technology.
+        demand: DataArray with dimension "commodity", which defines the demand for each
+            commodity.
+
+    Returns:
+        DataArray with dimension "commodity", which defines the new demand-limiting
+        capacity constraint for each commodity.
+
+    Example:
+        Let's consider a simple example of a refinery sector with two alternative
+        technologies that each produce two commodities: gasoline and diesel.
+
+        We define the technologies DataArray as follows:
+        >>> import xarray as xr
+        >>> technologies = xr.DataArray(
+        ...     data=[[1, 5], [0.5, 1]],
+        ...     dims=['replacement', 'commodity'],
+        ...     coords={'replacement': ['technology1', 'technology2'],
+        ...             'commodity': ['gasoline', 'diesel']},
+        ... )
+
+        technology1 produces 1 unit of gasoline and 5 units of diesel (per unit of
+        activity), whereas technology2 produces 0.5 units of gasoline and 1 unit of
+        diesel.
+
+        In this scenario, let's also define the demand for gasoline and diesel as
+        follows (1 unit of demand for gasoline and 0 units for diesel):
+        >>> demand = xr.DataArray(
+        ...     data=[1, 0],
+        ...     dims=['commodity'],
+        ...     coords={'commodity': ['gasoline', 'diesel']},
+        ... )
+
+        The aim of the demand-limiting capacity (DLC) constraint is to limit the
+        capacity of each technology so that supply is sufficient to meet the demand for
+        each commodity, and no more.
+
+        However, in this case we have a problem. The demand for gasoline can be met by
+        either technology1 or technology2 (as both produce gasoline), but doing so would
+        require producing up to 5 units of diesel (if all demand was met by
+        technology1), which would exceed the diesel demand (0). Therefore, to allow the
+        model to meet the demand for gasoline via either technology, we must relax the
+        DLC constraint on diesel (to 5 units).
+
+        In general, for an arbitrary set of technologies and commodity demands, the
+        DLC of each commodity needs to be sufficiently high to permit any technology to
+        act in service of any appropriate commodity demand, and no higher.
+
+        The first step is to calculate the commodity output ratios for each technology:
+        >>> output_ratios = technologies.rename({"commodity": "commodity2"}) / technologies
+        >>> output_ratios
+        <xarray.DataArray (replacement: 2, commodity2: 2, commodity: 2)> Size: 64B
+        array([[[1. , 0.2],
+                [5. , 1. ]],
+        <BLANKLINE>
+               [[1. , 0.5],
+                [2. , 1. ]]])
+        Coordinates:
+          * replacement  (replacement) <U11 88B 'technology1' 'technology2'
+          * commodity2   (commodity2) <U8 64B 'gasoline' 'diesel'
+          * commodity    (commodity) <U8 64B 'gasoline' 'diesel'
+
+        We introduce the dimension "commodity2" to compare the outputs of each commodity
+        against every other commodity. For example, for technology1, producing 1 unit of
+        gasoline leads to 5 units of diesel, whereas producing 1 unit of diesel leads to
+        0.2 units of gasoline.
+
+        Multiplying these output ratios by the demand, we get the full outputs that each
+        technology would produce whilst acting in service of each commodity-level
+        demand:
+        >>> outputs = output_ratios * demand
+        >>> outputs
+        <xarray.DataArray (replacement: 2, commodity2: 2, commodity: 2)> Size: 64B
+        array([[[1., 0.],
+                [5., 0.]],
+        <BLANKLINE>
+               [[1., 0.],
+                [2., 0.]]])
+        Coordinates:
+          * replacement  (replacement) <U11 88B 'technology1' 'technology2'
+          * commodity2   (commodity2) <U8 64B 'gasoline' 'diesel'
+          * commodity    (commodity) <U8 64B 'gasoline' 'diesel'
+
+        In this case, meeting the gasoline demand with technology1 would require
+        producing 1 unit of gasoline and 5 units of diesel, whereas meeting the gasoline
+        demand with technology2 would require producing 1 unit of gasoline and 2 units
+        of diesel. Since there is no diesel demand, all values for commodity = "diesel"
+        are zero.
+
+        Then, taking a maximum over the "commodity" dimension, we get the maximum
+        potential outputs of each technology:
+        >>> max_outputs = outputs.max("commodity")
+        >>> max_outputs
+        <xarray.DataArray (replacement: 2, commodity2: 2)> Size: 32B
+        array([[1., 5.],
+               [1., 2.]])
+        Coordinates:
+          * replacement  (replacement) <U11 88B 'technology1' 'technology2'
+          * commodity2   (commodity2) <U8 64B 'gasoline' 'diesel'
+
+        In this case, this is just the outputs of each technology when acting in service
+        of the gasoline demand.
+
+        Finally, summing over the "replacement" dimension, we get the maximum potential
+        outputs of each commodity:
+        >>> dlc = max_outputs.max("replacement").rename({"commodity2": "commodity"})
+        >>> dlc
+        <xarray.DataArray (commodity: 2)> Size: 16B
+        array([1., 5.])
+        Coordinates:
+          * commodity  (commodity) <U8 64B 'gasoline' 'diesel'
+
+        In this case, we get the maximum potential production of diesel as 5 units,
+        which would occur as a side-product when technology1 is acting in service of the
+        gasoline demand. This becomes the new DLC constraint.
+
+        Putting this all together:
+        >>> from muse.constraints import modify_dlc
+        >>> modify_dlc(technologies, demand)
+        <xarray.DataArray (commodity: 2)> Size: 16B
+        array([1., 5.])
+        Coordinates:
+          * commodity  (commodity) <U8 64B 'gasoline' 'diesel'
+    """  # noqa: E501
+    # Calculate commodity output ratios for each technology
+    output_ratios = technologies.rename({"commodity": "commodity2"}) / technologies
+    output_ratios = output_ratios.where(np.isfinite(output_ratios), 0)  # this is
+    # necessary for technologies that do not produce every commodity, which would lead
+    # to an "infinite" ratio between commodities
+
+    # Calculate the full outputs of each technology acting in service of each commodity
+    # demand
+    outputs = output_ratios * demand
+
+    # Maximum potential outputs for each technology
+    max_outputs = outputs.max("commodity")
+
+    # Maximum potential production of each commodity -> demand-limiting capacity
+    b = max_outputs.max("replacement").rename({"commodity2": "commodity"})
+    return b
 
 
 @register_constraints
@@ -589,7 +752,7 @@ def minimum_service(
         .drop_vars("technology")
     )
     capacity = convert_timeslice(
-        techs.fixed_outputs * techs.utilization_factor * techs.minimum_service_factor,
+        techs.fixed_outputs * techs.minimum_service_factor,
         market.timeslice,
         QuantityType.EXTENSIVE,
     )
@@ -681,7 +844,7 @@ def lp_costs(
     production = zeros_like(ts_costs * fouts)
     for dim in production.dims:
         if isinstance(production.get_index(dim), pd.MultiIndex):
-            production = production.drop_vars(["timeslice", "month", "day", "hour"])
+            production = drop_timeslice(production)
             production[dim] = pd.Index(production.get_index(dim), tupleize_cols=False)
 
     return xr.Dataset(dict(capacity=costs, production=production))
@@ -748,7 +911,7 @@ def lp_constraint(constraint: Constraint, lpcosts: xr.Dataset) -> Constraint:
     constraint = constraint.copy(deep=False)
     for dim in constraint.dims:
         if isinstance(constraint.get_index(dim), pd.MultiIndex):
-            constraint = constraint.drop_vars(["timeslice", "month", "day", "hour"])
+            constraint = drop_timeslice(constraint)
             constraint[dim] = pd.Index(constraint.get_index(dim), tupleize_cols=False)
     b = constraint.b.drop_vars(set(constraint.b.coords) - set(constraint.b.dims))
     b = b.rename({k: f"c({k})" for k in b.dims})
@@ -796,7 +959,7 @@ def lp_constraint_matrix(
          >>> technologies = res.technologies
          >>> market = examples.residential_market("medium")
          >>> search = examples.search_space("residential", model="medium")
-         >>> assets = next(a.assets for a in res.agents if a.category == "retrofit")
+         >>> assets = next(a.assets for a in res.agents)
          >>> demand = None # not used in max production
          >>> constraint = cs.max_production(demand, assets, search, market,
          ...                                technologies) # noqa: E501
@@ -933,7 +1096,7 @@ class ScipyAdapter:
         >>> res = examples.sector("residential", model="medium")
         >>> market = examples.residential_market("medium")
         >>> search = examples.search_space("residential", model="medium")
-        >>> assets = next(a.assets for a in res.agents if a.category == "retrofit")
+        >>> assets = next(a.assets for a in res.agents)
         >>> market_demand =  0.8 * maximum_production(
         ...     res.technologies.interp(year=2025),
         ...     convert_timeslice(
@@ -961,7 +1124,7 @@ class ScipyAdapter:
         but not over the assets. Hence the assets will be summed over in the final
         constraint:
 
-        >>> assert (constraint.b.data == np.array([50.0, 3.0, 3.0, 50.0 ])).all()
+        >>> assert (constraint.b.data == np.array([50.0, 12.0, 12.0, 50.0 ])).all()
         >>> assert set(constraint.b.dims) == {"replacement"}
         >>> assert constraint.kind == cs.ConstraintKind.UPPER_BOUND
 

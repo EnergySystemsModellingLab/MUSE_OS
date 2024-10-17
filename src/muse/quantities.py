@@ -1,8 +1,10 @@
 """Collection of functions to compute model quantities.
 
 This module is meant to collect functions computing quantities of interest to the model,
-e.g. lcoe, maximum production for a given capacity, etc, especially where these
+e.g. maximum production for a given capacity, etc, especially where these
 functions are used in different areas of the model.
+
+Functions for calculating costs (e.g. LCOE, EAC) are in the `costs` module.
 """
 
 from collections.abc import Sequence
@@ -313,115 +315,6 @@ def consumption(
     return consumption + flex * production
 
 
-def annual_levelized_cost_of_energy(
-    prices: xr.DataArray,
-    technologies: xr.Dataset,
-    interpolation: str = "linear",
-    fill_value: Union[int, str] = "extrapolate",
-    **filters,
-) -> xr.DataArray:
-    """Undiscounted levelized cost of energy (LCOE) of technologies on each given year.
-
-    It mostly follows the `simplified LCOE`_ given by NREL. In the argument description,
-    we use the following:
-
-    * [h]: hour
-    * [y]: year
-    * [$]: unit of currency
-    * [E]: unit of energy
-    * [1]: dimensionless
-
-    Arguments:
-        prices: [$/(Eh)] the price of all commodities, including consumables and fuels.
-            This dataarray contains at least timeslice and commodity dimensions.
-
-        technologies: Describe the technologies, with at least the following parameters:
-
-            * cap_par: [$/E] overnight capital cost
-            * interest_rate: [1]
-            * fix_par: [$/(Eh)] fixed costs of operation and maintenance costs
-            * var_par: [$/(Eh)] variable costs of operation and maintenance costs
-            * fixed_inputs: [1] == [(Eh)/(Eh)] ratio indicating the amount of commodity
-                consumed per units of energy created.
-            * fixed_outputs: [1] == [(Eh)/(Eh)] ration indicating the amount of
-                environmental pollutants produced per units of energy created.
-
-        interpolation: interpolation method.
-        fill_value: Fill value for values outside the extrapolation range.
-        **filters: Anything by which prices can be filtered.
-
-    Return:
-        The lifetime LCOE in [$/(Eh)] for each technology at each timeslice.
-
-    .. _simplified LCOE: https://www.nrel.gov/analysis/tech-lcoe-documentation.html
-    """
-    from muse.commodities import is_pollutant
-    from muse.timeslices import QuantityType, convert_timeslice
-
-    techs = technologies[
-        [
-            "technical_life",
-            "interest_rate",
-            "cap_par",
-            "var_par",
-            "fix_par",
-            "fixed_inputs",
-            "flexible_inputs",
-            "fixed_outputs",
-            "utilization_factor",
-        ]
-    ]
-    if "year" in techs.dims:
-        techs = techs.interp(
-            year=prices.year, method=interpolation, kwargs={"fill_value": fill_value}
-        )
-    if filters is not None:
-        prices = prices.sel({k: v for k, v in filters.items() if k in prices.dims})
-        techs = techs.sel({k: v for k, v in filters.items() if k in techs.dims})
-
-    assert {"timeslice", "commodity"}.issubset(prices.dims)
-
-    life = techs.technical_life.astype(int)
-
-    annualized_capital_costs = (
-        convert_timeslice(
-            techs.cap_par
-            * techs.interest_rate
-            / (1 - (1 + techs.interest_rate) ** (-life)),
-            prices.timeslice,
-            QuantityType.EXTENSIVE,
-        )
-        / techs.utilization_factor
-    )
-
-    o_and_e_costs = (
-        convert_timeslice(
-            (techs.fix_par + techs.var_par),
-            prices.timeslice,
-            QuantityType.EXTENSIVE,
-        )
-        / techs.utilization_factor
-    )
-
-    fuel_costs = (techs.fixed_inputs * prices).sum("commodity")
-
-    fuel_costs += (techs.flexible_inputs * prices).sum("commodity")
-    if "region" in techs.dims:
-        env_costs = (
-            (techs.fixed_outputs * prices)
-            .sel(region=techs.region)
-            .sel(commodity=is_pollutant(techs.comm_usage))
-            .sum("commodity")
-        )
-    else:
-        env_costs = (
-            (techs.fixed_outputs * prices)
-            .sel(commodity=is_pollutant(techs.comm_usage))
-            .sum("commodity")
-        )
-    return annualized_capital_costs + o_and_e_costs + env_costs + fuel_costs
-
-
 def maximum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filters):
     r"""Production for a given capacity.
 
@@ -486,12 +379,13 @@ def demand_matched_production(
         **filters: keyword arguments with which to filter the input datasets and
             data arrays., e.g. region, or year.
     """
+    from muse.costs import annual_levelized_cost_of_energy as ALCOE
     from muse.demand_matching import demand_matching
     from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
 
     technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
-    cost = annual_levelized_cost_of_energy(prices, technodata, **filters)
+    cost = ALCOE(prices=prices, technologies=technodata, **filters)
     max_production = maximum_production(technodata, capacity, **filters)
     assert ("timeslice" in demand.dims) == ("timeslice" in cost.dims)
     if "timeslice" in demand.dims and "timeslice" not in max_production.dims:
@@ -550,38 +444,6 @@ def capacity_in_use(
         capa_in_use = capa_in_use.max(max_dim)
 
     return capa_in_use
-
-
-def supply_cost(
-    production: xr.DataArray, lcoe: xr.DataArray, asset_dim: Optional[str] = "asset"
-) -> xr.DataArray:
-    """Supply cost given production and the levelized cost of energy.
-
-    In practice, the supply cost is the weighted average LCOE over assets (`asset_dim`),
-    where the weights are the production.
-
-    Arguments:
-        production: Amount of goods produced. In practice, production can be obtained
-            from the capacity for each asset via the method
-            `muse.quantities.production`.
-        lcoe: Levelized cost of energy for each good produced. In practice, it can be
-            obtained from market prices via
-            `muse.quantities.annual_levelized_cost_of_energy` or
-            `muse.quantities.lifetime_levelized_cost_of_energy`.
-        asset_dim: Name of the dimension(s) holding assets, processes or technologies.
-    """
-    data = xr.Dataset(dict(production=production, prices=production * lcoe))
-    if asset_dim is not None:
-        if "region" not in data.coords or len(data.region.dims) == 0:
-            data = data.sum(asset_dim)
-
-        else:
-            data = data.groupby("region").sum(asset_dim)
-
-    total = data.production.where(np.abs(data.production) > 1e-15, np.infty).sum(
-        "timeslice"
-    )
-    return data.prices / total
 
 
 def costed_production(
@@ -725,3 +587,22 @@ def minimum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
         * ftechs.utilization_factor
     )
     return result.where(is_enduse(result.comm_usage), 0)
+
+
+def capacity_to_service_demand(
+    demand: xr.DataArray,
+    technologies: xr.Dataset,
+    hours=None,
+) -> xr.DataArray:
+    """Minimum capacity required to fulfill the demand."""
+    from muse.timeslices import represent_hours
+
+    if hours is None:
+        hours = represent_hours(demand.timeslice)
+    max_hours = hours.max() / hours.sum()
+    commodity_output = technologies.fixed_outputs.sel(commodity=demand.commodity)
+    max_demand = (
+        demand.where(commodity_output > 0, 0)
+        / commodity_output.where(commodity_output > 0, 1)
+    ).max(("commodity", "timeslice"))
+    return max_demand / technologies.utilization_factor / max_hours

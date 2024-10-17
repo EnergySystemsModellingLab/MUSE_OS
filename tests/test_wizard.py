@@ -1,5 +1,7 @@
 import pandas as pd
 import pytest
+from tomlkit import dumps, parse
+
 from muse import examples
 from muse.wizard import (
     add_agent,
@@ -11,13 +13,19 @@ from muse.wizard import (
     get_sectors,
     modify_toml,
 )
-from tomlkit import dumps, parse
 
 
 @pytest.fixture
 def model_path(tmp_path):
     """Creates temporary folder containing the default model."""
     examples.copy_model(name="default", path=tmp_path)
+    return tmp_path / "model"
+
+
+@pytest.fixture
+def model_path_retro(tmp_path):
+    """Creates temporary folder containing the default_retro model."""
+    examples.copy_model(name="default_retro", path=tmp_path)
     return tmp_path / "model"
 
 
@@ -129,19 +137,19 @@ def test_add_price_data_for_new_year(model_path):
         assert "2030" in df["Time"].values
 
 
-def test_add_agent(model_path):
-    """Test the add_agent function on the default model."""
-    add_agent(model_path, "A2", "A1", "Agent3", "Agent4")
+def test_add_agent(model_path_retro):
+    """Test the add_agent function on the default_retro model."""
+    add_agent(model_path_retro, "A2", "A1", "Agent3", "Agent4")
 
     # Check if the new agent is added to the Agents.csv file
-    df = pd.read_csv(model_path / "technodata/Agents.csv")
+    df = pd.read_csv(model_path_retro / "technodata/Agents.csv")
     assert "A2" in df["Name"].values
     assert "Agent3" in df["AgentShare"].values
     assert "Agent4" in df["AgentShare"].values
 
     # Check if the retrofit agent is added to the Technodata.csv files
-    sector1_file = model_path / "technodata/power/Technodata.csv"
-    sector2_file = model_path / "technodata/gas/Technodata.csv"
+    sector1_file = model_path_retro / "technodata/power/Technodata.csv"
+    sector2_file = model_path_retro / "technodata/gas/Technodata.csv"
     df_sector1 = pd.read_csv(sector1_file)
     df_sector2 = pd.read_csv(sector2_file)
     assert "Agent4" in df_sector1.columns

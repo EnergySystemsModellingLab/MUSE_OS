@@ -549,7 +549,7 @@ def convert_timeslice(
         index = index.set_names(f"finest_{u}" for u in index.names)
         mindex_coords = xr.Coordinates.from_pandas_multiindex(index, "finest_timeslice")
         finest = finest.drop_vars(list(finest.coords)).assign_coords(mindex_coords)
-        proj0 *= finest
+        proj0 = proj0 * finest
         proj0 = proj0 / proj0.sum("finest_timeslice")
     elif quantity is QuantityType.INTENSIVE:
         proj1 = proj1 / proj1.sum("finest_timeslice")
@@ -594,6 +594,17 @@ def represent_hours(
             average number of hours in year.
     """
     return convert_timeslice(DataArray([nhours]), timeslices).squeeze()
+
+
+def drop_timeslice(data: DataArray) -> DataArray:
+    """Drop the timeslice variable from a DataArray.
+
+    If the array doesn't contain the timeslice variable, return the input unchanged.
+    """
+    if "timeslice" not in data.dims:
+        return data
+
+    return data.drop_vars(data.timeslice.indexes)
 
 
 setup_module(DEFAULT_TIMESLICE_DESCRIPTION)

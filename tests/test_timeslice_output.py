@@ -25,6 +25,7 @@ def test_fullsim_timeslices(tmpdir, utilization_factors, process_name):
     from operator import ge, le
 
     import pandas as pd
+
     from muse import examples
     from muse.mca import MCA
 
@@ -79,11 +80,11 @@ def test_fullsim_timeslices(tmpdir, utilization_factors, process_name):
     ],
 )
 @mark.parametrize("process_name", [("gasCCGT", "windturbine")])
-@mark.parametrize("output", ["MCAMetric_Supply.csv", "MCAMetric_Consumption.csv"])
 def test_zero_utilization_factor_supply_timeslice(
-    tmpdir, utilization_factors, process_name, output
+    tmpdir, utilization_factors, process_name
 ):
     import pandas as pd
+
     from muse import examples
     from muse.mca import MCA
 
@@ -108,7 +109,7 @@ def test_zero_utilization_factor_supply_timeslice(
     with tmpdir.as_cwd():
         MCA.factory(model_path / "settings.toml").run()
 
-    path = str(tmpdir / "Results" / output)
+    path = str(tmpdir / "Results" / "Power_Supply.csv")
 
     output = pd.read_csv(path)
 

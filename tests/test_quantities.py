@@ -4,6 +4,8 @@ import numpy as np
 import xarray as xr
 from pytest import approx, fixture
 
+from muse.timeslices import drop_timeslice
+
 
 @fixture
 def demand(
@@ -42,9 +44,10 @@ def make_array(array):
 
 def test_supply_enduse(technologies, capacity, timeslice):
     """End-use part of supply."""
+    from numpy.random import random
+
     from muse.commodities import is_enduse
     from muse.quantities import maximum_production, supply
-    from numpy.random import random
 
     production = maximum_production(technologies, capacity)
     share = xr.DataArray(
@@ -332,9 +335,10 @@ def test_capacity_in_use(production: xr.DataArray, technologies: xr.Dataset):
 
 
 def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
-    from muse.quantities import supply_cost
     from numpy import average
     from numpy.random import random
+
+    from muse.costs import supply_cost
 
     timeslice = timeslice.timeslice
     production = production.sel(year=production.year.min(), drop=True)
@@ -351,28 +355,17 @@ def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
     for region in set(production.region.values):
         expected = average(
             lcoe.sel(asset=production.region == region),
-            weights=production.sel(asset=production.region == region)
-            / production.sel(asset=production.region == region).sum("asset"),
+            weights=production.sel(asset=production.region == region),
             axis=production.get_axis_num("asset"),
         )
 
-    for region in set(production.region.values):
-        weight = production / production.sel(asset=production.region == region).sum(
-            "asset"
-        ).sum("timeslice")
-
-        expected = lcoe * weight
-
-        assert actual.sel(region=region).values == approx(
-            expected.sel(asset=production.region == region).sum(
-                axis=production.get_axis_num("asset")
-            )
-        )
+        assert actual.sel(region=region).values == approx(expected)
 
 
 def test_supply_cost_zero_prod(production: xr.DataArray, timeslice: xr.Dataset):
-    from muse.quantities import supply_cost
     from numpy.random import randn
+
+    from muse.costs import supply_cost
 
     timeslice = timeslice.timeslice
     production = production.sel(year=production.year.min(), drop=True)
@@ -436,8 +429,8 @@ def test_demand_matched_production(
 
 
 def test_costed_production_exact_match(market, capacity, technologies):
+    from muse.costs import annual_levelized_cost_of_energy
     from muse.quantities import (
-        annual_levelized_cost_of_energy,
         costed_production,
         maximum_production,
     )
@@ -450,7 +443,7 @@ def test_costed_production_exact_match(market, capacity, technologies):
         )
     technodata = broadcast_techs(technologies, capacity)
     costs = annual_levelized_cost_of_energy(
-        market.prices.sel(region=technodata.region), technodata
+        prices=market.prices.sel(region=technodata.region), technologies=technodata
     )
     maxdemand = convert_timeslice(
         xr.Dataset(dict(mp=maximum_production(technologies, capacity)))
@@ -460,7 +453,7 @@ def test_costed_production_exact_match(market, capacity, technologies):
         market,
         QuantityType.EXTENSIVE,
     )
-    market["consumption"] = maxdemand.drop_vars(["timeslice", "month", "day", "hour"])
+    market["consumption"] = drop_timeslice(maxdemand)
     result = costed_production(market.consumption, costs, capacity, technologies)
     assert isinstance(result, xr.DataArray)
     actual = xr.Dataset(dict(r=result)).groupby("region").sum("asset").r
@@ -471,8 +464,8 @@ def test_costed_production_exact_match(market, capacity, technologies):
 
 
 def test_costed_production_single_region(market, capacity, technologies):
+    from muse.costs import annual_levelized_cost_of_energy
     from muse.quantities import (
-        annual_levelized_cost_of_energy,
         costed_production,
         maximum_production,
     )
@@ -487,12 +480,10 @@ def test_costed_production_single_region(market, capacity, technologies):
         market,
         QuantityType.EXTENSIVE,
     )
-    market["consumption"] = (0.9 * maxdemand).drop_vars(
-        ["timeslice", "month", "day", "hour"]
-    )
+    market["consumption"] = drop_timeslice(0.9 * maxdemand)
     technodata = broadcast_techs(technologies, capacity)
     costs = annual_levelized_cost_of_energy(
-        market.prices.sel(region=technodata.region), technodata
+        prices=market.prices.sel(region=technodata.region), technologies=technodata
     )
     result = costed_production(market.consumption, costs, capacity, technologies)
     assert isinstance(result, xr.DataArray)
@@ -504,8 +495,8 @@ def test_costed_production_single_region(market, capacity, technologies):
 
 
 def test_costed_production_single_year(market, capacity, technologies):
+    from muse.costs import annual_levelized_cost_of_energy
     from muse.quantities import (
-        annual_levelized_cost_of_energy,
         costed_production,
         maximum_production,
     )
@@ -522,12 +513,10 @@ def test_costed_production_single_year(market, capacity, technologies):
         market,
         QuantityType.EXTENSIVE,
     )
-    market["consumption"] = (0.9 * maxdemand).drop_vars(
-        ["timeslice", "month", "day", "hour"]
-    )
+    market["consumption"] = drop_timeslice(0.9 * maxdemand)
     technodata = broadcast_techs(technologies, capacity)
     costs = annual_levelized_cost_of_energy(
-        market.prices.sel(region=technodata.region), technodata
+        prices=market.prices.sel(region=technodata.region), technologies=technodata
     )
     result = costed_production(market.consumption, costs, capacity, technologies)
     assert isinstance(result, xr.DataArray)
@@ -539,8 +528,8 @@ def test_costed_production_single_year(market, capacity, technologies):
 
 
 def test_costed_production_over_capacity(market, capacity, technologies):
+    from muse.costs import annual_levelized_cost_of_energy
     from muse.quantities import (
-        annual_levelized_cost_of_energy,
         costed_production,
         maximum_production,
     )
@@ -560,12 +549,10 @@ def test_costed_production_over_capacity(market, capacity, technologies):
         market,
         QuantityType.EXTENSIVE,
     )
-    market["consumption"] = (maxdemand * 0.9).drop_vars(
-        ["timeslice", "month", "day", "hour"]
-    )
+    market["consumption"] = drop_timeslice(maxdemand * 0.9)
     technodata = broadcast_techs(technologies, capacity)
     costs = annual_levelized_cost_of_energy(
-        market.prices.sel(region=technodata.region), technodata
+        prices=market.prices.sel(region=technodata.region), technologies=technodata
     )
     result = costed_production(market.consumption, costs, capacity, technologies)
     assert isinstance(result, xr.DataArray)
@@ -577,8 +564,8 @@ def test_costed_production_over_capacity(market, capacity, technologies):
 
 
 def test_costed_production_with_minimum_service(market, capacity, technologies, rng):
+    from muse.costs import annual_levelized_cost_of_energy
     from muse.quantities import (
-        annual_levelized_cost_of_energy,
         costed_production,
         maximum_production,
     )
@@ -598,12 +585,10 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
     )
     minprod = maxprod * broadcast_techs(technologies.minimum_service_factor, maxprod)
     maxdemand = xr.Dataset(dict(mp=minprod)).groupby("region").sum("asset").mp
-    market["consumption"] = (maxdemand * 0.9).drop_vars(
-        ["timeslice", "month", "day", "hour"]
-    )
+    market["consumption"] = drop_timeslice(maxdemand * 0.9)
     technodata = broadcast_techs(technologies, capacity)
     costs = annual_levelized_cost_of_energy(
-        market.prices.sel(region=technodata.region), technodata
+        prices=market.prices.sel(region=technodata.region), technologies=technodata
     )
     result = costed_production(market.consumption, costs, capacity, technologies)
     assert isinstance(result, xr.DataArray)

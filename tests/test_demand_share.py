@@ -1,6 +1,8 @@
 import xarray as xr
 from pytest import approx, fixture, raises
 
+from muse.timeslices import drop_timeslice
+
 
 @fixture
 def matching_market(technologies, stock, timeslice):
@@ -14,9 +16,10 @@ def matching_market(technologies, stock, timeslice):
 
 def _matching_market(technologies, stock, timeslice):
     """A market which matches stocks exactly."""
+    from numpy.random import random
+
     from muse.quantities import consumption, maximum_production
     from muse.timeslices import QuantityType, convert_timeslice
-    from numpy.random import random
 
     market = xr.Dataset()
     production = convert_timeslice(
@@ -25,9 +28,9 @@ def _matching_market(technologies, stock, timeslice):
         QuantityType.EXTENSIVE,
     )
     market["supply"] = production.sum("asset")
-    market["consumption"] = (
+    market["consumption"] = drop_timeslice(
         consumption(technologies, production).sum("asset") + market.supply
-    ).drop_vars(["timeslice", "month", "day", "hour"])
+    )
     market["prices"] = market.supply.dims, random(market.supply.shape)
 
     return market

@@ -6,6 +6,8 @@ from typing import Callable, Optional, Union
 
 import xarray as xr
 
+from muse.timeslices import drop_timeslice
+
 
 class AbstractAgent(ABC):
     """Base class for all agents."""
@@ -111,13 +113,13 @@ class Agent(AbstractAgent):
         objectives: Optional[Callable] = None,
         decision: Optional[Callable] = None,
         year: int = 2010,
-        maturity_threshhold: float = 0,
+        maturity_threshold: float = 0,
         forecast: int = 5,
         housekeeping: Optional[Callable] = None,
         merge_transform: Optional[Callable] = None,
-        demand_threshhold: Optional[float] = None,
+        demand_threshold: Optional[float] = None,
         category: Optional[str] = None,
-        asset_threshhold: float = 1e-4,
+        asset_threshold: float = 1e-4,
         quantity: Optional[float] = 1,
         spend_limit: int = 0,
         **kwargs,
@@ -134,17 +136,17 @@ class Agent(AbstractAgent):
             objectives: One or more objectives by which to decide next investments.
             decision: single decision objective from one or more objectives.
             year: year the agent is created / current year
-            maturity_threshhold: threshold when filtering replacement
+            maturity_threshold: threshold when filtering replacement
                 technologies with respect to market share
             forecast: Number of years the agent will forecast
             housekeeping: transform applied to the assets at the start of
                 iteration. Defaults to doing nothing.
             merge_transform: transform merging current and newly invested assets
                 together. Defaults to replacing old assets completely.
-            demand_threshhold: criteria below which the demand is zero.
+            demand_threshold: criteria below which the demand is zero.
             category: optional attribute that could be used to classify
                 different agents together.
-            asset_threshhold: Threshold below which assets are not added.
+            asset_threshold: Threshold below which assets are not added.
             quantity: different agents' share of the population
             spend_limit: The cost above which agents will not invest
             **kwargs: Extra arguments
@@ -180,7 +182,7 @@ class Agent(AbstractAgent):
         function registered via `muse.filters.register_filter` can be
         used to filter the search space.
         """
-        self.maturity_threshhold = maturity_threshhold
+        self.maturity_threshold = maturity_threshold
         """ Market share threshold.
 
         Threshold when and if filtering replacement technologies with respect
@@ -215,13 +217,13 @@ class Agent(AbstractAgent):
         It can be any function registered with
         :py:func:`~muse.hooks.register_final_asset_transform`.
         """
-        self.demand_threshhold = demand_threshhold
+        self.demand_threshold = demand_threshold
         """Threshold below which the demand share is zero.
 
         This criteria avoids fulfilling demand for very small values. If None,
         then the criteria is not applied.
         """
-        self.asset_threshhold = asset_threshhold
+        self.asset_threshold = asset_threshold
         """Threshold below which assets are not added."""
 
     @property
@@ -276,23 +278,44 @@ class Agent(AbstractAgent):
             getLogger(__name__).critical("Search space is empty")
             self.year += time_period
             return None
-        decision = self._compute_objective(demand, search_space, technologies, market)
+
+        # Filter technologies according to the search space, forecast year and region
+        techs = self.filter_input(
+            technologies,
+            technology=search_space.replacement,
+            year=self.forecast_year,
+        ).drop_vars("technology")
+
+        # Reduce dimensions of the demand array
+        reduced_demand = demand.sel(
+            {
+                k: search_space[k]
+                for k in set(demand.dims).intersection(search_space.dims)
+            }
+        )
+
+        # Filter prices according to the region
+        prices = self.filter_input(market.prices)
+
+        # Compute the objective
+        decision = self._compute_objective(
+            technologies=techs, demand=reduced_demand, prices=prices
+        )
 
         self.year += time_period
         return xr.Dataset(dict(search_space=search_space, decision=decision))
 
     def _compute_objective(
         self,
-        demand: xr.DataArray,
-        search_space: xr.DataArray,
         technologies: xr.Dataset,
-        market: xr.Dataset,
+        demand: xr.DataArray,
+        prices: xr.DataArray,
     ) -> xr.DataArray:
-        objectives = self.objectives(self, demand, search_space, technologies, market)
+        objectives = self.objectives(
+            technologies=technologies, demand=demand, prices=prices
+        )
         decision = self.decision(objectives)
-        nobroadcast_dims = [d for d in decision.dims if d not in search_space.dims]
-        decision = xr.broadcast(decision, search_space, exclude=nobroadcast_dims)[0]
-        return decision.sel({k: search_space[k] for k in search_space.dims})
+        return decision
 
     def add_investments(
         self,
@@ -329,7 +352,7 @@ class Agent(AbstractAgent):
         if "agent" in investments.dims:
             investments = investments.squeeze("agent", drop=True)
         investments = investments.sel(
-            replacement=(investments > self.asset_threshhold).any(
+            replacement=(investments > self.asset_threshold).any(
                 [d for d in investments.dims if d != "replacement"]
             )
         )
@@ -416,7 +439,7 @@ class InvestingAgent(Agent):
             return None
 
         if "timeslice" in search.dims:
-            search["demand"] = demand.drop_vars(["timeslice", "month", "day", "hour"])
+            search["demand"] = drop_timeslice(demand)
         else:
             search["demand"] = demand
         not_assets = [u for u in search.demand.dims if u != "asset"]

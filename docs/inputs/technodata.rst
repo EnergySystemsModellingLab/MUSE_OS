@@ -11,10 +11,10 @@ the electric boiler used in households is taken as an example for a generic regi
 
 
 .. csv-table:: Techno-data: cost inputs
-   :header: ProcessName, RegionName, Time, Level, cap_par, cap_exp, fix_par, ...
+   :header: ProcessName, RegionName, Time, cap_par, cap_exp, fix_par, ...
 
-   resBoilerElectric, region1, 2010, fixed, 3.81, 1.00, 0.38, ...
-   resBoilerElectric, region1, 2030, fixed, 3.81, 1.00, 0.38, ...
+   resBoilerElectric, region1, 2010, 3.81, 1.00, 0.38, ...
+   resBoilerElectric, region1, 2030, 3.81, 1.00, 0.38, ...
 
 
 ProcessName
@@ -26,9 +26,6 @@ RegionName
 Time
    represents the period of the simulation to which the value applies; it needs to
    contain at least the base year of the simulation
-
-Level
-   characterises either a fixed or a flexible input type
 
 cap_par, cap_exp
    are used in the capital cost estimation. Capital costs are calculated as:
@@ -115,21 +112,24 @@ TechnicalLife
    represents the number of years that a technology operates before it is decommissioned.
 
 UtilizationFactor
-   represents the maximum actual output of the technology in a year, divided by the theoretical maximum output if the technology were operating at full capacity for the whole year. Must be between 0 and 1.
+   represents the *maximum* actual output of the technology in a year, divided by the theoretical maximum output if the technology were operating at full capacity for the whole year. Must be between 0 and 1.
 
-ScalingSize
-   represents the reference capacity at which capital costs are estimated when used as agents' objective as described in :ref:`inputs-agents`.
+MinimumServiceFactor (optional, default = 0)
+   Is the *minimum* output of the technology in a year, divided by the theoretical maximum output if the technology were operating at full capacity for the whole year. Must be between 0 and 1 and be smaller or equal than the `UtilizationFactor`. It is used to define the minimum service level that a technology must provide due to, typically, technical or efficiency constraints.
 
-efficiency
-   represents the technology efficiency used as agents' objective to sort investment according to their energy or material efficiency (see :ref:`inputs-agents`).
+ScalingSize (optional)
+   required when using the "capital_costs" agent objective. Represents the reference capacity at which capital costs are estimated when using this objective (see :ref:`inputs-agents`).
 
-Type
-   defines the type of a technology. This variable is used for the search space in the agents csv file. It allows for the agents to filter for technologies of a similar type, for example.
+efficiency (optional)
+   represents the technology efficiency. Required when using the "efficiency" agent objective, which ranks investment options according to their energy or material efficiency (see :ref:`inputs-agents`).
 
-Fuel
-   defines the fuel used by a technology, defined to restrict the new investments of each agent to selected technologies using selected fuels (see :ref:`inputs-agents`).
+Type (optional)
+   defines the type of a technology. Required when using the "similar_technology" search space, which allows agents to filter for technologies of a similar type (see :ref:`inputs-agents`).
 
-EndUse
+Fuel (optional)
+   defines the fuel used by a technology. Required when using the "fueltype" search space, which allows agents to filter for technologies using the same fuel (see :ref:`inputs-agents`).
+
+EndUse (optional)
    defines the end use of a technology, defined to restrict the new investments of each agent to selected technologies using selected end uses (see :ref:`inputs-agents`).
 
 InterestRate

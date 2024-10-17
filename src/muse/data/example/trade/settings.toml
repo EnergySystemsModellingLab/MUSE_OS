@@ -14,31 +14,14 @@ tolerance = 0.1
 tolerance_unmet_demand = -0.1
 
 [[outputs]]
-quantity = "prices"
-filename = "{cwd}/Results/Prices.csv"
-sink.name = "aggregate"
-sink.sink.name = "csv"
-sink.sink.set_index = ["region", "commodity", "year", "timeslice"]
-sink.sink.sort_index = true
-sink.sink.keep_columns = ["prices"]
+quantity = "capacity"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [[outputs]]
-quantity = "capacity"
-index = false
-filename = "{cwd}/Results/Capacities.csv"
-sink.name = "aggregate"
-sink.sink.name = "csv"
-sink.sink.sort_index = true
-sink.sink.keep_columns = [
-    'technology',
-    'dst_region',
-    'region',
-    'agent',
-    'sector',
-    'type',
-    'year',
-    'capacity'
-]
+quantity = "prices"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [carbon_budget_control]
 budget = []
@@ -67,23 +50,17 @@ agents = '{path}/technodata/residential/Agents.csv'
 existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
 lpsolver = "scipy"
 constraints = [
+    # Optional, defaults to the constraints below
     "max_production",
     "max_capacity_expansion",
-    "minimum_service",
     "demand",
-    "search_space"
+    "search_space",
+    "minimum_service",
+    "demand_limiting_capacity"
 ]
 demand_share = "new_and_retro"
 forecast = 5
-asset_threshhold = 1e-4
-
-[[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "capacity"
-sink = 'csv'
-overwrite = true
-columns = ["asset", "year", "region", "technology", "installed", "capacity"]
-index = false
+asset_threshold = 1e-4
 
 [[sectors.residential.interactions]]
 net = 'new_to_retro'
@@ -105,30 +82,17 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/power/ExistingTrade.csv'
 lpsolver = "scipy"
 constraints = [
+    # Optional, defaults to the constraints below
     "max_production",
     "max_capacity_expansion",
     "demand",
-    "search_space"
+    "search_space",
+    "minimum_service",
+    "demand_limiting_capacity"
 ]
 demand_share = "unmet_forecasted_demand"
 forecast = 5
-asset_threshhold = 1e-4
-
-[[sectors.power.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "capacity"
-sink = 'csv'
-overwrite = true
-columns = [
-    "dst_region",
-    "year",
-    "asset",
-    "region",
-    "technology",
-    "installed",
-    "capacity"
-]
-index = false
+asset_threshold = 1e-4
 
 [sectors.gas]
 type = 'default'
@@ -146,30 +110,17 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/gas/ExistingTrade.csv'
 lpsolver = "scipy"
 constraints = [
+    # Optional, defaults to the constraints below
     "max_production",
     "max_capacity_expansion",
     "demand",
-    "search_space"
+    "search_space",
+    "minimum_service",
+    "demand_limiting_capacity"
 ]
 demand_share = "unmet_forecasted_demand"
 forecast = 5
-asset_threshhold = 1e-4
-
-[[sectors.gas.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "capacity"
-sink = 'csv'
-overwrite = true
-columns = [
-    "dst_region",
-    "year",
-    "asset",
-    "region",
-    "technology",
-    "installed",
-    "capacity"
-]
-index = false
+asset_threshold = 1e-4
 
 [timeslices]
 level_names = ["month", "day", "hour"]

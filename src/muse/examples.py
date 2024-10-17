@@ -34,6 +34,7 @@ import xarray as xr
 
 from muse.mca import MCA
 from muse.sectors import AbstractSector
+from muse.timeslices import drop_timeslice
 
 __all__ = ["model", "technodata"]
 
@@ -98,6 +99,8 @@ def copy_model(
 
     if name.lower() == "default":
         _copy_default(path)
+    elif name.lower() == "default_retro":
+        _copy_default_retro(path)
     elif name.lower() == "default_timeslice":
         _copy_default_timeslice(path)
     elif name.lower() == "medium":
@@ -192,12 +195,8 @@ def mca_market(model: str = "default") -> xr.Dataset:
             .sel(region=settings.regions)
             .interp(year=settings.time_framework, method=settings.interpolation_mode)
         )
-        market["supply"] = zeros_like(market.exports).drop_vars(
-            ["timeslice", "month", "day", "hour"]
-        )
-        market["consumption"] = zeros_like(market.exports).drop_vars(
-            ["timeslice", "month", "day", "hour"]
-        )
+        market["supply"] = drop_timeslice(zeros_like(market.exports))
+        market["consumption"] = drop_timeslice(zeros_like(market.exports))
 
         return cast(xr.Dataset, market)
 
@@ -263,12 +262,12 @@ def matching_market(sector: str, model: str = "default") -> xr.Dataset:
         market = market.rename(dst_region="region")
     if market.region.dims:
         consump = consumption(loaded_sector.technologies, production)
-        market["consumption"] = (
+        market["consumption"] = drop_timeslice(
             consump.groupby("region").sum(
                 {"asset", "dst_region"}.intersection(consump.dims)
             )
             + market.supply
-        ).drop_vars(["timeslice", "month", "day", "hour"])
+        )
     else:
         market["consumption"] = (
             consumption(loaded_sector.technologies, production).sum(
@@ -286,6 +285,16 @@ def _copy_default(path: Path):
     copytree(example_data_dir() / "default" / "input", path / "input")
     copytree(example_data_dir() / "default" / "technodata", path / "technodata")
     copyfile(example_data_dir() / "default" / "settings.toml", path / "settings.toml")
+
+
+def _copy_default_retro(path: Path):
+    from shutil import copyfile, copytree
+
+    copytree(example_data_dir() / "default_retro" / "input", path / "input")
+    copytree(example_data_dir() / "default_retro" / "technodata", path / "technodata")
+    copyfile(
+        example_data_dir() / "default_retro" / "settings.toml", path / "settings.toml"
+    )
 
 
 def _copy_default_timeslice(path: Path):
@@ -313,7 +322,7 @@ def _copy_multiple_agents(path: Path):
     copytree(example_data_dir() / "default" / "input", path / "input")
     copytree(example_data_dir() / "default" / "technodata", path / "technodata")
     toml = load(example_data_dir() / "default" / "settings.toml")
-    toml["sectors"]["residential"]["subsectors"]["retro_and_new"]["agents"] = (
+    toml["sectors"]["residential"]["subsectors"]["all"]["agents"] = (
         "{path}/technodata/residential/Agents.csv"
     )
     with (path / "settings.toml").open("w") as fileobj:

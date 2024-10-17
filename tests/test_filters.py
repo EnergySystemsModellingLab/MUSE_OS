@@ -1,7 +1,8 @@
 import numpy as np
 import xarray as xr
-from muse.filters import factory, register_filter, register_initializer
 from pytest import fixture, mark
+
+from muse.filters import factory, register_filter, register_initializer
 
 
 @fixture
@@ -162,20 +163,20 @@ def test_maturity(retro_agent, search_space, technologies, agent_market):
     production = (outputs * capacity).sum("technology")
 
     # nothing should be true
-    retro_agent.maturity_threshhold = 1.1 * (capacity / production).max()
+    retro_agent.maturity_threshold = 1.1 * (capacity / production).max()
     actual = maturity(retro_agent, search_space, technologies, agent_market)
     assert sorted(actual.dims) == sorted(search_space.dims)
     assert (not actual).all()
 
     # some should be true - do it with a fully on search space for  simplicity
-    retro_agent.maturity_threshhold = 0.8 * (capacity / production).max()
+    retro_agent.maturity_threshold = 0.8 * (capacity / production).max()
     actual = maturity(
         search_space == retro_agent, search_space, technologies, agent_market
     )
     assert sorted(actual.dims) == sorted(search_space.dims)
     assert actual.any()
     # all should be true
-    retro_agent.maturity_threshhold = 0.8 * (capacity / production).min()
+    retro_agent.maturity_threshold = 0.8 * (capacity / production).min()
     actual = maturity(retro_agent, search_space, technologies, agent_market)
     assert (actual == search_space).any()
 

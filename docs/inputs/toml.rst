@@ -70,7 +70,7 @@ a whole.
    whether equilibrium of `demand` or `prices` should be sought. Defaults to `demand`.
 
 *maximum_iterations*
-   Maximum number of iterations when searching for equilibrium. Defaults to 3.
+   Maximum number of iterations when searching for equilibrium. Defaults to 100.
 
 *tolerance*
    Tolerance criteria when checking for equilibrium. Defaults to 0.1. 0.1 signifies that 10% of a deviation is allowed among the iterative value of either demand or price over a year per region.
@@ -90,8 +90,8 @@ a whole.
 Carbon market
 -------------
 
-This section contains the settings related to the modelling of the carbon market. If omitted, it defaults to not
-including the carbon market in the simulation.
+This section contains the settings related to the modelling of the carbon market.
+If omitted, it defaults to not including the carbon market in the simulation.
 
 Example
 
@@ -106,46 +106,50 @@ Example
    `time_framework` from the main section. If not given or an empty list, then the
    carbon market feature is disabled. Defaults to an empty list.
 
-*method*
-   Method used to equilibrate the carbon market. Available options are `fitting` and `bisection`, however this can be expanded with the `@register_carbon_budget_method` hook in `muse.carbon_budget`.
-
-   The market-clearing algorithm iterates over the sectors until the market reaches an equilibrium in the foresight period (the period next to the one analysed).
-   This is represented by a stable variation of a commodity demand (or price) between iterations below a defined tolerance.
-   The market-clearing algorithm samples a user-defined set of carbon prices.
-
-   When the `fitting` method is selected, this command builds a regression model of the emissions as a function of the carbon price.
-   It applies to a pool of emissions for all the modelled regions. Therefore, the estimated carbon price applies to all the modelled regions.
-   The regression model, the method calculates iteratively the emissions at pre-defined carbon price sample values.
-   The emissions-carbon price couples are used to used to fit the emission-carbon price relation, is uer-defined (ie. linear or exponential fitter).
-   The new carbon price is estimated as a root of the regression model estimated at the value of the emission equal to the user-defined emission cap in the foresight period.
-   Alongside the selection of the method, the user can define a `sample_size`, representing the magnitude of the sample for the fitter.
-
-   When the `bisection` method is selected, this command applies a bisection method to solve the carbon market.
-   Similarly to the `fitting` method, the carbon market includes a pool of all the modelled regions. The obtained carbon price
-   applies to all the regions, as above. This method solves as a typical bisection algorithm.
-   It is coded independently to use the internal signature of the `register_carbon_budget_method`. The algorithm aims to find a root of
-   the function emissions-carbon price, as for the carbon price at which the carbon budget is met.
-   The algorithm iteratively modifies the carbon price and estimates the corresponding emissions.
-   It stops when the convergence or stop criteria are met.
-   This happens for example either when the carbon budget or the maximum number of iterations are met.
-   Alongside the selection of the method, the user can define a `sample_size`, representing the number of iterations of the bisection method.
-
 *commodities*
    Commodities that make up the carbon market. Defaults to an empty list.
 
 *control_undershoot*
-   Whether to control carbon budget undershoots. This parameter allows for carbon tax credit from one year to be passed to the next in the case of less carbon being emitted than the budget. Defaults to True.
+   Whether to control carbon budget undershoots. This parameter allows for carbon tax credit from one year to be passed to the next in the case of less carbon being emitted than the budget. Defaults to False.
 
 *control_overshoot*
-   Whether to control carbon budget overshoots. If the amount of carbon emitted is above the carbon budget, this parameter specifies whether this deficit is carried over to the next year. Defaults to True.
+   Whether to control carbon budget overshoots. If the amount of carbon emitted is above the carbon budget, this parameter specifies whether this deficit is carried over to the next year. Defaults to False.
+
+*method*
+   Method used to equilibrate the carbon market. Available options are `fitting` and `bisection`, however this can be expanded with the `@register_carbon_budget_method` hook in `muse.carbon_budget`.
+
+   These methods solve the market with a number of different carbon prices, aiming to find the carbon price at which emissions (pooled across all regions) are equal to the carbon budget.
+   The obtained carbon price applies to all regions.
+
+   The `fitting` method samples a number of different carbon prices to build a regression model (linear or exponential) of emissions as a function of carbon price.
+   This regression model is then used to estimate the carbon price at which the carbon budget is met.
+
+   The `bisection` method uses an iterative approach to settle on a carbon price.
+   Starting with a lower and upper-bound carbon price, it iteratively halves this price interval until the carbon budget is met to within a user-defined tolerance, or until the maximum number of iterations is reached.
+   Generally, this method is more robust for markets with a complex, nonlinear relationship between emissions and carbon price, but may be slower to converge than the `fitting` method.
+
+   Defaults to `bisection`.
 
 *method_options*
-   Additional options for the specific carbon method. In particular, the `refine_price` activate a sanity check on the adjusted carbon price.
-   The sanity check applies an upper limit on the carbon price obtained from the algorithm (either `fitting` or `bisection`), called
-   `price_too_high_threshold`, a user-defined threshold based on heuristics on the values of the carbon price, reflecting typical historical trends.
+   Additional options for the specified carbon method.
 
-*fitter*
-   `fitter` specifies the regression model fit. The regression approximates the model emissions. Predefined options are `linear` and `exponential`. Further options can be defined using the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
+   Parameters for the `bisection` method:
+
+   - `max_iterations`: maximum number of iterations. Defaults to 5.
+   - `tolerance`: tolerance for convergence. E.g. 0.1 means that the algorithm will terminate when emissions are within 10% of the carbon budget. Defaults to 0.1.
+   - `early_termination_count`: number of iterations with no change in the carbon price before the algorithm will terminate. Defaults to 5.
+
+   Parameters for the `fitting` method:
+
+   - `fitter`: the regression model used to approximate model emissions. Predefined options are `linear` (default) and `exponential`. Further options can be defined using the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
+   - `sample_size`: number of price samples used. Defaults to 5.
+
+   Shared parameters:
+
+   - `refine_price`: If True, applies an upper limit on the carbon price. Defaults to False.
+   - `price_too_high_threshold`: upper limit on the carbon price. Defaults to 10.
+   - `resolution`: Number of decimal places to solve the carbon price to. When using the bisection method, increasing this value may increase the time taken to solve the carbon market. Defaults to 2.
+
 
 ------------------
 Global input files
@@ -270,7 +274,6 @@ See section on `Timeslices_`.
       quantity = "production"
       sink = "aggregate"
       filename = "{cwd}/{default_output_dir}/Cache{Quantity}.csv"
-      index = false
 
 ----------------
 Standard sectors
@@ -519,18 +522,17 @@ to define the timeslice simply by referring to the slices it will use at each le
 
     *demand_share*
         A method used to split the MCA demand into separate parts to be serviced by
-        specific agents. A basic distinction is between *new* and *retrofit* agents: the
-        former asked to respond to an increase of commodity demand investing in new
-        assets; the latter asked to invest in new asset to balance the decommissined
-        assets.
+        specific agents. The appropriate choice depends on the type of agents being used
+        in the simulation. There are currently two options:
 
-        There are currently two options:
-
-        - :py:func:`~muse.demand_share.new_and_retro`: the demand is split into a
-          retrofit demand corresponding to demand that used to be serviced by
-          decommisioned assets, and the *new* demand.
-        - :py:func:`~muse.demand_share.market_demand`: simply the consumption for the
-          forecast year.
+        - :py:func:`~muse.demand_share.standard_demand` (default): The input demand is
+          split amongst *new* agents. *New* agents get a share of the increase in demand
+          for the forecast years, as well as the demand that occurs from decommissioned
+          assets.
+        - :py:func:`~muse.demand_share.new_and_retro`: The input demand is split amongst
+          both *new* and *retrofit* agents. *New* agents get a share of the increase in
+          demand for the forecast year, whereas *retrofit* agents are assigned a share
+          of the demand that occurs from decommissioned assets.
 
     *constraints*
         The list of constraints to apply to the LP problem solved by the sector. By
@@ -546,7 +548,7 @@ to define the timeslice simply by referring to the slices it will use at each le
           specifying which technologies are considered for investment.
         - :py:func:`~muse.constraints.minimum_service`: a lower constraint for
           production for those technologies that need to keep a minimum production.
-        - :py:func:`~muse.constraints.demand_limitting_capacity`: limits the combined
+        - :py:func:`~muse.constraints.demand_limiting_capacity`: limits the combined
           capacity to be installed to the demand of the peak timeslice.
 
 
@@ -672,27 +674,19 @@ The following attributes are accepted:
    The CSV format should follow the following format:
 
    .. csv-table:: Consumption
-      :header: " ", "RegionName", "ProcessName", "TimeSlice", "electricity", "diesel", "algae"
-      :stub-columns: 4
+      :header: "RegionName", "Timeslice", "electricity", "diesel", "algae"
+      :stub-columns: 2
 
-      0,USA,fluorescent light,1,1.9, 0, 0
-      1,USA,fluorescent light,2,1.8, 0, 0
+      USA,1,1.9,0,0
+      USA,2,1.8,0,0
 
-
-   The index column as well as "RegionName", "ProcessName", and "TimeSlice" must be
-   present. Further columns are reserved for commodities. "TimeSlice" refers to the
+   The "RegionName" and "Timeslice" columns must be present.
+   Further columns are reserved for commodities. "Timeslice" refers to the
    index of the timeslice. Timeslices should be defined consistently to the sectoral
    level timeslices.
-   The column "ProcessName" needs to be present and filled in, in order for the data
-   to be read properly but it does not affect the simulation.
-
 
 *supply_path*
-   CSV file, one per year, indicating the amount of a commodities produced. It follows
-   the same format as :ref:`consumption_path <preset-consumption>`.
-
-*supply_path*
-   CSV file, one per year, indicating the amount of a commodities produced. It follows
+   CSV file, one per year, indicating the amount of commodities produced. It follows
    the same format as :ref:`consumption_path <preset-consumption>`.
 
 *prices_path*

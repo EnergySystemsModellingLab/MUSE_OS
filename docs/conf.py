@@ -6,9 +6,9 @@
 # -- Project information -----------------------------------------------------
 
 project = "MUSE"
-copyright = "2022, Sustainable Gas Institute"
+copyright = "2024, Imperial College London"
 author = "Imperial College London"
-release = "1.1.0"
+release = "1.2.1"
 version = ".".join(release.split(".")[:2])
 
 # -- General configuration ---------------------------------------------------
