@@ -598,3 +598,57 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
         assert (actual[dim] == maxdemand[dim]).all()
     assert (actual >= 0.9 * maxdemand - 1e-8).all()
     assert (result >= minprod - 1e-8).all()
+
+
+def test_min_production(technologies, capacity):
+    """Test minimum production quantity."""
+    from muse.quantities import maximum_production, minimum_production
+
+    # If no minimum service factor is defined, the minimum production is zero
+    assert "minimum_service_factor" not in technologies
+    production = minimum_production(technologies, capacity)
+    assert (production == 0).all()
+
+    # If minimum service factor is defined, then the minimum production is not zero
+    # and it is less than the maximum production
+    technologies["minimum_service_factor"] = 0.5
+    production = minimum_production(technologies, capacity)
+    assert not (production == 0).all()
+    assert (production <= maximum_production(technologies, capacity)).all()
+
+
+def test_supply_capped_by_min_service(technologies, capacity):
+    """Test supply is capped by the minimum service."""
+    from muse.commodities import CommodityUsage
+    from muse.quantities import minimum_production, supply
+
+    technologies["minimum_service_factor"] = 0.3
+    minprod = minimum_production(technologies, capacity)
+
+    # If minimum service factor is defined, then the minimum production is not zero
+    assert not (minprod == 0).all()
+
+    # And even if the demand is smaller than the minimum production, the supply
+    # should be equal to the minimum production
+    demand = minprod / 2
+    spl = supply(capacity, demand, technologies)
+    spl = spl.sel(commodity=spl.comm_usage == CommodityUsage.PRODUCT).sum(
+        ["year", "asset"]
+    )
+    minprod = minprod.sel(commodity=minprod.comm_usage == CommodityUsage.PRODUCT).sum(
+        ["year", "asset"]
+    )
+    assert (spl == approx(minprod)).all()
+
+    # But if there is not minimum service factor, the supply should be equal to the
+    # demand and should not be capped by the minimum production
+    del technologies["minimum_service_factor"]
+    spl = supply(capacity, demand, technologies)
+    spl = spl.sel(commodity=spl.comm_usage == CommodityUsage.PRODUCT).sum(
+        ["year", "asset"]
+    )
+    demand = demand.sel(commodity=demand.comm_usage == CommodityUsage.PRODUCT).sum(
+        ["year", "asset"]
+    )
+    assert (spl == approx(demand)).all()
+    assert (spl <= minprod).all()
