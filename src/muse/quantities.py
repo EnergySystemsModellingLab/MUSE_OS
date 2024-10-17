@@ -559,6 +559,7 @@ def minimum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
         the filters and the set of technologies in `capacity`.
     """
     from muse.commodities import is_enduse
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs, filter_input
 
     capa = filter_input(
@@ -578,7 +579,11 @@ def minimum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
     )
-    result = capa * ftechs.fixed_outputs * ftechs.minimum_service_factor
+    result = (
+        capa
+        * convert_timeslice(ftechs.fixed_outputs, TIMESLICE, QuantityType.EXTENSIVE)
+        * ftechs.minimum_service_factor
+    )
     return result.where(is_enduse(result.comm_usage), 0)
 
 
