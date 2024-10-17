@@ -55,11 +55,6 @@ PresetSector
 .. autoclass:: muse.sectors.preset_sector.PresetSector
    :members:
 
-LegacySector
-~~~~~~~~~~~~
-
-.. autoclass:: muse.sectors.legacy_sector.LegacySector
-   :members:
 
 Production
 ~~~~~~~~~~
