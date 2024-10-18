@@ -19,14 +19,9 @@ def _matching_market(technologies, stock, timeslice):
     from numpy.random import random
 
     from muse.quantities import consumption, maximum_production
-    from muse.timeslices import QuantityType, convert_timeslice
 
     market = xr.Dataset()
-    production = convert_timeslice(
-        maximum_production(technologies, stock.capacity),
-        timeslice,
-        QuantityType.EXTENSIVE,
-    )
+    production = maximum_production(technologies, stock.capacity)
     market["supply"] = production.sum("asset")
     market["consumption"] = drop_timeslice(
         consumption(technologies, production).sum("asset") + market.supply
@@ -126,7 +121,6 @@ def test_new_retro_split_zero_new_unmet(technologies, stock, matching_market):
 def test_new_retro_accounting_identity(technologies, stock, market):
     from muse.demand_share import new_and_retro_demands
     from muse.production import factory
-    from muse.timeslices import QuantityType, convert_timeslice
 
     share = new_and_retro_demands(
         stock.capacity, market, technologies, current_year=2010, forecast=5
@@ -134,14 +128,12 @@ def test_new_retro_accounting_identity(technologies, stock, market):
     assert (share >= 0).all()
 
     production_method = factory()
-    serviced = convert_timeslice(
+    serviced = (
         production_method(
             market.interp(year=2015), stock.capacity.interp(year=2015), technologies
         )
         .groupby("region")
-        .sum("asset"),
-        market.timeslice,
-        QuantityType.EXTENSIVE,
+        .sum("asset")
     )
     consumption = market.consumption.interp(year=2015)
 
