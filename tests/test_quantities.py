@@ -29,12 +29,14 @@ def demand(
 def production(technologies: xr.Dataset, capacity: xr.DataArray) -> xr.DataArray:
     from numpy.random import random
 
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+
     comms = xr.DataArray(
         random(len(technologies.commodity)),
         coords={"commodity": technologies.commodity},
         dims="commodity",
     )
-    return capacity * comms
+    return capacity * convert_timeslice(comms, TIMESLICE, QuantityType.EXTENSIVE)
 
 
 def make_array(array):
@@ -169,14 +171,10 @@ def test_consumption_no_flex(technologies, production, market):
 
     actual = consumption(technologies, production)
     assert set(actual.dims) == set(expected.dims)
-    assert "timeslice" not in actual.dims
-    actual, expected = xr.broadcast(actual, expected)
     assert actual.values == approx(expected.values)
 
     technologies.flexible_inputs[:] = 0
     actual = consumption(technologies, production, market.prices)
-    expected = expected * market.represent_hours / market.represent_hours.sum()
-    actual, expected = xr.broadcast(actual, expected)
     assert actual.values == approx(expected.values)
 
 
@@ -185,6 +183,7 @@ def test_consumption_with_flex(technologies, production, market):
 
     from muse.commodities import is_enduse, is_fuel
     from muse.quantities import consumption
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
 
     techs = technologies.copy()
     techs.fixed_inputs[:] = 0
@@ -209,13 +208,13 @@ def test_consumption_with_flex(technologies, production, market):
     region = one_dim(market.region)
     timeslice = one_dim(market.timeslice)
     commodity = one_dim(market.commodity)
-    hours = market.represent_hours / market.represent_hours.sum()
 
     prices = timeslice + commodity + year * region
     assert set(prices.dims) == set(market.prices.dims)
-    assert set((asset + year + commodity).dims) == set(production.dims)
     noenduse = ~is_enduse(techs.comm_usage)
-    production = asset * year + commodity
+    production = convert_timeslice(
+        asset * year + commodity, TIMESLICE, QuantityType.EXTENSIVE
+    )
     production.loc[{"commodity": noenduse}] = 0
 
     actual = consumption(technologies, production, prices)
@@ -248,9 +247,7 @@ def test_consumption_with_flex(technologies, production, market):
                 assert actual.sel(coords).values == approx(0)
                 continue
             prod = production.sel(asset=asset, year=year).sum("commodity")
-            expected = (
-                prod * hours.sel(timeslice=ts) / ncomms * flexs.sel(commodity=comm)
-            )
+            expected = prod.sel(timeslice=ts) / ncomms * flexs.sel(commodity=comm)
             assert expected.values == approx(actual.sel(coords).values)
 
 
