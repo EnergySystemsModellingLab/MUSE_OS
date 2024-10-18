@@ -59,14 +59,14 @@ def test_supply_enduse(technologies, capacity, timeslice):
     spl = supply(capacity, demand, technologies).where(
         is_enduse(technologies.comm_usage), 0
     )
-    assert (abs(spl.sum("timeslice") - production) < 1e-12).all()
+    assert (abs(spl - production) < 1e-12).all()
     assert (spl.sum("asset") < demand).all()
 
     demand = production.sum("asset") * 0.7 * share / share.sum()
     spl = supply(capacity, demand, technologies).where(
         is_enduse(technologies.comm_usage), 0
     )
-    assert (spl.sum("timeslice") <= production + 1e-12).all()
+    assert (spl <= production + 1e-12).all()
     assert (
         abs(spl.sum("asset") - demand.where(production.sum("asset") > 0, 0)) < 1e-12
     ).all()
@@ -89,6 +89,7 @@ def test_supply_emissions(technologies, capacity):
 def test_gross_margin(technologies, capacity, market):
     from muse.commodities import is_enduse, is_fuel, is_pollutant
     from muse.quantities import gross_margin
+    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
 
     """
     Gross margin refers to the calculation
@@ -118,11 +119,8 @@ def test_gross_margin(technologies, capacity, market):
     revenues = prices * prod * sum(is_enduse(usage))
     env_costs = env_prices * envs * sum(is_pollutant(usage))
     cons_costs = prices * fuels * sum(is_fuel(usage))
-    var_costs = (
-        vp
-        * ((prod * sum(is_enduse(usage))) ** ve)
-        * market.represent_hours
-        / sum(market.represent_hours)
+    var_costs = convert_timeslice(
+        vp * ((prod * sum(is_enduse(usage))) ** ve), TIMESLICE, QuantityType.EXTENSIVE
     )
 
     expected = revenues - env_costs - cons_costs - var_costs
@@ -143,10 +141,10 @@ def test_decommissioning_demand(technologies, capacity):
     technologies.fixed_outputs[:] = fouts = 0.5
     technologies.utilization_factor[:] = ufac = 0.4
     decom = decommissioning_demand(technologies, capacity, years)
-    assert set(decom.dims) == {"asset", "commodity", "year"}
-    assert decom.sel(commodity=is_enduse(technologies.comm_usage)).values == approx(
-        ufac * fouts * (current - forecast)
-    )
+    assert set(decom.dims) == {"asset", "commodity", "year", "timeslice"}
+    assert decom.sel(commodity=is_enduse(technologies.comm_usage)).sum(
+        "timeslice"
+    ).values == approx(ufac * fouts * (current - forecast))
 
 
 def test_consumption_no_flex(technologies, production, market):
@@ -276,25 +274,31 @@ def test_production_aggregate_asset_view(
     technologies.fixed_outputs[:] = 1
     technologies.utilization_factor[:] = 1
     prod = maximum_production(technologies, capacity)
-    assert set(prod.dims) == set(capacity.dims).union({"commodity"})
+    assert set(prod.dims) == set(capacity.dims).union({"commodity", "timeslice"})
     assert prod.sel(commodity=~enduses).values == approx(0)
-    prod, expected = xr.broadcast(prod.sel(commodity=enduses), capacity)
+    prod, expected = xr.broadcast(
+        prod.sel(commodity=enduses).sum("timeslice"), capacity
+    )
     assert prod.values == approx(expected.values)
 
     technologies.fixed_outputs[:] = fouts = 2
     technologies.utilization_factor[:] = ufact = 0.5
     prod = maximum_production(technologies, capacity)
     assert prod.sel(commodity=~enduses).values == approx(0)
-    assert set(prod.dims) == set(capacity.dims).union({"commodity"})
-    prod, expected = xr.broadcast(prod.sel(commodity=enduses), capacity)
+    assert set(prod.dims) == set(capacity.dims).union({"commodity", "timeslice"})
+    prod, expected = xr.broadcast(
+        prod.sel(commodity=enduses).sum("timeslice"), capacity
+    )
     assert prod.values == approx(fouts * ufact * expected.values)
 
     technologies.fixed_outputs[:] = fouts = 3
     technologies.utilization_factor[:] = ufact = 0.5
     prod = maximum_production(technologies, capacity)
     assert prod.sel(commodity=~enduses).values == approx(0)
-    assert set(prod.dims) == set(capacity.dims).union({"commodity"})
-    prod, expected = xr.broadcast(prod.sel(commodity=enduses), capacity)
+    assert set(prod.dims) == set(capacity.dims).union({"commodity", "timeslice"})
+    prod, expected = xr.broadcast(
+        prod.sel(commodity=enduses).sum("timeslice"), capacity
+    )
     assert prod.values == approx(fouts * ufact * expected.values)
 
 
