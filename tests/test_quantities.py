@@ -26,17 +26,19 @@ def demand(
 
 
 @fixture
-def production(technologies: xr.Dataset, capacity: xr.DataArray) -> xr.DataArray:
+def production(
+    technologies: xr.Dataset, capacity: xr.DataArray, timeslice
+) -> xr.DataArray:
     from numpy.random import random
 
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+    from muse.timeslices import QuantityType, convert_timeslice
 
     comms = xr.DataArray(
         random(len(technologies.commodity)),
         coords={"commodity": technologies.commodity},
         dims="commodity",
     )
-    return capacity * convert_timeslice(comms, TIMESLICE, QuantityType.EXTENSIVE)
+    return capacity * convert_timeslice(comms, timeslice, QuantityType.EXTENSIVE)
 
 
 def make_array(array):
@@ -46,25 +48,23 @@ def make_array(array):
 
 def test_supply_enduse(technologies, capacity, timeslice):
     """End-use part of supply."""
-    from numpy.random import random
-
     from muse.commodities import is_enduse
     from muse.quantities import maximum_production, supply
+    from muse.timeslices import QuantityType, convert_timeslice
 
     production = maximum_production(technologies, capacity)
-    share = xr.DataArray(
-        random(timeslice.timeslice.shape),
-        coords={"timeslice": timeslice.timeslice},
-        dims="timeslice",
+    demand = convert_timeslice(
+        production.sum("asset") + 1, timeslice, QuantityType.EXTENSIVE
     )
-    demand = (production.sum("asset") + 1) * share / share.sum()
     spl = supply(capacity, demand, technologies).where(
         is_enduse(technologies.comm_usage), 0
     )
     assert (abs(spl - production) < 1e-12).all()
     assert (spl.sum("asset") < demand).all()
 
-    demand = production.sum("asset") * 0.7 * share / share.sum()
+    demand = convert_timeslice(
+        production.sum("asset") * 0.7, timeslice, QuantityType.EXTENSIVE
+    )
     spl = supply(capacity, demand, technologies).where(
         is_enduse(technologies.comm_usage), 0
     )
@@ -88,10 +88,10 @@ def test_supply_emissions(technologies, capacity):
     assert actual.values == approx(expected.values)
 
 
-def test_gross_margin(technologies, capacity, market):
+def test_gross_margin(technologies, capacity, market, timeslice):
     from muse.commodities import is_enduse, is_fuel, is_pollutant
     from muse.quantities import gross_margin
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+    from muse.timeslices import QuantityType, convert_timeslice
 
     """
     Gross margin refers to the calculation
@@ -122,7 +122,7 @@ def test_gross_margin(technologies, capacity, market):
     env_costs = env_prices * envs * sum(is_pollutant(usage))
     cons_costs = prices * fuels * sum(is_fuel(usage))
     var_costs = convert_timeslice(
-        vp * ((prod * sum(is_enduse(usage))) ** ve), TIMESLICE, QuantityType.EXTENSIVE
+        vp * ((prod * sum(is_enduse(usage))) ** ve), timeslice, QuantityType.EXTENSIVE
     )
 
     expected = revenues - env_costs - cons_costs - var_costs
@@ -178,12 +178,12 @@ def test_consumption_no_flex(technologies, production, market):
     assert actual.values == approx(expected.values)
 
 
-def test_consumption_with_flex(technologies, production, market):
+def test_consumption_with_flex(technologies, production, market, timeslice):
     from itertools import product
 
     from muse.commodities import is_enduse, is_fuel
     from muse.quantities import consumption
-    from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+    from muse.timeslices import QuantityType, convert_timeslice
 
     techs = technologies.copy()
     techs.fixed_inputs[:] = 0
@@ -213,7 +213,7 @@ def test_consumption_with_flex(technologies, production, market):
     assert set(prices.dims) == set(market.prices.dims)
     noenduse = ~is_enduse(techs.comm_usage)
     production = convert_timeslice(
-        asset * year + commodity, TIMESLICE, QuantityType.EXTENSIVE
+        asset * year + commodity, timeslice, QuantityType.EXTENSIVE
     )
     production.loc[{"commodity": noenduse}] = 0
 
