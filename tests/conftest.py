@@ -161,17 +161,17 @@ def save_timeslice_globals():
 
 
 @fixture
-def default_timeslice_globals(save_timeslice_globals):
-    from muse import timeslices
+def default_timeslice_globals():
+    from muse.timeslices import DEFAULT_TIMESLICE_DESCRIPTION, setup_module
 
-    timeslices.setup_module(timeslices.DEFAULT_TIMESLICE_DESCRIPTION)
+    setup_module(DEFAULT_TIMESLICE_DESCRIPTION)
 
 
 @fixture
 def timeslice(default_timeslice_globals) -> Dataset:
-    from muse.readers.toml import read_timeslices
+    from muse.timeslices import TIMESLICE
 
-    return read_timeslices(dict(hour=["all-day"]))
+    return TIMESLICE
 
 
 @fixture
@@ -328,7 +328,7 @@ def technologies(coords) -> Dataset:
 def agent_market(coords, technologies, timeslice) -> Dataset:
     from numpy.random import rand
 
-    result = timeslice.copy()
+    result = Dataset(coords=timeslice.coords)
     result["commodity"] = "commodity", coords["commodity"]
     result["region"] = "region", coords["region"]
     result["technology"] = "technology", coords["technology"]
@@ -350,7 +350,7 @@ def agent_market(coords, technologies, timeslice) -> Dataset:
 def market(coords, technologies, timeslice) -> Dataset:
     from numpy.random import rand
 
-    result = timeslice.copy()
+    result = Dataset(coords=timeslice.coords)
     result["commodity"] = "commodity", coords["commodity"]
     result["region"] = "region", coords["region"]
     result["year"] = "year", coords["year"]
@@ -515,7 +515,6 @@ def demand_share(coords, timeslice):
     }
     shape = len(axes["commodity"]), len(axes["asset"]), len(axes["timeslice"])
     result = DataArray(rand(*shape), coords=axes, dims=axes.keys(), name="demand_share")
-    result.coords["represent_hours"] = timeslice.represent_hours
     return result
 
 
