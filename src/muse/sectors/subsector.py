@@ -87,7 +87,7 @@ class Subsector:
         market: xr.Dataset,
         time_period,
         current_year,
-    ):
+    ) -> None:
         from muse.utilities import agent_concatenation, reduce_assets
 
         # Split demand across agents

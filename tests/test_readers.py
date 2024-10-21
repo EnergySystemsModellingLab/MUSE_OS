@@ -472,16 +472,20 @@ def test_read_technodictionary(default_model):
 def test_read_technodata_timeslices(tmp_path):
     from muse.examples import copy_model
     from muse.readers.csv import read_technodata_timeslices
+    from muse.timeslices import setup_module
 
     copy_model("default_timeslice", tmp_path)
-    path = tmp_path / "model" / "technodata" / "power" / "TechnodataTimeslices.csv"
-    data = read_technodata_timeslices(path)
+    settings_path = tmp_path / "model" / "settings.toml"
+    settings = toml.load(settings_path)
+    setup_module(settings)  # configure global timeslicing scheme
+    data_path = tmp_path / "model" / "technodata" / "power" / "TechnodataTimeslices.csv"
+    data = read_technodata_timeslices(data_path)
 
     assert isinstance(data, xr.Dataset)
     assert set(data.dims) == {"technology", "region", "year", "timeslice"}
     assert dict(data.dtypes) == dict(
-        utilization_factor=np.int64,
-        minimum_service_factor=np.int64,
+        utilization_factor=np.float64,
+        minimum_service_factor=np.float64,
     )
     assert list(data.coords["technology"].values) == ["gasCCGT", "windturbine"]
     assert list(data.coords["region"].values) == ["R1"]
