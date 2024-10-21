@@ -26,15 +26,19 @@ def demand(
 
 
 @fixture
-def production(technologies: xr.Dataset, capacity: xr.DataArray) -> xr.DataArray:
+def production(
+    technologies: xr.Dataset, capacity: xr.DataArray, timeslice
+) -> xr.DataArray:
     from numpy.random import random
+
+    from muse.timeslices import QuantityType, convert_timeslice
 
     comms = xr.DataArray(
         random(len(technologies.commodity)),
         coords={"commodity": technologies.commodity},
         dims="commodity",
     )
-    return capacity * comms
+    return capacity * convert_timeslice(comms, timeslice, QuantityType.EXTENSIVE)
 
 
 def make_array(array):
@@ -44,29 +48,27 @@ def make_array(array):
 
 def test_supply_enduse(technologies, capacity, timeslice):
     """End-use part of supply."""
-    from numpy.random import random
-
     from muse.commodities import is_enduse
     from muse.quantities import maximum_production, supply
+    from muse.timeslices import QuantityType, convert_timeslice
 
     production = maximum_production(technologies, capacity)
-    share = xr.DataArray(
-        random(timeslice.timeslice.shape),
-        coords={"timeslice": timeslice.timeslice},
-        dims="timeslice",
+    demand = convert_timeslice(
+        production.sum("asset") + 1, timeslice, QuantityType.EXTENSIVE
     )
-    demand = (production.sum("asset") + 1) * share / share.sum()
     spl = supply(capacity, demand, technologies).where(
         is_enduse(technologies.comm_usage), 0
     )
-    assert (abs(spl.sum("timeslice") - production) < 1e-12).all()
+    assert (abs(spl - production) < 1e-12).all()
     assert (spl.sum("asset") < demand).all()
 
-    demand = production.sum("asset") * 0.7 * share / share.sum()
+    demand = convert_timeslice(
+        production.sum("asset") * 0.7, timeslice, QuantityType.EXTENSIVE
+    )
     spl = supply(capacity, demand, technologies).where(
         is_enduse(technologies.comm_usage), 0
     )
-    assert (spl.sum("timeslice") <= production + 1e-12).all()
+    assert (spl <= production + 1e-12).all()
     assert (
         abs(spl.sum("asset") - demand.where(production.sum("asset") > 0, 0)) < 1e-12
     ).all()
@@ -86,9 +88,10 @@ def test_supply_emissions(technologies, capacity):
     assert actual.values == approx(expected.values)
 
 
-def test_gross_margin(technologies, capacity, market):
+def test_gross_margin(technologies, capacity, market, timeslice):
     from muse.commodities import is_enduse, is_fuel, is_pollutant
     from muse.quantities import gross_margin
+    from muse.timeslices import QuantityType, convert_timeslice
 
     """
     Gross margin refers to the calculation
@@ -118,11 +121,8 @@ def test_gross_margin(technologies, capacity, market):
     revenues = prices * prod * sum(is_enduse(usage))
     env_costs = env_prices * envs * sum(is_pollutant(usage))
     cons_costs = prices * fuels * sum(is_fuel(usage))
-    var_costs = (
-        vp
-        * ((prod * sum(is_enduse(usage))) ** ve)
-        * market.represent_hours
-        / sum(market.represent_hours)
+    var_costs = convert_timeslice(
+        vp * ((prod * sum(is_enduse(usage))) ** ve), timeslice, QuantityType.EXTENSIVE
     )
 
     expected = revenues - env_costs - cons_costs - var_costs
@@ -143,10 +143,10 @@ def test_decommissioning_demand(technologies, capacity):
     technologies.fixed_outputs[:] = fouts = 0.5
     technologies.utilization_factor[:] = ufac = 0.4
     decom = decommissioning_demand(technologies, capacity, years)
-    assert set(decom.dims) == {"asset", "commodity", "year"}
-    assert decom.sel(commodity=is_enduse(technologies.comm_usage)).values == approx(
-        ufac * fouts * (current - forecast)
-    )
+    assert set(decom.dims) == {"asset", "commodity", "year", "timeslice"}
+    assert decom.sel(commodity=is_enduse(technologies.comm_usage)).sum(
+        "timeslice"
+    ).values == approx(ufac * fouts * (current - forecast))
 
 
 def test_consumption_no_flex(technologies, production, market):
@@ -171,22 +171,19 @@ def test_consumption_no_flex(technologies, production, market):
 
     actual = consumption(technologies, production)
     assert set(actual.dims) == set(expected.dims)
-    assert "timeslice" not in actual.dims
-    actual, expected = xr.broadcast(actual, expected)
     assert actual.values == approx(expected.values)
 
     technologies.flexible_inputs[:] = 0
     actual = consumption(technologies, production, market.prices)
-    expected = expected * market.represent_hours / market.represent_hours.sum()
-    actual, expected = xr.broadcast(actual, expected)
     assert actual.values == approx(expected.values)
 
 
-def test_consumption_with_flex(technologies, production, market):
+def test_consumption_with_flex(technologies, production, market, timeslice):
     from itertools import product
 
     from muse.commodities import is_enduse, is_fuel
     from muse.quantities import consumption
+    from muse.timeslices import QuantityType, convert_timeslice
 
     techs = technologies.copy()
     techs.fixed_inputs[:] = 0
@@ -211,13 +208,13 @@ def test_consumption_with_flex(technologies, production, market):
     region = one_dim(market.region)
     timeslice = one_dim(market.timeslice)
     commodity = one_dim(market.commodity)
-    hours = market.represent_hours / market.represent_hours.sum()
 
     prices = timeslice + commodity + year * region
     assert set(prices.dims) == set(market.prices.dims)
-    assert set((asset + year + commodity).dims) == set(production.dims)
     noenduse = ~is_enduse(techs.comm_usage)
-    production = asset * year + commodity
+    production = convert_timeslice(
+        asset * year + commodity, timeslice, QuantityType.EXTENSIVE
+    )
     production.loc[{"commodity": noenduse}] = 0
 
     actual = consumption(technologies, production, prices)
@@ -250,9 +247,7 @@ def test_consumption_with_flex(technologies, production, market):
                 assert actual.sel(coords).values == approx(0)
                 continue
             prod = production.sel(asset=asset, year=year).sum("commodity")
-            expected = (
-                prod * hours.sel(timeslice=ts) / ncomms * flexs.sel(commodity=comm)
-            )
+            expected = prod.sel(timeslice=ts) / ncomms * flexs.sel(commodity=comm)
             assert expected.values == approx(actual.sel(coords).values)
 
 
@@ -276,25 +271,31 @@ def test_production_aggregate_asset_view(
     technologies.fixed_outputs[:] = 1
     technologies.utilization_factor[:] = 1
     prod = maximum_production(technologies, capacity)
-    assert set(prod.dims) == set(capacity.dims).union({"commodity"})
+    assert set(prod.dims) == set(capacity.dims).union({"commodity", "timeslice"})
     assert prod.sel(commodity=~enduses).values == approx(0)
-    prod, expected = xr.broadcast(prod.sel(commodity=enduses), capacity)
+    prod, expected = xr.broadcast(
+        prod.sel(commodity=enduses).sum("timeslice"), capacity
+    )
     assert prod.values == approx(expected.values)
 
     technologies.fixed_outputs[:] = fouts = 2
     technologies.utilization_factor[:] = ufact = 0.5
     prod = maximum_production(technologies, capacity)
     assert prod.sel(commodity=~enduses).values == approx(0)
-    assert set(prod.dims) == set(capacity.dims).union({"commodity"})
-    prod, expected = xr.broadcast(prod.sel(commodity=enduses), capacity)
+    assert set(prod.dims) == set(capacity.dims).union({"commodity", "timeslice"})
+    prod, expected = xr.broadcast(
+        prod.sel(commodity=enduses).sum("timeslice"), capacity
+    )
     assert prod.values == approx(fouts * ufact * expected.values)
 
     technologies.fixed_outputs[:] = fouts = 3
     technologies.utilization_factor[:] = ufact = 0.5
     prod = maximum_production(technologies, capacity)
     assert prod.sel(commodity=~enduses).values == approx(0)
-    assert set(prod.dims) == set(capacity.dims).union({"commodity"})
-    prod, expected = xr.broadcast(prod.sel(commodity=enduses), capacity)
+    assert set(prod.dims) == set(capacity.dims).union({"commodity", "timeslice"})
+    prod, expected = xr.broadcast(
+        prod.sel(commodity=enduses).sum("timeslice"), capacity
+    )
     assert prod.values == approx(fouts * ufact * expected.values)
 
 
@@ -403,7 +404,6 @@ def test_demand_matched_production(
 ):
     from muse.commodities import CommodityUsage, is_enduse
     from muse.quantities import demand_matched_production, maximum_production
-    from muse.timeslices import QuantityType, convert_timeslice
 
     # try and make sure we have a few more outputs than the default fixture
     technologies.comm_usage[:] = np.random.choice(
@@ -414,11 +414,7 @@ def test_demand_matched_production(
     technologies.fixed_outputs[:] *= is_enduse(technologies.comm_usage)
 
     capacity = capacity.sel(year=capacity.year.min(), drop=True)
-    max_prod = convert_timeslice(
-        maximum_production(technologies, capacity),
-        demand.timeslice,
-        QuantityType.EXTENSIVE,
-    )
+    max_prod = maximum_production(technologies, capacity)
     demand = max_prod.sum("asset")
     demand[:] *= np.random.choice([0, 1, 1 / 2, 1 / 3, 1 / 10], demand.shape)
     prices = xr.zeros_like(demand)
@@ -434,7 +430,6 @@ def test_costed_production_exact_match(market, capacity, technologies):
         costed_production,
         maximum_production,
     )
-    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
 
     if set(capacity.region.values) != set(market.region.values):
@@ -445,13 +440,11 @@ def test_costed_production_exact_match(market, capacity, technologies):
     costs = annual_levelized_cost_of_energy(
         prices=market.prices.sel(region=technodata.region), technologies=technodata
     )
-    maxdemand = convert_timeslice(
+    maxdemand = (
         xr.Dataset(dict(mp=maximum_production(technologies, capacity)))
         .groupby("region")
         .sum("asset")
-        .mp,
-        market,
-        QuantityType.EXTENSIVE,
+        .mp
     )
     market["consumption"] = drop_timeslice(maxdemand)
     result = costed_production(market.consumption, costs, capacity, technologies)
@@ -469,17 +462,12 @@ def test_costed_production_single_region(market, capacity, technologies):
         costed_production,
         maximum_production,
     )
-    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
 
     capacity = capacity.drop_vars("region")
     capacity["region"] = "USA"
     market = market.sel(region=[capacity.region.values])
-    maxdemand = convert_timeslice(
-        maximum_production(technologies, capacity).sum("asset"),
-        market,
-        QuantityType.EXTENSIVE,
-    )
+    maxdemand = maximum_production(technologies, capacity).sum("asset")
     market["consumption"] = drop_timeslice(0.9 * maxdemand)
     technodata = broadcast_techs(technologies, capacity)
     costs = annual_levelized_cost_of_energy(
@@ -500,18 +488,15 @@ def test_costed_production_single_year(market, capacity, technologies):
         costed_production,
         maximum_production,
     )
-    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
 
     capacity = capacity.sel(year=2010)
     market = market.sel(year=2010)
-    maxdemand = convert_timeslice(
+    maxdemand = (
         xr.Dataset(dict(mp=maximum_production(technologies, capacity)))
         .groupby("region")
         .sum("asset")
-        .mp,
-        market,
-        QuantityType.EXTENSIVE,
+        .mp
     )
     market["consumption"] = drop_timeslice(0.9 * maxdemand)
     technodata = broadcast_techs(technologies, capacity)
@@ -533,7 +518,6 @@ def test_costed_production_over_capacity(market, capacity, technologies):
         costed_production,
         maximum_production,
     )
-    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
 
     capacity = capacity.isel(asset=[0, 1, 2])
@@ -541,13 +525,11 @@ def test_costed_production_over_capacity(market, capacity, technologies):
         capacity.region.values[: len(set(market.region.values))] = list(
             set(market.region.values)
         )
-    maxdemand = convert_timeslice(
+    maxdemand = (
         xr.Dataset(dict(mp=maximum_production(technologies, capacity)))
         .groupby("region")
         .sum("asset")
-        .mp,
-        market,
-        QuantityType.EXTENSIVE,
+        .mp
     )
     market["consumption"] = drop_timeslice(maxdemand * 0.9)
     technodata = broadcast_techs(technologies, capacity)
@@ -569,7 +551,6 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
         costed_production,
         maximum_production,
     )
-    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
 
     if set(capacity.region.values) != set(market.region.values):
@@ -580,9 +561,7 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
         technologies.utilization_factor.dims,
         rng.uniform(low=0.5, high=0.9, size=technologies.utilization_factor.shape),
     )
-    maxprod = convert_timeslice(
-        maximum_production(technologies, capacity), market, QuantityType.EXTENSIVE
-    )
+    maxprod = maximum_production(technologies, capacity)
     minprod = maxprod * broadcast_techs(technologies.minimum_service_factor, maxprod)
     maxdemand = xr.Dataset(dict(mp=minprod)).groupby("region").sum("asset").mp
     market["consumption"] = drop_timeslice(maxdemand * 0.9)
@@ -598,3 +577,57 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
         assert (actual[dim] == maxdemand[dim]).all()
     assert (actual >= 0.9 * maxdemand - 1e-8).all()
     assert (result >= minprod - 1e-8).all()
+
+
+def test_min_production(technologies, capacity):
+    """Test minimum production quantity."""
+    from muse.quantities import maximum_production, minimum_production
+
+    # If no minimum service factor is defined, the minimum production is zero
+    assert "minimum_service_factor" not in technologies
+    production = minimum_production(technologies, capacity)
+    assert (production == 0).all()
+
+    # If minimum service factor is defined, then the minimum production is not zero
+    # and it is less than the maximum production
+    technologies["minimum_service_factor"] = 0.5
+    production = minimum_production(technologies, capacity)
+    assert not (production == 0).all()
+    assert (production <= maximum_production(technologies, capacity)).all()
+
+
+def test_supply_capped_by_min_service(technologies, capacity):
+    """Test supply is capped by the minimum service."""
+    from muse.commodities import CommodityUsage
+    from muse.quantities import minimum_production, supply
+
+    technologies["minimum_service_factor"] = 0.3
+    minprod = minimum_production(technologies, capacity)
+
+    # If minimum service factor is defined, then the minimum production is not zero
+    assert not (minprod == 0).all()
+
+    # And even if the demand is smaller than the minimum production, the supply
+    # should be equal to the minimum production
+    demand = minprod / 2
+    spl = supply(capacity, demand, technologies)
+    spl = spl.sel(commodity=spl.comm_usage == CommodityUsage.PRODUCT).sum(
+        ["year", "asset"]
+    )
+    minprod = minprod.sel(commodity=minprod.comm_usage == CommodityUsage.PRODUCT).sum(
+        ["year", "asset"]
+    )
+    assert (spl == approx(minprod)).all()
+
+    # But if there is not minimum service factor, the supply should be equal to the
+    # demand and should not be capped by the minimum production
+    del technologies["minimum_service_factor"]
+    spl = supply(capacity, demand, technologies)
+    spl = spl.sel(commodity=spl.comm_usage == CommodityUsage.PRODUCT).sum(
+        ["year", "asset"]
+    )
+    demand = demand.sel(commodity=demand.comm_usage == CommodityUsage.PRODUCT).sum(
+        ["year", "asset"]
+    )
+    assert (spl == approx(demand)).all()
+    assert (spl <= minprod).all()
