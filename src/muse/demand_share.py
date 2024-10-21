@@ -602,8 +602,11 @@ def new_and_retro_demands(
 
     # Interpolate market to forecast year
     smarket: xr.Dataset = market.interp(year=[current_year, current_year + forecast])
+
+    # Interpolate capacity to forecast year
     capa = capacity.interp(year=[current_year, current_year + forecast])
     assert isinstance(capa, xr.DataArray)
+
     if hasattr(capa, "region") and capa.region.dims == ():
         capa["region"] = "asset", [str(capa.region.values)] * len(capa.asset)
 

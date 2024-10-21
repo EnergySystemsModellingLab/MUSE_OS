@@ -466,7 +466,6 @@ def max_production(
         .drop_vars("technology")
     )
     capacity = convert_timeslice(techs.fixed_outputs) * techs.utilization_factor
-
     if "asset" not in capacity.dims and "asset" in search_space.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
