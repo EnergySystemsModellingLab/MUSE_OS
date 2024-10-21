@@ -145,7 +145,7 @@ def new_and_retro(
            A_{a, s}^r = w_s\sum_i A_a^{r, i}
 
        with :math:`w_s` a weight associated with each timeslice and determined via
-       :py:func:`muse.timeslices.convert_timeslice_new`.
+       :py:func:`muse.timeslices.convert_timeslice`.
 
     #. An intermediate quantity, the :py:func:`unmet demand
        <muse.demand_share.unmet_demand>` :math:`U` is defined from
@@ -439,9 +439,8 @@ def unmet_forecasted_demand(
     comm_usage = technologies.comm_usage.sel(commodity=market.commodity)
     smarket: xr.Dataset = market.where(is_enduse(comm_usage), 0).interp(year=year)
     capacity = reduce_assets([u.assets.capacity.interp(year=year) for u in agents])
-    capa = cast(xr.DataArray, capacity)
-
-    result = unmet_demand(smarket, capa, technologies, production)
+    capacity = cast(xr.DataArray, capacity)
+    result = unmet_demand(smarket, capacity, technologies, production)
     if "year" in result.dims:
         result = result.squeeze("year")
     return result
@@ -480,12 +479,11 @@ def _inner_split(
 
     # Calculates the demand divided by the number of assets times the number of agents
     # if the demand is bigger than zero and the total demand assigned with the "method"
-    # function is zero (i.e. no decrease in production).
+    # function is zero.
     unassigned = (demand / (len(shares) * len(summed_shares))).where(
         logical_and(demand > 1e-12, total <= 1e-12), 0
     )
 
-    # ???
     totals = {
         key: (share / share.sum("asset")).fillna(0) for key, share in shares.items()
     }
@@ -561,6 +559,10 @@ def new_consumption(
     """
     from numpy import minimum
 
+    # Interpolate capacity to forecast year
+    capa = capacity.interp(year=current_year + forecast)
+    assert isinstance(capa, xr.DataArray)
+
     # Interpolate market to forecast year
     market = market.interp(year=[current_year, current_year + forecast])
     current = market.sel(year=current_year, drop=True)
@@ -569,11 +571,6 @@ def new_consumption(
     # Calculate the increase in consumption over the forecast period
     delta = (forecasted.consumption - current.consumption).clip(min=0)
 
-    # Capacity in the forecast year
-    capa = capacity.interp(year=current_year + forecast)
-    assert isinstance(capa, xr.DataArray)
-
-    #
     missing = unmet_demand(current, capa, technologies)
     consumption = minimum(delta, missing)
     return consumption

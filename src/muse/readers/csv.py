@@ -170,7 +170,8 @@ def read_technodata_timeslices(filename: Union[str, Path]) -> xr.Dataset:
         if item not in ["technology", "region", "year"]
     ]
     result = result.stack(timeslice=timeslice_levels)
-    result = convert_timeslice(result)  # sort timeslices
+    result = convert_timeslice(result)
+    # sorts timeslices into the correct order
     return result
 
 

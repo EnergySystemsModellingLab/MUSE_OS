@@ -69,7 +69,6 @@ class Sector(AbstractSector):  # type: ignore
         # Create outputs
         outputs = ofactory(*sector_settings.pop("outputs", []), sector_name=name)
 
-        #
         supply_args = sector_settings.pop(
             "supply", sector_settings.pop("dispatch_production", {})
         )
@@ -169,8 +168,7 @@ class Sector(AbstractSector):  # type: ignore
     def forecast(self):
         """Maximum forecast horizon across agents.
 
-        If no agents with a "forecast" attribute are found, defaults to 5. It cannot be
-        lower than 1 year.
+        It cannot be lower than 1 year.
         """
         forecasts = [getattr(agent, "forecast") for agent in self.agents]
         return max(1, max(forecasts))
