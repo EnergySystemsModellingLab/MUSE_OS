@@ -484,8 +484,8 @@ def test_read_technodata_timeslices(tmp_path):
     assert isinstance(data, xr.Dataset)
     assert set(data.dims) == {"technology", "region", "year", "timeslice"}
     assert dict(data.dtypes) == dict(
-        utilization_factor=np.float64,
-        minimum_service_factor=np.float64,
+        utilization_factor=np.int64,
+        minimum_service_factor=np.int64,
     )
     assert list(data.coords["technology"].values) == ["gasCCGT", "windturbine"]
     assert list(data.coords["region"].values) == ["R1"]

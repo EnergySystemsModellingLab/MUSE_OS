@@ -51,7 +51,7 @@ def timeslice_dataarray(reference):
     )
 
 
-def test_reference_timeslice():
+def test_read_timeslices():
     from toml import loads
 
     from muse.timeslices import read_timeslices

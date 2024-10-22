@@ -44,8 +44,8 @@ def read_timeslices(
         weight of each timeslice.
 
     Example:
-        >>> from muse.timeslices import reference_timeslice
-        >>> reference_timeslice(
+        >>> from muse.timeslices import read_timeslices
+        >>> read_timeslices(
         ...     """
         ...     [timeslices]
         ...     spring.weekday = 5
