@@ -2,6 +2,7 @@ import duckdb
 import numpy as np
 import pandas as pd
 import xarray as xr
+
 from muse.timeslices import QuantityType
 
 
