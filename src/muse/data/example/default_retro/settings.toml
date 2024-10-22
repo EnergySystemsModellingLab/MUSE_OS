@@ -14,16 +14,15 @@ tolerance = 0.1
 tolerance_unmet_demand = -0.1
 
 [[outputs]]
-quantity = "prices"
-sink = "aggregate"
-filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-
-[[outputs]]
 quantity = "capacity"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
-# Carbon budget control
+[[outputs]]
+quantity = "prices"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+
 [carbon_budget_control]
 budget = []
 
@@ -55,20 +54,6 @@ constraints = [
 demand_share = "new_and_retro"  # Optional, default to standard_demand
 forecast = 5  # Optional, defaults to 5
 
-[[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "capacity"
-sink = 'csv'
-overwrite = true
-
-[[sectors.residential.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-sink = 'csv'
-overwrite = true
-quantity.name = "supply"
-quantity.sum_over = "timeslice"
-quantity.drop = ["comm_usage", "units_prices"]
-
 [[sectors.residential.interactions]]
 net = 'new_to_retro'
 interaction = 'transfer'
@@ -87,12 +72,6 @@ existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
 lpsolver = "scipy"
 demand_share = "new_and_retro"
 
-[[sectors.power.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "capacity"
-sink = 'csv'
-overwrite = true
-
 [[sectors.power.interactions]]
 net = 'new_to_retro'
 interaction = 'transfer'
@@ -110,12 +89,6 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/gas/ExistingCapacity.csv'
 lpsolver = "scipy"
 demand_share = "new_and_retro"
-
-[[sectors.gas.outputs]]
-filename = '{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}'
-quantity = "capacity"
-sink = 'csv'
-overwrite = true
 
 [[sectors.gas.interactions]]
 net = 'new_to_retro'

@@ -1,7 +1,8 @@
 from pathlib import Path
 
-from muse.examples import available_examples
 from pytest import mark
+
+from muse.examples import available_examples
 
 # hack to skip regression tests for new input schema
 MODELS = available_examples()
@@ -15,9 +16,10 @@ MODELS.pop(MODELS.index("default_new_input"))
 def test_fullsim_regression(model, tmpdir, compare_dirs):
     from warnings import simplefilter
 
+    from pandas.errors import DtypeWarning
+
     from muse.examples import copy_model
     from muse.mca import MCA
-    from pandas.errors import DtypeWarning
 
     # fail the test if this warning crops up
     simplefilter("error", DtypeWarning)
@@ -50,8 +52,9 @@ def test_tutorial_regression(tutorial_path, tmpdir, compare_dirs):
     import shutil
     from warnings import simplefilter
 
-    from muse.mca import MCA
     from pandas.errors import DtypeWarning
+
+    from muse.mca import MCA
 
     # fail the test if this warning crops up
     simplefilter("error", DtypeWarning)

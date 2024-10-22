@@ -1,7 +1,8 @@
 import numpy as np
 import xarray as xr
-from muse.filters import factory, register_filter, register_initializer
 from pytest import fixture, mark
+
+from muse.filters import factory, register_filter, register_initializer
 
 
 @fixture

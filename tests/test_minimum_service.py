@@ -31,6 +31,7 @@ def modify_minimum_service_factors(
 def test_minimum_service_factor(check_mock, tmpdir, minimum_service_factors):
     """NOTE: Failing due to incorrect supply output (#335)."""
     import pandas as pd
+
     from muse import examples
     from muse.mca import MCA
 
