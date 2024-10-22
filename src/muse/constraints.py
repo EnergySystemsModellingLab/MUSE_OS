@@ -446,7 +446,7 @@ def max_production(
     from xarray import ones_like, zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     if year is None:
         year = int(market.year.min())
@@ -465,7 +465,7 @@ def max_production(
         .sel(**kwargs)
         .drop_vars("technology")
     )
-    capacity = convert_timeslice(techs.fixed_outputs) * techs.utilization_factor
+    capacity = distribute_timeslice(techs.fixed_outputs) * techs.utilization_factor
     if "asset" not in capacity.dims and "asset" in search_space.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
@@ -724,7 +724,7 @@ def minimum_service(
     from xarray import ones_like, zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     if "minimum_service_factor" not in technologies.data_vars:
         return None
@@ -747,7 +747,7 @@ def minimum_service(
         .sel(**kwargs)
         .drop_vars("technology")
     )
-    capacity = convert_timeslice(techs.fixed_outputs) * techs.minimum_service_factor
+    capacity = distribute_timeslice(techs.fixed_outputs) * techs.minimum_service_factor
     if "asset" not in capacity.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
@@ -808,7 +808,7 @@ def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
     from xarray import zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     assert "year" not in technologies.dims
 
@@ -821,7 +821,7 @@ def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
         selection["region"] = costs.region
     fouts = technologies.fixed_outputs.sel(selection).rename(technology="replacement")
 
-    production = zeros_like(costs * convert_timeslice(fouts))
+    production = zeros_like(costs * distribute_timeslice(fouts))
     for dim in production.dims:
         if isinstance(production.get_index(dim), pd.MultiIndex):
             production = drop_timeslice(production)

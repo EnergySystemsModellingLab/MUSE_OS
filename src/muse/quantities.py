@@ -153,7 +153,7 @@ def gross_margin(
     - non-environmental commodities OUTPUTS are related to revenues.
     """
     from muse.commodities import is_enduse, is_pollutant
-    from muse.timeslices import convert_timeslice
+    from muse.timeslices import distribute_timeslice
     from muse.utilities import broadcast_techs
 
     tech = broadcast_techs(  # type: ignore
@@ -190,7 +190,7 @@ def gross_margin(
     enduses = is_enduse(technologies.comm_usage)
 
     # Variable costs depend on factors such as labour
-    variable_costs = convert_timeslice(
+    variable_costs = distribute_timeslice(
         var_par * ((fixed_outputs.sel(commodity=enduses)).sum("commodity")) ** var_exp,
     )
 
@@ -340,7 +340,7 @@ def maximum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
         filters and the set of technologies in `capacity`.
     """
     from muse.commodities import is_enduse
-    from muse.timeslices import convert_timeslice
+    from muse.timeslices import distribute_timeslice
     from muse.utilities import broadcast_techs, filter_input
 
     capa = filter_input(
@@ -352,7 +352,9 @@ def maximum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
     )
-    result = capa * convert_timeslice(ftechs.fixed_outputs) * ftechs.utilization_factor
+    result = (
+        capa * distribute_timeslice(ftechs.fixed_outputs) * ftechs.utilization_factor
+    )
     return result.where(is_enduse(result.comm_usage), 0)
 
 
@@ -543,7 +545,7 @@ def minimum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
         the filters and the set of technologies in `capacity`.
     """
     from muse.commodities import is_enduse
-    from muse.timeslices import convert_timeslice
+    from muse.timeslices import distribute_timeslice
     from muse.utilities import broadcast_techs, filter_input
 
     capa = filter_input(
@@ -564,7 +566,9 @@ def minimum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
     )
     result = (
-        capa * convert_timeslice(ftechs.fixed_outputs) * ftechs.minimum_service_factor
+        capa
+        * distribute_timeslice(ftechs.fixed_outputs)
+        * ftechs.minimum_service_factor
     )
     return result.where(is_enduse(result.comm_usage), 0)
 
@@ -574,10 +578,10 @@ def capacity_to_service_demand(
     technologies: xr.Dataset,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
-    from muse.timeslices import convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     timeslice_outputs = (
-        convert_timeslice(technologies.fixed_outputs.sel(commodity=demand.commodity))
+        distribute_timeslice(technologies.fixed_outputs.sel(commodity=demand.commodity))
         * technologies.utilization_factor
     )
     capa_to_service_demand = demand / timeslice_outputs

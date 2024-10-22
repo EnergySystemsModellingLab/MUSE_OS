@@ -383,12 +383,12 @@ def lifetime_levelized_cost_of_energy(
     due to a zero utilisation factor.
     """
     from muse.costs import lifetime_levelized_cost_of_energy as LCOE
-    from muse.timeslices import convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = (
         capacity
-        * convert_timeslice(technologies.fixed_outputs)
+        * distribute_timeslice(technologies.fixed_outputs)
         * technologies.utilization_factor
     )
 
@@ -416,12 +416,12 @@ def net_present_value(
     See :py:func:`muse.costs.net_present_value` for more details.
     """
     from muse.costs import net_present_value as NPV
-    from muse.timeslices import convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = (
         capacity
-        * convert_timeslice(technologies.fixed_outputs)
+        * distribute_timeslice(technologies.fixed_outputs)
         * technologies.utilization_factor
     )
 
@@ -448,12 +448,12 @@ def net_present_cost(
     See :py:func:`muse.costs.net_present_cost` for more details.
     """
     from muse.costs import net_present_cost as NPC
-    from muse.timeslices import convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = (
         capacity
-        * convert_timeslice(technologies.fixed_outputs)
+        * distribute_timeslice(technologies.fixed_outputs)
         * technologies.utilization_factor
     )
 
@@ -480,12 +480,12 @@ def equivalent_annual_cost(
     See :py:func:`muse.costs.equivalent_annual_cost` for more details.
     """
     from muse.costs import equivalent_annual_cost as EAC
-    from muse.timeslices import convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = (
         capacity
-        * convert_timeslice(technologies.fixed_outputs)
+        * distribute_timeslice(technologies.fixed_outputs)
         * technologies.utilization_factor
     )
 

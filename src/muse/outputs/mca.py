@@ -35,7 +35,7 @@ from mypy_extensions import KwArg
 from muse.outputs.sector import market_quantity
 from muse.registration import registrator
 from muse.sectors import AbstractSector
-from muse.timeslices import convert_timeslice, drop_timeslice
+from muse.timeslices import distribute_timeslice, drop_timeslice
 from muse.utilities import multiindex_to_coords
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
@@ -350,12 +350,10 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             ]
             agent_market.loc[dict(commodity=excluded)] = 0
 
-            result = convert_timeslice(
-                supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                ),
+            result = supply(
+                agent_market,
+                capacity,
+                technologies,
             )
 
             if "year" in result.dims:
@@ -580,13 +578,12 @@ def sector_consumption(
             ]
             agent_market.loc[dict(commodity=excluded)] = 0
 
-            production = convert_timeslice(
-                supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                ),
+            production = supply(
+                agent_market,
+                capacity,
+                technologies,
             )
+
             prices = a.filter_input(market.prices, year=output_year)
             result = consumption(
                 technologies=technologies, production=production, prices=prices
@@ -720,12 +717,10 @@ def sector_fuel_costs(
                 year=output_year,
             ).fillna(0.0)
 
-            production = convert_timeslice(
-                supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                ),
+            production = supply(
+                agent_market,
+                capacity,
+                technologies,
             )
 
             prices = a.filter_input(market.prices, year=output_year)
@@ -776,7 +771,7 @@ def sector_capital_costs(
                 year=output_year,
                 technology=capacity.technology,
             )
-            data_agent = convert_timeslice(data.cap_par * (capacity**data.cap_exp))
+            data_agent = distribute_timeslice(data.cap_par * (capacity**data.cap_exp))
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
@@ -833,13 +828,12 @@ def sector_emission_costs(
             i = (np.where(envs))[0][0]
             red_envs = envs[i].commodity.values
             prices = a.filter_input(market.prices, year=output_year, commodity=red_envs)
-            production = convert_timeslice(
-                supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                ),
+            production = supply(
+                agent_market,
+                capacity,
+                technologies,
             )
+
             total = production.sel(commodity=enduses).sum("commodity")
             data_agent = total * (allemissions * prices).sum("commodity")
             data_agent["agent"] = a.name
@@ -906,7 +900,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             capacity = agent.filter_input(capacity_to_service_demand(demand, techs))
             production = (
                 capacity
-                * convert_timeslice(techs.fixed_outputs)
+                * distribute_timeslice(techs.fixed_outputs)
                 * techs.utilization_factor
             )
 
@@ -983,7 +977,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             capacity = agent.filter_input(capacity_to_service_demand(demand, techs))
             production = (
                 capacity
-                * convert_timeslice(techs.fixed_outputs)
+                * distribute_timeslice(techs.fixed_outputs)
                 * techs.utilization_factor
             )
 

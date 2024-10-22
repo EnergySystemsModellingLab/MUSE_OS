@@ -145,7 +145,7 @@ def new_and_retro(
            A_{a, s}^r = w_s\sum_i A_a^{r, i}
 
        with :math:`w_s` a weight associated with each timeslice and determined via
-       :py:func:`muse.timeslices.convert_timeslice`.
+       :py:func:`muse.timeslices.distribute_timeslice`.
 
     #. An intermediate quantity, the :py:func:`unmet demand
        <muse.demand_share.unmet_demand>` :math:`U` is defined from

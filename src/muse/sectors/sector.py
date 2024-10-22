@@ -384,7 +384,7 @@ class Sector(AbstractSector):  # type: ignore
         intensive: str | tuple[str] = "prices",
     ) -> xr.Dataset:
         """Converts market from one to another timeslice."""
-        from muse.timeslices import TIMESLICE, QuantityType, convert_timeslice
+        from muse.timeslices import broadcast_timeslice
 
         if isinstance(intensive, str):
             intensive = (intensive,)
@@ -393,11 +393,7 @@ class Sector(AbstractSector):  # type: ignore
 
         intensives = market[list(timesliced.intersection(intensive))]
         if "timeslice" not in intensives.dims:
-            intensives = convert_timeslice(
-                intensives,
-                TIMESLICE,
-                QuantityType.EXTENSIVE,
-            )
+            intensives = broadcast_timeslice(intensives)
         extensives = market[list(timesliced.difference(intensives.data_vars))]
         others = market[list(set(market.data_vars).difference(timesliced))]
         return xr.merge([intensives, extensives, others])
