@@ -8,13 +8,13 @@ from muse.timeslices import drop_timeslice
 def matching_market(technologies, stock, timeslice):
     """A market which matches stocks exactly."""
     return (
-        _matching_market(technologies, stock, timeslice)
+        _matching_market(technologies, stock)
         .interp(year=[2010, 2015, 2020, 2025])
         .transpose("timeslice", "region", "commodity", "year")
     )
 
 
-def _matching_market(technologies, stock, timeslice):
+def _matching_market(technologies, stock):
     """A market which matches stocks exactly."""
     from numpy.random import random
 
@@ -227,8 +227,8 @@ def test_new_retro_demand_share(technologies, coords, market, timeslice, stock_f
     asia_stock = stock_factory(coords, technologies).expand_dims(region=["ASEAN"])
     usa_stock = stock_factory(coords, technologies).expand_dims(region=["USA"])
 
-    asia_market = _matching_market(technologies, asia_stock, timeslice)
-    usa_market = _matching_market(technologies, usa_stock, timeslice)
+    asia_market = _matching_market(technologies, asia_stock)
+    usa_market = _matching_market(technologies, usa_stock)
     market = xr.concat((asia_market, usa_market), dim="region")
     market.consumption.loc[{"year": 2031}] *= 2
 
@@ -281,8 +281,8 @@ def test_standard_demand_share(technologies, coords, market, timeslice, stock_fa
     asia_stock = stock_factory(coords, technologies).expand_dims(region=["ASEAN"])
     usa_stock = stock_factory(coords, technologies).expand_dims(region=["USA"])
 
-    asia_market = _matching_market(technologies, asia_stock, timeslice)
-    usa_market = _matching_market(technologies, usa_stock, timeslice)
+    asia_market = _matching_market(technologies, asia_stock)
+    usa_market = _matching_market(technologies, usa_stock)
     market = xr.concat((asia_market, usa_market), dim="region")
     market.consumption.loc[{"year": 2031}] *= 2
 
@@ -334,8 +334,8 @@ def test_unmet_forecast_demand(technologies, coords, timeslice, stock_factory):
     asia_stock = stock_factory(coords, technologies).expand_dims(region=["ASEAN"])
     usa_stock = stock_factory(coords, technologies).expand_dims(region=["USA"])
 
-    asia_market = _matching_market(technologies, asia_stock, timeslice)
-    usa_market = _matching_market(technologies, usa_stock, timeslice)
+    asia_market = _matching_market(technologies, asia_stock)
+    usa_market = _matching_market(technologies, usa_stock)
     market = xr.concat((asia_market, usa_market), dim="region")
     current_year = market.year[0]
 

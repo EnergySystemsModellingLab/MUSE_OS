@@ -134,13 +134,6 @@ def test_check_foresight(settings: dict):
     check_foresight(settings)
 
 
-def test_check_time_slices(settings: dict):
-    """Tests the check_budget_parameters function."""
-    from muse.readers.toml import check_time_slices
-
-    check_time_slices(settings)
-
-
 def test_check_global_data_files(settings: dict, user_data_files):
     """Tests the check_global_data_files function."""
     from muse.readers.toml import check_global_data_files
@@ -491,8 +484,8 @@ def test_read_technodata_timeslices(tmp_path):
     assert isinstance(data, xr.Dataset)
     assert set(data.dims) == {"technology", "region", "year", "timeslice"}
     assert dict(data.dtypes) == dict(
-        utilization_factor=np.float64,
-        minimum_service_factor=np.float64,
+        utilization_factor=np.int64,
+        minimum_service_factor=np.int64,
     )
     assert list(data.coords["technology"].values) == ["gasCCGT", "windturbine"]
     assert list(data.coords["region"].values) == ["R1"]
@@ -609,11 +602,9 @@ def test_read_csv_agent_parameters(default_model):
 
 def test_read_initial_market(default_model):
     from muse.readers.csv import read_initial_market
-    from muse.readers.toml import read_settings
 
-    settings = read_settings(default_model / "settings.toml")
     path = default_model / "input" / "Projections.csv"
-    data = read_initial_market(path, timeslices=settings.timeslices)
+    data = read_initial_market(path)
 
     assert isinstance(data, xr.Dataset)
     assert set(data.dims) == {"region", "year", "commodity", "timeslice"}

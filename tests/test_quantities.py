@@ -31,14 +31,14 @@ def production(
 ) -> xr.DataArray:
     from numpy.random import random
 
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     comms = xr.DataArray(
         random(len(technologies.commodity)),
         coords={"commodity": technologies.commodity},
         dims="commodity",
     )
-    return capacity * convert_timeslice(comms, timeslice, QuantityType.EXTENSIVE)
+    return capacity * distribute_timeslice(comms)
 
 
 def make_array(array):
@@ -50,21 +50,16 @@ def test_supply_enduse(technologies, capacity, timeslice):
     """End-use part of supply."""
     from muse.commodities import is_enduse
     from muse.quantities import maximum_production, supply
-    from muse.timeslices import QuantityType, convert_timeslice
 
     production = maximum_production(technologies, capacity)
-    demand = convert_timeslice(
-        production.sum("asset") + 1, timeslice, QuantityType.EXTENSIVE
-    )
+    demand = production.sum("asset") + 1
     spl = supply(capacity, demand, technologies).where(
         is_enduse(technologies.comm_usage), 0
     )
     assert (abs(spl - production) < 1e-12).all()
     assert (spl.sum("asset") < demand).all()
 
-    demand = convert_timeslice(
-        production.sum("asset") * 0.7, timeslice, QuantityType.EXTENSIVE
-    )
+    demand = production.sum("asset") * 0.7
     spl = supply(capacity, demand, technologies).where(
         is_enduse(technologies.comm_usage), 0
     )
@@ -91,7 +86,7 @@ def test_supply_emissions(technologies, capacity):
 def test_gross_margin(technologies, capacity, market, timeslice):
     from muse.commodities import is_enduse, is_fuel, is_pollutant
     from muse.quantities import gross_margin
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     """
     Gross margin refers to the calculation
@@ -121,9 +116,7 @@ def test_gross_margin(technologies, capacity, market, timeslice):
     revenues = prices * prod * sum(is_enduse(usage))
     env_costs = env_prices * envs * sum(is_pollutant(usage))
     cons_costs = prices * fuels * sum(is_fuel(usage))
-    var_costs = convert_timeslice(
-        vp * ((prod * sum(is_enduse(usage))) ** ve), timeslice, QuantityType.EXTENSIVE
-    )
+    var_costs = distribute_timeslice(vp * ((prod * sum(is_enduse(usage))) ** ve))
 
     expected = revenues - env_costs - cons_costs - var_costs
     expected *= 100 / revenues
@@ -183,7 +176,7 @@ def test_consumption_with_flex(technologies, production, market, timeslice):
 
     from muse.commodities import is_enduse, is_fuel
     from muse.quantities import consumption
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     techs = technologies.copy()
     techs.fixed_inputs[:] = 0
@@ -212,9 +205,7 @@ def test_consumption_with_flex(technologies, production, market, timeslice):
     prices = timeslice + commodity + year * region
     assert set(prices.dims) == set(market.prices.dims)
     noenduse = ~is_enduse(techs.comm_usage)
-    production = convert_timeslice(
-        asset * year + commodity, timeslice, QuantityType.EXTENSIVE
-    )
+    production = distribute_timeslice(asset * year + commodity)
     production.loc[{"commodity": noenduse}] = 0
 
     actual = consumption(technologies, production, prices)

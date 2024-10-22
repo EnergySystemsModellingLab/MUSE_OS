@@ -102,14 +102,13 @@ def test_lp_costs():
 
     technologies = examples.technodata("power", model="trade")
     search_space = examples.search_space("power", model="trade")
-    timeslices = examples.sector("power", model="trade").timeslices
     costs = (
         search_space
         * np.arange(np.prod(search_space.shape)).reshape(search_space.shape)
         * xr.ones_like(technologies.dst_region)
     )
 
-    lpcosts = lp_costs(technologies.sel(year=2020, drop=True), costs, timeslices)
+    lpcosts = lp_costs(technologies.sel(year=2020, drop=True), costs)
     assert "capacity" in lpcosts.data_vars
     assert "production" in lpcosts.data_vars
     assert set(lpcosts.capacity.dims) == {"agent", "replacement", "dst_region"}

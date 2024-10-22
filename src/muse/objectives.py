@@ -214,12 +214,8 @@ def capacity_to_service_demand(
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
     from muse.quantities import capacity_to_service_demand
-    from muse.timeslices import represent_hours
 
-    hours = represent_hours(demand.timeslice)
-    return capacity_to_service_demand(
-        demand=demand, technologies=technologies, hours=hours
-    )
+    return capacity_to_service_demand(demand=demand, technologies=technologies)
 
 
 @register_objective
@@ -230,13 +226,12 @@ def capacity_in_use(
     **kwargs,
 ):
     from muse.commodities import is_enduse
-    from muse.timeslices import represent_hours
+    from muse.timeslices import TIMESLICE
 
-    hours = represent_hours(demand.timeslice)
     enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
     return (
-        (demand.sel(commodity=enduses).sum("commodity") / hours).sum("timeslice")
-        * hours.sum()
+        (demand.sel(commodity=enduses).sum("commodity") / TIMESLICE).sum("timeslice")
+        * TIMESLICE.sum()
         / technologies.utilization_factor
     )
 
@@ -388,14 +383,12 @@ def lifetime_levelized_cost_of_energy(
     due to a zero utilisation factor.
     """
     from muse.costs import lifetime_levelized_cost_of_energy as LCOE
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = (
         capacity
-        * convert_timeslice(
-            technologies.fixed_outputs, demand.timeslice, QuantityType.EXTENSIVE
-        )
+        * distribute_timeslice(technologies.fixed_outputs)
         * technologies.utilization_factor
     )
 
@@ -423,14 +416,12 @@ def net_present_value(
     See :py:func:`muse.costs.net_present_value` for more details.
     """
     from muse.costs import net_present_value as NPV
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = (
         capacity
-        * convert_timeslice(
-            technologies.fixed_outputs, demand.timeslice, QuantityType.EXTENSIVE
-        )
+        * distribute_timeslice(technologies.fixed_outputs)
         * technologies.utilization_factor
     )
 
@@ -457,14 +448,12 @@ def net_present_cost(
     See :py:func:`muse.costs.net_present_cost` for more details.
     """
     from muse.costs import net_present_cost as NPC
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = (
         capacity
-        * convert_timeslice(
-            technologies.fixed_outputs, demand.timeslice, QuantityType.EXTENSIVE
-        )
+        * distribute_timeslice(technologies.fixed_outputs)
         * technologies.utilization_factor
     )
 
@@ -491,14 +480,12 @@ def equivalent_annual_cost(
     See :py:func:`muse.costs.equivalent_annual_cost` for more details.
     """
     from muse.costs import equivalent_annual_cost as EAC
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = (
         capacity
-        * convert_timeslice(
-            technologies.fixed_outputs, demand.timeslice, QuantityType.EXTENSIVE
-        )
+        * distribute_timeslice(technologies.fixed_outputs)
         * technologies.utilization_factor
     )
 

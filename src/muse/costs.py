@@ -13,7 +13,7 @@ import xarray as xr
 
 from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
 from muse.quantities import consumption
-from muse.timeslices import QuantityType, convert_timeslice
+from muse.timeslices import distribute_timeslice
 from muse.utilities import filter_input
 
 
@@ -96,10 +96,8 @@ def net_present_value(
     raw_revenues = (production * prices_non_env * rates).sum(("commodity", "year"))
 
     # Cost of installed capacity
-    installed_capacity_costs = convert_timeslice(
+    installed_capacity_costs = distribute_timeslice(
         techs.cap_par * (capacity**techs.cap_exp),
-        prices.timeslice,
-        QuantityType.EXTENSIVE,
     )
 
     # Cost related to environmental products
@@ -120,10 +118,8 @@ def net_present_value(
     material_costs = (production * prices_material * rates).sum(("commodity", "year"))
 
     # Fixed and Variable costs
-    fixed_costs = convert_timeslice(
+    fixed_costs = distribute_timeslice(
         techs.fix_par * (capacity**techs.fix_exp),
-        prices.timeslice,
-        QuantityType.EXTENSIVE,
     )
     variable_costs = techs.var_par * (
         (production.sel(commodity=products).sum("commodity")) ** techs.var_exp
@@ -260,10 +256,8 @@ def lifetime_levelized_cost_of_energy(
     fuels = is_fuel(technologies.comm_usage)
 
     # Cost of installed capacity
-    installed_capacity_costs = convert_timeslice(
+    installed_capacity_costs = distribute_timeslice(
         techs.cap_par * (capacity**techs.cap_exp),
-        prices.timeslice,
-        QuantityType.EXTENSIVE,
     )
 
     # Cost related to environmental products
@@ -284,10 +278,8 @@ def lifetime_levelized_cost_of_energy(
     material_costs = (production * prices_material * rates).sum(("commodity", "year"))
 
     # Fixed and Variable costs
-    fixed_costs = convert_timeslice(
+    fixed_costs = distribute_timeslice(
         techs.fix_par * (capacity**techs.fix_exp),
-        prices.timeslice,
-        QuantityType.EXTENSIVE,
     )
     variable_costs = (
         techs.var_par * production.sel(commodity=products) ** techs.var_exp
@@ -372,21 +364,11 @@ def annual_levelized_cost_of_energy(
     rates = techs.interest_rate / (1 - (1 + techs.interest_rate) ** (-life))
 
     annualized_capital_costs = (
-        convert_timeslice(
-            techs.cap_par * rates,
-            prices.timeslice,
-            QuantityType.EXTENSIVE,
-        )
-        / techs.utilization_factor
+        distribute_timeslice(techs.cap_par * rates) / techs.utilization_factor
     )
 
     o_and_e_costs = (
-        convert_timeslice(
-            (techs.fix_par + techs.var_par),
-            prices.timeslice,
-            QuantityType.EXTENSIVE,
-        )
-        / techs.utilization_factor
+        distribute_timeslice(techs.fix_par + techs.var_par) / techs.utilization_factor
     )
 
     fuel_costs = (techs.fixed_inputs * prices).sum("commodity")
