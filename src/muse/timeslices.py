@@ -111,6 +111,12 @@ def broadcast_timeslice(x, ts=None):
     if ts is None:
         ts = TIMESLICE
 
+    # If x already has timeslices, check that it is matches the reference timeslice.
+    if "timeslice" in x.dims:
+        if x.timeslice.reset_coords(drop=True).equals(ts.timeslice):
+            return x
+        raise ValueError("x has incompatible timeslicing.")
+
     mindex_coords = Coordinates.from_pandas_multiindex(ts.timeslice, "timeslice")
     extensive = x.expand_dims(timeslice=ts["timeslice"]).assign_coords(mindex_coords)
     return extensive
@@ -121,7 +127,7 @@ def distribute_timeslice(x, ts=None):
         ts = TIMESLICE
 
     extensive = broadcast_timeslice(x, ts)
-    return extensive * (ts / ts.sum())
+    return extensive * (ts / broadcast_timeslice(ts.sum()))
 
 
 def drop_timeslice(data: DataArray) -> DataArray:
