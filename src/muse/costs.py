@@ -13,7 +13,7 @@ import xarray as xr
 
 from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
 from muse.quantities import consumption
-from muse.timeslices import distribute_timeslice
+from muse.timeslices import broadcast_timeslice, distribute_timeslice
 from muse.utilities import filter_input
 
 
@@ -220,6 +220,8 @@ def lifetime_levelized_cost_of_energy(
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
     """
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
+
     techs = technologies[
         [
             "technical_life",
@@ -243,10 +245,12 @@ def lifetime_levelized_cost_of_energy(
     years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
 
     # Evolution of rates with time
-    rates = discount_factor(
-        years=years - year + 1,
-        interest_rate=techs.interest_rate,
-        mask=years <= year + life,
+    rates = broadcast_timeslice(
+        discount_factor(
+            years=years - year + 1,
+            interest_rate=techs.interest_rate,
+            mask=years <= year + life,
+        )
     )
 
     # Filters
@@ -282,7 +286,8 @@ def lifetime_levelized_cost_of_energy(
         techs.fix_par * (capacity**techs.fix_exp),
     )
     variable_costs = (
-        techs.var_par * production.sel(commodity=products) ** techs.var_exp
+        broadcast_timeslice(techs.var_par)
+        * production.sel(commodity=products) ** broadcast_timeslice(techs.var_exp)
     ).sum("commodity")
     fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
     denominator = production.where(production > 0.0, 1e-6)
@@ -363,27 +368,28 @@ def annual_levelized_cost_of_energy(
 
     rates = techs.interest_rate / (1 - (1 + techs.interest_rate) ** (-life))
 
-    annualized_capital_costs = (
-        distribute_timeslice(techs.cap_par * rates) / techs.utilization_factor
+    annualized_capital_costs = distribute_timeslice(
+        techs.cap_par * rates
+    ) / broadcast_timeslice(techs.utilization_factor)
+
+    o_and_e_costs = distribute_timeslice(
+        techs.fix_par + techs.var_par
+    ) / broadcast_timeslice(techs.utilization_factor)
+
+    fuel_costs = (distribute_timeslice(techs.fixed_inputs) * prices).sum("commodity")
+    fuel_costs += (distribute_timeslice(techs.flexible_inputs) * prices).sum(
+        "commodity"
     )
-
-    o_and_e_costs = (
-        distribute_timeslice(techs.fix_par + techs.var_par) / techs.utilization_factor
-    )
-
-    fuel_costs = (techs.fixed_inputs * prices).sum("commodity")
-
-    fuel_costs += (techs.flexible_inputs * prices).sum("commodity")
     if "region" in techs.dims:
         env_costs = (
-            (techs.fixed_outputs * prices)
+            (distribute_timeslice(techs.fixed_outputs) * prices)
             .sel(region=techs.region)
             .sel(commodity=is_pollutant(techs.comm_usage))
             .sum("commodity")
         )
     else:
         env_costs = (
-            (techs.fixed_outputs * prices)
+            (distribute_timeslice(techs.fixed_outputs) * prices)
             .sel(commodity=is_pollutant(techs.comm_usage))
             .sum("commodity")
         )

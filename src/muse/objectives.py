@@ -383,13 +383,13 @@ def lifetime_levelized_cost_of_energy(
     due to a zero utilisation factor.
     """
     from muse.costs import lifetime_levelized_cost_of_energy as LCOE
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = (
-        capacity
+        broadcast_timeslice(capacity)
         * distribute_timeslice(technologies.fixed_outputs)
-        * technologies.utilization_factor
+        * broadcast_timeslice(technologies.utilization_factor)
     )
 
     results = LCOE(
