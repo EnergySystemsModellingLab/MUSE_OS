@@ -50,17 +50,16 @@ def test_supply_enduse(technologies, capacity, timeslice):
     """End-use part of supply."""
     from muse.commodities import is_enduse
     from muse.quantities import maximum_production, supply
-    from muse.timeslices import distribute_timeslice
 
     production = maximum_production(technologies, capacity)
-    demand = distribute_timeslice(production.sum("asset") + 1)
+    demand = production.sum("asset") + 1
     spl = supply(capacity, demand, technologies).where(
         is_enduse(technologies.comm_usage), 0
     )
     assert (abs(spl - production) < 1e-12).all()
     assert (spl.sum("asset") < demand).all()
 
-    demand = distribute_timeslice(production.sum("asset") * 0.7)
+    demand = production.sum("asset") * 0.7
     spl = supply(capacity, demand, technologies).where(
         is_enduse(technologies.comm_usage), 0
     )
