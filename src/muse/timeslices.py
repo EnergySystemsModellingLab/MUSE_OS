@@ -2,13 +2,13 @@
 
 __all__ = [
     "read_timeslices",
-    "convert_timeslice",
+    "broadcast_timeslice",
+    "distribute_timeslice",
     "drop_timeslice",
     "setup_module",
 ]
 
 from collections.abc import Mapping, Sequence
-from enum import Enum, unique
 from typing import Union
 
 from numpy import ndarray
@@ -105,43 +105,23 @@ def setup_module(settings: Union[str, Mapping]):
     TIMESLICE = read_timeslices(settings)
 
 
-@unique
-class QuantityType(Enum):
-    """Underlying transformation when performing time-slice conversion.
-
-    The meaning of a quantity vs the time-slice can be different:
-
-    - intensive: when extending the period of interest, quantities should be
-      added together. For instance the number of hours should be summed across
-      months.
-    - extensive: when extending the period of interest, quantities should be
-      broadcasted. For instance when extending a price from a one week period to
-      a two week period, the price should remain the same. Going in the opposite
-      direction (reducing the length of the time period), quantities should be
-      averaged.
-    """
-
-    INTENSIVE = "intensive"
-    EXTENSIVE = "extensive"
-
-
-def convert_timeslice(x, ts=None, quantity=QuantityType.INTENSIVE):
+def broadcast_timeslice(x, ts=None):
     from xarray import Coordinates
 
     if ts is None:
         ts = TIMESLICE
 
-    if hasattr(x, "timeslice"):
-        x = x.sel(timeslice=ts["timeslice"])
-        return x
-
     mindex_coords = Coordinates.from_pandas_multiindex(ts.timeslice, "timeslice")
     extensive = x.expand_dims(timeslice=ts["timeslice"]).assign_coords(mindex_coords)
-    if quantity is QuantityType.EXTENSIVE:
-        return extensive
+    return extensive
 
-    if quantity is QuantityType.INTENSIVE:
-        return extensive * (ts / ts.sum())
+
+def distribute_timeslice(x, ts=None):
+    if ts is None:
+        ts = TIMESLICE
+
+    extensive = broadcast_timeslice(x, ts)
+    return extensive * (ts / ts.sum())
 
 
 def drop_timeslice(data: DataArray) -> DataArray:
