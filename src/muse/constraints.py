@@ -726,7 +726,7 @@ def minimum_service(
     from xarray import ones_like, zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     if "minimum_service_factor" not in technologies.data_vars:
         return None
@@ -749,7 +749,9 @@ def minimum_service(
         .sel(**kwargs)
         .drop_vars("technology")
     )
-    capacity = distribute_timeslice(techs.fixed_outputs) * techs.minimum_service_factor
+    capacity = distribute_timeslice(techs.fixed_outputs) * broadcast_timeslice(
+        techs.minimum_service_factor
+    )
     if "asset" not in capacity.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)

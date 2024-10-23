@@ -31,14 +31,14 @@ def production(
 ) -> xr.DataArray:
     from numpy.random import random
 
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     comms = xr.DataArray(
         random(len(technologies.commodity)),
         coords={"commodity": technologies.commodity},
         dims="commodity",
     )
-    return capacity * distribute_timeslice(comms)
+    return broadcast_timeslice(capacity) * distribute_timeslice(comms)
 
 
 def make_array(array):
@@ -86,7 +86,6 @@ def test_supply_emissions(technologies, capacity):
 def test_gross_margin(technologies, capacity, market, timeslice):
     from muse.commodities import is_enduse, is_fuel, is_pollutant
     from muse.quantities import gross_margin
-    from muse.timeslices import distribute_timeslice
 
     """
     Gross margin refers to the calculation
@@ -116,7 +115,7 @@ def test_gross_margin(technologies, capacity, market, timeslice):
     revenues = prices * prod * sum(is_enduse(usage))
     env_costs = env_prices * envs * sum(is_pollutant(usage))
     cons_costs = prices * fuels * sum(is_fuel(usage))
-    var_costs = distribute_timeslice(vp * ((prod * sum(is_enduse(usage))) ** ve))
+    var_costs = vp * ((prod * sum(is_enduse(usage))) ** ve)
 
     expected = revenues - env_costs - cons_costs - var_costs
     expected *= 100 / revenues
@@ -145,6 +144,7 @@ def test_decommissioning_demand(technologies, capacity):
 def test_consumption_no_flex(technologies, production, market):
     from muse.commodities import is_enduse, is_fuel
     from muse.quantities import consumption
+    from muse.timeslices import distribute_timeslice
 
     fins = (
         technologies.fixed_inputs.where(is_fuel(technologies.comm_usage), 0)
@@ -157,7 +157,7 @@ def test_consumption_no_flex(technologies, production, market):
     )
     services = technologies.commodity.sel(commodity=is_enduse(technologies.comm_usage))
     expected = (
-        (production.rename(commodity="comm_in") * fins)
+        (production.rename(commodity="comm_in") * distribute_timeslice(fins))
         .sel(comm_in=production.commodity.isin(services).rename(commodity="comm_in"))
         .sum("comm_in")
     )
@@ -542,6 +542,7 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
         costed_production,
         maximum_production,
     )
+    from muse.timeslices import broadcast_timeslice
     from muse.utilities import broadcast_techs
 
     if set(capacity.region.values) != set(market.region.values):
@@ -553,7 +554,7 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
         rng.uniform(low=0.5, high=0.9, size=technologies.utilization_factor.shape),
     )
     maxprod = maximum_production(technologies, capacity)
-    minprod = maxprod * broadcast_techs(technologies.minimum_service_factor, maxprod)
+    minprod = maxprod * broadcast_timeslice(technologies.minimum_service_factor)
     maxdemand = xr.Dataset(dict(mp=minprod)).groupby("region").sum("asset").mp
     market["consumption"] = drop_timeslice(maxdemand * 0.9)
     technodata = broadcast_techs(technologies, capacity)

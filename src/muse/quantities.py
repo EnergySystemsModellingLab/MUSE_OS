@@ -197,9 +197,9 @@ def gross_margin(
 
     # The individual prices are selected
     # costs due to consumables, direct inputs
-    consumption_costs = (prices * fixed_inputs).sum("commodity")
+    consumption_costs = (prices * distribute_timeslice(fixed_inputs)).sum("commodity")
     # costs due to pollutants
-    production_costs = prices * fixed_outputs
+    production_costs = prices * distribute_timeslice(fixed_outputs)
     environmental_costs = (production_costs.sel(commodity=environmentals)).sum(
         "commodity"
     )
