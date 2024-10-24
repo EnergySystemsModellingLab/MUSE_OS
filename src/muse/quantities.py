@@ -125,6 +125,7 @@ def emission(production: xr.DataArray, fixed_outputs: xr.DataArray):
         A data array containing emissions (and only emissions).
     """
     from muse.commodities import is_enduse, is_pollutant
+    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import broadcast_techs
 
     # just in case we are passed a technologies dataset, like in other functions
@@ -133,8 +134,8 @@ def emission(production: xr.DataArray, fixed_outputs: xr.DataArray):
     )
     envs = is_pollutant(fouts.comm_usage)
     enduses = is_enduse(fouts.comm_usage)
-    return production.sel(commodity=enduses).sum("commodity") * fouts.sel(
-        commodity=envs
+    return production.sel(commodity=enduses).sum("commodity") * convert_timeslice(
+        fouts.sel(commodity=envs), production.timeslice, QuantityType.EXTENSIVE
     )
 
 
