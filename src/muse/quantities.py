@@ -44,6 +44,7 @@ def supply(
         input commodities).
     """
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
+    from muse.timeslices import broadcast_timeslice
 
     if production_method is None:
         production_method = maximum_production
@@ -88,8 +89,12 @@ def supply(
         demsum = set(maxprod.dims).difference(demand.dims)
         expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
 
-    expanded_maxprod = (maxprod * demand / demand.sum(prodsum)).fillna(0)
-    expanded_minprod = (minprod * demand / demand.sum(prodsum)).fillna(0)
+    expanded_maxprod = (
+        maxprod * demand / broadcast_timeslice(demand.sum(prodsum))
+    ).fillna(0)
+    expanded_minprod = (
+        minprod * demand / broadcast_timeslice(demand.sum(prodsum))
+    ).fillna(0)
     expanded_demand = expanded_demand.reindex_like(maxprod)
     expanded_minprod = expanded_minprod.reindex_like(maxprod)
 

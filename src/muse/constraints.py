@@ -484,8 +484,8 @@ def max_production(
         maxadd = maxadd.rename(technology="replacement")
         maxadd = maxadd.where(maxadd == 0, 0.0)
         maxadd = maxadd.where(maxadd > 0, -1.0)
-        capacity = capacity * maxadd
-        production = production * maxadd
+        capacity = capacity * broadcast_timeslice(maxadd)
+        production = production * broadcast_timeslice(maxadd)
         b = b.rename(region="src_region")
     return xr.Dataset(
         dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
