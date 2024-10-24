@@ -295,7 +295,11 @@ def consumption(
         )
 
     params_fuels = is_fuel(params.comm_usage)
-    consumption = production * params.fixed_inputs.where(params_fuels, 0)
+    consumption = production * convert_timeslice(
+        params.fixed_inputs.where(params_fuels, 0),
+        production.timeslice,
+        QuantityType.EXTENSIVE,
+    )
 
     if prices is None:
         return consumption
