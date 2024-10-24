@@ -44,7 +44,7 @@ def generate_model_1() -> None:
 
     # Add carbon budget
     carbon_budget_settings = {
-        "budget": [300, 300, 300, 300],
+        "budget": [50, 50, 50, 50],
         "commodities": ["CO2f"],
         "method": "bisection",
         "control_undershoot": False,

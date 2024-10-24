@@ -29,7 +29,7 @@ sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
 [carbon_budget_control]
-budget = [300, 300, 300, 300]
+budget = [50, 50, 50, 50]
 commodities = ["CO2f"]
 method = "bisection"
 control_undershoot = false
