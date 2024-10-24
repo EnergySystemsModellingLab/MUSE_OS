@@ -536,21 +536,9 @@ def demand_limiting_capacity(
     # utilization factor.
     if "timeslice" in b.dims or "timeslice" in capacity.dims:
         ratio = b / capacity
-        ts = ratio.timeslice.isel(
-            timeslice=ratio.min("replacement").argmax("timeslice")
-        )
-        # We select this timeslice for each array - don't trust the indices:
-        # search for the right timeslice in the array and select it.
-        b = (
-            b.isel(timeslice=(b.timeslice == ts).argmax("timeslice"))
-            if "timeslice" in b.dims
-            else b
-        )
-        capacity = (
-            capacity.isel(timeslice=(capacity.timeslice == ts).argmax("timeslice"))
-            if "timeslice" in capacity.dims
-            else capacity
-        )
+        ts_index = ratio.min("replacement").argmax("timeslice")
+        b = b.isel(timeslice=ts_index)
+        capacity = capacity.isel(timeslice=ts_index)
 
     # An adjustment is required to account for technologies that have multiple output
     # commodities
