@@ -79,10 +79,12 @@ def net_present_value(
     years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
 
     # Evolution of rates with time
-    rates = discount_factor(
-        years - year + 1,
-        interest_rate=techs.interest_rate,
-        mask=years <= year + life,
+    rates = broadcast_timeslice(
+        discount_factor(
+            years - year + 1,
+            interest_rate=techs.interest_rate,
+            mask=years <= year + life,
+        )
     )
 
     # Filters
@@ -121,8 +123,9 @@ def net_present_value(
     fixed_costs = distribute_timeslice(
         techs.fix_par * (capacity**techs.fix_exp),
     )
-    variable_costs = techs.var_par * (
-        (production.sel(commodity=products).sum("commodity")) ** techs.var_exp
+    variable_costs = broadcast_timeslice(techs.var_par) * (
+        (production.sel(commodity=products).sum("commodity"))
+        ** broadcast_timeslice(techs.var_exp)
     )
     assert set(fixed_costs.dims) == set(variable_costs.dims)
     fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
@@ -196,7 +199,7 @@ def equivalent_annual_cost(
     """
     npc = net_present_cost(technologies, prices, capacity, production, year)
     crf = capital_recovery_factor(technologies)
-    return npc * crf
+    return npc * broadcast_timeslice(crf)
 
 
 def lifetime_levelized_cost_of_energy(

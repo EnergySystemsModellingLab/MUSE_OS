@@ -271,7 +271,7 @@ def consumption(
     are not given, then flexible consumption is *not* considered.
     """
     from muse.commodities import is_enduse, is_fuel
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
     from muse.utilities import filter_with_template
 
     params = filter_with_template(
@@ -307,7 +307,7 @@ def consumption(
     ]
     # add consumption from cheapest fuel
     assert all(flexs.commodity.values == consumption.commodity.values)
-    flex = flexs.where(minprices == flexs.commodity, 0)
+    flex = flexs.where(minprices == broadcast_timeslice(flexs.commodity), 0)
     flex = flex / (flex > 0).sum("commodity").clip(min=1)
     return consumption + flex * production
 

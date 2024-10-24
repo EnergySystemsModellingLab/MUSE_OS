@@ -317,12 +317,15 @@ def emission_cost(
     with :math:`s` the timeslices and :math:`c` the commodity.
     """
     from muse.commodities import is_enduse, is_pollutant
+    from muse.timeslices import distribute_timeslice
 
     enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
     total = demand.sel(commodity=enduses).sum("commodity")
     envs = is_pollutant(technologies.comm_usage)
     prices = filter_input(prices, year=demand.year.item(), commodity=envs)
-    return total * (technologies.fixed_outputs * prices).sum("commodity")
+    return total * (distribute_timeslice(technologies.fixed_outputs) * prices).sum(
+        "commodity"
+    )
 
 
 @register_objective
@@ -416,13 +419,13 @@ def net_present_value(
     See :py:func:`muse.costs.net_present_value` for more details.
     """
     from muse.costs import net_present_value as NPV
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = (
-        capacity
+        broadcast_timeslice(capacity)
         * distribute_timeslice(technologies.fixed_outputs)
-        * technologies.utilization_factor
+        * broadcast_timeslice(technologies.utilization_factor)
     )
 
     results = NPV(
@@ -448,13 +451,13 @@ def net_present_cost(
     See :py:func:`muse.costs.net_present_cost` for more details.
     """
     from muse.costs import net_present_cost as NPC
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = (
-        capacity
+        broadcast_timeslice(capacity)
         * distribute_timeslice(technologies.fixed_outputs)
-        * technologies.utilization_factor
+        * broadcast_timeslice(technologies.utilization_factor)
     )
 
     results = NPC(
@@ -480,13 +483,13 @@ def equivalent_annual_cost(
     See :py:func:`muse.costs.equivalent_annual_cost` for more details.
     """
     from muse.costs import equivalent_annual_cost as EAC
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = (
-        capacity
+        broadcast_timeslice(capacity)
         * distribute_timeslice(technologies.fixed_outputs)
-        * technologies.utilization_factor
+        * broadcast_timeslice(technologies.utilization_factor)
     )
 
     results = EAC(
