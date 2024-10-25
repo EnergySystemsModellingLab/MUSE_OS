@@ -1107,6 +1107,7 @@ class ScipyAdapter:
         >>> market_demand =  0.8 * maximum_production(
         ...     res.technologies.interp(year=2025),
         ...     assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
+        ...     timeslices=market.timeslice,
         ... ).rename(technology="asset")
         >>> costs = search * np.arange(np.prod(search.shape)).reshape(search.shape)
         >>> constraint = cs.max_capacity_expansion(
