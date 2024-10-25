@@ -77,6 +77,7 @@ def market_demand(assets, technologies, market):
     return 0.8 * maximum_production(
         technologies.interp(year=2025),
         assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
+        timeslices=market.timeslice,
     ).rename(technology="asset")
 
 
