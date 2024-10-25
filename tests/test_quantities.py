@@ -86,7 +86,7 @@ def test_supply_emissions(technologies, capacity):
 def test_gross_margin(technologies, capacity, market, timeslice):
     from muse.commodities import is_enduse, is_fuel, is_pollutant
     from muse.quantities import gross_margin
-    
+
     """
     Gross margin refers to the calculation
     .. _here:
