@@ -317,18 +317,15 @@ def emission_cost(
     with :math:`s` the timeslices and :math:`c` the commodity.
     """
     from muse.commodities import is_enduse, is_pollutant
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
     total = demand.sel(commodity=enduses).sum("commodity")
     envs = is_pollutant(technologies.comm_usage)
     prices = filter_input(prices, year=demand.year.item(), commodity=envs)
-    return total * (
-        convert_timeslice(
-            technologies.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
-        )
-        * prices
-    ).sum("commodity")
+    return total * (distribute_timeslice(technologies.fixed_outputs) * prices).sum(
+        "commodity"
+    )
 
 
 @register_objective
