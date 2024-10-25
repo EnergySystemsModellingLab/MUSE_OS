@@ -242,7 +242,6 @@ def matching_market(sector: str, model: str = "default") -> xr.Dataset:
     from muse.examples import sector as load_sector
     from muse.quantities import consumption, maximum_production
     from muse.sectors import Sector
-    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import agent_concatenation
 
     loaded_sector = cast(Sector, load_sector(sector, model))
@@ -251,10 +250,8 @@ def matching_market(sector: str, model: str = "default") -> xr.Dataset:
     market = xr.Dataset()
     production = cast(
         xr.DataArray,
-        convert_timeslice(
-            maximum_production(loaded_sector.technologies, assets.capacity),
-            loaded_sector.timeslices,
-            QuantityType.EXTENSIVE,
+        maximum_production(
+            loaded_sector.technologies, assets.capacity, loaded_sector.timeslices
         ),
     )
     market["supply"] = production.sum("asset")
