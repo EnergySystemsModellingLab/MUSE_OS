@@ -371,19 +371,38 @@ def annual_levelized_cost_of_energy(
         distribute_timeslice(techs.fix_par + techs.var_par) / techs.utilization_factor
     )
 
-    fuel_costs = (techs.fixed_inputs * prices).sum("commodity")
+    fuel_costs = (
+        convert_timeslice(techs.fixed_inputs, prices.timeslice, QuantityType.EXTENSIVE)
+        * prices
+    ).sum("commodity")
 
-    fuel_costs += (techs.flexible_inputs * prices).sum("commodity")
+    fuel_costs += (
+        convert_timeslice(
+            techs.flexible_inputs, prices.timeslice, QuantityType.EXTENSIVE
+        )
+        * prices
+    ).sum("commodity")
+
     if "region" in techs.dims:
         env_costs = (
-            (techs.fixed_outputs * prices)
+            (
+                convert_timeslice(
+                    techs.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
+                )
+                * prices
+            )
             .sel(region=techs.region)
             .sel(commodity=is_pollutant(techs.comm_usage))
             .sum("commodity")
         )
     else:
         env_costs = (
-            (techs.fixed_outputs * prices)
+            (
+                convert_timeslice(
+                    techs.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
+                )
+                * prices
+            )
             .sel(commodity=is_pollutant(techs.comm_usage))
             .sum("commodity")
         )
