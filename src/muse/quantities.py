@@ -130,7 +130,7 @@ def emission(production: xr.DataArray, fixed_outputs: xr.DataArray):
         A data array containing emissions (and only emissions).
     """
     from muse.commodities import is_enduse, is_pollutant
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice
     from muse.utilities import broadcast_techs
 
     # just in case we are passed a technologies dataset, like in other functions
@@ -139,7 +139,7 @@ def emission(production: xr.DataArray, fixed_outputs: xr.DataArray):
     )
     envs = is_pollutant(fouts.comm_usage)
     enduses = is_enduse(fouts.comm_usage)
-    return production.sel(commodity=enduses).sum("commodity") * distribute_timeslice(
+    return production.sel(commodity=enduses).sum("commodity") * broadcast_timeslice(
         fouts.sel(commodity=envs)
     )
 
@@ -276,7 +276,7 @@ def consumption(
     are not given, then flexible consumption is *not* considered.
     """
     from muse.commodities import is_enduse, is_fuel
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
+    from muse.timeslices import broadcast_timeslice
     from muse.utilities import filter_with_template
 
     params = filter_with_template(
@@ -289,7 +289,7 @@ def consumption(
 
     production = production.sel(commodity=is_enduse(comm_usage)).sum("commodity")
     params_fuels = is_fuel(params.comm_usage)
-    consumption = production * distribute_timeslice(
+    consumption = production * broadcast_timeslice(
         params.fixed_inputs.where(params_fuels, 0)
     )
 
