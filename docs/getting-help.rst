@@ -5,7 +5,7 @@ Getting help
 
 Using MUSE can be daunting at first. It is a very powerful tool, but unleashing all its capabilities might take some time and effort. There are several resources available to help you with that:
 
-- :ref:`customising-muse`: The tutorials - and the underlying code, `available in the GitHub repository <https://github.com/EnergySystemsModellingLab/MUSE_OS/tree/develop/docs/tutorial-code>`_ - are the easiest way to start using MUSE and adapting it to your own needs. Look for one that looks similar to what you will need and use it as the starting point of your own simulation.
+- :ref:`customising-muse`: The tutorials - and the underlying code, `available in the GitHub repository <https://github.com/EnergySystemsModellingLab/MUSE_OS/tree/main/docs/tutorial-code>`_ - are the easiest way to start using MUSE and adapting it to your own needs. Look for one that looks similar to what you will need and use it as the starting point of your own simulation.
 
 - The `MUSE users mailing list <https://groups.google.com/g/muse-model>`_ is your next stop to get help with MUSE. Have a look at past topics in case anyone has hit the same issue as you or open your own questions if nothing fits what you are looking for.
 

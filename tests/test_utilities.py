@@ -269,7 +269,7 @@ def test_merge_assets():
             .interp(year=ab_side.year, method="linear")
             .fillna(0)
         )
-        assert ab_side.values == approx((a_side + b_side).values)
+        assert (ab_side.capacity == approx((a_side + b_side).values)).all()
 
 
 def test_avoid_repetitions():
