@@ -93,10 +93,7 @@ class AbstractAgent(ABC):
 
 
 class Agent(AbstractAgent):
-    """Agent that is capable of computing a search-space and a cost metric.
-
-    This agent will not perform any investment itself.
-    """
+    """Standard agent that does not perform investments."""
 
     def __init__(
         self,
@@ -246,40 +243,6 @@ class Agent(AbstractAgent):
     ) -> None:
         self.year += time_period
 
-    def compute_decision(
-        self,
-        technologies: xr.Dataset,
-        market: xr.Dataset,
-        demand: xr.DataArray,
-        search_space: xr.DataArray,
-    ) -> xr.DataArray:
-        # Filter technologies according to the search space, forecast year and region
-        techs = self.filter_input(
-            technologies,
-            technology=search_space.replacement,
-            year=self.forecast_year,
-        ).drop_vars("technology")
-
-        # Reduce dimensions of the demand array
-        reduced_demand = demand.sel(
-            {
-                k: search_space[k]
-                for k in set(demand.dims).intersection(search_space.dims)
-            }
-        )
-
-        # Filter prices according to the region
-        prices = self.filter_input(market.prices)
-
-        # Compute the objectives
-        objectives = self.objectives(
-            technologies=techs, demand=reduced_demand, prices=prices
-        )
-
-        # Compute the decision metric
-        decision = self.decision(objectives)
-        return decision
-
 
 class InvestingAgent(Agent):
     """Agent that performs investment for itself."""
@@ -392,6 +355,40 @@ class InvestingAgent(Agent):
 
         # Increment the year
         self.year += time_period
+
+    def compute_decision(
+        self,
+        technologies: xr.Dataset,
+        market: xr.Dataset,
+        demand: xr.DataArray,
+        search_space: xr.DataArray,
+    ) -> xr.DataArray:
+        # Filter technologies according to the search space, forecast year and region
+        techs = self.filter_input(
+            technologies,
+            technology=search_space.replacement,
+            year=self.forecast_year,
+        ).drop_vars("technology")
+
+        # Reduce dimensions of the demand array
+        reduced_demand = demand.sel(
+            {
+                k: search_space[k]
+                for k in set(demand.dims).intersection(search_space.dims)
+            }
+        )
+
+        # Filter prices according to the region
+        prices = self.filter_input(market.prices)
+
+        # Compute the objectives
+        objectives = self.objectives(
+            technologies=techs, demand=reduced_demand, prices=prices
+        )
+
+        # Compute the decision metric
+        decision = self.decision(objectives)
+        return decision
 
     def add_investments(
         self,

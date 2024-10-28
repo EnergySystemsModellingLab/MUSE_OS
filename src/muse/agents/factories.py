@@ -19,7 +19,7 @@ def create_standard_agent(
     interpolation: str = "linear",
     **kwargs,
 ):
-    """Creates retrofit agent from muse primitives."""
+    """Creates standard (noninvesting) agent from muse primitives."""
     from muse.filters import factory as filter_factory
 
     if share is not None:
