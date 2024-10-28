@@ -233,7 +233,10 @@ def new_and_retro(
         from muse.quantities import decommissioning_demand
 
         return decommissioning_demand(
-            technologies, capacity, year=[current_year, current_year + forecast]
+            technologies,
+            capacity,
+            year=[current_year, current_year + forecast],
+            timeslices=market.timeslice,
         ).squeeze("year")
 
     if current_year is None:
@@ -308,7 +311,12 @@ def new_and_retro(
         new_demands = _inner_split(
             new_capacity,
             demands.new.sel(region=region),
-            partial(maximum_production, technologies=regional_techs, year=current_year),
+            partial(
+                maximum_production,
+                technologies=regional_techs,
+                timeslices=market.timeslice,
+                year=current_year,
+            ),
             id_to_nquantity,
         )
 
@@ -357,7 +365,10 @@ def standard_demand(
         from muse.quantities import decommissioning_demand
 
         return decommissioning_demand(
-            technologies, capacity, year=[current_year, current_year + forecast]
+            technologies,
+            capacity,
+            year=[current_year, current_year + forecast],
+            timeslices=market.timeslice,
         ).squeeze("year")
 
     if current_year is None:
@@ -408,6 +419,7 @@ def standard_demand(
             partial(
                 maximum_production,
                 technologies=technologies.sel(region=region),
+                timeslices=market.timeslice,
                 year=current_year,
             ),
             id_to_quantity,
@@ -433,7 +445,6 @@ def unmet_forecasted_demand(
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
     from muse.commodities import is_enduse
-    from muse.timeslices import QuantityType, convert_timeslice
     from muse.utilities import reduce_assets
 
     if current_year is None:
@@ -443,12 +454,8 @@ def unmet_forecasted_demand(
     comm_usage = technologies.comm_usage.sel(commodity=market.commodity)
     smarket: xr.Dataset = market.where(is_enduse(comm_usage), 0).interp(year=year)
     capacity = reduce_assets([u.assets.capacity.interp(year=year) for u in agents])
-    ts_capacity = cast(
-        xr.DataArray,
-        convert_timeslice(capacity, market.timeslice, QuantityType.EXTENSIVE),
-    )
-
-    result = unmet_demand(smarket, ts_capacity, technologies, production)
+    capacity = cast(xr.DataArray, capacity)
+    result = unmet_demand(smarket, capacity, technologies, production)
     if "year" in result.dims:
         result = result.squeeze("year")
     return result
@@ -560,26 +567,17 @@ def new_consumption(
     """
     from numpy import minimum
 
-    from muse.timeslices import QuantityType, convert_timeslice
-
     if current_year is None:
         current_year = market.year.min()
 
-    ts_capa = convert_timeslice(
-        capacity.interp(year=current_year), market.timeslice, QuantityType.EXTENSIVE
-    )
-    ts_capa = convert_timeslice(
-        capacity.interp(year=current_year + forecast),
-        market.timeslice,
-        QuantityType.EXTENSIVE,
-    )
-    assert isinstance(ts_capa, xr.DataArray)
+    capa = capacity.interp(year=current_year + forecast)
+    assert isinstance(capa, xr.DataArray)
     market = market.interp(year=[current_year, current_year + forecast])
     current = market.sel(year=current_year, drop=True)
     forecasted = market.sel(year=current_year + forecast, drop=True)
 
     delta = (forecasted.consumption - current.consumption).clip(min=0)
-    missing = unmet_demand(current, ts_capa, technologies)
+    missing = unmet_demand(current, capa, technologies)
     consumption = minimum(delta, missing)
     return consumption
 
@@ -605,7 +603,6 @@ def new_and_retro_demands(
     from numpy import minimum
 
     from muse.production import factory as prod_factory
-    from muse.timeslices import QuantityType, convert_timeslice
 
     production_method = production if callable(production) else prod_factory(production)
     assert callable(production_method)
@@ -613,18 +610,13 @@ def new_and_retro_demands(
         current_year = market.year.min()
 
     smarket: xr.Dataset = market.interp(year=[current_year, current_year + forecast])
-    ts_capa = convert_timeslice(
-        capacity.interp(year=[current_year, current_year + forecast]),
-        market.timeslice,
-        QuantityType.EXTENSIVE,
-    )
-
-    assert isinstance(ts_capa, xr.DataArray)
-    if hasattr(ts_capa, "region") and ts_capa.region.dims == ():
-        ts_capa["region"] = "asset", [str(ts_capa.region.values)] * len(ts_capa.asset)
+    capa = capacity.interp(year=[current_year, current_year + forecast])
+    assert isinstance(capa, xr.DataArray)
+    if hasattr(capa, "region") and capa.region.dims == ():
+        capa["region"] = "asset", [str(capa.region.values)] * len(capa.asset)
 
     new_demand = new_consumption(
-        ts_capa, smarket, technologies, current_year=current_year, forecast=forecast
+        capa, smarket, technologies, current_year=current_year, forecast=forecast
     )
     if "year" in new_demand.dims:
         new_demand = new_demand.squeeze("year")
@@ -632,7 +624,7 @@ def new_and_retro_demands(
     service = (
         production_method(
             smarket.sel(year=current_year + forecast),
-            ts_capa.sel(year=current_year + forecast),
+            capa.sel(year=current_year + forecast),
             technologies,
         )
         .groupby("region")

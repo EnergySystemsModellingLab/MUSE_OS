@@ -58,11 +58,22 @@ def generate_model_2() -> None:
     # Modify UtilizationFactor and MinimumServiceFactor for windturbine
     timeslices_file = model_path / "technodata/power/TechnodataTimeslices.csv"
     df = pd.read_csv(timeslices_file)
-    df.loc[
-        (df["ProcessName"] == "windturbine")
-        & (df["hour"].isin(["morning", "afternoon"])),
-        "UtilizationFactor",
-    ] = 0.5
+    df.loc[df["ProcessName"] == "gasCCGT", "MinimumServiceFactor"] = [
+        0.2,
+        0.4,
+        0.6,
+        0.4,
+        0,
+        0,
+    ]
+    df.loc[df["ProcessName"] == "gasCCGT", "UtilizationFactor"] = [
+        1,
+        1,
+        1,
+        1,
+        0.5,
+        0.5,
+    ]
     df.to_csv(timeslices_file, index=False)
 
 

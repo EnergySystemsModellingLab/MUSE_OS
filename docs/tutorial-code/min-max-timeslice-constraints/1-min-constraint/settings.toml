@@ -57,7 +57,7 @@ forecast = 5  # Optional, defaults to 5
 [sectors.power]
 type = 'default'
 priority = 2
-dispatch_production = 'costed'
+dispatch_production = 'share'
 technodata = '{path}/technodata/power/Technodata.csv'
 technodata_timeslices = '{path}/technodata/power/TechnodataTimeslices.csv'
 commodities_in = '{path}/technodata/power/CommIn.csv'
