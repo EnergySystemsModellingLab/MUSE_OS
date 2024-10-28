@@ -234,6 +234,7 @@ def adhoc_match_demand(
     max_prod = maximum_production(
         technologies,
         max_capacity,
+        timeslices=demand,
         year=year,
         technology=costs.replacement,
         commodity=demand.commodity,

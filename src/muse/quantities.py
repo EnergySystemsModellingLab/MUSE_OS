@@ -48,8 +48,8 @@ def supply(
     if production_method is None:
         production_method = maximum_production
 
-    maxprod = production_method(technologies, capacity)
-    minprod = minimum_production(technologies, capacity)
+    maxprod = production_method(technologies, capacity, timeslices=demand)
+    minprod = minimum_production(technologies, capacity, timeslices=demand)
     size = np.array(maxprod.region).size
     # in presence of trade demand needs to map maxprod dst_region
     if (
@@ -216,6 +216,7 @@ def gross_margin(
 def decommissioning_demand(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
+    timeslices: xr.DataArray,
     year: Optional[Sequence[int]] = None,
 ) -> xr.DataArray:
     r"""Computes demand from process decommissioning.
@@ -255,7 +256,11 @@ def decommissioning_demand(
     capacity_decrease = capacity.sel(year=baseyear) - capacity.sel(year=dyears)
 
     # Calculate production associated with this capacity
-    return maximum_production(technologies, capacity_decrease).clip(min=0)
+    return maximum_production(
+        technologies,
+        capacity_decrease,
+        timeslices=timeslices,
+    ).clip(min=0)
 
 
 def consumption(
@@ -308,7 +313,11 @@ def consumption(
     return consumption + flex * production
 
 
-def maximum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filters):
+def maximum_production(
+    technologies: xr.Dataset,
+    capacity: xr.DataArray,
+    **filters,
+):
     r"""Production for a given capacity.
 
     Given a capacity :math:`\mathcal{A}_{t, \iota}^r`, the utilization factor
@@ -330,6 +339,8 @@ def maximum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
         technologies: xr.Dataset describing the features of the technologies of
             interests.  It should contain `fixed_outputs` and `utilization_factor`. It's
             shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
+        timeslices: xr.DataArray of the timeslicing scheme. Production data will be
+            returned in this format.
         filters: keyword arguments are used to filter down the capacity and
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are
@@ -381,7 +392,9 @@ def demand_matched_production(
 
     technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
     cost = ALCOE(prices=prices, technologies=technodata, **filters)
-    max_production = maximum_production(technodata, capacity, **filters)
+    max_production = maximum_production(
+        technodata, capacity, timeslices=demand, **filters
+    )
     assert ("timeslice" in demand.dims) == ("timeslice" in cost.dims)
     return demand_matching(demand, cost, max_production)
 
@@ -466,7 +479,7 @@ def costed_production(
             return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
 
     ranking = costs.rank("asset")
-    maxprod = maximum_production(technodata, capacity)
+    maxprod = maximum_production(technodata, capacity, timeslices=demand.timeslice)
     commodity = (maxprod > 0).any([i for i in maxprod.dims if i != "commodity"])
     commodity = commodity.drop_vars(
         [u for u in commodity.coords if u not in commodity.dims]
@@ -513,7 +526,12 @@ def costed_production(
     return result
 
 
-def minimum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filters):
+def minimum_production(
+    technologies: xr.Dataset,
+    capacity: xr.DataArray,
+    timeslices: xr.DataArray,
+    **filters,
+):
     r"""Minimum production for a given capacity.
 
     Given a capacity :math:`\mathcal{A}_{t, \iota}^r`, the minimum service factor
@@ -535,6 +553,8 @@ def minimum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
         technologies: xr.Dataset describing the features of the technologies of
             interests.  It should contain `fixed_outputs` and `minimum_service_factor`.
             Its shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
+        timeslices: xr.DataArray of the timeslicing scheme. Production data will be
+            returned in this format.
         filters: keyword arguments are used to filter down the capacity and
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are

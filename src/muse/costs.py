@@ -363,19 +363,23 @@ def annual_levelized_cost_of_energy(
 
     rates = techs.interest_rate / (1 - (1 + techs.interest_rate) ** (-life))
 
+    # Capital costs
     annualized_capital_costs = (
         distribute_timeslice(techs.cap_par * rates) / techs.utilization_factor
     )
 
+    # Fixed and variable running costs
     o_and_e_costs = (
         distribute_timeslice(techs.fix_par + techs.var_par) / techs.utilization_factor
     )
 
+    # Fuel costs from fixed and flexible inputs
     fuel_costs = (distribute_timeslice(techs.fixed_inputs) * prices).sum("commodity")
     fuel_costs += (distribute_timeslice(techs.flexible_inputs) * prices).sum(
         "commodity"
     )
 
+    # Environmental costs
     if "region" in techs.dims:
         env_costs = (
             (distribute_timeslice(techs.fixed_outputs) * prices)
