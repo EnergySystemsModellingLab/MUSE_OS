@@ -236,7 +236,6 @@ def new_and_retro(
             technologies,
             capacity,
             year=[current_year, current_year + forecast],
-            timeslices=market.timeslice,
         ).squeeze("year")
 
     capacity = reduce_assets([u.assets.capacity for u in agents])
@@ -311,7 +310,6 @@ def new_and_retro(
             partial(
                 maximum_production,
                 technologies=regional_techs,
-                timeslices=market.timeslice,
                 year=current_year,
             ),
             id_to_nquantity,
@@ -365,7 +363,6 @@ def standard_demand(
             technologies,
             capacity,
             year=[current_year, current_year + forecast],
-            timeslices=market.timeslice,
         ).squeeze("year")
 
     # Make sure there are no retrofit agents
@@ -418,7 +415,6 @@ def standard_demand(
             partial(
                 maximum_production,
                 technologies=technologies.sel(region=region),
-                timeslices=market.timeslice,
                 year=current_year,
             ),
             id_to_quantity,

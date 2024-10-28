@@ -158,7 +158,6 @@ def test_demand_split(technologies, stock, matching_market):
         return decommissioning_demand(
             technologies.sel(region="USA"),
             capacity,
-            matching_market.timeslice,
             year=[2012, 2017],
         )
 
@@ -195,7 +194,6 @@ def test_demand_split_zero_share(technologies, stock, matching_market):
         return 0 * decommissioning_demand(
             technologies.sel(region="USA"),
             capacity,
-            matching_market.timeslice,
             year=[2012, 2017],
         )
 

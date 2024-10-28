@@ -108,7 +108,7 @@ def maximum_production(
     """
     from muse.quantities import maximum_production
 
-    return maximum_production(technologies, capacity, timeslices=market.timeslice)
+    return maximum_production(technologies, capacity)
 
 
 @register_production(name=("share", "shares"))

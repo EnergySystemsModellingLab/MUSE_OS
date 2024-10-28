@@ -48,8 +48,8 @@ def supply(
     if production_method is None:
         production_method = maximum_production
 
-    maxprod = production_method(technologies, capacity, timeslices=demand)
-    minprod = minimum_production(technologies, capacity, timeslices=demand)
+    maxprod = production_method(technologies, capacity)
+    minprod = minimum_production(technologies, capacity)
     size = np.array(maxprod.region).size
     # in presence of trade demand needs to map maxprod dst_region
     if (
@@ -216,7 +216,6 @@ def gross_margin(
 def decommissioning_demand(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
-    timeslices: xr.DataArray,
     year: Optional[Sequence[int]] = None,
 ) -> xr.DataArray:
     r"""Computes demand from process decommissioning.
@@ -259,7 +258,6 @@ def decommissioning_demand(
     return maximum_production(
         technologies,
         capacity_decrease,
-        timeslices=timeslices,
     ).clip(min=0)
 
 
@@ -392,9 +390,7 @@ def demand_matched_production(
 
     technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
     cost = ALCOE(prices=prices, technologies=technodata, **filters)
-    max_production = maximum_production(
-        technodata, capacity, timeslices=demand, **filters
-    )
+    max_production = maximum_production(technodata, capacity, **filters)
     assert ("timeslice" in demand.dims) == ("timeslice" in cost.dims)
     return demand_matching(demand, cost, max_production)
 
@@ -479,7 +475,7 @@ def costed_production(
             return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
 
     ranking = costs.rank("asset")
-    maxprod = maximum_production(technodata, capacity, timeslices=demand.timeslice)
+    maxprod = maximum_production(technodata, capacity)
     commodity = (maxprod > 0).any([i for i in maxprod.dims if i != "commodity"])
     commodity = commodity.drop_vars(
         [u for u in commodity.coords if u not in commodity.dims]
@@ -529,7 +525,6 @@ def costed_production(
 def minimum_production(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
-    timeslices: xr.DataArray,
     **filters,
 ):
     r"""Minimum production for a given capacity.
