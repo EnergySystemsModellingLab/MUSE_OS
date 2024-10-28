@@ -69,7 +69,7 @@ def test_supply_enduse(technologies, capacity, timeslice):
     ).all()
 
 
-def test_supply_emissions(technologies, capacity):
+def test_supply_emissions(technologies, capacity, timeslice):
     """Emission part of supply."""
     from muse.commodities import is_enduse, is_pollutant
     from muse.quantities import emission, maximum_production, supply
@@ -124,7 +124,7 @@ def test_gross_margin(technologies, capacity, market, timeslice):
     assert actual.values == approx(expected.values)
 
 
-def test_decommissioning_demand(technologies, capacity):
+def test_decommissioning_demand(technologies, capacity, timeslice):
     from muse.commodities import is_enduse
     from muse.quantities import decommissioning_demand
 
@@ -290,7 +290,9 @@ def test_production_aggregate_asset_view(
     assert prod.values == approx(fouts * ufact * expected.values)
 
 
-def test_production_agent_asset_view(capacity: xr.DataArray, technologies: xr.Dataset):
+def test_production_agent_asset_view(
+    capacity: xr.DataArray, technologies: xr.Dataset, timeslice
+):
     """Production when capacity has format of agent.assets.capacity."""
     from muse.utilities import coords_to_multiindex, reduce_assets
 
@@ -571,7 +573,7 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
     assert (result >= minprod - 1e-8).all()
 
 
-def test_min_production(technologies, capacity):
+def test_min_production(technologies, capacity, timeslice):
     """Test minimum production quantity."""
     from muse.quantities import maximum_production, minimum_production
 
@@ -588,7 +590,7 @@ def test_min_production(technologies, capacity):
     assert (production <= maximum_production(technologies, capacity)).all()
 
 
-def test_supply_capped_by_min_service(technologies, capacity):
+def test_supply_capped_by_min_service(technologies, capacity, timeslice):
     """Test supply is capped by the minimum service."""
     from muse.commodities import CommodityUsage
     from muse.quantities import minimum_production, supply

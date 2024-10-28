@@ -261,7 +261,10 @@ def decommissioning_demand(
     capacity_decrease = capacity.sel(year=baseyear) - capacity.sel(year=dyears)
 
     # Calculate production associated with this capacity
-    return maximum_production(technologies, capacity_decrease).clip(min=0)
+    return maximum_production(
+        technologies,
+        capacity_decrease,
+    ).clip(min=0)
 
 
 def consumption(
@@ -317,7 +320,11 @@ def consumption(
     return consumption + flex * production
 
 
-def maximum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filters):
+def maximum_production(
+    technologies: xr.Dataset,
+    capacity: xr.DataArray,
+    **filters,
+):
     r"""Production for a given capacity.
 
     Given a capacity :math:`\mathcal{A}_{t, \iota}^r`, the utilization factor
@@ -339,6 +346,8 @@ def maximum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
         technologies: xr.Dataset describing the features of the technologies of
             interests.  It should contain `fixed_outputs` and `utilization_factor`. It's
             shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
+        timeslices: xr.DataArray of the timeslicing scheme. Production data will be
+            returned in this format.
         filters: keyword arguments are used to filter down the capacity and
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are
@@ -524,7 +533,11 @@ def costed_production(
     return result
 
 
-def minimum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filters):
+def minimum_production(
+    technologies: xr.Dataset,
+    capacity: xr.DataArray,
+    **filters,
+):
     r"""Minimum production for a given capacity.
 
     Given a capacity :math:`\mathcal{A}_{t, \iota}^r`, the minimum service factor
@@ -546,6 +559,8 @@ def minimum_production(technologies: xr.Dataset, capacity: xr.DataArray, **filte
         technologies: xr.Dataset describing the features of the technologies of
             interests.  It should contain `fixed_outputs` and `minimum_service_factor`.
             Its shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
+        timeslices: xr.DataArray of the timeslicing scheme. Production data will be
+            returned in this format.
         filters: keyword arguments are used to filter down the capacity and
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are

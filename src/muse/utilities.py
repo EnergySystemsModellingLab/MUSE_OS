@@ -412,6 +412,8 @@ def merge_assets(
 
     #
     forgroup = result.pipe(coords_to_multiindex, dimension=dimension)
+    if isinstance(forgroup, xr.DataArray):
+        forgroup = forgroup.to_dataset()
     if len(forgroup[dimension]) != len(set(forgroup[dimension].values)):
         result = (
             forgroup.groupby(dimension)

@@ -156,7 +156,9 @@ def test_demand_split(technologies, stock, matching_market):
         from muse.quantities import decommissioning_demand
 
         return decommissioning_demand(
-            technologies.sel(region="USA"), capacity, year=[2012, 2017]
+            technologies.sel(region="USA"),
+            capacity,
+            year=[2012, 2017],
         )
 
     demand = matching_market.consumption.sel(year=2015, region="USA", drop=True).where(
@@ -190,7 +192,9 @@ def test_demand_split_zero_share(technologies, stock, matching_market):
         from muse.quantities import decommissioning_demand
 
         return 0 * decommissioning_demand(
-            technologies.sel(region="USA"), capacity, year=[2012, 2017]
+            technologies.sel(region="USA"),
+            capacity,
+            year=[2012, 2017],
         )
 
     demand = matching_market.consumption.sel(year=2015, region="USA", drop=True).where(
