@@ -597,7 +597,7 @@ def test_min_production(technologies, capacity, timeslice):
 
     # If no minimum service factor is defined, the minimum production is zero
     assert "minimum_service_factor" not in technologies
-    production = minimum_production(technologies, capacity, timeslice)
+    production = minimum_production(technologies, capacity)
     assert (production == 0).all()
 
     # If minimum service factor is defined, then the minimum production is not zero
