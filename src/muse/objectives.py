@@ -322,12 +322,18 @@ def emission_cost(
     with :math:`s` the timeslices and :math:`c` the commodity.
     """
     from muse.commodities import is_enduse, is_pollutant
+    from muse.timeslices import QuantityType, convert_timeslice
 
     enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
     total = demand.sel(commodity=enduses).sum("commodity")
     envs = is_pollutant(technologies.comm_usage)
     prices = filter_input(prices, year=demand.year.item(), commodity=envs)
-    return total * (technologies.fixed_outputs * prices).sum("commodity")
+    return total * (
+        convert_timeslice(
+            technologies.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
+        )
+        * prices
+    ).sum("commodity")
 
 
 @register_objective
@@ -391,8 +397,13 @@ def lifetime_levelized_cost_of_energy(
     from muse.timeslices import QuantityType, convert_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
-    production = capacity * technologies.fixed_outputs * technologies.utilization_factor
-    production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
+    production = (
+        capacity
+        * convert_timeslice(
+            technologies.fixed_outputs, demand.timeslice, QuantityType.EXTENSIVE
+        )
+        * technologies.utilization_factor
+    )
 
     results = LCOE(
         technologies=technologies,
@@ -421,8 +432,13 @@ def net_present_value(
     from muse.timeslices import QuantityType, convert_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
-    production = capacity * technologies.fixed_outputs * technologies.utilization_factor
-    production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
+    production = (
+        capacity
+        * convert_timeslice(
+            technologies.fixed_outputs, demand.timeslice, QuantityType.EXTENSIVE
+        )
+        * technologies.utilization_factor
+    )
 
     results = NPV(
         technologies=technologies,
@@ -450,8 +466,13 @@ def net_present_cost(
     from muse.timeslices import QuantityType, convert_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
-    production = capacity * technologies.fixed_outputs * technologies.utilization_factor
-    production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
+    production = (
+        capacity
+        * convert_timeslice(
+            technologies.fixed_outputs, demand.timeslice, QuantityType.EXTENSIVE
+        )
+        * technologies.utilization_factor
+    )
 
     results = NPC(
         technologies=technologies,
@@ -479,8 +500,13 @@ def equivalent_annual_cost(
     from muse.timeslices import QuantityType, convert_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
-    production = capacity * technologies.fixed_outputs * technologies.utilization_factor
-    production = convert_timeslice(production, demand.timeslice, QuantityType.EXTENSIVE)
+    production = (
+        capacity
+        * convert_timeslice(
+            technologies.fixed_outputs, demand.timeslice, QuantityType.EXTENSIVE
+        )
+        * technologies.utilization_factor
+    )
 
     results = EAC(
         technologies=technologies,

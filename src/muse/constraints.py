@@ -465,11 +465,15 @@ def max_production(
         .sel(**kwargs)
         .drop_vars("technology")
     )
-    capacity = convert_timeslice(
-        techs.fixed_outputs * techs.utilization_factor,
-        market.timeslice,
-        QuantityType.EXTENSIVE,
+    capacity = (
+        convert_timeslice(
+            techs.fixed_outputs,
+            market.timeslice,
+            QuantityType.EXTENSIVE,
+        )
+        * techs.utilization_factor
     )
+
     if "asset" not in capacity.dims and "asset" in search_space.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
@@ -751,10 +755,13 @@ def minimum_service(
         .sel(**kwargs)
         .drop_vars("technology")
     )
-    capacity = convert_timeslice(
-        techs.fixed_outputs * techs.minimum_service_factor,
-        market.timeslice,
-        QuantityType.EXTENSIVE,
+    capacity = (
+        convert_timeslice(
+            techs.fixed_outputs,
+            market.timeslice,
+            QuantityType.EXTENSIVE,
+        )
+        * techs.minimum_service_factor
     )
     if "asset" not in capacity.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
@@ -1099,10 +1106,8 @@ class ScipyAdapter:
         >>> assets = next(a.assets for a in res.agents)
         >>> market_demand =  0.8 * maximum_production(
         ...     res.technologies.interp(year=2025),
-        ...     convert_timeslice(
-        ...         assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
-        ...         market.timeslice,
-        ...     ),
+        ...     assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
+        ...     timeslices=market.timeslice,
         ... ).rename(technology="asset")
         >>> costs = search * np.arange(np.prod(search.shape)).reshape(search.shape)
         >>> constraint = cs.max_capacity_expansion(

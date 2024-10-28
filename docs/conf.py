@@ -8,7 +8,7 @@
 project = "MUSE"
 copyright = "2024, Imperial College London"
 author = "Imperial College London"
-release = "1.2.1"
+release = "1.2.2"
 version = ".".join(release.split(".")[:2])
 
 # -- General configuration ---------------------------------------------------

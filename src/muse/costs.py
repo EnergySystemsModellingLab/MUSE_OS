@@ -371,6 +371,7 @@ def annual_levelized_cost_of_energy(
 
     rates = techs.interest_rate / (1 - (1 + techs.interest_rate) ** (-life))
 
+    # Capital costs
     annualized_capital_costs = (
         convert_timeslice(
             techs.cap_par * rates,
@@ -380,6 +381,7 @@ def annual_levelized_cost_of_energy(
         / techs.utilization_factor
     )
 
+    # Fixed and variable running costs
     o_and_e_costs = (
         convert_timeslice(
             (techs.fix_par + techs.var_par),
@@ -389,19 +391,39 @@ def annual_levelized_cost_of_energy(
         / techs.utilization_factor
     )
 
-    fuel_costs = (techs.fixed_inputs * prices).sum("commodity")
+    # Fuel costs from fixed and flexible inputs
+    fuel_costs = (
+        convert_timeslice(techs.fixed_inputs, prices.timeslice, QuantityType.EXTENSIVE)
+        * prices
+    ).sum("commodity")
+    fuel_costs += (
+        convert_timeslice(
+            techs.flexible_inputs, prices.timeslice, QuantityType.EXTENSIVE
+        )
+        * prices
+    ).sum("commodity")
 
-    fuel_costs += (techs.flexible_inputs * prices).sum("commodity")
+    # Environmental costs
     if "region" in techs.dims:
         env_costs = (
-            (techs.fixed_outputs * prices)
+            (
+                convert_timeslice(
+                    techs.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
+                )
+                * prices
+            )
             .sel(region=techs.region)
             .sel(commodity=is_pollutant(techs.comm_usage))
             .sum("commodity")
         )
     else:
         env_costs = (
-            (techs.fixed_outputs * prices)
+            (
+                convert_timeslice(
+                    techs.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
+                )
+                * prices
+            )
             .sel(commodity=is_pollutant(techs.comm_usage))
             .sum("commodity")
         )
