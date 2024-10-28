@@ -46,7 +46,7 @@ def make_array(array):
     return xr.DataArray(data, dims=array.dims, coords=array.coords)
 
 
-def test_supply_enduse(technologies, capacity):
+def test_supply_enduse(technologies, capacity, timeslice):
     """End-use part of supply."""
     from muse.commodities import is_enduse
     from muse.quantities import maximum_production, supply
@@ -69,7 +69,7 @@ def test_supply_enduse(technologies, capacity):
     ).all()
 
 
-def test_supply_emissions(technologies, capacity):
+def test_supply_emissions(technologies, capacity, timeslice):
     """Emission part of supply."""
     from muse.commodities import is_enduse, is_pollutant
     from muse.quantities import emission, maximum_production, supply
@@ -296,7 +296,7 @@ def test_production_agent_asset_view(
     from muse.utilities import coords_to_multiindex, reduce_assets
 
     capacity = coords_to_multiindex(reduce_assets(capacity)).unstack("asset").fillna(0)
-    test_production_aggregate_asset_view(capacity, technologies, timeslice)
+    test_production_aggregate_asset_view(capacity, technologies)
 
 
 def test_capacity_in_use(production: xr.DataArray, technologies: xr.Dataset):
