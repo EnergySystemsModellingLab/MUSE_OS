@@ -432,6 +432,7 @@ def capacity_in_use(
         Capacity-in-use for each technology, whittled down by the filters.
     """
     from muse.commodities import is_enduse
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
     from muse.utilities import broadcast_techs, filter_input
 
     prod = filter_input(
@@ -445,7 +446,10 @@ def capacity_in_use(
         btechs, **{k: v for k, v in filters.items() if k in technologies.dims}
     )
 
-    factor = 1 / (ftechs.fixed_outputs * ftechs.utilization_factor)
+    factor = 1 / (
+        distribute_timeslice(ftechs.fixed_outputs)
+        * broadcast_timeslice(ftechs.utilization_factor)
+    )
     capa_in_use = (prod * factor).where(~np.isinf(factor), 0)
 
     capa_in_use = capa_in_use.where(
@@ -471,6 +475,7 @@ def costed_production(
     service is applied first.
     """
     from muse.quantities import maximum_production
+    from muse.timeslices import broadcast_timeslice
     from muse.utilities import broadcast_techs
 
     technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
@@ -503,9 +508,13 @@ def costed_production(
     if not with_minimum_service:
         production = xr.zeros_like(constraints.maxprod)
     else:
-        production = (
-            getattr(technodata, "minimum_service_factor", 0) * constraints.maxprod
-        )
+        if hasattr(technodata, "minimum_service_factor"):
+            production = (
+                broadcast_timeslice(technodata.minimum_service_factor)
+                * constraints.maxprod
+            )
+        else:
+            production = 0 * constraints.maxprod
         demand = np.maximum(demand - group_assets(production), 0)
 
     for rank in sorted(set(constraints.ranking.values.flatten())):
