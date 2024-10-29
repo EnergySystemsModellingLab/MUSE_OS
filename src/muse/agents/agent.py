@@ -80,9 +80,9 @@ class AbstractAgent(ABC):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        time_period: int,
+        year: int,
     ) -> None:
-        """Increments agent to the next time point (e.g. performing investments)."""
+        """Increments agent to the specified year (e.g. performing investments)."""
 
     def __repr__(self):
         return (
@@ -239,9 +239,9 @@ class Agent(AbstractAgent):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        time_period: int,
+        year: int,
     ) -> None:
-        self.year += time_period
+        self.year = year
 
 
 class InvestingAgent(Agent):
@@ -281,7 +281,7 @@ class InvestingAgent(Agent):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        time_period: int,
+        year: int,
     ) -> None:
         """Iterates agent one turn.
 
@@ -294,11 +294,11 @@ class InvestingAgent(Agent):
         """
         from logging import getLogger
 
-        current_year = self.year
+        # Increment the year
+        self.year = year
 
         # Skip forward if demand is zero
         if demand.size == 0 or demand.sum() < 1e-12:
-            self.year += time_period
             return None
 
         # Calculate the search space
@@ -309,7 +309,6 @@ class InvestingAgent(Agent):
         # Skip forward if the search space is empty
         if any(u == 0 for u in search_space.shape):
             getLogger(__name__).critical("Search space is empty")
-            self.year += time_period
             return None
 
         # Calculate the decision metric
@@ -334,7 +333,7 @@ class InvestingAgent(Agent):
             search.search_space,
             market,
             technologies,
-            year=current_year,
+            year=self.year,
         )
 
         # Calculate investments
@@ -342,19 +341,17 @@ class InvestingAgent(Agent):
             search[["search_space", "decision"]],
             technologies,
             constraints,
-            year=current_year,
+            year=self.year,
         )
 
         # Add investments
+        time_period = (market.year[1] - market.year[0]).item()
         self.add_investments(
             technologies,
             investments,
-            current_year=current_year,
+            current_year=self.year,
             time_period=time_period,
         )
-
-        # Increment the year
-        self.year += time_period
 
     def compute_decision(
         self,

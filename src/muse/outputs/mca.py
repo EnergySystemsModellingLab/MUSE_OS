@@ -333,10 +333,9 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
 
     if len(techs) > 0:
         for a in agents:
-            output_year = a.year - a.forecast
-            capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
-            technologies = a.filter_input(techs, year=output_year).fillna(0.0)
-            agent_market = market.sel(year=output_year).copy()
+            capacity = a.filter_input(a.assets.capacity, year=a.year).fillna(0.0)
+            technologies = a.filter_input(techs, year=a.year).fillna(0.0)
+            agent_market = market.sel(year=a.year).copy()
             agent_market["consumption"] = drop_timeslice(
                 agent_market.consumption * a.quantity
             )
@@ -361,10 +360,10 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             )
 
             if "year" in result.dims:
-                data_agent = result.sel(year=output_year)
+                data_agent = result.sel(year=a.year)
             else:
                 data_agent = result
-                data_agent["year"] = output_year
+                data_agent["year"] = a.year
             if "dst_region" not in data_agent.coords:
                 data_agent["dst_region"] = a.region
             data_agent["agent"] = a.name
@@ -461,16 +460,14 @@ def sectory_supply(
 
     if len(techs) > 0:
         if "dst_region" in techs.dims:
-            output_year = agents[0].year - agents[0].forecast
+            year = agents[0].year
             years = market.year.values
             capacity = (
-                capacity(agents)
-                .interp(year=years, method="linear")
-                .sel(year=output_year)
+                capacity(agents).interp(year=years, method="linear").sel(year=year)
             )
-            agent_market = market.sel(year=output_year).copy()
+            agent_market = market.sel(year=year).copy()
             agent_market["consumption"] = agent_market.consumption
-            technologies = techs.sel(year=output_year)
+            technologies = techs.sel(year=year)
             result = supply(
                 agent_market,
                 capacity,
@@ -478,10 +475,10 @@ def sectory_supply(
             )
 
             if "year" in result.dims:
-                data_agent = result.sel(year=output_year)
+                data_agent = result.sel(year=year)
             else:
                 data_agent = result
-                data_agent["year"] = output_year
+                data_agent["year"] = year
 
             data_agent["agent"] = agents[0].name
             data_agent["category"] = agents[0].category
@@ -495,12 +492,11 @@ def sectory_supply(
                 data_sector.append(b)
         else:
             for agent in agents:
-                output_year = agent.year - agent.forecast
                 capacity = agent.filter_input(
-                    agent.assets.capacity, year=output_year
+                    agent.assets.capacity, year=agent.year
                 ).fillna(0.0)
-                technologies = techs.sel(year=output_year, region=agent.region)
-                agent_market = market.sel(year=output_year).copy()
+                technologies = techs.sel(year=agent.year, region=agent.region)
+                agent_market = market.sel(year=agent.year).copy()
                 agent_market["consumption"] = agent_market.consumption * agent.quantity
                 included = [
                     i
@@ -519,10 +515,10 @@ def sectory_supply(
                 )
 
                 if "year" in result.dims:
-                    data_agent = result.sel(year=output_year)
+                    data_agent = result.sel(year=agent.year)
                 else:
                     data_agent = result
-                    data_agent["year"] = output_year
+                    data_agent["year"] = agent.year
                 if "dst_region" not in data_agent.coords:
                     data_agent["dst_region"] = agent.region
                 data_agent["agent"] = agent.name
@@ -565,10 +561,9 @@ def sector_consumption(
     agent_market = market
     if len(techs) > 0:
         for a in agents:
-            output_year = a.year - a.forecast
-            capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
-            technologies = a.filter_input(techs, year=output_year).fillna(0.0)
-            agent_market = market.sel(year=output_year).copy()
+            capacity = a.filter_input(a.assets.capacity, year=a.year).fillna(0.0)
+            technologies = a.filter_input(techs, year=a.year).fillna(0.0)
+            agent_market = market.sel(year=a.year).copy()
             agent_market["consumption"] = drop_timeslice(
                 agent_market.consumption * a.quantity
             )
@@ -591,15 +586,15 @@ def sector_consumption(
                 agent_market["consumption"].timeslice,
                 QuantityType.EXTENSIVE,
             )
-            prices = a.filter_input(market.prices, year=output_year)
+            prices = a.filter_input(market.prices, year=a.year)
             result = consumption(
                 technologies=technologies, production=production, prices=prices
             )
             if "year" in result.dims:
-                data_agent = result.sel(year=output_year)
+                data_agent = result.sel(year=a.year)
             else:
                 data_agent = result
-                data_agent["year"] = output_year
+                data_agent["year"] = a.year
             if "dst_region" not in data_agent.coords:
                 data_agent["dst_region"] = a.region
             data_agent["agent"] = a.name
@@ -642,10 +637,9 @@ def sectory_consumption(
     agent_market = market
     if len(techs) > 0:
         for a in agents:
-            output_year = a.year - a.forecast
-            capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
-            technologies = a.filter_input(techs, year=output_year).fillna(0.0)
-            agent_market = market.sel(year=output_year).copy()
+            capacity = a.filter_input(a.assets.capacity, year=a.year).fillna(0.0)
+            technologies = a.filter_input(techs, year=a.year).fillna(0.0)
+            agent_market = market.sel(year=a.year).copy()
             agent_market["consumption"] = agent_market.consumption * a.quantity
             included = [
                 i
@@ -663,15 +657,15 @@ def sectory_consumption(
                 technologies,
             )
 
-            prices = a.filter_input(market.prices, year=output_year)
+            prices = a.filter_input(market.prices, year=a.year)
             result = consumption(
                 technologies=technologies, production=production, prices=prices
             )
             if "year" in result.dims:
-                data_agent = result.sel(year=output_year)
+                data_agent = result.sel(year=a.year)
             else:
                 data_agent = result
-                data_agent["year"] = output_year
+                data_agent["year"] = a.year
             if "dst_region" not in data_agent.coords:
                 data_agent["dst_region"] = a.region
             data_agent["agent"] = a.name
@@ -713,15 +707,14 @@ def sector_fuel_costs(
     agent_market = market.copy()
     if len(technologies) > 0:
         for a in agents:
-            output_year = a.year - a.forecast
             agent_market["consumption"] = (market.consumption * a.quantity).sel(
-                year=output_year
+                year=a.year
             )
             commodity = is_fuel(technologies.comm_usage)
 
             capacity = a.filter_input(
                 a.assets.capacity,
-                year=output_year,
+                year=a.year,
             ).fillna(0.0)
 
             production = convert_timeslice(
@@ -734,7 +727,7 @@ def sector_fuel_costs(
                 QuantityType.EXTENSIVE,
             )
 
-            prices = a.filter_input(market.prices, year=output_year)
+            prices = a.filter_input(market.prices, year=a.year)
             fcons = consumption(
                 technologies=technologies, production=production, prices=prices
             )
@@ -743,7 +736,7 @@ def sector_fuel_costs(
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
-            data_agent["year"] = output_year
+            data_agent["year"] = a.year
             data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
                 "fuel_consumption_costs"
             )
@@ -776,11 +769,10 @@ def sector_capital_costs(
     if len(technologies) > 0:
         for a in agents:
             demand = market.consumption * a.quantity
-            output_year = a.year - a.forecast
-            capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
+            capacity = a.filter_input(a.assets.capacity, year=a.year).fillna(0.0)
             data = a.filter_input(
                 technologies[["cap_par", "cap_exp"]],
-                year=output_year,
+                year=a.year,
                 technology=capacity.technology,
             )
             result = data.cap_par * (capacity**data.cap_exp)
@@ -792,7 +784,7 @@ def sector_capital_costs(
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
-            data_agent["year"] = output_year
+            data_agent["year"] = a.year
             data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
                 "capital_costs"
             )
@@ -828,23 +820,22 @@ def sector_emission_costs(
     agent_market = market.copy()
     if len(technologies) > 0:
         for a in agents:
-            output_year = a.year - a.forecast
             agent_market["consumption"] = (market.consumption * a.quantity).sel(
-                year=output_year
+                year=a.year
             )
 
-            capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
+            capacity = a.filter_input(a.assets.capacity, year=a.year).fillna(0.0)
             allemissions = a.filter_input(
                 technologies.fixed_outputs,
                 commodity=is_pollutant(technologies.comm_usage),
                 technology=capacity.technology,
-                year=output_year,
+                year=a.year,
             )
             envs = is_pollutant(technologies.comm_usage)
             enduses = is_enduse(technologies.comm_usage)
             i = (np.where(envs))[0][0]
             red_envs = envs[i].commodity.values
-            prices = a.filter_input(market.prices, year=output_year, commodity=red_envs)
+            prices = a.filter_input(market.prices, year=a.year, commodity=red_envs)
             production = convert_timeslice(
                 supply(
                     agent_market,
@@ -859,7 +850,7 @@ def sector_emission_costs(
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
-            data_agent["year"] = output_year
+            data_agent["year"] = a.year
             data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
                 "emission_costs"
             )
@@ -896,8 +887,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
     agents = retro if len(retro) > 0 else new
     if len(technologies) > 0:
         for agent in agents:
-            output_year = agent.year - agent.forecast
-            agent_market = market.sel(year=output_year).copy()
+            agent_market = market.sel(year=agent.year).copy()
             agent_market["consumption"] = agent_market.consumption * agent.quantity
             included = [
                 i
@@ -908,7 +898,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
                 i for i in agent_market["commodity"].values if i not in included
             ]
             agent_market.loc[dict(commodity=excluded)] = 0
-            years = [output_year, agent.year]
+            years = [agent.year, agent.forecast_year]
             agent_market["prices"] = agent.filter_input(market["prices"], year=years)
 
             techs = agent.filter_input(
@@ -940,7 +930,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             data_agent["agent"] = agent.name
             data_agent["category"] = agent.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
-            data_agent["year"] = output_year
+            data_agent["year"] = agent.year
             data_agent = data_agent.fillna(0)
             data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
                 "LCOE"
@@ -977,8 +967,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
     agents = retro if len(retro) > 0 else new
     if len(technologies) > 0:
         for agent in agents:
-            output_year = agent.year - agent.forecast
-            agent_market = market.sel(year=output_year).copy()
+            agent_market = market.sel(year=agent.year).copy()
             agent_market["consumption"] = agent_market.consumption * agent.quantity
             included = [
                 i
@@ -989,7 +978,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
                 i for i in agent_market["commodity"].values if i not in included
             ]
             agent_market.loc[dict(commodity=excluded)] = 0
-            years = [output_year, agent.year]
+            years = [agent.year, agent.forecast_year]
             agent_market["prices"] = agent.filter_input(market["prices"], year=years)
 
             techs = agent.filter_input(
@@ -1021,7 +1010,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             data_agent["agent"] = agent.name
             data_agent["category"] = agent.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
-            data_agent["year"] = output_year
+            data_agent["year"] = agent.year
             data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
                 "capital_costs"
             )
