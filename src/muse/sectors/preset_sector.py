@@ -7,7 +7,6 @@ from typing import Any
 from xarray import DataArray, Dataset
 
 from muse.sectors.register import AbstractSector, register_sector
-from muse.timeslices import drop_timeslice
 
 
 @register_sector(name=("preset", "presets"))
@@ -30,7 +29,7 @@ class PresetSector(AbstractSector):  # type: ignore
             read_timeslice_shares,
         )
         from muse.regressions import endogenous_demand
-        from muse.timeslices import TIMESLICE, distribute_timeslice
+        from muse.timeslices import TIMESLICE, broadcast_timeslice, distribute_timeslice
 
         sector_conf = getattr(settings.sectors, name)
         presets = Dataset()
@@ -71,17 +70,11 @@ class PresetSector(AbstractSector):  # type: ignore
                 shares = read_timeslice_shares(sector_conf.timeslice_shares_path)
                 assert consumption.commodity.isin(shares.commodity).all()
                 assert consumption.region.isin(shares.region).all()
-                if "timeslice" in shares.dims:
-                    ts = shares.timeslice
-                    shares = drop_timeslice(shares)
-                    consumption = (shares * consumption).assign_coords(timeslice=ts)
-                else:
-                    consumption = consumption * shares.sel(
-                        region=consumption.region, commodity=consumption.commodity
-                    )
-            presets["consumption"] = drop_timeslice(consumption).assign_coords(
-                timeslice=timeslice
-            )
+                shares = shares.assign_coords(timeslice=timeslice)
+                consumption = broadcast_timeslice(consumption) * shares.sel(
+                    region=consumption.region, commodity=consumption.commodity
+                )
+            presets["consumption"] = consumption
 
         if getattr(sector_conf, "supply_path", None) is not None:
             supply = read_presets(sector_conf.supply_path)
