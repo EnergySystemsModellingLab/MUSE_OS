@@ -35,7 +35,7 @@ from mypy_extensions import KwArg
 from muse.outputs.sector import market_quantity
 from muse.registration import registrator
 from muse.sectors import AbstractSector
-from muse.timeslices import distribute_timeslice
+from muse.timeslices import distribute_timeslice, drop_timeslice
 from muse.utilities import multiindex_to_coords
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
@@ -337,7 +337,9 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             technologies = a.filter_input(techs, year=output_year).fillna(0.0)
             agent_market = market.sel(year=output_year).copy()
-            agent_market["consumption"] = agent_market.consumption * a.quantity
+            agent_market["consumption"] = drop_timeslice(
+                agent_market.consumption * a.quantity
+            )
             included = [
                 i
                 for i in agent_market["commodity"].values
@@ -563,7 +565,9 @@ def sector_consumption(
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             technologies = a.filter_input(techs, year=output_year).fillna(0.0)
             agent_market = market.sel(year=output_year).copy()
-            agent_market["consumption"] = agent_market.consumption * a.quantity
+            agent_market["consumption"] = drop_timeslice(
+                agent_market.consumption * a.quantity
+            )
             included = [
                 i
                 for i in agent_market["commodity"].values

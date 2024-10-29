@@ -34,6 +34,7 @@ import xarray as xr
 
 from muse.mca import MCA
 from muse.sectors import AbstractSector
+from muse.timeslices import drop_timeslice
 
 __all__ = ["model", "technodata"]
 
@@ -193,8 +194,8 @@ def mca_market(model: str = "default") -> xr.Dataset:
             .sel(region=settings.regions)
             .interp(year=settings.time_framework, method=settings.interpolation_mode)
         )
-        market["supply"] = zeros_like(market.exports)
-        market["consumption"] = zeros_like(market.exports)
+        market["supply"] = drop_timeslice(zeros_like(market.exports))
+        market["consumption"] = drop_timeslice(zeros_like(market.exports))
 
         return cast(xr.Dataset, market)
 
@@ -255,7 +256,7 @@ def matching_market(sector: str, model: str = "default") -> xr.Dataset:
         market = market.rename(dst_region="region")
     if market.region.dims:
         consump = consumption(loaded_sector.technologies, production)
-        market["consumption"] = (
+        market["consumption"] = drop_timeslice(
             consump.groupby("region").sum(
                 {"asset", "dst_region"}.intersection(consump.dims)
             )

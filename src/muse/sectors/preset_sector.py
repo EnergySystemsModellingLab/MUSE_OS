@@ -75,7 +75,7 @@ class PresetSector(AbstractSector):  # type: ignore
                 consumption = broadcast_timeslice(consumption) * shares.sel(
                     region=consumption.region, commodity=consumption.commodity
                 )
-            presets["consumption"] = consumption
+            presets["consumption"] = drop_timeslice(consumption)
 
         if getattr(sector_conf, "supply_path", None) is not None:
             supply = read_presets(sector_conf.supply_path)

@@ -10,6 +10,7 @@ import numpy as np
 import xarray as xr
 
 from muse.agents import Agent
+from muse.timeslices import drop_timeslice
 
 
 class Subsector:
@@ -55,8 +56,8 @@ class Subsector:
         # Expand prices to include destination region (for trade models)
         if self.expand_market_prices:
             market = market.copy()
-            market["prices"] = np.maximum(
-                market.prices, market.prices.rename(region="dst_region")
+            market["prices"] = drop_timeslice(
+                np.maximum(market.prices, market.prices.rename(region="dst_region"))
             )
 
         # Agent housekeeping
