@@ -6,8 +6,6 @@ from typing import Callable, Optional, Union
 
 import xarray as xr
 
-from muse.timeslices import drop_timeslice
-
 
 class AbstractAgent(ABC):
     """Base class for all agents."""
@@ -352,10 +350,7 @@ class InvestingAgent(Agent):
         # Calculate the decision metric
         decision = self.compute_decision(technologies, market, demand, search_space)
         search = xr.Dataset(dict(search_space=search_space, decision=decision))
-        if "timeslice" in search.dims:
-            search["demand"] = drop_timeslice(demand)
-        else:
-            search["demand"] = demand
+        search["demand"] = demand
 
         # Filter assets with demand
         not_assets = [u for u in search.demand.dims if u != "asset"]

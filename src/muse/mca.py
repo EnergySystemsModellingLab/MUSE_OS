@@ -14,7 +14,6 @@ from xarray import Dataset, zeros_like
 from muse.outputs.cache import OutputCache
 from muse.readers import read_initial_market
 from muse.sectors import SECTORS_REGISTERED, AbstractSector, Sector
-from muse.timeslices import drop_timeslice
 from muse.utilities import future_propagation
 
 
@@ -60,8 +59,8 @@ class MCA:
             ).sel(region=settings.regions)
         ).interp(year=settings.time_framework, method=settings.interpolation_mode)
 
-        market["supply"] = drop_timeslice(zeros_like(market.exports))
-        market["consumption"] = drop_timeslice(zeros_like(market.exports))
+        market["supply"] = zeros_like(market.exports)
+        market["consumption"] = zeros_like(market.exports)
 
         # We create the sectors
         sectors = []
@@ -275,6 +274,8 @@ class MCA:
 
         from xarray import DataArray
 
+        from muse.timeslices import broadcast_timeslice
+
         nyear = len(self.time_framework) - 1
         check_carbon_budget = len(self.carbon_budget) and len(self.carbon_commodities)
         shoots = self.control_undershoot or self.control_overshoot
@@ -295,7 +296,7 @@ class MCA:
                 new_market.prices.loc[dict(commodity=self.carbon_commodities)] = (
                     future_propagation(
                         new_market.prices.sel(commodity=self.carbon_commodities),
-                        future_price,
+                        broadcast_timeslice(future_price),
                     )
                 )
                 self.carbon_price = future_propagation(self.carbon_price, future_price)
@@ -363,7 +364,7 @@ def single_year_iteration(
     sectors = deepcopy(sectors)
     market = market.copy(deep=True)
     if "updated_prices" not in market.data_vars:
-        market["updated_prices"] = drop_timeslice(market.prices.copy())
+        market["updated_prices"] = market.prices.copy()
 
     for sector in sectors:
         # Solve the sector
@@ -457,10 +458,8 @@ def find_equilibrium(
             break
 
         # Update prices
-        market["prices"] = drop_timeslice(
-            future_propagation(
-                market["prices"], market["updated_prices"].sel(year=market.year[1])
-            )
+        market["prices"] = future_propagation(
+            market["prices"], market["updated_prices"].sel(year=market.year[1])
         )
 
         # Check convergence

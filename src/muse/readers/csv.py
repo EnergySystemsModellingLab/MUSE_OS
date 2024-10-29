@@ -450,7 +450,6 @@ def read_global_commodities(path: Union[str, Path]) -> xr.Dataset:
 def read_timeslice_shares(
     path: Union[str, Path] = DEFAULT_SECTORS_DIRECTORY,
     sector: Optional[str] = None,
-    timeslice: Union[str, Path, xr.DataArray] = "Timeslices{sector}.csv",
 ) -> xr.Dataset:
     """Reads sliceshare information into a xr.Dataset.
 
@@ -461,6 +460,10 @@ def read_timeslice_shares(
     from logging import getLogger
     from re import match
 
+    from muse.timeslices import TIMESLICE
+
+    timeslice = TIMESLICE.timeslice
+
     path = Path(path)
     if sector is None:
         if path.is_dir():
@@ -469,10 +472,6 @@ def read_timeslice_shares(
             path, filename = path.parent, path.name
             re = match(r"TimesliceShare(.*)\.csv", filename)
             sector = path.name if re is None else re.group(1)
-    if isinstance(timeslice, str) and "{sector}" in timeslice:
-        timeslice = timeslice.format(sector=sector)
-    if isinstance(timeslice, (str, Path)) and not Path(timeslice).is_file():
-        timeslice = find_sectors_file(timeslice, sector, path)
 
     share_path = find_sectors_file(f"TimesliceShare{sector}.csv", sector, path)
     getLogger(__name__).info(f"Reading timeslice shares from {share_path}")
@@ -485,13 +484,7 @@ def read_timeslice_shares(
     data.columns.name = "commodity"
 
     result = xr.DataArray(data).unstack("rt").to_dataset(name="shares")
-
-    if timeslice is None:
-        result = result.drop_vars("timeslice")
-    elif isinstance(timeslice, xr.DataArray) and hasattr(timeslice, "timeslice"):
-        result["timeslice"] = timeslice.timeslice
-    else:
-        result["timeslice"] = timeslice
+    result["timeslice"] = timeslice
     return result.shares
 
 

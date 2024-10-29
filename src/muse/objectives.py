@@ -71,7 +71,6 @@ from mypy_extensions import KwArg
 
 from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
-from muse.timeslices import drop_timeslice
 from muse.utilities import filter_input
 
 OBJECTIVE_SIGNATURE = Callable[
@@ -138,8 +137,6 @@ def factory(
             obj = objective(
                 technologies=technologies, demand=demand, prices=prices, *args, **kwargs
             )
-            if "timeslice" in obj.dims and "timeslice" in result.dims:
-                obj = drop_timeslice(obj)
             result[name] = obj
         return result
 

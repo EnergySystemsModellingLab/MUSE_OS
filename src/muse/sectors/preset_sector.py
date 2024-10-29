@@ -68,9 +68,7 @@ class PresetSector(AbstractSector):  # type: ignore
 
             if getattr(sector_conf, "timeslice_shares_path", None) is not None:
                 assert isinstance(timeslice, DataArray)
-                shares = read_timeslice_shares(
-                    sector_conf.timeslice_shares_path, timeslice=timeslice
-                )
+                shares = read_timeslice_shares(sector_conf.timeslice_shares_path)
                 assert consumption.commodity.isin(shares.commodity).all()
                 assert consumption.region.isin(shares.region).all()
                 if "timeslice" in shares.dims:
@@ -113,7 +111,7 @@ class PresetSector(AbstractSector):  # type: ignore
         for component in components:
             others = components.intersection(presets.data_vars).difference({component})
             if component not in presets and len(others) > 0:
-                presets[component] = drop_timeslice(zeros_like(presets[others.pop()]))
+                presets[component] = zeros_like(presets[others.pop()])
 
         # add timeslice, if missing
         for component in {"supply", "consumption"}:
@@ -152,7 +150,7 @@ class PresetSector(AbstractSector):  # type: ignore
         costs = self._interpolate(presets.costs, mca_market.year)
 
         result = Dataset({"supply": supply, "consumption": consumption})
-        result["costs"] = drop_timeslice(costs)
+        result["costs"] = costs
         assert isinstance(result, Dataset)
         return result
 
