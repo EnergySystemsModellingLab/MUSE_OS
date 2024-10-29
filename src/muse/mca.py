@@ -14,6 +14,7 @@ from xarray import Dataset, zeros_like
 from muse.outputs.cache import OutputCache
 from muse.readers import read_initial_market
 from muse.sectors import SECTORS_REGISTERED, AbstractSector, Sector
+from muse.timeslices import drop_timeslice
 from muse.utilities import future_propagation
 
 
@@ -40,6 +41,7 @@ class MCA:
         from muse.outputs.mca import factory as ofactory
         from muse.readers import read_settings
         from muse.readers.toml import convert
+        from muse.timeslices import drop_timeslice
 
         if isinstance(settings, (str, Path)):
             settings = read_settings(settings)  # type: ignore
@@ -59,8 +61,8 @@ class MCA:
             ).sel(region=settings.regions)
         ).interp(year=settings.time_framework, method=settings.interpolation_mode)
 
-        market["supply"] = zeros_like(market.exports)
-        market["consumption"] = zeros_like(market.exports)
+        market["supply"] = drop_timeslice(zeros_like(market.exports))
+        market["consumption"] = drop_timeslice(zeros_like(market.exports))
 
         # We create the sectors
         sectors = []
@@ -360,11 +362,12 @@ def single_year_iteration(
     from copy import deepcopy
 
     from muse.commodities import is_enduse
+    from muse.timeslices import drop_timeslice
 
     sectors = deepcopy(sectors)
     market = market.copy(deep=True)
     if "updated_prices" not in market.data_vars:
-        market["updated_prices"] = market.prices.copy()
+        market["updated_prices"] = drop_timeslice(market.prices.copy())
 
     for sector in sectors:
         # Solve the sector
@@ -458,8 +461,10 @@ def find_equilibrium(
             break
 
         # Update prices
-        market["prices"] = future_propagation(
-            market["prices"], market["updated_prices"].sel(year=market.year[1])
+        market["prices"] = drop_timeslice(
+            future_propagation(
+                market["prices"], market["updated_prices"].sel(year=market.year[1])
+            )
         )
 
         # Check convergence

@@ -7,6 +7,7 @@ from typing import Any
 from xarray import DataArray, Dataset
 
 from muse.sectors.register import AbstractSector, register_sector
+from muse.timeslices import drop_timeslice
 
 
 @register_sector(name=("preset", "presets"))
@@ -104,7 +105,7 @@ class PresetSector(AbstractSector):  # type: ignore
         for component in components:
             others = components.intersection(presets.data_vars).difference({component})
             if component not in presets and len(others) > 0:
-                presets[component] = zeros_like(presets[others.pop()])
+                presets[component] = drop_timeslice(zeros_like(presets[others.pop()]))
 
         # add timeslice, if missing
         for component in {"supply", "consumption"}:
@@ -143,7 +144,7 @@ class PresetSector(AbstractSector):  # type: ignore
         costs = self._interpolate(presets.costs, mca_market.year)
 
         result = Dataset({"supply": supply, "consumption": consumption})
-        result["costs"] = costs
+        result["costs"] = drop_timeslice(costs)
         assert isinstance(result, Dataset)
         return result
 
