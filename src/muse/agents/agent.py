@@ -267,13 +267,9 @@ class InvestingAgent(Agent):
 
         super().__init__(*args, **kwargs)
 
-        if investment is None:
-            investment = ifactory()
-        self.invest = investment
+        self.invest = investment or ifactory()
         """Method to use when fulfilling demand from rated set of techs."""
-        if not callable(constraints):
-            constraints = csfactory()
-        self.constraints = constraints
+        self.constraints = constraints or csfactory()
         """Creates a set of constraints limiting investment."""
 
     def next(
