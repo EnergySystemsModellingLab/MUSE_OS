@@ -163,6 +163,8 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
     def decorated_objective(technologies: xr.Dataset, *args, **kwargs) -> xr.DataArray:
         from logging import getLogger
 
+        from muse.timeslices import broadcast_timeslice
+
         result = function(technologies, *args, **kwargs)
 
         dtype = result.values.dtype
@@ -170,6 +172,8 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
             msg = f"dtype of objective {function.__name__} is not a number ({dtype})"
             getLogger(function.__module__).warning(msg)
 
+        if "timeslice" not in result.dims:
+            result = broadcast_timeslice(result)
         if "replacement" not in result.dims:
             raise RuntimeError("Objective should return a dimension 'replacement'")
         if "technology" in result.dims:
@@ -274,7 +278,9 @@ def fixed_costs(
     :math:`\alpha` and :math:`\beta` are "fix_par" and "fix_exp" in
     :ref:`inputs-technodata`, respectively.
     """
-    capacity = capacity_to_service_demand(technologies, demand)
+    from muse.quantities import capacity_to_service_demand
+
+    capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
     result = technologies.fix_par * (capacity**technologies.fix_exp)
     return result
 
@@ -386,9 +392,10 @@ def lifetime_levelized_cost_of_energy(
     due to a zero utilisation factor.
     """
     from muse.costs import lifetime_levelized_cost_of_energy as LCOE
+    from muse.quantities import capacity_to_service_demand
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    capacity = capacity_to_service_demand(technologies, demand)
+    capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
     production = (
         broadcast_timeslice(capacity)
         * distribute_timeslice(technologies.fixed_outputs)
@@ -419,9 +426,10 @@ def net_present_value(
     See :py:func:`muse.costs.net_present_value` for more details.
     """
     from muse.costs import net_present_value as NPV
+    from muse.quantities import capacity_to_service_demand
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    capacity = capacity_to_service_demand(technologies, demand)
+    capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
     production = (
         broadcast_timeslice(capacity)
         * distribute_timeslice(technologies.fixed_outputs)
@@ -451,9 +459,10 @@ def net_present_cost(
     See :py:func:`muse.costs.net_present_cost` for more details.
     """
     from muse.costs import net_present_cost as NPC
+    from muse.quantities import capacity_to_service_demand
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    capacity = capacity_to_service_demand(technologies, demand)
+    capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
     production = (
         broadcast_timeslice(capacity)
         * distribute_timeslice(technologies.fixed_outputs)
@@ -483,9 +492,10 @@ def equivalent_annual_cost(
     See :py:func:`muse.costs.equivalent_annual_cost` for more details.
     """
     from muse.costs import equivalent_annual_cost as EAC
+    from muse.quantities import capacity_to_service_demand
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    capacity = capacity_to_service_demand(technologies, demand)
+    capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
     production = (
         broadcast_timeslice(capacity)
         * distribute_timeslice(technologies.fixed_outputs)
