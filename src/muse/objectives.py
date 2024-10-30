@@ -133,12 +133,16 @@ def factory(
         *args,
         **kwargs,
     ) -> xr.Dataset:
+        from muse.timeslices import broadcast_timeslice
+
         result = xr.Dataset()
         for name, objective in functions:
             obj = objective(
                 technologies=technologies, demand=demand, prices=prices, *args, **kwargs
             )
-            if "timeslice" in obj.dims and "timeslice" in result.dims:
+            if "timeslice" not in obj.dims:
+                obj = broadcast_timeslice(obj)
+            if "timeslice" in result.dims:
                 obj = drop_timeslice(obj)
             result[name] = obj
         return result
@@ -163,8 +167,6 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
     def decorated_objective(technologies: xr.Dataset, *args, **kwargs) -> xr.DataArray:
         from logging import getLogger
 
-        from muse.timeslices import broadcast_timeslice
-
         result = function(technologies, *args, **kwargs)
 
         dtype = result.values.dtype
@@ -172,8 +174,6 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
             msg = f"dtype of objective {function.__name__} is not a number ({dtype})"
             getLogger(function.__module__).warning(msg)
 
-        if "timeslice" not in result.dims:
-            result = broadcast_timeslice(result)
         if "replacement" not in result.dims:
             raise RuntimeError("Objective should return a dimension 'replacement'")
         if "technology" in result.dims:
