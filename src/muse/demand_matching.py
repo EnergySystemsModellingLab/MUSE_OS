@@ -273,15 +273,11 @@ def _demand_matching_impl(
     from numpy import isnan, prod
     from xarray import Dataset, align, full_like
 
-    from muse.timeslices import broadcast_timeslice
-
     assert not set(demand.dims).difference(
         cost.dims, *(cons.dims for cons in constraints)
     )
 
-    result = full_like(
-        sum(constraints) + demand + drop_timeslice(broadcast_timeslice(cost)), 0
-    )  # type: ignore
+    result = full_like(sum(constraints) + demand + cost, 0)  # type: ignore
     names = [f"constraint{i}" for i in range(len(constraints))]
     data = Dataset(
         {

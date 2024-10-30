@@ -241,10 +241,6 @@ def adhoc_match_demand(
 
     # Push disabled techs to last rank.
     # Any production assigned to them by the demand-matching algorithm will be removed.
-
-    if "timeslice" in costs.dims:
-        costs = costs.mean("timeslice").mean("asset")  # timeslice_op(costs)
-
     minobj = costs.min()
     maxobj = costs.where(search_space, minobj).max("replacement") + 1
 
