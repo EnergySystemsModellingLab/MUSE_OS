@@ -492,7 +492,9 @@ def _inner_split(
     # Calculates the demand divided by the number of assets times the number of agents
     # if the demand is bigger than zero and the total demand assigned with the "method"
     # function is zero.
-    unassigned = (demand / (len(shares) * len(summed_shares))).where(
+    n_agents = len(quantity)
+    n_assets = summed_shares.sizes["asset"]
+    unassigned = (demand / (n_agents * n_assets)).where(
         logical_and(demand > 1e-12, total <= 1e-12), 0
     )
 
