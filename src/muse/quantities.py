@@ -44,6 +44,7 @@ def supply(
         input commodities).
     """
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
+    from muse.timeslices import broadcast_timeslice
 
     if production_method is None:
         production_method = maximum_production
@@ -88,8 +89,12 @@ def supply(
         demsum = set(maxprod.dims).difference(demand.dims)
         expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
 
-    expanded_maxprod = (maxprod * demand / demand.sum(prodsum)).fillna(0)
-    expanded_minprod = (minprod * demand / demand.sum(prodsum)).fillna(0)
+    expanded_maxprod = (
+        maxprod * demand / broadcast_timeslice(demand.sum(prodsum))
+    ).fillna(0)
+    expanded_minprod = (
+        minprod * demand / broadcast_timeslice(demand.sum(prodsum))
+    ).fillna(0)
     expanded_demand = expanded_demand.reindex_like(maxprod)
     expanded_minprod = expanded_minprod.reindex_like(maxprod)
 
@@ -125,6 +130,7 @@ def emission(production: xr.DataArray, fixed_outputs: xr.DataArray):
         A data array containing emissions (and only emissions).
     """
     from muse.commodities import is_enduse, is_pollutant
+    from muse.timeslices import broadcast_timeslice
     from muse.utilities import broadcast_techs
 
     # just in case we are passed a technologies dataset, like in other functions
@@ -133,8 +139,8 @@ def emission(production: xr.DataArray, fixed_outputs: xr.DataArray):
     )
     envs = is_pollutant(fouts.comm_usage)
     enduses = is_enduse(fouts.comm_usage)
-    return production.sel(commodity=enduses).sum("commodity") * fouts.sel(
-        commodity=envs
+    return production.sel(commodity=enduses).sum("commodity") * broadcast_timeslice(
+        fouts.sel(commodity=envs)
     )
 
 
@@ -273,6 +279,7 @@ def consumption(
     are not given, then flexible consumption is *not* considered.
     """
     from muse.commodities import is_enduse, is_fuel
+    from muse.timeslices import broadcast_timeslice
     from muse.utilities import filter_with_template
 
     params = filter_with_template(
@@ -285,7 +292,9 @@ def consumption(
 
     production = production.sel(commodity=is_enduse(comm_usage)).sum("commodity")
     params_fuels = is_fuel(params.comm_usage)
-    consumption = production * params.fixed_inputs.where(params_fuels, 0)
+    consumption = production * broadcast_timeslice(
+        params.fixed_inputs.where(params_fuels, 0)
+    )
 
     if prices is None:
         return consumption
@@ -306,7 +315,7 @@ def consumption(
     ]
     # add consumption from cheapest fuel
     assert all(flexs.commodity.values == consumption.commodity.values)
-    flex = flexs.where(minprices == flexs.commodity, 0)
+    flex = flexs.where(minprices == broadcast_timeslice(flexs.commodity), 0)
     flex = flex / (flex > 0).sum("commodity").clip(min=1)
     return consumption + flex * production
 
@@ -349,7 +358,7 @@ def maximum_production(
         filters and the set of technologies in `capacity`.
     """
     from muse.commodities import is_enduse
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
     from muse.utilities import broadcast_techs, filter_input
 
     capa = filter_input(
@@ -362,7 +371,9 @@ def maximum_production(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
     )
     result = (
-        capa * distribute_timeslice(ftechs.fixed_outputs) * ftechs.utilization_factor
+        broadcast_timeslice(capa)
+        * distribute_timeslice(ftechs.fixed_outputs)
+        * broadcast_timeslice(ftechs.utilization_factor)
     )
     return result.where(is_enduse(result.comm_usage), 0)
 
@@ -421,6 +432,7 @@ def capacity_in_use(
         Capacity-in-use for each technology, whittled down by the filters.
     """
     from muse.commodities import is_enduse
+    from muse.timeslices import broadcast_timeslice
     from muse.utilities import broadcast_techs, filter_input
 
     prod = filter_input(
@@ -435,7 +447,7 @@ def capacity_in_use(
     )
 
     factor = 1 / (ftechs.fixed_outputs * ftechs.utilization_factor)
-    capa_in_use = (prod * factor).where(~np.isinf(factor), 0)
+    capa_in_use = (prod * broadcast_timeslice(factor)).where(~np.isinf(factor), 0)
 
     capa_in_use = capa_in_use.where(
         is_enduse(technologies.comm_usage.sel(commodity=capa_in_use.commodity)), 0
@@ -460,6 +472,7 @@ def costed_production(
     service is applied first.
     """
     from muse.quantities import maximum_production
+    from muse.timeslices import broadcast_timeslice
     from muse.utilities import broadcast_techs
 
     technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
@@ -492,9 +505,13 @@ def costed_production(
     if not with_minimum_service:
         production = xr.zeros_like(constraints.maxprod)
     else:
-        production = (
-            getattr(technodata, "minimum_service_factor", 0) * constraints.maxprod
-        )
+        if hasattr(technodata, "minimum_service_factor"):
+            production = (
+                broadcast_timeslice(technodata.minimum_service_factor)
+                * constraints.maxprod
+            )
+        else:
+            production = 0 * constraints.maxprod
         demand = np.maximum(demand - group_assets(production), 0)
 
     for rank in sorted(set(constraints.ranking.values.flatten())):
@@ -560,7 +577,7 @@ def minimum_production(
         the filters and the set of technologies in `capacity`.
     """
     from muse.commodities import is_enduse
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
     from muse.utilities import broadcast_techs, filter_input
 
     capa = filter_input(
@@ -568,7 +585,7 @@ def minimum_production(
     )
 
     if "minimum_service_factor" not in technologies:
-        return xr.zeros_like(capa)
+        return broadcast_timeslice(xr.zeros_like(capa))
 
     btechs = broadcast_techs(  # type: ignore
         cast(
@@ -581,9 +598,9 @@ def minimum_production(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
     )
     result = (
-        capa
+        broadcast_timeslice(capa)
         * distribute_timeslice(ftechs.fixed_outputs)
-        * ftechs.minimum_service_factor
+        * broadcast_timeslice(ftechs.minimum_service_factor)
     )
     return result.where(is_enduse(result.comm_usage), 0)
 
@@ -593,11 +610,10 @@ def capacity_to_service_demand(
     technologies: xr.Dataset,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    timeslice_outputs = (
-        distribute_timeslice(technologies.fixed_outputs.sel(commodity=demand.commodity))
-        * technologies.utilization_factor
-    )
+    timeslice_outputs = distribute_timeslice(
+        technologies.fixed_outputs.sel(commodity=demand.commodity)
+    ) * broadcast_timeslice(technologies.utilization_factor)
     capa_to_service_demand = demand / timeslice_outputs
     return capa_to_service_demand.max(("commodity", "timeslice"))

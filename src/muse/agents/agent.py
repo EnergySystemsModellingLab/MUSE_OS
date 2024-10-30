@@ -352,10 +352,7 @@ class InvestingAgent(Agent):
         # Calculate the decision metric
         decision = self.compute_decision(technologies, market, demand, search_space)
         search = xr.Dataset(dict(search_space=search_space, decision=decision))
-        if "timeslice" in search.dims:
-            search["demand"] = drop_timeslice(demand)
-        else:
-            search["demand"] = demand
+        search["demand"] = drop_timeslice(demand)
 
         # Filter assets with demand
         not_assets = [u for u in search.demand.dims if u != "asset"]

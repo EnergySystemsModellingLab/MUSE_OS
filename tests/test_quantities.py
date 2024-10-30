@@ -31,14 +31,14 @@ def production(
 ) -> xr.DataArray:
     from numpy.random import random
 
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     comms = xr.DataArray(
         random(len(technologies.commodity)),
         coords={"commodity": technologies.commodity},
         dims="commodity",
     )
-    return capacity * distribute_timeslice(comms)
+    return broadcast_timeslice(capacity) * distribute_timeslice(comms)
 
 
 def make_array(array):
@@ -144,6 +144,7 @@ def test_decommissioning_demand(technologies, capacity, timeslice):
 def test_consumption_no_flex(technologies, production, market):
     from muse.commodities import is_enduse, is_fuel
     from muse.quantities import consumption
+    from muse.timeslices import broadcast_timeslice
 
     fins = (
         technologies.fixed_inputs.where(is_fuel(technologies.comm_usage), 0)
@@ -156,7 +157,7 @@ def test_consumption_no_flex(technologies, production, market):
     )
     services = technologies.commodity.sel(commodity=is_enduse(technologies.comm_usage))
     expected = (
-        (production.rename(commodity="comm_in") * fins)
+        (production.rename(commodity="comm_in") * broadcast_timeslice(fins))
         .sel(comm_in=production.commodity.isin(services).rename(commodity="comm_in"))
         .sum("comm_in")
     )
@@ -175,7 +176,7 @@ def test_consumption_with_flex(technologies, production, market, timeslice):
 
     from muse.commodities import is_enduse, is_fuel
     from muse.quantities import consumption
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     techs = technologies.copy()
     techs.fixed_inputs[:] = 0
@@ -201,7 +202,11 @@ def test_consumption_with_flex(technologies, production, market, timeslice):
     timeslice = one_dim(market.timeslice)
     commodity = one_dim(market.commodity)
 
-    prices = timeslice + commodity + year * region
+    prices = (
+        timeslice
+        + broadcast_timeslice(commodity)
+        + broadcast_timeslice(year) * broadcast_timeslice(region)
+    )
     assert set(prices.dims) == set(market.prices.dims)
     noenduse = ~is_enduse(techs.comm_usage)
     production = distribute_timeslice(asset * year + commodity)
@@ -543,6 +548,7 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
         costed_production,
         maximum_production,
     )
+    from muse.timeslices import broadcast_timeslice
     from muse.utilities import broadcast_techs
 
     if set(capacity.region.values) != set(market.region.values):
@@ -554,7 +560,9 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
         rng.uniform(low=0.5, high=0.9, size=technologies.utilization_factor.shape),
     )
     maxprod = maximum_production(technologies, capacity)
-    minprod = maxprod * broadcast_techs(technologies.minimum_service_factor, maxprod)
+    minprod = maxprod * broadcast_timeslice(
+        broadcast_techs(technologies.minimum_service_factor, maxprod)
+    )
     maxdemand = xr.Dataset(dict(mp=minprod)).groupby("region").sum("asset").mp
     market["consumption"] = drop_timeslice(maxdemand * 0.9)
     technodata = broadcast_techs(technologies, capacity)

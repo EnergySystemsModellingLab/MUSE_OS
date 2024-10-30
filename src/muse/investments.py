@@ -241,10 +241,6 @@ def adhoc_match_demand(
 
     # Push disabled techs to last rank.
     # Any production assigned to them by the demand-matching algorithm will be removed.
-
-    if "timeslice" in costs.dims:
-        costs = costs.mean("timeslice").mean("asset")  # timeslice_op(costs)
-
     minobj = costs.min()
     maxobj = costs.where(search_space, minobj).max("replacement") + 1
 
@@ -388,6 +384,6 @@ def cvxopt_match_demand(
 
 
 def timeslice_op(x: xr.DataArray) -> xr.DataArray:
-    from muse.timeslices import TIMESLICE
+    from muse.timeslices import TIMESLICE, broadcast_timeslice
 
-    return (x / (TIMESLICE / sum(TIMESLICE))).max("timeslice")
+    return (x / (TIMESLICE / broadcast_timeslice(TIMESLICE.sum()))).max("timeslice")

@@ -446,7 +446,7 @@ def max_production(
     from xarray import ones_like, zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     if year is None:
         year = int(market.year.min())
@@ -465,7 +465,9 @@ def max_production(
         .sel(**kwargs)
         .drop_vars("technology")
     )
-    capacity = distribute_timeslice(techs.fixed_outputs) * techs.utilization_factor
+    capacity = distribute_timeslice(techs.fixed_outputs) * broadcast_timeslice(
+        techs.utilization_factor
+    )
     if "asset" not in capacity.dims and "asset" in search_space.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
@@ -482,8 +484,8 @@ def max_production(
         maxadd = maxadd.rename(technology="replacement")
         maxadd = maxadd.where(maxadd == 0, 0.0)
         maxadd = maxadd.where(maxadd > 0, -1.0)
-        capacity = capacity * maxadd
-        production = production * maxadd
+        capacity = capacity * broadcast_timeslice(maxadd)
+        production = production * broadcast_timeslice(maxadd)
         b = b.rename(region="src_region")
     return xr.Dataset(
         dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
@@ -534,21 +536,9 @@ def demand_limiting_capacity(
     # utilization factor.
     if "timeslice" in b.dims or "timeslice" in capacity.dims:
         ratio = b / capacity
-        ts = ratio.timeslice.isel(
-            timeslice=ratio.min("replacement").argmax("timeslice")
-        )
-        # We select this timeslice for each array - don't trust the indices:
-        # search for the right timeslice in the array and select it.
-        b = (
-            b.isel(timeslice=(b.timeslice == ts).argmax("timeslice"))
-            if "timeslice" in b.dims
-            else b
-        )
-        capacity = (
-            capacity.isel(timeslice=(capacity.timeslice == ts).argmax("timeslice"))
-            if "timeslice" in capacity.dims
-            else capacity
-        )
+        ts_index = ratio.min("replacement").argmax("timeslice")
+        b = b.isel(timeslice=ts_index)
+        capacity = capacity.isel(timeslice=ts_index)
 
     # An adjustment is required to account for technologies that have multiple output
     # commodities
@@ -724,7 +714,7 @@ def minimum_service(
     from xarray import ones_like, zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     if "minimum_service_factor" not in technologies.data_vars:
         return None
@@ -747,7 +737,9 @@ def minimum_service(
         .sel(**kwargs)
         .drop_vars("technology")
     )
-    capacity = distribute_timeslice(techs.fixed_outputs) * techs.minimum_service_factor
+    capacity = distribute_timeslice(techs.fixed_outputs) * broadcast_timeslice(
+        techs.minimum_service_factor
+    )
     if "asset" not in capacity.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
@@ -803,12 +795,12 @@ def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
         which production occurs and the ``commodity`` produced.
 
         >>> lpcosts.production.dims
-        ('asset', 'replacement', 'timeslice', 'commodity')
+        ('timeslice', 'asset', 'replacement', 'commodity')
     """
     from xarray import zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     assert "year" not in technologies.dims
 
@@ -821,7 +813,7 @@ def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
         selection["region"] = costs.region
     fouts = technologies.fixed_outputs.sel(selection).rename(technology="replacement")
 
-    production = zeros_like(costs * distribute_timeslice(fouts))
+    production = zeros_like(broadcast_timeslice(costs) * distribute_timeslice(fouts))
     for dim in production.dims:
         if isinstance(production.get_index(dim), pd.MultiIndex):
             production = drop_timeslice(production)
