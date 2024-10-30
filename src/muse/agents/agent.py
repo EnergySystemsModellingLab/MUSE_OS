@@ -158,7 +158,7 @@ class Agent(AbstractAgent):
         )
 
         self.year = year
-        """ Current year. Incremented by one every time next is called."""
+        """ Current year. Incremented every time next is called."""
         self.forecast = forecast
         """Number of years to look into the future for forecating purposed."""
         if search_rules is None:
