@@ -560,7 +560,9 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
         rng.uniform(low=0.5, high=0.9, size=technologies.utilization_factor.shape),
     )
     maxprod = maximum_production(technologies, capacity)
-    minprod = maxprod * broadcast_timeslice(technologies.minimum_service_factor)
+    minprod = maxprod * broadcast_timeslice(
+        broadcast_techs(technologies.minimum_service_factor, maxprod)
+    )
     maxdemand = xr.Dataset(dict(mp=minprod)).groupby("region").sum("asset").mp
     market["consumption"] = drop_timeslice(maxdemand * 0.9)
     technodata = broadcast_techs(technologies, capacity)
