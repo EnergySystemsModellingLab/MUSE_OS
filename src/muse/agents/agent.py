@@ -443,8 +443,6 @@ class InvestingAgent(Agent):
             lifetime,
             investment_year=current_year + time_period,
         )
-        if "dst_region" in investments.coords:
-            investments = investments.reindex_like(profile, method="ffill")
 
         # Apply the retirement profile to the investments
         new_assets = (investments * profile).rename(replacement="asset")

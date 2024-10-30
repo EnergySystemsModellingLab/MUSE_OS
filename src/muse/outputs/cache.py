@@ -353,7 +353,6 @@ def extract_agents_internal(
         info[aid]["agent"] = agent.name
         info[aid]["category"] = agent.category
         info[aid]["sector"] = sector_name
-        info[aid]["dst_region"] = agent.region
         info[aid]["year"] = agent.forecast_year
         info[aid]["installed"] = agent.year
 
@@ -412,12 +411,9 @@ def consolidate_quantity(
     """
     data = _aggregate_cache(quantity, cached)
 
-    ignore_dst_region = "dst_region" in data.columns
     for agent in tuple(agents):
         filter = data.agent == agent
         for key, value in agents[agent].items():
-            if key == "dst_region" and ignore_dst_region:
-                continue
             data.loc[filter, key] = value
 
     data = data.rename(columns={"replacement": "technology"})

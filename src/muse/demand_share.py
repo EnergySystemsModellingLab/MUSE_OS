@@ -522,9 +522,7 @@ def unmet_demand(
     produced = maximum_production(capacity=capacity, technologies=technologies)
 
     # Total commodity production by summing over assets
-    if "dst_region" in produced.dims:
-        produced = produced.sum("asset").rename(dst_region="region")
-    elif "region" in produced.coords and produced.region.dims:
+    if "region" in produced.coords and produced.region.dims:
         produced = produced.groupby("region").sum("asset")
     else:
         produced = produced.sum("asset")
