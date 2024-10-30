@@ -460,10 +460,6 @@ def read_timeslice_shares(
     from logging import getLogger
     from re import match
 
-    from muse.timeslices import TIMESLICE
-
-    timeslice = TIMESLICE.timeslice
-
     path = Path(path)
     if sector is None:
         if path.is_dir():
@@ -484,7 +480,6 @@ def read_timeslice_shares(
     data.columns.name = "commodity"
 
     result = xr.DataArray(data).unstack("rt").to_dataset(name="shares")
-    result["timeslice"] = timeslice
     return result.shares
 
 

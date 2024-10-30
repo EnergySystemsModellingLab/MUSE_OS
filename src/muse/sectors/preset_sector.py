@@ -69,13 +69,13 @@ class PresetSector(AbstractSector):  # type: ignore
             if getattr(sector_conf, "timeslice_shares_path", None) is not None:
                 assert isinstance(timeslice, DataArray)
                 shares = read_timeslice_shares(sector_conf.timeslice_shares_path)
+                shares = shares.assign_coords(timeslice=timeslice)
                 assert consumption.commodity.isin(shares.commodity).all()
                 assert consumption.region.isin(shares.region).all()
-                shares = shares.assign_coords(timeslice=timeslice)
                 consumption = broadcast_timeslice(consumption) * shares.sel(
                     region=consumption.region, commodity=consumption.commodity
                 )
-            presets["consumption"] = drop_timeslice(consumption)
+            presets["consumption"] = consumption
 
         if getattr(sector_conf, "supply_path", None) is not None:
             supply = read_presets(sector_conf.supply_path)
