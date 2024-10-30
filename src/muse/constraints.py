@@ -795,7 +795,7 @@ def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
         which production occurs and the ``commodity`` produced.
 
         >>> lpcosts.production.dims
-        ('asset', 'replacement', 'timeslice', 'commodity')
+        ('timeslice', 'asset', 'replacement', 'commodity')
     """
     from xarray import zeros_like
 

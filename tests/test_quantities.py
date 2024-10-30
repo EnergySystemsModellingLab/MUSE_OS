@@ -144,7 +144,7 @@ def test_decommissioning_demand(technologies, capacity, timeslice):
 def test_consumption_no_flex(technologies, production, market):
     from muse.commodities import is_enduse, is_fuel
     from muse.quantities import consumption
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice
 
     fins = (
         technologies.fixed_inputs.where(is_fuel(technologies.comm_usage), 0)
@@ -157,7 +157,7 @@ def test_consumption_no_flex(technologies, production, market):
     )
     services = technologies.commodity.sel(commodity=is_enduse(technologies.comm_usage))
     expected = (
-        (production.rename(commodity="comm_in") * distribute_timeslice(fins))
+        (production.rename(commodity="comm_in") * broadcast_timeslice(fins))
         .sel(comm_in=production.commodity.isin(services).rename(commodity="comm_in"))
         .sum("comm_in")
     )
@@ -176,7 +176,7 @@ def test_consumption_with_flex(technologies, production, market, timeslice):
 
     from muse.commodities import is_enduse, is_fuel
     from muse.quantities import consumption
-    from muse.timeslices import distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     techs = technologies.copy()
     techs.fixed_inputs[:] = 0
@@ -202,7 +202,11 @@ def test_consumption_with_flex(technologies, production, market, timeslice):
     timeslice = one_dim(market.timeslice)
     commodity = one_dim(market.commodity)
 
-    prices = timeslice + commodity + year * region
+    prices = (
+        timeslice
+        + broadcast_timeslice(commodity)
+        + broadcast_timeslice(year) * broadcast_timeslice(region)
+    )
     assert set(prices.dims) == set(market.prices.dims)
     noenduse = ~is_enduse(techs.comm_usage)
     production = distribute_timeslice(asset * year + commodity)
