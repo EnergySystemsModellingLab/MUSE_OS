@@ -432,7 +432,7 @@ def capacity_in_use(
         Capacity-in-use for each technology, whittled down by the filters.
     """
     from muse.commodities import is_enduse
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
+    from muse.timeslices import broadcast_timeslice
     from muse.utilities import broadcast_techs, filter_input
 
     prod = filter_input(
@@ -446,11 +446,8 @@ def capacity_in_use(
         btechs, **{k: v for k, v in filters.items() if k in technologies.dims}
     )
 
-    factor = 1 / (
-        distribute_timeslice(ftechs.fixed_outputs)
-        * broadcast_timeslice(ftechs.utilization_factor)
-    )
-    capa_in_use = (prod * factor).where(~np.isinf(factor), 0)
+    factor = 1 / (ftechs.fixed_outputs * ftechs.utilization_factor)
+    capa_in_use = (prod * broadcast_timeslice(factor)).where(~np.isinf(factor), 0)
 
     capa_in_use = capa_in_use.where(
         is_enduse(technologies.comm_usage.sel(commodity=capa_in_use.commodity)), 0
