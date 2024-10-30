@@ -726,8 +726,7 @@ def read_technodata(
     techcomms = technologies.commodity[ins | outs]
     technologies = technologies.sel(commodity=techcomms)
     for name, value in technosettings.items():
-        if isinstance(name, (str, Path)):
-            data = value
+        data = value
         if isinstance(data, xr.Dataset):
             technologies = technologies.merge(data)
         else:
