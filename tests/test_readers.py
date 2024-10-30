@@ -387,48 +387,6 @@ def test_suffix_path_formatting(suffix, tmpdir):
     )
 
 
-def test_read_existing_trade(tmp_path):
-    from muse.examples import copy_model
-    from muse.readers.csv import read_trade
-
-    copy_model("trade", tmp_path)
-    path = tmp_path / "model" / "technodata" / "gas" / "ExistingTrade.csv"
-    data = read_trade(path, skiprows=[1])
-
-    assert isinstance(data, xr.DataArray)
-    assert set(data.dims) == {"year", "technology", "dst_region", "region"}
-    assert list(data.coords["year"].values) == [2010, 2020, 2030, 2040, 2050]
-    assert list(data.coords["technology"].values) == ["gassupply1"]
-    assert list(data.coords["dst_region"].values) == ["R1", "R2"]
-    assert list(data.coords["region"].values) == ["R1", "R2"]
-
-
-def test_read_trade_technodata(tmp_path):
-    from muse.examples import copy_model
-    from muse.readers.csv import read_trade
-
-    copy_model("trade", tmp_path)
-    path = tmp_path / "model" / "technodata" / "gas" / "TradeTechnodata.csv"
-    data = read_trade(path, drop="Unit")
-
-    assert isinstance(data, xr.Dataset)
-    assert set(data.dims) == {"technology", "dst_region", "region"}
-    assert set(data.data_vars) == {
-        "cap_par",
-        "cap_exp",
-        "fix_par",
-        "fix_exp",
-        "max_capacity_addition",
-        "max_capacity_growth",
-        "total_capacity_limit",
-    }
-    assert all(val == np.float64 for val in data.dtypes.values())
-    assert list(data.coords["dst_region"].values) == ["R1", "R2"]
-    assert list(data.coords["technology"].values) == ["gassupply1"]
-    assert list(data.coords["region"].values) == ["R1", "R2", "R3"]
-    assert all(var.coords.equals(data.coords) for var in data.data_vars.values())
-
-
 @fixture
 def default_model(tmp_path):
     from muse.examples import copy_model

@@ -255,20 +255,16 @@ def matching_market(sector: str, model: str = "default") -> xr.Dataset:
         ),
     )
     market["supply"] = production.sum("asset")
-    if "dst_region" in market.dims:
-        market = market.rename(dst_region="region")
     if market.region.dims:
         consump = consumption(loaded_sector.technologies, production)
         market["consumption"] = drop_timeslice(
-            consump.groupby("region").sum(
-                {"asset", "dst_region"}.intersection(consump.dims)
-            )
+            consump.groupby("region").sum({"asset"}.intersection(consump.dims))
             + market.supply
         )
     else:
         market["consumption"] = (
             consumption(loaded_sector.technologies, production).sum(
-                {"asset", "dst_region"}.intersection(market.dims)
+                {"asset"}.intersection(market.dims)
             )
             + market.supply
         )

@@ -845,7 +845,7 @@ def read_technodata(
     **kwargs,
 ) -> xr.Dataset:
     """Helper function to create technodata for a given sector."""
-    from muse.readers.csv import read_technologies, read_trade
+    from muse.readers.csv import read_technologies
 
     if time_framework is None:
         time_framework = getattr(settings, "time_framework", [2010, 2050])
@@ -905,15 +905,6 @@ def read_technodata(
     technologies = technologies.sel(commodity=techcomms)
     for name, value in technosettings.items():
         if isinstance(name, (str, Path)):
-            data = read_trade(value, drop="Unit")
-            if "region" in data.dims:
-                data = data.sel(region=regions)
-            if "dst_region" in data.dims:
-                data = data.sel(dst_region=regions)
-                if data.dst_region.size == 1:
-                    data = data.squeeze("dst_region", drop=True)
-
-        else:
             data = value
         if isinstance(data, xr.Dataset):
             technologies = technologies.merge(data)
