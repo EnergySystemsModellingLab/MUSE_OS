@@ -504,14 +504,12 @@ def test_extract_agents_internal(newcapa_agent, retro_agent):
             "agent",
             "category",
             "sector",
-            "dst_region",
             "year",
             "installed",
         )
         assert actual[agent.uuid]["agent"] == agent.name
         assert actual[agent.uuid]["category"] == agent.category
         assert actual[agent.uuid]["sector"] == "IT"
-        assert actual[agent.uuid]["dst_region"] == agent.region
 
 
 def test_aggregate_cache():
