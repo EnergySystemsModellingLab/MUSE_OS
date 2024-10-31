@@ -137,9 +137,14 @@ def search_space(sector: str, model: str = "default") -> xr.DataArray:
 
     Used in constraints or during investment.
     """
-    if model == "trade" and sector != "residential":
-        return _trade_search_space(sector, model)
-    return _nontrade_search_space(sector, model)
+    from numpy import ones
+
+    technology = technodata(sector, model).technology
+    return xr.DataArray(
+        ones((len(technology), len(technology)), dtype=bool),
+        coords=dict(asset=technology.values, replacement=technology.values),
+        dims=("asset", "replacement"),
+    )
 
 
 def sector(sector: str, model: str = "default") -> AbstractSector:
@@ -366,40 +371,3 @@ def _copy_trade(path: Path):
     copytree(example_data_dir() / "trade" / "input", path / "input")
     copytree(example_data_dir() / "trade" / "technodata", path / "technodata")
     copyfile(example_data_dir() / "trade" / "settings.toml", path / "settings.toml")
-
-
-def _trade_search_space(sector: str, model: str = "default") -> xr.DataArray:
-    from muse.agents import Agent
-    from muse.examples import sector as load_sector
-    from muse.sectors import Sector
-    from muse.utilities import agent_concatenation
-
-    loaded_sector = cast(Sector, load_sector(sector, model))
-
-    market = matching_market(sector, model)
-    return cast(
-        xr.DataArray,
-        agent_concatenation(
-            {
-                a.uuid: cast(Agent, a).search_rules(
-                    agent=a,
-                    demand=market.consumption.isel(year=0, drop=True),
-                    technologies=loaded_sector.technologies,
-                    market=market,
-                )
-                for a in loaded_sector.agents
-            },
-            dim="agent",
-        ),
-    )
-
-
-def _nontrade_search_space(sector: str, model: str = "default") -> xr.DataArray:
-    from numpy import ones
-
-    technology = technodata(sector, model).technology
-    return xr.DataArray(
-        ones((len(technology), len(technology)), dtype=bool),
-        coords=dict(asset=technology.values, replacement=technology.values),
-        dims=("asset", "replacement"),
-    )
