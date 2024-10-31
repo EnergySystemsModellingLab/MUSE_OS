@@ -82,10 +82,12 @@ def market_demand(assets, technologies, market):
 
 
 @fixture
-def max_production(market_demand, assets, search_space, market, technologies):
+def max_production(market_demand, assets, search_space, market, technologies, year):
     from muse.constraints import max_production
 
-    return max_production(market_demand, assets, search_space, market, technologies)
+    return max_production(
+        market_demand, assets, search_space, market, technologies, year=year
+    )
 
 
 @fixture
@@ -110,20 +112,26 @@ def max_capacity_expansion(market_demand, assets, search_space, market, technolo
 
 
 @fixture
-def demand_limiting_capacity(market_demand, assets, search_space, market, technologies):
+def demand_limiting_capacity(
+    market_demand, assets, search_space, market, technologies, year
+):
     from muse.constraints import demand_limiting_capacity
 
     return demand_limiting_capacity(
-        market_demand, assets, search_space, market, technologies
+        market_demand, assets, search_space, market, technologies, year=year
     )
 
 
 @fixture(params=["timeslice_as_list", "timeslice_as_multindex"])
-def constraints(request, market_demand, assets, search_space, market, technologies):
+def constraints(
+    request, market_demand, assets, search_space, market, technologies, year
+):
     from muse import constraints as cs
 
     constraints = [
-        cs.max_production(market_demand, assets, search_space, market, technologies),
+        cs.max_production(
+            market_demand, assets, search_space, market, technologies, year=year
+        ),
         cs.demand(market_demand, assets, search_space, market, technologies),
         cs.max_capacity_expansion(
             market_demand, assets, search_space, market, technologies
