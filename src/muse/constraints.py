@@ -302,6 +302,11 @@ def max_capacity_expansion(
     """
     from muse.utilities import filter_input
 
+    # Expand capacity to cover all replacement technologies
+    capacity = capacity.rename(technology="replacement").reindex_like(
+        search_space, fill_value=0
+    )
+
     replacement = search_space.replacement
     replacement = replacement.drop_vars(
         [u for u in replacement.coords if u not in replacement.dims]
