@@ -109,8 +109,6 @@ def copy_model(
         _copy_multiple_agents(path)
     elif name.lower() == "minimum_service":
         _copy_minimum_service(path)
-    elif name.lower() == "trade":
-        _copy_trade(path)
     return path
 
 
@@ -363,11 +361,3 @@ def _copy_minimum_service(path: Path):
     copyfile(
         example_data_dir() / "minimum_service" / "settings.toml", path / "settings.toml"
     )
-
-
-def _copy_trade(path: Path):
-    from shutil import copyfile, copytree
-
-    copytree(example_data_dir() / "trade" / "input", path / "input")
-    copytree(example_data_dir() / "trade" / "technodata", path / "technodata")
-    copyfile(example_data_dir() / "trade" / "settings.toml", path / "settings.toml")
