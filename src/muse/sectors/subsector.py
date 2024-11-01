@@ -75,20 +75,31 @@ class Subsector:
         )
 
         # Calculate existing capacity
-        agent_market = market.copy()
-        agent_market["capacity"] = (
-            reduce_assets(assets.capacity, coords=("region", "technology"))
-            .interp(year=market.year, method="linear", kwargs={"fill_value": 0.0})
-            .swap_dims(dict(asset="technology"))
-        )
+        capacity = reduce_assets(
+            assets.capacity, coords=("region", "technology")
+        ).interp(year=market.year, method="linear", kwargs={"fill_value": 0.0})
 
         # Increment each agent (perform investments)
         for agent in self.agents:
+            agent_market = market.copy()
+
+            # Select appropriate data for the region
+            techs = technologies.sel(region=agent.region)
+            agent_market = agent_market.sel(region=agent.region)
+            capa = (
+                capacity.sel(asset=capacity.region == agent.region)
+                if "asset" in capacity.region.dims
+                else capacity
+            )
+            agent_market["capacity"] = capa.swap_dims(dict(asset="technology"))
+
+            # Select demands for the agent
             if "agent" in demands.coords:
                 share = demands.sel(asset=demands.agent == agent.uuid)
             else:
                 share = demands
-            agent.next(technologies, agent_market, share, time_period=time_period)
+
+            agent.next(techs, agent_market, share, time_period=time_period)
 
     @classmethod
     def factory(

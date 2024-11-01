@@ -320,13 +320,15 @@ class InvestingAgent(Agent):
         ).values
         search = search.sel(asset=condtechs)
 
+        # Get technology parameters for the current year
+        techs = self.filter_input(technologies, year=current_year)
+
         # Calculate constraints
         constraints = self.constraints(
-            search.demand,
-            self.assets,
-            search.search_space,
-            market,
-            technologies,
+            demand=search.demand,
+            search_space=search.search_space,
+            capacity=market.capacity,
+            technologies=techs,
             year=current_year,
         )
 
