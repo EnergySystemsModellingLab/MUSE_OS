@@ -173,6 +173,16 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
         **kwargs,
     ) -> Constraint | None:
         """Computes and standardizes a constraint."""
+        # Check inputs
+        assert set(demand.dims) == {"asset", "commodity", "timeslice"}
+        assert set(capacity.dims) == {"technology", "year"}
+        assert set(search_space.dims) == {"asset", "replacement"}
+        assert set(technologies.dims) == {"technology", "commodity"}
+        assert set(search_space.replacement.values) == set(
+            technologies.technology.values
+        )
+        assert set(search_space.asset.values) == set(demand.asset.values)
+
         constraint = function(  # type: ignore
             demand, capacity, search_space, technologies, **kwargs
         )
@@ -262,7 +272,6 @@ def max_capacity_expansion(
     capacity: xr.Dataset,
     search_space: xr.DataArray,
     technologies: xr.Dataset,
-    interpolation: str = "linear",
     **kwargs,
 ) -> Constraint:
     r"""Max-capacity addition, max-capacity growth, and capacity limits constraints.
@@ -670,7 +679,7 @@ def minimum_service(
     )
     kwargs = dict(technology=replacement, commodity=commodities)
     techs = (
-        technologies[["fixed_outputs", "utilization_factor", "minimum_service_factor"]]
+        technologies[["fixed_outputs", "minimum_service_factor"]]
         .sel(**kwargs)
         .drop_vars("technology")
     )
