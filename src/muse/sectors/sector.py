@@ -265,7 +265,6 @@ class Sector(AbstractSector):  # type: ignore
             result = xr.Dataset(
                 dict(supply=supply, consumption=consumption, costs=costs)
             )
-        result = self.convert_market_timeslice(result, mca_market.timeslice)
         result["comm_usage"] = self.technologies.comm_usage.sel(
             commodity=result.commodity
         )
@@ -376,24 +375,3 @@ class Sector(AbstractSector):  # type: ignore
         """Iterator over all agents in the sector."""
         for subsector in self.subsectors:
             yield from subsector.agents
-
-    @staticmethod
-    def convert_market_timeslice(
-        market: xr.Dataset,
-        timeslice: pd.MultiIndex,
-        intensive: str | tuple[str] = "prices",
-    ) -> xr.Dataset:
-        """Converts market from one to another timeslice."""
-        from muse.timeslices import broadcast_timeslice
-
-        if isinstance(intensive, str):
-            intensive = (intensive,)
-
-        timesliced = {d for d in market.data_vars if "timeslice" in market[d].dims}
-
-        intensives = market[list(timesliced.intersection(intensive))]
-        if "timeslice" not in intensives.dims:
-            intensives = broadcast_timeslice(intensives)
-        extensives = market[list(timesliced.difference(intensives.data_vars))]
-        others = market[list(set(market.data_vars).difference(timesliced))]
-        return xr.merge([intensives, extensives, others])
