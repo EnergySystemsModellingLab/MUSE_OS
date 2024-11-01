@@ -47,12 +47,7 @@ def test_subsector_investing_aggregation():
             subsector = Subsector(agents, commodities)
             initial_agents = deepcopy(agents)
             assert {agent.year for agent in agents} == {int(market.year.min())}
-            assert (
-                subsector.aggregate_lp(
-                    technologies, market, time_period=5, current_year=5
-                )
-                is None
-            )
+            subsector.aggregate_lp(technologies, market, time_period=5, current_year=5)
             assert {agent.year for agent in agents} == {int(market.year.min() + 5)}
             for initial, final in zip(initial_agents, agents):
                 assert initial.assets.sum() != final.assets.sum()

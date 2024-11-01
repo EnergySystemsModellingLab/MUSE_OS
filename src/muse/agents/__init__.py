@@ -2,7 +2,6 @@ __all__ = [
     "AbstractAgent",
     "Agent",
     "InvestingAgent",
-    "factory",
     "agents_factory",
     "create_agent",
 ]
