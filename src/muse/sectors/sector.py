@@ -237,34 +237,6 @@ class Sector(AbstractSector):  # type: ignore
             )
 
         result = output_data.copy(deep=True)
-        if "dst_region" in result:
-            exclude = ["dst_region", "commodity", "year", "timeslice"]
-            prices = market.prices.expand_dims(dst_region=market.prices.region.values)
-            sup, prices = xr.broadcast(result.supply, prices)
-            sup = sup.fillna(0.0)
-            con, prices = xr.broadcast(result.consumption, prices)
-            con = con.fillna(0.0)
-            supply = result.supply.sum("region").rename(dst_region="region")
-            consumption = con.sum("dst_region")
-            assert len(supply.region) == len(consumption.region)
-
-            # Need to reindex costs to avoid nans for non-producing regions
-            costs0, prices = xr.broadcast(result.costs, prices, exclude=exclude)
-            # Fulfil nans with price values
-            costs0 = costs0.reindex_like(prices).fillna(prices)
-            costs0 = costs0.where(costs0 > 0, prices)
-            # Find where sup >0 (exporter)
-            # Importers have nans and average over exporting price
-            costs = ((costs0 * sup) / sup.sum("dst_region")).fillna(
-                costs0.mean("region")
-            )
-
-            # Take average over dst regions
-            costs = costs.where(costs > 0, prices).mean("dst_region")
-
-            result = xr.Dataset(
-                dict(supply=supply, consumption=consumption, costs=costs)
-            )
         result = self.convert_market_timeslice(result, mca_market.timeslice)
         result["comm_usage"] = self.technologies.comm_usage.sel(
             commodity=result.commodity
@@ -316,60 +288,17 @@ class Sector(AbstractSector):  # type: ignore
         """
         from muse.utilities import filter_input, reduce_assets
 
-        traded = [
-            u.assets.capacity
-            for u in self.agents
-            if "dst_region" in u.assets.capacity.dims
+        nontraded = [u.assets.capacity for u in self.agents]
+
+        full_list = [
+            list(nontraded[i].year.values)
+            for i in range(len(nontraded))
+            if "year" in nontraded[i].dims
         ]
-        nontraded = [
-            u.assets.capacity
-            for u in self.agents
-            if "dst_region" not in u.assets.capacity.dims
-        ]
-
-        # Only nontraded assets
-        if not traded:
-            full_list = [
-                list(nontraded[i].year.values)
-                for i in range(len(nontraded))
-                if "year" in nontraded[i].dims
-            ]
-            flat_list = [item for sublist in full_list for item in sublist]
-            years = sorted(list(set(flat_list)))
-            nontraded = [
-                filter_input(u.assets.capacity, year=years)
-                for u in self.agents
-                if "dst_region" not in u.assets.capacity.dims
-            ]
-            return reduce_assets(nontraded)
-
-        # Only traded assets
-        elif not nontraded:
-            full_list = [
-                list(traded[i].year.values)
-                for i in range(len(traded))
-                if "year" in traded[i].dims
-            ]
-            flat_list = [item for sublist in full_list for item in sublist]
-            years = sorted(list(set(flat_list)))
-            traded = [
-                filter_input(u.assets.capacity, year=years)
-                for u in self.agents
-                if "dst_region" in u.assets.capacity.dims
-            ]
-            return reduce_assets(traded)
-
-        # Both traded and nontraded assets
-        else:
-            traded_results = reduce_assets(traded)
-            nontraded_results = reduce_assets(nontraded)
-            return reduce_assets(
-                [
-                    traded_results,
-                    nontraded_results
-                    * (nontraded_results.region == traded_results.dst_region),
-                ]
-            )
+        flat_list = [item for sublist in full_list for item in sublist]
+        years = sorted(list(set(flat_list)))
+        nontraded = [filter_input(u.assets.capacity, year=years) for u in self.agents]
+        return reduce_assets(nontraded)
 
     @property
     def agents(self) -> Iterator[AbstractAgent]:

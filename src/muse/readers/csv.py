@@ -237,12 +237,7 @@ def read_io_technodata(filename: Union[str, Path]) -> xr.Dataset:
 def read_initial_assets(filename: Union[str, Path]) -> xr.DataArray:
     """Reads and formats data about initial capacity into a dataframe."""
     data = pd.read_csv(filename, float_precision="high", low_memory=False)
-    if "Time" in data.columns:
-        result = cast(
-            xr.DataArray, read_trade(filename, skiprows=[1], columns_are_source=True)
-        )
-    else:
-        result = read_initial_capacity(data)
+    result = read_initial_capacity(data)
     technology = result.technology
     result = result.drop_vars("technology").rename(technology="asset")
     result["technology"] = "asset", technology.values
@@ -814,66 +809,6 @@ def read_presets(
             camel_to_snake(u) for u in result.commodity.values
         ]
     return result
-
-
-def read_trade(
-    data: Union[pd.DataFrame, str, Path],
-    columns_are_source: bool = True,
-    parameters: Optional[str] = None,
-    skiprows: Optional[Sequence[int]] = None,
-    name: Optional[str] = None,
-    drop: Optional[Union[str, Sequence[str]]] = None,
-) -> Union[xr.DataArray, xr.Dataset]:
-    """Read CSV table with source and destination regions."""
-    from muse.readers import camel_to_snake
-
-    if not isinstance(data, pd.DataFrame):
-        data = pd.read_csv(data, skiprows=skiprows)
-
-    if parameters is None and "Parameter" in data.columns:
-        parameters = "Parameter"
-    if columns_are_source:
-        col_region = "src_region"
-        row_region = "dst_region"
-    else:
-        row_region = "src_region"
-        col_region = "dst_region"
-    data = data.apply(to_numeric, axis=0)
-    if isinstance(drop, str):
-        drop = [drop]
-    if drop:
-        drop = list(set(drop).intersection(data.columns))
-    if drop:
-        data = data.drop(columns=drop)
-    data = data.rename(
-        columns=dict(
-            Time="year",
-            ProcessName="technology",
-            RegionName=row_region,
-            Commodity="commodity",
-        )
-    )
-    indices = list(
-        {"commodity", "year", "src_region", "dst_region", "technology"}.intersection(
-            data.columns
-        )
-    )
-    data = data.melt(
-        id_vars={parameters}.union(indices).intersection(data.columns),
-        var_name=col_region,
-    )
-    if parameters is None:
-        result: Union[xr.DataArray, xr.Dataset] = xr.DataArray.from_series(
-            data.set_index([*indices, col_region])["value"]
-        ).rename(name)
-    else:
-        result = xr.Dataset.from_dataframe(
-            data.pivot_table(
-                values="value", columns=parameters, index=[*indices, col_region]
-            ).rename(columns=camel_to_snake)
-        )
-
-    return result.rename(src_region="region")
 
 
 def read_finite_resources(path: Union[str, Path]) -> xr.DataArray:

@@ -375,9 +375,6 @@ def max_capacity_expansion(
 
     if b.region.dims == ():
         capa = 1
-    elif "dst_region" in b.dims:
-        b = b.rename(region="src_region")
-        capa = search_space.agent.region == b.src_region
 
     return xr.Dataset(
         dict(b=b, capacity=capa),
@@ -401,8 +398,6 @@ def demand(
 
     enduse = technologies.commodity.sel(commodity=is_enduse(technologies.comm_usage))
     b = demand.sel(commodity=demand.commodity.isin(enduse))
-    if "region" in b.dims and "dst_region" in assets.dims:
-        b = b.rename(region="dst_region")
     assert "year" not in b.dims
     return xr.Dataset(
         dict(b=b, production=1), attrs=dict(kind=ConstraintKind.LOWER_BOUND)
@@ -472,21 +467,6 @@ def max_production(
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
     b = zeros_like(production)
-    # Include maxaddition constraint in max production to match region-dst_region
-    if "dst_region" in assets.dims:
-        b = b.expand_dims(dst_region=assets.dst_region)
-        capacity = capacity.rename(region="src_region")
-        production = production.rename(region="src_region")
-        maxadd = technologies.max_capacity_addition.rename(region="src_region")
-        if "year" in maxadd.dims:
-            maxadd = maxadd.sel(year=year)
-
-        maxadd = maxadd.rename(technology="replacement")
-        maxadd = maxadd.where(maxadd == 0, 0.0)
-        maxadd = maxadd.where(maxadd > 0, -1.0)
-        capacity = capacity * broadcast_timeslice(maxadd)
-        production = production * broadcast_timeslice(maxadd)
-        b = b.rename(region="src_region")
     return xr.Dataset(
         dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),

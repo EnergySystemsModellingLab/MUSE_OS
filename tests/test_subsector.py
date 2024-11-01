@@ -47,12 +47,7 @@ def test_subsector_investing_aggregation():
             subsector = Subsector(agents, commodities)
             initial_agents = deepcopy(agents)
             assert {agent.year for agent in agents} == {int(market.year.min())}
-            assert (
-                subsector.aggregate_lp(
-                    technologies, market, time_period=5, current_year=5
-                )
-                is None
-            )
+            subsector.aggregate_lp(technologies, market, time_period=5, current_year=5)
             assert {agent.year for agent in agents} == {int(market.year.min() + 5)}
             for initial, final in zip(initial_agents, agents):
                 assert initial.assets.sum() != final.assets.sum()
@@ -89,7 +84,6 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
             del param["share"]
 
         param["agent_type"] = "default"
-        param["category"] = "trade"
         param["year"] = 2020
         param["search_rules"] = "from_assets -> compress -> reduce_assets"
         param["objectives"] = "ALCOE"

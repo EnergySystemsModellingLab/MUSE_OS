@@ -193,14 +193,11 @@ def sector_capacity(sector: AbstractSector) -> pd.DataFrame:
         capa_agent["sector"] = getattr(sector, "name", "unnamed")
 
         if len(capa_agent) > 0 and len(capa_agent.technology.values) > 0:
-            if "dst_region" not in capa_agent.coords:
-                capa_agent["dst_region"] = agent.region
             a = capa_agent.to_dataframe()
             b = (
                 a.groupby(
                     [
                         "technology",
-                        "dst_region",
                         "region",
                         "agent",
                         "sector",
@@ -361,8 +358,6 @@ def sector_supply(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Da
             else:
                 data_agent = result
                 data_agent["year"] = output_year
-            if "dst_region" not in data_agent.coords:
-                data_agent["dst_region"] = a.region
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
@@ -403,70 +398,41 @@ def sectory_supply(
         """
         from muse.utilities import filter_input, reduce_assets
 
-        traded = [
-            u.assets.capacity for u in agents if "dst_region" in u.assets.capacity.dims
+        nontraded = [u.assets.capacity for u in agents]
+        full_list = [
+            list(nontraded[i].year.values)
+            for i in range(len(nontraded))
+            if "year" in nontraded[i].dims
         ]
-        nontraded = [
-            u.assets.capacity
-            for u in agents
-            if "dst_region" not in u.assets.capacity.dims
-        ]
-        if not traded:
-            full_list = [
-                list(nontraded[i].year.values)
-                for i in range(len(nontraded))
-                if "year" in nontraded[i].dims
-            ]
-            flat_list = [item for sublist in full_list for item in sublist]
-            years = sorted(list(set(flat_list)))
-            nontraded = [
-                filter_input(u.assets.capacity, year=years)
-                for u in agents
-                if "dst_region" not in u.assets.capacity.dims
-            ]
+        flat_list = [item for sublist in full_list for item in sublist]
+        years = sorted(list(set(flat_list)))
+        nontraded = [filter_input(u.assets.capacity, year=years) for u in agents]
 
-            return reduce_assets(nontraded)
-
-        if not nontraded:
-            full_list = [
-                list(traded[i].year.values)
-                for i in range(len(traded))
-                if "year" in traded[i].dims
-            ]
-            flat_list = [item for sublist in full_list for item in sublist]
-            years = sorted(list(set(flat_list)))
-            traded = [
-                filter_input(u.assets.capacity, year=years)
-                for u in agents
-                if "dst_region" in u.assets.capacity.dims
-            ]
-            return reduce_assets(traded)
-        traded_results = reduce_assets(traded)
-        nontraded_results = reduce_assets(nontraded)
-        return reduce_assets(
-            [
-                traded_results,
-                nontraded_results
-                * (nontraded_results.region == traded_results.dst_region),
-            ]
-        )
+        return reduce_assets(nontraded)
 
     data_sector: list[xr.DataArray] = []
     techs = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
     if len(techs) > 0:
-        if "dst_region" in techs.dims:
-            output_year = agents[0].year - agents[0].forecast
-            years = market.year.values
-            capacity = (
-                capacity(agents)
-                .interp(year=years, method="linear")
-                .sel(year=output_year)
-            )
+        for agent in agents:
+            output_year = agent.year - agent.forecast
+            capacity = agent.filter_input(
+                agent.assets.capacity, year=output_year
+            ).fillna(0.0)
+            technologies = techs.sel(year=output_year, region=agent.region)
             agent_market = market.sel(year=output_year).copy()
-            agent_market["consumption"] = agent_market.consumption
-            technologies = techs.sel(year=output_year)
+            agent_market["consumption"] = agent_market.consumption * agent.quantity
+            included = [
+                i
+                for i in agent_market["commodity"].values
+                if i in technologies.enduse.values
+            ]
+            excluded = [
+                i for i in agent_market["commodity"].values if i not in included
+            ]
+            agent_market.loc[dict(commodity=excluded)] = 0
+
             result = supply(
                 agent_market,
                 capacity,
@@ -478,9 +444,8 @@ def sectory_supply(
             else:
                 data_agent = result
                 data_agent["year"] = output_year
-
-            data_agent["agent"] = agents[0].name
-            data_agent["category"] = agents[0].category
+            data_agent["agent"] = agent.name
+            data_agent["category"] = agent.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
 
             a = data_agent.to_dataframe("supply")
@@ -489,48 +454,6 @@ def sectory_supply(
                 b = a.reset_index()
                 b = b[b["supply"] != 0]
                 data_sector.append(b)
-        else:
-            for agent in agents:
-                output_year = agent.year - agent.forecast
-                capacity = agent.filter_input(
-                    agent.assets.capacity, year=output_year
-                ).fillna(0.0)
-                technologies = techs.sel(year=output_year, region=agent.region)
-                agent_market = market.sel(year=output_year).copy()
-                agent_market["consumption"] = agent_market.consumption * agent.quantity
-                included = [
-                    i
-                    for i in agent_market["commodity"].values
-                    if i in technologies.enduse.values
-                ]
-                excluded = [
-                    i for i in agent_market["commodity"].values if i not in included
-                ]
-                agent_market.loc[dict(commodity=excluded)] = 0
-
-                result = supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                )
-
-                if "year" in result.dims:
-                    data_agent = result.sel(year=output_year)
-                else:
-                    data_agent = result
-                    data_agent["year"] = output_year
-                if "dst_region" not in data_agent.coords:
-                    data_agent["dst_region"] = agent.region
-                data_agent["agent"] = agent.name
-                data_agent["category"] = agent.category
-                data_agent["sector"] = getattr(sector, "name", "unnamed")
-
-                a = data_agent.to_dataframe("supply")
-                a["comm_usage"] = a["comm_usage"].apply(lambda x: x.name)
-                if len(a) > 0 and len(a.technology.values) > 0:
-                    b = a.reset_index()
-                    b = b[b["supply"] != 0]
-                    data_sector.append(b)
 
     if len(data_sector) > 0:
         output = pd.concat(data_sector, sort=True).reset_index()
@@ -593,8 +516,6 @@ def sector_consumption(
             else:
                 data_agent = result
                 data_agent["year"] = output_year
-            if "dst_region" not in data_agent.coords:
-                data_agent["dst_region"] = a.region
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
@@ -665,8 +586,6 @@ def sectory_consumption(
             else:
                 data_agent = result
                 data_agent["year"] = output_year
-            if "dst_region" not in data_agent.coords:
-                data_agent["dst_region"] = a.region
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")

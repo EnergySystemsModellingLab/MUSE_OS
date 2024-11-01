@@ -52,36 +52,16 @@ def supply(
     maxprod = production_method(technologies, capacity)
     minprod = minimum_production(technologies, capacity)
     size = np.array(maxprod.region).size
-    # in presence of trade demand needs to map maxprod dst_region
-    if (
-        "region" in demand.dims
-        and "region" in maxprod.coords
-        and "dst_region" not in maxprod.dims
-        and size == 1
-    ):
+
+    if "region" in demand.dims and "region" in maxprod.coords and size == 1:
         demand = demand.sel(region=maxprod.region)
         prodsum = set(demand.dims).difference(maxprod.dims)
         demsum = set(maxprod.dims).difference(demand.dims)
         expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
 
-    elif (
-        "region" in demand.dims
-        and "region" in maxprod.coords
-        and "dst_region" not in maxprod.dims
-        and size > 1
-    ):
+    elif "region" in demand.dims and "region" in maxprod.coords and size > 1:
         prodsum = set(demand.dims).difference(maxprod.dims)
         demsum = set(maxprod.dims).difference(demand.dims)
-        expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
-
-    elif (
-        "region" in demand.dims
-        and "region" in maxprod.coords
-        and "dst_region" in maxprod.dims
-    ):
-        demand = demand.rename(region="dst_region")
-        prodsum = {"timeslice"}
-        demsum = {"asset"}
         expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
 
     else:

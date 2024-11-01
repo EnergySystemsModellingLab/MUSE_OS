@@ -44,7 +44,7 @@ def test_cliff_retirement_known_profile():
         name="technical_life",
     )
 
-    profile = cliff_retirement_profile(technical_life=lifetime)
+    profile = cliff_retirement_profile(technical_life=lifetime, investment_year=2020)
     expected = array(
         [
             [True, False, False, False],
@@ -73,7 +73,7 @@ def test_cliff_retirement_random_profile(protected):
     )
     effective_lifetime = (protected // lifetime + 1) * lifetime
 
-    investment_year = 5
+    investment_year = 2020
     profile = cliff_retirement_profile(
         technical_life=lifetime.clip(min=protected), investment_year=investment_year
     )

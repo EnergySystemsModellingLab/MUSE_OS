@@ -19,7 +19,7 @@ def create_standard_agent(
     interpolation: str = "linear",
     **kwargs,
 ):
-    """Creates retrofit agent from muse primitives."""
+    """Creates standard (noninvesting) agent from muse primitives."""
     from muse.filters import factory as filter_factory
 
     if share is not None:
@@ -198,10 +198,6 @@ def agents_factory(
 
     if regions and "region" in capacity.dims:
         capacity = capacity.sel(region=regions)
-    if regions and "dst_region" in capacity.dims:
-        capacity = capacity.sel(dst_region=regions)
-        if capacity.dst_region.size == 1:
-            capacity = capacity.squeeze("dst_region", drop=True)
     result = []
 
     retrofit_present = False
