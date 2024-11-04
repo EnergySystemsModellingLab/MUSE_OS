@@ -115,6 +115,7 @@ def new_and_retro(
     current_year: int,
     forecast: int,
     production: Union[str, Mapping, Callable] = "maximum_production",
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     r"""Splits demand across new and retro agents.
 
@@ -236,6 +237,7 @@ def new_and_retro(
             technologies,
             capacity,
             year=[current_year, current_year + forecast],
+            timeslice_level=timeslice_level,
         ).squeeze("year")
 
     capacity = reduce_assets([u.assets.capacity for u in agents])
@@ -247,6 +249,7 @@ def new_and_retro(
         production=production,
         current_year=current_year,
         forecast=forecast,
+        timeslice_level=timeslice_level,
     )
 
     demands = demands.where(
@@ -311,6 +314,7 @@ def new_and_retro(
                 maximum_production,
                 technologies=regional_techs,
                 year=current_year,
+                timeslice_level=timeslice_level,
             ),
             id_to_nquantity,
         )
@@ -329,6 +333,7 @@ def standard_demand(
     current_year: int,
     forecast: int,
     production: Union[str, Mapping, Callable] = "maximum_production",
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     r"""Splits demand across new agents.
 
@@ -363,6 +368,7 @@ def standard_demand(
             technologies,
             capacity,
             year=[current_year, current_year + forecast],
+            timeslice_level=timeslice_level,
         ).squeeze("year")
 
     # Make sure there are no retrofit agents
@@ -381,6 +387,7 @@ def standard_demand(
         production=production,
         current_year=current_year,
         forecast=forecast,
+        timeslice_level=timeslice_level,
     )
 
     # Only consider end-use commodities
@@ -416,6 +423,7 @@ def standard_demand(
                 maximum_production,
                 technologies=technologies.sel(region=region),
                 year=current_year,
+                timeslice_level=timeslice_level,
             ),
             id_to_quantity,
         )
@@ -438,6 +446,7 @@ def unmet_forecasted_demand(
     current_year: int,
     forecast: int,
     production: Union[str, Mapping, Callable] = "maximum_production",
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
     from muse.commodities import is_enduse
@@ -448,7 +457,9 @@ def unmet_forecasted_demand(
     smarket: xr.Dataset = market.where(is_enduse(comm_usage), 0).interp(year=year)
     capacity = reduce_assets([u.assets.capacity.interp(year=year) for u in agents])
     capacity = cast(xr.DataArray, capacity)
-    result = unmet_demand(smarket, capacity, technologies, production)
+    result = unmet_demand(
+        smarket, capacity, technologies, production, timeslice_level=timeslice_level
+    )
     if "year" in result.dims:
         result = result.squeeze("year")
     return result
@@ -511,6 +522,7 @@ def unmet_demand(
     capacity: xr.DataArray,
     technologies: xr.Dataset,
     production: Union[str, Mapping, Callable] = "maximum_production",
+    timeslice_level: str | None = None,
 ):
     r"""Share of the demand that cannot be serviced by the existing assets.
 
@@ -531,7 +543,12 @@ def unmet_demand(
     assert callable(prod_method)
 
     # Calculate production by existing assets
-    produced = prod_method(market=market, capacity=capacity, technologies=technologies)
+    produced = prod_method(
+        market=market,
+        capacity=capacity,
+        technologies=technologies,
+        timeslice_level=timeslice_level,
+    )
 
     # Total commodity production by summing over assets
     if "dst_region" in produced.dims:
@@ -552,6 +569,7 @@ def new_consumption(
     technologies: xr.Dataset,
     current_year: int,
     forecast: int,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     r"""Computes share of the demand attributed to new agents.
 
@@ -580,7 +598,7 @@ def new_consumption(
 
     # Calculate the increase in consumption over the forecast period
     delta = (forecasted.consumption - current.consumption).clip(min=0)
-    missing = unmet_demand(current, capa, technologies)
+    missing = unmet_demand(current, capa, technologies, timeslice_level=timeslice_level)
     consumption = minimum(delta, missing)
     return consumption
 
@@ -592,6 +610,7 @@ def new_and_retro_demands(
     current_year: int,
     forecast: int,
     production: Union[str, Mapping, Callable] = "maximum_production",
+    timeslice_level: str | None = None,
 ) -> xr.Dataset:
     """Splits demand into *new* and *retrofit* demand.
 
@@ -622,7 +641,12 @@ def new_and_retro_demands(
 
     # Calculate demand to allocate to "new" agents
     new_demand = new_consumption(
-        capa, smarket, technologies, current_year=current_year, forecast=forecast
+        capa,
+        smarket,
+        technologies,
+        current_year=current_year,
+        forecast=forecast,
+        timeslice_level=timeslice_level,
     )
     if "year" in new_demand.dims:
         new_demand = new_demand.squeeze("year")
@@ -633,6 +657,7 @@ def new_and_retro_demands(
             smarket.sel(year=current_year + forecast),
             capa.sel(year=current_year + forecast),
             technologies,
+            timeslice_level=timeslice_level,
         )
         .groupby("region")
         .sum("asset")

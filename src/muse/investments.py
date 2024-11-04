@@ -269,6 +269,7 @@ def scipy_match_demand(
     technologies: xr.Dataset,
     constraints: list[Constraint],
     year: Optional[int] = None,
+    timeslice_level: Optional[str] = None,
     **options,
 ) -> xr.DataArray:
     from logging import getLogger
@@ -289,7 +290,9 @@ def scipy_match_demand(
         techs = technologies
 
     # Run scipy optimization with highs solver
-    adapter = ScipyAdapter.factory(techs, cast(np.ndarray, costs), *constraints)
+    adapter = ScipyAdapter.factory(
+        techs, cast(np.ndarray, costs), *constraints, timeslice_level=timeslice_level
+    )
     res = linprog(**adapter.kwargs, method="highs")
 
     # Backup: try with highs-ipm
@@ -386,4 +389,6 @@ def cvxopt_match_demand(
 def timeslice_op(x: xr.DataArray) -> xr.DataArray:
     from muse.timeslices import TIMESLICE, broadcast_timeslice
 
-    return (x / (TIMESLICE / broadcast_timeslice(TIMESLICE.sum()))).max("timeslice")
+    return (x / (TIMESLICE / broadcast_timeslice(TIMESLICE.sum(), level=""))).max(
+        "timeslice"
+    )

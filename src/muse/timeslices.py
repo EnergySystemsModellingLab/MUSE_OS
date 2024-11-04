@@ -105,11 +105,14 @@ def setup_module(settings: Union[str, Mapping]):
     TIMESLICE = read_timeslices(settings)
 
 
-def broadcast_timeslice(x, ts=None):
+def broadcast_timeslice(x, ts=None, level=None):
     from xarray import Coordinates
 
     if ts is None:
         ts = TIMESLICE
+
+    if level is None:
+        pass
 
     # If x already has timeslices, check that it is matches the reference timeslice.
     if "timeslice" in x.dims:
@@ -122,12 +125,12 @@ def broadcast_timeslice(x, ts=None):
     return extensive
 
 
-def distribute_timeslice(x, ts=None):
+def distribute_timeslice(x, ts=None, level=None):
     if ts is None:
         ts = TIMESLICE
 
-    extensive = broadcast_timeslice(x, ts)
-    return extensive * (ts / broadcast_timeslice(ts.sum()))
+    extensive = broadcast_timeslice(x, ts, level)
+    return extensive * (ts / broadcast_timeslice(ts.sum(), level=level))
 
 
 def drop_timeslice(data: DataArray) -> DataArray:

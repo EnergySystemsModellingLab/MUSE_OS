@@ -39,6 +39,7 @@ class Subsector:
         self.forecast = forecast
         self.name = name
         self.expand_market_prices = expand_market_prices
+        self.timeslice_level = ""
         """Whether to expand prices to include destination region.
 
         If ``True``, the input market prices are expanded of the missing "dst_region"
@@ -97,6 +98,7 @@ class Subsector:
             technologies,
             current_year=current_year,
             forecast=self.forecast,
+            timeslice_level=self.timeslice_level,
         )
 
         if "dst_region" in demands.dims:

@@ -217,6 +217,7 @@ class Agent(AbstractAgent):
         """
         self.asset_threshold = asset_threshold
         """Threshold below which assets are not added."""
+        self.timeslice_level = ""
 
     @property
     def forecast_year(self):
@@ -273,7 +274,10 @@ class Agent(AbstractAgent):
 
         # Compute the objectives
         objectives = self.objectives(
-            technologies=techs, demand=reduced_demand, prices=prices
+            technologies=techs,
+            demand=reduced_demand,
+            prices=prices,
+            timeslice_level=self.timeslice_level,
         )
 
         # Compute the decision metric
@@ -369,6 +373,7 @@ class InvestingAgent(Agent):
             market,
             technologies,
             year=current_year,
+            timeslice_level=self.timeslice_level,
         )
 
         # Calculate investments
@@ -377,6 +382,7 @@ class InvestingAgent(Agent):
             technologies,
             constraints,
             year=current_year,
+            timeslice_level=self.timeslice_level,
         )
 
         # Add investments

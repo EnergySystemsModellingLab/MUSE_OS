@@ -99,7 +99,10 @@ def factory(
 
 @register_production(name=("max", "maximum"))
 def maximum_production(
-    market: xr.Dataset, capacity: xr.DataArray, technologies: xr.Dataset
+    market: xr.Dataset,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Production when running at full capacity.
 
@@ -108,12 +111,15 @@ def maximum_production(
     """
     from muse.quantities import maximum_production
 
-    return maximum_production(technologies, capacity)
+    return maximum_production(technologies, capacity, timeslice_level)
 
 
 @register_production(name=("share", "shares"))
 def supply(
-    market: xr.Dataset, capacity: xr.DataArray, technologies: xr.Dataset
+    market: xr.Dataset,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Service current demand equally from all assets.
 
@@ -122,7 +128,9 @@ def supply(
     """
     from muse.quantities import supply
 
-    return supply(capacity, market.consumption, technologies)
+    return supply(
+        capacity, market.consumption, technologies, timeslice_level=timeslice_level
+    )
 
 
 @register_production(name="match")
@@ -131,6 +139,7 @@ def demand_matched_production(
     capacity: xr.DataArray,
     technologies: xr.Dataset,
     costs: str = "prices",
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Production from matching demand via annual lcoe."""
     from muse.costs import annual_levelized_cost_of_energy as lcoe
@@ -143,7 +152,9 @@ def demand_matched_production(
         prices = gross_margin(technologies, capacity, market.prices)
     elif costs == "lcoe":
         prices = lcoe(
-            market.prices, cast(xr.Dataset, broadcast_techs(technologies, capacity))
+            market.prices,
+            cast(xr.Dataset, broadcast_techs(technologies, capacity)),
+            timeslice_level=timeslice_level,
         )
     else:
         raise ValueError(f"Unknown costs option {costs}")
@@ -153,6 +164,7 @@ def demand_matched_production(
         prices=prices,
         capacity=capacity,
         technologies=technologies,
+        timeslice_level=timeslice_level,
     )
 
 
@@ -164,6 +176,7 @@ def costed_production(
     costs: Union[xr.DataArray, Callable, str] = "alcoe",
     with_minimum_service: bool = True,
     with_emission: bool = True,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Computes production from ranked assets.
 
@@ -187,7 +200,9 @@ def costed_production(
     if callable(costs):
         technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
         costs = costs(
-            prices=market.prices.sel(region=technodata.region), technologies=technodata
+            prices=market.prices.sel(region=technodata.region),
+            technologies=technodata,
+            timeslice_level=timeslice_level,
         )
     else:
         costs = costs
@@ -199,6 +214,7 @@ def costed_production(
         capacity,
         technologies,
         with_minimum_service=with_minimum_service,
+        timeslice_level=timeslice_level,
     )
     # add production of environmental pollutants
     if with_emission:

@@ -248,11 +248,20 @@ def factory(
         market: xr.Dataset,
         technologies: xr.Dataset,
         year: int | None = None,
+        timeslice_level: str | None = None,
     ) -> list[Constraint]:
         if year is None:
             year = int(market.year.min())
         constraints = [
-            function(demand, assets, search_space, market, technologies, year=year)
+            function(
+                demand,
+                assets,
+                search_space,
+                market,
+                technologies,
+                year=year,
+                timeslice_level=timeslice_level,
+            )
             for function in constraint_closures
         ]
         return [constraint for constraint in constraints if constraint is not None]
@@ -270,6 +279,7 @@ def max_capacity_expansion(
     year: int | None = None,
     forecast: int | None = None,
     interpolation: str = "linear",
+    **kwargs,
 ) -> Constraint:
     r"""Max-capacity addition, max-capacity growth, and capacity limits constraints.
 
@@ -395,6 +405,7 @@ def demand(
     year: int | None = None,
     forecast: int = 5,
     interpolation: str = "linear",
+    **kwargs,
 ) -> Constraint:
     """Constraints production to meet demand."""
     from muse.commodities import is_enduse
@@ -418,6 +429,7 @@ def search_space(
     technologies: xr.Dataset,
     year: int | None = None,
     forecast: int = 5,
+    **kwargs,
 ) -> Constraint | None:
     """Removes disabled technologies."""
     if search_space.all():
@@ -437,6 +449,8 @@ def max_production(
     market: xr.Dataset,
     technologies: xr.Dataset,
     year: int | None = None,
+    timeslice_level: str | None = None,
+    **kwargs,
 ) -> Constraint:
     """Constructs constraint between capacity and maximum production.
 
@@ -465,9 +479,9 @@ def max_production(
         .sel(**kwargs)
         .drop_vars("technology")
     )
-    capacity = distribute_timeslice(techs.fixed_outputs) * broadcast_timeslice(
-        techs.utilization_factor
-    )
+    capacity = distribute_timeslice(
+        techs.fixed_outputs, level=timeslice_level
+    ) * broadcast_timeslice(techs.utilization_factor, level=timeslice_level)
     if "asset" not in capacity.dims and "asset" in search_space.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
@@ -484,8 +498,8 @@ def max_production(
         maxadd = maxadd.rename(technology="replacement")
         maxadd = maxadd.where(maxadd == 0, 0.0)
         maxadd = maxadd.where(maxadd > 0, -1.0)
-        capacity = capacity * broadcast_timeslice(maxadd)
-        production = production * broadcast_timeslice(maxadd)
+        capacity = capacity * broadcast_timeslice(maxadd, level=timeslice_level)
+        production = production * broadcast_timeslice(maxadd, level=timeslice_level)
         b = b.rename(region="src_region")
     return xr.Dataset(
         dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
@@ -501,6 +515,8 @@ def demand_limiting_capacity(
     market: xr.Dataset,
     technologies: xr.Dataset,
     year: int | None = None,
+    timeslice_level: str | None = None,
+    **kwargs,
 ) -> Constraint:
     """Limits the maximum combined capacity to match the demand.
 
@@ -516,7 +532,13 @@ def demand_limiting_capacity(
     """
     # We start with the maximum production constraint and the demand constraint
     capacity_constraint = max_production(
-        demand_, assets, search_space, market, technologies, year=year
+        demand_,
+        assets,
+        search_space,
+        market,
+        technologies,
+        year=year,
+        timeslice_level=timeslice_level,
     )
     demand_constraint = demand(
         demand_, assets, search_space, market, technologies, year=year
@@ -709,6 +731,8 @@ def minimum_service(
     market: xr.Dataset,
     technologies: xr.Dataset,
     year: int | None = None,
+    timeslice_level: str | None = None,
+    **kwargs,
 ) -> Constraint | None:
     """Constructs constraint between capacity and minimum service."""
     from xarray import ones_like, zeros_like
@@ -737,9 +761,9 @@ def minimum_service(
         .sel(**kwargs)
         .drop_vars("technology")
     )
-    capacity = distribute_timeslice(techs.fixed_outputs) * broadcast_timeslice(
-        techs.minimum_service_factor
-    )
+    capacity = distribute_timeslice(
+        techs.fixed_outputs, level=timeslice_level
+    ) * broadcast_timeslice(techs.minimum_service_factor, level=timeslice_level)
     if "asset" not in capacity.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
@@ -750,7 +774,9 @@ def minimum_service(
     )
 
 
-def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
+def lp_costs(
+    technologies: xr.Dataset, costs: xr.DataArray, timeslice_level: str | None = None
+) -> xr.Dataset:
     """Creates costs for solving with scipy's LP solver.
 
     Example:
@@ -813,7 +839,10 @@ def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
         selection["region"] = costs.region
     fouts = technologies.fixed_outputs.sel(selection).rename(technology="replacement")
 
-    production = zeros_like(broadcast_timeslice(costs) * distribute_timeslice(fouts))
+    production = zeros_like(
+        broadcast_timeslice(costs, level=timeslice_level)
+        * distribute_timeslice(fouts, level=timeslice_level)
+    )
     for dim in production.dims:
         if isinstance(production.get_index(dim), pd.MultiIndex):
             production = drop_timeslice(production)
@@ -1166,8 +1195,9 @@ class ScipyAdapter:
         technologies: xr.Dataset,
         costs: xr.DataArray,
         *constraints: Constraint,
+        timeslice_level: str | None = None,
     ) -> ScipyAdapter:
-        lpcosts = lp_costs(technologies, costs)
+        lpcosts = lp_costs(technologies, costs, timeslice_level=timeslice_level)
 
         data = cls._unified_dataset(technologies, lpcosts, *constraints)
 

@@ -109,6 +109,7 @@ class Sector(AbstractSector):  # type: ignore
         from muse.production import maximum_production
 
         self.name: str = name
+        self.timeslice_level = ""
         """Name of the sector."""
         self.subsectors: Sequence[Subsector] = list(subsectors)
         """Subsectors controlled by this object."""
@@ -276,18 +277,25 @@ class Sector(AbstractSector):  # type: ignore
 
         # Calculate supply
         supply = self.supply_prod(
-            market=market, capacity=capacity, technologies=technologies
+            market=market,
+            capacity=capacity,
+            technologies=technologies,
+            timeslice_level=self.timeslice_level,
         )
 
         # Calculate consumption
-        consume = consumption(technologies, supply, market.prices)
+        consume = consumption(
+            technologies, supply, market.prices, timeslice_level=self.timeslice_level
+        )
 
         # Calculate commodity prices
         technodata = cast(xr.Dataset, broadcast_techs(technologies, supply))
         costs = supply_cost(
             supply.where(~is_pollutant(supply.comm_usage), 0),
             annual_levelized_cost_of_energy(
-                prices=market.prices.sel(region=supply.region), technologies=technodata
+                prices=market.prices.sel(region=supply.region),
+                technologies=technodata,
+                timeslice_level=self.timeslice_level,
             ),
             asset_dim="asset",
         )
