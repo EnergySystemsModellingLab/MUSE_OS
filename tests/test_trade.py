@@ -14,15 +14,12 @@ def constraints_args(sector="power", model="trade") -> Mapping[str, Any]:
     power = examples.sector(model=model, sector=sector)
     search_space = examples.search_space("power", model="trade")
     market = examples.matching_market("power", "trade")
-    assets = reduce_assets(
-        agent_concatenation({u.uuid: u.assets for u in list(power.agents)}),
-        coords=["agent", "technology", "region"],
-    ).set_coords(["agent", "technology", "region"])
+    assets = agent_concatenation({u.uuid: u.assets for u in list(power.agents)})
+    capacity = reduce_assets(assets.capacity, coords=("region", "technology"))
     return dict(
         demand=market.consumption.sel(year=market.year.min(), drop=True),
-        assets=assets,
+        capacity=capacity,
         search_space=search_space,
-        market=market,
         technologies=power.technologies,
     )
 

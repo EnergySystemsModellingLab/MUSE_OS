@@ -68,24 +68,26 @@ the following signature:
     @register_constraints
     def constraints(
         demand: xr.DataArray,
-        assets: xr.Dataset,
         search_space: xr.DataArray,
+        capacity: xr.DataArray,
         technologies: xr.Dataset,
         **kwargs,
     ) -> Constraint:
         pass
 
 demand:
-    The demand for the sectors products. In practice it is a demand share obtained in
-    :py:mod:`~muse.demand_share`. It is a data-array with dimensions including `asset`,
-    `commodity`, `timeslice`.
-assets:
-    The capacity of the assets owned by the agent.
+    The demand for the sector's products in the investment year. In practice it is a
+    demand share obtained in :py:mod:`~muse.demand_share`. It is a data-array with
+    dimensions `asset`, `commodity` and `timeslice`.
+capacity:
+    A data-array with dimensions `technology` and `year` defining the existing capacity
+    of each technology in the current year and investment year.
 search_space:
     A matrix `asset` vs `replacement` technology defining which replacement technologies
     will be considered for each existing asset.
 technologies:
-    Technodata characterizing the competing technologies.
+    Technodata characterizing the competing technologies in the current year. Must have
+    dimensions `technology`, `commodity`. May also have `timeslice` dimension.
 ``**kwargs``:
     Any other parameter.
 """
@@ -141,7 +143,7 @@ upper bound constraint.
 
 
 CONSTRAINT_SIGNATURE = Callable[
-    [xr.DataArray, xr.Dataset, xr.DataArray, xr.Dataset, KwArg(Any)],
+    [xr.DataArray, xr.DataArray, xr.DataArray, xr.Dataset, KwArg(Any)],
     Optional[Constraint],
 ]
 """Basic signature for functions producing constraints.
@@ -167,7 +169,7 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
     @wraps(function)
     def decorated(
         demand: xr.DataArray,
-        capacity: xr.Dataset,
+        capacity: xr.DataArray,
         search_space: xr.DataArray,
         technologies: xr.Dataset,
         **kwargs,
@@ -177,14 +179,19 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
         assert set(demand.dims) == {"asset", "commodity", "timeslice"}
         assert set(capacity.dims) == {"technology", "year"}
         assert set(search_space.dims) == {"asset", "replacement"}
-        assert set(technologies.dims) == {"technology", "commodity"}
+        assert {"technology", "commodity"}.issubset(set(technologies.dims))
+        assert set(technologies.dims).issubset({"technology", "commodity", "timeslice"})
         assert set(search_space.replacement.values) == set(
             technologies.technology.values
         )
         assert set(search_space.asset.values) == set(demand.asset.values)
 
         constraint = function(  # type: ignore
-            demand, capacity, search_space, technologies, **kwargs
+            demand,
+            capacity,
+            search_space,
+            technologies,
+            **kwargs,
         )
         if constraint is not None:
             if "kind" not in constraint.attrs:
@@ -853,11 +860,11 @@ def lp_constraint_matrix(
          >>> from muse import constraints as cs
          >>> res = examples.sector("residential", model="medium")
          >>> technologies = res.technologies
-         >>> market = examples.residential_market("medium")
          >>> search = examples.search_space("residential", model="medium")
          >>> assets = next(a.assets for a in res.agents)
+         >>> capacity = reduce_assets(assets.capacity, coords=("region", "technology"))
          >>> demand = None # not used in max production
-         >>> constraint = cs.max_production(demand, assets, search,
+         >>> constraint = cs.max_production(demand, capacity, search,
          ...                                technologies) # noqa: E501
          >>> lpcosts = cs.lp_costs(
          ...     (
@@ -993,6 +1000,7 @@ class ScipyAdapter:
         >>> market = examples.residential_market("medium")
         >>> search = examples.search_space("residential", model="medium")
         >>> assets = next(a.assets for a in res.agents)
+        >>> capacity = reduce_assets(assets.capacity, coords=("region", "technology"))
         >>> market_demand =  0.8 * maximum_production(
         ...     res.technologies.interp(year=2025),
         ...     assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
@@ -1000,7 +1008,7 @@ class ScipyAdapter:
         ... ).rename(technology="asset")
         >>> costs = search * np.arange(np.prod(search.shape)).reshape(search.shape)
         >>> constraint = cs.max_capacity_expansion(
-        ...     market_demand, assets, search, res.technologies,
+        ...     market_demand, capacity, search, res.technologies,
         ... )
 
         The constraint acts over capacity decision variables only:

@@ -332,7 +332,6 @@ class InvestingAgent(Agent):
             search_space=search.search_space,
             capacity=market.capacity,
             technologies=techs,
-            year=current_year,
         )
 
         # Calculate investments
