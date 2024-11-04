@@ -277,17 +277,10 @@ class Sector(AbstractSector):  # type: ignore
         """
         from muse.utilities import filter_input, reduce_assets
 
-        nontraded = [u.assets.capacity for u in self.agents]
-
-        full_list = [
-            list(nontraded[i].year.values)
-            for i in range(len(nontraded))
-            if "year" in nontraded[i].dims
-        ]
-        flat_list = [item for sublist in full_list for item in sublist]
-        years = sorted(list(set(flat_list)))
-        nontraded = [filter_input(u.assets.capacity, year=years) for u in self.agents]
-        return reduce_assets(nontraded)
+        capacities = [u.assets.capacity for u in self.agents]
+        all_years = sorted({year for capa in capacities for year in capa.year.values})
+        capacities = [filter_input(capa, year=all_years) for capa in capacities]
+        return reduce_assets(capacities)
 
     @property
     def agents(self) -> Iterator[AbstractAgent]:
