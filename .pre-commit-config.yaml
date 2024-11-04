@@ -9,7 +9,7 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.7.1
+    rev: v0.7.2
     hooks:
       - id: ruff-format
         types_or: [python, pyi, jupyter]
@@ -21,7 +21,7 @@ repos:
     hooks:
       - id: markdownlint-fix
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.7.1
+    rev: 0.8.0
     hooks:
       - id: nbstripout
         files: ".ipynb"
