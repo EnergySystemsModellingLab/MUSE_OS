@@ -7,8 +7,6 @@ There are three main kinds of sectors classes, encompassing three use cases:
   investing in new assets.
 - :class:`~muse.sectors.preset_sector.PresetSector`: A sector that is meant to generate
   demand for the sectors above using a fixed formula or schedule.
-- :class:`~muse.sectors.legacy_sector.LegacySector`: A wrapper around the original MUSE
-  sectors.
 
 All the sectors derive from :class:`AbstractSector`. The :class:`AbstractSector` defines
 two `abstract`__ functions which should be declared by derived sectors. `Abstract`__
@@ -33,12 +31,10 @@ __all__ = [
     "AbstractSector",
     "Sector",
     "PresetSector",
-    "LegacySector",
     "register_sector",
     "SECTORS_REGISTERED",
 ]
 from muse.sectors.abstract import AbstractSector
-from muse.sectors.legacy_sector import LegacySector
 from muse.sectors.preset_sector import PresetSector
 from muse.sectors.register import SECTORS_REGISTERED, register_sector
 from muse.sectors.sector import Sector
