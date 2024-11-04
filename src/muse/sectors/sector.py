@@ -48,6 +48,7 @@ class Sector(AbstractSector):  # type: ignore
                 regions=settings.regions,
                 current_year=int(min(settings.time_framework)),
                 name=subsec_name,
+                timeslice_level=sector_settings.get("timeslice_level", None),
             )
             for subsec_name, subsec_settings in sector_settings.pop("subsectors")
             ._asdict()
@@ -103,13 +104,14 @@ class Sector(AbstractSector):  # type: ignore
         interpolation: str = "linear",
         outputs: Callable | None = None,
         supply_prod: PRODUCTION_SIGNATURE | None = None,
+        timeslice_level: str | None = None,
     ):
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory
         from muse.production import maximum_production
 
         self.name: str = name
-        self.timeslice_level = ""
+        self.timeslice_level = timeslice_level
         """Name of the sector."""
         self.subsectors: Sequence[Subsector] = list(subsectors)
         """Subsectors controlled by this object."""

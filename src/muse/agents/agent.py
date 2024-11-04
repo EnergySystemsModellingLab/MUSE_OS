@@ -23,6 +23,7 @@ class AbstractAgent(ABC):
         interpolation: str = "linear",
         category: Optional[str] = None,
         quantity: Optional[float] = 1,
+        timeslice_level: str | None = None,
     ):
         """Creates a standard MUSE agent.
 
@@ -57,6 +58,7 @@ class AbstractAgent(ABC):
         """Attribute to classify different sets of agents."""
         self.quantity = quantity
         """Attribute to classify different agents' share of the population."""
+        self.timeslice_level = timeslice_level
 
     def filter_input(
         self,
@@ -117,6 +119,7 @@ class Agent(AbstractAgent):
         asset_threshold: float = 1e-4,
         quantity: Optional[float] = 1,
         spend_limit: int = 0,
+        timeslice_level: str | None = None,
         **kwargs,
     ):
         """Creates a standard agent.
@@ -158,6 +161,7 @@ class Agent(AbstractAgent):
             interpolation=interpolation,
             category=category,
             quantity=quantity,
+            timeslice_level=timeslice_level,
         )
 
         self.year = year
@@ -217,7 +221,6 @@ class Agent(AbstractAgent):
         """
         self.asset_threshold = asset_threshold
         """Threshold below which assets are not added."""
-        self.timeslice_level = ""
 
     @property
     def forecast_year(self):

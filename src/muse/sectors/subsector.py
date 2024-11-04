@@ -26,6 +26,7 @@ class Subsector:
         name: str = "subsector",
         forecast: int = 5,
         expand_market_prices: bool = False,
+        timeslice_level: str | None = None,
     ):
         from muse import constraints as cs
         from muse import demand_share as ds
@@ -39,7 +40,7 @@ class Subsector:
         self.forecast = forecast
         self.name = name
         self.expand_market_prices = expand_market_prices
-        self.timeslice_level = ""
+        self.timeslice_level = timeslice_level
         """Whether to expand prices to include destination region.
 
         If ``True``, the input market prices are expanded of the missing "dst_region"
@@ -138,6 +139,7 @@ class Subsector:
         regions: Sequence[str] | None = None,
         current_year: int | None = None,
         name: str = "subsector",
+        timeslice_level: str | None = None,
     ) -> Subsector:
         from muse import constraints as cs
         from muse import demand_share as ds
@@ -162,6 +164,7 @@ class Subsector:
             investment=getattr(settings, "lpsolver", "adhoc"),
             forecast=getattr(settings, "forecast", 5),
             constraints=getattr(settings, "constraints", ()),
+            timeslice_level=timeslice_level,
         )
         # technologies can have nans where a commodity
         # does not apply to a technology at all
@@ -215,6 +218,7 @@ class Subsector:
             forecast=forecast,
             name=name,
             expand_market_prices=expand_market_prices,
+            timeslice_level=timeslice_level,
         )
 
 
