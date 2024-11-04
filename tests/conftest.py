@@ -4,7 +4,7 @@ from typing import Callable, Optional
 
 import numpy as np
 from pandas import DataFrame
-from pytest import fixture, mark
+from pytest import fixture
 from xarray import DataArray, Dataset
 
 from muse.agents import Agent
@@ -17,29 +17,6 @@ def logger():
     logger = getLogger("muse")
     logger.setLevel(CRITICAL)
     return logger
-
-
-@fixture(scope="session")
-def cases_directory() -> Optional[Path]:
-    try:
-        import muse_legacy
-    except ImportError:
-        return None
-
-    return Path(muse_legacy.__file__).parent / "data" / "test" / "cases"
-
-
-@fixture(scope="session")
-def regression_directories(cases_directory) -> Mapping[str, Path]:
-    if cases_directory is None:
-        return {}
-    return {
-        directory.name: cases_directory / directory
-        for directory in cases_directory.iterdir()
-        if directory.is_dir()
-        and (directory / "input").is_dir()
-        and (directory / "output").is_dir()
-    }
 
 
 @fixture()
@@ -102,7 +79,6 @@ def compare_dirs() -> Callable:
     def compare_dirs(actual_dir, expected_dir, **kwargs):
         """Compares all the csv files in a directory."""
         from os import walk
-        from pathlib import Path
 
         from pandas import read_csv
 
@@ -134,23 +110,6 @@ def compare_dirs() -> Callable:
     return compare_dirs
 
 
-def pytest_collection_modifyitems(config, items):
-    try:
-        __import__("SGIModelData")
-    except ImportError:
-        skip_sgi_data = mark.skip(reason="Test requires private data")
-        for item in items:
-            if "sgidata" in item.keywords:
-                item.add_marker(skip_sgi_data)
-    try:
-        __import__("muse_legacy")
-    except ImportError:
-        skip_legacy = mark.skip(reason="Test requires legacy code")
-        for item in items:
-            if "legacy" in item.keywords:
-                item.add_marker(skip_legacy)
-
-
 @fixture
 def save_timeslice_globals():
     from muse import timeslices
@@ -161,17 +120,17 @@ def save_timeslice_globals():
 
 
 @fixture
-def default_timeslice_globals(save_timeslice_globals):
-    from muse import timeslices
+def default_timeslice_globals():
+    from muse.timeslices import DEFAULT_TIMESLICE_DESCRIPTION, setup_module
 
-    timeslices.setup_module(timeslices.DEFAULT_TIMESLICE_DESCRIPTION)
+    setup_module(DEFAULT_TIMESLICE_DESCRIPTION)
 
 
 @fixture
 def timeslice(default_timeslice_globals) -> Dataset:
-    from muse.readers.toml import read_timeslices
+    from muse.timeslices import TIMESLICE
 
-    return read_timeslices(dict(hour=["all-day"]))
+    return TIMESLICE
 
 
 @fixture
@@ -328,7 +287,7 @@ def technologies(coords) -> Dataset:
 def agent_market(coords, technologies, timeslice) -> Dataset:
     from numpy.random import rand
 
-    result = timeslice.copy()
+    result = Dataset(coords=timeslice.coords)
     result["commodity"] = "commodity", coords["commodity"]
     result["region"] = "region", coords["region"]
     result["technology"] = "technology", coords["technology"]
@@ -350,7 +309,7 @@ def agent_market(coords, technologies, timeslice) -> Dataset:
 def market(coords, technologies, timeslice) -> Dataset:
     from numpy.random import rand
 
-    result = timeslice.copy()
+    result = Dataset(coords=timeslice.coords)
     result["commodity"] = "commodity", coords["commodity"]
     result["region"] = "region", coords["region"]
     result["year"] = "year", coords["year"]
@@ -515,7 +474,6 @@ def demand_share(coords, timeslice):
     }
     shape = len(axes["commodity"]), len(axes["asset"]), len(axes["timeslice"])
     result = DataArray(rand(*shape), coords=axes, dims=axes.keys(), name="demand_share")
-    result.coords["represent_hours"] = timeslice.represent_hours
     return result
 
 
@@ -589,11 +547,8 @@ def settings(tmpdir) -> dict:
 def warnings_as_errors(request):
     from warnings import simplefilter
 
-    # disable fixture for some tests using legacy sectors.
+    # disable fixture for some tests
     if (
-        request.module.__name__ == "test_legacy_sector"
-        and request.node.name.startswith("test_legacy_sector_regression[")
-    ) or (
         request.module.__name__ == "test_outputs"
         and request.node.name == "test_save_with_fullpath_to_excel_with_sink"
     ):

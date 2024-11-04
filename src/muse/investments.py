@@ -154,6 +154,7 @@ def factory(settings: Optional[Union[str, Mapping]] = None) -> Callable:
         """
         from numpy import zeros
 
+        # Skip the investment step if no assets or replacements are available
         if any(u == 0 for u in search.decision.shape):
             return xr.DataArray(
                 zeros((len(search.asset), len(search.replacement))),
@@ -161,6 +162,7 @@ def factory(settings: Optional[Union[str, Mapping]] = None) -> Callable:
                 dims=("asset", "replacement"),
             )
 
+        # Otherwise, compute the investment
         return investment(
             search.decision,
             search.search_space,
@@ -175,8 +177,7 @@ def factory(settings: Optional[Union[str, Mapping]] = None) -> Callable:
 
 def cliff_retirement_profile(
     technical_life: xr.DataArray,
-    current_year: int = 0,
-    protected: int = 0,
+    investment_year: int,
     interpolation: str = "linear",
     **kwargs,
 ) -> xr.DataArray:
@@ -186,19 +187,13 @@ def cliff_retirement_profile(
     Assets with a technical life smaller than the input time-period should automatically
     be renewed.
 
-    Hence, if ``technical_life <= protected``, then effectively, the technical life is
-    rewritten as ``technical_life * n`` with ``n = int(protected // technical_life) +
-    1``.
-
     We could just return an array where each year is represented. Instead, to save
     memory, we return a compact view of the same where years where no change happens are
     removed.
 
     Arguments:
         technical_life: lifetimes for each technology
-        current_year: current year
-        protected: The technologies are assumed to be renewed between years
-            `current_year` and `current_year + protected`
+        investment_year: The year in which the investment is made
         interpolation: Interpolation type
         **kwargs: arguments by which to filter technical_life, if any.
 
@@ -211,26 +206,26 @@ def cliff_retirement_profile(
     if kwargs:
         technical_life = technical_life.sel(**kwargs)
     if "year" in technical_life.dims:
-        technical_life = technical_life.interp(year=current_year, method=interpolation)
-    technical_life = (1 + protected // technical_life) * technical_life  # type:ignore
+        technical_life = technical_life.interp(
+            year=investment_year, method=interpolation
+        )
 
+    # Create profile across all years
     if len(technical_life) > 0:
-        max_year = int(current_year + technical_life.max())
+        max_year = int(investment_year + technical_life.max())
     else:
-        max_year = int(current_year + protected)
+        max_year = investment_year
     allyears = xr.DataArray(
-        range(current_year, max_year + 1),
+        range(investment_year, max_year + 1),
         dims="year",
-        coords={"year": range(current_year, max_year + 1)},
+        coords={"year": range(investment_year, max_year + 1)},
     )
+    profile = allyears < (investment_year + technical_life)  # type: ignore
 
-    profile = allyears < (current_year + technical_life)  # type: ignore
-
-    # now we minimize the number of years needed to represent the profile fully
-    # this is done by removing the central year of any three repeating year, ensuring
-    # the removed year can be recovered by a linear interpolation.
+    # Minimize the number of years needed to represent the profile fully
+    # This is done by removing the central year of any three repeating years, ensuring
+    # the removed year can be recovered by linear interpolation.
     goodyears = avoid_repetitions(profile.astype(int))
-
     return profile.sel(year=goodyears).astype(bool)
 
 
@@ -252,7 +247,6 @@ def adhoc_match_demand(
 ) -> xr.DataArray:
     from muse.demand_matching import demand_matching
     from muse.quantities import capacity_in_use, maximum_production
-    from muse.timeslices import QuantityType, convert_timeslice
 
     demand = next(c for c in constraints if c.name == "demand").b
 
@@ -260,12 +254,11 @@ def adhoc_match_demand(
     max_prod = maximum_production(
         technologies,
         max_capacity,
+        timeslices=demand,
         year=year,
         technology=costs.replacement,
         commodity=demand.commodity,
     ).drop_vars("technology")
-    if "timeslice" in demand.dims and "timeslice" not in max_prod.dims:
-        max_prod = convert_timeslice(max_prod, demand, QuantityType.EXTENSIVE)
 
     # Push disabled techs to last rank.
     # Any production assigned to them by the demand-matching algorithm will be removed.
@@ -312,18 +305,24 @@ def scipy_match_demand(
 
     if "timeslice" in costs.dims and timeslice_op is not None:
         costs = timeslice_op(costs)
+
+    timeslice = next(cs.timeslice for cs in constraints if "timeslice" in cs.dims)
+
+    # Select technodata for the current year
     if "year" in technologies.dims and year is None:
         raise ValueError("Missing year argument")
     elif "year" in technologies.dims:
         techs = technologies.sel(year=year).drop_vars("year")
     else:
         techs = technologies
-    timeslice = next(cs.timeslice for cs in constraints if "timeslice" in cs.dims)
 
+    # Run scipy optimization with highs solver
     adapter = ScipyAdapter.factory(
         techs, cast(np.ndarray, costs), timeslice, *constraints
     )
     res = linprog(**adapter.kwargs, method="highs")
+
+    # Backup: try with highs-ipm
     if not res.success and (res.status != 0):
         res = linprog(
             **adapter.kwargs,
@@ -345,7 +344,9 @@ def scipy_match_demand(
             getLogger(__name__).critical(msg)
             raise GrowthOfCapacityTooConstrained
 
-    return cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(res.x)
+    # Convert results to a MUSE friendly format
+    result = cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(res.x)
+    return result
 
 
 @register_investment(name=["cvxopt"])

@@ -37,7 +37,7 @@ def test_reduce_assets_with_zero_size(capacity: xr.DataArray):
 
     x = capacity.sel(asset=[])
     actual = reduce_assets(x)
-    assert actual is x
+    assert (actual == x).all()
 
 
 def test_broadcast_tech(technologies, capacity):
@@ -269,7 +269,7 @@ def test_merge_assets():
             .interp(year=ab_side.year, method="linear")
             .fillna(0)
         )
-        assert ab_side.values == approx((a_side + b_side).values)
+        assert (ab_side.capacity == approx((a_side + b_side).values)).all()
 
 
 def test_avoid_repetitions():

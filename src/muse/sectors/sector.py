@@ -30,20 +30,24 @@ class Sector(AbstractSector):  # type: ignore
         from muse.readers.toml import read_technodata
         from muse.utilities import nametuple_to_dict
 
+        # Read sector settings
         sector_settings = getattr(settings.sectors, name)._asdict()
         for attribute in ("name", "type", "priority", "path"):
             sector_settings.pop(attribute, None)
-
-        timeslices = read_timeslices(
-            sector_settings.pop("timeslice_levels", None)
-        ).get_index("timeslice")
-
-        technologies = read_technodata(settings, name, settings.time_framework)
-
         if "subsectors" not in sector_settings:
             raise RuntimeError(f"Missing 'subsectors' section in sector {name}")
         if len(sector_settings["subsectors"]._asdict()) == 0:
             raise RuntimeError(f"Empty 'subsectors' section in sector {name}")
+
+        # Timeslices
+        timeslices = read_timeslices(
+            sector_settings.pop("timeslice_levels", None)
+        ).get_index("timeslice")
+
+        # Read technologies
+        technologies = read_technodata(settings, name, settings.time_framework)
+
+        # Create subsectors
         subsectors = [
             Subsector.factory(
                 subsec_settings,
@@ -56,12 +60,15 @@ class Sector(AbstractSector):  # type: ignore
             ._asdict()
             .items()
         ]
+
+        # Check that subsector commodities are disjoint
         are_disjoint_commodities = sum(len(s.commodities) for s in subsectors) == len(
             set().union(*(set(s.commodities) for s in subsectors))  # type: ignore
         )
         if not are_disjoint_commodities:
             raise RuntimeError("Subsector commodities are not disjoint")
 
+        # Create outputs
         outputs = ofactory(*sector_settings.pop("outputs", []), sector_name=name)
 
         supply_args = sector_settings.pop(
@@ -73,9 +80,16 @@ class Sector(AbstractSector):  # type: ignore
             supply_args = nametuple_to_dict(supply_args)
         supply = pfactory(**supply_args)
 
+        # Create interactions
         interactions = interaction_factory(sector_settings.pop("interactions", None))
 
-        for attr in ("technodata", "commodities_out", "commodities_in"):
+        # Create sector
+        for attr in (
+            "technodata",
+            "commodities_out",
+            "commodities_in",
+            "technodata_timeslices",
+        ):
             sector_settings.pop(attr, None)
         return cls(
             name,
@@ -94,7 +108,6 @@ class Sector(AbstractSector):  # type: ignore
         technologies: xr.Dataset,
         subsectors: Sequence[Subsector] = [],
         timeslices: pd.MultiIndex | None = None,
-        technodata_timeslices: xr.Dataset = None,
         interactions: Callable[[Sequence[AbstractAgent]], None] | None = None,
         interpolation: str = "linear",
         outputs: Callable | None = None,
@@ -112,7 +125,6 @@ class Sector(AbstractSector):  # type: ignore
         """Parameters describing the sector's technologies."""
         self.timeslices: pd.MultiIndex | None = timeslices
         """Timeslice at which this sector operates.
-
         If None, it will operate using the timeslice of the input market.
         """
         self.interpolation: Mapping[str, Any] = {
@@ -158,33 +170,20 @@ class Sector(AbstractSector):  # type: ignore
     def forecast(self):
         """Maximum forecast horizon across agents.
 
-        If no agents with a "forecast" attribute are found, defaults to 5. It cannot be
-        lower than 1 year.
+        It cannot be lower than 1 year.
         """
-        forecasts = [
-            getattr(agent, "forecast")
-            for agent in self.agents
-            if hasattr(agent, "forecast")
-        ]
-        if len(forecasts) == 0:
-            return 5
+        forecasts = [getattr(agent, "forecast") for agent in self.agents]
         return max(1, max(forecasts))
 
     def next(
         self,
         mca_market: xr.Dataset,
-        time_period: int | None = None,
-        current_year: int | None = None,
     ) -> xr.Dataset:
         """Advance sector by one time period.
 
         Args:
             mca_market:
                 Market with ``demand``, ``supply``, and ``prices``.
-            time_period:
-                Length of the time period in the framework. Defaults to the range of
-                ``mca_market.year``.
-            current_year: Current year of the simulation
 
         Returns:
             A market containing the ``supply`` offered by the sector, it's attendant
@@ -195,47 +194,29 @@ class Sector(AbstractSector):  # type: ignore
         def group_assets(x: xr.DataArray) -> xr.DataArray:
             return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
 
-        if time_period is None:
-            time_period = int(mca_market.year.max() - mca_market.year.min())
-        if current_year is None:
-            current_year = int(mca_market.year.min())
+        time_period = int(mca_market.year.max() - mca_market.year.min())
+        current_year = int(mca_market.year.min())
         getLogger(__name__).info(f"Running {self.name} for year {current_year}")
 
-        # > to sector timeslice
-        market = self.convert_market_timeslice(
-            mca_market.sel(
-                commodity=self.technologies.commodity, region=self.technologies.region
-            ).interp(
-                year=sorted(
-                    {
-                        current_year,
-                        current_year + time_period,
-                        current_year + self.forecast,
-                    }
-                ),
-                **self.interpolation,
-            ),
-            self.timeslices,
-        )
-        # > agent interactions
+        # Agent interactions
         self.interactions(list(self.agents))
-        # > investment
-        years = sorted(
-            set(
-                market.year.data.tolist()
-                + self.capacity.installed.data.tolist()
-                + self.technologies.year.data.tolist()
-            )
-        )
-        technologies = self.technologies.interp(year=years, **self.interpolation)
 
+        # Select appropriate data from the market
+        market = mca_market.sel(
+            commodity=self.technologies.commodity, region=self.technologies.region
+        )
+
+        # Investments
         for subsector in self.subsectors:
             subsector.invest(
-                technologies, market, time_period=time_period, current_year=current_year
+                self.technologies,
+                market,
+                time_period=time_period,
+                current_year=current_year,
             )
 
         # Full output data
-        supply, consume, costs = self.market_variables(market, technologies)
+        supply, consume, costs = self.market_variables(market, self.technologies)
         self.output_data = xr.Dataset(
             dict(
                 supply=supply,
@@ -287,7 +268,9 @@ class Sector(AbstractSector):  # type: ignore
                 dict(supply=supply, consumption=consumption, costs=costs)
             )
         result = self.convert_market_timeslice(result, mca_market.timeslice)
-        result["comm_usage"] = technologies.comm_usage.sel(commodity=result.commodity)
+        result["comm_usage"] = self.technologies.comm_usage.sel(
+            commodity=result.commodity
+        )
         result.set_coords("comm_usage")
         return result
 
@@ -306,15 +289,17 @@ class Sector(AbstractSector):  # type: ignore
         years = market.year.values
         capacity = self.capacity.interp(year=years, **self.interpolation)
 
+        # Calculate supply
         supply = self.supply_prod(
             market=market, capacity=capacity, technologies=technologies
         )
-
         if "timeslice" in market.prices.dims and "timeslice" not in supply.dims:
             supply = convert_timeslice(supply, market.timeslice, QuantityType.EXTENSIVE)
 
+        # Calculate consumption
         consume = consumption(technologies, supply, market.prices)
 
+        # Calculate commodity prices
         technodata = cast(xr.Dataset, broadcast_techs(technologies, supply))
         costs = supply_cost(
             supply.where(~is_pollutant(supply.comm_usage), 0),
@@ -346,6 +331,8 @@ class Sector(AbstractSector):  # type: ignore
             for u in self.agents
             if "dst_region" not in u.assets.capacity.dims
         ]
+
+        # Only nontraded assets
         if not traded:
             full_list = [
                 list(nontraded[i].year.values)
@@ -360,7 +347,9 @@ class Sector(AbstractSector):  # type: ignore
                 if "dst_region" not in u.assets.capacity.dims
             ]
             return reduce_assets(nontraded)
-        if not nontraded:
+
+        # Only traded assets
+        elif not nontraded:
             full_list = [
                 list(traded[i].year.values)
                 for i in range(len(traded))
@@ -374,15 +363,18 @@ class Sector(AbstractSector):  # type: ignore
                 if "dst_region" in u.assets.capacity.dims
             ]
             return reduce_assets(traded)
-        traded_results = reduce_assets(traded)
-        nontraded_results = reduce_assets(nontraded)
-        return reduce_assets(
-            [
-                traded_results,
-                nontraded_results
-                * (nontraded_results.region == traded_results.dst_region),
-            ]
-        )
+
+        # Both traded and nontraded assets
+        else:
+            traded_results = reduce_assets(traded)
+            nontraded_results = reduce_assets(nontraded)
+            return reduce_assets(
+                [
+                    traded_results,
+                    nontraded_results
+                    * (nontraded_results.region == traded_results.dst_region),
+                ]
+            )
 
     @property
     def agents(self) -> Iterator[AbstractAgent]:

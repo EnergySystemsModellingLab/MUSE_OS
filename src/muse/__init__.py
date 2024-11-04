@@ -2,7 +2,7 @@
 
 import os
 
-VERSION = "1.2.1"
+VERSION = "1.2.2"
 
 
 def _create_logger(color: bool = True):
@@ -59,6 +59,5 @@ __all__ = [
     "objectives",
     "outputs",
     "sectors",
-    "legacy_sectors",
     VERSION,
 ]
