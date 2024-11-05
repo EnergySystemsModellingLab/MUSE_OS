@@ -31,7 +31,6 @@ __all__ = [
     "AbstractSector",
     "Sector",
     "PresetSector",
-    "LegacySector",
     "register_sector",
     "SECTORS_REGISTERED",
 ]

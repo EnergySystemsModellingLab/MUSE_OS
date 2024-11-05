@@ -139,9 +139,9 @@ def reduce_assets(
             installed   (asset) int32 12B 1990 1991 1990
         Dimensions without coordinates: asset
     """
-    from copy import copy
+    from copy import deepcopy
 
-    assets = copy(assets)
+    assets = deepcopy(assets)
 
     if operation is None:
 

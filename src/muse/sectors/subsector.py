@@ -69,20 +69,6 @@ class Subsector:
         # Perform the investments
         self.aggregate_lp(technologies, market, time_period, current_year=current_year)
 
-    def assign_back_to_agents(
-        self,
-        technologies: xr.Dataset,
-        solution: xr.DataArray,
-        current_year: int,
-        time_period: int,
-    ):
-        agents = {u.uuid: u for u in self.agents}
-
-        for uuid, assets in solution.groupby("agent"):
-            agents[uuid].add_investments(
-                technologies, assets, current_year, time_period
-            )
-
     def aggregate_lp(
         self,
         technologies: xr.Dataset,
