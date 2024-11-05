@@ -1,14 +1,12 @@
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Callable, Optional
-from unittest.mock import patch
 
 import numpy as np
 from pandas import DataFrame
-from pytest import fixture, mark
+from pytest import fixture
 from xarray import DataArray, Dataset
 
-from muse.__main__ import patched_broadcast_compat_data
 from muse.agents import Agent
 
 
@@ -19,37 +17,6 @@ def logger():
     logger = getLogger("muse")
     logger.setLevel(CRITICAL)
     return logger
-
-
-@fixture(autouse=True)
-def patch_broadcast_compat_data():
-    with patch(
-        "xarray.core.variable._broadcast_compat_data", patched_broadcast_compat_data
-    ):
-        yield
-
-
-@fixture(scope="session")
-def cases_directory() -> Optional[Path]:
-    try:
-        import muse_legacy
-    except ImportError:
-        return None
-
-    return Path(muse_legacy.__file__).parent / "data" / "test" / "cases"
-
-
-@fixture(scope="session")
-def regression_directories(cases_directory) -> Mapping[str, Path]:
-    if cases_directory is None:
-        return {}
-    return {
-        directory.name: cases_directory / directory
-        for directory in cases_directory.iterdir()
-        if directory.is_dir()
-        and (directory / "input").is_dir()
-        and (directory / "output").is_dir()
-    }
 
 
 @fixture()
@@ -112,7 +79,6 @@ def compare_dirs() -> Callable:
     def compare_dirs(actual_dir, expected_dir, **kwargs):
         """Compares all the csv files in a directory."""
         from os import walk
-        from pathlib import Path
 
         from pandas import read_csv
 
@@ -142,23 +108,6 @@ def compare_dirs() -> Callable:
         assert compared_something, "The test is not setup correctly"
 
     return compare_dirs
-
-
-def pytest_collection_modifyitems(config, items):
-    try:
-        __import__("SGIModelData")
-    except ImportError:
-        skip_sgi_data = mark.skip(reason="Test requires private data")
-        for item in items:
-            if "sgidata" in item.keywords:
-                item.add_marker(skip_sgi_data)
-    try:
-        __import__("muse_legacy")
-    except ImportError:
-        skip_legacy = mark.skip(reason="Test requires legacy code")
-        for item in items:
-            if "legacy" in item.keywords:
-                item.add_marker(skip_legacy)
 
 
 @fixture
