@@ -80,7 +80,7 @@ commodities_in = '{path}/technodata/gas/CommIn.csv'
 commodities_out = '{path}/technodata/gas/CommOut.csv'
 
 [sectors.gas.subsectors.trade]
-agents = '{path}/technodata/Agents.csv'
+agents = '{path}/technodata/gas/Agents.csv'
 existing_capacity = '{path}/technodata/gas/ExistingTrade.csv'
 lpsolver = "scipy"
 demand_share = "unmet_forecasted_demand"
