@@ -310,6 +310,7 @@ class MCA:
                 )
                 self.carbon_price = future_propagation(self.carbon_price, future_price)
 
+            # Solve the market
             _, new_market, self.sectors = self.find_equilibrium(new_market)
 
             # Save sector outputs
@@ -324,17 +325,19 @@ class MCA:
                     new_market, year_idx
                 )
 
+            # Update the market
             dims = {i: new_market[i] for i in new_market.dims}
             self.market.supply.loc[dims] = new_market.supply
             self.market.consumption.loc[dims] = new_market.consumption
-
             dims = {i: new_market[i] for i in new_market.prices.dims if i != "year"}
             self.market.prices.loc[dims] = future_propagation(
                 self.market.prices.sel(dims), new_market.prices.sel(year=years[1])
             )
 
+            # Global outputs
             self.outputs(self.market, self.sectors, year=self.time_framework[year_idx])  # type: ignore
             self.outputs_cache.consolidate_cache(year=self.time_framework[year_idx])
+
             getLogger(__name__).info(
                 f"Finish simulation year {years[0]} ({year_idx+1}/{nyear})!"
             )
@@ -429,29 +432,26 @@ def single_year_iteration(
     if "updated_prices" not in market.data_vars:
         market["updated_prices"] = drop_timeslice(market.prices.copy())
 
-    # eventually, the first market should be one that creates the initial demand
     for sector in sectors:
+        # Solve the sector
         sector_market = sector.next(
             market[["supply", "consumption", "prices"]]  # type:ignore
         )
-
         sector_market = sector_market.sel(year=market.year)
 
+        # Calculate net consumption
         dims = {i: sector_market[i] for i in sector_market.consumption.dims}
-
         sector_market.consumption.loc[dims] = (
             sector_market.consumption.loc[dims] - sector_market.supply.loc[dims]
         ).clip(min=0.0, max=None)
 
+        # Update market supply and consumption
         market.consumption.loc[dims] += sector_market.consumption
-
         dims = {i: sector_market[i] for i in sector_market.supply.dims}
         market.supply.loc[dims] += sector_market.supply
 
+        # Update market prices
         costs = sector_market.costs.sel(commodity=is_enduse(sector_market.comm_usage))
-
-        # do not write costs lower than 1e-4
-        # should correspond to rounding value
         if len(costs.commodity) > 0:
             costs = costs.where(costs > 1e-4, 0)
             dims = {i: costs[i] for i in costs.dims}

@@ -343,6 +343,7 @@ def test_unmet_forecast_demand(technologies, coords, timeslice, stock_factory):
     asia_market = _matching_market(technologies, asia_stock, timeslice)
     usa_market = _matching_market(technologies, usa_stock, timeslice)
     market = xr.concat((asia_market, usa_market), dim="region")
+    current_year = market.year[0]
 
     # spoof some agents
     @dataclass
@@ -355,7 +356,9 @@ def test_unmet_forecast_demand(technologies, coords, timeslice, stock_factory):
         Agent(0.7 * usa_stock.squeeze("region")),
         Agent(asia_stock.squeeze("region")),
     ]
-    result = unmet_forecasted_demand(agents, market, technologies)
+    result = unmet_forecasted_demand(
+        agents, market, technologies, current_year=current_year, forecast=5
+    )
     assert set(result.dims) == set(market.consumption.dims) - {"year"}
     assert result.values == approx(0)
 
@@ -365,7 +368,9 @@ def test_unmet_forecast_demand(technologies, coords, timeslice, stock_factory):
         Agent(0.8 * usa_stock.squeeze("region")),
         Agent(1.1 * asia_stock.squeeze("region")),
     ]
-    result = unmet_forecasted_demand(agents, market, technologies)
+    result = unmet_forecasted_demand(
+        agents, market, technologies, current_year=current_year, forecast=5
+    )
     assert set(result.dims) == set(market.consumption.dims) - {"year"}
     assert result.values == approx(0)
 
@@ -374,7 +379,9 @@ def test_unmet_forecast_demand(technologies, coords, timeslice, stock_factory):
         Agent(0.5 * usa_stock.squeeze("region")),
         Agent(0.5 * asia_stock.squeeze("region")),
     ]
-    result = unmet_forecasted_demand(agents, market, technologies)
+    result = unmet_forecasted_demand(
+        agents, market, technologies, current_year=current_year, forecast=5
+    )
     comm_usage = technologies.comm_usage.sel(commodity=market.commodity)
     enduse = is_enduse(comm_usage)
     assert (result.commodity == comm_usage.commodity).all()
