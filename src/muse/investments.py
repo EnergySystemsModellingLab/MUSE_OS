@@ -389,6 +389,6 @@ def cvxopt_match_demand(
 def timeslice_op(x: xr.DataArray) -> xr.DataArray:
     from muse.timeslices import TIMESLICE, broadcast_timeslice
 
-    return (x / (TIMESLICE / broadcast_timeslice(TIMESLICE.sum(), level=""))).max(
+    return (x / (TIMESLICE / broadcast_timeslice(TIMESLICE.sum(), level=None))).max(
         "timeslice"
     )
