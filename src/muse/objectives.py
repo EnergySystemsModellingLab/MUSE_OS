@@ -133,12 +133,6 @@ def factory(
         *args,
         **kwargs,
     ) -> xr.Dataset:
-        assert set(technologies.dims).issubset(
-            {"replacement", "commodity", "timeslice"}
-        )
-        assert set(demand.dims) == {"asset", "timeslice", "commodity"}
-        assert set(prices.dims) == {"commodity", "timeslice"}
-
         result = xr.Dataset()
         for name, objective in functions:
             obj = objective(
