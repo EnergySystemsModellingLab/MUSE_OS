@@ -133,7 +133,9 @@ def factory(
         *args,
         **kwargs,
     ) -> xr.Dataset:
-        assert set(technologies.dims) == {"replacement", "commodity"}
+        assert set(technologies.dims).issubset(
+            {"replacement", "commodity", "timeslice"}
+        )
         assert set(demand.dims) == {"asset", "timeslice", "commodity"}
         assert set(prices.dims) == {"commodity", "timeslice"}
 
