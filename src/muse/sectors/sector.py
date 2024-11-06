@@ -315,6 +315,8 @@ class Sector(AbstractSector):  # type: ignore
 
         consume = consumption(technologies, supply, market.prices)
 
+        # Calculate LCOE
+        # We select data for the second year, which corresponds to the investment year
         technodata = cast(xr.Dataset, broadcast_techs(technologies, supply))
         lcoe = annual_levelized_cost_of_energy(
             prices=market.prices.sel(region=supply.region).isel(year=1),

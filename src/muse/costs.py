@@ -484,6 +484,7 @@ def supply_cost(
             `muse.quantities.production`.
         lcoe: Levelized cost of energy for each good produced. In practice, it can be
             obtained from market prices via
+            `muse.costs.annual_levelized_cost_of_energy` or
             `muse.costs.lifetime_levelized_cost_of_energy`.
         asset_dim: Name of the dimension(s) holding assets, processes or technologies.
     """
