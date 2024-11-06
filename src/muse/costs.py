@@ -12,7 +12,7 @@ import numpy as np
 import xarray as xr
 
 from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
-from muse.timeslices import QuantityType, convert_timeslice
+from muse.timeslices import broadcast_timeslice, distribute_timeslice
 from muse.utilities import filter_input
 
 
@@ -100,10 +100,8 @@ def net_present_value(
     raw_revenues = (production * prices_non_env * rates).sum(("commodity", "year"))
 
     # Cost of installed capacity
-    installed_capacity_costs = convert_timeslice(
+    installed_capacity_costs = distribute_timeslice(
         techs.cap_par * (capacity**techs.cap_exp),
-        prices.timeslice,
-        QuantityType.EXTENSIVE,
     )
 
     # Cost related to environmental products
@@ -122,24 +120,20 @@ def net_present_value(
 
     # Fixed costs
     fixed_costs = (
-        convert_timeslice(
-            techs.fix_par * (capacity**techs.fix_exp),
-            prices.timeslice,
-            QuantityType.EXTENSIVE,
-        )
-        * rates
+        distribute_timeslice(techs.fix_par * (capacity**techs.fix_exp)) * rates
     ).sum("year")
 
     # Variable costs
-    prod_amplitude = (
-        production
-        / convert_timeslice(
-            techs.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
-        )
-    ).max("commodity")
-    variable_costs = ((techs.var_par * prod_amplitude**techs.var_exp) * rates).sum(
-        "year"
+    prod_amplitude = (production / distribute_timeslice(techs.fixed_outputs)).max(
+        "commodity"
     )
+    variable_costs = (
+        (
+            broadcast_timeslice(techs.var_par)
+            * prod_amplitude ** broadcast_timeslice(techs.var_exp)
+        )
+        * rates
+    ).sum("year")
 
     # Net present value
     result = raw_revenues - (
@@ -225,7 +219,7 @@ def equivalent_annual_cost(
 
     npc = net_present_cost(technologies, prices, capacity, production, consumption)
     crf = capital_recovery_factor(technologies)
-    return npc * crf
+    return npc * broadcast_timeslice(crf)
 
 
 def lifetime_levelized_cost_of_energy(
@@ -290,10 +284,8 @@ def lifetime_levelized_cost_of_energy(
     fuels = is_fuel(technologies.comm_usage)
 
     # Cost of installed capacity
-    installed_capacity_costs = convert_timeslice(
+    installed_capacity_costs = distribute_timeslice(
         techs.cap_par * (capacity**techs.cap_exp),
-        prices.timeslice,
-        QuantityType.EXTENSIVE,
     )
 
     # Cost related to environmental products
@@ -312,24 +304,20 @@ def lifetime_levelized_cost_of_energy(
 
     # Fixed costs
     fixed_costs = (
-        convert_timeslice(
-            techs.fix_par * (capacity**techs.fix_exp),
-            prices.timeslice,
-            QuantityType.EXTENSIVE,
-        )
-        * rates
+        distribute_timeslice(techs.fix_par * (capacity**techs.fix_exp)) * rates
     ).sum("year")
 
     # Variable costs
-    prod_amplitude = (
-        production
-        / convert_timeslice(
-            techs.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
-        )
-    ).max("commodity")
-    variable_costs = ((techs.var_par * prod_amplitude**techs.var_exp) * rates).sum(
-        "year"
+    prod_amplitude = (production / distribute_timeslice(techs.fixed_outputs)).max(
+        "commodity"
     )
+    variable_costs = (
+        (
+            broadcast_timeslice(techs.var_par)
+            * prod_amplitude ** broadcast_timeslice(techs.var_exp)
+        )
+        * rates
+    ).sum("year")
 
     # Production
     prod = (
@@ -414,11 +402,7 @@ def annual_levelized_cost_of_energy(
 
     # Cost of installed capacity (annualized)
     installed_capacity_costs = (
-        convert_timeslice(
-            techs.cap_par * (capacity**techs.cap_exp),
-            prices.timeslice,
-            QuantityType.EXTENSIVE,
-        )
+        distribute_timeslice(techs.cap_par * (capacity**techs.cap_exp))
         / techs.technical_life
     )
 
@@ -435,20 +419,15 @@ def annual_levelized_cost_of_energy(
     material_costs = (consumption * prices_material).sum("commodity")
 
     # Fixed costs
-    fixed_costs = convert_timeslice(
-        techs.fix_par * (capacity**techs.fix_exp),
-        prices.timeslice,
-        QuantityType.EXTENSIVE,
-    )
+    fixed_costs = distribute_timeslice(techs.fix_par * (capacity**techs.fix_exp))
 
     # Variable costs
-    prod_amplitude = (
-        production
-        / convert_timeslice(
-            techs.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
-        )
-    ).max("commodity")
-    variable_costs = techs.var_par * prod_amplitude**techs.var_exp
+    prod_amplitude = (production / distribute_timeslice(techs.fixed_outputs)).max(
+        "commodity"
+    )
+    variable_costs = broadcast_timeslice(
+        techs.var_par
+    ) * prod_amplitude ** broadcast_timeslice(techs.var_exp)
 
     # Production
     prod = (

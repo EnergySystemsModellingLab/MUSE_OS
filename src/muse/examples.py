@@ -190,7 +190,6 @@ def mca_market(model: str = "default") -> xr.Dataset:
                 base_year_import=getattr(
                     settings.global_input_files, "base_year_import", None
                 ),
-                timeslices=settings.timeslices,
             )
             .sel(region=settings.regions)
             .interp(year=settings.time_framework, method=settings.interpolation_mode)
@@ -250,9 +249,7 @@ def matching_market(sector: str, model: str = "default") -> xr.Dataset:
     market = xr.Dataset()
     production = cast(
         xr.DataArray,
-        maximum_production(
-            loaded_sector.technologies, assets.capacity, loaded_sector.timeslices
-        ),
+        maximum_production(loaded_sector.technologies, assets.capacity),
     )
     market["supply"] = production.sum("asset")
     if "dst_region" in market.dims:

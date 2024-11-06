@@ -145,7 +145,7 @@ def new_and_retro(
            A_{a, s}^r = w_s\sum_i A_a^{r, i}
 
        with :math:`w_s` a weight associated with each timeslice and determined via
-       :py:func:`muse.timeslices.convert_timeslice`.
+       :py:func:`muse.timeslices.distribute_timeslice`.
 
     #. An intermediate quantity, the :py:func:`unmet demand
        <muse.demand_share.unmet_demand>` :math:`U` is defined from
@@ -236,7 +236,6 @@ def new_and_retro(
             technologies,
             capacity,
             year=[current_year, current_year + forecast],
-            timeslices=market.timeslice,
         ).squeeze("year")
 
     capacity = reduce_assets([u.assets.capacity for u in agents])
@@ -311,7 +310,6 @@ def new_and_retro(
             partial(
                 maximum_production,
                 technologies=regional_techs,
-                timeslices=market.timeslice,
                 year=current_year,
             ),
             id_to_nquantity,
@@ -365,7 +363,6 @@ def standard_demand(
             technologies,
             capacity,
             year=[current_year, current_year + forecast],
-            timeslices=market.timeslice,
         ).squeeze("year")
 
     # Make sure there are no retrofit agents
@@ -418,7 +415,6 @@ def standard_demand(
             partial(
                 maximum_production,
                 technologies=technologies.sel(region=region),
-                timeslices=market.timeslice,
                 year=current_year,
             ),
             id_to_quantity,
@@ -616,8 +612,11 @@ def new_and_retro_demands(
 
     # Interpolate market to forecast year
     smarket: xr.Dataset = market.interp(year=[current_year, current_year + forecast])
+
+    # Interpolate capacity to forecast year
     capa = capacity.interp(year=[current_year, current_year + forecast])
     assert isinstance(capa, xr.DataArray)
+
     if hasattr(capa, "region") and capa.region.dims == ():
         capa["region"] = "asset", [str(capa.region.values)] * len(capa.asset)
 

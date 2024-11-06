@@ -61,5 +61,34 @@ def run():
     muse_main(args.settings, args.model, args.copy)
 
 
+def patched_broadcast_compat_data(self, other):
+    from xarray.core.variable import Variable, _broadcast_compat_variables
+
+    if (isinstance(other, Variable)) and ("timeslice" in self.dims) != (
+        "timeslice" in getattr(other, "dims", [])
+    ):
+        raise ValueError(
+            "Broadcasting is necessary but automatic broadcasting is disabled globally."
+        )
+
+    if all(hasattr(other, attr) for attr in ["dims", "data", "shape", "encoding"]):
+        # `other` satisfies the necessary Variable API for broadcast_variables
+        new_self, new_other = _broadcast_compat_variables(self, other)
+        self_data = new_self.data
+        other_data = new_other.data
+        dims = new_self.dims
+    else:
+        # rely on numpy broadcasting rules
+        self_data = self.data
+        other_data = other
+        dims = self.dims
+    return self_data, other_data, dims
+
+
 if "__main__" == __name__:
-    run()
+    from unittest.mock import patch
+
+    with patch(
+        "xarray.core.variable._broadcast_compat_data", patched_broadcast_compat_data
+    ):
+        run()
