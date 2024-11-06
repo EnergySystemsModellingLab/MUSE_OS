@@ -139,7 +139,9 @@ def reduce_assets(
             installed   (asset) int32 12B 1990 1991 1990
         Dimensions without coordinates: asset
     """
-    from copy import copy
+    from copy import deepcopy
+
+    assets = deepcopy(assets)
 
     if operation is None:
 
@@ -148,23 +150,31 @@ def reduce_assets(
 
     assert operation is not None
 
+    # Concatenate assets if a sequence is given
     if not isinstance(assets, (xr.Dataset, xr.DataArray)):
         assets = xr.concat(assets, dim=dim)
     assert isinstance(assets, (xr.Dataset, xr.DataArray))
+
+    # If there are no assets, nothing needs to be done
     if assets[dim].size == 0:
         return assets
+
+    # Coordinates to reduce over (e.g. technology, installed)
     if coords is None:
         coords = [cast(str, k) for k, v in assets.coords.items() if v.dims == (dim,)]
     elif isinstance(coords, str):
         coords = (coords,)
     coords = [k for k in coords if k in assets.coords and assets[k].dims == (dim,)]
-    assets = copy(assets)
+
+    # Create a new dimension to group by
     dtypes = [(d, assets[d].dtype) for d in coords]
     grouper = np.array(
         list(zip(*(cast(Iterator, assets[d].values) for d in coords))), dtype=dtypes
     )
     assert "grouper" not in assets.coords
     assets["grouper"] = "asset", grouper
+
+    # Perform the operation
     result = operation(assets.groupby("grouper")).rename(grouper=dim)
     for i, d in enumerate(coords):
         result[d] = dim, [u[i] for u in result[dim].values]
@@ -385,32 +395,22 @@ def merge_assets(
     dimension: str = "asset",
 ) -> xr.DataArray:
     """Merge two capacity arrays."""
+    # Interpolate capacity arrays to a common time framework
     years = sorted(set(capa_a.year.values).union(capa_b.year.values))
-
     if len(capa_a.year) == 1:
-        result = xr.concat(
-            (
-                capa_a,
-                capa_b.interp(year=years, method=interpolation).fillna(0),
-            ),
-            dim=dimension,
-        ).fillna(0)
+        capa_a_interp = capa_a
+        capa_b_interp = capa_b.interp(year=years, method=interpolation).fillna(0)
     elif len(capa_b.year) == 1:
-        result = xr.concat(
-            (
-                capa_a.interp(year=years, method=interpolation).fillna(0),
-                capa_b,
-            ),
-            dim=dimension,
-        ).fillna(0)
+        capa_a_interp = capa_a.interp(year=years, method=interpolation).fillna(0)
+        capa_b_interp = capa_b
     else:
-        result = xr.concat(
-            (
-                capa_a.interp(year=years, method=interpolation).fillna(0),
-                capa_b.interp(year=years, method=interpolation).fillna(0),
-            ),
-            dim=dimension,
-        )
+        capa_a_interp = capa_a.interp(year=years, method=interpolation).fillna(0)
+        capa_b_interp = capa_b.interp(year=years, method=interpolation).fillna(0)
+
+    # Concatenate the two capacity arrays
+    result = xr.concat((capa_a_interp, capa_b_interp), dim=dimension)
+
+    #
     forgroup = result.pipe(coords_to_multiindex, dimension=dimension)
     if isinstance(forgroup, xr.DataArray):
         forgroup = forgroup.to_dataset()

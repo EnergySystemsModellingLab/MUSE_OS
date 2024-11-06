@@ -274,23 +274,14 @@ class MCA:
         """
         from logging import getLogger
 
-        from numpy import where
         from xarray import DataArray
-
-        _, self.sectors, hist_years = self.calibrate_legacy_sectors()
-        if len(hist_years) > 0:
-            hist = where(self.time_framework <= hist_years[-1])[0]
-            start = hist[-1]
-
-        else:
-            start = -1
 
         nyear = len(self.time_framework) - 1
         check_carbon_budget = len(self.carbon_budget) and len(self.carbon_commodities)
         shoots = self.control_undershoot or self.control_overshoot
         variables = ["supply", "consumption", "prices"]
 
-        for year_idx in range(start + 1, nyear):
+        for year_idx in range(nyear):
             years = self.time_framework[year_idx : year_idx + 2]
             getLogger(__name__).info(f"Running simulation year {years[0]}...")
             new_market = self.market[variables].sel(year=years)
@@ -310,6 +301,7 @@ class MCA:
                 )
                 self.carbon_price = future_propagation(self.carbon_price, future_price)
 
+            # Solve the market
             _, new_market, self.sectors = self.find_equilibrium(new_market)
 
             # Save sector outputs
@@ -324,77 +316,22 @@ class MCA:
                     new_market, year_idx
                 )
 
+            # Update the market
             dims = {i: new_market[i] for i in new_market.dims}
             self.market.supply.loc[dims] = new_market.supply
             self.market.consumption.loc[dims] = new_market.consumption
-
             dims = {i: new_market[i] for i in new_market.prices.dims if i != "year"}
             self.market.prices.loc[dims] = future_propagation(
                 self.market.prices.sel(dims), new_market.prices.sel(year=years[1])
             )
 
+            # Global outputs
             self.outputs(self.market, self.sectors, year=self.time_framework[year_idx])  # type: ignore
             self.outputs_cache.consolidate_cache(year=self.time_framework[year_idx])
+
             getLogger(__name__).info(
                 f"Finish simulation year {years[0]} ({year_idx+1}/{nyear})!"
             )
-
-    def calibrate_legacy_sectors(self):
-        """Run a calibration step in the legacy sectors.
-
-        Run historical years.
-        """
-        from copy import deepcopy
-        from logging import getLogger
-
-        from numpy import where
-
-        hist_years = []
-        if len([s for s in self.sectors if "LegacySector" in str(type(s))]) == 0:
-            return None, self.sectors, hist_years
-
-        sectors = []
-        idx = []
-        for i, s in enumerate(self.sectors):
-            if "LegacySector" in str(type(s)):
-                s.mode = "Calibration"
-                sectors.append(s)
-                idx.append(i)
-
-        getLogger(__name__).info("Calibrating LegacySectors...")
-
-        if 2015 in self.time_framework:
-            hist_years = self.time_framework[where(self.time_framework <= 2015)]
-        hist = len(hist_years)
-        for year_idx in range(hist):  # range(nyear):
-            years = self.time_framework[year_idx : year_idx + 1]
-            sectors = deepcopy(sectors)
-            variables = ["supply", "consumption", "prices"]
-            new_market = self.market[variables].sel(year=years).copy(deep=True)
-            for sector in sectors:
-                sector_market = sector.next(
-                    new_market[["supply", "consumption", "prices"]]  # type:ignore
-                )
-
-                sector_market = sector_market.sel(year=new_market.year)
-
-                dims = {i: sector_market[i] for i in sector_market.consumption.dims}
-
-                sector_market.consumption.loc[dims] = (
-                    sector_market.consumption.loc[dims] - sector_market.supply.loc[dims]
-                ).clip(min=0.0, max=None)
-                new_market.consumption.loc[dims] += sector_market.consumption
-
-                dims = {i: sector_market[i] for i in sector_market.supply.dims}
-                new_market.supply.loc[dims] += sector_market.supply
-
-        for i, s in enumerate(sectors):
-            s.mode = "Iteration"
-            self.sectors[idx[i]] = s
-
-        getLogger(__name__).info("Finish calibration of LegacySectors!")
-
-        return None, self.sectors, hist_years
 
 
 class SingleYearIterationResult(NamedTuple):
@@ -429,29 +366,26 @@ def single_year_iteration(
     if "updated_prices" not in market.data_vars:
         market["updated_prices"] = drop_timeslice(market.prices.copy())
 
-    # eventually, the first market should be one that creates the initial demand
     for sector in sectors:
+        # Solve the sector
         sector_market = sector.next(
             market[["supply", "consumption", "prices"]]  # type:ignore
         )
-
         sector_market = sector_market.sel(year=market.year)
 
+        # Calculate net consumption
         dims = {i: sector_market[i] for i in sector_market.consumption.dims}
-
         sector_market.consumption.loc[dims] = (
             sector_market.consumption.loc[dims] - sector_market.supply.loc[dims]
         ).clip(min=0.0, max=None)
 
+        # Update market supply and consumption
         market.consumption.loc[dims] += sector_market.consumption
-
         dims = {i: sector_market[i] for i in sector_market.supply.dims}
         market.supply.loc[dims] += sector_market.supply
 
+        # Update market prices
         costs = sector_market.costs.sel(commodity=is_enduse(sector_market.comm_usage))
-
-        # do not write costs lower than 1e-4
-        # should correspond to rounding value
         if len(costs.commodity) > 0:
             costs = costs.where(costs > 1e-4, 0)
             dims = {i: costs[i] for i in costs.dims}
