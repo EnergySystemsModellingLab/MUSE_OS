@@ -378,7 +378,7 @@ class InvestingAgent(Agent):
         prices = self.filter_input(market.prices)
 
         # Compute the objectives
-        decision = self._compute_objective(
+        objectives = self._compute_objective(
             technologies=techs, demand=reduced_demand, prices=prices.isel(year=1)
         )
 
