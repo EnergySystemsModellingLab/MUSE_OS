@@ -375,11 +375,28 @@ def annual_levelized_cost_of_energy(
 
     """
     from muse.costs import annual_levelized_cost_of_energy as aLCOE
+    from muse.quantities import consumption
+    from muse.timeslices import QuantityType, convert_timeslice
 
-    return filter_input(
-        aLCOE(technologies=technologies, prices=prices).max("timeslice"),
-        year=demand.year.item(),
+    capacity = capacity_to_service_demand(technologies, demand)
+    production = (
+        capacity
+        * convert_timeslice(
+            technologies.fixed_outputs, demand.timeslice, QuantityType.EXTENSIVE
+        )
+        * technologies.utilization_factor
     )
+    consump = consumption(technologies=technologies, prices=prices, production=demand)
+
+    results = aLCOE(
+        technologies=technologies,
+        prices=prices,
+        capacity=capacity,
+        production=production,
+        consumption=consump,
+    )
+
+    return results.where(np.isfinite(results)).fillna(0.0)
 
 
 @register_objective(name=["LCOE", "LLCOE"])
@@ -398,6 +415,7 @@ def lifetime_levelized_cost_of_energy(
     due to a zero utilisation factor.
     """
     from muse.costs import lifetime_levelized_cost_of_energy as LCOE
+    from muse.quantities import consumption
     from muse.timeslices import QuantityType, convert_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
@@ -408,12 +426,14 @@ def lifetime_levelized_cost_of_energy(
         )
         * technologies.utilization_factor
     )
+    consump = consumption(technologies=technologies, prices=prices, production=demand)
 
     results = LCOE(
         technologies=technologies,
         prices=prices,
         capacity=capacity,
         production=production,
+        consumption=consump,
     )
 
     return results.where(np.isfinite(results)).fillna(0.0)

@@ -6,13 +6,12 @@ data such as commodity prices, capacity of the technologies, and commodity-produ
 data for the technologies, where appropriate.
 """
 
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 import xarray as xr
 
 from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
-from muse.quantities import consumption
 from muse.timeslices import QuantityType, convert_timeslice
 from muse.utilities import filter_input
 
@@ -22,6 +21,7 @@ def net_present_value(
     prices: xr.DataArray,
     capacity: xr.DataArray,
     production: xr.DataArray,
+    consumption: xr.DataArray,
 ) -> xr.DataArray:
     """Net present value (NPV) of the relevant technologies.
 
@@ -48,11 +48,19 @@ def net_present_value(
         technologies: xr.Dataset of technology parameters
         prices: xr.DataArray with commodity prices
         capacity: xr.DataArray with the capacity of the relevant technologies
-        production: xr.DataArray with the production of the relevant technologies
+        production: xr.DataArray with commodity production by the relevant technologies
+        consumption: xr.DataArray with commodity consumption by the relevant
+            technologies
 
     Return:
         xr.DataArray with the NPV calculated for the relevant technologies
     """
+    assert "year" not in technologies.dims
+    assert "year" not in prices.dims
+    assert "year" not in capacity.dims
+    assert "year" not in production.dims
+    assert "year" not in consumption.dims
+
     # Filtering of the inputs
     techs = technologies[
         [
@@ -106,24 +114,32 @@ def net_present_value(
 
     # Fuel/energy costs
     prices_fuel = filter_input(prices, commodity=fuels)
-    fuel = consumption(technologies=techs, production=production, prices=prices)
-    fuel_costs = (fuel * prices_fuel * rates).sum(("commodity", "year"))
+    fuel_costs = (consumption * prices_fuel * rates).sum(("commodity", "year"))
 
     # Cost related to material other than fuel/energy and environmentals
     prices_material = filter_input(prices, commodity=material)
-    material_costs = (production * prices_material * rates).sum(("commodity", "year"))
+    material_costs = (consumption * prices_material * rates).sum(("commodity", "year"))
 
-    # Fixed and Variable costs
-    fixed_costs = convert_timeslice(
-        techs.fix_par * (capacity**techs.fix_exp),
-        prices.timeslice,
-        QuantityType.EXTENSIVE,
+    # Fixed costs
+    fixed_costs = (
+        convert_timeslice(
+            techs.fix_par * (capacity**techs.fix_exp),
+            prices.timeslice,
+            QuantityType.EXTENSIVE,
+        )
+        * rates
+    ).sum("year")
+
+    # Variable costs
+    prod_amplitude = (
+        production
+        / convert_timeslice(
+            techs.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
+        )
+    ).max("commodity")
+    variable_costs = ((techs.var_par * prod_amplitude**techs.var_exp) * rates).sum(
+        "year"
     )
-    variable_costs = techs.var_par * (
-        (production.sel(commodity=products).sum("commodity")) ** techs.var_exp
-    )
-    assert set(fixed_costs.dims) == set(variable_costs.dims)
-    fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
 
     # Net present value
     result = raw_revenues - (
@@ -131,7 +147,8 @@ def net_present_value(
         + fuel_costs
         + environmental_costs
         + material_costs
-        + fixed_and_variable_costs
+        + fixed_costs
+        + variable_costs
     )
     return result
 
@@ -141,6 +158,7 @@ def net_present_cost(
     prices: xr.DataArray,
     capacity: xr.DataArray,
     production: xr.DataArray,
+    consumption: xr.DataArray,
 ) -> xr.DataArray:
     """Net present cost (NPC) of the relevant technologies.
 
@@ -155,7 +173,9 @@ def net_present_cost(
         technologies: xr.Dataset of technology parameters
         prices: xr.DataArray with commodity prices
         capacity: xr.DataArray with the capacity of the relevant technologies
-        production: xr.DataArray with the production of the relevant technologies
+        production: xr.DataArray with commodity production by the relevant technologies
+        consumption: xr.DataArray with commodity consumption by the relevant
+            technologies
 
     Return:
         xr.DataArray with the NPC calculated for the relevant technologies
@@ -164,8 +184,9 @@ def net_present_cost(
     assert "year" not in prices.dims
     assert "year" not in capacity.dims
     assert "year" not in production.dims
+    assert "year" not in consumption.dims
 
-    return -net_present_value(technologies, prices, capacity, production)
+    return -net_present_value(technologies, prices, capacity, production, consumption)
 
 
 def equivalent_annual_cost(
@@ -173,6 +194,7 @@ def equivalent_annual_cost(
     prices: xr.DataArray,
     capacity: xr.DataArray,
     production: xr.DataArray,
+    consumption: xr.DataArray,
 ) -> xr.DataArray:
     """Equivalent annual costs (or annualized cost) of a technology.
 
@@ -188,7 +210,9 @@ def equivalent_annual_cost(
         technologies: xr.Dataset of technology parameters
         prices: xr.DataArray with commodity prices
         capacity: xr.DataArray with the capacity of the relevant technologies
-        production: xr.DataArray with the production of the relevant technologies
+        production: xr.DataArray with commodity production by the relevant technologies
+        consumption: xr.DataArray with commodity consumption by the relevant
+            technologies
 
     Return:
         xr.DataArray with the EAC calculated for the relevant technologies
@@ -197,8 +221,9 @@ def equivalent_annual_cost(
     assert "year" not in prices.dims
     assert "year" not in capacity.dims
     assert "year" not in production.dims
+    assert "year" not in consumption.dims
 
-    npc = net_present_cost(technologies, prices, capacity, production)
+    npc = net_present_cost(technologies, prices, capacity, production, consumption)
     crf = capital_recovery_factor(technologies)
     return npc * crf
 
@@ -208,6 +233,7 @@ def lifetime_levelized_cost_of_energy(
     prices: xr.DataArray,
     capacity: xr.DataArray,
     production: xr.DataArray,
+    consumption: xr.DataArray,
 ) -> xr.DataArray:
     """Levelized cost of energy (LCOE) of technologies over their lifetime.
 
@@ -217,8 +243,9 @@ def lifetime_levelized_cost_of_energy(
         technologies: xr.Dataset of technology parameters
         prices: xr.DataArray with commodity prices
         capacity: xr.DataArray with the capacity of the relevant technologies
-        production: xr.DataArray with the production of the relevant technologies
-        year: int, the year of the forecast
+        production: xr.DataArray with commodity production by the relevant technologies
+        consumption: xr.DataArray with commodity consumption by the relevant
+            technologies
 
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
@@ -227,6 +254,7 @@ def lifetime_levelized_cost_of_energy(
     assert "year" not in prices.dims
     assert "year" not in capacity.dims
     assert "year" not in production.dims
+    assert "year" not in consumption.dims
 
     techs = technologies[
         [
@@ -276,23 +304,32 @@ def lifetime_levelized_cost_of_energy(
 
     # Fuel/energy costs
     prices_fuel = filter_input(prices, commodity=fuels)
-    fuel = consumption(technologies=techs, production=production, prices=prices)
-    fuel_costs = (fuel * prices_fuel * rates).sum(("commodity", "year"))
+    fuel_costs = (consumption * prices_fuel * rates).sum(("commodity", "year"))
 
     # Cost related to material other than fuel/energy and environmentals
     prices_material = filter_input(prices, commodity=material)
-    material_costs = (production * prices_material * rates).sum(("commodity", "year"))
+    material_costs = (consumption * prices_material * rates).sum(("commodity", "year"))
 
-    # Fixed and Variable costs
-    fixed_costs = convert_timeslice(
-        techs.fix_par * (capacity**techs.fix_exp),
-        prices.timeslice,
-        QuantityType.EXTENSIVE,
+    # Fixed costs
+    fixed_costs = (
+        convert_timeslice(
+            techs.fix_par * (capacity**techs.fix_exp),
+            prices.timeslice,
+            QuantityType.EXTENSIVE,
+        )
+        * rates
+    ).sum("year")
+
+    # Variable costs
+    prod_amplitude = (
+        production
+        / convert_timeslice(
+            techs.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
+        )
+    ).max("commodity")
+    variable_costs = ((techs.var_par * prod_amplitude**techs.var_exp) * rates).sum(
+        "year"
     )
-    variable_costs = (
-        techs.var_par * production.sel(commodity=products) ** techs.var_exp
-    ).sum("commodity")
-    fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
 
     # Production
     prod = (
@@ -308,7 +345,8 @@ def lifetime_levelized_cost_of_energy(
         + fuel_costs
         + environmental_costs
         + material_costs
-        + fixed_and_variable_costs
+        + fixed_costs
+        + variable_costs
     ) / total_prod
 
     return result
@@ -317,9 +355,9 @@ def lifetime_levelized_cost_of_energy(
 def annual_levelized_cost_of_energy(
     technologies: xr.Dataset,
     prices: xr.DataArray,
-    interpolation: str = "linear",
-    fill_value: Union[int, str] = "extrapolate",
-    **filters,
+    capacity: xr.DataArray,
+    production: xr.DataArray,
+    consumption: xr.DataArray,
 ) -> xr.DataArray:
     """Undiscounted levelized cost of energy (LCOE) of technologies on each given year.
 
@@ -333,110 +371,103 @@ def annual_levelized_cost_of_energy(
     * [1]: dimensionless
 
     Arguments:
-        technologies: Describe the technologies, with at least the following parameters:
-            * cap_par: [$/E] overnight capital cost
-            * interest_rate: [1]
-            * fix_par: [$/(Eh)] fixed costs of operation and maintenance costs
-            * var_par: [$/(Eh)] variable costs of operation and maintenance costs
-            * fixed_inputs: [1] == [(Eh)/(Eh)] ratio indicating the amount of commodity
-                consumed per units of energy created.
-            * fixed_outputs: [1] == [(Eh)/(Eh)] ration indicating the amount of
-                environmental pollutants produced per units of energy created.
-        prices: [$/(Eh)] the price of all commodities, including consumables and fuels.
-            This dataarray contains at least timeslice and commodity dimensions.
-        interpolation: interpolation method.
-        fill_value: Fill value for values outside the extrapolation range.
-        **filters: Anything by which prices can be filtered.
+        technologies: xr.Dataset of technology parameters
+        prices: xr.DataArray with commodity prices
+        capacity: xr.DataArray with the capacity of the relevant technologies
+        production: xr.DataArray with commodity production by the relevant technologies
+        consumption: xr.DataArray with commodity consumption by the relevant
+            technologies
 
     Return:
         The lifetime LCOE in [$/(Eh)] for each technology at each timeslice.
 
     .. _simplified LCOE: https://www.nrel.gov/analysis/tech-lcoe-documentation.html
     """
+    assert "year" not in technologies.dims
+    assert "year" not in prices.dims
+    assert "year" not in capacity.dims
+    assert "year" not in production.dims
+    assert "year" not in consumption.dims
+
     techs = technologies[
         [
             "technical_life",
             "interest_rate",
             "cap_par",
+            "cap_exp",
             "var_par",
+            "var_exp",
             "fix_par",
+            "fix_exp",
+            "fixed_outputs",
             "fixed_inputs",
             "flexible_inputs",
-            "fixed_outputs",
             "utilization_factor",
         ]
     ]
-    if "year" in techs.dims:
-        techs = techs.interp(
-            year=prices.year, method=interpolation, kwargs={"fill_value": fill_value}
-        )
-    if filters is not None:
-        prices = prices.sel({k: v for k, v in filters.items() if k in prices.dims})
-        techs = techs.sel({k: v for k, v in filters.items() if k in techs.dims})
 
-    assert {"timeslice", "commodity"}.issubset(prices.dims)
+    # Filters
+    environmentals = is_pollutant(technologies.comm_usage)
+    material = is_material(technologies.comm_usage)
+    products = is_enduse(technologies.comm_usage)
+    fuels = is_fuel(technologies.comm_usage)
 
-    life = techs.technical_life.astype(int)
-
-    rates = techs.interest_rate / (1 - (1 + techs.interest_rate) ** (-life))
-
-    # Capital costs
-    annualized_capital_costs = (
+    # Cost of installed capacity (annualized)
+    installed_capacity_costs = (
         convert_timeslice(
-            techs.cap_par * rates,
+            techs.cap_par * (capacity**techs.cap_exp),
             prices.timeslice,
             QuantityType.EXTENSIVE,
         )
-        / techs.utilization_factor
+        / techs.technical_life
     )
 
-    # Fixed and variable running costs
-    o_and_e_costs = (
-        convert_timeslice(
-            (techs.fix_par + techs.var_par),
-            prices.timeslice,
-            QuantityType.EXTENSIVE,
-        )
-        / techs.utilization_factor
+    # Cost related to environmental products
+    prices_environmental = filter_input(prices, commodity=environmentals)
+    environmental_costs = (production * prices_environmental).sum("commodity")
+
+    # Fuel/energy costs
+    prices_fuel = filter_input(prices, commodity=fuels)
+    fuel_costs = (consumption * prices_fuel).sum("commodity")
+
+    # Cost related to material other than fuel/energy and environmentals
+    prices_material = filter_input(prices, commodity=material)
+    material_costs = (consumption * prices_material).sum("commodity")
+
+    # Fixed costs
+    fixed_costs = convert_timeslice(
+        techs.fix_par * (capacity**techs.fix_exp),
+        prices.timeslice,
+        QuantityType.EXTENSIVE,
     )
 
-    # Fuel costs from fixed and flexible inputs
-    fuel_costs = (
-        convert_timeslice(techs.fixed_inputs, prices.timeslice, QuantityType.EXTENSIVE)
-        * prices
-    ).sum("commodity")
-    fuel_costs += (
-        convert_timeslice(
-            techs.flexible_inputs, prices.timeslice, QuantityType.EXTENSIVE
+    # Variable costs
+    prod_amplitude = (
+        production
+        / convert_timeslice(
+            techs.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
         )
-        * prices
-    ).sum("commodity")
+    ).max("commodity")
+    variable_costs = techs.var_par * prod_amplitude**techs.var_exp
 
-    # Environmental costs
-    if "region" in techs.dims:
-        env_costs = (
-            (
-                convert_timeslice(
-                    techs.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
-                )
-                * prices
-            )
-            .sel(region=techs.region)
-            .sel(commodity=is_pollutant(techs.comm_usage))
-            .sum("commodity")
-        )
-    else:
-        env_costs = (
-            (
-                convert_timeslice(
-                    techs.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
-                )
-                * prices
-            )
-            .sel(commodity=is_pollutant(techs.comm_usage))
-            .sum("commodity")
-        )
-    return annualized_capital_costs + o_and_e_costs + env_costs + fuel_costs
+    # Production
+    prod = (
+        production.where(production > 0.0, 1e-6)
+        .sel(commodity=products)
+        .sum("commodity")
+    )
+
+    # LCOE
+    result = (
+        installed_capacity_costs
+        + fuel_costs
+        + environmental_costs
+        + material_costs
+        + fixed_costs
+        + variable_costs
+    ) / prod
+
+    return result
 
 
 def supply_cost(

@@ -299,13 +299,21 @@ class Sector(AbstractSector):  # type: ignore
         # Calculate consumption
         consume = consumption(technologies, supply, market.prices)
 
-        # Calculate commodity prices
+        # Calculate LCOE
+        # We select data for the second year, which corresponds to the investment year
         technodata = cast(xr.Dataset, broadcast_techs(technologies, supply))
+        lcoe = annual_levelized_cost_of_energy(
+            prices=market.prices.sel(region=supply.region).isel(year=1),
+            technologies=technodata,
+            capacity=capacity.isel(year=1),
+            production=supply.isel(year=1),
+            consumption=consume.isel(year=1),
+        )
+
+        # Calculate new commodity prices
         costs = supply_cost(
             supply.where(~is_pollutant(supply.comm_usage), 0),
-            annual_levelized_cost_of_energy(
-                prices=market.prices.sel(region=supply.region), technologies=technodata
-            ),
+            lcoe,
             asset_dim="asset",
         )
 
