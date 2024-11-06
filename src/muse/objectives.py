@@ -442,7 +442,7 @@ def net_present_value(
     See :py:func:`muse.costs.net_present_value` for more details.
     """
     from muse.costs import net_present_value as NPV
-    from muse.quantities import capacity_to_service_demand
+    from muse.quantities import capacity_to_service_demand, consumption
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
@@ -451,13 +451,14 @@ def net_present_value(
         * distribute_timeslice(technologies.fixed_outputs)
         * broadcast_timeslice(technologies.utilization_factor)
     )
+    consump = consumption(technologies=technologies, prices=prices, production=demand)
 
     results = NPV(
         technologies=technologies,
         prices=prices,
         capacity=capacity,
         production=production,
-        year=demand.year.item(),
+        consumption=consump,
     )
     return results
 
@@ -475,7 +476,7 @@ def net_present_cost(
     See :py:func:`muse.costs.net_present_cost` for more details.
     """
     from muse.costs import net_present_cost as NPC
-    from muse.quantities import capacity_to_service_demand
+    from muse.quantities import capacity_to_service_demand, consumption
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
@@ -484,13 +485,14 @@ def net_present_cost(
         * distribute_timeslice(technologies.fixed_outputs)
         * broadcast_timeslice(technologies.utilization_factor)
     )
+    consump = consumption(technologies=technologies, prices=prices, production=demand)
 
     results = NPC(
         technologies=technologies,
         prices=prices,
         capacity=capacity,
         production=production,
-        year=demand.year.item(),
+        consumption=consump,
     )
     return results
 
@@ -508,7 +510,7 @@ def equivalent_annual_cost(
     See :py:func:`muse.costs.equivalent_annual_cost` for more details.
     """
     from muse.costs import equivalent_annual_cost as EAC
-    from muse.quantities import capacity_to_service_demand
+    from muse.quantities import capacity_to_service_demand, consumption
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
@@ -517,12 +519,13 @@ def equivalent_annual_cost(
         * distribute_timeslice(technologies.fixed_outputs)
         * broadcast_timeslice(technologies.utilization_factor)
     )
+    consump = consumption(technologies=technologies, prices=prices, production=demand)
 
     results = EAC(
         technologies=technologies,
         prices=prices,
         capacity=capacity,
         production=production,
-        year=demand.year.item(),
+        consumption=consump,
     )
     return results
