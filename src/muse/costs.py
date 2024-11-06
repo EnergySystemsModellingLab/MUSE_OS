@@ -71,12 +71,10 @@ def net_present_value(
         ]
     ]
 
-    # Years
+    # Evolution of rates with time
     life = techs.technical_life.astype(int)
     iyears = range(life.values.max())
     years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
-
-    # Evolution of rates with time
     rates = discount_factor(
         years + 1,
         interest_rate=techs.interest_rate,
@@ -127,15 +125,15 @@ def net_present_value(
     assert set(fixed_costs.dims) == set(variable_costs.dims)
     fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
 
-    results = raw_revenues - (
+    # Net present value
+    result = raw_revenues - (
         installed_capacity_costs
         + fuel_costs
         + environmental_costs
         + material_costs
         + fixed_and_variable_costs
     )
-
-    return results
+    return result
 
 
 def net_present_cost(
@@ -247,12 +245,10 @@ def lifetime_levelized_cost_of_energy(
         ]
     ]
 
-    # Years
+    # Evolution of rates with time
     life = techs.technical_life.astype(int)
     iyears = range(life.values.max())
     years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
-
-    # Evolution of rates with time
     rates = discount_factor(
         years=years + 1,
         interest_rate=techs.interest_rate,
@@ -297,14 +293,23 @@ def lifetime_levelized_cost_of_energy(
         techs.var_par * production.sel(commodity=products) ** techs.var_exp
     ).sum("commodity")
     fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
-    denominator = production.where(production > 0.0, 1e-6)
+
+    # Production
+    prod = (
+        production.where(production > 0.0, 1e-6)
+        .sel(commodity=products)
+        .sum("commodity")
+    )
+    total_prod = (prod * rates).sum("year")
+
+    # LCOE
     result = (
         installed_capacity_costs
         + fuel_costs
         + environmental_costs
         + material_costs
         + fixed_and_variable_costs
-    ) / (denominator.sel(commodity=products).sum("commodity") * rates).sum("year")
+    ) / total_prod
 
     return result
 
