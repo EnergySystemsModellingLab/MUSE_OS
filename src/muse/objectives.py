@@ -71,7 +71,7 @@ from mypy_extensions import KwArg
 
 from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
-from muse.timeslices import drop_timeslice
+from muse.timeslices import broadcast_timeslice, drop_timeslice
 from muse.utilities import filter_input
 
 OBJECTIVE_SIGNATURE = Callable[
@@ -133,9 +133,9 @@ def factory(
         *args,
         **kwargs,
     ) -> xr.Dataset:
-        from muse.timeslices import broadcast_timeslice
-
-        assert set(technologies.dims) == {"replacement", "commodity"}
+        assert set(technologies.dims).issubset(
+            {"replacement", "commodity", "timeslice"}
+        )
         assert set(demand.dims) == {"asset", "timeslice", "commodity"}
         assert set(prices.dims) == {"commodity", "timeslice"}
 
