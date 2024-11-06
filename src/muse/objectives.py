@@ -133,6 +133,10 @@ def factory(
         *args,
         **kwargs,
     ) -> xr.Dataset:
+        assert set(technologies.dims) == {"replacement", "commodity"}
+        assert set(demand.dims) == {"asset", "timeslice", "commodity"}
+        assert set(prices.dims) == {"commodity", "timeslice"}
+
         result = xr.Dataset()
         for name, objective in functions:
             obj = objective(
@@ -410,7 +414,6 @@ def lifetime_levelized_cost_of_energy(
         prices=prices,
         capacity=capacity,
         production=production,
-        year=demand.year.item(),
     )
 
     return results.where(np.isfinite(results)).fillna(0.0)

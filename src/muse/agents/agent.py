@@ -299,7 +299,7 @@ class Agent(AbstractAgent):
 
         # Compute the objective
         decision = self._compute_objective(
-            technologies=techs, demand=reduced_demand, prices=prices
+            technologies=techs, demand=reduced_demand, prices=prices.isel(year=1)
         )
 
         self.year += time_period

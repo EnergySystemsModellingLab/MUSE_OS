@@ -933,7 +933,6 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
                 technologies=techs,
                 capacity=capacity,
                 production=production,
-                year=agent.year,
             )
 
             data_agent = result
