@@ -422,7 +422,7 @@ def test_demand_matched_production(
 
 
 def test_costed_production_exact_match(market, capacity, technologies):
-    from muse.costs import annual_levelized_cost_of_energy
+    from muse.costs import annual_levelized_cost_of_energy_legacy as ALCOE
     from muse.quantities import (
         costed_production,
         maximum_production,
@@ -434,7 +434,7 @@ def test_costed_production_exact_match(market, capacity, technologies):
             set(market.region.values)
         )
     technodata = broadcast_techs(technologies, capacity)
-    costs = annual_levelized_cost_of_energy(
+    costs = ALCOE(
         prices=market.prices.sel(region=technodata.region), technologies=technodata
     )
     maxdemand = (
@@ -454,7 +454,7 @@ def test_costed_production_exact_match(market, capacity, technologies):
 
 
 def test_costed_production_single_region(market, capacity, technologies):
-    from muse.costs import annual_levelized_cost_of_energy
+    from muse.costs import annual_levelized_cost_of_energy_legacy as ALCOE
     from muse.quantities import (
         costed_production,
         maximum_production,
@@ -467,7 +467,7 @@ def test_costed_production_single_region(market, capacity, technologies):
     maxdemand = maximum_production(technologies, capacity).sum("asset")
     market["consumption"] = drop_timeslice(0.9 * maxdemand)
     technodata = broadcast_techs(technologies, capacity)
-    costs = annual_levelized_cost_of_energy(
+    costs = ALCOE(
         prices=market.prices.sel(region=technodata.region), technologies=technodata
     )
     result = costed_production(market.consumption, costs, capacity, technologies)
@@ -480,7 +480,7 @@ def test_costed_production_single_region(market, capacity, technologies):
 
 
 def test_costed_production_single_year(market, capacity, technologies):
-    from muse.costs import annual_levelized_cost_of_energy
+    from muse.costs import annual_levelized_cost_of_energy_legacy as ALCOE
     from muse.quantities import (
         costed_production,
         maximum_production,
@@ -497,7 +497,7 @@ def test_costed_production_single_year(market, capacity, technologies):
     )
     market["consumption"] = drop_timeslice(0.9 * maxdemand)
     technodata = broadcast_techs(technologies, capacity)
-    costs = annual_levelized_cost_of_energy(
+    costs = ALCOE(
         prices=market.prices.sel(region=technodata.region), technologies=technodata
     )
     result = costed_production(market.consumption, costs, capacity, technologies)
@@ -510,7 +510,7 @@ def test_costed_production_single_year(market, capacity, technologies):
 
 
 def test_costed_production_over_capacity(market, capacity, technologies):
-    from muse.costs import annual_levelized_cost_of_energy
+    from muse.costs import annual_levelized_cost_of_energy_legacy as ALCOE
     from muse.quantities import (
         costed_production,
         maximum_production,
@@ -530,7 +530,7 @@ def test_costed_production_over_capacity(market, capacity, technologies):
     )
     market["consumption"] = drop_timeslice(maxdemand * 0.9)
     technodata = broadcast_techs(technologies, capacity)
-    costs = annual_levelized_cost_of_energy(
+    costs = ALCOE(
         prices=market.prices.sel(region=technodata.region), technologies=technodata
     )
     result = costed_production(market.consumption, costs, capacity, technologies)
@@ -543,7 +543,7 @@ def test_costed_production_over_capacity(market, capacity, technologies):
 
 
 def test_costed_production_with_minimum_service(market, capacity, technologies, rng):
-    from muse.costs import annual_levelized_cost_of_energy
+    from muse.costs import annual_levelized_cost_of_energy_legacy as ALCOE
     from muse.quantities import (
         costed_production,
         maximum_production,
@@ -566,7 +566,7 @@ def test_costed_production_with_minimum_service(market, capacity, technologies, 
     maxdemand = xr.Dataset(dict(mp=minprod)).groupby("region").sum("asset").mp
     market["consumption"] = drop_timeslice(maxdemand * 0.9)
     technodata = broadcast_techs(technologies, capacity)
-    costs = annual_levelized_cost_of_energy(
+    costs = ALCOE(
         prices=market.prices.sel(region=technodata.region), technologies=technodata
     )
     result = costed_production(market.consumption, costs, capacity, technologies)

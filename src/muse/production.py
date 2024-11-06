@@ -133,7 +133,7 @@ def demand_matched_production(
     costs: str = "prices",
 ) -> xr.DataArray:
     """Production from matching demand via annual lcoe."""
-    from muse.costs import annual_levelized_cost_of_energy as lcoe
+    from muse.costs import annual_levelized_cost_of_energy_legacy as lcoe
     from muse.quantities import demand_matched_production, gross_margin
     from muse.utilities import broadcast_techs
 
@@ -173,7 +173,7 @@ def costed_production(
     minimum service is applied first.
     """
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
-    from muse.costs import annual_levelized_cost_of_energy
+    from muse.costs import annual_levelized_cost_of_energy_legacy as ALCOE
     from muse.quantities import (
         costed_production,
         emission,
@@ -181,7 +181,7 @@ def costed_production(
     from muse.utilities import broadcast_techs
 
     if isinstance(costs, str) and costs.lower() == "alcoe":
-        costs = annual_levelized_cost_of_energy
+        costs = ALCOE
     elif isinstance(costs, str):
         raise ValueError(f"Unknown cost {costs}")
     if callable(costs):

@@ -6,7 +6,7 @@ data such as commodity prices, capacity of the technologies, and commodity-produ
 data for the technologies, where appropriate.
 """
 
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import xarray as xr
@@ -447,6 +447,133 @@ def annual_levelized_cost_of_energy(
     ) / prod
 
     return result
+
+
+def annual_levelized_cost_of_energy_legacy(
+    technologies: xr.Dataset,
+    prices: xr.DataArray,
+    interpolation: str = "linear",
+    fill_value: Union[int, str] = "extrapolate",
+    **filters,
+) -> xr.DataArray:
+    """LEGACY: Used in the "match" and "costed" production methods (to be deleted).
+
+    Undiscounted levelized cost of energy (LCOE) of technologies on each given year.
+
+    It mostly follows the `simplified LCOE`_ given by NREL. In the argument description,
+    we use the following:
+
+    * [h]: hour
+    * [y]: year
+    * [$]: unit of currency
+    * [E]: unit of energy
+    * [1]: dimensionless
+
+    Arguments:
+        technologies: Describe the technologies, with at least the following parameters:
+            * cap_par: [$/E] overnight capital cost
+            * interest_rate: [1]
+            * fix_par: [$/(Eh)] fixed costs of operation and maintenance costs
+            * var_par: [$/(Eh)] variable costs of operation and maintenance costs
+            * fixed_inputs: [1] == [(Eh)/(Eh)] ratio indicating the amount of commodity
+                consumed per units of energy created.
+            * fixed_outputs: [1] == [(Eh)/(Eh)] ration indicating the amount of
+                environmental pollutants produced per units of energy created.
+        prices: [$/(Eh)] the price of all commodities, including consumables and fuels.
+            This dataarray contains at least timeslice and commodity dimensions.
+        interpolation: interpolation method.
+        fill_value: Fill value for values outside the extrapolation range.
+        **filters: Anything by which prices can be filtered.
+
+    Return:
+        The lifetime LCOE in [$/(Eh)] for each technology at each timeslice.
+
+    .. _simplified LCOE: https://www.nrel.gov/analysis/tech-lcoe-documentation.html
+    """
+    techs = technologies[
+        [
+            "technical_life",
+            "interest_rate",
+            "cap_par",
+            "var_par",
+            "fix_par",
+            "fixed_inputs",
+            "flexible_inputs",
+            "fixed_outputs",
+            "utilization_factor",
+        ]
+    ]
+    if "year" in techs.dims:
+        techs = techs.interp(
+            year=prices.year, method=interpolation, kwargs={"fill_value": fill_value}
+        )
+    if filters is not None:
+        prices = prices.sel({k: v for k, v in filters.items() if k in prices.dims})
+        techs = techs.sel({k: v for k, v in filters.items() if k in techs.dims})
+
+    assert {"timeslice", "commodity"}.issubset(prices.dims)
+
+    life = techs.technical_life.astype(int)
+
+    rates = techs.interest_rate / (1 - (1 + techs.interest_rate) ** (-life))
+
+    # Capital costs
+    annualized_capital_costs = (
+        convert_timeslice(
+            techs.cap_par * rates,
+            prices.timeslice,
+            QuantityType.EXTENSIVE,
+        )
+        / techs.utilization_factor
+    )
+
+    # Fixed and variable running costs
+    o_and_e_costs = (
+        convert_timeslice(
+            (techs.fix_par + techs.var_par),
+            prices.timeslice,
+            QuantityType.EXTENSIVE,
+        )
+        / techs.utilization_factor
+    )
+
+    # Fuel costs from fixed and flexible inputs
+    fuel_costs = (
+        convert_timeslice(techs.fixed_inputs, prices.timeslice, QuantityType.EXTENSIVE)
+        * prices
+    ).sum("commodity")
+    fuel_costs += (
+        convert_timeslice(
+            techs.flexible_inputs, prices.timeslice, QuantityType.EXTENSIVE
+        )
+        * prices
+    ).sum("commodity")
+
+    # Environmental costs
+    if "region" in techs.dims:
+        env_costs = (
+            (
+                convert_timeslice(
+                    techs.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
+                )
+                * prices
+            )
+            .sel(region=techs.region)
+            .sel(commodity=is_pollutant(techs.comm_usage))
+            .sum("commodity")
+        )
+    else:
+        env_costs = (
+            (
+                convert_timeslice(
+                    techs.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
+                )
+                * prices
+            )
+            .sel(commodity=is_pollutant(techs.comm_usage))
+            .sum("commodity")
+        )
+    return annualized_capital_costs + o_and_e_costs + env_costs + fuel_costs
 
 
 def supply_cost(
