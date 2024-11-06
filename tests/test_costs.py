@@ -1,103 +1,140 @@
 from pytest import fixture
 
+YEAR = 2030
+
 
 @fixture
 def _prices(market):
     prices = market.prices
-    return prices
+    return prices.sel(year=YEAR)
 
 
 @fixture
-def _capacity(technologies, demand_share):
+def _technologies(technologies):
+    return technologies.sel(year=YEAR)
+
+
+@fixture
+def _capacity(_technologies, demand_share):
     from muse.quantities import capacity_to_service_demand
 
     capacity = capacity_to_service_demand(
-        technologies=technologies, demand=demand_share
+        technologies=_technologies, demand=demand_share
     )
     return capacity
 
 
 @fixture
-def _production(technologies, _capacity, demand_share):
+def _production(_technologies, _capacity, demand_share):
     from muse.timeslices import QuantityType, convert_timeslice
 
     production = (
         _capacity
         * convert_timeslice(
-            technologies.fixed_outputs, demand_share.timeslice, QuantityType.EXTENSIVE
+            _technologies.fixed_outputs, demand_share.timeslice, QuantityType.EXTENSIVE
         )
-        * technologies.utilization_factor
+        * _technologies.utilization_factor
     )
     return production
 
 
-def test_fixtures(technologies, _prices, _capacity, _production):
+@fixture
+def _consumption(_technologies, _capacity, demand_share):
+    from muse.timeslices import QuantityType, convert_timeslice
+
+    consumption = (
+        _capacity
+        * convert_timeslice(
+            _technologies.fixed_inputs, demand_share.timeslice, QuantityType.EXTENSIVE
+        )
+        * _technologies.utilization_factor
+    )
+    return consumption
+
+
+def test_fixtures(_technologies, _prices, _capacity, _production, _consumption):
     """Validating that the fixtures have appropriate dimensions."""
-    assert set(technologies.dims) == {"commodity", "region", "technology", "year"}
-    assert set(_prices.dims) == {"commodity", "region", "timeslice", "year"}
-    assert set(_capacity.dims) == {"asset", "region", "technology", "year"}
-    assert set(_production.dims) == {
-        "asset",
-        "commodity",
-        "region",
-        "technology",
-        "timeslice",
-        "year",
-    }
+    assert set(_technologies.dims) == {"commodity", "region", "technology"}
+    assert set(_prices.dims) == {"commodity", "region", "timeslice"}
+    assert set(_capacity.dims) == {"asset", "region", "technology"}
+    assert (
+        set(_production.dims)
+        == set(_consumption.dims)
+        == {
+            "asset",
+            "commodity",
+            "region",
+            "technology",
+            "timeslice",
+        }
+    )
 
 
-def test_net_present_value(technologies, _prices, _capacity, _production, year=2030):
+def test_net_present_value(
+    _technologies, _prices, _capacity, _production, _consumption
+):
     from muse.costs import net_present_value
 
-    result = net_present_value(technologies, _prices, _capacity, _production, year)
-    assert set(result.dims) == {"asset", "region", "technology", "timeslice", "year"}
+    result = net_present_value(
+        _technologies, _prices, _capacity, _production, _consumption
+    )
+    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
 
 
-def test_net_present_cost(technologies, _prices, _capacity, _production, year=2030):
+def test_net_present_cost(_technologies, _prices, _capacity, _production, _consumption):
     from muse.costs import net_present_cost
 
-    result = net_present_cost(technologies, _prices, _capacity, _production, year)
-    assert set(result.dims) == {"asset", "region", "technology", "timeslice", "year"}
+    result = net_present_cost(
+        _technologies, _prices, _capacity, _production, _consumption
+    )
+    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
 
 
 def test_equivalent_annual_cost(
-    technologies, _prices, _capacity, _production, year=2030
+    _technologies, _prices, _capacity, _production, _consumption
 ):
     from muse.costs import equivalent_annual_cost
 
-    result = equivalent_annual_cost(technologies, _prices, _capacity, _production, year)
-    assert set(result.dims) == {"asset", "region", "technology", "timeslice", "year"}
+    result = equivalent_annual_cost(
+        _technologies, _prices, _capacity, _production, _consumption
+    )
+    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
 
 
 def test_lifetime_levelized_cost_of_energy(
-    technologies, _prices, _capacity, _production, year=2030
+    _technologies, _prices, _capacity, _production, _consumption
 ):
     from muse.costs import lifetime_levelized_cost_of_energy
 
     result = lifetime_levelized_cost_of_energy(
-        technologies, _prices, _capacity, _production, year
+        _technologies, _prices, _capacity, _production, _consumption
     )
-    assert set(result.dims) == {"asset", "region", "technology", "timeslice", "year"}
+    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
 
 
-def test_annual_levelized_cost_of_energy(technologies, _prices):
+def test_annual_levelized_cost_of_energy(
+    _technologies, _prices, _capacity, _production, _consumption
+):
     from muse.costs import annual_levelized_cost_of_energy
 
-    result = annual_levelized_cost_of_energy(technologies, _prices)
-    assert set(result.dims) == {"region", "technology", "timeslice", "year"}
+    result = annual_levelized_cost_of_energy(
+        _technologies, _prices, _capacity, _production, _consumption
+    )
+    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
 
 
-def test_supply_cost(_production, _prices, technologies):
+def test_supply_cost(_technologies, _prices, _capacity, _production, _consumption):
     from muse.costs import annual_levelized_cost_of_energy, supply_cost
 
-    lcoe = annual_levelized_cost_of_energy(technologies, _prices)
+    lcoe = annual_levelized_cost_of_energy(
+        _technologies, _prices, _capacity, _production, _consumption
+    )
     result = supply_cost(_production, lcoe)
     assert set(result.dims) == {
         "commodity",
         "region",
         "technology",
         "timeslice",
-        "year",
     }
 
 
