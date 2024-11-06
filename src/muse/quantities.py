@@ -259,13 +259,9 @@ def decommissioning_demand(
     baseyear = min(year)
     dyears = [u for u in year if u != baseyear]
 
-    # Calculate the decrease in capacity from the current year to future years
-    capacity_decrease = capacity.sel(year=baseyear) - capacity.sel(year=dyears)
-
-    # Calculate production associated with this capacity
     return maximum_production(
         technologies,
-        capacity_decrease,
+        capacity.sel(year=baseyear) - capacity.sel(year=dyears),
         timeslices=timeslices,
     ).clip(min=0)
 

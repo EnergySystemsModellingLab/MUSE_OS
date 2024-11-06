@@ -19,3 +19,14 @@ def camel_to_snake(name: str) -> str:
     result = result.replace("n2_o", "N2O")
     result = result.replace("f-gases", "F-gases")
     return result
+
+
+def kebab_to_camel(string):
+    return "".join(x.capitalize() for x in string.split("-"))
+
+
+def snake_to_kebab(string: str) -> str:
+    from re import sub
+
+    result = sub(r"((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))", r"-\1", string)
+    return result.lower()

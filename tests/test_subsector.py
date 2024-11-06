@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from unittest.mock import MagicMock, patch
 
 import xarray as xr
@@ -47,7 +48,7 @@ def test_subsector_investing_aggregation():
             subsector = Subsector(agents, commodities)
             initial_agents = deepcopy(agents)
             assert {agent.year for agent in agents} == {int(market.year.min())}
-            subsector.aggregate_lp(technologies, market, time_period=5, current_year=5)
+            assert subsector.aggregate_lp(technologies, market) is None
             assert {agent.year for agent in agents} == {int(market.year.min() + 5)}
             for initial, final in zip(initial_agents, agents):
                 assert initial.assets.sum() != final.assets.sum()
@@ -104,7 +105,20 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
         commodity=technologies.commodity, region=technologies.region
     ).interp(year=[2020, 2025])
     assert all(agent.year == 2020 for agent in agents)
-    subsector.aggregate_lp(technologies, market, time_period=5, current_year=2020)
+    result = subsector.aggregate_lp(technologies, market)
+
+    assert result is not None
+    assert len(result) == 2
+
+    lpcosts, lpconstraints = result
+    assert isinstance(lpcosts, xr.Dataset)
+    assert {"search_space", "decision"} == set(lpcosts.data_vars)
+    assert "agent" in lpcosts.coords
+    assert isinstance(lpconstraints, Sequence)
+    assert len(lpconstraints) == 1
+    assert all(isinstance(u, xr.Dataset) for u in lpconstraints)
+    # makes sure agent investment got called
+    assert all(agent.year == 2025 for agent in agents)
 
 
 def test_factory_smoke_test(model, technologies, tmp_path):

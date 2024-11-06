@@ -12,6 +12,14 @@ muse.sectors.abstract module
    :undoc-members:
    :show-inheritance:
 
+muse.sectors.legacy\_sector module
+----------------------------------
+
+.. automodule:: muse.sectors.legacy_sector
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 muse.sectors.preset\_sector module
 ----------------------------------
 

@@ -37,7 +37,7 @@ def test_reduce_assets_with_zero_size(capacity: xr.DataArray):
 
     x = capacity.sel(asset=[])
     actual = reduce_assets(x)
-    assert (actual == x).all()
+    assert actual is x
 
 
 def test_broadcast_tech(technologies, capacity):
