@@ -368,15 +368,13 @@ def annual_levelized_cost_of_energy(
     """
     from muse.costs import annual_levelized_cost_of_energy as aLCOE
     from muse.quantities import consumption
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = (
-        capacity
-        * convert_timeslice(
-            technologies.fixed_outputs, demand.timeslice, QuantityType.EXTENSIVE
-        )
-        * technologies.utilization_factor
+        broadcast_timeslice(capacity)
+        * distribute_timeslice(technologies.fixed_outputs)
+        * broadcast_timeslice(technologies.utilization_factor)
     )
     consump = consumption(technologies=technologies, prices=prices, production=demand)
 
