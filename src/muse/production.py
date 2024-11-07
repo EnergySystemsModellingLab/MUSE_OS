@@ -173,7 +173,7 @@ def costed_production(
     minimum service is applied first.
     """
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
-    from muse.costs import annual_levelized_cost_of_energy_legacy as ALCOE
+    from muse.costs import annual_levelized_cost_of_energy_legacy as aLCOE
     from muse.quantities import (
         costed_production,
         emission,
@@ -181,7 +181,7 @@ def costed_production(
     from muse.utilities import broadcast_techs
 
     if isinstance(costs, str) and costs.lower() == "alcoe":
-        costs = ALCOE
+        costs = aLCOE
     elif isinstance(costs, str):
         raise ValueError(f"Unknown cost {costs}")
     if callable(costs):

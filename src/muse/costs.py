@@ -72,9 +72,6 @@ def net_present_value(
             "var_exp",
             "fix_par",
             "fix_exp",
-            "fixed_outputs",
-            "fixed_inputs",
-            "flexible_inputs",
             "utilization_factor",
         ]
     ]
@@ -85,7 +82,7 @@ def net_present_value(
     years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
     rates = broadcast_timeslice(
         discount_factor(
-            years + 1,
+            years=years,
             interest_rate=techs.interest_rate,
             mask=years <= life,
         )
@@ -263,8 +260,6 @@ def lifetime_levelized_cost_of_energy(
             "fix_par",
             "fix_exp",
             "fixed_outputs",
-            "fixed_inputs",
-            "flexible_inputs",
             "utilization_factor",
         ]
     ]
@@ -275,7 +270,7 @@ def lifetime_levelized_cost_of_energy(
     years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
     rates = broadcast_timeslice(
         discount_factor(
-            years=years + 1,
+            years=years,
             interest_rate=techs.interest_rate,
             mask=years <= life,
         )
@@ -566,6 +561,7 @@ def supply_cost(
             `muse.quantities.production`.
         lcoe: Levelized cost of energy for each good produced. In practice, it can be
             obtained from market prices via
+            `muse.costs.annual_levelized_cost_of_energy` or
             `muse.costs.lifetime_levelized_cost_of_energy`.
         asset_dim: Name of the dimension(s) holding assets, processes or technologies.
     """

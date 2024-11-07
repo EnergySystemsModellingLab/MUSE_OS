@@ -251,9 +251,18 @@ def consumption(
     Currently, the consumption is implemented for commodity_max == +infinity.
     """
     from muse.quantities import consumption
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    result = consumption(technologies=technologies, prices=prices, production=demand)
-    return result.sum("commodity")
+    capacity = capacity_to_service_demand(technologies, demand)
+    production = (
+        broadcast_timeslice(capacity)
+        * distribute_timeslice(technologies.fixed_outputs)
+        * broadcast_timeslice(technologies.utilization_factor)
+    )
+    consump = consumption(
+        technologies=technologies, prices=prices, production=production
+    )
+    return consump.sum("commodity")
 
 
 @register_objective
@@ -343,11 +352,21 @@ def fuel_consumption_cost(
     """Cost of fuels when fulfilling whole demand."""
     from muse.commodities import is_fuel
     from muse.quantities import consumption
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
+
+    capacity = capacity_to_service_demand(technologies, demand)
+    production = (
+        broadcast_timeslice(capacity)
+        * distribute_timeslice(technologies.fixed_outputs)
+        * broadcast_timeslice(technologies.utilization_factor)
+    )
+    consump = consumption(
+        technologies=technologies, prices=prices, production=production
+    )
 
     commodity = is_fuel(technologies.comm_usage.sel(commodity=demand.commodity))
-    fcons = consumption(technologies=technologies, prices=prices, production=demand)
-    prices = filter_input(prices, year=demand.year.item(), commodity=commodity)
-    return (fcons * prices).sum("commodity")
+    prices = filter_input(prices, commodity=commodity)
+    return (consump * prices).sum("commodity")
 
 
 @register_objective(name=["ALCOE"])

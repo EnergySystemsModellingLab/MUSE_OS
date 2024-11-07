@@ -392,12 +392,12 @@ def demand_matched_production(
         **filters: keyword arguments with which to filter the input datasets and
             data arrays., e.g. region, or year.
     """
-    from muse.costs import annual_levelized_cost_of_energy_legacy as ALCOE
+    from muse.costs import annual_levelized_cost_of_energy_legacy as aLCOE
     from muse.demand_matching import demand_matching
     from muse.utilities import broadcast_techs
 
     technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
-    cost = ALCOE(prices=prices, technologies=technodata, **filters)
+    cost = aLCOE(prices=prices, technologies=technodata, **filters)
     max_production = maximum_production(technodata, capacity, **filters)
     assert ("timeslice" in demand.dims) == ("timeslice" in cost.dims)
     return demand_matching(demand, cost, max_production)
