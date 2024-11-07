@@ -280,7 +280,7 @@ class Sector(AbstractSector):  # type: ignore
         )
 
         # Calculate consumption
-        consume = consumption(technologies, supply, market.prices)
+        consume = consumption(technologies, production=supply, prices=market.prices)
 
         # Calculate LCOE
         # We select data for the second year, which corresponds to the investment year

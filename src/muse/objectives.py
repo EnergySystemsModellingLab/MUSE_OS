@@ -376,7 +376,9 @@ def annual_levelized_cost_of_energy(
         * distribute_timeslice(technologies.fixed_outputs)
         * broadcast_timeslice(technologies.utilization_factor)
     )
-    consump = consumption(technologies=technologies, prices=prices, production=demand)
+    consump = consumption(
+        technologies=technologies, prices=prices, production=production
+    )
 
     results = aLCOE(
         technologies=technologies,
@@ -414,7 +416,9 @@ def lifetime_levelized_cost_of_energy(
         * distribute_timeslice(technologies.fixed_outputs)
         * broadcast_timeslice(technologies.utilization_factor)
     )
-    consump = consumption(technologies=technologies, prices=prices, production=demand)
+    consump = consumption(
+        technologies=technologies, prices=prices, production=production
+    )
 
     results = LCOE(
         technologies=technologies,
@@ -449,7 +453,9 @@ def net_present_value(
         * distribute_timeslice(technologies.fixed_outputs)
         * broadcast_timeslice(technologies.utilization_factor)
     )
-    consump = consumption(technologies=technologies, prices=prices, production=demand)
+    consump = consumption(
+        technologies=technologies, prices=prices, production=production
+    )
 
     results = NPV(
         technologies=technologies,
@@ -483,7 +489,9 @@ def net_present_cost(
         * distribute_timeslice(technologies.fixed_outputs)
         * broadcast_timeslice(technologies.utilization_factor)
     )
-    consump = consumption(technologies=technologies, prices=prices, production=demand)
+    consump = consumption(
+        technologies=technologies, prices=prices, production=production
+    )
 
     results = NPC(
         technologies=technologies,
@@ -517,7 +525,9 @@ def equivalent_annual_cost(
         * distribute_timeslice(technologies.fixed_outputs)
         * broadcast_timeslice(technologies.utilization_factor)
     )
-    consump = consumption(technologies=technologies, prices=prices, production=demand)
+    consump = consumption(
+        technologies=technologies, prices=prices, production=production
+    )
 
     results = EAC(
         technologies=technologies,

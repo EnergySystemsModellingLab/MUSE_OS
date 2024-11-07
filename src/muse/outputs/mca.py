@@ -454,7 +454,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
                 * techs.utilization_factor
             )
             consump = consumption(
-                technologies=technologies, prices=prices, production=demand
+                technologies=technologies, prices=prices, production=production
             )
 
             result = LCOE(

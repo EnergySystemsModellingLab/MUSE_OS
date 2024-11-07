@@ -83,10 +83,12 @@ def net_present_value(
     life = techs.technical_life.astype(int)
     iyears = range(life.values.max())
     years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
-    rates = discount_factor(
-        years + 1,
-        interest_rate=techs.interest_rate,
-        mask=years <= life,
+    rates = broadcast_timeslice(
+        discount_factor(
+            years + 1,
+            interest_rate=techs.interest_rate,
+            mask=years <= life,
+        )
     )
 
     # Filters
@@ -124,7 +126,7 @@ def net_present_value(
     ).sum("year")
 
     # Variable costs
-    prod_amplitude = (production / distribute_timeslice(techs.fixed_outputs)).max(
+    prod_amplitude = (production / broadcast_timeslice(techs.fixed_outputs)).max(
         "commodity"
     )
     variable_costs = (
@@ -271,10 +273,12 @@ def lifetime_levelized_cost_of_energy(
     life = techs.technical_life.astype(int)
     iyears = range(life.values.max())
     years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
-    rates = discount_factor(
-        years=years + 1,
-        interest_rate=techs.interest_rate,
-        mask=years <= life,
+    rates = broadcast_timeslice(
+        discount_factor(
+            years=years + 1,
+            interest_rate=techs.interest_rate,
+            mask=years <= life,
+        )
     )
 
     # Filters
@@ -308,7 +312,7 @@ def lifetime_levelized_cost_of_energy(
     ).sum("year")
 
     # Variable costs
-    prod_amplitude = (production / distribute_timeslice(techs.fixed_outputs)).max(
+    prod_amplitude = (production / broadcast_timeslice(techs.fixed_outputs)).max(
         "commodity"
     )
     variable_costs = (
@@ -422,7 +426,7 @@ def annual_levelized_cost_of_energy(
     fixed_costs = distribute_timeslice(techs.fix_par * (capacity**techs.fix_exp))
 
     # Variable costs
-    prod_amplitude = (production / distribute_timeslice(techs.fixed_outputs)).max(
+    prod_amplitude = (production / broadcast_timeslice(techs.fixed_outputs)).max(
         "commodity"
     )
     variable_costs = broadcast_timeslice(
