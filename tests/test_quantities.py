@@ -240,52 +240,6 @@ def test_capacity_in_use(production: xr.DataArray, technologies: xr.Dataset):
     assert capa.values == approx(prod / fout / ufac)
 
 
-def test_supply_cost(production: xr.DataArray, timeslice: xr.Dataset):
-    from numpy import average
-    from numpy.random import random
-
-    from muse.costs import supply_cost
-
-    timeslice = timeslice.timeslice
-    production = production.sel(year=production.year.min(), drop=True)
-    # no zero production, because it does not sit well with np.average
-    production[:] = random(production.shape)
-    lcoe = xr.DataArray(
-        random((len(production.asset), len(timeslice))),
-        coords={"timeslice": timeslice, "asset": production.asset},
-        dims=("asset", "timeslice"),
-    )
-
-    production, lcoe = xr.broadcast(production, lcoe)
-    actual = supply_cost(production, lcoe, asset_dim="asset")
-    for region in set(production.region.values):
-        expected = average(
-            lcoe.sel(asset=production.region == region),
-            weights=production.sel(asset=production.region == region),
-            axis=production.get_axis_num("asset"),
-        )
-
-        assert actual.sel(region=region).values == approx(expected)
-
-
-def test_supply_cost_zero_prod(production: xr.DataArray, timeslice: xr.Dataset):
-    from numpy.random import randn
-
-    from muse.costs import supply_cost
-
-    timeslice = timeslice.timeslice
-    production = production.sel(year=production.year.min(), drop=True)
-    production[:] = 0
-    lcoe = xr.DataArray(
-        randn(len(production.asset), len(timeslice)),
-        coords={"timeslice": timeslice, "asset": production.asset},
-        dims=("asset", "timeslice"),
-    )
-    production, lcoe = xr.broadcast(production, lcoe)
-    actual = supply_cost(production, lcoe, asset_dim="asset")
-    assert actual.values == approx(0e0)
-
-
 def test_emission(production: xr.DataArray, technologies: xr.Dataset):
     from muse.commodities import is_enduse, is_pollutant
     from muse.quantities import emission
