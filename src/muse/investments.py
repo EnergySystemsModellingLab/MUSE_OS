@@ -256,7 +256,7 @@ def adhoc_match_demand(
         production, technologies, year=year, technology=production.replacement
     ).drop_vars("technology")
     if "timeslice" in capacity.dims:
-        capacity = timeslice_op(capacity)
+        capacity = timeslice_max(capacity)
 
     result = xr.Dataset({"capacity": capacity, "production": production})
     return result
@@ -278,7 +278,7 @@ def scipy_match_demand(
     from muse.constraints import ScipyAdapter
 
     if "timeslice" in costs.dims:
-        costs = timeslice_op(costs)
+        costs = timeslice_max(costs)
 
     # Select technodata for the current year
     if "year" in technologies.dims and year is None:
@@ -355,7 +355,7 @@ def cvxopt_match_demand(
         return default_to_scipy()
 
     if "timeslice" in costs.dims:
-        costs = timeslice_op(costs)
+        costs = timeslice_max(costs)
     timeslice = next(cs.timeslice for cs in constraints if "timeslice" in cs.dims)
     adapter = ScipyAdapter.factory(
         techs, -cast(np.ndarray, costs), timeslice, *constraints
@@ -383,7 +383,12 @@ def cvxopt_match_demand(
     return solution
 
 
-def timeslice_op(x: xr.DataArray) -> xr.DataArray:
+def timeslice_max(x: xr.DataArray) -> xr.DataArray:
+    """Find the max value over the timeslice dimension, normlaized for timeslice length.
+
+    This first annualizes the value in each timeslice by dividing by the fraction of the
+    year that the timeslice occupies, then takes the maximum value
+    """
     from muse.timeslices import TIMESLICE, broadcast_timeslice
 
     return (x / (TIMESLICE / broadcast_timeslice(TIMESLICE.sum()))).max("timeslice")
