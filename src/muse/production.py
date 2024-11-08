@@ -31,7 +31,6 @@ Returns:
 """
 
 __all__ = [
-    "demand_matched_production",
     "factory",
     "maximum_production",
     "register_production",
@@ -123,34 +122,3 @@ def supply(
     from muse.quantities import supply
 
     return supply(capacity, market.consumption, technologies)
-
-
-@register_production(name="match")
-def demand_matched_production(
-    market: xr.Dataset,
-    capacity: xr.DataArray,
-    technologies: xr.Dataset,
-    costs: str = "prices",
-) -> xr.DataArray:
-    """Production from matching demand via annual lcoe."""
-    from muse.costs import annual_levelized_cost_of_energy as lcoe
-    from muse.quantities import demand_matched_production, gross_margin
-    from muse.utilities import broadcast_techs
-
-    if costs == "prices":
-        prices = market.prices
-    elif costs == "gross_margin":
-        prices = gross_margin(technologies, capacity, market.prices)
-    elif costs == "lcoe":
-        prices = lcoe(
-            market.prices, cast(xr.Dataset, broadcast_techs(technologies, capacity))
-        )
-    else:
-        raise ValueError(f"Unknown costs option {costs}")
-
-    return demand_matched_production(
-        demand=market.consumption,
-        prices=prices,
-        capacity=capacity,
-        technologies=technologies,
-    )

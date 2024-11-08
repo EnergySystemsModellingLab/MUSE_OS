@@ -396,31 +396,6 @@ def test_emission(production: xr.DataArray, technologies: xr.Dataset):
     assert em.values == approx(fout * enduses.sum().values * prod)
 
 
-def test_demand_matched_production(
-    demand: xr.DataArray, capacity: xr.DataArray, technologies: xr.Dataset
-):
-    from muse.commodities import CommodityUsage, is_enduse
-    from muse.quantities import demand_matched_production, maximum_production
-
-    # try and make sure we have a few more outputs than the default fixture
-    technologies.comm_usage[:] = np.random.choice(
-        [CommodityUsage.PRODUCT] * 3 + list(set(technologies.comm_usage.values)),
-        technologies.comm_usage.shape,
-    )
-    technologies.fixed_outputs[:] = np.random.random(technologies.fixed_outputs.shape)
-    technologies.fixed_outputs[:] *= is_enduse(technologies.comm_usage)
-
-    capacity = capacity.sel(year=capacity.year.min(), drop=True)
-    max_prod = maximum_production(technologies, capacity, timeslices=demand.timeslice)
-    demand = max_prod.sum("asset")
-    demand[:] *= np.random.choice([0, 1, 1 / 2, 1 / 3, 1 / 10], demand.shape)
-    prices = xr.zeros_like(demand)
-    prices[:] = np.random.randint(1, 10, prices.shape)
-    production = demand_matched_production(demand, prices, capacity, technologies)
-    assert set(production.dims) == set(max_prod.dims).union(prices.dims, capacity.dims)
-    assert (production <= max_prod + 1e-8).all()
-
-
 def test_min_production(technologies, capacity, timeslice):
     """Test minimum production quantity."""
     from muse.quantities import maximum_production, minimum_production

@@ -386,36 +386,6 @@ def maximum_production(
     return result.where(is_enduse(result.comm_usage), 0)
 
 
-def demand_matched_production(
-    demand: xr.DataArray,
-    prices: xr.DataArray,
-    capacity: xr.DataArray,
-    technologies: xr.Dataset,
-    **filters,
-) -> xr.DataArray:
-    """Production matching the input demand.
-
-    Arguments:
-        demand: demand to match.
-        prices: price from which to compute the annual levelized cost of energy.
-        capacity: capacity from which to obtain the maximum production constraints.
-        technologies: technologies we are looking at
-        **filters: keyword arguments with which to filter the input datasets and
-            data arrays., e.g. region, or year.
-    """
-    from muse.costs import annual_levelized_cost_of_energy as ALCOE
-    from muse.demand_matching import demand_matching
-    from muse.utilities import broadcast_techs
-
-    technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
-    cost = ALCOE(prices=prices, technologies=technodata, **filters)
-    max_production = maximum_production(
-        technodata, capacity, timeslices=demand, **filters
-    )
-    assert ("timeslice" in demand.dims) == ("timeslice" in cost.dims)
-    return demand_matching(demand, cost, max_production)
-
-
 def capacity_in_use(
     production: xr.DataArray,
     technologies: xr.Dataset,
