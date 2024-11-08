@@ -72,6 +72,7 @@ def net_present_value(
             "var_exp",
             "fix_par",
             "fix_exp",
+            "fixed_outputs",
             "utilization_factor",
         ]
     ]

@@ -270,12 +270,13 @@ def decommissioning_demand(
 def consumption(
     technologies: xr.Dataset,
     production: xr.DataArray,
-    prices: xr.DataArray,
+    prices: Optional[xr.DataArray] = None,
     **kwargs,
 ) -> xr.DataArray:
     """Commodity consumption when fulfilling the whole production.
 
-    Currently, the consumption is implemented for commodity_max == +infinity.
+    Currently, the consumption is implemented for commodity_max == +infinity. If prices
+    are not given, then flexible consumption is *not* considered.
     """
     from muse.commodities import is_fuel
     from muse.timeslices import broadcast_timeslice
@@ -299,6 +300,11 @@ def consumption(
 
     # If there are no flexible inputs, then we are done
     if not (params.flexible_inputs.sel(commodity=params_fuels) > 0).any():
+        return consumption_fixed
+
+    # If prices are not given, then we can't consider flexible inputs, so just return
+    # the fixed consumption
+    if prices is None:
         return consumption_fixed
 
     # Flexible inputs
@@ -343,8 +349,6 @@ def maximum_production(
         technologies: xr.Dataset describing the features of the technologies of
             interests.  It should contain `fixed_outputs` and `utilization_factor`. It's
             shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
-        timeslices: xr.DataArray of the timeslicing scheme. Production data will be
-            returned in this format.
         filters: keyword arguments are used to filter down the capacity and
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are
