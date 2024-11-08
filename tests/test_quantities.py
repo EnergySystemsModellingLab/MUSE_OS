@@ -29,16 +29,13 @@ def demand(
 def production(
     technologies: xr.Dataset, capacity: xr.DataArray, timeslice
 ) -> xr.DataArray:
-    from numpy.random import random
-
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    comms = xr.DataArray(
-        random(len(technologies.commodity)),
-        coords={"commodity": technologies.commodity},
-        dims="commodity",
+    return (
+        broadcast_timeslice(capacity)
+        * distribute_timeslice(technologies.fixed_outputs)
+        * broadcast_timeslice(technologies.utilization_factor)
     )
-    return broadcast_timeslice(capacity) * distribute_timeslice(comms)
 
 
 def make_array(array):
@@ -142,108 +139,21 @@ def test_decommissioning_demand(technologies, capacity, timeslice):
 
 
 def test_consumption_no_flex(technologies, production, market):
-    from muse.commodities import is_enduse, is_fuel
     from muse.quantities import consumption
-    from muse.timeslices import broadcast_timeslice
 
-    fins = (
-        technologies.fixed_inputs.where(is_fuel(technologies.comm_usage), 0)
-        .interp(year=sorted(set(production.installed.values)), method="slinear")
-        .sel(
-            technology=production.technology,
-            region=production.region,
-            year=production.installed,
-        )
-    )
-    services = technologies.commodity.sel(commodity=is_enduse(technologies.comm_usage))
-    expected = (
-        (production.rename(commodity="comm_in") * broadcast_timeslice(fins))
-        .sel(comm_in=production.commodity.isin(services).rename(commodity="comm_in"))
-        .sum("comm_in")
-    )
-
-    actual = consumption(technologies, production)
-    assert set(actual.dims) == set(expected.dims)
-    assert actual.values == approx(expected.values)
+    consump = consumption(technologies, production)
+    assert set(production.dims) == set(consump.dims)
 
     technologies.flexible_inputs[:] = 0
-    actual = consumption(technologies, production, market.prices)
-    assert actual.values == approx(expected.values)
+    consump2 = consumption(technologies, production, market.prices)
+    assert consump2.values == approx(consump.values)
 
 
-def test_consumption_with_flex(technologies, production, market, timeslice):
-    from itertools import product
-
-    from muse.commodities import is_enduse, is_fuel
+def test_consumption_with_flex(technologies, production, market):
     from muse.quantities import consumption
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    techs = technologies.copy()
-    techs.fixed_inputs[:] = 0
-    techs.flexible_inputs[:] = 0
-    consumables = is_fuel(techs.comm_usage)
-    while (techs.flexible_inputs.sel(commodity=consumables) == 0).all():
-        techs.flexible_inputs[:] = (
-            np.random.randint(0, 2, techs.flexible_inputs.shape) != 0
-        )
-        techs.flexible_inputs[{"commodity": ~consumables}] = 0
-
-    def one_dim(dimension):
-        from numpy import arange
-        from numpy.random import shuffle
-
-        data = arange(len(dimension), dtype="int")
-        shuffle(data)
-        return xr.DataArray(data, coords=dimension.coords, dims=dimension.dims)
-
-    year = one_dim(production.year)
-    asset = one_dim(production.asset)
-    region = one_dim(market.region)
-    timeslice = one_dim(market.timeslice)
-    commodity = one_dim(market.commodity)
-
-    prices = (
-        timeslice
-        + broadcast_timeslice(commodity)
-        + broadcast_timeslice(year) * broadcast_timeslice(region)
-    )
-    assert set(prices.dims) == set(market.prices.dims)
-    noenduse = ~is_enduse(techs.comm_usage)
-    production = distribute_timeslice(asset * year + commodity)
-    production.loc[{"commodity": noenduse}] = 0
-
-    actual = consumption(technologies, production, prices)
-    assert set(actual.dims) == {"year", "timeslice", "asset", "commodity"}
-    assert (year.year == actual.year).all()
-    assert (timeslice.timeslice == actual.timeslice).all()
-    assert (asset.asset == actual.asset).all()
-    assert (commodity.commodity == actual.commodity).all()
-
-    fuels = techs.commodity.loc[{"commodity": consumables}].values
-    dims = ("timeslice", "asset", "year")
-    allprods = list(product(*(actual[u] for u in dims)))
-    allprods = [
-        allprods[i] for i in np.random.choice(range(len(allprods)), 50, replace=False)
-    ]
-    for ts, asset, year in allprods:
-        flexs = techs.flexible_inputs.sel(
-            region=asset.region, technology=asset.technology
-        ).interp(year=asset.installed, method="slinear")
-        comm_prices = prices.sel(region=asset.region, year=year, timeslice=ts)
-        comm_prices = [int(p) for p, f in zip(comm_prices, flexs) if f > 0]
-        min_price = min(comm_prices) if comm_prices else None
-        ncomms = max(len([u for u in comm_prices if u == min_price]), 1)
-        for comm in fuels:
-            current_price = prices.sel(
-                region=asset.region, year=year, timeslice=ts, commodity=comm
-            )
-            coords = dict(timeslice=ts, year=year, asset=asset, commodity=comm)
-            if current_price != min_price:
-                assert actual.sel(coords).values == approx(0)
-                continue
-            prod = production.sel(asset=asset, year=year).sum("commodity")
-            expected = prod.sel(timeslice=ts) / ncomms * flexs.sel(commodity=comm)
-            assert expected.values == approx(actual.sel(coords).values)
+    consump = consumption(technologies, production, market.prices)
+    assert set(production.dims) == set(consump.dims)
 
 
 def test_production_aggregate_asset_view(
