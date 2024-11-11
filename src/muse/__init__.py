@@ -31,35 +31,50 @@ def _create_logger(color: bool = True):
 
     logger.setLevel(logging.DEBUG)
 
+    add_file_logger()
+
     return logger
 
 
-def add_file_logger(file_path: str | None) -> None:
+def add_file_logger() -> None:
     """Adds a file logger to the main logger.
 
-    If the file already exists, it is deleted.
-
-    Args:
-        file_path (str): Path to the file where the logs will be written.
+    The file logger is split into two files: one for INFO and DEBUG messages, and one
+    for WARNING messages and above to avoid cluttering the main log file and highlight
+    potential issues.
     """
-    import datetime
     import logging
     from pathlib import Path
 
-    if not file_path:
-        file_path = (
-            f"muse_{datetime.datetime.now().strftime('%Y-%m-%d_%H.%M.%S-%f')}.log"
-        )
+    from .defaults import DEFAULT_OUTPUT_DIRECTORY
 
-    if (path := Path(file_path)).exists():
-        path.unlink()
-
-    file_handler = logging.FileHandler(file_path)
-    file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(
-        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
-    logging.getLogger(name=__name__).addHandler(file_handler)
+
+    # Sets the warning log, for warnings and above
+    warning_file = Path(DEFAULT_OUTPUT_DIRECTORY) / "muse_warning.log"
+    if warning_file.exists():
+        warning_file.unlink()
+
+    warning_file_handler = logging.FileHandler(warning_file)
+    warning_file_handler.setLevel(logging.WARNING)
+    warning_file_handler.setFormatter(formatter)
+    warning_file_handler.filters = [lambda record: record.levelno > logging.INFO]
+
+    logging.getLogger(name=__name__).addHandler(warning_file_handler)
+
+    # Sets the info log, for debug and info only
+    info_file = Path(DEFAULT_OUTPUT_DIRECTORY) / "muse_info.log"
+    if info_file.exists():
+        info_file.unlink()
+
+    info_file_handler = logging.FileHandler(info_file)
+    info_file_handler.setLevel(logging.DEBUG)
+    info_file_handler.setFormatter(formatter)
+    info_file_handler.filters = [lambda record: record.levelno <= logging.INFO]
+
+    logging.getLogger(name=__name__).addHandler(info_file_handler)
 
 
 logger = _create_logger(os.environ.get("MUSE_COLOR_LOG") != "False")
