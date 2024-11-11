@@ -114,7 +114,6 @@ def new_and_retro(
     technologies: xr.Dataset,
     current_year: int,
     forecast: int,
-    production: Union[str, Mapping, Callable] = "maximum_production",
 ) -> xr.DataArray:
     r"""Splits demand across new and retro agents.
 
@@ -245,7 +244,6 @@ def new_and_retro(
         capacity,
         market,
         technologies,
-        production=production,
         current_year=current_year,
         forecast=forecast,
     )
@@ -330,7 +328,6 @@ def standard_demand(
     technologies: xr.Dataset,
     current_year: int,
     forecast: int,
-    production: Union[str, Mapping, Callable] = "maximum_production",
 ) -> xr.DataArray:
     r"""Splits demand across new agents.
 
@@ -381,7 +378,6 @@ def standard_demand(
         capacity,
         market,
         technologies,
-        production=production,
         current_year=current_year,
         forecast=forecast,
     )
@@ -441,7 +437,6 @@ def unmet_forecasted_demand(
     technologies: xr.Dataset,
     current_year: int,
     forecast: int,
-    production: Union[str, Mapping, Callable] = "maximum_production",
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
     from muse.commodities import is_enduse
@@ -452,7 +447,7 @@ def unmet_forecasted_demand(
     smarket: xr.Dataset = market.where(is_enduse(comm_usage), 0).interp(year=year)
     capacity = reduce_assets([u.assets.capacity.interp(year=year) for u in agents])
     capacity = cast(xr.DataArray, capacity)
-    result = unmet_demand(smarket, capacity, technologies, production)
+    result = unmet_demand(smarket, capacity, technologies)
     if "year" in result.dims:
         result = result.squeeze("year")
     return result
@@ -514,7 +509,6 @@ def unmet_demand(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    production: Union[str, Mapping, Callable] = "maximum_production",
 ):
     r"""Share of the demand that cannot be serviced by the existing assets.
 
@@ -529,13 +523,12 @@ def unmet_demand(
     :math:`P` is any function registered with
     :py:func:`@register_production<muse.production.register_production>`.
     """
-    from muse.production import factory as prod_factory
-
-    prod_method = production if callable(production) else prod_factory(production)
-    assert callable(prod_method)
+    from muse.quantities import supply
 
     # Calculate production by existing assets
-    produced = prod_method(market=market, capacity=capacity, technologies=technologies)
+    produced = supply(
+        capacity=capacity, demand=market.consumption, technologies=technologies
+    )
 
     # Total commodity production by summing over assets
     if "dst_region" in produced.dims:
@@ -595,7 +588,6 @@ def new_and_retro_demands(
     technologies: xr.Dataset,
     current_year: int,
     forecast: int,
-    production: Union[str, Mapping, Callable] = "maximum_production",
 ) -> xr.Dataset:
     """Splits demand into *new* and *retrofit* demand.
 
@@ -609,10 +601,7 @@ def new_and_retro_demands(
     """
     from numpy import minimum
 
-    from muse.production import factory as prod_factory
-
-    production_method = production if callable(production) else prod_factory(production)
-    assert callable(production_method)
+    from muse.quantities import maximum_production
 
     # Interpolate market to forecast year
     smarket: xr.Dataset = market.interp(year=[current_year, current_year + forecast])
@@ -630,10 +619,10 @@ def new_and_retro_demands(
 
     # Total production in the forecast year by existing assets
     service = (
-        production_method(
-            smarket.sel(year=current_year + forecast),
-            capa.sel(year=current_year + forecast),
+        maximum_production(
             technologies,
+            capa.sel(year=current_year + forecast),
+            timeslices=smarket.timeslice,
         )
         .groupby("region")
         .sum("asset")

@@ -11,7 +11,6 @@ import pandas as pd
 import xarray as xr
 
 from muse.agents import AbstractAgent
-from muse.production import PRODUCTION_SIGNATURE
 from muse.sectors.abstract import AbstractSector
 from muse.sectors.register import register_sector
 from muse.sectors.subsector import Subsector
@@ -25,10 +24,8 @@ class Sector(AbstractSector):  # type: ignore
     def factory(cls, name: str, settings: Any) -> Sector:
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory
-        from muse.production import factory as pfactory
         from muse.readers import read_timeslices
         from muse.readers.toml import read_technodata
-        from muse.utilities import nametuple_to_dict
 
         # Read sector settings
         sector_settings = getattr(settings.sectors, name)._asdict()
@@ -71,15 +68,6 @@ class Sector(AbstractSector):  # type: ignore
         # Create outputs
         outputs = ofactory(*sector_settings.pop("outputs", []), sector_name=name)
 
-        supply_args = sector_settings.pop(
-            "supply", sector_settings.pop("dispatch_production", {})
-        )
-        if isinstance(supply_args, str):
-            supply_args = {"name": supply_args}
-        else:
-            supply_args = nametuple_to_dict(supply_args)
-        supply = pfactory(**supply_args)
-
         # Create interactions
         interactions = interaction_factory(sector_settings.pop("interactions", None))
 
@@ -89,6 +77,7 @@ class Sector(AbstractSector):  # type: ignore
             "commodities_out",
             "commodities_in",
             "technodata_timeslices",
+            "dispatch_production",  # old parameter which may still exist in the file
         ):
             sector_settings.pop(attr, None)
         return cls(
@@ -96,7 +85,6 @@ class Sector(AbstractSector):  # type: ignore
             technologies,
             subsectors=subsectors,
             timeslices=timeslices,
-            supply_prod=supply,
             outputs=outputs,
             interactions=interactions,
             **sector_settings,
@@ -111,11 +99,9 @@ class Sector(AbstractSector):  # type: ignore
         interactions: Callable[[Sequence[AbstractAgent]], None] | None = None,
         interpolation: str = "linear",
         outputs: Callable | None = None,
-        supply_prod: PRODUCTION_SIGNATURE | None = None,
     ):
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory
-        from muse.production import maximum_production
 
         self.name: str = name
         """Name of the sector."""
@@ -155,14 +141,6 @@ class Sector(AbstractSector):  # type: ignore
             cast(Callable, ofactory()) if outputs is None else outputs
         )
         """A function for outputting data for post-mortem analysis."""
-        self.supply_prod = (
-            supply_prod if supply_prod is not None else maximum_production
-        )
-        """ Computes production as used to return the supply to the MCA.
-
-        It can be anything registered with
-        :py:func:`@register_production<muse.production.register_production>`.
-        """
         self.output_data: xr.Dataset
         """Full supply, consumption and costs data for the most recent year."""
 
@@ -282,7 +260,7 @@ class Sector(AbstractSector):  # type: ignore
         """Computes resulting market: production, consumption, and costs."""
         from muse.commodities import is_pollutant
         from muse.costs import annual_levelized_cost_of_energy, supply_cost
-        from muse.quantities import consumption
+        from muse.quantities import consumption, supply
         from muse.timeslices import QuantityType, convert_timeslice
         from muse.utilities import broadcast_techs
 
@@ -290,26 +268,24 @@ class Sector(AbstractSector):  # type: ignore
         capacity = self.capacity.interp(year=years, **self.interpolation)
 
         # Calculate supply
-        supply = self.supply_prod(
-            market=market, capacity=capacity, technologies=technologies
-        )
-        if "timeslice" in market.prices.dims and "timeslice" not in supply.dims:
-            supply = convert_timeslice(supply, market.timeslice, QuantityType.EXTENSIVE)
+        sup = supply(capacity, market.consumption, technologies)
+        if "timeslice" in market.prices.dims and "timeslice" not in sup.dims:
+            sup = convert_timeslice(sup, market.timeslice, QuantityType.EXTENSIVE)
 
         # Calculate consumption
-        consume = consumption(technologies, supply, market.prices)
+        consume = consumption(technologies, sup, market.prices)
 
         # Calculate commodity prices
-        technodata = cast(xr.Dataset, broadcast_techs(technologies, supply))
+        technodata = cast(xr.Dataset, broadcast_techs(technologies, sup))
         costs = supply_cost(
-            supply.where(~is_pollutant(supply.comm_usage), 0),
+            sup.where(~is_pollutant(sup.comm_usage), 0),
             annual_levelized_cost_of_energy(
-                prices=market.prices.sel(region=supply.region), technologies=technodata
+                prices=market.prices.sel(region=sup.region), technologies=technodata
             ),
             asset_dim="asset",
         )
 
-        return supply, consume, costs
+        return sup, consume, costs
 
     @property
     def capacity(self) -> xr.DataArray:
