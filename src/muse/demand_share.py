@@ -130,7 +130,6 @@ def new_and_retro(
             to the production method. The ``consumption`` reflects the demand for the
             commodities produced by the current sector.
         technologies: quantities describing the technologies.
-        production: Production method
         current_year: Current year of simulation
         forecast: How many years to forecast ahead
 
@@ -160,8 +159,8 @@ def new_and_retro(
        simplicity. The resulting expression has the same indices as the consumption
        :math:`\mathcal{C}_{c, s}^r`.
 
-       :math:`P` is any function registered with
-       :py:func:`@register_production<muse.production.register_production>`.
+       :math:`P` is the maximum production, given by
+       <muse.quantities.maximum_production>`.
 
 
     #. the *new* demand :math:`N` is defined as:
@@ -344,7 +343,6 @@ def standard_demand(
             to the production method. The ``consumption`` reflects the demand for the
             commodities produced by the current sector.
         technologies: quantities describing the technologies.
-        production: Production method
         current_year: Current year of simulation
         forecast: How many years to forecast ahead
 
@@ -520,12 +518,11 @@ def unmet_demand(
     The resulting expression has the same indices as the consumption
     :math:`\mathcal{C}_{c, s}^r`.
 
-    :math:`P` is any function registered with
-    :py:func:`@register_production<muse.production.register_production>`.
+    :math:`P` is the maximum production, given by <muse.quantities.maximum_production>.
     """
     from muse.quantities import maximum_production
 
-    # Calculate production by existing assets
+    # Calculate maximum production by existing assets
     produced = maximum_production(
         capacity=capacity, technologies=technologies, timeslices=market.timeslice
     )
@@ -562,7 +559,8 @@ def new_consumption(
                 - P[\mathcal{M}(y + \Delta y), \mathcal{A}_{a, s}^r(y)]
         \right)
 
-    Where :math:`P` is a production function taking the market and assets as arguments.
+    Where :math:`P` the maximum production by existing assets, given by
+    <muse.quantities.maximum_production>.
     """
     from numpy import minimum
 
@@ -617,7 +615,7 @@ def new_and_retro_demands(
     if "year" in new_demand.dims:
         new_demand = new_demand.squeeze("year")
 
-    # Total production in the forecast year by existing assets
+    # Maximum production in the forecast year by existing assets
     service = (
         maximum_production(
             technologies,
