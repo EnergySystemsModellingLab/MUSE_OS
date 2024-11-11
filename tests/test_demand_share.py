@@ -120,17 +120,18 @@ def test_new_retro_split_zero_new_unmet(technologies, stock, matching_market):
 
 def test_new_retro_accounting_identity(technologies, stock, market):
     from muse.demand_share import new_and_retro_demands
-    from muse.production import factory
+    from muse.quantities import maximum_production
 
     share = new_and_retro_demands(
         stock.capacity, market, technologies, current_year=2010, forecast=5
     )
     assert (share >= 0).all()
 
-    production_method = factory()
     serviced = (
-        production_method(
-            market.interp(year=2015), stock.capacity.interp(year=2015), technologies
+        maximum_production(
+            capacity=stock.capacity.interp(year=2015),
+            technologies=technologies,
+            timeslices=market.timeslice,
         )
         .groupby("region")
         .sum("asset")

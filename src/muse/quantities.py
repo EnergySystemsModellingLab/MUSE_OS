@@ -8,7 +8,7 @@ Functions for calculating costs (e.g. LCOE, EAC) are in the `costs` module.
 """
 
 from collections.abc import Sequence
-from typing import Callable, Optional, Union, cast
+from typing import Optional, Union, cast
 
 import numpy as np
 import xarray as xr
@@ -18,8 +18,6 @@ def supply(
     capacity: xr.DataArray,
     demand: xr.DataArray,
     technologies: Union[xr.Dataset, xr.DataArray],
-    interpolation: str = "linear",
-    production_method: Optional[Callable] = None,
 ) -> xr.DataArray:
     """Production and emission for a given capacity servicing a given demand.
 
@@ -36,8 +34,6 @@ def supply(
             exceed its share of the demand.
         technologies: factors bindings the capacity of an asset with its production of
             commodities and environmental pollutants.
-        interpolation: Interpolation type
-        production_method: Production for a given capacity
 
     Return:
         A data array where the commodity dimension only contains actual outputs (i.e. no
@@ -45,10 +41,7 @@ def supply(
     """
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
 
-    if production_method is None:
-        production_method = maximum_production
-
-    maxprod = production_method(technologies, capacity, timeslices=demand)
+    maxprod = maximum_production(technologies, capacity, timeslices=demand)
     minprod = minimum_production(technologies, capacity, timeslices=demand)
     size = np.array(maxprod.region).size
     # in presence of trade demand needs to map maxprod dst_region
