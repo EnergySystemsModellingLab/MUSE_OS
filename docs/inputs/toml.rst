@@ -66,9 +66,6 @@ a whole.
 *log_level*
    verbosity of the output. Valid options, from the highest to the lowest level of verbosity, are: "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL".
 
-*log_file*
-   Path to a file where the log will be saved, in addition to printing it to the console. If not given, the log will be added to a file named `muse_CURRENT_DATETIME.log` in the current working directory.
-
 *equilibirum_variable*
    whether equilibrium of `demand` or `prices` should be sought. Defaults to `demand`.
 

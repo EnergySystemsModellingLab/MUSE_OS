@@ -31,8 +31,6 @@ def _create_logger(color: bool = True):
 
     logger.setLevel(logging.DEBUG)
 
-    add_file_logger()
-
     return logger
 
 
@@ -62,7 +60,7 @@ def add_file_logger() -> None:
     warning_file_handler.setFormatter(formatter)
     warning_file_handler.filters = [lambda record: record.levelno > logging.INFO]
 
-    logging.getLogger(name=__name__).addHandler(warning_file_handler)
+    logging.getLogger("muse").addHandler(warning_file_handler)
 
     # Sets the info log, for debug and info only
     info_file = Path(DEFAULT_OUTPUT_DIRECTORY) / "muse_info.log"
@@ -74,7 +72,7 @@ def add_file_logger() -> None:
     info_file_handler.setFormatter(formatter)
     info_file_handler.filters = [lambda record: record.levelno <= logging.INFO]
 
-    logging.getLogger(name=__name__).addHandler(info_file_handler)
+    logging.getLogger("muse").addHandler(info_file_handler)
 
 
 logger = _create_logger(os.environ.get("MUSE_COLOR_LOG") != "False")

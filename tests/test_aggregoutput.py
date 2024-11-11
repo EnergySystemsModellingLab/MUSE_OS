@@ -9,7 +9,7 @@ def test_aggregate_sector():
     """
     from pandas import DataFrame, concat
 
-    mca = examples.model("multiple_agents")
+    mca = examples.model("multiple_agents", test=True)
     year = [2020, 2025]
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
     agent_list = [list(a.agents) for a in sector_list]
@@ -43,7 +43,7 @@ def test_aggregate_sectors():
 
     from muse.outputs.mca import _aggregate_sectors
 
-    mca = examples.model("multiple_agents")
+    mca = examples.model("multiple_agents", test=True)
     year = [2020, 2025, 2030]
     sector_list = [sector for sector in mca.sectors if "preset" not in sector.name]
     agent_list = [list(a.agents) for a in sector_list]
@@ -83,7 +83,7 @@ def test_aggregate_sector_manyregions():
 
     from muse.outputs.mca import _aggregate_sectors
 
-    mca = examples.model("multiple_agents")
+    mca = examples.model("multiple_agents", test=True)
     residential = next(sector for sector in mca.sectors if sector.name == "residential")
     agents = list(residential.agents)
     agents[0].assets["region"] = "BELARUS"
