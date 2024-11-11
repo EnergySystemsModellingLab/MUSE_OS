@@ -327,6 +327,22 @@ A sector accepts these attributes:
 
    .. _scipy method's kind attribute: https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
 
+*dispatch_production*
+   The method used to calculate supply of commodities after investments have been made.
+
+   MUSE provides two methods in :py:mod:`muse.production`:
+
+   - share: assets each supply a proportion of demand based on their share of total
+      capacity
+   - maximum: the production is the maximum production for the existing capacity and
+      the technology's utilization factor.
+      See :py:func:`muse.production.maximum_production`.
+
+    Defaults to "share".
+
+    Additional methods can be registered with
+    :py:func:`muse.production.register_production`
+
 Sectors contain a number of subsections:
 *interactions*
    Defines interactions between agents. These interactions take place right before new

@@ -56,6 +56,13 @@ PresetSector
    :members:
 
 
+Production
+~~~~~~~~~~
+
+.. automodule:: muse.production
+   :members:
+
+
 Agent Interactions
 ~~~~~~~~~~~~~~~~~~
 
