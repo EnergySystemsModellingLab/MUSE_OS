@@ -523,11 +523,11 @@ def unmet_demand(
     :math:`P` is any function registered with
     :py:func:`@register_production<muse.production.register_production>`.
     """
-    from muse.quantities import supply
+    from muse.quantities import maximum_production
 
     # Calculate production by existing assets
-    produced = supply(
-        capacity=capacity, demand=market.consumption, technologies=technologies
+    produced = maximum_production(
+        capacity=capacity, technologies=technologies, timeslices=market.timeslice
     )
 
     # Total commodity production by summing over assets
