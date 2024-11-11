@@ -38,7 +38,7 @@ def muse_main(settings, model, copy):
     from logging import getLogger
     from pathlib import Path
 
-    from muse import examples
+    from muse import add_file_logger, examples
     from muse.mca import MCA
     from muse.readers.toml import read_settings
 
@@ -53,6 +53,7 @@ def muse_main(settings, model, copy):
     else:
         settings = read_settings(settings)
         getLogger("muse").setLevel(settings.log_level)
+        add_file_logger(getattr(settings, "log_file", None))
         MCA.factory(settings).run()
 
 

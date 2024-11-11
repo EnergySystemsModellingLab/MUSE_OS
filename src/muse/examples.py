@@ -55,6 +55,7 @@ def model(name: str = "default") -> MCA:
     """Fully constructs a given example model."""
     from tempfile import TemporaryDirectory
 
+    from muse import add_file_logger
     from muse.readers.toml import read_settings
 
     # we could modify the settings directly, but instead we use the copy_model function.
@@ -63,6 +64,7 @@ def model(name: str = "default") -> MCA:
         path = copy_model(name, tmpdir)
         settings = read_settings(path / "settings.toml")
         getLogger("muse").setLevel(settings.log_level)
+        add_file_logger(getattr(settings, "log_file", None))
         return MCA.factory(settings)
 
 
