@@ -303,41 +303,21 @@ A sector accepts these attributes:
 
    .. _scipy method's kind attribute: https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
 
-*investment_production*
-   In its simplest form, this is the name of a method to compute the production from a
-   sector, as used when splitting the demand across agents. In other words, this is the
-   computation of the production which affects future investments. In it's more general
-   form, *production* can be a subsection of its own, with a "name" attribute. For
-   instance:
-
-   .. code-block:: TOML
-
-      [sectors.residential.production]
-      name = "match"
-      costing = "prices"
+*dispatch_production*
+   The method used to calculate supply of commodities after investments have been made.
 
    MUSE provides two methods in :py:mod:`muse.production`:
 
-   - share: the production is the maximum production for the existing capacity and
+   - share: assets each supply a proportion of demand based on their share of total
+      capacity
+   - maximum: the production is the maximum production for the existing capacity and
       the technology's utilization factor.
       See :py:func:`muse.production.maximum_production`.
-   - match: production and demand are matched according to a given cost metric. The
-      cost metric defaults to "prices". It can be modified by using the general form
-      given above, with a "costing" attribute. The latter can be "prices",
-      "gross_margin", or "lcoe".
-      See :py:func:`muse.production.demand_matched_production`.
-
-   *production* can also refer to any custom production method registered with MUSE via
-   :py:func:`muse.production.register_production`.
 
    Defaults to "share".
 
-*dispatch_production*
-   The name of the production method used to compute the sector's output, as returned
-   to the muse market clearing algorithm. In other words, this is computation of the
-   production method which will affect other sectors.
-
-   It has the same format and options as the *production* attribute above.
+   Additional methods can be registered with
+   :py:func:`muse.production.register_production`
 
 Sectors contain a number of subsections:
 *interactions*
