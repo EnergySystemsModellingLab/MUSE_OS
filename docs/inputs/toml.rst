@@ -338,10 +338,10 @@ A sector accepts these attributes:
       the technology's utilization factor.
       See :py:func:`muse.production.maximum_production`.
 
-    Defaults to "share".
+   Defaults to "share".
 
-    Additional methods can be registered with
-    :py:func:`muse.production.register_production`
+   Additional methods can be registered with
+   :py:func:`muse.production.register_production`
 
 Sectors contain a number of subsections:
 *interactions*
