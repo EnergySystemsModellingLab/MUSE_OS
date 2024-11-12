@@ -277,50 +277,46 @@ def consumption(
     Currently, the consumption is implemented for commodity_max == +infinity. If prices
     are not given, then flexible consumption is *not* considered.
     """
-    from muse.commodities import is_enduse, is_fuel
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.commodities import is_fuel
     from muse.utilities import filter_with_template
 
     params = filter_with_template(
-        technologies[["fixed_inputs", "flexible_inputs"]], production, **kwargs
+        technologies[["fixed_inputs", "flexible_inputs", "fixed_outputs"]],
+        production,
+        **kwargs,
     )
-
-    # sum over end-use products, if the dimension exists in the input
-
-    comm_usage = technologies.comm_usage.sel(commodity=production.commodity)
-
-    production = production.sel(commodity=is_enduse(comm_usage)).sum("commodity")
-
-    if prices is not None and "timeslice" in prices.dims:
-        production = convert_timeslice(  # type: ignore
-            production, prices, QuantityType.EXTENSIVE
-        )
-
     params_fuels = is_fuel(params.comm_usage)
-    consumption = production * params.fixed_inputs.where(params_fuels, 0)
 
-    if prices is None:
-        return consumption
+    # Calculate degree of technology activity
+    # We do this by dividing the production by the output flow per unit of activity
+    prod_amplitude = (production / params.fixed_outputs).max("commodity")
 
+    # Calculate consumption of fixed commodities
+    consumption_fixed = prod_amplitude * params.fixed_inputs
+
+    # If there are no flexible inputs, then we are done
     if not (params.flexible_inputs.sel(commodity=params_fuels) > 0).any():
-        return consumption
+        return consumption_fixed
 
-    prices = filter_with_template(prices, production, installed_as_year=False, **kwargs)
-    # technology with flexible inputs
+    # If prices are not given, then we can't consider flexible inputs, so just return
+    # the fixed consumption
+    if prices is None:
+        return consumption_fixed
+
+    # Flexible inputs
     flexs = params.flexible_inputs.where(params_fuels, 0)
-    # cheapest fuel for each flexible technology
-    assert prices is not None
-    flexprice = [i for i in flexs.commodity.values if i in prices.commodity.values]
-    assert all(flexprice)
-    priceflex = prices.loc[dict(commodity=flexs.commodity)]
+
+    # Calculate the cheapest fuel for each flexible technology
+    priceflex = prices.loc[dict(commodity=flexs.commodity)] * flexs
     minprices = flexs.commodity[
         priceflex.where(flexs > 0, priceflex.max() + 1).argmin("commodity")
     ]
-    # add consumption from cheapest fuel
-    assert all(flexs.commodity.values == consumption.commodity.values)
-    flex = flexs.where(minprices == flexs.commodity, 0)
-    flex = flex / (flex > 0).sum("commodity").clip(min=1)
-    return consumption + flex * production
+
+    # Consumption of flexible commodities
+    assert all(flexs.commodity.values == consumption_fixed.commodity.values)
+    flex = flexs.where(flexs.commodity == minprices, 0)
+    consumption_flex = flex * prod_amplitude
+    return consumption_fixed + consumption_flex
 
 
 def maximum_production(
