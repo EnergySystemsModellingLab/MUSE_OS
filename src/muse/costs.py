@@ -124,13 +124,13 @@ def net_present_value(
     ).sum("year")
 
     # Variable costs
-    prod_amplitude = (production / broadcast_timeslice(techs.fixed_outputs)).max(
+    tech_activity = (production / broadcast_timeslice(techs.fixed_outputs)).max(
         "commodity"
     )
     variable_costs = (
         (
             broadcast_timeslice(techs.var_par)
-            * prod_amplitude ** broadcast_timeslice(techs.var_exp)
+            * tech_activity ** broadcast_timeslice(techs.var_exp)
         )
         * rates
     ).sum("year")
@@ -308,13 +308,13 @@ def lifetime_levelized_cost_of_energy(
     ).sum("year")
 
     # Variable costs
-    prod_amplitude = (production / broadcast_timeslice(techs.fixed_outputs)).max(
+    tech_activity = (production / broadcast_timeslice(techs.fixed_outputs)).max(
         "commodity"
     )
     variable_costs = (
         (
             broadcast_timeslice(techs.var_par)
-            * prod_amplitude ** broadcast_timeslice(techs.var_exp)
+            * tech_activity ** broadcast_timeslice(techs.var_exp)
         )
         * rates
     ).sum("year")
@@ -422,12 +422,12 @@ def annual_levelized_cost_of_energy(
     fixed_costs = distribute_timeslice(techs.fix_par * (capacity**techs.fix_exp))
 
     # Variable costs
-    prod_amplitude = (production / broadcast_timeslice(techs.fixed_outputs)).max(
+    tech_activity = (production / broadcast_timeslice(techs.fixed_outputs)).max(
         "commodity"
     )
     variable_costs = broadcast_timeslice(
         techs.var_par
-    ) * prod_amplitude ** broadcast_timeslice(techs.var_exp)
+    ) * tech_activity ** broadcast_timeslice(techs.var_exp)
 
     # Production
     prod = (
