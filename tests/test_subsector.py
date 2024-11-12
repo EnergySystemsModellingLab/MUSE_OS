@@ -33,7 +33,7 @@ def test_subsector_investing_aggregation():
     sector_list = ["residential", "power", "gas"]
 
     for model in model_list:
-        mca = examples.model(model)
+        mca = examples.model(model, test=True)
         for sname in sector_list:
             agents = list(examples.sector(sname, model).agents)
             sector = next(sector for sector in mca.sectors if sector.name == sname)
