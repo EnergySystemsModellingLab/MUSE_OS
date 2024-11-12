@@ -122,15 +122,20 @@ def net_present_value(
     material_costs = (cons * prices_material * rates).sum(("commodity", "year"))
 
     # Fixed costs
-    fixed_costs = convert_timeslice(
-        techs.fix_par * (capacity**techs.fix_exp),
-        prices.timeslice,
-        QuantityType.EXTENSIVE,
-    )
+    fixed_costs = (
+        convert_timeslice(
+            techs.fix_par * (capacity**techs.fix_exp),
+            prices.timeslice,
+            QuantityType.EXTENSIVE,
+        )
+        * rates
+    ).sum("year")
 
     # Variable costs
     tech_activity = (production / techs.fixed_outputs).max("commodity")
-    variable_costs = techs.var_par * tech_activity**techs.var_exp
+    variable_costs = ((techs.var_par * tech_activity**techs.var_exp) * rates).sum(
+        "year"
+    )
 
     # Net present value
     result = raw_revenues - (
@@ -289,15 +294,20 @@ def lifetime_levelized_cost_of_energy(
     material_costs = (cons * prices_material * rates).sum(("commodity", "year"))
 
     # Fixed costs
-    fixed_costs = convert_timeslice(
-        techs.fix_par * (capacity**techs.fix_exp),
-        prices.timeslice,
-        QuantityType.EXTENSIVE,
-    )
+    fixed_costs = (
+        convert_timeslice(
+            techs.fix_par * (capacity**techs.fix_exp),
+            prices.timeslice,
+            QuantityType.EXTENSIVE,
+        )
+        * rates
+    ).sum("year")
 
     # Variable costs
     tech_activity = (production / techs.fixed_outputs).max("commodity")
-    variable_costs = techs.var_par * tech_activity**techs.var_exp
+    variable_costs = ((techs.var_par * tech_activity**techs.var_exp) * rates).sum(
+        "year"
+    )
 
     # Production
     prod = (
