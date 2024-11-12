@@ -91,6 +91,9 @@ def net_present_value(
     products = is_enduse(technologies.comm_usage)
     fuels = is_fuel(technologies.comm_usage)
 
+    # Calculate consumption
+    cons = consumption(technologies=techs, production=production, prices=prices)
+
     # Revenue
     prices_non_env = filter_input(prices, commodity=products, year=years.values)
     raw_revenues = (production * prices_non_env * rates).sum(("commodity", "year"))
@@ -112,8 +115,7 @@ def net_present_value(
 
     # Fuel/energy costs
     prices_fuel = filter_input(prices, commodity=fuels, year=years.values)
-    fuel = consumption(technologies=techs, production=production, prices=prices)
-    fuel_costs = (fuel * prices_fuel * rates).sum(("commodity", "year"))
+    fuel_costs = (cons * prices_fuel * rates).sum(("commodity", "year"))
 
     # Cost related to material other than fuel/energy and environmentals
     prices_material = filter_input(prices, commodity=material, year=years.values)
@@ -259,6 +261,9 @@ def lifetime_levelized_cost_of_energy(
     products = is_enduse(technologies.comm_usage)
     fuels = is_fuel(technologies.comm_usage)
 
+    # Calculate consumption
+    cons = consumption(technologies=techs, production=production, prices=prices)
+
     # Cost of installed capacity
     installed_capacity_costs = convert_timeslice(
         techs.cap_par * (capacity**techs.cap_exp),
@@ -276,12 +281,11 @@ def lifetime_levelized_cost_of_energy(
 
     # Fuel/energy costs
     prices_fuel = filter_input(prices, commodity=fuels, year=years.values)
-    fuel = consumption(technologies=techs, production=production, prices=prices)
-    fuel_costs = (fuel * prices_fuel * rates).sum(("commodity", "year"))
+    fuel_costs = (cons * prices_fuel * rates).sum(("commodity", "year"))
 
     # Cost related to material other than fuel/energy and environmentals
     prices_material = filter_input(prices, commodity=material, year=years.values)
-    material_costs = (production * prices_material * rates).sum(("commodity", "year"))
+    material_costs = (cons * prices_material * rates).sum(("commodity", "year"))
 
     # Fixed and Variable costs
     fixed_costs = convert_timeslice(
