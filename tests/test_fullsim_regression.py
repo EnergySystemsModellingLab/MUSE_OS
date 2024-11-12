@@ -29,7 +29,7 @@ def test_fullsim_regression(model, tmpdir, compare_dirs):
 
     compare_dirs(
         tmpdir / "Results",
-        Path(__file__).parent / "example_outputs" / model.replace("-", "_"),
+        Path(__file__).parent / "example_outputs" / model.replace("-", "_") / "Results",
         rtol=1e-4,
         atol=1e-7,
     )
