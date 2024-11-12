@@ -935,7 +935,6 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
                 production=production,
                 year=agent.year,
             )
-            result = result.where(np.isfinite(result)).fillna(0.0)
 
             data_agent = result
             data_agent["agent"] = agent.name
