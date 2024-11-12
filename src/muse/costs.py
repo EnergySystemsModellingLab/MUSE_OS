@@ -121,27 +121,28 @@ def net_present_value(
     prices_material = filter_input(prices, commodity=material, year=years.values)
     material_costs = (production * prices_material * rates).sum(("commodity", "year"))
 
-    # Fixed and Variable costs
+    # Fixed costs
     fixed_costs = convert_timeslice(
         techs.fix_par * (capacity**techs.fix_exp),
         prices.timeslice,
         QuantityType.EXTENSIVE,
     )
-    variable_costs = techs.var_par * (
-        (production.sel(commodity=products).sum("commodity")) ** techs.var_exp
-    )
-    assert set(fixed_costs.dims) == set(variable_costs.dims)
-    fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
 
-    results = raw_revenues - (
+    # Variable costs
+    prod_amplitude = (production / techs.fixed_outputs).max("commodity")
+    variable_costs = (techs.var_par * prod_amplitude**techs.var_exp).sum("commodity")
+
+    # Net present value
+    result = raw_revenues - (
         installed_capacity_costs
         + fuel_costs
         + environmental_costs
         + material_costs
-        + fixed_and_variable_costs
+        + fixed_costs
+        + variable_costs
     )
 
-    return results
+    return result
 
 
 def net_present_cost(
@@ -287,24 +288,34 @@ def lifetime_levelized_cost_of_energy(
     prices_material = filter_input(prices, commodity=material, year=years.values)
     material_costs = (cons * prices_material * rates).sum(("commodity", "year"))
 
-    # Fixed and Variable costs
+    # Fixed costs
     fixed_costs = convert_timeslice(
         techs.fix_par * (capacity**techs.fix_exp),
         prices.timeslice,
         QuantityType.EXTENSIVE,
     )
-    variable_costs = (
-        techs.var_par * production.sel(commodity=products) ** techs.var_exp
-    ).sum("commodity")
-    fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
-    denominator = production.where(production > 0.0, 1e-6)
+
+    # Variable costs
+    prod_amplitude = (production / techs.fixed_outputs).max("commodity")
+    variable_costs = (techs.var_par * prod_amplitude**techs.var_exp).sum("commodity")
+
+    # Production
+    prod = (
+        production.where(production > 0.0, 1e-6)
+        .sel(commodity=products)
+        .sum("commodity")
+    )
+    total_prod = (prod * rates).sum("year")
+
+    # LCOE
     result = (
         installed_capacity_costs
         + fuel_costs
         + environmental_costs
         + material_costs
-        + fixed_and_variable_costs
-    ) / (denominator.sel(commodity=products).sum("commodity") * rates).sum("year")
+        + fixed_costs
+        + variable_costs
+    ) / total_prod
 
     return result
 
