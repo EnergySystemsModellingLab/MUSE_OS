@@ -2,12 +2,7 @@
 
 from pathlib import Path
 
-try:
-    import SGIModelData
-
-    DEFAULT_SECTORS_DIRECTORY = SGIModelData.PATH
-except ImportError:
-    DEFAULT_SECTORS_DIRECTORY = Path().cwd() / "data"
+DEFAULT_SECTORS_DIRECTORY = Path().cwd() / "data"
 
 DATA_DIRECTORY = Path(__file__).parent / "data"
 """ Standard data directory."""

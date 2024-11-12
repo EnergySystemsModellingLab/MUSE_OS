@@ -263,7 +263,6 @@ def read_initial_capacity(data: Union[str, Path, pd.DataFrame]) -> xr.DataArray:
         .set_index(["region", "technology", "year"])
     )
     result = xr.DataArray.from_series(data["value"])
-    # inconsistent legacy data files.
     result = result.sel(year=result.year != "2100.1")
     result["year"] = result.year.astype(int)
     return result
