@@ -119,7 +119,7 @@ def net_present_value(
 
     # Cost related to material other than fuel/energy and environmentals
     prices_material = filter_input(prices, commodity=material, year=years.values)
-    material_costs = (production * prices_material * rates).sum(("commodity", "year"))
+    material_costs = (cons * prices_material * rates).sum(("commodity", "year"))
 
     # Fixed costs
     fixed_costs = convert_timeslice(
