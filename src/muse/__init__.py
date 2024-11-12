@@ -34,6 +34,49 @@ def _create_logger(color: bool = True):
     return logger
 
 
+def add_file_logger() -> None:
+    """Adds a file logger to the main logger.
+
+    The file logger is split into two files: one for INFO and DEBUG messages, and one
+    for WARNING messages and above to avoid cluttering the main log file and highlight
+    potential issues.
+    """
+    import logging
+    from pathlib import Path
+
+    from .defaults import DEFAULT_OUTPUT_DIRECTORY
+
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
+    DEFAULT_OUTPUT_DIRECTORY.mkdir(parents=True, exist_ok=True)
+
+    # Sets the warning log, for warnings and above
+    warning_file = Path(DEFAULT_OUTPUT_DIRECTORY) / "muse_warning.log"
+    if warning_file.exists():
+        warning_file.unlink()
+
+    warning_file_handler = logging.FileHandler(warning_file)
+    warning_file_handler.setLevel(logging.WARNING)
+    warning_file_handler.setFormatter(formatter)
+    warning_file_handler.filters = [lambda record: record.levelno > logging.INFO]
+
+    logging.getLogger("muse").addHandler(warning_file_handler)
+
+    # Sets the info log, for debug and info only
+    info_file = Path(DEFAULT_OUTPUT_DIRECTORY) / "muse_info.log"
+    if info_file.exists():
+        info_file.unlink()
+
+    info_file_handler = logging.FileHandler(info_file)
+    info_file_handler.setLevel(logging.DEBUG)
+    info_file_handler.setFormatter(formatter)
+    info_file_handler.filters = [lambda record: record.levelno <= logging.INFO]
+
+    logging.getLogger("muse").addHandler(info_file_handler)
+
+
 logger = _create_logger(os.environ.get("MUSE_COLOR_LOG") != "False")
 """ Main logger """
 

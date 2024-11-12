@@ -128,6 +128,7 @@ dmypy.json
 
 **/Results/
 !docs/tutorial-code/**/Results
+!tests/example_outputs/**/Results
 /FileLog.txt
 /Power/Data/MusePower/Data/
 /MUSEGlobalSettings.csv/
