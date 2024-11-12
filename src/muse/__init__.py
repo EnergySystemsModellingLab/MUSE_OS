@@ -50,6 +50,8 @@ def add_file_logger() -> None:
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
+    DEFAULT_OUTPUT_DIRECTORY.mkdir(parents=True, exist_ok=True)
+
     # Sets the warning log, for warnings and above
     warning_file = Path(DEFAULT_OUTPUT_DIRECTORY) / "muse_warning.log"
     if warning_file.exists():
