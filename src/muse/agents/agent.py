@@ -80,9 +80,8 @@ class AbstractAgent(ABC):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        year: int,
     ) -> None:
-        """Increments agent to the specified year (e.g. performing investments)."""
+        """Increments agent to the next time point (e.g. performing investments)."""
 
     def __repr__(self):
         return (
@@ -104,7 +103,7 @@ class Agent(AbstractAgent):
         search_rules: Optional[Callable] = None,
         objectives: Optional[Callable] = None,
         decision: Optional[Callable] = None,
-        year: int = 2010,
+        years: list[int] = [2010],
         maturity_threshold: float = 0,
         forecast: int = 5,
         housekeeping: Optional[Callable] = None,
@@ -127,7 +126,7 @@ class Agent(AbstractAgent):
             search_rules: method used to filter the search space
             objectives: One or more objectives by which to decide next investments.
             decision: single decision objective from one or more objectives.
-            year: year the agent is created / current year
+            years: time framework over which the agent will iterate
             maturity_threshold: threshold when filtering replacement
                 technologies with respect to market share
             forecast: Number of years the agent will forecast
@@ -157,8 +156,10 @@ class Agent(AbstractAgent):
             quantity=quantity,
         )
 
-        self.year = year
-        """ Current year. Incremented every time next is called."""
+        self.years = iter(years)
+        """Years to iterate over."""
+        self.year = next(self.years)
+        """Current year. Incremented every time next is called."""
         self.forecast = forecast
         """Number of years to look into the future for forecating purposed."""
         if search_rules is None:
@@ -239,9 +240,8 @@ class Agent(AbstractAgent):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        year: int,
     ) -> None:
-        self.year = year
+        self.year = next(self.years)
 
 
 class InvestingAgent(Agent):
@@ -277,7 +277,6 @@ class InvestingAgent(Agent):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        year: int,
     ) -> None:
         """Iterates agent one turn.
 
@@ -291,7 +290,7 @@ class InvestingAgent(Agent):
         from logging import getLogger
 
         # Increment the year
-        self.year = year
+        self.year = next(self.years)
 
         # Skip forward if demand is zero
         if demand.size == 0 or demand.sum() < 1e-12:

@@ -53,7 +53,7 @@ class Sector(AbstractSector):  # type: ignore
                 subsec_settings,
                 technologies,
                 regions=settings.regions,
-                current_year=int(min(settings.time_framework)),
+                years=list(settings.time_framework),
                 name=subsec_name,
             )
             for subsec_name, subsec_settings in sector_settings.pop("subsectors")

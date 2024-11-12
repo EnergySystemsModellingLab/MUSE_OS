@@ -110,7 +110,7 @@ class Subsector:
                 share = demands.sel(asset=demands.agent == agent.uuid)
             else:
                 share = demands
-            agent.next(technologies, agent_market, share, year=current_year)
+            agent.next(technologies, agent_market, share)
 
     @classmethod
     def factory(
@@ -118,7 +118,7 @@ class Subsector:
         settings: Any,
         technologies: xr.Dataset,
         regions: Sequence[str] | None = None,
-        current_year: int | None = None,
+        years: list[int] | None = None,
         name: str = "subsector",
     ) -> Subsector:
         from muse import constraints as cs
@@ -138,7 +138,7 @@ class Subsector:
             settings.existing_capacity,
             technologies=technologies,
             regions=regions,
-            year=current_year or int(technologies.year.min()),
+            years=years,
             asset_threshold=getattr(settings, "asset_threshold", 1e-12),
             # only used by self-investing agents
             investment=getattr(settings, "lpsolver", "adhoc"),
