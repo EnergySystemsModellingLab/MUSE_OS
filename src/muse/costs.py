@@ -130,7 +130,7 @@ def net_present_value(
 
     # Variable costs
     prod_amplitude = (production / techs.fixed_outputs).max("commodity")
-    variable_costs = (techs.var_par * prod_amplitude**techs.var_exp).sum("commodity")
+    variable_costs = techs.var_par * prod_amplitude**techs.var_exp
 
     # Net present value
     result = raw_revenues - (
@@ -297,7 +297,7 @@ def lifetime_levelized_cost_of_energy(
 
     # Variable costs
     prod_amplitude = (production / techs.fixed_outputs).max("commodity")
-    variable_costs = (techs.var_par * prod_amplitude**techs.var_exp).sum("commodity")
+    variable_costs = techs.var_par * prod_amplitude**techs.var_exp
 
     # Production
     prod = (
