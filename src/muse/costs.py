@@ -95,6 +95,9 @@ def net_present_value(
     products = is_enduse(technologies.comm_usage)
     fuels = is_fuel(technologies.comm_usage)
 
+    # Calculate consumption
+    cons = consumption(technologies=techs, production=production, prices=prices)
+
     # Revenue
     prices_non_env = filter_input(prices, commodity=products, year=years.values)
     raw_revenues = (production * prices_non_env * rates).sum(("commodity", "year"))
@@ -114,33 +117,44 @@ def net_present_value(
 
     # Fuel/energy costs
     prices_fuel = filter_input(prices, commodity=fuels, year=years.values)
-    fuel = consumption(technologies=techs, production=production, prices=prices)
-    fuel_costs = (fuel * prices_fuel * rates).sum(("commodity", "year"))
+    fuel_costs = (cons * prices_fuel * rates).sum(("commodity", "year"))
 
     # Cost related to material other than fuel/energy and environmentals
     prices_material = filter_input(prices, commodity=material, year=years.values)
-    material_costs = (production * prices_material * rates).sum(("commodity", "year"))
+    material_costs = (cons * prices_material * rates).sum(("commodity", "year"))
 
-    # Fixed and Variable costs
-    fixed_costs = distribute_timeslice(
-        techs.fix_par * (capacity**techs.fix_exp), level=timeslice_level
-    )
-    variable_costs = broadcast_timeslice(techs.var_par, level=timeslice_level) * (
-        (production.sel(commodity=products).sum("commodity"))
-        ** broadcast_timeslice(techs.var_exp, level=timeslice_level)
-    )
-    assert set(fixed_costs.dims) == set(variable_costs.dims)
-    fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
+    # Fixed costs
+    fixed_costs = (
+        distribute_timeslice(
+            techs.fix_par * (capacity**techs.fix_exp), level=timeslice_level
+        )
+        * rates
+    ).sum("year")
 
-    results = raw_revenues - (
+    # Variable costs
+    tech_activity = (
+        production.sel(commodity=products)
+        / broadcast_timeslice(techs.fixed_outputs, level=timeslice_level)
+    ).max("commodity")
+    variable_costs = (
+        (
+            broadcast_timeslice(techs.var_par, level=timeslice_level)
+            * tech_activity ** broadcast_timeslice(techs.var_exp, level=timeslice_level)
+        )
+        * rates
+    ).sum("year")
+
+    # Net present value
+    result = raw_revenues - (
         installed_capacity_costs
         + fuel_costs
         + environmental_costs
         + material_costs
-        + fixed_and_variable_costs
+        + fixed_costs
+        + variable_costs
     )
 
-    return results
+    return result
 
 
 def net_present_cost(
@@ -267,6 +281,9 @@ def lifetime_levelized_cost_of_energy(
     products = is_enduse(technologies.comm_usage)
     fuels = is_fuel(technologies.comm_usage)
 
+    # Calculate consumption
+    cons = consumption(technologies=techs, production=production, prices=prices)
+
     # Cost of installed capacity
     installed_capacity_costs = distribute_timeslice(
         techs.cap_par * (capacity**techs.cap_exp), level=timeslice_level
@@ -282,36 +299,50 @@ def lifetime_levelized_cost_of_energy(
 
     # Fuel/energy costs
     prices_fuel = filter_input(prices, commodity=fuels, year=years.values)
-    fuel = consumption(
-        technologies=techs,
-        production=production,
-        prices=prices,
-        timeslice_level=timeslice_level,
-    )
-    fuel_costs = (fuel * prices_fuel * rates).sum(("commodity", "year"))
+    fuel_costs = (cons * prices_fuel * rates).sum(("commodity", "year"))
 
     # Cost related to material other than fuel/energy and environmentals
     prices_material = filter_input(prices, commodity=material, year=years.values)
-    material_costs = (production * prices_material * rates).sum(("commodity", "year"))
+    material_costs = (cons * prices_material * rates).sum(("commodity", "year"))
 
-    # Fixed and Variable costs
-    fixed_costs = distribute_timeslice(
-        techs.fix_par * (capacity**techs.fix_exp), level=timeslice_level
-    )
+    # Fixed costs
+    fixed_costs = (
+        distribute_timeslice(
+            techs.fix_par * (capacity**techs.fix_exp), level=timeslice_level
+        )
+        * rates
+    ).sum("year")
+
+    # Variable costs
+    tech_activity = (
+        production.sel(commodity=products)
+        / broadcast_timeslice(techs.fixed_outputs, level=timeslice_level)
+    ).max("commodity")
     variable_costs = (
-        broadcast_timeslice(techs.var_par, level=timeslice_level)
-        * production.sel(commodity=products)
-        ** broadcast_timeslice(techs.var_exp, level=timeslice_level)
-    ).sum("commodity")
-    fixed_and_variable_costs = ((fixed_costs + variable_costs) * rates).sum("year")
-    denominator = production.where(production > 0.0, 1e-6)
+        (
+            broadcast_timeslice(techs.var_par, level=timeslice_level)
+            * tech_activity ** broadcast_timeslice(techs.var_exp, level=timeslice_level)
+        )
+        * rates
+    ).sum("year")
+
+    # Production
+    prod = (
+        production.where(production > 0.0, 1e-6)
+        .sel(commodity=products)
+        .sum("commodity")
+    )
+    total_prod = (prod * rates).sum("year")
+
+    # LCOE
     result = (
         installed_capacity_costs
         + fuel_costs
         + environmental_costs
         + material_costs
-        + fixed_and_variable_costs
-    ) / (denominator.sel(commodity=products).sum("commodity") * rates).sum("year")
+        + fixed_costs
+        + variable_costs
+    ) / total_prod
 
     return result
 

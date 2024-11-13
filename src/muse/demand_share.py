@@ -114,7 +114,6 @@ def new_and_retro(
     technologies: xr.Dataset,
     current_year: int,
     forecast: int,
-    production: Union[str, Mapping, Callable] = "maximum_production",
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
     r"""Splits demand across new and retro agents.
@@ -132,7 +131,6 @@ def new_and_retro(
             to the production method. The ``consumption`` reflects the demand for the
             commodities produced by the current sector.
         technologies: quantities describing the technologies.
-        production: Production method
         current_year: Current year of simulation
         forecast: How many years to forecast ahead
 
@@ -162,8 +160,8 @@ def new_and_retro(
        simplicity. The resulting expression has the same indices as the consumption
        :math:`\mathcal{C}_{c, s}^r`.
 
-       :math:`P` is any function registered with
-       :py:func:`@register_production<muse.production.register_production>`.
+       :math:`P` is the maximum production, given by
+       <muse.quantities.maximum_production>`.
 
 
     #. the *new* demand :math:`N` is defined as:
@@ -246,7 +244,6 @@ def new_and_retro(
         capacity,
         market,
         technologies,
-        production=production,
         current_year=current_year,
         forecast=forecast,
         timeslice_level=timeslice_level,
@@ -332,7 +329,6 @@ def standard_demand(
     technologies: xr.Dataset,
     current_year: int,
     forecast: int,
-    production: Union[str, Mapping, Callable] = "maximum_production",
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
     r"""Splits demand across new agents.
@@ -350,7 +346,6 @@ def standard_demand(
             to the production method. The ``consumption`` reflects the demand for the
             commodities produced by the current sector.
         technologies: quantities describing the technologies.
-        production: Production method
         current_year: Current year of simulation
         forecast: How many years to forecast ahead
 
@@ -384,7 +379,6 @@ def standard_demand(
         capacity,
         market,
         technologies,
-        production=production,
         current_year=current_year,
         forecast=forecast,
         timeslice_level=timeslice_level,
@@ -445,7 +439,6 @@ def unmet_forecasted_demand(
     technologies: xr.Dataset,
     current_year: int,
     forecast: int,
-    production: Union[str, Mapping, Callable] = "maximum_production",
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
@@ -458,7 +451,7 @@ def unmet_forecasted_demand(
     capacity = reduce_assets([u.assets.capacity.interp(year=year) for u in agents])
     capacity = cast(xr.DataArray, capacity)
     result = unmet_demand(
-        smarket, capacity, technologies, production, timeslice_level=timeslice_level
+        smarket, capacity, technologies, timeslice_level=timeslice_level
     )
     if "year" in result.dims:
         result = result.squeeze("year")
@@ -521,7 +514,6 @@ def unmet_demand(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    production: Union[str, Mapping, Callable] = "maximum_production",
     timeslice_level: str | None = None,
 ):
     r"""Share of the demand that cannot be serviced by the existing assets.
@@ -534,20 +526,13 @@ def unmet_demand(
     The resulting expression has the same indices as the consumption
     :math:`\mathcal{C}_{c, s}^r`.
 
-    :math:`P` is any function registered with
-    :py:func:`@register_production<muse.production.register_production>`.
+    :math:`P` is the maximum production, given by <muse.quantities.maximum_production>.
     """
-    from muse.production import factory as prod_factory
+    from muse.quantities import maximum_production
 
-    prod_method = production if callable(production) else prod_factory(production)
-    assert callable(prod_method)
-
-    # Calculate production by existing assets
-    produced = prod_method(
-        market=market,
-        capacity=capacity,
-        technologies=technologies,
-        timeslice_level=timeslice_level,
+    # Calculate maximum production by existing assets
+    produced = maximum_production(
+        capacity=capacity, technologies=technologies, timeslice_level=timeslice_level
     )
 
     # Total commodity production by summing over assets
@@ -583,7 +568,8 @@ def new_consumption(
                 - P[\mathcal{M}(y + \Delta y), \mathcal{A}_{a, s}^r(y)]
         \right)
 
-    Where :math:`P` is a production function taking the market and assets as arguments.
+    Where :math:`P` the maximum production by existing assets, given by
+    <muse.quantities.maximum_production>.
     """
     from numpy import minimum
 
@@ -609,7 +595,6 @@ def new_and_retro_demands(
     technologies: xr.Dataset,
     current_year: int,
     forecast: int,
-    production: Union[str, Mapping, Callable] = "maximum_production",
     timeslice_level: str | None = None,
 ) -> xr.Dataset:
     """Splits demand into *new* and *retrofit* demand.
@@ -624,10 +609,7 @@ def new_and_retro_demands(
     """
     from numpy import minimum
 
-    from muse.production import factory as prod_factory
-
-    production_method = production if callable(production) else prod_factory(production)
-    assert callable(production_method)
+    from muse.quantities import maximum_production
 
     # Interpolate market to forecast year
     smarket: xr.Dataset = market.interp(year=[current_year, current_year + forecast])
@@ -651,12 +633,11 @@ def new_and_retro_demands(
     if "year" in new_demand.dims:
         new_demand = new_demand.squeeze("year")
 
-    # Total production in the forecast year by existing assets
+    # Maximum production in the forecast year by existing assets
     service = (
-        production_method(
-            smarket.sel(year=current_year + forecast),
-            capa.sel(year=current_year + forecast),
+        maximum_production(
             technologies,
+            capa.sel(year=current_year + forecast),
             timeslice_level=timeslice_level,
         )
         .groupby("region")

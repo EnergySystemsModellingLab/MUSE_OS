@@ -236,30 +236,6 @@ levels. For instance, there no ``peak`` periods during weekends. All that matter
 that the relative weights (i.e. the number of hours) are consistent and sum up to a
 year.
 
-The input above defines the finest times slice in the code. In order to define rougher
-timeslices we can introduce items in each levels that represent aggregates at that
-level. By default, we have the following:
-
-.. code-block:: TOML
-
-    [timeslices.aggregates]
-    all-day = ["night", "morning", "afternoon", "early-peak", "late-peak", "evening"]
-    all-week = ["weekday", "weekend"]
-    all-year = ["winter", "summer", "spring-autumn"]
-
-Here, ``all-day`` aggregates the full day. However, one could potentially create
-aggregates such as:
-
-.. code-block:: TOML
-
-    [timeslices.aggregates]
-    daylight = ["morning", "afternoon", "early-peak", "late-peak"]
-    nightlife = ["evening", "night"]
-
- It is possible to specify a timeslice level for the mca by adding an
-`mca.timeslice_levels` section, using an inline table format.
-See section on `Timeslices_`.
-
 *outputs_cache*
    This option behaves exactly like `outputs` for sectors and accepts the same options but
    controls the output of cached quantities instead. This option is NOT available for
@@ -327,41 +303,21 @@ A sector accepts these attributes:
 
    .. _scipy method's kind attribute: https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
 
-*investment_production*
-   In its simplest form, this is the name of a method to compute the production from a
-   sector, as used when splitting the demand across agents. In other words, this is the
-   computation of the production which affects future investments. In it's more general
-   form, *production* can be a subsection of its own, with a "name" attribute. For
-   instance:
-
-   .. code-block:: TOML
-
-      [sectors.residential.production]
-      name = "match"
-      costing = "prices"
+*dispatch_production*
+   The method used to calculate supply of commodities after investments have been made.
 
    MUSE provides two methods in :py:mod:`muse.production`:
 
-   - share: the production is the maximum production for the existing capacity and
+   - share: assets each supply a proportion of demand based on their share of total
+      capacity
+   - maximum: the production is the maximum production for the existing capacity and
       the technology's utilization factor.
       See :py:func:`muse.production.maximum_production`.
-   - match: production and demand are matched according to a given cost metric. The
-      cost metric defaults to "prices". It can be modified by using the general form
-      given above, with a "costing" attribute. The latter can be "prices",
-      "gross_margin", or "lcoe".
-      See :py:func:`muse.production.demand_matched_production`.
-
-   *production* can also refer to any custom production method registered with MUSE via
-   :py:func:`muse.production.register_production`.
 
    Defaults to "share".
 
-*dispatch_production*
-   The name of the production method used to compute the sector's output, as returned
-   to the muse market clearing algorithm. In other words, this is computation of the
-   production method which will affect other sectors.
-
-   It has the same format and options as the *production* attribute above.
+   Additional methods can be registered with
+   :py:func:`muse.production.register_production`
 
 Sectors contain a number of subsections:
 *interactions*
@@ -442,30 +398,6 @@ Sectors contain a number of subsections:
    *commodities_out*
       Path to a csv file describing the outputs of each technology involved in the sector.
       See :ref:`inputs-iocomms`.
-
-   Once the finest timeslice and its aggregates are given, it is  possible for each sector
-to define the timeslice simply by referring to the slices it will use at each level.
-
-.. _sector-timeslices:
-
-*timeslice_levels*
-   Optional. These define the timeslices of a sector. If not specified, the finest timeslice levels will be used
-   (See `Timeslices`_).
-   It can be implemented with the following rows:
-
-.. code-block:: TOML
-
-    [sectors.some_sector.timeslice_levels]
-    day = ["daylight", "nightlife"]
-    month = ["all-year"]
-
-   Above, ``sectors.some_sector.timeslice_levels.week`` defaults its value in the finest
-   timeslice. Indeed, if the subsection ``sectors.some_sector.timeslice_levels`` is not
-   given, then the sector will default to using the finest timeslices.
-
-   If the MCA uses a rougher
-   timeslice framework, the market will be expressed within it. Hence information from
-   sectors with a finer timeslice framework will be lost.
 
 *subsectors*
 
@@ -731,58 +663,3 @@ The following attributes are accepted:
 
       filters.region = ["USA", "ASEA"]
       filters.commodity = ["algae", "fluorescent light"]
-
-
---------------
-Legacy Sectors
---------------
-
-Legacy sectors wrap sectors developed for a previous version of MUSE to the open-source
-version.
-
-Preset sectors are defined in :py:class:`~muse.sectors.PresetSector`.
-
-The can be defined in the TOML file as follows:
-
-.. code-block:: TOML
-
-   [global_input_files]
-   macrodrivers = '{path}/input/Macrodrivers.csv'
-   regions = '{path}/input/Regions.csv'
-   global_commodities = '{path}/input/MUSEGlobalCommodities.csv'
-
-   [sectors.Industry]
-   type = 'legacy'
-   priority = 'demand'
-   agregation_level = 'month'
-   excess = 0
-
-   userdata_path = '{muse_sectors}/Industry'
-   technodata_path = '{muse_sectors}/Industry'
-   timeslices_path = '{muse_sectors}/Industry/TimeslicesIndustry.csv'
-   output_path = '{path}/output'
-
-For historical reasons, the three `global_input_files` above are required. The sector
-itself can use the following attributes.
-
-*type*
-   See the attribute in the standard mode, :ref:`type<sector-type>`. *Legacy* sectors
-   are those with type "legacy".
-
-*priority*
-   See the attribute in the standard mode, :ref:`priority<sector-priority>`.
-
-*agregation_level*
-   Information relevant to the sector's timeslice.
-
-*excess*
-   Excess factor used to model early obsolescence.
-
-*userdata_path*
-   Path to a directory with sector-specific data files.
-
-*technodata_path*
-   Path to a technodata CSV file. See. :ref:`inputs-technodata`.
-
-*output_path*
-   Path to a directory where the sector will write output files.

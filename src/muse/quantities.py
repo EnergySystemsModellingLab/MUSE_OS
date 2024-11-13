@@ -8,7 +8,7 @@ Functions for calculating costs (e.g. LCOE, EAC) are in the `costs` module.
 """
 
 from collections.abc import Sequence
-from typing import Callable, Optional, Union, cast
+from typing import Optional, Union, cast
 
 import numpy as np
 import xarray as xr
@@ -18,8 +18,6 @@ def supply(
     capacity: xr.DataArray,
     demand: xr.DataArray,
     technologies: Union[xr.Dataset, xr.DataArray],
-    interpolation: str = "linear",
-    production_method: Optional[Callable] = None,
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Production and emission for a given capacity servicing a given demand.
@@ -37,8 +35,6 @@ def supply(
             exceed its share of the demand.
         technologies: factors bindings the capacity of an asset with its production of
             commodities and environmental pollutants.
-        interpolation: Interpolation type
-        production_method: Production for a given capacity
 
     Return:
         A data array where the commodity dimension only contains actual outputs (i.e. no
@@ -47,13 +43,8 @@ def supply(
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
     from muse.timeslices import broadcast_timeslice
 
-    if production_method is None:
-        production_method = maximum_production
-
-    maxprod = production_method(technologies, capacity, timeslice_level=timeslice_level)
-    minprod = minimum_production(
-        technologies, capacity, timeslice_level=timeslice_level
-    )
+    maxprod = maximum_production(technologies, capacity)
+    minprod = minimum_production(technologies, capacity)
     size = np.array(maxprod.region).size
     # in presence of trade demand needs to map maxprod dst_region
     if (
@@ -403,34 +394,6 @@ def maximum_production(
     return result.where(is_enduse(result.comm_usage), 0)
 
 
-def demand_matched_production(
-    demand: xr.DataArray,
-    prices: xr.DataArray,
-    capacity: xr.DataArray,
-    technologies: xr.Dataset,
-    **filters,
-) -> xr.DataArray:
-    """Production matching the input demand.
-
-    Arguments:
-        demand: demand to match.
-        prices: price from which to compute the annual levelized cost of energy.
-        capacity: capacity from which to obtain the maximum production constraints.
-        technologies: technologies we are looking at
-        **filters: keyword arguments with which to filter the input datasets and
-            data arrays., e.g. region, or year.
-    """
-    from muse.costs import annual_levelized_cost_of_energy as ALCOE
-    from muse.demand_matching import demand_matching
-    from muse.utilities import broadcast_techs
-
-    technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
-    cost = ALCOE(prices=prices, technologies=technodata, **filters)
-    max_production = maximum_production(technodata, capacity, **filters)
-    assert ("timeslice" in demand.dims) == ("timeslice" in cost.dims)
-    return demand_matching(demand, cost, max_production)
-
-
 def capacity_in_use(
     production: xr.DataArray,
     technologies: xr.Dataset,
@@ -484,90 +447,6 @@ def capacity_in_use(
         capa_in_use = capa_in_use.max(max_dim)
 
     return capa_in_use
-
-
-def costed_production(
-    demand: xr.Dataset,
-    costs: xr.DataArray,
-    capacity: xr.DataArray,
-    technologies: xr.Dataset,
-    with_minimum_service: bool = True,
-    timeslice_level: str | None = None,
-) -> xr.DataArray:
-    """Computes production from ranked assets.
-
-    The assets are ranked according to their cost. The asset with least cost are allowed
-    to service the demand first, up to the maximum production. By default, the minimum
-    service is applied first.
-    """
-    from muse.quantities import maximum_production
-    from muse.timeslices import broadcast_timeslice
-    from muse.utilities import broadcast_techs
-
-    technodata = cast(xr.Dataset, broadcast_techs(technologies, capacity))
-
-    if len(capacity.region.dims) == 0:
-
-        def group_assets(x: xr.DataArray) -> xr.DataArray:
-            return x.sum("asset")
-
-    else:
-
-        def group_assets(x: xr.DataArray) -> xr.DataArray:
-            return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
-
-    ranking = costs.rank("asset")
-    maxprod = maximum_production(technodata, capacity)
-    commodity = (maxprod > 0).any([i for i in maxprod.dims if i != "commodity"])
-    commodity = commodity.drop_vars(
-        [u for u in commodity.coords if u not in commodity.dims]
-    )
-    demand = demand.sel(commodity=commodity).copy()
-
-    constraints = (
-        xr.Dataset(dict(maxprod=maxprod, ranking=ranking, has_output=maxprod > 0))
-        .set_coords("ranking")
-        .set_coords("has_output")
-        .sel(commodity=commodity)
-    )
-
-    if not with_minimum_service:
-        production = xr.zeros_like(constraints.maxprod)
-    else:
-        if hasattr(technodata, "minimum_service_factor"):
-            production = (
-                broadcast_timeslice(
-                    technodata.minimum_service_factor, level=timeslice_level
-                )
-                * constraints.maxprod
-            )
-        else:
-            production = 0 * constraints.maxprod
-        demand = np.maximum(demand - group_assets(production), 0)
-
-    for rank in sorted(set(constraints.ranking.values.flatten())):
-        condition = (constraints.ranking == rank) & constraints.has_output
-        current_maxprod = constraints.maxprod.where(condition, 0)
-        fullprod = group_assets(current_maxprod)
-        if (fullprod <= demand + 1e-10).all():
-            current_demand = fullprod
-            current_prod = current_maxprod
-        else:
-            if "region" in demand.dims:
-                demand_prod = demand.sel(region=production.region)
-            else:
-                demand_prod = demand
-            demand_prod = (
-                current_maxprod / current_maxprod.sum("asset") * demand_prod
-            ).where(condition, 0)
-            current_prod = np.minimum(demand_prod, current_maxprod)
-            current_demand = group_assets(current_prod)
-        demand -= np.minimum(current_demand, demand)
-        production = production + current_prod
-
-    result = xr.zeros_like(maxprod)
-    result[dict(commodity=commodity)] = result[dict(commodity=commodity)] + production
-    return result
 
 
 def minimum_production(
