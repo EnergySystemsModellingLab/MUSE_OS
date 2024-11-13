@@ -81,6 +81,7 @@ def setup_module(settings: Union[str, Mapping]):
 
 
 def broadcast_timeslice(x, ts=None, level=None):
+    """Convert a non-timesliced array to a timesliced array by broadcasting."""
     from xarray import Coordinates
 
     if ts is None:
@@ -101,6 +102,7 @@ def broadcast_timeslice(x, ts=None, level=None):
 
 
 def distribute_timeslice(x, ts=None, level=None):
+    """Convert a non-timesliced array to a timesliced array by distribution."""
     if ts is None:
         ts = TIMESLICE
 

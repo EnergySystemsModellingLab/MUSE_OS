@@ -191,6 +191,10 @@ class Sector(AbstractSector):  # type: ignore
         # Agent interactions
         self.interactions(list(self.agents))
 
+        # Convert market to sector timeslicing
+        # TODO: check mca_market is in global timeslicing scheme
+        mca_market = self.convert_to_sector_timeslicing(mca_market)
+
         # Select appropriate data from the market
         market = mca_market.sel(
             commodity=self.technologies.commodity, region=self.technologies.region
@@ -261,7 +265,9 @@ class Sector(AbstractSector):  # type: ignore
             commodity=result.commodity
         )
         result.set_coords("comm_usage")
-        return result
+
+        # Convert result to global timeslicing scheme
+        return self.convert_to_global_timeslicing(result)
 
     def save_outputs(self) -> None:
         """Calls the outputs function with the current output data."""
@@ -303,6 +309,18 @@ class Sector(AbstractSector):  # type: ignore
         )
 
         return supply, consume, costs
+
+    def convert_to_sector_timeslicing(self, market: xr.Dataset) -> xr.Dataset:
+        """Converts market data to sector timeslicing."""
+        # sector_market = func(market, self.timeslice_level)
+        # return sector_market
+        return market
+
+    def convert_to_global_timeslicing(self, market: xr.Dataset) -> xr.Dataset:
+        """Converts market data to global timeslicing."""
+        # global_market = func(market)
+        # return global_market
+        return market
 
     @property
     def capacity(self) -> xr.DataArray:

@@ -374,6 +374,7 @@ def single_year_iteration(
         sector_market = sector.next(
             market[["supply", "consumption", "prices"]]  # type:ignore
         )
+        # TODO: check sector_market is in global timeslicing scheme
         sector_market = sector_market.sel(year=market.year)
 
         # Calculate net consumption
