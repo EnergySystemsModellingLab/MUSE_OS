@@ -694,7 +694,7 @@ def sectory_consumption(
 def metric_fuel_costs(
     market: xr.Dataset, sectors: list[AbstractSector], **kwargs
 ) -> pd.DataFrame:
-    """Current lifetime levelised cost across all sectors."""
+    """Current fuel costs across all sectors."""
     return _aggregate_sectors(sectors, market, op=sector_fuel_costs)
 
 
@@ -878,7 +878,7 @@ def sector_emission_costs(
 def metric_lcoe(
     market: xr.Dataset, sectors: list[AbstractSector], **kwargs
 ) -> pd.DataFrame:
-    """Current emission costs across all sectors."""
+    """Current lifetime levelised cost across all sectors."""
     return _aggregate_sectors(sectors, market, op=sector_lcoe)
 
 
