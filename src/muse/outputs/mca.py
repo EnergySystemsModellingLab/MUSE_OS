@@ -35,7 +35,7 @@ from mypy_extensions import KwArg
 from muse.outputs.sector import market_quantity
 from muse.registration import registrator
 from muse.sectors import AbstractSector
-from muse.timeslices import QuantityType, convert_timeslice
+from muse.timeslices import distribute_timeslice
 from muse.utilities import multiindex_to_coords
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
@@ -267,14 +267,10 @@ def sector_fuel_costs(
                 year=output_year,
             ).fillna(0.0)
 
-            production = convert_timeslice(
-                supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                ),
-                agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
+            production = supply(
+                agent_market,
+                capacity,
+                technologies,
             )
 
             prices = a.filter_input(market.prices, year=output_year)
@@ -318,7 +314,6 @@ def sector_capital_costs(
 
     if len(technologies) > 0:
         for a in agents:
-            demand = market.consumption * a.quantity
             output_year = a.year - a.forecast
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             data = a.filter_input(
@@ -326,12 +321,7 @@ def sector_capital_costs(
                 year=output_year,
                 technology=capacity.technology,
             )
-            result = data.cap_par * (capacity**data.cap_exp)
-            data_agent = convert_timeslice(
-                result,
-                demand.timeslice,
-                QuantityType.EXTENSIVE,
-            )
+            data_agent = distribute_timeslice(data.cap_par * (capacity**data.cap_exp))
             data_agent["agent"] = a.name
             data_agent["category"] = a.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
@@ -388,15 +378,12 @@ def sector_emission_costs(
             i = (np.where(envs))[0][0]
             red_envs = envs[i].commodity.values
             prices = a.filter_input(market.prices, year=output_year, commodity=red_envs)
-            production = convert_timeslice(
-                supply(
-                    agent_market,
-                    capacity,
-                    technologies,
-                ),
-                agent_market["consumption"].timeslice,
-                QuantityType.EXTENSIVE,
+            production = supply(
+                agent_market,
+                capacity,
+                technologies,
             )
+
             total = production.sel(commodity=enduses).sum("commodity")
             data_agent = total * (allemissions * prices).sum("commodity")
             data_agent["agent"] = a.name
@@ -463,11 +450,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             capacity = agent.filter_input(capacity_to_service_demand(demand, techs))
             production = (
                 capacity
-                * convert_timeslice(
-                    techs.fixed_outputs,
-                    demand.timeslice,
-                    QuantityType.EXTENSIVE,
-                )
+                * distribute_timeslice(techs.fixed_outputs)
                 * techs.utilization_factor
             )
 
@@ -544,11 +527,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             capacity = agent.filter_input(capacity_to_service_demand(demand, techs))
             production = (
                 capacity
-                * convert_timeslice(
-                    techs.fixed_outputs,
-                    demand.timeslice,
-                    QuantityType.EXTENSIVE,
-                )
+                * distribute_timeslice(techs.fixed_outputs)
                 * techs.utilization_factor
             )
 

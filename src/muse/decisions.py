@@ -117,7 +117,9 @@ def mean(objectives: Dataset, *args, **kwargs) -> DataArray:
     from xarray import concat
 
     allobjectives = concat(objectives.data_vars.values(), dim="concat_var")
-    return allobjectives.mean(set(allobjectives.dims) - {"asset", "replacement"})
+    return allobjectives.mean(
+        set(allobjectives.dims) - {"asset", "replacement", "timeslice"}
+    )
 
 
 @register_decision

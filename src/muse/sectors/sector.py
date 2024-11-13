@@ -7,7 +7,6 @@ from typing import (
     cast,
 )
 
-import pandas as pd
 import xarray as xr
 
 from muse.agents import AbstractAgent
@@ -26,7 +25,6 @@ class Sector(AbstractSector):  # type: ignore
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory
         from muse.production import factory as pfactory
-        from muse.readers import read_timeslices
         from muse.readers.toml import read_technodata
         from muse.utilities import nametuple_to_dict
 
@@ -38,11 +36,6 @@ class Sector(AbstractSector):  # type: ignore
             raise RuntimeError(f"Missing 'subsectors' section in sector {name}")
         if len(sector_settings["subsectors"]._asdict()) == 0:
             raise RuntimeError(f"Empty 'subsectors' section in sector {name}")
-
-        # Timeslices
-        timeslices = read_timeslices(
-            sector_settings.pop("timeslice_levels", None)
-        ).get_index("timeslice")
 
         # Read technologies
         technologies = read_technodata(settings, name, settings.time_framework)
@@ -95,7 +88,6 @@ class Sector(AbstractSector):  # type: ignore
             name,
             technologies,
             subsectors=subsectors,
-            timeslices=timeslices,
             supply_prod=supply,
             outputs=outputs,
             interactions=interactions,
@@ -107,7 +99,6 @@ class Sector(AbstractSector):  # type: ignore
         name: str,
         technologies: xr.Dataset,
         subsectors: Sequence[Subsector] = [],
-        timeslices: pd.MultiIndex | None = None,
         interactions: Callable[[Sequence[AbstractAgent]], None] | None = None,
         interpolation: str = "linear",
         outputs: Callable | None = None,
@@ -123,10 +114,6 @@ class Sector(AbstractSector):  # type: ignore
         """Subsectors controlled by this object."""
         self.technologies: xr.Dataset = technologies
         """Parameters describing the sector's technologies."""
-        self.timeslices: pd.MultiIndex | None = timeslices
-        """Timeslice at which this sector operates.
-        If None, it will operate using the timeslice of the input market.
-        """
         self.interpolation: Mapping[str, Any] = {
             "method": interpolation,
             "kwargs": {"fill_value": "extrapolate"},
@@ -267,7 +254,6 @@ class Sector(AbstractSector):  # type: ignore
             result = xr.Dataset(
                 dict(supply=supply, consumption=consumption, costs=costs)
             )
-        result = self.convert_market_timeslice(result, mca_market.timeslice)
         result["comm_usage"] = self.technologies.comm_usage.sel(
             commodity=result.commodity
         )
@@ -283,7 +269,6 @@ class Sector(AbstractSector):  # type: ignore
         from muse.commodities import is_pollutant
         from muse.costs import annual_levelized_cost_of_energy, supply_cost
         from muse.quantities import consumption
-        from muse.timeslices import QuantityType, convert_timeslice
         from muse.utilities import broadcast_techs
 
         years = market.year.values
@@ -293,8 +278,6 @@ class Sector(AbstractSector):  # type: ignore
         supply = self.supply_prod(
             market=market, capacity=capacity, technologies=technologies
         )
-        if "timeslice" in market.prices.dims and "timeslice" not in supply.dims:
-            supply = convert_timeslice(supply, market.timeslice, QuantityType.EXTENSIVE)
 
         # Calculate consumption
         consume = consumption(technologies, supply, market.prices)
@@ -381,29 +364,3 @@ class Sector(AbstractSector):  # type: ignore
         """Iterator over all agents in the sector."""
         for subsector in self.subsectors:
             yield from subsector.agents
-
-    @staticmethod
-    def convert_market_timeslice(
-        market: xr.Dataset,
-        timeslice: pd.MultiIndex,
-        intensive: str | tuple[str] = "prices",
-    ) -> xr.Dataset:
-        """Converts market from one to another timeslice."""
-        from muse.timeslices import QuantityType, convert_timeslice
-
-        if isinstance(intensive, str):
-            intensive = (intensive,)
-
-        timesliced = {d for d in market.data_vars if "timeslice" in market[d].dims}
-        intensives = convert_timeslice(
-            market[list(timesliced.intersection(intensive))],
-            timeslice,
-            QuantityType.INTENSIVE,
-        )
-        extensives = convert_timeslice(
-            market[list(timesliced.difference(intensives.data_vars))],
-            timeslice,
-            QuantityType.EXTENSIVE,
-        )
-        others = market[list(set(market.data_vars).difference(timesliced))]
-        return xr.merge([intensives, extensives, others])

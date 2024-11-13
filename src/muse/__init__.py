@@ -2,7 +2,7 @@
 
 import os
 
-VERSION = "1.2.2"
+VERSION = "1.3.0"
 
 
 def _create_logger(color: bool = True):
@@ -89,7 +89,6 @@ __all__ = [
     "read_technodictionary",
     "read_technologies",
     "read_timeslice_shares",
-    "read_csv_timeslices",
     "read_settings",
     "read_macro_drivers",
     "read_csv_agent_parameters",

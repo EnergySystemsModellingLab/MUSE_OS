@@ -236,30 +236,6 @@ levels. For instance, there no ``peak`` periods during weekends. All that matter
 that the relative weights (i.e. the number of hours) are consistent and sum up to a
 year.
 
-The input above defines the finest times slice in the code. In order to define rougher
-timeslices we can introduce items in each levels that represent aggregates at that
-level. By default, we have the following:
-
-.. code-block:: TOML
-
-    [timeslices.aggregates]
-    all-day = ["night", "morning", "afternoon", "early-peak", "late-peak", "evening"]
-    all-week = ["weekday", "weekend"]
-    all-year = ["winter", "summer", "spring-autumn"]
-
-Here, ``all-day`` aggregates the full day. However, one could potentially create
-aggregates such as:
-
-.. code-block:: TOML
-
-    [timeslices.aggregates]
-    daylight = ["morning", "afternoon", "early-peak", "late-peak"]
-    nightlife = ["evening", "night"]
-
- It is possible to specify a timeslice level for the mca by adding an
-`mca.timeslice_levels` section, using an inline table format.
-See section on `Timeslices_`.
-
 *outputs_cache*
    This option behaves exactly like `outputs` for sectors and accepts the same options but
    controls the output of cached quantities instead. This option is NOT available for
@@ -422,30 +398,6 @@ Sectors contain a number of subsections:
    *commodities_out*
       Path to a csv file describing the outputs of each technology involved in the sector.
       See :ref:`inputs-iocomms`.
-
-   Once the finest timeslice and its aggregates are given, it is  possible for each sector
-to define the timeslice simply by referring to the slices it will use at each level.
-
-.. _sector-timeslices:
-
-*timeslice_levels*
-   Optional. These define the timeslices of a sector. If not specified, the finest timeslice levels will be used
-   (See `Timeslices`_).
-   It can be implemented with the following rows:
-
-.. code-block:: TOML
-
-    [sectors.some_sector.timeslice_levels]
-    day = ["daylight", "nightlife"]
-    month = ["all-year"]
-
-   Above, ``sectors.some_sector.timeslice_levels.week`` defaults its value in the finest
-   timeslice. Indeed, if the subsection ``sectors.some_sector.timeslice_levels`` is not
-   given, then the sector will default to using the finest timeslices.
-
-   If the MCA uses a rougher
-   timeslice framework, the market will be expressed within it. Hence information from
-   sectors with a finer timeslice framework will be lost.
 
 *subsectors*
 
@@ -711,58 +663,3 @@ The following attributes are accepted:
 
       filters.region = ["USA", "ASEA"]
       filters.commodity = ["algae", "fluorescent light"]
-
-
---------------
-Legacy Sectors
---------------
-
-Legacy sectors wrap sectors developed for a previous version of MUSE to the open-source
-version.
-
-Preset sectors are defined in :py:class:`~muse.sectors.PresetSector`.
-
-The can be defined in the TOML file as follows:
-
-.. code-block:: TOML
-
-   [global_input_files]
-   macrodrivers = '{path}/input/Macrodrivers.csv'
-   regions = '{path}/input/Regions.csv'
-   global_commodities = '{path}/input/MUSEGlobalCommodities.csv'
-
-   [sectors.Industry]
-   type = 'legacy'
-   priority = 'demand'
-   agregation_level = 'month'
-   excess = 0
-
-   userdata_path = '{muse_sectors}/Industry'
-   technodata_path = '{muse_sectors}/Industry'
-   timeslices_path = '{muse_sectors}/Industry/TimeslicesIndustry.csv'
-   output_path = '{path}/output'
-
-For historical reasons, the three `global_input_files` above are required. The sector
-itself can use the following attributes.
-
-*type*
-   See the attribute in the standard mode, :ref:`type<sector-type>`. *Legacy* sectors
-   are those with type "legacy".
-
-*priority*
-   See the attribute in the standard mode, :ref:`priority<sector-priority>`.
-
-*agregation_level*
-   Information relevant to the sector's timeslice.
-
-*excess*
-   Excess factor used to model early obsolescence.
-
-*userdata_path*
-   Path to a directory with sector-specific data files.
-
-*technodata_path*
-   Path to a technodata CSV file. See. :ref:`inputs-technodata`.
-
-*output_path*
-   Path to a directory where the sector will write output files.
