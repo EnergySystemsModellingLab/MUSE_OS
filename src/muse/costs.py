@@ -282,7 +282,12 @@ def lifetime_levelized_cost_of_energy(
     fuels = is_fuel(technologies.comm_usage)
 
     # Calculate consumption
-    cons = consumption(technologies=techs, production=production, prices=prices)
+    cons = consumption(
+        technologies=techs,
+        production=production,
+        prices=prices,
+        timeslice_level=timeslice_level,
+    )
 
     # Cost of installed capacity
     installed_capacity_costs = distribute_timeslice(

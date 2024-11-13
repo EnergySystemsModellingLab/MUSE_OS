@@ -43,8 +43,12 @@ def supply(
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
     from muse.timeslices import broadcast_timeslice
 
-    maxprod = maximum_production(technologies, capacity)
-    minprod = minimum_production(technologies, capacity)
+    maxprod = maximum_production(
+        technologies, capacity, timeslice_level=timeslice_level
+    )
+    minprod = minimum_production(
+        technologies, capacity, timeslice_level=timeslice_level
+    )
     size = np.array(maxprod.region).size
     # in presence of trade demand needs to map maxprod dst_region
     if (

@@ -127,4 +127,6 @@ def supply(
     """
     from muse.quantities import supply
 
-    return supply(capacity, market.consumption, technologies)
+    return supply(
+        capacity, market.consumption, technologies, timeslice_level=timeslice_level
+    )
