@@ -116,27 +116,45 @@ def distribute_timeslice(x, ts=None, level=None):
 def compress_timeslice(x, ts=None, level=None, operation="sum"):
     """Convert a timesliced array to a lower level by performing the given operation.
 
-    The operation can be either 'sum', or 'item'
-    - sum: weighted sum according to timeslice length
-    - mean: weighted mean according to timeslice length
+    The operation can be either 'sum', or 'mean'
     """
     if ts is None:
         ts = TIMESLICE
 
-    if not x.timeslice.reset_coords(drop=True).equals(ts.timeslice):
-        raise ValueError(
-            "x must be in the global timeslicing scheme to perform this operation."
-        )
+    # If level is not specified, don't compress
+    if level is None:
+        return x
 
-    finest_level = ts.timeslice.to_index().names[-1]
-    if level == finest_level:
+    # Get level names from x
+    level_names = x.timeslice.to_index().names
+    if level not in level_names:
+        raise ValueError(f"Unknown level: {level}. Must be one of {level_names}.")
+    current_level, coarser_levels = level_names[-1], level_names[:-1]
+
+    # Return if already at the desired level
+    if current_level == level:
         return x
 
     # Perform the operation over one timeslice level
-    coarser_level = ...
+    if operation == "sum":
+        x = (
+            x.unstack(dim="timeslice")
+            .sum(current_level)
+            .stack(timeslice=coarser_levels)
+        )
+    elif operation == "mean":
+        # TODO: This should be a weighted mean according to timeslice length
+        x = (
+            x.unstack(dim="timeslice")
+            .mean(current_level)
+            .stack(timeslice=coarser_levels)
+        )
+    else:
+        raise ValueError(f"Unknown operation: {operation}. Must be 'sum' or 'mean'.")
 
     # Recurse
     return compress_timeslice(x, ts=ts, level=level, operation=operation)
+
 
 def expand_timeslice(x, ts=None, operation="distribute"):
     """Convert a timesliced array to the global scheme by expanding.
@@ -148,16 +166,31 @@ def expand_timeslice(x, ts=None, operation="distribute"):
     if ts is None:
         ts = TIMESLICE
 
+    # Get level names from ts
+    level_names = ts.timeslice.to_index().names
+    finest_level = level_names[-1]
+
+    # Return if already at the finest level
     current_level = x.timeslice.to_index().names[-1]
-    finest_level = ts.timeslice.to_index().names[-1]
     if current_level == finest_level:
         return x
+    else:
+        pass
 
     # Perform the operation over one timeslice level
-    finer_level = ...
+    finer_level = level_names[level_names.index(current_level) + 1]
+    if operation == "broadcast":
+        return x  # TODO
+    elif operation == "distribute":
+        return x  # TODO
+    else:
+        raise ValueError(
+            f"Unknown operation: {operation}. Must be 'distribute' or 'broadcast'."
+        )
 
     # Recurse
     return expand_timeslice(x, ts=ts, operation=operation)
+
 
 def drop_timeslice(data: DataArray) -> DataArray:
     """Drop the timeslice variable from a DataArray.

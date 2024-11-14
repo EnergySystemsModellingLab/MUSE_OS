@@ -318,7 +318,7 @@ class Sector(AbstractSector):  # type: ignore
             market["supply"], level=self.timeslice_level, operation="sum"
         )
         consumption = compress_timeslice(
-            market["consumption"], level=self.timeslice_level, operation=sum
+            market["consumption"], level=self.timeslice_level, operation="sum"
         )
         prices = compress_timeslice(
             market["prices"], level=self.timeslice_level, operation="mean"
