@@ -124,27 +124,29 @@ def non_timesliced_dataarray():
 def test_broadcast_timeslice(non_timesliced_dataarray, timeslice):
     from muse.timeslices import broadcast_timeslice, compress_timeslice
 
-    out = broadcast_timeslice(non_timesliced_dataarray)
+    for level in ["month", "day", "hour"]:
+        out = broadcast_timeslice(non_timesliced_dataarray, level=level)
+        target_timeslices = compress_timeslice(timeslice, level=level)
 
-    # Check that timeslicing in output matches the global scheme
-    assert out.timeslice.equals(timeslice.timeslice)
+        # Check that timeslicing in output matches the global scheme
+        assert out.timeslice.equals(target_timeslices.timeslice)
 
-    # Check that all timeslices in the output are equal to each other
-    assert (out.diff(dim="timeslice") == 0).all()
+        # Check that all timeslices in the output are equal to each other
+        assert (out.diff(dim="timeslice") == 0).all()
 
-    # Check that all values in the output are equal to the input
-    assert all(
-        (out.isel(timeslice=i) == non_timesliced_dataarray).all()
-        for i in range(out.sizes["timeslice"])
-    )
+        # Check that all values in the output are equal to the input
+        assert all(
+            (out.isel(timeslice=i) == non_timesliced_dataarray).all()
+            for i in range(out.sizes["timeslice"])
+        )
 
-    # Calling on an already timesliced array: the input should be returned unchanged
+    # Calling on a fully timesliced array: the input should be returned unchanged
     out2 = broadcast_timeslice(out)
     assert out2.equals(out)
 
     # Calling on an array with inappropraite timeslicing: ValueError should be raised
     with raises(ValueError):
-        broadcast_timeslice(compress_timeslice(timeslice, level="day"))
+        broadcast_timeslice(compress_timeslice(out, level="day"))
 
 
 def test_distribute_timeslice(non_timesliced_dataarray, timeslice):
@@ -154,26 +156,30 @@ def test_distribute_timeslice(non_timesliced_dataarray, timeslice):
         distribute_timeslice,
     )
 
-    out = distribute_timeslice(non_timesliced_dataarray)
+    for level in ["month", "day", "hour"]:
+        out = distribute_timeslice(non_timesliced_dataarray, level=level)
+        target_timeslices = compress_timeslice(timeslice, level=level)
 
-    # Check that timeslicing in output matches the global scheme
-    assert out.timeslice.equals(timeslice.timeslice)
+        # Check that timeslicing in output matches the global scheme
+        assert out.timeslice.equals(target_timeslices.timeslice)
 
-    # Check that all values are proportional to timeslice lengths
-    out_proportions = out / broadcast_timeslice(out.sum("timeslice"))
-    ts_proportions = timeslice / broadcast_timeslice(timeslice.sum("timeslice"))
-    assert abs(out_proportions - ts_proportions).max() < 1e-6
+        # Check that all values are proportional to timeslice lengths
+        out_proportions = out / broadcast_timeslice(out.sum("timeslice"), level=level)
+        ts_proportions = target_timeslices / broadcast_timeslice(
+            target_timeslices.sum("timeslice"), level=level
+        )
+        assert abs(out_proportions - ts_proportions).max() < 1e-6
 
-    # Check that the sum across timeslices is equal to the input
-    assert (out.sum("timeslice") == approx(non_timesliced_dataarray)).all()
+        # Check that the sum across timeslices is equal to the input
+        assert (out.sum("timeslice") == approx(non_timesliced_dataarray)).all()
 
-    # Calling on an already timesliced array: the input should be returned unchanged
+    # Calling on a fully timesliced array: the input should be returned unchanged
     out2 = distribute_timeslice(out)
     assert out2.equals(out)
 
     # Calling on an array with inappropraite timeslicing: ValueError should be raised
     with raises(ValueError):
-        distribute_timeslice(compress_timeslice(timeslice, level="day"))
+        distribute_timeslice(compress_timeslice(out, level="day"))
 
 
 def test_compress_timeslice(non_timesliced_dataarray, timeslice):
