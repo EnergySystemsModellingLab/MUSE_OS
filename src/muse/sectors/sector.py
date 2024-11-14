@@ -312,15 +312,28 @@ class Sector(AbstractSector):  # type: ignore
 
     def convert_to_sector_timeslicing(self, market: xr.Dataset) -> xr.Dataset:
         """Converts market data to sector timeslicing."""
-        # sector_market = func(market, self.timeslice_level)
-        # return sector_market
-        return market
+        from muse.timeslices import compress_timeslice
+
+        supply = compress_timeslice(
+            market["supply"], level=self.timeslice_level, operation="sum"
+        )
+        consumption = compress_timeslice(
+            market["consumption"], level=self.timeslice_level, operation=sum
+        )
+        prices = compress_timeslice(
+            market["prices"], level=self.timeslice_level, operation="mean"
+        )
+        return xr.Dataset(dict(supply=supply, consumption=consumption, prices=prices))
 
     def convert_to_global_timeslicing(self, market: xr.Dataset) -> xr.Dataset:
         """Converts market data to global timeslicing."""
-        # global_market = func(market)
-        # return global_market
-        return market
+        from muse.timeslices import expand_timeslice
+
+        supply = expand_timeslice(market["supply"], operation="distribute")
+        consumption = expand_timeslice(market["consumption"], operation="distribute")
+        costs = expand_timeslice(market["costs"], operation="distribute")
+
+        return xr.Dataset(dict(supply=supply, consumption=consumption, costs=costs))
 
     @property
     def capacity(self) -> xr.DataArray:

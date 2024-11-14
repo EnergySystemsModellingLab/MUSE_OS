@@ -90,7 +90,7 @@ def broadcast_timeslice(x, ts=None, level=None):
     if level is not None:
         ts = TRANSFORMS[level]
 
-    # If x already has timeslices, check that it is matches the reference timeslice.
+    # If x already has timeslices, check that it matches the reference timeslice.
     if "timeslice" in x.dims:
         if x.timeslice.reset_coords(drop=True).equals(ts.timeslice):
             return x
@@ -112,6 +112,52 @@ def distribute_timeslice(x, ts=None, level=None):
     extensive = broadcast_timeslice(x, ts, level)
     return extensive * (ts / broadcast_timeslice(ts.sum(), level=level))
 
+
+def compress_timeslice(x, ts=None, level=None, operation="sum"):
+    """Convert a timesliced array to a lower level by performing the given operation.
+
+    The operation can be either 'sum', or 'item'
+    - sum: weighted sum according to timeslice length
+    - mean: weighted mean according to timeslice length
+    """
+    if ts is None:
+        ts = TIMESLICE
+
+    if not x.timeslice.reset_coords(drop=True).equals(ts.timeslice):
+        raise ValueError(
+            "x must be in the global timeslicing scheme to perform this operation."
+        )
+
+    finest_level = ts.timeslice.to_index().names[-1]
+    if level == finest_level:
+        return x
+
+    # Perform the operation over one timeslice level
+    coarser_level = ...
+
+    # Recurse
+    return compress_timeslice(x, ts=ts, level=level, operation=operation)
+
+def expand_timeslice(x, ts=None, operation="distribute"):
+    """Convert a timesliced array to the global scheme by expanding.
+
+    The operation can be either 'distribute', or 'broadcast'
+    - distribute: distribute the values according to timeslice length
+    - broadcast: broadcast the values across the new timeslice level
+    """
+    if ts is None:
+        ts = TIMESLICE
+
+    current_level = x.timeslice.to_index().names[-1]
+    finest_level = ts.timeslice.to_index().names[-1]
+    if current_level == finest_level:
+        return x
+
+    # Perform the operation over one timeslice level
+    finer_level = ...
+
+    # Recurse
+    return expand_timeslice(x, ts=ts, operation=operation)
 
 def drop_timeslice(data: DataArray) -> DataArray:
     """Drop the timeslice variable from a DataArray.
