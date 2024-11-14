@@ -179,20 +179,23 @@ def test_distribute_timeslice(non_timesliced_dataarray, timeslice):
 def test_compress_timeslice(non_timesliced_dataarray, timeslice):
     from muse.timeslices import broadcast_timeslice, compress_timeslice
 
-    # Create timesliced dataarray for testing
+    # Create timesliced dataarray for compressing
     timesliced_dataarray = broadcast_timeslice(non_timesliced_dataarray)
 
-    # Sum operation
-    out = compress_timeslice(timesliced_dataarray, operation="sum", level="day")
-    assert out.timeslice.to_index().names[-1] == "day"
-    assert (out.sum("timeslice") == approx(timesliced_dataarray.sum("timeslice"))).all()
+    for level in ["month", "day", "hour"]:
+        # Sum operation
+        out = compress_timeslice(timesliced_dataarray, operation="sum", level=level)
+        assert out.timeslice.to_index().names[-1] == level
+        assert (
+            out.sum("timeslice") == approx(timesliced_dataarray.sum("timeslice"))
+        ).all()
 
-    # Mean operation
-    out = compress_timeslice(timesliced_dataarray, operation="mean", level="day")
-    assert out.timeslice.to_index().names[-1] == "day"
-    assert (
-        out.mean("timeslice") == approx(timesliced_dataarray.mean("timeslice"))
-    ).all()
+        # Mean operation
+        out = compress_timeslice(timesliced_dataarray, operation="mean", level=level)
+        assert out.timeslice.to_index().names[-1] == level
+        assert (
+            out.mean("timeslice") == approx(timesliced_dataarray.mean("timeslice"))
+        ).all()
 
     # Calling without specifying a level: the input should be returned unchanged
     out = compress_timeslice(timesliced_dataarray)
@@ -207,21 +210,36 @@ def test_compress_timeslice(non_timesliced_dataarray, timeslice):
         compress_timeslice(timesliced_dataarray, level="day", operation="invalid")
 
 
-def test_expand_timeslice(timeslice_dataarray):
-    # Test 1: calling on an already expanded array
-    # Assert the input is returned unchanged
+def test_expand_timeslice(non_timesliced_dataarray, timeslice):
+    from muse.timeslices import broadcast_timeslice, expand_timeslice
 
-    # Test 2: invalid operation
-    # Assert ValueError is raised
+    for level in ["month", "day", "hour"]:
+        # Create timesliced dataarray for expanding
+        timesliced_dataarray = broadcast_timeslice(
+            non_timesliced_dataarray, level=level
+        )
 
-    # Test 3: broadcast operation
-    # Assert timeslicing matches the global scheme
-    # Assert all values are equal to each other
-    # Assert all values in the output are equal to the input
+        # Broadcast operation
+        out = expand_timeslice(timesliced_dataarray, operation="broadcast")
+        assert out.timeslice.equals(timeslice.timeslice)
+        assert (
+            out.mean("timeslice") == approx(timesliced_dataarray.mean("timeslice"))
+        ).all()
 
-    # Test 4: distribute operation
-    # Assert timeslicing matches the global scheme
-    # Assert all values are in proportion to timeslice length
-    # Assert sum of output across timeslices is equal to the input
+        # Distribute operation
+        out = expand_timeslice(timesliced_dataarray, operation="distribute")
+        assert out.timeslice.equals(timeslice.timeslice)
+        assert (
+            out.sum("timeslice") == approx(timesliced_dataarray.sum("timeslice"))
+        ).all()
 
-    pass
+    # Calling on an already expanded array: the input should be returned unchanged
+    out2 = expand_timeslice(out)
+    assert out.equals(out2)
+
+    # Calling with an invalid operation: ValueError should be raised
+    with raises(ValueError):
+        timesliced_dataarray = broadcast_timeslice(
+            non_timesliced_dataarray, level="month"
+        )
+        expand_timeslice(timesliced_dataarray, operation="invalid")

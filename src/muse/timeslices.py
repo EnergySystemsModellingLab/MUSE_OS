@@ -11,6 +11,7 @@ __all__ = [
 from collections.abc import Mapping, Sequence
 from typing import Union
 
+import numpy as np
 import pandas as pd
 from xarray import DataArray
 
@@ -145,6 +146,7 @@ def compress_timeslice(
             .sum(current_level)
             .stack(timeslice=coarser_levels)
         )
+        # return x.unstack(dim="timeslice").sum(["hour"]).stack(timeslice=["month", "day"])
     elif operation == "mean":
         # TODO: This should be a weighted mean according to timeslice length
         x = (
@@ -173,28 +175,31 @@ def expand_timeslice(
 
     # Get level names from ts
     level_names = ts.timeslice.to_index().names
-    finest_level = level_names[-1]
 
     # Return if already at the finest level
+    finest_level = level_names[-1]
     current_level = x.timeslice.to_index().names[-1]
     if current_level == finest_level:
         return x
-    else:
-        pass
 
-    # Perform the operation over one timeslice level
-    finer_level = level_names[level_names.index(current_level) + 1]
+    # Prepare mask
+    mask = ts.unstack(dim="timeslice")
     if operation == "broadcast":
-        return x  # TODO
+        mask = mask.where(np.isnan(mask), 1)
     elif operation == "distribute":
-        return x  # TODO
+        mask /= mask.sum(level_names[level_names.index(current_level) + 1 :])
     else:
         raise ValueError(
             f"Unknown operation: {operation}. Must be 'distribute' or 'broadcast'."
         )
 
-    # Recurse
-    return expand_timeslice(x, ts=ts, operation=operation)
+    # Perform the operation
+    return (
+        (x.unstack(dim="timeslice") * mask)
+        .stack(timeslice=level_names)
+        .dropna("timeslice")
+        .sel(timeslice=ts.timeslice)
+    )
 
 
 def drop_timeslice(data: DataArray) -> DataArray:
