@@ -80,7 +80,9 @@ def setup_module(settings: Union[str, Mapping]):
         )
 
 
-def broadcast_timeslice(x, ts=None, level=None):
+def broadcast_timeslice(
+    x: DataArray, ts: DataArray | None = None, level: str | None = None
+):
     """Convert a non-timesliced array to a timesliced array by broadcasting."""
     from xarray import Coordinates
 
@@ -101,7 +103,7 @@ def broadcast_timeslice(x, ts=None, level=None):
     return extensive
 
 
-def distribute_timeslice(x, ts=None, level=None):
+def distribute_timeslice(x: DataArray, ts: DataArray | None = None, level=None):
     """Convert a non-timesliced array to a timesliced array by distribution."""
     if ts is None:
         ts = TIMESLICE
@@ -113,7 +115,12 @@ def distribute_timeslice(x, ts=None, level=None):
     return extensive * (ts / broadcast_timeslice(ts.sum(), level=level))
 
 
-def compress_timeslice(x, ts=None, level=None, operation="sum"):
+def compress_timeslice(
+    x: DataArray,
+    ts: DataArray | None = None,
+    level: str | None = None,
+    operation: str = "sum",
+):
     """Convert a timesliced array to a lower level by performing the given operation.
 
     The operation can be either 'sum', or 'mean'
@@ -156,7 +163,9 @@ def compress_timeslice(x, ts=None, level=None, operation="sum"):
     return compress_timeslice(x, ts=ts, level=level, operation=operation)
 
 
-def expand_timeslice(x, ts=None, operation="distribute"):
+def expand_timeslice(
+    x: DataArray, ts: DataArray | None = None, operation: str = "distribute"
+):
     """Convert a timesliced array to the global scheme by expanding.
 
     The operation can be either 'distribute', or 'broadcast'

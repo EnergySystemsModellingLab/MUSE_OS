@@ -70,8 +70,3 @@ summer.weekend.night = 150
 summer.weekend.morning = 150
 summer.weekend.afternoon = 150
 summer.weekend.evening = 150
-
-[timeslices.aggregates]
-all-day = ["night", "morning", "afternoon", "early-peak", "late-peak", "evening"]
-all-week = ["weekday", "weekend"]
-all-year = ["winter", "summer", "spring-autumn"]

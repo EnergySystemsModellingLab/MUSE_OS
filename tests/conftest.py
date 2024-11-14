@@ -147,13 +147,6 @@ def default_timeslice_globals():
     summer.weekend.afternoon = 150
     summer.weekend.evening = 150
     level_names = ["month", "day", "hour"]
-
-    [timeslices.aggregates]
-    all-day = [
-        "night", "morning", "afternoon", "early-peak", "late-peak", "evening", "night"
-    ]
-    all-week = ["weekday", "weekend"]
-    all-year = ["winter", "summer", "spring-autumn"]
     """
 
     setup_module(default_timeslices)
