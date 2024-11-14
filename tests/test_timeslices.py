@@ -121,8 +121,8 @@ def non_timesliced_dataarray():
     return DataArray([1, 2, 3], dims=["x"])
 
 
-def test_broadcast_timeslice(non_timesliced_dataarray, timeslice, timeslice_dataarray):
-    from muse.timeslices import broadcast_timeslice
+def test_broadcast_timeslice(non_timesliced_dataarray, timeslice):
+    from muse.timeslices import broadcast_timeslice, compress_timeslice
 
     out = broadcast_timeslice(non_timesliced_dataarray)
 
@@ -142,13 +142,17 @@ def test_broadcast_timeslice(non_timesliced_dataarray, timeslice, timeslice_data
     out2 = broadcast_timeslice(out)
     assert out2.equals(out)
 
-    # Calling with an incompatible timeslicing scheme: ValueError should be raised
+    # Calling on an array with inappropraite timeslicing: ValueError should be raised
     with raises(ValueError):
-        broadcast_timeslice(out, ts=timeslice_dataarray)
+        broadcast_timeslice(compress_timeslice(timeslice, level="day"))
 
 
-def test_distribute_timeslice(non_timesliced_dataarray, timeslice, timeslice_dataarray):
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
+def test_distribute_timeslice(non_timesliced_dataarray, timeslice):
+    from muse.timeslices import (
+        broadcast_timeslice,
+        compress_timeslice,
+        distribute_timeslice,
+    )
 
     out = distribute_timeslice(non_timesliced_dataarray)
 
@@ -167,27 +171,40 @@ def test_distribute_timeslice(non_timesliced_dataarray, timeslice, timeslice_dat
     out2 = distribute_timeslice(out)
     assert out2.equals(out)
 
-    # Calling with an incompatible timeslicing scheme: ValueError should be raised
+    # Calling on an array with inappropraite timeslicing: ValueError should be raised
     with raises(ValueError):
-        distribute_timeslice(out, ts=timeslice_dataarray)
+        distribute_timeslice(compress_timeslice(timeslice, level="day"))
 
 
-def test_compress_timeslice(non_timesliced_dataarray, timeslice, timeslice_dataarray):
-    # Test 1: without specifying level
-    # Assert output matches input
+def test_compress_timeslice(non_timesliced_dataarray, timeslice):
+    from muse.timeslices import broadcast_timeslice, compress_timeslice
 
-    # Test 2: invalid operation
-    # Assert ValueError is raised
+    # Create timesliced dataarray for testing
+    timesliced_dataarray = broadcast_timeslice(non_timesliced_dataarray)
 
-    # Test 3: sum operation
-    # Assert timeslicing is the correct level
-    # Assert sum of output equals sum of input
+    # Sum operation
+    out = compress_timeslice(timesliced_dataarray, operation="sum", level="day")
+    assert out.timeslice.to_index().names[-1] == "day"
+    assert (out.sum("timeslice") == approx(timesliced_dataarray.sum("timeslice"))).all()
 
-    # Test 4: mean operation
-    # Assert timeslicing is the correct level
-    # Assert weighted mean of output equals weighted mean of input
+    # Mean operation
+    out = compress_timeslice(timesliced_dataarray, operation="mean", level="day")
+    assert out.timeslice.to_index().names[-1] == "day"
+    assert (
+        out.mean("timeslice") == approx(timesliced_dataarray.mean("timeslice"))
+    ).all()
 
-    pass
+    # Calling without specifying a level: the input should be returned unchanged
+    out = compress_timeslice(timesliced_dataarray)
+    assert out.equals(timesliced_dataarray)
+
+    # Calling with an invalid level: ValueError should be raised
+    with raises(ValueError):
+        compress_timeslice(timesliced_dataarray, level="invalid")
+
+    # Calling with an invalid operation: ValueError should be raised
+    with raises(ValueError):
+        compress_timeslice(timesliced_dataarray, level="day", operation="invalid")
 
 
 def test_expand_timeslice(timeslice_dataarray):

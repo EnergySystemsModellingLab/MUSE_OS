@@ -224,6 +224,7 @@ def adhoc_match_demand(
     technologies: xr.Dataset,
     constraints: list[Constraint],
     year: int,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     from muse.demand_matching import demand_matching
     from muse.quantities import capacity_in_use, maximum_production
@@ -237,6 +238,7 @@ def adhoc_match_demand(
         year=year,
         technology=costs.replacement,
         commodity=demand.commodity,
+        timeslice_level=timeslice_level,
     ).drop_vars("technology")
 
     # Push disabled techs to last rank.

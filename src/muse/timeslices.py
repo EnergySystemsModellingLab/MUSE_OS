@@ -101,6 +101,12 @@ def distribute_timeslice(x: DataArray, ts: DataArray | None = None, level=None):
     if level is not None:
         ts = compress_timeslice(ts, level=level, operation="sum")
 
+    # If x already has timeslices, check that it matches the reference timeslice.
+    if "timeslice" in x.dims:
+        if x.timeslice.reset_coords(drop=True).equals(ts.timeslice):
+            return x
+        raise ValueError("x has incompatible timeslicing.")
+
     extensive = broadcast_timeslice(x, ts)
     return extensive * (ts / broadcast_timeslice(ts.sum(), ts))
 
