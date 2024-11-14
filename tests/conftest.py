@@ -1,12 +1,14 @@
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Callable, Optional
+from unittest.mock import patch
 
 import numpy as np
 from pandas import DataFrame
 from pytest import fixture
 from xarray import DataArray, Dataset
 
+from muse.__main__ import patched_broadcast_compat_data
 from muse.agents import Agent
 
 
@@ -17,6 +19,14 @@ def logger():
     logger = getLogger("muse")
     logger.setLevel(CRITICAL)
     return logger
+
+
+@fixture(autouse=True)
+def patch_broadcast_compat_data():
+    with patch(
+        "xarray.core.variable._broadcast_compat_data", patched_broadcast_compat_data
+    ):
+        yield
 
 
 @fixture()
