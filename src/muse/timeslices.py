@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 from collections.abc import Mapping, Sequence
-from typing import Union
+from typing import Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -72,7 +72,7 @@ def setup_module(settings: Union[str, Mapping]):
 
 
 def broadcast_timeslice(
-    x: DataArray, ts: DataArray | None = None, level: str | None = None
+    x: DataArray, ts: Optional[DataArray] = None, level: Optional[str] = None
 ):
     """Convert a non-timesliced array to a timesliced array by broadcasting."""
     from xarray import Coordinates
@@ -94,7 +94,7 @@ def broadcast_timeslice(
     return extensive
 
 
-def distribute_timeslice(x: DataArray, ts: DataArray | None = None, level=None):
+def distribute_timeslice(x: DataArray, ts: Optional[DataArray] = None, level=None):
     """Convert a non-timesliced array to a timesliced array by distribution."""
     if ts is None:
         ts = TIMESLICE
@@ -114,8 +114,8 @@ def distribute_timeslice(x: DataArray, ts: DataArray | None = None, level=None):
 
 def compress_timeslice(
     x: DataArray,
-    ts: DataArray | None = None,
-    level: str | None = None,
+    ts: Optional[DataArray] = None,
+    level: Optional[str] = None,
     operation: str = "sum",
 ):
     """Convert a timesliced array to a lower level by performing the given operation.
@@ -162,7 +162,7 @@ def compress_timeslice(
 
 
 def expand_timeslice(
-    x: DataArray, ts: DataArray | None = None, operation: str = "distribute"
+    x: DataArray, ts: Optional[DataArray] = None, operation: str = "distribute"
 ):
     """Convert a timesliced array to the global scheme by expanding.
 
