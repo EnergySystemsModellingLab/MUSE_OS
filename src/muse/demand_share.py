@@ -114,7 +114,7 @@ def new_and_retro(
     technologies: xr.Dataset,
     current_year: int,
     forecast: int,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     r"""Splits demand across new and retro agents.
 
@@ -329,7 +329,7 @@ def standard_demand(
     technologies: xr.Dataset,
     current_year: int,
     forecast: int,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     r"""Splits demand across new agents.
 
@@ -439,7 +439,7 @@ def unmet_forecasted_demand(
     technologies: xr.Dataset,
     current_year: int,
     forecast: int,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
     from muse.commodities import is_enduse
@@ -514,7 +514,7 @@ def unmet_demand(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
 ):
     r"""Share of the demand that cannot be serviced by the existing assets.
 
@@ -554,7 +554,7 @@ def new_consumption(
     technologies: xr.Dataset,
     current_year: int,
     forecast: int,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     r"""Computes share of the demand attributed to new agents.
 
@@ -595,7 +595,7 @@ def new_and_retro_demands(
     technologies: xr.Dataset,
     current_year: int,
     forecast: int,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
 ) -> xr.Dataset:
     """Splits demand into *new* and *retrofit* demand.
 

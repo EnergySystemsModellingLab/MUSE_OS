@@ -23,7 +23,7 @@ class AbstractAgent(ABC):
         interpolation: str = "linear",
         category: Optional[str] = None,
         quantity: Optional[float] = 1,
-        timeslice_level: str | None = None,
+        timeslice_level: Optional[str] = None,
     ):
         """Creates a standard MUSE agent.
 
@@ -116,7 +116,7 @@ class Agent(AbstractAgent):
         asset_threshold: float = 1e-4,
         quantity: Optional[float] = 1,
         spend_limit: int = 0,
-        timeslice_level: str | None = None,
+        timeslice_level: Optional[str] = None,
         **kwargs,
     ):
         """Creates a standard agent.

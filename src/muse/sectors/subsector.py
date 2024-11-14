@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from typing import (
     Any,
     Callable,
+    Optional,
 )
 
 import numpy as np
@@ -26,7 +27,7 @@ class Subsector:
         name: str = "subsector",
         forecast: int = 5,
         expand_market_prices: bool = False,
-        timeslice_level: str | None = None,
+        timeslice_level: Optional[str] = None,
     ):
         from muse import constraints as cs
         from muse import demand_share as ds
@@ -125,7 +126,7 @@ class Subsector:
         regions: Sequence[str] | None = None,
         current_year: int | None = None,
         name: str = "subsector",
-        timeslice_level: str | None = None,
+        timeslice_level: Optional[str] = None,
     ) -> Subsector:
         from muse import constraints as cs
         from muse import demand_share as ds

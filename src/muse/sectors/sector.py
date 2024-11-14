@@ -4,6 +4,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from typing import (
     Any,
     Callable,
+    Optional,
     cast,
 )
 
@@ -104,7 +105,7 @@ class Sector(AbstractSector):  # type: ignore
         interpolation: str = "linear",
         outputs: Callable | None = None,
         supply_prod: PRODUCTION_SIGNATURE | None = None,
-        timeslice_level: str | None = None,
+        timeslice_level: Optional[str] = None,
     ):
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory

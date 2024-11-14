@@ -38,7 +38,7 @@ __all__ = [
     "PRODUCTION_SIGNATURE",
 ]
 from collections.abc import Mapping, MutableMapping
-from typing import Any, Callable, Union, cast
+from typing import Any, Callable, Optional, Union, cast
 
 import xarray as xr
 
@@ -101,7 +101,7 @@ def maximum_production(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Production when running at full capacity.
 
@@ -118,7 +118,7 @@ def supply(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Service current demand equally from all assets.
 

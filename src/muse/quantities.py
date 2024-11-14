@@ -18,7 +18,7 @@ def supply(
     capacity: xr.DataArray,
     demand: xr.DataArray,
     technologies: Union[xr.Dataset, xr.DataArray],
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Production and emission for a given capacity servicing a given demand.
 
@@ -120,7 +120,7 @@ def supply(
 def emission(
     production: xr.DataArray,
     fixed_outputs: xr.DataArray,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
 ):
     """Computes emission from current products.
 
@@ -154,7 +154,7 @@ def gross_margin(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
     prices: xr.Dataset,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """The percentage of revenue after direct expenses have been subtracted.
 
@@ -237,7 +237,7 @@ def decommissioning_demand(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
     year: Optional[Sequence[int]] = None,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     r"""Computes demand from process decommissioning.
 
@@ -287,7 +287,7 @@ def consumption(
     technologies: xr.Dataset,
     production: xr.DataArray,
     prices: Optional[xr.DataArray] = None,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
     **kwargs,
 ) -> xr.DataArray:
     """Commodity consumption when fulfilling the whole production.
@@ -342,7 +342,7 @@ def consumption(
 def maximum_production(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
     **filters,
 ):
     r"""Production for a given capacity.
@@ -402,7 +402,7 @@ def capacity_in_use(
     production: xr.DataArray,
     technologies: xr.Dataset,
     max_dim: Optional[Union[str, tuple[str]]] = "commodity",
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
     **filters,
 ):
     """Capacity-in-use for each asset, given production.
@@ -456,7 +456,7 @@ def capacity_in_use(
 def minimum_production(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
     **filters,
 ):
     r"""Minimum production for a given capacity.
@@ -523,7 +523,7 @@ def minimum_production(
 def capacity_to_service_demand(
     demand: xr.DataArray,
     technologies: xr.Dataset,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
     from muse.timeslices import broadcast_timeslice, distribute_timeslice

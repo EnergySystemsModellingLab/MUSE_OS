@@ -248,7 +248,7 @@ def factory(
         market: xr.Dataset,
         technologies: xr.Dataset,
         year: int | None = None,
-        timeslice_level: str | None = None,
+        timeslice_level: Optional[str] = None,
     ) -> list[Constraint]:
         if year is None:
             year = int(market.year.min())
@@ -449,7 +449,7 @@ def max_production(
     market: xr.Dataset,
     technologies: xr.Dataset,
     year: int | None = None,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
     **kwargs,
 ) -> Constraint:
     """Constructs constraint between capacity and maximum production.
@@ -515,7 +515,7 @@ def demand_limiting_capacity(
     market: xr.Dataset,
     technologies: xr.Dataset,
     year: int | None = None,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
     **kwargs,
 ) -> Constraint:
     """Limits the maximum combined capacity to match the demand.
@@ -731,7 +731,7 @@ def minimum_service(
     market: xr.Dataset,
     technologies: xr.Dataset,
     year: int | None = None,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
     **kwargs,
 ) -> Constraint | None:
     """Constructs constraint between capacity and minimum service."""
@@ -775,7 +775,7 @@ def minimum_service(
 
 
 def lp_costs(
-    technologies: xr.Dataset, costs: xr.DataArray, timeslice_level: str | None = None
+    technologies: xr.Dataset, costs: xr.DataArray, timeslice_level: Optional[str] = None
 ) -> xr.Dataset:
     """Creates costs for solving with scipy's LP solver.
 
@@ -1195,7 +1195,7 @@ class ScipyAdapter:
         technologies: xr.Dataset,
         costs: xr.DataArray,
         *constraints: Constraint,
-        timeslice_level: str | None = None,
+        timeslice_level: Optional[str] = None,
     ) -> ScipyAdapter:
         lpcosts = lp_costs(technologies, costs, timeslice_level=timeslice_level)
 

@@ -187,7 +187,7 @@ def expand_timeslice(
     if operation == "broadcast":
         mask = mask.where(np.isnan(mask), 1)
     elif operation == "distribute":
-        mask /= mask.sum(level_names[level_names.index(current_level) + 1 :])
+        mask = mask / mask.sum(level_names[level_names.index(current_level) + 1 :])
     else:
         raise ValueError(
             f"Unknown operation: {operation}. Must be 'distribute' or 'broadcast'."

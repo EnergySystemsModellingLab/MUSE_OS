@@ -63,7 +63,7 @@ __all__ = [
 ]
 
 from collections.abc import Mapping, MutableMapping, Sequence
-from typing import Any, Callable, Union
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 import xarray as xr
@@ -130,7 +130,7 @@ def factory(
         technologies: xr.Dataset,
         demand: xr.DataArray,
         prices: xr.DataArray,
-        timeslice_level: str | None = None,
+        timeslice_level: Optional[str] = None,
         *args,
         **kwargs,
     ) -> xr.Dataset:
@@ -387,7 +387,7 @@ def lifetime_levelized_cost_of_energy(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
     *args,
     **kwargs,
 ):
@@ -428,7 +428,7 @@ def net_present_value(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
     *args,
     **kwargs,
 ):
@@ -463,7 +463,7 @@ def net_present_cost(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
     *args,
     **kwargs,
 ):
@@ -497,7 +497,7 @@ def equivalent_annual_cost(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
     *args,
     **kwargs,
 ):

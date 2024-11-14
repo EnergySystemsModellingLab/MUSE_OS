@@ -23,7 +23,7 @@ def net_present_value(
     capacity: xr.DataArray,
     production: xr.DataArray,
     year: int,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Net present value (NPV) of the relevant technologies.
 
@@ -192,7 +192,7 @@ def equivalent_annual_cost(
     capacity: xr.DataArray,
     production: xr.DataArray,
     year: int,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Equivalent annual costs (or annualized cost) of a technology.
 
@@ -225,7 +225,7 @@ def lifetime_levelized_cost_of_energy(
     capacity: xr.DataArray,
     production: xr.DataArray,
     year: int,
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Levelized cost of energy (LCOE) of technologies over their lifetime.
 
@@ -357,7 +357,7 @@ def annual_levelized_cost_of_energy(
     prices: xr.DataArray,
     interpolation: str = "linear",
     fill_value: Union[int, str] = "extrapolate",
-    timeslice_level: str | None = None,
+    timeslice_level: Optional[str] = None,
     **filters,
 ) -> xr.DataArray:
     """Undiscounted levelized cost of energy (LCOE) of technologies on each given year.
