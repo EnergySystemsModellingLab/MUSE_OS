@@ -19,8 +19,6 @@ def toml():
         summer.weekend.night = 2
         summer.weekend.dusk = 1
         level_names = ["semester", "week", "day"]
-        [timeslices.aggregates]
-        allday = ["day", "night"]
     """
 
 
@@ -116,3 +114,87 @@ def test_drop_timeslice(timeslice_dataarray):
     data_without_timeslice = DataArray([1, 2, 3], dims=["x"])
     assert drop_timeslice(data_without_timeslice).equals(data_without_timeslice)
     assert drop_timeslice(dropped).equals(dropped)
+
+
+@fixture
+def non_timesliced_dataarray():
+    return DataArray([1, 2, 3], dims=["x"])
+
+
+def test_broadcast_timeslice(non_timesliced_dataarray, timeslice):
+    from muse.timeslices import broadcast_timeslice
+
+    # Test 1: normal call
+    out = broadcast_timeslice(non_timesliced_dataarray)
+    # Assert timeslicing in output matches the global scheme
+    assert out.timeslice.equals(TIMESLICE.timeslice)
+    # Assert all values are equal to each other
+
+    # Assert all values in the output are equal to the input
+
+    # Test 2: calling on a compatible timesliced array
+    # Assert the input is returned unchanged
+
+    # Test 3: calling on an incompatible timesliced array
+    # Assert ValueError is raised
+
+    pass
+
+
+def test_distribute_timeslice(non_timesliced_dataarray):
+    from muse.timeslices import distribute_timeslice, TIMESLICE
+
+    # Test 1: normal call
+    # Assert timeslicing in output matches the global scheme
+    # Assert all values are in proportion to timeslice length
+    # Assert sum of output across timeslices is equal to the input
+
+    # Test 2: calling on a compatible timesliced array
+    # Assert the input is returned unchanged
+
+    # Test 3: calling on an incompatible timesliced array
+    # Assert ValueError is raised
+
+    pass
+
+
+def test_compress_timeslice(non_timesliced_dataarray):
+    from muse.timeslices import compress_timeslice
+
+    # Test 1: without specifying level
+    # Assert output matches input
+
+    # Test 2: invalid operation
+    # Assert ValueError is raised
+
+    # Test 3: sum operation
+    # Assert timeslicing is the correct level
+    # Assert sum of output equals sum of input
+
+    # Test 4: mean operation
+    # Assert timeslicing is the correct level
+    # Assert weighted mean of output equals weighted mean of input
+
+    pass
+
+
+def test_expand_timeslice(timeslice_dataarray):
+    from muse.timeslices import expand_timeslice
+
+    # Test 1: calling on an already expanded array
+    # Assert the input is returned unchanged
+
+    # Test 2: invalid operation
+    # Assert ValueError is raised
+
+    # Test 3: broadcast operation
+    # Assert timeslicing matches the global scheme
+    # Assert all values are equal to each other
+    # Assert all values in the output are equal to the input
+
+    # Test 4: distribute operation
+    # Assert timeslicing matches the global scheme
+    # Assert all values are in proportion to timeslice length
+    # Assert sum of output across timeslices is equal to the input
+
+    pass
