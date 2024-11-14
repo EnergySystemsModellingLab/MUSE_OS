@@ -1,6 +1,6 @@
 """Test timeslice utilities."""
 
-from pytest import fixture
+from pytest import approx, fixture, raises
 from xarray import DataArray
 
 
@@ -121,42 +121,58 @@ def non_timesliced_dataarray():
     return DataArray([1, 2, 3], dims=["x"])
 
 
-def test_broadcast_timeslice(non_timesliced_dataarray, timeslice):
+def test_broadcast_timeslice(non_timesliced_dataarray, timeslice, timeslice_dataarray):
     from muse.timeslices import broadcast_timeslice
 
-    # Test 1: normal call
     out = broadcast_timeslice(non_timesliced_dataarray)
-    # Assert timeslicing in output matches the global scheme
-    assert out.timeslice.equals(TIMESLICE.timeslice)
-    # Assert all values are equal to each other
 
-    # Assert all values in the output are equal to the input
+    # Check that timeslicing in output matches the global scheme
+    assert out.timeslice.equals(timeslice.timeslice)
 
-    # Test 2: calling on a compatible timesliced array
-    # Assert the input is returned unchanged
+    # Check that all timeslices in the output are equal to each other
+    assert (out.diff(dim="timeslice") == 0).all()
 
-    # Test 3: calling on an incompatible timesliced array
-    # Assert ValueError is raised
+    # Check that all values in the output are equal to the input
+    assert all(
+        (out.isel(timeslice=i) == non_timesliced_dataarray).all()
+        for i in range(out.sizes["timeslice"])
+    )
 
-    pass
+    # Calling on an already timesliced array: the input should be returned unchanged
+    out2 = broadcast_timeslice(out)
+    assert out2.equals(out)
 
-
-def test_distribute_timeslice(non_timesliced_dataarray):
-    # Test 1: normal call
-    # Assert timeslicing in output matches the global scheme
-    # Assert all values are in proportion to timeslice length
-    # Assert sum of output across timeslices is equal to the input
-
-    # Test 2: calling on a compatible timesliced array
-    # Assert the input is returned unchanged
-
-    # Test 3: calling on an incompatible timesliced array
-    # Assert ValueError is raised
-
-    pass
+    # Calling with an incompatible timeslicing scheme: ValueError should be raised
+    with raises(ValueError):
+        broadcast_timeslice(out, ts=timeslice_dataarray)
 
 
-def test_compress_timeslice(non_timesliced_dataarray):
+def test_distribute_timeslice(non_timesliced_dataarray, timeslice, timeslice_dataarray):
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
+
+    out = distribute_timeslice(non_timesliced_dataarray)
+
+    # Check that timeslicing in output matches the global scheme
+    assert out.timeslice.equals(timeslice.timeslice)
+
+    # Check that all values are proportional to timeslice lengths
+    out_proportions = out / broadcast_timeslice(out.sum("timeslice"))
+    ts_proportions = timeslice / broadcast_timeslice(timeslice.sum("timeslice"))
+    assert abs(out_proportions - ts_proportions).max() < 1e-6
+
+    # Check that the sum across timeslices is equal to the input
+    assert (out.sum("timeslice") == approx(non_timesliced_dataarray)).all()
+
+    # Calling on an already timesliced array: the input should be returned unchanged
+    out2 = distribute_timeslice(out)
+    assert out2.equals(out)
+
+    # Calling with an incompatible timeslicing scheme: ValueError should be raised
+    with raises(ValueError):
+        distribute_timeslice(out, ts=timeslice_dataarray)
+
+
+def test_compress_timeslice(non_timesliced_dataarray, timeslice, timeslice_dataarray):
     # Test 1: without specifying level
     # Assert output matches input
 

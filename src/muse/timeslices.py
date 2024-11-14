@@ -15,8 +15,6 @@ import pandas as pd
 from xarray import DataArray
 
 TIMESLICE: DataArray = None  # type: ignore
-"""Array with the finest timeslice."""
-TRANSFORMS: dict[str, DataArray] = None  # type: ignore
 
 
 def read_timeslices(
@@ -43,41 +41,33 @@ def read_timeslices(
         levels = [(*previous, b) for previous, a in zip(levels, ts) for b in a]
         ts = reduce(list.__add__, (list(u.values()) for u in ts), [])
 
-    # Create DataFrame
-    df = pd.DataFrame(ts, columns=["value"])
-    df["level"] = levels
-    df[level_names] = pd.DataFrame(df["level"].tolist(), index=df.index)
-    df = df.drop("level", axis=1).set_index(level_names)
-    return df
+    nln = min(len(levels[0]), len(level_names))
+    level_names = (
+        list(level_names[:nln]) + [str(i) for i in range(len(levels[0]))][nln:]
+    )
+    indices = pd.MultiIndex.from_tuples(levels, names=level_names)
+
+    if any(
+        reduce(set.union, indices.levels[:i], set()).intersection(indices.levels[i])
+        for i in range(1, indices.nlevels)
+    ):
+        raise ValueError("Names from different levels should not overlap.")
+
+    return DataArray(ts, coords={"timeslice": indices}, dims="timeslice")
+
+    # # Create DataFrame
+    # df = pd.DataFrame(ts, columns=["value"])
+    # df["level"] = levels
+    # df[level_names] = pd.DataFrame(df["level"].tolist(), index=df.index)
+    # df = df.drop("level", axis=1).set_index(level_names)
+    # return df
 
 
 def setup_module(settings: Union[str, Mapping]):
     """Sets up module singletons."""
     global TIMESLICE
-    global TRANSFORMS
 
-    df = read_timeslices(settings)
-
-    # Global timeslicing scheme
-    TIMESLICE = DataArray(
-        df.values.flatten(), coords={"timeslice": df.index}, dims="timeslice"
-    )
-
-    # Timeslices aggregated to each level
-    TRANSFORMS = {}
-    levels = df.index.names
-    for i, level in enumerate(levels):
-        group = levels[: i + 1]
-        df_grouped = df.groupby(group, sort=False).sum()
-        if isinstance(df_grouped.index, pd.MultiIndex):
-            coords = {"timeslice": df_grouped.index}
-        else:
-            coords = {"timeslice": df_grouped.index.tolist()}
-        TRANSFORMS[level] = DataArray(
-            df_grouped.values.flatten(),
-            coords=coords,
-            dims="timeslice",
-        )
+    TIMESLICE = read_timeslices(settings)
 
 
 def broadcast_timeslice(
@@ -90,7 +80,7 @@ def broadcast_timeslice(
         ts = TIMESLICE
 
     if level is not None:
-        ts = TRANSFORMS[level]
+        ts = compress_timeslice(ts, level=level, operation="sum")
 
     # If x already has timeslices, check that it matches the reference timeslice.
     if "timeslice" in x.dims:
@@ -109,10 +99,10 @@ def distribute_timeslice(x: DataArray, ts: DataArray | None = None, level=None):
         ts = TIMESLICE
 
     if level is not None:
-        ts = TRANSFORMS[level]
+        ts = compress_timeslice(ts, level=level, operation="sum")
 
-    extensive = broadcast_timeslice(x, ts, level)
-    return extensive * (ts / broadcast_timeslice(ts.sum(), level=level))
+    extensive = broadcast_timeslice(x, ts)
+    return extensive * (ts / broadcast_timeslice(ts.sum(), ts))
 
 
 def compress_timeslice(
