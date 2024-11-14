@@ -142,7 +142,6 @@ def test_broadcast_timeslice(non_timesliced_dataarray, timeslice):
 
 
 def test_distribute_timeslice(non_timesliced_dataarray):
-    from muse.timeslices import distribute_timeslice, TIMESLICE
 
     # Test 1: normal call
     # Assert timeslicing in output matches the global scheme
@@ -159,7 +158,6 @@ def test_distribute_timeslice(non_timesliced_dataarray):
 
 
 def test_compress_timeslice(non_timesliced_dataarray):
-    from muse.timeslices import compress_timeslice
 
     # Test 1: without specifying level
     # Assert output matches input
@@ -179,7 +177,6 @@ def test_compress_timeslice(non_timesliced_dataarray):
 
 
 def test_expand_timeslice(timeslice_dataarray):
-    from muse.timeslices import expand_timeslice
 
     # Test 1: calling on an already expanded array
     # Assert the input is returned unchanged
