@@ -42,26 +42,22 @@ def read_timeslices(
         levels = [(*previous, b) for previous, a in zip(levels, ts) for b in a]
         ts = reduce(list.__add__, (list(u.values()) for u in ts), [])
 
+    # Prepare multiindex
     nln = min(len(levels[0]), len(level_names))
     level_names = (
         list(level_names[:nln]) + [str(i) for i in range(len(levels[0]))][nln:]
     )
     indices = pd.MultiIndex.from_tuples(levels, names=level_names)
 
+    # Make sure names from different levels don't overlap
     if any(
         reduce(set.union, indices.levels[:i], set()).intersection(indices.levels[i])
         for i in range(1, indices.nlevels)
     ):
         raise ValueError("Names from different levels should not overlap.")
 
+    # Create DataArray
     return DataArray(ts, coords={"timeslice": indices}, dims="timeslice")
-
-    # # Create DataFrame
-    # df = pd.DataFrame(ts, columns=["value"])
-    # df["level"] = levels
-    # df[level_names] = pd.DataFrame(df["level"].tolist(), index=df.index)
-    # df = df.drop("level", axis=1).set_index(level_names)
-    # return df
 
 
 def setup_module(settings: Union[str, Mapping]):
@@ -154,17 +150,15 @@ def compress_timeslice(
     if ts is None:
         ts = TIMESLICE
 
-    # Raise error if x is not timesliced
+    # Raise error if x is not timesliced appropriately
     if "timeslice" not in x.dims:
-        raise ValueError("DataArray must have a 'timeslice' dimension.")
+        raise ValueError("x must have a 'timeslice' dimension.")
+    if not x.timeslice.reset_coords(drop=True).equals(ts.timeslice):
+        raise ValueError("x has incompatible timeslicing.")
 
     # If level is not specified, don't compress
     if level is None:
         return x
-
-    # x must have the same timeslicing as ts
-    if not x.timeslice.reset_coords(drop=True).equals(ts.timeslice):
-        raise ValueError("x has incompatible timeslicing.")
 
     # level must be a valid timeslice level
     x_levels = x.timeslice.to_index().names
