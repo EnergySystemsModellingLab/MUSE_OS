@@ -52,6 +52,7 @@ def net_present_value(
         capacity: xr.DataArray with the capacity of the relevant technologies
         production: xr.DataArray with the production of the relevant technologies
         year: int, the year of the forecast
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         xr.DataArray with the NPV calculated for the relevant technologies
@@ -210,6 +211,7 @@ def equivalent_annual_cost(
         capacity: xr.DataArray with the capacity of the relevant technologies
         production: xr.DataArray with the production of the relevant technologies
         year: int, the year of the forecast
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         xr.DataArray with the EAC calculated for the relevant technologies
@@ -237,6 +239,7 @@ def lifetime_levelized_cost_of_energy(
         capacity: xr.DataArray with the capacity of the relevant technologies
         production: xr.DataArray with the production of the relevant technologies
         year: int, the year of the forecast
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
@@ -385,6 +388,7 @@ def annual_levelized_cost_of_energy(
             This dataarray contains at least timeslice and commodity dimensions.
         interpolation: interpolation method.
         fill_value: Fill value for values outside the extrapolation range.
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
         **filters: Anything by which prices can be filtered.
 
     Return:

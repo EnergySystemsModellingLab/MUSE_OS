@@ -133,6 +133,7 @@ def new_and_retro(
         technologies: quantities describing the technologies.
         current_year: Current year of simulation
         forecast: How many years to forecast ahead
+        timeslice_level: the timeslice level of the sector (e.g. "hour", "day")
 
     Pseudo-code:
 
@@ -348,6 +349,7 @@ def standard_demand(
         technologies: quantities describing the technologies.
         current_year: Current year of simulation
         forecast: How many years to forecast ahead
+        timeslice_level: the timeslice level of the sector (e.g. "hour", "day")
 
     """
     from functools import partial

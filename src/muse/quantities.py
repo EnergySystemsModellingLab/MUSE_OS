@@ -35,6 +35,7 @@ def supply(
             exceed its share of the demand.
         technologies: factors bindings the capacity of an asset with its production of
             commodities and environmental pollutants.
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         A data array where the commodity dimension only contains actual outputs (i.e. no
@@ -131,6 +132,7 @@ def emission(
             when computing emissions.
         fixed_outputs: factor relating total production to emissions. For convenience,
             this can also be a `technologies` dataset containing `fixed_output`.
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         A data array containing emissions (and only emissions).
@@ -372,6 +374,7 @@ def maximum_production(
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are
             silently ignored.
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         `capacity * fixed_outputs * utilization_factor`, whittled down according to the
@@ -420,6 +423,7 @@ def capacity_in_use(
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are
             silently ignored.
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         Capacity-in-use for each technology, whittled down by the filters.
@@ -486,6 +490,7 @@ def minimum_production(
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are
             silently ignored.
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         `capacity * fixed_outputs * minimum_service_factor`, whittled down according to

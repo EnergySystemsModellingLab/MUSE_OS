@@ -40,6 +40,9 @@ class AbstractAgent(ABC):
                 together.
             quantity: optional value to classify different agents' share of the
                 population.
+            timeslice_level: the timeslice level over which investments/production
+                will be optimized (e.g "hour", "day"). If None, the agent will use the
+                finest timeslice level.
         """
         from uuid import uuid4
 
@@ -144,6 +147,9 @@ class Agent(AbstractAgent):
             asset_threshold: Threshold below which assets are not added.
             quantity: different agents' share of the population
             spend_limit: The cost above which agents will not invest
+            timeslice_level: the timeslice level over which the agent invesments will
+                be optimized (e.g "hour", "day"). If None, the agent will use the finest
+                timeslice level.
             **kwargs: Extra arguments
         """
         from muse.decisions import factory as decision_factory

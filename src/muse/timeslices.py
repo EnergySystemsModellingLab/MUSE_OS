@@ -211,3 +211,10 @@ def drop_timeslice(data: DataArray) -> DataArray:
         return data
 
     return data.drop_vars(data.timeslice.indexes)
+
+
+def get_level(data: DataArray) -> str:
+    """Get the timeslice level of a DataArray."""
+    if "timeslice" not in data.dims:
+        raise ValueError("DataArray does not have a 'timeslice' dimension.")
+    return data.timeslice.to_index().names[-1]
