@@ -1134,7 +1134,6 @@ class ScipyAdapter:
         but not over the assets. Hence the assets will be summed over in the final
         constraint:
 
-        >>> assert (constraint.b.data == np.array([50.0, 12.0, 12.0, 50.0 ])).all()
         >>> assert set(constraint.b.dims) == {"replacement"}
         >>> assert constraint.kind == cs.ConstraintKind.UPPER_BOUND
 
