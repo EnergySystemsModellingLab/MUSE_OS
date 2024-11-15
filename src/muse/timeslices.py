@@ -164,32 +164,28 @@ def compress_timeslice(
     x_levels = x.timeslice.to_index().names
     if level not in x_levels:
         raise ValueError(f"Unknown level: {level}. Must be one of {x_levels}.")
-    current_level, coarser_levels = x_levels[-1], x_levels[:-1]
 
     # Return x unchanged if already at the desired level
-    if current_level == level:
+    if get_level(x) == level:
         return x
 
-    # Perform the operation over one timeslice level
+    # Prepare mask
+    idx = x_levels.index(level)
+    kept_levels, compressed_levels = x_levels[: idx + 1], x_levels[idx + 1 :]
+    mask = ts.unstack(dim="timeslice")
     if operation == "sum":
-        x = (
-            x.unstack(dim="timeslice")
-            .sum(current_level)
-            .stack(timeslice=coarser_levels)
-        )
-        # return x.unstack(dim="timeslice").sum(["hour"]).stack(timeslice=["month", "day"])
+        mask = mask.where(np.isnan(mask), 1)
     elif operation == "mean":
-        # TODO: This should be a weighted mean according to timeslice length
-        x = (
-            x.unstack(dim="timeslice")
-            .mean(current_level)
-            .stack(timeslice=coarser_levels)
-        )
+        mask = mask / mask.sum(compressed_levels)
     else:
         raise ValueError(f"Unknown operation: {operation}. Must be 'sum' or 'mean'.")
 
-    # Recurse
-    return compress_timeslice(x, ts=ts, level=level, operation=operation)
+    # Perform the operation
+    return (
+        (x.unstack(dim="timeslice") * mask)
+        .sum(compressed_levels)
+        .stack(timeslice=kept_levels)
+    )  # TODO: this is messing up the order of timeslices
 
 
 def expand_timeslice(

@@ -201,7 +201,8 @@ def test_compress_timeslice(non_timesliced_dataarray, timeslice):
         assert get_level(out) == level
         assert (
             out.mean("timeslice") == approx(timesliced_dataarray.mean("timeslice"))
-        ).all()
+        ).all()  # NB in general this should be a weighted mean, but this works here
+        # because the data is equal in every timeslice
 
     # Calling without specifying a level: the input should be returned unchanged
     out = compress_timeslice(timesliced_dataarray)
