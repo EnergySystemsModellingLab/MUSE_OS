@@ -183,7 +183,7 @@ def test_distribute_timeslice(non_timesliced_dataarray, timeslice):
 
 
 def test_compress_timeslice(non_timesliced_dataarray, timeslice):
-    from muse.timeslices import broadcast_timeslice, compress_timeslice
+    from muse.timeslices import broadcast_timeslice, compress_timeslice, get_level
 
     # Create timesliced dataarray for compressing
     timesliced_dataarray = broadcast_timeslice(non_timesliced_dataarray)
@@ -191,14 +191,14 @@ def test_compress_timeslice(non_timesliced_dataarray, timeslice):
     for level in ["month", "day", "hour"]:
         # Sum operation
         out = compress_timeslice(timesliced_dataarray, operation="sum", level=level)
-        assert out.timeslice.to_index().names[-1] == level
+        assert get_level(out) == level
         assert (
             out.sum("timeslice") == approx(timesliced_dataarray.sum("timeslice"))
         ).all()
 
         # Mean operation
         out = compress_timeslice(timesliced_dataarray, operation="mean", level=level)
-        assert out.timeslice.to_index().names[-1] == level
+        assert get_level(out) == level
         assert (
             out.mean("timeslice") == approx(timesliced_dataarray.mean("timeslice"))
         ).all()

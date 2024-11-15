@@ -394,9 +394,14 @@ def timeslice_max(x: xr.DataArray) -> xr.DataArray:
     This first annualizes the value in each timeslice by dividing by the fraction of the
     year that the timeslice occupies, then takes the maximum value
     """
-    from muse.timeslices import TIMESLICE, broadcast_timeslice, compress_timeslice
+    from muse.timeslices import (
+        TIMESLICE,
+        broadcast_timeslice,
+        compress_timeslice,
+        get_level,
+    )
 
-    timeslice_level = x.timeslice.to_index().names[-1]
+    timeslice_level = get_level(x)
     timeslice_fractions = compress_timeslice(
         TIMESLICE, level=timeslice_level
     ) / broadcast_timeslice(TIMESLICE.sum(), level=timeslice_level)
