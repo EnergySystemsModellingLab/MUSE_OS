@@ -459,7 +459,7 @@ def test_read_technodictionary(default_model):
         tech_type=np.dtype("<U6"),
         efficiency=np.dtype("int64"),
         max_capacity_addition=np.dtype("int64"),
-        max_capacity_growth=np.dtype("int64"),
+        max_capacity_growth=np.dtype("float64"),
         scaling_size=np.dtype("float64"),
         technical_life=np.dtype("int64"),
         total_capacity_limit=np.dtype("int64"),
