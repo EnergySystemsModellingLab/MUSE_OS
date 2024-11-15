@@ -370,7 +370,7 @@ def max_capacity_expansion(
 
     # Max capacity growth constraint
     max_growth = techs.max_capacity_growth
-    growth_cap = initial * (max_growth * forecast + 1) - forecasted
+    growth_cap = initial * ((max_growth + 1) ** forecast) - forecasted
 
     # Relax growth constraint if no existing capacity
     growth_cap = growth_cap.where(growth_cap > 0, np.inf)
