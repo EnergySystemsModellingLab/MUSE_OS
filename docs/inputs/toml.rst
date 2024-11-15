@@ -337,8 +337,8 @@ A sector accepts these attributes:
    See :ref:`inputs-iocomms`.
 
 *timeslice_level*
-   Optional. This represents the level of timeslice granularity over which commodity 
-   flows out of the sector are balanced (e.g. if "day", the sector will aim to meet 
+   Optional. This represents the level of timeslice granularity over which commodity
+   flows out of the sector are balanced (e.g. if "day", the sector will aim to meet
    commodity demands on a daily basis, rather than an hourly basis).
    If not given, defaults to the finest level defined in the global `timeslices` section.
    Note: If *technodata_timeslices* is used, the data in this file must match the timeslice
