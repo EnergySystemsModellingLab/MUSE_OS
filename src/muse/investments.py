@@ -64,6 +64,7 @@ from muse.constraints import Constraint
 from muse.errors import GrowthOfCapacityTooConstrained
 from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
+from muse.timeslices import timeslice_max
 
 INVESTMENT_SIGNATURE = Callable[
     [xr.DataArray, xr.DataArray, xr.Dataset, list[Constraint], KwArg(Any)],
@@ -388,21 +389,3 @@ def cvxopt_match_demand(
     return solution
 
 
-def timeslice_max(x: xr.DataArray) -> xr.DataArray:
-    """Find the max value over the timeslice dimension, normlaized for timeslice length.
-
-    This first annualizes the value in each timeslice by dividing by the fraction of the
-    year that the timeslice occupies, then takes the maximum value
-    """
-    from muse.timeslices import (
-        TIMESLICE,
-        broadcast_timeslice,
-        compress_timeslice,
-        get_level,
-    )
-
-    timeslice_level = get_level(x)
-    timeslice_fractions = compress_timeslice(
-        TIMESLICE, level=timeslice_level
-    ) / broadcast_timeslice(TIMESLICE.sum(), level=timeslice_level)
-    return (x / timeslice_fractions).max("timeslice")

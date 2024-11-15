@@ -241,12 +241,12 @@ def expand_timeslice(
         )
 
     # Perform the operation
-    return (
+    result = (
         (x.unstack(dim="timeslice") * mask)
         .stack(timeslice=ts_levels)
         .dropna("timeslice")
-        .sel(timeslice=ts.timeslice)
     )
+    return sort_timeslices(result, ts)
 
 
 def drop_timeslice(data: DataArray) -> DataArray:
@@ -265,3 +265,26 @@ def get_level(data: DataArray) -> str:
     if "timeslice" not in data.dims:
         raise ValueError("DataArray does not have a 'timeslice' dimension.")
     return data.timeslice.to_index().names[-1]
+
+
+def sort_timeslices(data: DataArray, ts: Optional[DataArray] = None) -> DataArray:
+    """Sorts the timeslices of a DataArray according to a reference timeslice."""
+    if ts is None:
+        ts = TIMESLICE
+    return data.sel(timeslice=ts.timeslice)
+
+
+def timeslice_max(x: DataArray, ts: Optional[DataArray] = None) -> DataArray:
+    """Find the max value over the timeslice dimension, normlaized for timeslice length.
+
+    This first annualizes the value in each timeslice by dividing by the fraction of the
+    year that the timeslice occupies, then takes the maximum value
+    """
+    if ts is None:
+        ts = TIMESLICE
+
+    timeslice_level = get_level(x)
+    timeslice_fractions = compress_timeslice(
+        ts, level=timeslice_level
+    ) / broadcast_timeslice(ts.sum(), level=timeslice_level)
+    return (x / timeslice_fractions).max("timeslice")
