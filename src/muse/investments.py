@@ -387,5 +387,3 @@ def cvxopt_match_demand(
 
     solution = cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(list(res["x"]))
     return solution
-
-
