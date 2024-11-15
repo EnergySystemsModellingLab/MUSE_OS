@@ -366,7 +366,7 @@ def max_capacity_expansion(
 
     # Total capacity limit constraint
     limit = techs.total_capacity_limit
-    total_cap = (limit - forecasted).clip(min=0).rename("total_cap")
+    total_cap = (limit - forecasted).clip(min=0)
 
     # Max capacity growth constraint
     max_growth = techs.max_capacity_growth
