@@ -15,7 +15,7 @@ from muse.production import PRODUCTION_SIGNATURE
 from muse.sectors.abstract import AbstractSector
 from muse.sectors.register import register_sector
 from muse.sectors.subsector import Subsector
-from muse.timeslices import compress_timeslice, expand_timeslice
+from muse.timeslices import compress_timeslice, expand_timeslice, get_level
 
 
 @register_sector(name="default")
@@ -112,21 +112,31 @@ class Sector(AbstractSector):  # type: ignore
         from muse.outputs.sector import factory as ofactory
         from muse.production import maximum_production
 
-        self.name: str = name
-        self.timeslice_level = timeslice_level
         """Name of the sector."""
-        self.subsectors: Sequence[Subsector] = list(subsectors)
+        self.name: str = name
+
+        """Timeslice level for the sector (e.g. "month")."""
+        self.timeslice_level = timeslice_level
+
         """Subsectors controlled by this object."""
-        self.technologies: xr.Dataset = technologies
+        self.subsectors: Sequence[Subsector] = list(subsectors)
+
         """Parameters describing the sector's technologies."""
+        self.technologies: xr.Dataset = technologies
+        if "timeslice" in self.technologies.dims:
+            if not get_level(self.technologies) == self.timeslice_level:
+                raise ValueError(
+                    f"Technodata for {self.name} sector does not match "
+                    "the specified timeslice level for that sector "
+                    f"({self.timeslice_level})"
+                )
+
+        """Interpolation method and arguments when computing years."""
         self.interpolation: Mapping[str, Any] = {
             "method": interpolation,
             "kwargs": {"fill_value": "extrapolate"},
         }
-        """Interpolation method and arguments when computing years."""
-        if interactions is None:
-            interactions = interaction_factory()
-        self.interactions = interactions
+
         """Interactions between agents.
 
         Called right before computing new investments, this function should manage any
@@ -143,20 +153,26 @@ class Sector(AbstractSector):  # type: ignore
 
         :py:mod:`muse.interactions` contains MUSE's base interactions
         """
+        if interactions is None:
+            interactions = interaction_factory()
+        self.interactions = interactions
+
+        """A function for outputting data for post-mortem analysis."""
         self.outputs: Callable = (
             cast(Callable, ofactory()) if outputs is None else outputs
         )
-        """A function for outputting data for post-mortem analysis."""
-        self.supply_prod = (
-            supply_prod if supply_prod is not None else maximum_production
-        )
-        """ Computes production as used to return the supply to the MCA.
+
+        """Computes production as used to return the supply to the MCA.
 
         It can be anything registered with
         :py:func:`@register_production<muse.production.register_production>`.
         """
-        self.output_data: xr.Dataset
+        self.supply_prod = (
+            supply_prod if supply_prod is not None else maximum_production
+        )
+
         """Full supply, consumption and costs data for the most recent year."""
+        self.output_data: xr.Dataset
 
     @property
     def forecast(self):
