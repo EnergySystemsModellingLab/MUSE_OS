@@ -15,6 +15,7 @@ from muse.production import PRODUCTION_SIGNATURE
 from muse.sectors.abstract import AbstractSector
 from muse.sectors.register import register_sector
 from muse.sectors.subsector import Subsector
+from muse.timeslices import compress_timeslice, expand_timeslice
 
 
 @register_sector(name="default")
@@ -313,8 +314,6 @@ class Sector(AbstractSector):  # type: ignore
 
     def convert_to_sector_timeslicing(self, market: xr.Dataset) -> xr.Dataset:
         """Converts market data to sector timeslicing."""
-        from muse.timeslices import compress_timeslice
-
         supply = compress_timeslice(
             market["supply"], level=self.timeslice_level, operation="sum"
         )
@@ -328,8 +327,6 @@ class Sector(AbstractSector):  # type: ignore
 
     def convert_to_global_timeslicing(self, market: xr.Dataset) -> xr.Dataset:
         """Converts market data to global timeslicing."""
-        from muse.timeslices import expand_timeslice
-
         supply = expand_timeslice(market["supply"], operation="distribute")
         consumption = expand_timeslice(market["consumption"], operation="distribute")
         costs = expand_timeslice(market["costs"], operation="distribute")

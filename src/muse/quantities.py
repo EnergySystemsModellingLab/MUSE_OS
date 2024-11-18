@@ -13,6 +13,8 @@ from typing import Optional, Union, cast
 import numpy as np
 import xarray as xr
 
+from muse.timeslices import broadcast_timeslice, distribute_timeslice
+
 
 def supply(
     capacity: xr.DataArray,
@@ -42,7 +44,6 @@ def supply(
         input commodities).
     """
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
-    from muse.timeslices import broadcast_timeslice
 
     maxprod = maximum_production(
         technologies, capacity, timeslice_level=timeslice_level
@@ -138,7 +139,6 @@ def emission(
         A data array containing emissions (and only emissions).
     """
     from muse.commodities import is_enduse, is_pollutant
-    from muse.timeslices import broadcast_timeslice
     from muse.utilities import broadcast_techs
 
     # just in case we are passed a technologies dataset, like in other functions
@@ -170,7 +170,6 @@ def gross_margin(
     - non-environmental commodities OUTPUTS are related to revenues.
     """
     from muse.commodities import is_enduse, is_pollutant
-    from muse.timeslices import distribute_timeslice
     from muse.utilities import broadcast_techs
 
     tech = broadcast_techs(  # type: ignore
@@ -298,7 +297,6 @@ def consumption(
     are not given, then flexible consumption is *not* considered.
     """
     from muse.commodities import is_enduse, is_fuel
-    from muse.timeslices import broadcast_timeslice
     from muse.utilities import filter_with_template
 
     params = filter_with_template(
@@ -381,7 +379,6 @@ def maximum_production(
         filters and the set of technologies in `capacity`.
     """
     from muse.commodities import is_enduse
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
     from muse.utilities import broadcast_techs, filter_input
 
     capa = filter_input(
@@ -429,7 +426,6 @@ def capacity_in_use(
         Capacity-in-use for each technology, whittled down by the filters.
     """
     from muse.commodities import is_enduse
-    from muse.timeslices import broadcast_timeslice
     from muse.utilities import broadcast_techs, filter_input
 
     prod = filter_input(
@@ -497,7 +493,6 @@ def minimum_production(
         the filters and the set of technologies in `capacity`.
     """
     from muse.commodities import is_enduse
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
     from muse.utilities import broadcast_techs, filter_input
 
     capa = filter_input(
@@ -531,8 +526,6 @@ def capacity_to_service_demand(
     timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
-
     timeslice_outputs = distribute_timeslice(
         technologies.fixed_outputs.sel(commodity=demand.commodity),
         level=timeslice_level,

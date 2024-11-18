@@ -115,7 +115,7 @@ import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.registration import registrator
-from muse.timeslices import drop_timeslice
+from muse.timeslices import broadcast_timeslice, distribute_timeslice, drop_timeslice
 
 CAPACITY_DIMS = "asset", "replacement", "region"
 """Default dimensions for capacity decision variables."""
@@ -460,7 +460,6 @@ def max_production(
     from xarray import ones_like, zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     if year is None:
         year = int(market.year.min())
@@ -738,7 +737,6 @@ def minimum_service(
     from xarray import ones_like, zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     if "minimum_service_factor" not in technologies.data_vars:
         return None
@@ -826,7 +824,6 @@ def lp_costs(
     from xarray import zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     assert "year" not in technologies.dims
 

@@ -244,8 +244,6 @@ def lifetime_levelized_cost_of_energy(
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
     """
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
-
     techs = technologies[
         [
             "technical_life",
