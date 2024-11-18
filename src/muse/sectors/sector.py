@@ -111,12 +111,13 @@ class Sector(AbstractSector):  # type: ignore
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory
         from muse.production import maximum_production
+        from muse.timeslices import TIMESLICE
 
         """Name of the sector."""
         self.name: str = name
 
         """Timeslice level for the sector (e.g. "month")."""
-        self.timeslice_level = timeslice_level
+        self.timeslice_level = timeslice_level or get_level(TIMESLICE)
 
         """Subsectors controlled by this object."""
         self.subsectors: Sequence[Subsector] = list(subsectors)
