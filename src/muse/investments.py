@@ -256,7 +256,11 @@ def adhoc_match_demand(
     ).where(search_space, 0)
 
     capacity = capacity_in_use(
-        production, technologies, year=year, technology=production.replacement
+        production,
+        technologies,
+        year=year,
+        technology=production.replacement,
+        timeslice_level=timeslice_level,
     ).drop_vars("technology")
     if "timeslice" in capacity.dims:
         capacity = timeslice_max(capacity)

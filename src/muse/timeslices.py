@@ -23,6 +23,7 @@ def read_timeslices(
     level_names: Sequence[str] = ("month", "day", "hour"),
 ) -> DataArray:
     from functools import reduce
+    from logging import getLogger
 
     from toml import loads
 
@@ -30,6 +31,15 @@ def read_timeslices(
     if isinstance(settings, str):
         settings = loads(settings)
     settings = dict(**settings.get("timeslices", settings))
+
+    # Legacy: warn user about deprecation of "aggregates" feature (#550)
+    if "aggregates" in settings:
+        msg = (
+            "Timeslice aggregation has been deprecated since v1.3.0. Please see the "
+            "release notes for that version for more information."
+        )
+        getLogger(__name__).warning(msg)
+        settings.pop("aggregates")
 
     # Extract level names
     if "level_names" in settings:
