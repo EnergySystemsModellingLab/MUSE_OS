@@ -210,7 +210,6 @@ class Sector(AbstractSector):  # type: ignore
         self.interactions(list(self.agents))
 
         # Convert market to sector timeslicing
-        # TODO: check mca_market is in global timeslicing scheme
         mca_market = self.convert_to_sector_timeslicing(mca_market)
 
         # Select appropriate data from the market
@@ -346,7 +345,6 @@ class Sector(AbstractSector):  # type: ignore
         supply = expand_timeslice(market["supply"], operation="distribute")
         consumption = expand_timeslice(market["consumption"], operation="distribute")
         costs = expand_timeslice(market["costs"], operation="distribute")
-
         return xr.Dataset(dict(supply=supply, consumption=consumption, costs=costs))
 
     @property
