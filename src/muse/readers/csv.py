@@ -136,7 +136,7 @@ def read_technodictionary(filename: Union[str, Path]) -> xr.Dataset:
 
 def read_technodata_timeslices(filename: Union[str, Path]) -> xr.Dataset:
     from muse.readers import camel_to_snake
-    from muse.timeslices import sort_timeslice
+    from muse.timeslices import sort_timeslices
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
     csv = csv.rename(columns=camel_to_snake)
@@ -170,8 +170,7 @@ def read_technodata_timeslices(filename: Union[str, Path]) -> xr.Dataset:
         if item not in ["technology", "region", "year"]
     ]
     result = result.stack(timeslice=timeslice_levels)
-    result = sort_timeslice(result)
-    return result
+    return sort_timeslices(result)
 
 
 def read_io_technodata(filename: Union[str, Path]) -> xr.Dataset:

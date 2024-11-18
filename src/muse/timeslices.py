@@ -85,7 +85,7 @@ def broadcast_timeslice(
         ts = TIMESLICE
 
     if level is not None:
-        ts = compress_timeslice(ts, level=level, operation="sum")
+        ts = compress_timeslice(ts, ts=ts, level=level, operation="sum")
 
     # If x already has timeslices, check that it matches the reference timeslice.
     if "timeslice" in x.dims:
@@ -115,7 +115,7 @@ def distribute_timeslice(
         ts = TIMESLICE
 
     if level is not None:
-        ts = compress_timeslice(ts, level=level, operation="sum")
+        ts = compress_timeslice(ts, ts=ts, level=level, operation="sum")
 
     # If x already has timeslices, check that it matches the reference timeslice.
     if "timeslice" in x.dims:
@@ -123,8 +123,8 @@ def distribute_timeslice(
             return x
         raise ValueError("x has incompatible timeslicing.")
 
-    broadcasted = broadcast_timeslice(x, ts)
-    timeslice_fractions = ts / broadcast_timeslice(ts.sum(), ts)
+    broadcasted = broadcast_timeslice(x, ts=ts)
+    timeslice_fractions = ts / broadcast_timeslice(ts.sum(), ts=ts)
     return broadcasted * timeslice_fractions
 
 
@@ -181,11 +181,12 @@ def compress_timeslice(
         raise ValueError(f"Unknown operation: {operation}. Must be 'sum' or 'mean'.")
 
     # Perform the operation
-    return (
+    result = (
         (x.unstack(dim="timeslice") * mask)
         .sum(compressed_levels)
         .stack(timeslice=kept_levels)
-    )  # TODO: this is messing up the order of timeslices
+    )
+    return sort_timeslices(result, ts)
 
 
 def expand_timeslice(
@@ -271,11 +272,16 @@ def sort_timeslices(data: DataArray, ts: Optional[DataArray] = None) -> DataArra
     """Sorts the timeslices of a DataArray according to a reference timeslice."""
     if ts is None:
         ts = TIMESLICE
-    return data.sel(timeslice=ts.timeslice)
+
+    # If data is at the finest timeslice level, sort timeslices according to ts
+    if get_level(data) == get_level(ts):
+        return data.sel(timeslice=ts.timeslice)
+    # Otherwise, sort timeslices in alphabetical order
+    return data.sortby("timeslice")
 
 
 def timeslice_max(x: DataArray, ts: Optional[DataArray] = None) -> DataArray:
-    """Find the max value over the timeslice dimension, normlaized for timeslice length.
+    """Find the max value over the timeslice dimension, normalized for timeslice length.
 
     This first annualizes the value in each timeslice by dividing by the fraction of the
     year that the timeslice occupies, then takes the maximum value
@@ -285,6 +291,6 @@ def timeslice_max(x: DataArray, ts: Optional[DataArray] = None) -> DataArray:
 
     timeslice_level = get_level(x)
     timeslice_fractions = compress_timeslice(
-        ts, level=timeslice_level
-    ) / broadcast_timeslice(ts.sum(), level=timeslice_level)
+        ts, ts=ts, level=timeslice_level, operation="sum"
+    ) / broadcast_timeslice(ts.sum(), ts=ts, level=timeslice_level)
     return (x / timeslice_fractions).max("timeslice")
