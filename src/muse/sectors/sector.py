@@ -345,7 +345,7 @@ class Sector(AbstractSector):  # type: ignore
         """Converts market data to global timeslicing."""
         supply = expand_timeslice(market["supply"], operation="distribute")
         consumption = expand_timeslice(market["consumption"], operation="distribute")
-        costs = expand_timeslice(market["costs"], operation="distribute")
+        costs = expand_timeslice(market["costs"], operation="broadcast")
         return xr.Dataset(dict(supply=supply, consumption=consumption, costs=costs))
 
     @property
