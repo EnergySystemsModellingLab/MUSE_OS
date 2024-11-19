@@ -218,7 +218,12 @@ Quantity
    A factor used to determine the demand share of "New" agents.
 
 MaturityThreshold (optional)
-   Required when using the :py:func:`maturity <muse.filters.maturity>` search rule.
+   Only applies when using the :py:func:`maturity <muse.filters.maturity>` search rule.
+   Allows agents to only consider technologies that have achieved a certain market share
+   (e.g. if 0.5, the agent will only invest in technologies that have a current market share of 50% or more).
+   Must be between 0 and 1.
 
 SpendLimit (optional)
-   Required when using the :py:func:`spend_limit <muse.filters.spend_limit>` search rule.
+   Only applies when using the :py:func:`spend_limit <muse.filters.spend_limit>` search rule.
+   Allows agents to only consider technologies with a unit capital cost (`cap_par`) lower than the spend limit.
+   (e.g. if 10, the agent will only invest in technologies with a `cap_par` of 10 or lower, as listed in the :ref:`inputs-technodata` file).
