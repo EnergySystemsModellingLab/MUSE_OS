@@ -2,7 +2,7 @@
 
 import os
 
-VERSION = "1.2.2"
+VERSION = "1.2.3"
 
 
 def _create_logger(color: bool = True):
