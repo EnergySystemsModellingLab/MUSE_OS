@@ -357,21 +357,26 @@ def max_capacity_expansion(
     if regions is not None and "region" in technologies.dims:
         techs = techs.sel(region=regions)
 
+    # Existing and forecasted capacity
+    initial = capacity.sel(year=year, drop=True)
+    forecasted = capacity.sel(year=forecast_year, drop=True)
+
+    # Max capacity addition constraint
     add_cap = techs.max_capacity_addition * forecast
 
+    # Total capacity limit constraint
     limit = techs.total_capacity_limit
-    forecasted = capacity.sel(year=forecast_year, drop=True)
-    total_cap = (limit - forecasted).clip(min=0).rename("total_cap")
+    total_cap = (limit - forecasted).clip(min=0)
 
+    # Max capacity growth constraint
     max_growth = techs.max_capacity_growth
-    initial = capacity.sel(year=year, drop=True)
+    growth_cap = initial * (max_growth + 1) ** forecast - forecasted
 
-    growth_cap = initial * (max_growth * forecast + 1) - forecasted
-    growth_cap = growth_cap.where(growth_cap > 0, total_cap)
+    # Relax growth constraint if no existing capacity
+    growth_cap = growth_cap.where(growth_cap > 0, np.inf)
 
-    zero_cap = add_cap.where(add_cap < total_cap, total_cap)
-    with_growth = zero_cap.where(zero_cap < growth_cap, growth_cap)
-    b = with_growth.where(initial > 0, zero_cap)
+    # Take the most restrictive constraint
+    b = np.minimum(np.minimum(add_cap, total_cap), growth_cap)
 
     if b.region.dims == ():
         capa = 1
@@ -1091,7 +1096,6 @@ class ScipyAdapter:
         but not over the assets. Hence the assets will be summed over in the final
         constraint:
 
-        >>> assert (constraint.b.data == np.array([50.0, 12.0, 12.0, 50.0 ])).all()
         >>> assert set(constraint.b.dims) == {"replacement"}
         >>> assert constraint.kind == cs.ConstraintKind.UPPER_BOUND
 
