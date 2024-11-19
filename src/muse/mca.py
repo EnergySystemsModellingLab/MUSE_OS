@@ -565,13 +565,17 @@ def check_demand_fulfillment(market: Dataset, tol: float) -> bool:
     """
     from logging import getLogger
 
-    future = market.year[-1]
+    future = market.year[-1].item()
     delta = (market.supply - market.consumption).sel(year=future)
     unmet = (delta < tol).any([u for u in delta.dims if u != "commodity"])
 
     if unmet.any():
         commodities = ", ".join(unmet.commodity.sel(commodity=unmet.values).values)
-        getLogger(__name__).warning(f"Check growth constraints for {commodities}.")
+        msg = (
+            f"Consumption exceeds supply for the following commodities: {commodities} "
+            f"(year = {future})."
+        )
+        getLogger(__name__).warning(msg)
 
         return False
 
