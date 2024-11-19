@@ -138,7 +138,7 @@ def test_issue_835_and_842(agent_args, technologies, stock):
 
 
 def test_run_retro_agent(retro_agent, technologies, agent_market, demand_share):
-    # make sure capacity limits are no reached
+    # make sure capacity limits are not reached
     technologies.total_capacity_limit[:] = retro_agent.assets.capacity.sum() * 100
     technologies.max_capacity_addition[:] = retro_agent.assets.capacity.sum() * 100
     technologies.max_capacity_growth[:] = retro_agent.assets.capacity.sum() * 100

@@ -86,7 +86,7 @@ Growith constraints
       represents the maximum addition of installed capacity per technology, per year in a period, per region.
 
    MaxCapacityGrowth
-      represents the percentage growth per year based on the available stock in a year, per region and technology.
+      represents the fraction growth per year based on the available stock in a year, per region and technology.
 
    TotalCapacityLimit
       represents the total capacity limit per technology, region and year.
@@ -101,7 +101,7 @@ Growith constraints
    it constrains the new capacity which can be installed in a modelled period as being equal to *10 * 5 = 50 PJ*.
    The *MaxCapacityGrowth* applies a constraint on the capacity which can be installed in a modelled period, which depends on the
    decommissioning profile. Assuming that 7.7 PJ of resBoilerElectric is available in the year when the decision is made (investment year), and that 4.9 PJ of
-   resBoilerElectric is available in the year at which capacities invested in, will be online, then the constraint applies as follows *7.7 * (0.2 * 5 + 1) - 4.9 = 10.5 PJ*.
+   resBoilerElectric is available in the year at which capacities invested in, will be online, then the constraint applies as follows *7.7 * ((1 + 0.2) ** 5) - 4.9 = 14.3 PJ*.
    The *TotalCapacityLimit* applies a constraint on the maximum capacity of a technology in the investment year; it depends on the decommissioning profile and equals *100 - 4.9 = 95.1 PJ*.
 
    Growth constraints are applied for each single agent in a multi-agent simulation. When only one agent is present, the growth constraints
