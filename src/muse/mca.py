@@ -173,19 +173,15 @@ class MCA:
             )
         else:
             self.carbon_budget = DataArray([], dims="year")
-        self.carbon_price = (
-            carbon_price if carbon_price is not None else zeros_like(self.carbon_budget)
-        )
-        self.carbon_commodities = (
-            carbon_commodities if carbon_commodities is not None else []
-        )
+        self.carbon_price = carbon_price or zeros_like(self.carbon_budget)
+        self.carbon_commodities = carbon_commodities or []
         self.debug = debug
         self.control_undershoot = control_undershoot
         self.control_overshoot = control_overshoot
         self.carbon_method = CARBON_BUDGET_METHODS[carbon_method]
-        self.method_options = method_options
-        self.outputs = ofactory() if outputs is None else outputs
-        self.outputs_cache = OutputCache() if outputs_cache is None else outputs_cache
+        self.method_options = method_options or {}
+        self.outputs = outputs or ofactory()
+        self.outputs_cache = outputs_cache or OutputCache()
 
     def find_equilibrium(
         self,
