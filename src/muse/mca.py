@@ -572,8 +572,8 @@ def check_demand_fulfillment(market: Dataset, tol: float) -> bool:
     if unmet.any():
         commodities = ", ".join(unmet.commodity.sel(commodity=unmet.values).values)
         msg = (
-            f"Consumption exceeds supply for the following commodities: {commodities} "
-            f"(year = {future})."
+            f"Consumption exceeds supply in the year {future} for the following "
+            f"commodities: {commodities} "
         )
         getLogger(__name__).warning(msg)
 
