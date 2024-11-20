@@ -357,21 +357,26 @@ def max_capacity_expansion(
     if regions is not None and "region" in technologies.dims:
         techs = techs.sel(region=regions)
 
+    # Existing and forecasted capacity
+    initial = capacity.sel(year=year, drop=True)
+    forecasted = capacity.sel(year=forecast_year, drop=True)
+
+    # Max capacity addition constraint
     add_cap = techs.max_capacity_addition * forecast
 
+    # Total capacity limit constraint
     limit = techs.total_capacity_limit
-    forecasted = capacity.sel(year=forecast_year, drop=True)
-    total_cap = (limit - forecasted).clip(min=0).rename("total_cap")
+    total_cap = (limit - forecasted).clip(min=0)
 
+    # Max capacity growth constraint
     max_growth = techs.max_capacity_growth
-    initial = capacity.sel(year=year, drop=True)
+    growth_cap = initial * (max_growth + 1) ** forecast - forecasted
 
-    growth_cap = initial * (max_growth * forecast + 1) - forecasted
-    growth_cap = growth_cap.where(growth_cap > 0, total_cap)
+    # Relax growth constraint if no existing capacity
+    growth_cap = growth_cap.where(growth_cap > 0, np.inf)
 
-    zero_cap = add_cap.where(add_cap < total_cap, total_cap)
-    with_growth = zero_cap.where(zero_cap < growth_cap, growth_cap)
-    b = with_growth.where(initial > 0, zero_cap)
+    # Take the most restrictive constraint
+    b = np.minimum(np.minimum(add_cap, total_cap), growth_cap)
 
     if b.region.dims == ():
         capa = 1
@@ -446,7 +451,7 @@ def max_production(
     from xarray import ones_like, zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     if year is None:
         year = int(market.year.min())
@@ -465,15 +470,9 @@ def max_production(
         .sel(**kwargs)
         .drop_vars("technology")
     )
-    capacity = (
-        convert_timeslice(
-            techs.fixed_outputs,
-            market.timeslice,
-            QuantityType.EXTENSIVE,
-        )
-        * techs.utilization_factor
+    capacity = distribute_timeslice(techs.fixed_outputs) * broadcast_timeslice(
+        techs.utilization_factor
     )
-
     if "asset" not in capacity.dims and "asset" in search_space.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
@@ -490,8 +489,8 @@ def max_production(
         maxadd = maxadd.rename(technology="replacement")
         maxadd = maxadd.where(maxadd == 0, 0.0)
         maxadd = maxadd.where(maxadd > 0, -1.0)
-        capacity = capacity * maxadd
-        production = production * maxadd
+        capacity = capacity * broadcast_timeslice(maxadd)
+        production = production * broadcast_timeslice(maxadd)
         b = b.rename(region="src_region")
     return xr.Dataset(
         dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
@@ -542,21 +541,9 @@ def demand_limiting_capacity(
     # utilization factor.
     if "timeslice" in b.dims or "timeslice" in capacity.dims:
         ratio = b / capacity
-        ts = ratio.timeslice.isel(
-            timeslice=ratio.min("replacement").argmax("timeslice")
-        )
-        # We select this timeslice for each array - don't trust the indices:
-        # search for the right timeslice in the array and select it.
-        b = (
-            b.isel(timeslice=(b.timeslice == ts).argmax("timeslice"))
-            if "timeslice" in b.dims
-            else b
-        )
-        capacity = (
-            capacity.isel(timeslice=(capacity.timeslice == ts).argmax("timeslice"))
-            if "timeslice" in capacity.dims
-            else capacity
-        )
+        ts_index = ratio.min("replacement").argmax("timeslice")
+        b = b.isel(timeslice=ts_index)
+        capacity = capacity.isel(timeslice=ts_index)
 
     # An adjustment is required to account for technologies that have multiple output
     # commodities
@@ -732,7 +719,7 @@ def minimum_service(
     from xarray import ones_like, zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     if "minimum_service_factor" not in technologies.data_vars:
         return None
@@ -751,17 +738,12 @@ def minimum_service(
     if "region" in search_space.coords and "region" in technologies.dims:
         kwargs["region"] = assets.region
     techs = (
-        technologies[["fixed_outputs", "utilization_factor", "minimum_service_factor"]]
+        technologies[["fixed_outputs", "minimum_service_factor"]]
         .sel(**kwargs)
         .drop_vars("technology")
     )
-    capacity = (
-        convert_timeslice(
-            techs.fixed_outputs,
-            market.timeslice,
-            QuantityType.EXTENSIVE,
-        )
-        * techs.minimum_service_factor
+    capacity = distribute_timeslice(techs.fixed_outputs) * broadcast_timeslice(
+        techs.minimum_service_factor
     )
     if "asset" not in capacity.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
@@ -773,9 +755,7 @@ def minimum_service(
     )
 
 
-def lp_costs(
-    technologies: xr.Dataset, costs: xr.DataArray, timeslices: xr.DataArray
-) -> xr.Dataset:
+def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
     """Creates costs for solving with scipy's LP solver.
 
     Example:
@@ -785,7 +765,6 @@ def lp_costs(
         >>> from muse import examples
         >>> technologies = examples.technodata("residential", model="medium")
         >>> search_space = examples.search_space("residential", model="medium")
-        >>> timeslices = examples.sector("residential", model="medium").timeslices
         >>> costs = (
         ...     search_space
         ...     * np.arange(np.prod(search_space.shape)).reshape(search_space.shape)
@@ -796,7 +775,7 @@ def lp_costs(
 
         >>> from muse.constraints import lp_costs
         >>> lpcosts = lp_costs(
-        ...     technologies.sel(year=2020, region="R1"), costs, timeslices
+        ...     technologies.sel(year=2020, region="R1"), costs
         ... )
         >>> assert "capacity" in lpcosts.data_vars
         >>> assert "production" in lpcosts.data_vars
@@ -826,72 +805,26 @@ def lp_costs(
     from xarray import zeros_like
 
     from muse.commodities import is_enduse
-    from muse.timeslices import convert_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     assert "year" not in technologies.dims
 
-    ts_costs = convert_timeslice(costs, timeslices)
     selection = dict(
         commodity=is_enduse(technologies.comm_usage),
         technology=technologies.technology.isin(costs.replacement),
     )
 
-    if "region" in technologies.fixed_outputs.dims and "region" in ts_costs.coords:
-        selection["region"] = ts_costs.region
+    if "region" in technologies.fixed_outputs.dims and "region" in costs.coords:
+        selection["region"] = costs.region
     fouts = technologies.fixed_outputs.sel(selection).rename(technology="replacement")
 
-    # lpcosts.dims = Frozen({'asset': 2,
-    #                   'replacement': 2,
-    #                   'timeslice': 3,
-    #                   'commodity': 1})
-    # muse38: lpcosts.dims = Frozen({'asset': 2, ,
-    #                                'commodity': 1
-    #                                'replacement': 2,
-    #                                'timeslice': 3})
-    production = zeros_like(ts_costs * fouts)
+    production = zeros_like(broadcast_timeslice(costs) * distribute_timeslice(fouts))
     for dim in production.dims:
         if isinstance(production.get_index(dim), pd.MultiIndex):
             production = drop_timeslice(production)
             production[dim] = pd.Index(production.get_index(dim), tupleize_cols=False)
 
     return xr.Dataset(dict(capacity=costs, production=production))
-
-
-def merge_lp(
-    costs: xr.Dataset, *constraints: Constraint
-) -> tuple[xr.Dataset, list[Constraint]]:
-    """Unify coordinate systems of costs and constraints.
-
-    In practice, this function brings costs and constraints into a single xr.Dataset and
-    then splits things up again. This ensures the dimensions are not only compatible,
-    but also such that that their order in memory is the same.
-    """
-    from xarray import merge
-
-    data = merge(
-        [costs]
-        + [
-            constraint.rename(
-                b=f"b{i}", capacity=f"capacity{i}", production=f"production{i}"
-            )
-            for i, constraint in enumerate(constraints)
-        ]
-    )
-
-    unified_costs = cast(xr.Dataset, data[["capacity", "production"]])
-    unified_constraints = [
-        xr.Dataset(
-            {
-                "capacity": data[f"capacity{i}"],
-                "production": data[f"production{i}"],
-                "b": data[f"b{i}"],
-            },
-            attrs=constraint.attrs,
-        )
-        for i, constraint in enumerate(constraints)
-    ]
-
-    return unified_costs, unified_constraints
 
 
 def lp_constraint(constraint: Constraint, lpcosts: xr.Dataset) -> Constraint:
@@ -978,7 +911,6 @@ def lp_constraint_matrix(
          ...         .sel(region=assets.region)
          ...     ),
          ...     costs=search * np.arange(np.prod(search.shape)).reshape(search.shape),
-         ...     timeslices=market.timeslice,
          ... )
 
          For a simple example, we can first check the case where b is scalar. The result
@@ -1098,7 +1030,6 @@ class ScipyAdapter:
 
         >>> from muse import examples
         >>> from muse.quantities import maximum_production
-        >>> from muse.timeslices import convert_timeslice
         >>> from muse import constraints as cs
         >>> res = examples.sector("residential", model="medium")
         >>> market = examples.residential_market("medium")
@@ -1107,7 +1038,6 @@ class ScipyAdapter:
         >>> market_demand =  0.8 * maximum_production(
         ...     res.technologies.interp(year=2025),
         ...     assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
-        ...     timeslices=market.timeslice,
         ... ).rename(technology="asset")
         >>> costs = search * np.arange(np.prod(search.shape)).reshape(search.shape)
         >>> constraint = cs.max_capacity_expansion(
@@ -1129,7 +1059,6 @@ class ScipyAdapter:
         but not over the assets. Hence the assets will be summed over in the final
         constraint:
 
-        >>> assert (constraint.b.data == np.array([50.0, 12.0, 12.0, 50.0 ])).all()
         >>> assert set(constraint.b.dims) == {"replacement"}
         >>> assert constraint.kind == cs.ConstraintKind.UPPER_BOUND
 
@@ -1143,7 +1072,7 @@ class ScipyAdapter:
 
         >>> technologies = res.technologies.interp(year=market.year.min() + 5)
         >>> inputs = cs.ScipyAdapter.factory(
-        ...     technologies, costs, market.timeslice, constraint
+        ...     technologies, costs, constraint
         ... )
 
         The decision variables are always constrained between zero and infinity:
@@ -1168,7 +1097,7 @@ class ScipyAdapter:
         In practice, :py:func:`~muse.constraints.lp_costs` helps us define the decision
         variables (and ``c``). We can verify that the sizes are consistent:
 
-        >>> lpcosts = cs.lp_costs(technologies, costs, market.timeslice)
+        >>> lpcosts = cs.lp_costs(technologies, costs)
         >>> capsize = lpcosts.capacity.size
         >>> prodsize = lpcosts.production.size
         >>> assert inputs.c.size == capsize + prodsize
@@ -1203,10 +1132,9 @@ class ScipyAdapter:
         cls,
         technologies: xr.Dataset,
         costs: xr.DataArray,
-        timeslices: pd.Index,
         *constraints: Constraint,
     ) -> ScipyAdapter:
-        lpcosts = lp_costs(technologies, costs, timeslices)
+        lpcosts = lp_costs(technologies, costs)
 
         data = cls._unified_dataset(technologies, lpcosts, *constraints)
 

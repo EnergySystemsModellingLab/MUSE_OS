@@ -28,17 +28,14 @@ class PresetSector(AbstractSector):  # type: ignore
             read_presets,
             read_regression_parameters,
             read_timeslice_shares,
-            read_timeslices,
         )
         from muse.regressions import endogenous_demand
-        from muse.timeslices import QuantityType, convert_timeslice
+        from muse.timeslices import TIMESLICE, broadcast_timeslice, distribute_timeslice
 
         sector_conf = getattr(settings.sectors, name)
         presets = Dataset()
 
-        timeslice = read_timeslices(
-            getattr(sector_conf, "timeslice_levels", None)
-        ).timeslice
+        timeslice = TIMESLICE.timeslice
         if getattr(sector_conf, "consumption_path", None) is not None:
             consumption = read_presets(sector_conf.consumption_path)
             presets["consumption"] = consumption.assign_coords(timeslice=timeslice)
@@ -71,22 +68,14 @@ class PresetSector(AbstractSector):  # type: ignore
 
             if getattr(sector_conf, "timeslice_shares_path", None) is not None:
                 assert isinstance(timeslice, DataArray)
-                shares = read_timeslice_shares(
-                    sector_conf.timeslice_shares_path, timeslice=timeslice
-                )
+                shares = read_timeslice_shares(sector_conf.timeslice_shares_path)
+                shares = shares.assign_coords(timeslice=timeslice)
                 assert consumption.commodity.isin(shares.commodity).all()
                 assert consumption.region.isin(shares.region).all()
-                if "timeslice" in shares.dims:
-                    ts = shares.timeslice
-                    shares = drop_timeslice(shares)
-                    consumption = (shares * consumption).assign_coords(timeslice=ts)
-                else:
-                    consumption = consumption * shares.sel(
-                        region=consumption.region, commodity=consumption.commodity
-                    )
-            presets["consumption"] = drop_timeslice(consumption).assign_coords(
-                timeslice=timeslice
-            )
+                consumption = broadcast_timeslice(consumption) * shares.sel(
+                    region=consumption.region, commodity=consumption.commodity
+                )
+            presets["consumption"] = consumption
 
         if getattr(sector_conf, "supply_path", None) is not None:
             supply = read_presets(sector_conf.supply_path)
@@ -121,9 +110,7 @@ class PresetSector(AbstractSector):  # type: ignore
         # add timeslice, if missing
         for component in {"supply", "consumption"}:
             if "timeslice" not in presets[component].dims:
-                presets[component] = convert_timeslice(
-                    presets[component], timeslice, QuantityType.EXTENSIVE
-                )
+                presets[component] = distribute_timeslice(presets[component])
 
         comm_usage = (presets.costs > 0).any(set(presets.costs.dims) - {"commodity"})
         presets["comm_usage"] = (
@@ -151,21 +138,13 @@ class PresetSector(AbstractSector):  # type: ignore
 
     def next(self, mca_market: Dataset) -> Dataset:
         """Advance sector by one time period."""
-        from muse.timeslices import QuantityType, convert_timeslice
-
         presets = self.presets.sel(region=mca_market.region)
         supply = self._interpolate(presets.supply, mca_market.year)
         consumption = self._interpolate(presets.consumption, mca_market.year)
         costs = self._interpolate(presets.costs, mca_market.year)
 
-        result = convert_timeslice(
-            Dataset({"supply": supply, "consumption": consumption}),
-            mca_market.timeslice,
-            QuantityType.EXTENSIVE,
-        )
-        result["costs"] = drop_timeslice(
-            convert_timeslice(costs, mca_market.timeslice, QuantityType.INTENSIVE)
-        )
+        result = Dataset({"supply": supply, "consumption": consumption})
+        result["costs"] = drop_timeslice(costs)
         assert isinstance(result, Dataset)
         return result
 

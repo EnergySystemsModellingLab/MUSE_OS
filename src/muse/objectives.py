@@ -133,12 +133,16 @@ def factory(
         *args,
         **kwargs,
     ) -> xr.Dataset:
+        from muse.timeslices import broadcast_timeslice
+
         result = xr.Dataset()
         for name, objective in functions:
             obj = objective(
                 technologies=technologies, demand=demand, prices=prices, *args, **kwargs
             )
-            if "timeslice" in obj.dims and "timeslice" in result.dims:
+            if "timeslice" not in obj.dims:
+                obj = broadcast_timeslice(obj)
+            if "timeslice" in result.dims:
                 obj = drop_timeslice(obj)
             result[name] = obj
         return result
@@ -214,12 +218,8 @@ def capacity_to_service_demand(
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
     from muse.quantities import capacity_to_service_demand
-    from muse.timeslices import represent_hours
 
-    hours = represent_hours(demand.timeslice)
-    return capacity_to_service_demand(
-        demand=demand, technologies=technologies, hours=hours
-    )
+    return capacity_to_service_demand(demand=demand, technologies=technologies)
 
 
 @register_objective
@@ -230,13 +230,12 @@ def capacity_in_use(
     **kwargs,
 ):
     from muse.commodities import is_enduse
-    from muse.timeslices import represent_hours
+    from muse.timeslices import TIMESLICE
 
-    hours = represent_hours(demand.timeslice)
     enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
     return (
-        (demand.sel(commodity=enduses).sum("commodity") / hours).sum("timeslice")
-        * hours.sum()
+        (demand.sel(commodity=enduses).sum("commodity") / TIMESLICE).sum("timeslice")
+        * TIMESLICE.sum()
         / technologies.utilization_factor
     )
 
@@ -279,7 +278,9 @@ def fixed_costs(
     :math:`\alpha` and :math:`\beta` are "fix_par" and "fix_exp" in
     :ref:`inputs-technodata`, respectively.
     """
-    capacity = capacity_to_service_demand(technologies, demand)
+    from muse.quantities import capacity_to_service_demand
+
+    capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
     result = technologies.fix_par * (capacity**technologies.fix_exp)
     return result
 
@@ -322,18 +323,15 @@ def emission_cost(
     with :math:`s` the timeslices and :math:`c` the commodity.
     """
     from muse.commodities import is_enduse, is_pollutant
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import distribute_timeslice
 
     enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
     total = demand.sel(commodity=enduses).sum("commodity")
     envs = is_pollutant(technologies.comm_usage)
     prices = filter_input(prices, year=demand.year.item(), commodity=envs)
-    return total * (
-        convert_timeslice(
-            technologies.fixed_outputs, prices.timeslice, QuantityType.EXTENSIVE
-        )
-        * prices
-    ).sum("commodity")
+    return total * (distribute_timeslice(technologies.fixed_outputs) * prices).sum(
+        "commodity"
+    )
 
 
 @register_objective
@@ -394,15 +392,14 @@ def lifetime_levelized_cost_of_energy(
     due to a zero utilisation factor.
     """
     from muse.costs import lifetime_levelized_cost_of_energy as LCOE
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.quantities import capacity_to_service_demand
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    capacity = capacity_to_service_demand(technologies, demand)
+    capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
     production = (
-        capacity
-        * convert_timeslice(
-            technologies.fixed_outputs, demand.timeslice, QuantityType.EXTENSIVE
-        )
-        * technologies.utilization_factor
+        broadcast_timeslice(capacity)
+        * distribute_timeslice(technologies.fixed_outputs)
+        * broadcast_timeslice(technologies.utilization_factor)
     )
 
     results = LCOE(
@@ -429,15 +426,14 @@ def net_present_value(
     See :py:func:`muse.costs.net_present_value` for more details.
     """
     from muse.costs import net_present_value as NPV
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.quantities import capacity_to_service_demand
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    capacity = capacity_to_service_demand(technologies, demand)
+    capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
     production = (
-        capacity
-        * convert_timeslice(
-            technologies.fixed_outputs, demand.timeslice, QuantityType.EXTENSIVE
-        )
-        * technologies.utilization_factor
+        broadcast_timeslice(capacity)
+        * distribute_timeslice(technologies.fixed_outputs)
+        * broadcast_timeslice(technologies.utilization_factor)
     )
 
     results = NPV(
@@ -463,15 +459,14 @@ def net_present_cost(
     See :py:func:`muse.costs.net_present_cost` for more details.
     """
     from muse.costs import net_present_cost as NPC
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.quantities import capacity_to_service_demand
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    capacity = capacity_to_service_demand(technologies, demand)
+    capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
     production = (
-        capacity
-        * convert_timeslice(
-            technologies.fixed_outputs, demand.timeslice, QuantityType.EXTENSIVE
-        )
-        * technologies.utilization_factor
+        broadcast_timeslice(capacity)
+        * distribute_timeslice(technologies.fixed_outputs)
+        * broadcast_timeslice(technologies.utilization_factor)
     )
 
     results = NPC(
@@ -497,15 +492,14 @@ def equivalent_annual_cost(
     See :py:func:`muse.costs.equivalent_annual_cost` for more details.
     """
     from muse.costs import equivalent_annual_cost as EAC
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.quantities import capacity_to_service_demand
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    capacity = capacity_to_service_demand(technologies, demand)
+    capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
     production = (
-        capacity
-        * convert_timeslice(
-            technologies.fixed_outputs, demand.timeslice, QuantityType.EXTENSIVE
-        )
-        * technologies.utilization_factor
+        broadcast_timeslice(capacity)
+        * distribute_timeslice(technologies.fixed_outputs)
+        * broadcast_timeslice(technologies.utilization_factor)
     )
 
     results = EAC(

@@ -5,7 +5,6 @@ from pytest import mark
 from muse.examples import available_examples
 
 
-@mark.usefixtures("save_timeslice_globals")
 @mark.regression
 @mark.example
 @mark.parametrize("model", available_examples())
@@ -29,7 +28,7 @@ def test_fullsim_regression(model, tmpdir, compare_dirs):
 
     compare_dirs(
         tmpdir / "Results",
-        Path(__file__).parent / "example_outputs" / model.replace("-", "_"),
+        Path(__file__).parent / "example_outputs" / model.replace("-", "_") / "Results",
         rtol=1e-4,
         atol=1e-7,
     )
@@ -40,7 +39,6 @@ def available_tutorials():
     return [d.parent for d in base_path.rglob("*/input") if d.is_dir()]
 
 
-@mark.usefixtures("save_timeslice_globals")
 @mark.regression
 @mark.tutorial
 @mark.parametrize("tutorial_path", available_tutorials())

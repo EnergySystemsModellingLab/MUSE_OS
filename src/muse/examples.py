@@ -51,10 +51,21 @@ def available_examples() -> list[str]:
     return [d.stem for d in example_data_dir().iterdir() if d.is_dir()]
 
 
-def model(name: str = "default") -> MCA:
-    """Fully constructs a given example model."""
+def model(name: str = "default", test: bool = False) -> MCA:
+    """Fully constructs a given example model.
+
+    File logging is added if ``test`` is False.
+
+    Args:
+        name: Name of the model to load.
+        test: If True, the logging to file is not added.
+
+    Returns:
+        The MCA model.
+    """
     from tempfile import TemporaryDirectory
 
+    from muse import add_file_logger
     from muse.readers.toml import read_settings
 
     # we could modify the settings directly, but instead we use the copy_model function.
@@ -63,6 +74,8 @@ def model(name: str = "default") -> MCA:
         path = copy_model(name, tmpdir)
         settings = read_settings(path / "settings.toml")
         getLogger("muse").setLevel(settings.log_level)
+        if not test:
+            add_file_logger()
         return MCA.factory(settings)
 
 
@@ -190,7 +203,6 @@ def mca_market(model: str = "default") -> xr.Dataset:
                 base_year_import=getattr(
                     settings.global_input_files, "base_year_import", None
                 ),
-                timeslices=settings.timeslices,
             )
             .sel(region=settings.regions)
             .interp(year=settings.time_framework, method=settings.interpolation_mode)
@@ -250,9 +262,7 @@ def matching_market(sector: str, model: str = "default") -> xr.Dataset:
     market = xr.Dataset()
     production = cast(
         xr.DataArray,
-        maximum_production(
-            loaded_sector.technologies, assets.capacity, loaded_sector.timeslices
-        ),
+        maximum_production(loaded_sector.technologies, assets.capacity),
     )
     market["supply"] = production.sum("asset")
     if "dst_region" in market.dims:

@@ -38,7 +38,7 @@ def muse_main(settings, model, copy):
     from logging import getLogger
     from pathlib import Path
 
-    from muse import examples
+    from muse import add_file_logger, examples
     from muse.mca import MCA
     from muse.readers.toml import read_settings
 
@@ -53,6 +53,7 @@ def muse_main(settings, model, copy):
     else:
         settings = read_settings(settings)
         getLogger("muse").setLevel(settings.log_level)
+        add_file_logger()
         MCA.factory(settings).run()
 
 
@@ -61,5 +62,51 @@ def run():
     muse_main(args.settings, args.model, args.copy)
 
 
+def patched_broadcast_compat_data(self, other):
+    """Patch for xarray.core.variable._broadcast_compat_data.
+
+    This has been introduced to disallow automatic broadcasting along the 'timeslice'
+    dimension.
+
+    If `self` and `other` differ in whether they have a 'timeslice' dimension (in which
+    case automatic broadcasting would normally be performed), an error is raised.
+
+    In this case, developers must explicitly handle broadcasting by calling either
+    `broadcast_timeslice` or `distribute_timeslice` (see `muse.timeslices`). The
+    appropriate choice of operation will depend on the context and the quantity in
+    question.
+    """
+    from xarray.core.variable import Variable, _broadcast_compat_variables
+
+    if (isinstance(other, Variable)) and ("timeslice" in self.dims) != (
+        "timeslice" in getattr(other, "dims", [])
+    ):
+        raise ValueError(
+            "Broadcasting along the 'timeslice' dimension is required, but automatic "
+            "broadcasting is disabled. Please handle it explicitly using "
+            "`broadcast_timeslice` or `distribute_timeslice` (see `muse.timeslices`)."
+        )
+
+    # The rest of the function is copied directly from
+    # xarray.core.variable._broadcast_compat_data
+    if all(hasattr(other, attr) for attr in ["dims", "data", "shape", "encoding"]):
+        # `other` satisfies the necessary Variable API for broadcast_variables
+        new_self, new_other = _broadcast_compat_variables(self, other)
+        self_data = new_self.data
+        other_data = new_other.data
+        dims = new_self.dims
+    else:
+        # rely on numpy broadcasting rules
+        self_data = self.data
+        other_data = other
+        dims = self.dims
+    return self_data, other_data, dims
+
+
 if "__main__" == __name__:
-    run()
+    from unittest.mock import patch
+
+    with patch(
+        "xarray.core.variable._broadcast_compat_data", patched_broadcast_compat_data
+    ):
+        run()

@@ -111,19 +111,52 @@ def compare_dirs() -> Callable:
 
 
 @fixture
-def save_timeslice_globals():
-    from muse import timeslices
-
-    old = timeslices.TIMESLICE, timeslices.TRANSFORMS
-    yield
-    timeslices.TIMESLICE, timeslices.TRANSFORMS = old
-
-
-@fixture
 def default_timeslice_globals():
-    from muse.timeslices import DEFAULT_TIMESLICE_DESCRIPTION, setup_module
+    from muse.timeslices import setup_module
 
-    setup_module(DEFAULT_TIMESLICE_DESCRIPTION)
+    default_timeslices = """
+    [timeslices]
+    winter.weekday.night = 396
+    winter.weekday.morning = 396
+    winter.weekday.afternoon = 264
+    winter.weekday.early-peak = 66
+    winter.weekday.late-peak = 66
+    winter.weekday.evening = 396
+    winter.weekend.night = 156
+    winter.weekend.morning = 156
+    winter.weekend.afternoon = 156
+    winter.weekend.evening = 156
+    spring-autumn.weekday.night = 792
+    spring-autumn.weekday.morning = 792
+    spring-autumn.weekday.afternoon = 528
+    spring-autumn.weekday.early-peak = 132
+    spring-autumn.weekday.late-peak = 132
+    spring-autumn.weekday.evening = 792
+    spring-autumn.weekend.night = 300
+    spring-autumn.weekend.morning = 300
+    spring-autumn.weekend.afternoon = 300
+    spring-autumn.weekend.evening = 300
+    summer.weekday.night = 396
+    summer.weekday.morning  = 396
+    summer.weekday.afternoon = 264
+    summer.weekday.early-peak = 66
+    summer.weekday.late-peak = 66
+    summer.weekday.evening = 396
+    summer.weekend.night = 150
+    summer.weekend.morning = 150
+    summer.weekend.afternoon = 150
+    summer.weekend.evening = 150
+    level_names = ["month", "day", "hour"]
+
+    [timeslices.aggregates]
+    all-day = [
+        "night", "morning", "afternoon", "early-peak", "late-peak", "evening", "night"
+    ]
+    all-week = ["weekday", "weekend"]
+    all-year = ["winter", "summer", "spring-autumn"]
+    """
+
+    setup_module(default_timeslices)
 
 
 @fixture
@@ -131,22 +164,6 @@ def timeslice(default_timeslice_globals) -> Dataset:
     from muse.timeslices import TIMESLICE
 
     return TIMESLICE
-
-
-@fixture
-def other_timeslice() -> Dataset:
-    from pandas import MultiIndex
-
-    months = ["winter", "spring-autumn", "summer"]
-    days = ["all-week", "all-week", "all-week"]
-    hour = ["all-day", "all-day", "all-day"]
-    coordinates = MultiIndex.from_arrays(
-        [months, days, hour], names=("month", "day", "hour")
-    )
-    result = Dataset(coords={"timeslice": coordinates})
-    result["represent_hours"] = ("timeslice", [2920, 2920, 2920])
-    result = result.set_coords("represent_hours")
-    return result
 
 
 @fixture

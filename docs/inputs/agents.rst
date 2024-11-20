@@ -18,13 +18,12 @@ For instance, we have the following CSV table:
 .. csv-table::
    :header: Name, Type, AgentShare, RegionName, Objective1, SearchRule, DecisionMethod, ...
 
-   A1, New, Agent5, ASEAN, EAC, all, epsilonCon, ...
-   A4, New, Agent6, ASEAN, CapitalCosts, existing, weightedSum, ...
-   A1, Retrofit, Agent1, ASEAN, efficiency, all, epsilonCon, ...
-   A2, Retrofit, Agent2, ASEAN, Emissions, similar, weightedSum, ...
+   A1, New, Agent1New, ASEAN, EAC, all->maturity, epsilonCon, ...
+   A2, New, Agent2New, ASEAN, CapitalCosts, all->spend_limit, weightedSum, ...
+   A1, Retrofit, Agent1Retro, ASEAN, efficiency, existing, epsilonCon, ...
+   A2, Retrofit, Agent2Retro, ASEAN, Emissions, similar, weightedSum, ...
 
-For simplicity, not all columns are included in the example above. Though all column
-listed below are currently required.
+For simplicity, not all columns are included in the example above.
 
 The columns have the following meaning:
 
@@ -45,9 +44,12 @@ Type
    "Retrofit" agent for that.
 
 AgentShare
-   Name of the share of the existing capacity assigned to this agent. Only meaningful
-   for retrofit agents. The actual share itself can be found in
-   :ref:`inputs-technodata`.
+   Name used to assign a fraction of existing capacity to the agent in the :ref:`inputs-technodata` file.
+   If using "New" and "Retrofit" agents, you should create a column with the name of each "Retrofit" agent share (e.g. "Agent1Retro", "Agent2Retro" etc.) in the :ref:`inputs-technodata` file,
+   with values summing to 1 for each technology.
+   If only using "New" agents, you should create a column with the name of each "New" agent share in the :ref:`inputs-technodata` file,
+   with values summing to 1 for each technology.
+   See documentation for the :ref:`inputs-technodata` file for more details.
 
 RegionName
    Region where an agent operates.
@@ -177,7 +179,7 @@ SearchRule
    - :py:func:`spend_limit <spend_limit>`: Only allows technologies with a unit capital cost (cap_par in
       :ref:`inputs-technodata`) lower than the spend limit.
 
-   The implementation allows for combining these filters.
+   Filters can be combined by chaining them with "->". For example, "all->maturity->spend_limit".
 
 .. py:currentmodule:: muse.decisions
 
@@ -215,10 +217,17 @@ DecisionMethod
    allows only for three.
 
 Quantity
-   A factor used to determine the demand share of "New" agents.
+   Represents the fraction of new demand that is assigned to the agent
+   (e.g. if 0.2, 20% of new demand in each year will be assigned to the agent).
+   Must sum to 1 across all "New" agents.
+   When using both "Retrofit" agents and "New" agents, this only applies to the "New" agents.
 
 MaturityThreshold (optional)
-   Required when using the :py:func:`maturity <muse.filters.maturity>` search rule.
+   Only applies when using the :py:func:`maturity <muse.filters.maturity>` search rule.
+   Allows agents to only consider technologies that have achieved a certain market share
+   (e.g. if 0.5, the agent will only invest in technologies that have a current market share of 50% or more).
 
 SpendLimit (optional)
-   Required when using the :py:func:`spend_limit <muse.filters.spend_limit>` search rule.
+   Only applies when using the :py:func:`spend_limit <muse.filters.spend_limit>` search rule.
+   Allows agents to only consider technologies with a unit capital cost (`cap_par`) lower than the spend limit.
+   (e.g. if 10, the agent will only invest in technologies with a `cap_par` of 10 or lower, as listed in the :ref:`inputs-technodata` file).
