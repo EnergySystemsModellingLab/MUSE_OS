@@ -873,33 +873,6 @@ def read_trade(
     return result.rename(src_region="region")
 
 
-def read_finite_resources(path: Union[str, Path]) -> xr.DataArray:
-    """Reads finite resources from csv file.
-
-    The CSV file is made up of columns "Region", "Year", as well
-    as three timeslice columns ("Month", "Day", "Hour"). All three sets of columns are
-    optional. The timeslice set should contain a full set of timeslices, if present.
-    Other columns correspond to commodities.
-    """
-    from muse.timeslices import TIMESLICE
-
-    data = pd.read_csv(path)
-    data.columns = [c.lower() for c in data.columns]
-    ts_levels = TIMESLICE.get_index("timeslice").names
-
-    if set(data.columns).issuperset(ts_levels):
-        timeslice = pd.MultiIndex.from_arrays(
-            [data[u] for u in ts_levels], names=ts_levels
-        )
-        timeslice = pd.DataFrame(timeslice, columns=["timeslice"])
-        data = pd.concat((data, timeslice), axis=1)
-        data.drop(columns=ts_levels, inplace=True)
-    indices = list({"year", "region", "timeslice"}.intersection(data.columns))
-    data.set_index(indices, inplace=True)
-
-    return xr.Dataset.from_dataframe(data).to_array(dim="commodity")
-
-
 def check_utilization_and_minimum_service_factors(data, filename):
     if "utilization_factor" not in data.columns:
         raise ValueError(

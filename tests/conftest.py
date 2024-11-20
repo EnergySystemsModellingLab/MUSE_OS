@@ -29,20 +29,6 @@ def patch_broadcast_compat_data():
         yield
 
 
-@fixture()
-def sectors_dir(tmpdir):
-    """Copies sectors directory to new dir.
-
-    This gives some assurance the machinery for specifying sectors data actually works.
-    """
-    from shutil import copytree
-
-    from muse.defaults import DEFAULT_SECTORS_DIRECTORY
-
-    copytree(DEFAULT_SECTORS_DIRECTORY, tmpdir.join("sectors_data_dir"))
-    return tmpdir.join("sectors_data_dir")
-
-
 def compare_df(
     expected: DataFrame,
     actual: DataFrame,
@@ -380,17 +366,6 @@ def retro_agent(agent_args, technologies, stock) -> Agent:
 
 
 @fixture
-def objective(retro_agent, coords) -> DataArray:
-    from numpy.random import choice, rand
-
-    asset = retro_agent.assets.technology.rename(technology="asset")
-    techs = [i for i in coords["technology"] if choice((True, False))]
-    data = rand(len(asset), len(techs))
-    coords = {"asset": asset, "technology": techs}
-    return DataArray(data, coords=coords, dims=("asset", "technology"))
-
-
-@fixture
 def stock(coords, technologies) -> Dataset:
     return _stock(coords, technologies)
 
@@ -448,21 +423,6 @@ def _stock(
     if "region" in result.data_vars:
         result = result.set_coords("region")
     return result
-
-
-@fixture
-def assets(coords, technologies) -> Dataset:
-    """Stock with repeat technologies."""
-    from xarray import concat
-
-    return concat(
-        (
-            _stock(coords, technologies),
-            _stock(coords, technologies),
-            _stock(coords, technologies),
-        ),
-        dim="technology",
-    )
 
 
 @fixture
