@@ -827,43 +827,6 @@ def lp_costs(technologies: xr.Dataset, costs: xr.DataArray) -> xr.Dataset:
     return xr.Dataset(dict(capacity=costs, production=production))
 
 
-def merge_lp(
-    costs: xr.Dataset, *constraints: Constraint
-) -> tuple[xr.Dataset, list[Constraint]]:
-    """Unify coordinate systems of costs and constraints.
-
-    In practice, this function brings costs and constraints into a single xr.Dataset and
-    then splits things up again. This ensures the dimensions are not only compatible,
-    but also such that that their order in memory is the same.
-    """
-    from xarray import merge
-
-    data = merge(
-        [costs]
-        + [
-            constraint.rename(
-                b=f"b{i}", capacity=f"capacity{i}", production=f"production{i}"
-            )
-            for i, constraint in enumerate(constraints)
-        ]
-    )
-
-    unified_costs = cast(xr.Dataset, data[["capacity", "production"]])
-    unified_constraints = [
-        xr.Dataset(
-            {
-                "capacity": data[f"capacity{i}"],
-                "production": data[f"production{i}"],
-                "b": data[f"b{i}"],
-            },
-            attrs=constraint.attrs,
-        )
-        for i, constraint in enumerate(constraints)
-    ]
-
-    return unified_costs, unified_constraints
-
-
 def lp_constraint(constraint: Constraint, lpcosts: xr.Dataset) -> Constraint:
     """Transforms the constraint to LP data.
 
