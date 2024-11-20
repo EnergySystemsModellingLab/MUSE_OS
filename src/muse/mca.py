@@ -173,19 +173,15 @@ class MCA:
             )
         else:
             self.carbon_budget = DataArray([], dims="year")
-        self.carbon_price = (
-            carbon_price if carbon_price is not None else zeros_like(self.carbon_budget)
-        )
-        self.carbon_commodities = (
-            carbon_commodities if carbon_commodities is not None else []
-        )
+        self.carbon_price = carbon_price or zeros_like(self.carbon_budget)
+        self.carbon_commodities = carbon_commodities or []
         self.debug = debug
         self.control_undershoot = control_undershoot
         self.control_overshoot = control_overshoot
         self.carbon_method = CARBON_BUDGET_METHODS[carbon_method]
-        self.method_options = method_options
-        self.outputs = ofactory() if outputs is None else outputs
-        self.outputs_cache = OutputCache() if outputs_cache is None else outputs_cache
+        self.method_options = method_options or {}
+        self.outputs = outputs or ofactory()
+        self.outputs_cache = outputs_cache or OutputCache()
 
     def find_equilibrium(
         self,
@@ -506,13 +502,17 @@ def check_demand_fulfillment(market: Dataset, tol: float) -> bool:
     """
     from logging import getLogger
 
-    future = market.year[-1]
+    future = market.year[-1].item()
     delta = (market.supply - market.consumption).sel(year=future)
     unmet = (delta < tol).any([u for u in delta.dims if u != "commodity"])
 
     if unmet.any():
         commodities = ", ".join(unmet.commodity.sel(commodity=unmet.values).values)
-        getLogger(__name__).warning(f"Check growth constraints for {commodities}.")
+        msg = (
+            f"Consumption exceeds supply in the year {future} for the following "
+            f"commodities: {commodities} "
+        )
+        getLogger(__name__).warning(msg)
 
         return False
 
