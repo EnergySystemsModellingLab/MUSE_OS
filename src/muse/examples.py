@@ -315,10 +315,6 @@ def _copy_default_timeslice(path: Path):
         example_data_dir() / "default_timeslice" / "settings.toml",
         path / "settings.toml",
     )
-    copyfile(
-        example_data_dir() / "default_timeslice" / "output.py",
-        path / "output.py",
-    )
 
 
 def _copy_multiple_agents(path: Path):
