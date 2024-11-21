@@ -72,7 +72,7 @@ the following signature:
         search_space: xr.DataArray,
         market: xr.Dataset,
         technologies: xr.Dataset,
-        year: Optional[int] = None,
+        year: int | None = None,
         **kwargs,
     ) -> Constraint:
         pass
@@ -248,7 +248,7 @@ def factory(
         market: xr.Dataset,
         technologies: xr.Dataset,
         year: int | None = None,
-        timeslice_level: Optional[str] = None,
+        timeslice_level: str | None = None,
     ) -> list[Constraint]:
         if year is None:
             year = int(market.year.min())
@@ -454,7 +454,7 @@ def max_production(
     market: xr.Dataset,
     technologies: xr.Dataset,
     year: int | None = None,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
     **kwargs,
 ) -> Constraint:
     """Constructs constraint between capacity and maximum production.
@@ -519,7 +519,7 @@ def demand_limiting_capacity(
     market: xr.Dataset,
     technologies: xr.Dataset,
     year: int | None = None,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
     **kwargs,
 ) -> Constraint:
     """Limits the maximum combined capacity to match the demand.
@@ -735,7 +735,7 @@ def minimum_service(
     market: xr.Dataset,
     technologies: xr.Dataset,
     year: int | None = None,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
     **kwargs,
 ) -> Constraint | None:
     """Constructs constraint between capacity and minimum service."""
@@ -778,7 +778,7 @@ def minimum_service(
 
 
 def lp_costs(
-    technologies: xr.Dataset, costs: xr.DataArray, timeslice_level: Optional[str] = None
+    technologies: xr.Dataset, costs: xr.DataArray, timeslice_level: str | None = None
 ) -> xr.Dataset:
     """Creates costs for solving with scipy's LP solver.
 
@@ -1159,7 +1159,7 @@ class ScipyAdapter:
         technologies: xr.Dataset,
         costs: xr.DataArray,
         *constraints: Constraint,
-        timeslice_level: Optional[str] = None,
+        timeslice_level: str | None = None,
     ) -> ScipyAdapter:
         lpcosts = lp_costs(technologies, costs, timeslice_level=timeslice_level)
 
