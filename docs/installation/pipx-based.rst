@@ -6,7 +6,7 @@ pipx-based installation
 To help you installing MUSE in your system we will follow these steps:
 
 - `Launching a terminal`_: Needed to both install and run MUSE.
-- `Installing a compatible Python version`_: MUSE works with Python 3.9 to 3.12.
+- `Installing a compatible Python version`_: MUSE works with Python 3.9 to 3.13.
 - `Installing pipx`_: A Python application manager that facilitates installing, keeping applications updated and run them in their own isolated environments.
 - `Installing MUSE itself`_
 
@@ -67,7 +67,7 @@ Once you have launched the Terminal, the window that opens will show the command
 Installing a compatible Python version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-MUSE needs Python to run and it works with versions 3.9 to 3.12, so the next step is to install a suitable version of Python.
+MUSE needs Python to run and it works with versions 3.9 to 3.13, so the next step is to install a suitable version of Python.
 
 .. note::
 
