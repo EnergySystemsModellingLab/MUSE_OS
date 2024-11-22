@@ -69,10 +69,12 @@ def supply(
         demand = demand.rename(region="dst_region")
 
     # Share demand among assets
-    expanded_demand = (demand * maxprod / maxprod.sum("asset")).fillna(0)
+    if "asset" not in demand.dims:
+        assert set(demand.dims) == set(maxprod.dims) - {"asset"}
+        demand = (demand * maxprod / maxprod.sum("asset")).fillna(0)
 
     # Supply is equal to demand, bounded between minprod and maxprod
-    result = np.minimum(expanded_demand, maxprod)
+    result = np.minimum(demand, maxprod)
     result = np.maximum(result, minprod)
 
     # add production of environmental pollutants
