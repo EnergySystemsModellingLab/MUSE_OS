@@ -20,7 +20,6 @@ def supply(
     capacity: xr.DataArray,
     demand: xr.DataArray,
     technologies: Union[xr.Dataset, xr.DataArray],
-    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Production and emission for a given capacity servicing a given demand.
 
@@ -37,7 +36,6 @@ def supply(
             exceed its share of the demand.
         technologies: factors bindings the capacity of an asset with its production of
             commodities and environmental pollutants.
-        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         A data array where the commodity dimension only contains actual outputs (i.e. no
@@ -45,13 +43,10 @@ def supply(
     """
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
 
-    maxprod = maximum_production(
-        technologies, capacity, timeslice_level=timeslice_level
-    )
-    minprod = minimum_production(
-        technologies, capacity, timeslice_level=timeslice_level
-    )
+    maxprod = maximum_production(technologies, capacity)
+    minprod = minimum_production(technologies, capacity)
     size = np.array(maxprod.region).size
+
     # in presence of trade demand needs to map maxprod dst_region
     if (
         "region" in demand.dims
@@ -60,19 +55,6 @@ def supply(
         and size == 1
     ):
         demand = demand.sel(region=maxprod.region)
-        prodsum = set(demand.dims).difference(maxprod.dims)
-        demsum = set(maxprod.dims).difference(demand.dims)
-        expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
-
-    elif (
-        "region" in demand.dims
-        and "region" in maxprod.coords
-        and "dst_region" not in maxprod.dims
-        and size > 1
-    ):
-        prodsum = set(demand.dims).difference(maxprod.dims)
-        demsum = set(maxprod.dims).difference(demand.dims)
-        expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
 
     elif (
         "region" in demand.dims
@@ -80,38 +62,21 @@ def supply(
         and "dst_region" in maxprod.dims
     ):
         demand = demand.rename(region="dst_region")
-        prodsum = {"timeslice"}
-        demsum = {"asset"}
-        expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
 
-    else:
-        prodsum = set(demand.dims).difference(maxprod.dims)
-        demsum = set(maxprod.dims).difference(demand.dims)
-        expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
+    # Share demand among assets
+    if "asset" not in demand.dims:
+        assert set(demand.dims) == set(maxprod.dims) - {"asset"}
+        demand = (demand * maxprod / maxprod.sum("asset")).fillna(0)
 
-    expanded_maxprod = (
-        maxprod
-        * demand
-        / broadcast_timeslice(demand.sum(prodsum), level=timeslice_level)
-    ).fillna(0)
-    expanded_minprod = (
-        minprod
-        * demand
-        / broadcast_timeslice(demand.sum(prodsum), level=timeslice_level)
-    ).fillna(0)
-    expanded_demand = expanded_demand.reindex_like(maxprod)
-    expanded_minprod = expanded_minprod.reindex_like(maxprod)
-
-    result = expanded_demand.where(
-        expanded_demand <= expanded_maxprod, expanded_maxprod
-    )
-    result = result.where(result >= expanded_minprod, expanded_minprod)
+    # Supply is equal to demand, bounded between minprod and maxprod
+    result = np.minimum(demand, maxprod)
+    result = np.maximum(result, minprod)
 
     # add production of environmental pollutants
     env = is_pollutant(technologies.comm_usage)
-    result[{"commodity": env}] = emission(
-        result, technologies.fixed_outputs, timeslice_level=timeslice_level
-    ).transpose(*result.dims)
+    result[{"commodity": env}] = emission(result, technologies.fixed_outputs).transpose(
+        *result.dims
+    )
     result[
         {"commodity": ~check_usage(technologies.comm_usage, CommodityUsage.PRODUCT)}
     ] = 0
