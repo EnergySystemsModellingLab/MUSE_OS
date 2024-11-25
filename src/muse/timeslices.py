@@ -1,12 +1,12 @@
 """Timeslice utility functions."""
 
 __all__ = [
-    "reference_timeslice",
     "aggregate_transforms",
     "convert_timeslice",
-    "timeslice_projector",
-    "setup_module",
+    "reference_timeslice",
     "represent_hours",
+    "setup_module",
+    "timeslice_projector",
 ]
 
 from collections.abc import Mapping, Sequence

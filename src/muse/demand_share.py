@@ -38,12 +38,12 @@ Returns:
 """
 
 __all__ = [
-    "new_and_retro",
+    "DEMAND_SHARE_SIGNATURE",
     "factory",
+    "new_and_retro",
     "register_demand_share",
     "unmet_demand",
     "unmet_forecasted_demand",
-    "DEMAND_SHARE_SIGNATURE",
 ]
 from collections.abc import Hashable, Mapping, MutableMapping, Sequence
 from typing import (
