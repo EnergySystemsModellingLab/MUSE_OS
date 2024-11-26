@@ -63,7 +63,7 @@ __all__ = [
 ]
 
 from collections.abc import Mapping, MutableMapping, Sequence
-from typing import Any, Callable, Union
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 import xarray as xr
@@ -71,7 +71,7 @@ from mypy_extensions import KwArg
 
 from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
-from muse.timeslices import drop_timeslice
+from muse.timeslices import broadcast_timeslice, distribute_timeslice, drop_timeslice
 from muse.utilities import filter_input
 
 OBJECTIVE_SIGNATURE = Callable[
@@ -130,18 +130,22 @@ def factory(
         technologies: xr.Dataset,
         demand: xr.DataArray,
         prices: xr.DataArray,
+        timeslice_level: Optional[str] = None,
         *args,
         **kwargs,
     ) -> xr.Dataset:
-        from muse.timeslices import broadcast_timeslice
-
         result = xr.Dataset()
         for name, objective in functions:
             obj = objective(
-                technologies=technologies, demand=demand, prices=prices, *args, **kwargs
+                technologies=technologies,
+                demand=demand,
+                prices=prices,
+                timeslice_level=timeslice_level,
+                *args,
+                **kwargs,
             )
             if "timeslice" not in obj.dims:
-                obj = broadcast_timeslice(obj)
+                obj = broadcast_timeslice(obj, level=timeslice_level)
             if "timeslice" in result.dims:
                 obj = drop_timeslice(obj)
             result[name] = obj
@@ -323,7 +327,6 @@ def emission_cost(
     with :math:`s` the timeslices and :math:`c` the commodity.
     """
     from muse.commodities import is_enduse, is_pollutant
-    from muse.timeslices import distribute_timeslice
 
     enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
     total = demand.sel(commodity=enduses).sum("commodity")
@@ -381,6 +384,7 @@ def lifetime_levelized_cost_of_energy(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
+    timeslice_level: Optional[str] = None,
     *args,
     **kwargs,
 ):
@@ -393,13 +397,14 @@ def lifetime_levelized_cost_of_energy(
     """
     from muse.costs import lifetime_levelized_cost_of_energy as LCOE
     from muse.quantities import capacity_to_service_demand
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
+    capacity = capacity_to_service_demand(
+        technologies=technologies, demand=demand, timeslice_level=timeslice_level
+    )
     production = (
-        broadcast_timeslice(capacity)
-        * distribute_timeslice(technologies.fixed_outputs)
-        * broadcast_timeslice(technologies.utilization_factor)
+        broadcast_timeslice(capacity, level=timeslice_level)
+        * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
+        * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     )
 
     results = LCOE(
@@ -408,6 +413,7 @@ def lifetime_levelized_cost_of_energy(
         capacity=capacity,
         production=production,
         year=demand.year.item(),
+        timeslice_level=timeslice_level,
     )
 
     return results.where(np.isfinite(results)).fillna(0.0)
@@ -418,6 +424,7 @@ def net_present_value(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
+    timeslice_level: Optional[str] = None,
     *args,
     **kwargs,
 ):
@@ -427,13 +434,12 @@ def net_present_value(
     """
     from muse.costs import net_present_value as NPV
     from muse.quantities import capacity_to_service_demand
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
     production = (
-        broadcast_timeslice(capacity)
-        * distribute_timeslice(technologies.fixed_outputs)
-        * broadcast_timeslice(technologies.utilization_factor)
+        broadcast_timeslice(capacity, level=timeslice_level)
+        * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
+        * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     )
 
     results = NPV(
@@ -442,6 +448,7 @@ def net_present_value(
         capacity=capacity,
         production=production,
         year=demand.year.item(),
+        timeslice_level=timeslice_level,
     )
     return results
 
@@ -451,6 +458,7 @@ def net_present_cost(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
+    timeslice_level: Optional[str] = None,
     *args,
     **kwargs,
 ):
@@ -460,13 +468,12 @@ def net_present_cost(
     """
     from muse.costs import net_present_cost as NPC
     from muse.quantities import capacity_to_service_demand
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
     production = (
-        broadcast_timeslice(capacity)
-        * distribute_timeslice(technologies.fixed_outputs)
-        * broadcast_timeslice(technologies.utilization_factor)
+        broadcast_timeslice(capacity, level=timeslice_level)
+        * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
+        * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     )
 
     results = NPC(
@@ -484,6 +491,7 @@ def equivalent_annual_cost(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
+    timeslice_level: Optional[str] = None,
     *args,
     **kwargs,
 ):
@@ -493,13 +501,12 @@ def equivalent_annual_cost(
     """
     from muse.costs import equivalent_annual_cost as EAC
     from muse.quantities import capacity_to_service_demand
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
     production = (
-        broadcast_timeslice(capacity)
-        * distribute_timeslice(technologies.fixed_outputs)
-        * broadcast_timeslice(technologies.utilization_factor)
+        broadcast_timeslice(capacity, level=timeslice_level)
+        * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
+        * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     )
 
     results = EAC(
@@ -508,5 +515,6 @@ def equivalent_annual_cost(
         capacity=capacity,
         production=production,
         year=demand.year.item(),
+        timeslice_level=timeslice_level,
     )
     return results

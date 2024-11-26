@@ -136,7 +136,7 @@ def read_technodictionary(filename: Union[str, Path]) -> xr.Dataset:
 
 def read_technodata_timeslices(filename: Union[str, Path]) -> xr.Dataset:
     from muse.readers import camel_to_snake
-    from muse.timeslices import TIMESLICE
+    from muse.timeslices import sort_timeslices
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
     csv = csv.rename(columns=camel_to_snake)
@@ -170,9 +170,7 @@ def read_technodata_timeslices(filename: Union[str, Path]) -> xr.Dataset:
         if item not in ["technology", "region", "year"]
     ]
     result = result.stack(timeslice=timeslice_levels)
-    result = result.sel(timeslice=TIMESLICE.timeslice)
-    # sorts timeslices into the correct order
-    return result
+    return sort_timeslices(result)
 
 
 def read_io_technodata(filename: Union[str, Path]) -> xr.Dataset:
@@ -617,8 +615,8 @@ def read_initial_market(
         getLogger(__name__).info("Base year import not provided. Set to zero.")
         base_year_import = xr.zeros_like(projections)
 
-    base_year_export = distribute_timeslice(base_year_export)
-    base_year_import = distribute_timeslice(base_year_import)
+    base_year_export = distribute_timeslice(base_year_export, level=None)
+    base_year_import = distribute_timeslice(base_year_import, level=None)
     base_year_export.name = "exports"
     base_year_import.name = "imports"
 

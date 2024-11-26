@@ -64,6 +64,7 @@ from muse.constraints import Constraint
 from muse.errors import GrowthOfCapacityTooConstrained
 from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
+from muse.timeslices import timeslice_max
 
 INVESTMENT_SIGNATURE = Callable[
     [xr.DataArray, xr.DataArray, xr.Dataset, list[Constraint], KwArg(Any)],
@@ -224,6 +225,7 @@ def adhoc_match_demand(
     technologies: xr.Dataset,
     constraints: list[Constraint],
     year: int,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     from muse.demand_matching import demand_matching
     from muse.quantities import capacity_in_use, maximum_production
@@ -237,6 +239,7 @@ def adhoc_match_demand(
         year=year,
         technology=costs.replacement,
         commodity=demand.commodity,
+        timeslice_level=timeslice_level,
     ).drop_vars("technology")
 
     # Push disabled techs to last rank.
@@ -253,7 +256,11 @@ def adhoc_match_demand(
     ).where(search_space, 0)
 
     capacity = capacity_in_use(
-        production, technologies, year=year, technology=production.replacement
+        production,
+        technologies,
+        year=year,
+        technology=production.replacement,
+        timeslice_level=timeslice_level,
     ).drop_vars("technology")
     if "timeslice" in capacity.dims:
         capacity = timeslice_max(capacity)
@@ -269,6 +276,7 @@ def scipy_match_demand(
     technologies: xr.Dataset,
     constraints: list[Constraint],
     year: Optional[int] = None,
+    timeslice_level: Optional[str] = None,
     **options,
 ) -> xr.DataArray:
     from logging import getLogger
@@ -289,7 +297,9 @@ def scipy_match_demand(
         techs = technologies
 
     # Run scipy optimization with highs solver
-    adapter = ScipyAdapter.factory(techs, cast(np.ndarray, costs), *constraints)
+    adapter = ScipyAdapter.factory(
+        techs, cast(np.ndarray, costs), *constraints, timeslice_level=timeslice_level
+    )
     res = linprog(**adapter.kwargs, method="highs")
 
     # Backup: try with highs-ipm
@@ -381,14 +391,3 @@ def cvxopt_match_demand(
 
     solution = cast(Callable[[np.ndarray], xr.Dataset], adapter.to_muse)(list(res["x"]))
     return solution
-
-
-def timeslice_max(x: xr.DataArray) -> xr.DataArray:
-    """Find the max value over the timeslice dimension, normlaized for timeslice length.
-
-    This first annualizes the value in each timeslice by dividing by the fraction of the
-    year that the timeslice occupies, then takes the maximum value
-    """
-    from muse.timeslices import TIMESLICE, broadcast_timeslice
-
-    return (x / (TIMESLICE / broadcast_timeslice(TIMESLICE.sum()))).max("timeslice")
