@@ -153,9 +153,7 @@ class Sector(AbstractSector):  # type: ignore
 
         :py:mod:`muse.interactions` contains MUSE's base interactions
         """
-        if interactions is None:
-            interactions = interaction_factory()
-        self.interactions = interactions
+        self.interactions = interactions or interaction_factory()
 
         """A function for outputting data for post-mortem analysis."""
         self.outputs: Callable = (
@@ -167,9 +165,7 @@ class Sector(AbstractSector):  # type: ignore
         It can be anything registered with
         :py:func:`@register_production<muse.production.register_production>`.
         """
-        self.supply_prod = (
-            supply_prod if supply_prod is not None else maximum_production
-        )
+        self.supply_prod = supply_prod or maximum_production
 
         """Full supply, consumption and costs data for the most recent year."""
         self.output_data: xr.Dataset

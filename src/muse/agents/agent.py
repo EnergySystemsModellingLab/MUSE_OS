@@ -62,6 +62,7 @@ class AbstractAgent(ABC):
         self.quantity = quantity
         """Attribute to classify different agents' share of the population."""
         self.timeslice_level = timeslice_level
+        """Timeslice level for the agent."""
 
     def filter_input(
         self,

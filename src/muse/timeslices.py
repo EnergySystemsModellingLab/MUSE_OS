@@ -6,6 +6,11 @@ __all__ = [
     "distribute_timeslice",
     "drop_timeslice",
     "setup_module",
+    "compress_timeslice",
+    "expand_timeslice",
+    "get_level",
+    "sort_timeslices",
+    "timeslice_max",
 ]
 
 from collections.abc import Mapping, Sequence
@@ -81,7 +86,8 @@ def broadcast_timeslice(
 ) -> DataArray:
     """Convert a non-timesliced array to a timesliced array by broadcasting.
 
-    If x is already timesliced in the appropriate scheme, it will be returned unchanged.
+    If data is already timesliced in the appropriate scheme, it will be returned
+    unchanged.
 
     Args:
         data: Array to broadcast.
@@ -97,11 +103,13 @@ def broadcast_timeslice(
     if level is not None:
         ts = compress_timeslice(ts, ts=ts, level=level, operation="sum")
 
-    # If x already has timeslices, check that it matches the reference timeslice.
+    # If data already has timeslices, check that it matches the reference timeslice.
     if "timeslice" in data.dims:
         if data.timeslice.reset_coords(drop=True).equals(ts.timeslice):
             return data
-        raise ValueError("x has incompatible timeslicing.")
+        raise ValueError(
+            "Data is already timesliced, but does not match the reference."
+        )
 
     mindex_coords = Coordinates.from_pandas_multiindex(ts.timeslice, "timeslice")
     broadcasted = data.expand_dims(timeslice=ts["timeslice"]).assign_coords(
@@ -115,7 +123,8 @@ def distribute_timeslice(
 ) -> DataArray:
     """Convert a non-timesliced array to a timesliced array by distribution.
 
-    If x is already timesliced in the appropriate scheme, it will be returned unchanged.
+    If data is already timesliced in the appropriate scheme, it will be returned
+    unchanged.
 
     Args:
         data: Array to distribute.
@@ -129,11 +138,13 @@ def distribute_timeslice(
     if level is not None:
         ts = compress_timeslice(ts, ts=ts, level=level, operation="sum")
 
-    # If x already has timeslices, check that it matches the reference timeslice.
+    # If data already has timeslices, check that it matches the reference timeslice.
     if "timeslice" in data.dims:
         if data.timeslice.reset_coords(drop=True).equals(ts.timeslice):
             return data
-        raise ValueError("x has incompatible timeslicing.")
+        raise ValueError(
+            "Data is already timesliced, but does not match the reference."
+        )
 
     broadcasted = broadcast_timeslice(data, ts=ts)
     timeslice_fractions = ts / broadcast_timeslice(ts.sum(), ts=ts)
@@ -163,11 +174,11 @@ def compress_timeslice(
     if ts is None:
         ts = TIMESLICE
 
-    # Raise error if x is not timesliced appropriately
+    # Raise error if data is not timesliced appropriately
     if "timeslice" not in data.dims:
-        raise ValueError("x must have a 'timeslice' dimension.")
+        raise ValueError("Data must have a 'timeslice' dimension.")
     if not data.timeslice.reset_coords(drop=True).equals(ts.timeslice):
-        raise ValueError("x has incompatible timeslicing.")
+        raise ValueError("Data has incompatible timeslicing with reference.")
 
     # If level is not specified, don't compress
     if level is None:
@@ -178,7 +189,7 @@ def compress_timeslice(
     if level not in x_levels:
         raise ValueError(f"Unknown level: {level}. Must be one of {x_levels}.")
 
-    # Return x unchanged if already at the desired level
+    # Return data unchanged if already at the desired level
     if get_level(data) == level:
         return data
 
@@ -223,21 +234,23 @@ def expand_timeslice(
     if ts is None:
         ts = TIMESLICE
 
-    # Raise error if x is not timesliced
+    # Raise error if data is not timesliced
     if "timeslice" not in data.dims:
-        raise ValueError("DataArray must have a 'timeslice' dimension.")
+        raise ValueError("Data must have a 'timeslice' dimension.")
 
     # Get level names
     ts_levels = ts.timeslice.to_index().names
     x_levels = data.timeslice.to_index().names
 
-    # Raise error if x_level is not a subset of ts_levels
+    # Raise error if x_levels is not a subset of ts_levels
     if not set(x_levels).issubset(ts_levels):
         raise ValueError(
-            f"Timeslice levels of x ({x_levels}) must be a subset of ts ({ts_levels})."
+            "Data has incompatible timeslicing with reference. "
+            f"Timeslice levels of data ({x_levels}) must be a subset of ts "
+            f"({ts_levels})."
         )
 
-    # Return x unchanged if already at the desired level
+    # Return data unchanged if already at the desired level
     finest_level = get_level(ts)
     current_level = get_level(data)
     if current_level == finest_level:
@@ -277,7 +290,7 @@ def drop_timeslice(data: DataArray) -> DataArray:
 def get_level(data: DataArray) -> str:
     """Get the timeslice level of a DataArray."""
     if "timeslice" not in data.dims:
-        raise ValueError("DataArray does not have a 'timeslice' dimension.")
+        raise ValueError("Data does not have a 'timeslice' dimension.")
     return data.timeslice.to_index().names[-1]
 
 
