@@ -1,14 +1,14 @@
 """Timeslice utility functions."""
 
 __all__ = [
-    "read_timeslices",
     "broadcast_timeslice",
+    "compress_timeslice",
     "distribute_timeslice",
     "drop_timeslice",
-    "setup_module",
-    "compress_timeslice",
     "expand_timeslice",
     "get_level",
+    "read_timeslices",
+    "setup_module",
     "sort_timeslices",
     "timeslice_max",
 ]

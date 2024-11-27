@@ -48,18 +48,18 @@ Returns:
 """
 
 __all__ = [
-    "register_objective",
+    "capacity_to_service_demand",
+    "capital_costs",
     "comfort",
     "efficiency",
-    "fixed_costs",
-    "capital_costs",
     "emission_cost",
+    "equivalent_annual_cost",
+    "factory",
+    "fixed_costs",
     "fuel_consumption_cost",
     "lifetime_levelized_cost_of_energy",
     "net_present_value",
-    "equivalent_annual_cost",
-    "capacity_to_service_demand",
-    "factory",
+    "register_objective",
 ]
 
 from collections.abc import Mapping, MutableMapping, Sequence

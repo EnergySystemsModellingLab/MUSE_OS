@@ -10,14 +10,14 @@ from typing import Callable, ClassVar
 from xarray import DataArray, Dataset
 
 __all__ = [
-    "factory",
     "Exponential",
     "ExponentialAdj",
-    "Logistic",
-    "Loglog",
-    "LogisticSigmoid",
     "Linear",
+    "Logistic",
+    "LogisticSigmoid",
+    "Loglog",
     "endogenous_demand",
+    "factory",
     "register_regression",
 ]
 

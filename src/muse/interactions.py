@@ -15,10 +15,10 @@ arguments and returns nothing. It is expected to modify the agents in-place.
 """
 
 __all__ = [
-    "register_interaction_net",
-    "register_agent_interaction",
     "factory",
     "new_to_retro_net",
+    "register_agent_interaction",
+    "register_interaction_net",
     "transfer_assets",
 ]
 
