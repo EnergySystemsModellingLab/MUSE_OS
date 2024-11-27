@@ -31,12 +31,12 @@ Returns:
 """
 
 __all__ = [
+    "PRODUCTION_SIGNATURE",
     "demand_matched_production",
     "factory",
     "maximum_production",
     "register_production",
     "supply",
-    "PRODUCTION_SIGNATURE",
 ]
 from collections.abc import Mapping, MutableMapping
 from typing import Any, Callable, Union, cast

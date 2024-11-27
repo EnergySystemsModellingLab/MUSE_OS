@@ -1,15 +1,15 @@
 """Pre and post hooks on agents."""
 
 __all__ = [
-    "register_initial_asset_transform",
-    "register_final_asset_transform",
-    "noop",
+    "asset_merge_factory",
     "clean",
-    "old_assets_only",
+    "housekeeping_factory",
     "merge_assets",
     "new_assets_only",
-    "housekeeping_factory",
-    "asset_merge_factory",
+    "noop",
+    "old_assets_only",
+    "register_final_asset_transform",
+    "register_initial_asset_transform",
 ]
 from collections.abc import Mapping, MutableMapping
 from typing import Callable, Union

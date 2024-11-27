@@ -42,10 +42,10 @@ Returns:
 """
 
 __all__ = [
+    "INVESTMENT_SIGNATURE",
     "adhoc_match_demand",
     "cliff_retirement_profile",
     "register_investment",
-    "INVESTMENT_SIGNATURE",
 ]
 from collections.abc import Mapping, MutableMapping
 from typing import (
