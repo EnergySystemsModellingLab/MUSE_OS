@@ -42,9 +42,8 @@ Arguments:
             these parameters.
 
 Returns:
-    A DataArray with at least one dimension corresponding to ``replacement``.
-    Other dimensions can be present, as long as the subsequent decision function knows
-    how to reduce them.
+    A DataArray with at least two dimension corresponding to `replacement` and `asset`.
+    A `timeslice` dimension may also be present.
 """
 
 __all__ = [
@@ -172,6 +171,8 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
 
         if "replacement" not in result.dims:
             raise RuntimeError("Objective should return a dimension 'replacement'")
+        if "asset" not in result.dims:
+            raise RuntimeError("Objective should return a dimension 'asset'")
         if "technology" in result.dims:
             raise RuntimeError("Objective should not return a dimension 'technology'")
         if "technology" in result.coords:
@@ -188,21 +189,25 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
 @register_objective
 def comfort(
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     *args,
     **kwargs,
 ) -> xr.DataArray:
     """Comfort value provided by technologies."""
-    return technologies.comfort
+    result = xr.broadcast(technologies.comfort, demand.asset)[0]
+    return result
 
 
 @register_objective
 def efficiency(
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     *args,
     **kwargs,
 ) -> xr.DataArray:
     """Efficiency of the technologies."""
-    return technologies.efficiency
+    result = xr.broadcast(technologies.efficiency, demand.asset)[0]
+    return result
 
 
 @register_objective(name="capacity")
@@ -287,6 +292,7 @@ def fixed_costs(
 @register_objective
 def capital_costs(
     technologies: xr.Dataset,
+    demand: xr.Dataset,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -298,6 +304,7 @@ def capital_costs(
     simulation for each technology.
     """
     result = technologies.cap_par * (technologies.scaling_size**technologies.cap_exp)
+    result = xr.broadcast(result, demand.asset)[0]
     return result
 
 
@@ -372,10 +379,12 @@ def annual_levelized_cost_of_energy(
     """
     from muse.costs import annual_levelized_cost_of_energy as aLCOE
 
-    return filter_input(
+    result = filter_input(
         aLCOE(technologies=technologies, prices=prices).max("timeslice"),
         year=demand.year.item(),
     )
+    result = xr.broadcast(result, demand.asset)[0]
+    return result
 
 
 @register_objective(name=["LCOE", "LLCOE"])
