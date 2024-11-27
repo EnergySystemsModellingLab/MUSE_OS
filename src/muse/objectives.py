@@ -159,11 +159,23 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
     from functools import wraps
 
     @wraps(function)
-    def decorated_objective(technologies: xr.Dataset, *args, **kwargs) -> xr.DataArray:
+    def decorated_objective(
+        technologies: xr.Dataset, demand: xr.DataArray, *args, **kwargs
+    ) -> xr.DataArray:
         from logging import getLogger
 
-        result = function(technologies, *args, **kwargs)
+        # Check inputs
+        assert set(demand.dims) == {"asset", "timeslice", "commodity"}
+        technologies_dims = set(technologies.dims)
+        assert {"replacement", "commodity"}.issubset(
+            technologies_dims
+        ) and technologies_dims <= {"replacement", "commodity", "timeslice"}
 
+        # Calculate objective
+        result = function(technologies, demand, *args, **kwargs)
+        result.name = function.__name__
+
+        # Check result
         dtype = result.values.dtype
         if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
             msg = f"dtype of objective {function.__name__} is not a number ({dtype})"
@@ -179,7 +191,7 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
             raise RuntimeError("Objective should not return a coordinate 'technology'")
         if "year" in result.dims:
             raise RuntimeError("Objective should not return a dimension 'year'")
-        result.name = function.__name__
+
         cache_quantity(**{result.name: result})
         return result
 
