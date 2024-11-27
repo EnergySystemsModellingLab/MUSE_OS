@@ -2,9 +2,9 @@ __all__ = [
     "AbstractAgent",
     "Agent",
     "InvestingAgent",
-    "factory",
     "agents_factory",
     "create_agent",
+    "factory",
 ]
 
 from muse.agents.agent import AbstractAgent, Agent, InvestingAgent

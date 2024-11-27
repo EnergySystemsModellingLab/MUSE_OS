@@ -30,12 +30,12 @@ New sectors can be registered with the MUSE input files using
 """
 
 __all__ = [
-    "AbstractSector",
-    "Sector",
-    "PresetSector",
-    "LegacySector",
-    "register_sector",
     "SECTORS_REGISTERED",
+    "AbstractSector",
+    "LegacySector",
+    "PresetSector",
+    "Sector",
+    "register_sector",
 ]
 from muse.sectors.abstract import AbstractSector
 from muse.sectors.legacy_sector import LegacySector
