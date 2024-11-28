@@ -165,7 +165,9 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
         from logging import getLogger
 
         # Check inputs
-        check_dimensions(demand, ["asset", "timeslice", "commodity"])
+        check_dimensions(
+            demand, ["asset", "timeslice", "commodity"], optional=["region"]
+        )
         check_dimensions(
             technologies, ["replacement", "commodity"], optional=["timeslice"]
         )
