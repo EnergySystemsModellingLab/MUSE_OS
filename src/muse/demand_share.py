@@ -120,7 +120,9 @@ def factory(
         result = function(agents, market, technologies, **keyword_args)
 
         # Check result
-        check_dimensions(result, ["asset", "timeslice", "commodity"])
+        check_dimensions(
+            result, ["timeslice", "commodity"], optional=["asset", "region"]
+        )  # asset should be required
         return result
 
     return cast(DEMAND_SHARE_SIGNATURE, demand_share)
