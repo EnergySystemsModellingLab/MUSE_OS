@@ -71,7 +71,7 @@ from mypy_extensions import KwArg
 from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
 from muse.timeslices import broadcast_timeslice, distribute_timeslice, drop_timeslice
-from muse.utilities import filter_input
+from muse.utilities import check_dimensions, filter_input
 
 OBJECTIVE_SIGNATURE = Callable[
     [xr.Dataset, xr.DataArray, xr.DataArray, KwArg(Any)], xr.DataArray
@@ -173,11 +173,10 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
         from logging import getLogger
 
         # Check inputs
-        assert set(demand.dims) == {"asset", "timeslice", "commodity"}
-        technologies_dims = set(technologies.dims)
-        assert {"replacement", "commodity"}.issubset(
-            technologies_dims
-        ) and technologies_dims <= {"replacement", "commodity", "timeslice"}
+        check_dimensions(demand, ["asset", "timeslice", "commodity"])
+        check_dimensions(
+            technologies, ["replacement", "commodity"], optional=["timeslice"]
+        )
 
         # Calculate objective
         result = function(technologies, demand, *args, **kwargs)
@@ -188,17 +187,7 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
         if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
             msg = f"dtype of objective {function.__name__} is not a number ({dtype})"
             getLogger(function.__module__).warning(msg)
-
-        if "replacement" not in result.dims:
-            raise RuntimeError("Objective should return a dimension 'replacement'")
-        if "asset" not in result.dims:
-            raise RuntimeError("Objective should return a dimension 'asset'")
-        if "technology" in result.dims:
-            raise RuntimeError("Objective should not return a dimension 'technology'")
-        if "technology" in result.coords:
-            raise RuntimeError("Objective should not return a coordinate 'technology'")
-        if "year" in result.dims:
-            raise RuntimeError("Objective should not return a dimension 'year'")
+        check_dimensions(result, ["replacement", "asset"], optional=["timeslice"])
 
         cache_quantity(**{result.name: result})
         return result
