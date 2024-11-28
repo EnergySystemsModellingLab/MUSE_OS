@@ -113,7 +113,7 @@ def factory(
         check_dimensions(
             technologies,
             ["technology", "year", "region"],
-            optional=["timeslice", "commodity"],
+            optional=["timeslice", "commodity", "dst_region"],
         )
 
         # Calculate demand share
