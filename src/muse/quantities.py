@@ -13,11 +13,14 @@ from typing import Optional, Union, cast
 import numpy as np
 import xarray as xr
 
+from muse.timeslices import broadcast_timeslice, distribute_timeslice
+
 
 def supply(
     capacity: xr.DataArray,
     demand: xr.DataArray,
     technologies: Union[xr.Dataset, xr.DataArray],
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Production and emission for a given capacity servicing a given demand.
 
@@ -34,16 +37,20 @@ def supply(
             exceed its share of the demand.
         technologies: factors bindings the capacity of an asset with its production of
             commodities and environmental pollutants.
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         A data array where the commodity dimension only contains actual outputs (i.e. no
         input commodities).
     """
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
-    from muse.timeslices import broadcast_timeslice
 
-    maxprod = maximum_production(technologies, capacity)
-    minprod = minimum_production(technologies, capacity)
+    maxprod = maximum_production(
+        technologies, capacity, timeslice_level=timeslice_level
+    )
+    minprod = minimum_production(
+        technologies, capacity, timeslice_level=timeslice_level
+    )
     size = np.array(maxprod.region).size
     # in presence of trade demand needs to map maxprod dst_region
     if (
@@ -83,10 +90,14 @@ def supply(
         expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
 
     expanded_maxprod = (
-        maxprod * demand / broadcast_timeslice(demand.sum(prodsum))
+        maxprod
+        * demand
+        / broadcast_timeslice(demand.sum(prodsum), level=timeslice_level)
     ).fillna(0)
     expanded_minprod = (
-        minprod * demand / broadcast_timeslice(demand.sum(prodsum))
+        minprod
+        * demand
+        / broadcast_timeslice(demand.sum(prodsum), level=timeslice_level)
     ).fillna(0)
     expanded_demand = expanded_demand.reindex_like(maxprod)
     expanded_minprod = expanded_minprod.reindex_like(maxprod)
@@ -98,9 +109,9 @@ def supply(
 
     # add production of environmental pollutants
     env = is_pollutant(technologies.comm_usage)
-    result[{"commodity": env}] = emission(result, technologies.fixed_outputs).transpose(
-        *result.dims
-    )
+    result[{"commodity": env}] = emission(
+        result, technologies.fixed_outputs, timeslice_level=timeslice_level
+    ).transpose(*result.dims)
     result[
         {"commodity": ~check_usage(technologies.comm_usage, CommodityUsage.PRODUCT)}
     ] = 0
@@ -108,7 +119,11 @@ def supply(
     return result
 
 
-def emission(production: xr.DataArray, fixed_outputs: xr.DataArray):
+def emission(
+    production: xr.DataArray,
+    fixed_outputs: xr.DataArray,
+    timeslice_level: Optional[str] = None,
+):
     """Computes emission from current products.
 
     Emissions are computed as `sum(product) * fixed_outputs`.
@@ -118,12 +133,12 @@ def emission(production: xr.DataArray, fixed_outputs: xr.DataArray):
             when computing emissions.
         fixed_outputs: factor relating total production to emissions. For convenience,
             this can also be a `technologies` dataset containing `fixed_output`.
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         A data array containing emissions (and only emissions).
     """
     from muse.commodities import is_enduse, is_pollutant
-    from muse.timeslices import broadcast_timeslice
     from muse.utilities import broadcast_techs
 
     # just in case we are passed a technologies dataset, like in other functions
@@ -133,12 +148,15 @@ def emission(production: xr.DataArray, fixed_outputs: xr.DataArray):
     envs = is_pollutant(fouts.comm_usage)
     enduses = is_enduse(fouts.comm_usage)
     return production.sel(commodity=enduses).sum("commodity") * broadcast_timeslice(
-        fouts.sel(commodity=envs)
+        fouts.sel(commodity=envs), level=timeslice_level
     )
 
 
 def gross_margin(
-    technologies: xr.Dataset, capacity: xr.DataArray, prices: xr.Dataset
+    technologies: xr.Dataset,
+    capacity: xr.DataArray,
+    prices: xr.Dataset,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """The percentage of revenue after direct expenses have been subtracted.
 
@@ -152,7 +170,6 @@ def gross_margin(
     - non-environmental commodities OUTPUTS are related to revenues.
     """
     from muse.commodities import is_enduse, is_pollutant
-    from muse.timeslices import distribute_timeslice
     from muse.utilities import broadcast_techs
 
     tech = broadcast_techs(  # type: ignore
@@ -191,13 +208,18 @@ def gross_margin(
     # Variable costs depend on factors such as labour
     variable_costs = distribute_timeslice(
         var_par * ((fixed_outputs.sel(commodity=enduses)).sum("commodity")) ** var_exp,
+        level=timeslice_level,
     )
 
     # The individual prices are selected
     # costs due to consumables, direct inputs
-    consumption_costs = (prices * distribute_timeslice(fixed_inputs)).sum("commodity")
+    consumption_costs = (
+        prices * distribute_timeslice(fixed_inputs, level=timeslice_level)
+    ).sum("commodity")
     # costs due to pollutants
-    production_costs = prices * distribute_timeslice(fixed_outputs)
+    production_costs = prices * distribute_timeslice(
+        fixed_outputs, level=timeslice_level
+    )
     environmental_costs = (production_costs.sel(commodity=environmentals)).sum(
         "commodity"
     )
@@ -216,6 +238,7 @@ def decommissioning_demand(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
     year: Optional[Sequence[int]] = None,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     r"""Computes demand from process decommissioning.
 
@@ -257,6 +280,7 @@ def decommissioning_demand(
     return maximum_production(
         technologies,
         capacity_decrease,
+        timeslice_level=timeslice_level,
     ).clip(min=0)
 
 
@@ -264,6 +288,7 @@ def consumption(
     technologies: xr.Dataset,
     production: xr.DataArray,
     prices: Optional[xr.DataArray] = None,
+    timeslice_level: Optional[str] = None,
     **kwargs,
 ) -> xr.DataArray:
     """Commodity consumption when fulfilling the whole production.
@@ -272,7 +297,6 @@ def consumption(
     are not given, then flexible consumption is *not* considered.
     """
     from muse.commodities import is_fuel
-    from muse.timeslices import broadcast_timeslice
     from muse.utilities import filter_with_template
 
     params = filter_with_template(
@@ -284,9 +308,9 @@ def consumption(
 
     # Calculate degree of technology activity
     # We do this by dividing the production by the output flow per unit of activity
-    prod_amplitude = (production / broadcast_timeslice(params.fixed_outputs)).max(
-        "commodity"
-    )
+    prod_amplitude = (
+        production / broadcast_timeslice(params.fixed_outputs, level=timeslice_level)
+    ).max("commodity")
 
     # Calculate consumption of fixed commodities
     consumption_fixed = prod_amplitude * broadcast_timeslice(params.fixed_inputs)
@@ -311,7 +335,9 @@ def consumption(
 
     # Consumption of flexible commodities
     assert all(flexs.commodity.values == consumption_fixed.commodity.values)
-    flex = flexs.where(broadcast_timeslice(flexs.commodity) == minprices, 0)
+    flex = flexs.where(
+        broadcast_timeslice(flexs.commodity, level=timeslice_level) == minprices, 0
+    )
     consumption_flex = flex * prod_amplitude
     return consumption_fixed + consumption_flex
 
@@ -319,6 +345,7 @@ def consumption(
 def maximum_production(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
+    timeslice_level: Optional[str] = None,
     **filters,
 ):
     r"""Production for a given capacity.
@@ -346,13 +373,13 @@ def maximum_production(
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are
             silently ignored.
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         `capacity * fixed_outputs * utilization_factor`, whittled down according to the
         filters and the set of technologies in `capacity`.
     """
     from muse.commodities import is_enduse
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
     from muse.utilities import broadcast_techs, filter_input
 
     capa = filter_input(
@@ -365,9 +392,9 @@ def maximum_production(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
     )
     result = (
-        broadcast_timeslice(capa)
-        * distribute_timeslice(ftechs.fixed_outputs)
-        * broadcast_timeslice(ftechs.utilization_factor)
+        broadcast_timeslice(capa, level=timeslice_level)
+        * distribute_timeslice(ftechs.fixed_outputs, level=timeslice_level)
+        * broadcast_timeslice(ftechs.utilization_factor, level=timeslice_level)
     )
     return result.where(is_enduse(result.comm_usage), 0)
 
@@ -376,6 +403,7 @@ def capacity_in_use(
     production: xr.DataArray,
     technologies: xr.Dataset,
     max_dim: Optional[Union[str, tuple[str]]] = "commodity",
+    timeslice_level: Optional[str] = None,
     **filters,
 ):
     """Capacity-in-use for each asset, given production.
@@ -393,12 +421,12 @@ def capacity_in_use(
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are
             silently ignored.
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         Capacity-in-use for each technology, whittled down by the filters.
     """
     from muse.commodities import is_enduse
-    from muse.timeslices import broadcast_timeslice
     from muse.utilities import broadcast_techs, filter_input
 
     prod = filter_input(
@@ -413,7 +441,9 @@ def capacity_in_use(
     )
 
     factor = 1 / (ftechs.fixed_outputs * ftechs.utilization_factor)
-    capa_in_use = (prod * broadcast_timeslice(factor)).where(~np.isinf(factor), 0)
+    capa_in_use = (prod * broadcast_timeslice(factor, level=timeslice_level)).where(
+        ~np.isinf(factor), 0
+    )
 
     capa_in_use = capa_in_use.where(
         is_enduse(technologies.comm_usage.sel(commodity=capa_in_use.commodity)), 0
@@ -427,6 +457,7 @@ def capacity_in_use(
 def minimum_production(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
+    timeslice_level: Optional[str] = None,
     **filters,
 ):
     r"""Minimum production for a given capacity.
@@ -456,13 +487,13 @@ def minimum_production(
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are
             silently ignored.
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         `capacity * fixed_outputs * minimum_service_factor`, whittled down according to
         the filters and the set of technologies in `capacity`.
     """
     from muse.commodities import is_enduse
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
     from muse.utilities import broadcast_techs, filter_input
 
     capa = filter_input(
@@ -470,7 +501,7 @@ def minimum_production(
     )
 
     if "minimum_service_factor" not in technologies:
-        return broadcast_timeslice(xr.zeros_like(capa))
+        return broadcast_timeslice(xr.zeros_like(capa), level=timeslice_level)
 
     btechs = broadcast_techs(  # type: ignore
         cast(
@@ -483,9 +514,9 @@ def minimum_production(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
     )
     result = (
-        broadcast_timeslice(capa)
-        * distribute_timeslice(ftechs.fixed_outputs)
-        * broadcast_timeslice(ftechs.minimum_service_factor)
+        broadcast_timeslice(capa, level=timeslice_level)
+        * distribute_timeslice(ftechs.fixed_outputs, level=timeslice_level)
+        * broadcast_timeslice(ftechs.minimum_service_factor, level=timeslice_level)
     )
     return result.where(is_enduse(result.comm_usage), 0)
 
@@ -493,12 +524,12 @@ def minimum_production(
 def capacity_to_service_demand(
     demand: xr.DataArray,
     technologies: xr.Dataset,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
-
     timeslice_outputs = distribute_timeslice(
-        technologies.fixed_outputs.sel(commodity=demand.commodity)
-    ) * broadcast_timeslice(technologies.utilization_factor)
+        technologies.fixed_outputs.sel(commodity=demand.commodity),
+        level=timeslice_level,
+    ) * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     capa_to_service_demand = demand / timeslice_outputs
     return capa_to_service_demand.max(("commodity", "timeslice"))

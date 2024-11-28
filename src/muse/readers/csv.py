@@ -1,18 +1,18 @@
 """Ensemble of functions to read MUSE data."""
 
 __all__ = [
-    "read_technodictionary",
-    "read_io_technodata",
-    "read_initial_assets",
-    "read_technologies",
-    "read_global_commodities",
-    "read_timeslice_shares",
-    "read_csv_agent_parameters",
-    "read_macro_drivers",
-    "read_initial_market",
     "read_attribute_table",
-    "read_regression_parameters",
+    "read_csv_agent_parameters",
+    "read_global_commodities",
+    "read_initial_assets",
+    "read_initial_market",
+    "read_io_technodata",
+    "read_macro_drivers",
     "read_presets",
+    "read_regression_parameters",
+    "read_technodictionary",
+    "read_technologies",
+    "read_timeslice_shares",
 ]
 
 from collections.abc import Sequence
@@ -136,7 +136,7 @@ def read_technodictionary(filename: Union[str, Path]) -> xr.Dataset:
 
 def read_technodata_timeslices(filename: Union[str, Path]) -> xr.Dataset:
     from muse.readers import camel_to_snake
-    from muse.timeslices import TIMESLICE
+    from muse.timeslices import sort_timeslices
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
     csv = csv.rename(columns=camel_to_snake)
@@ -170,9 +170,7 @@ def read_technodata_timeslices(filename: Union[str, Path]) -> xr.Dataset:
         if item not in ["technology", "region", "year"]
     ]
     result = result.stack(timeslice=timeslice_levels)
-    result = result.sel(timeslice=TIMESLICE.timeslice)
-    # sorts timeslices into the correct order
-    return result
+    return sort_timeslices(result)
 
 
 def read_io_technodata(filename: Union[str, Path]) -> xr.Dataset:
@@ -617,8 +615,8 @@ def read_initial_market(
         getLogger(__name__).info("Base year import not provided. Set to zero.")
         base_year_import = xr.zeros_like(projections)
 
-    base_year_export = distribute_timeslice(base_year_export)
-    base_year_import = distribute_timeslice(base_year_import)
+    base_year_export = distribute_timeslice(base_year_export, level=None)
+    base_year_import = distribute_timeslice(base_year_import, level=None)
     base_year_export.name = "exports"
     base_year_import.name = "imports"
 
@@ -873,33 +871,6 @@ def read_trade(
         )
 
     return result.rename(src_region="region")
-
-
-def read_finite_resources(path: Union[str, Path]) -> xr.DataArray:
-    """Reads finite resources from csv file.
-
-    The CSV file is made up of columns "Region", "Year", as well
-    as three timeslice columns ("Month", "Day", "Hour"). All three sets of columns are
-    optional. The timeslice set should contain a full set of timeslices, if present.
-    Other columns correspond to commodities.
-    """
-    from muse.timeslices import TIMESLICE
-
-    data = pd.read_csv(path)
-    data.columns = [c.lower() for c in data.columns]
-    ts_levels = TIMESLICE.get_index("timeslice").names
-
-    if set(data.columns).issuperset(ts_levels):
-        timeslice = pd.MultiIndex.from_arrays(
-            [data[u] for u in ts_levels], names=ts_levels
-        )
-        timeslice = pd.DataFrame(timeslice, columns=["timeslice"])
-        data = pd.concat((data, timeslice), axis=1)
-        data.drop(columns=ts_levels, inplace=True)
-    indices = list({"year", "region", "timeslice"}.intersection(data.columns))
-    data.set_index(indices, inplace=True)
-
-    return xr.Dataset.from_dataframe(data).to_array(dim="commodity")
 
 
 def check_utilization_and_minimum_service_factors(data, filename):

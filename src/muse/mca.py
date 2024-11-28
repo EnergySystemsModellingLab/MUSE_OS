@@ -14,7 +14,7 @@ from xarray import Dataset, zeros_like
 from muse.outputs.cache import OutputCache
 from muse.readers import read_initial_market
 from muse.sectors import SECTORS_REGISTERED, AbstractSector, Sector
-from muse.timeslices import drop_timeslice
+from muse.timeslices import broadcast_timeslice, drop_timeslice
 from muse.utilities import future_propagation
 
 
@@ -41,7 +41,6 @@ class MCA:
         from muse.outputs.mca import factory as ofactory
         from muse.readers import read_settings
         from muse.readers.toml import convert
-        from muse.timeslices import drop_timeslice
 
         if isinstance(settings, (str, Path)):
             settings = read_settings(settings)  # type: ignore
@@ -173,19 +172,15 @@ class MCA:
             )
         else:
             self.carbon_budget = DataArray([], dims="year")
-        self.carbon_price = (
-            carbon_price if carbon_price is not None else zeros_like(self.carbon_budget)
-        )
-        self.carbon_commodities = (
-            carbon_commodities if carbon_commodities is not None else []
-        )
+        self.carbon_price = carbon_price or zeros_like(self.carbon_budget)
+        self.carbon_commodities = carbon_commodities or []
         self.debug = debug
         self.control_undershoot = control_undershoot
         self.control_overshoot = control_overshoot
         self.carbon_method = CARBON_BUDGET_METHODS[carbon_method]
-        self.method_options = method_options
-        self.outputs = ofactory() if outputs is None else outputs
-        self.outputs_cache = OutputCache() if outputs_cache is None else outputs_cache
+        self.method_options = method_options or {}
+        self.outputs = outputs or ofactory()
+        self.outputs_cache = outputs_cache or OutputCache()
 
     def find_equilibrium(
         self,
@@ -276,8 +271,6 @@ class MCA:
 
         from xarray import DataArray
 
-        from muse.timeslices import broadcast_timeslice
-
         nyear = len(self.time_framework) - 1
         check_carbon_budget = len(self.carbon_budget) and len(self.carbon_commodities)
         shoots = self.control_undershoot or self.control_overshoot
@@ -362,7 +355,6 @@ def single_year_iteration(
     from copy import deepcopy
 
     from muse.commodities import is_enduse
-    from muse.timeslices import drop_timeslice
 
     sectors = deepcopy(sectors)
     market = market.copy(deep=True)
@@ -506,13 +498,17 @@ def check_demand_fulfillment(market: Dataset, tol: float) -> bool:
     """
     from logging import getLogger
 
-    future = market.year[-1]
+    future = market.year[-1].item()
     delta = (market.supply - market.consumption).sel(year=future)
     unmet = (delta < tol).any([u for u in delta.dims if u != "commodity"])
 
     if unmet.any():
         commodities = ", ".join(unmet.commodity.sel(commodity=unmet.values).values)
-        getLogger(__name__).warning(f"Check growth constraints for {commodities}.")
+        msg = (
+            f"Consumption exceeds supply in the year {future} for the following "
+            f"commodities: {commodities} "
+        )
+        getLogger(__name__).warning(msg)
 
         return False
 

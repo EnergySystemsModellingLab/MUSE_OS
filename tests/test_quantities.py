@@ -6,24 +6,6 @@ from pytest import approx, fixture
 
 
 @fixture
-def demand(
-    technologies: xr.Dataset, capacity: xr.DataArray, market: xr.DataArray
-) -> xr.DataArray:
-    from collections.abc import Hashable, Mapping
-    from typing import Any
-
-    region = xr.DataArray(list(set(capacity.region.values)), dims="region")
-    coords: Mapping[Hashable, Any] = {
-        "commodity": technologies.commodity,
-        "year": capacity.year,
-        "region": region,
-        "timeslice": market.timeslice,
-    }
-    data = np.random.randint(0, 5, tuple(len(u) for u in coords.values()))
-    return xr.DataArray(data, coords=coords, dims=tuple(coords.keys()))
-
-
-@fixture
 def production(
     technologies: xr.Dataset, capacity: xr.DataArray, timeslice
 ) -> xr.DataArray:
@@ -34,11 +16,6 @@ def production(
         * distribute_timeslice(technologies.fixed_outputs)
         * broadcast_timeslice(technologies.utilization_factor)
     )
-
-
-def make_array(array):
-    data = np.random.randint(1, 5, len(array))
-    return xr.DataArray(data, dims=array.dims, coords=array.coords)
 
 
 def test_supply_enduse(technologies, capacity, timeslice):

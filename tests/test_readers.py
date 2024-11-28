@@ -23,21 +23,6 @@ def user_data_files(settings: dict) -> None:
 
 
 @fixture
-def sectors_files(settings: dict):
-    """Creates the files related to the sector."""
-    for data in settings["sectors"].values():
-        for path in data.values():
-            if not isinstance(path, (Path, str)):
-                continue
-            path = Path(path)
-            if path.suffix != ".csv":
-                continue
-
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text("Some data")
-
-
-@fixture
 def plugins(settings: dict, tmp_path) -> Path:
     """Creates the files related to the custom modules."""
     plugin = tmp_path / "plugins" / "cat.py"
@@ -46,21 +31,6 @@ def plugins(settings: dict, tmp_path) -> Path:
 
     settings["plugins"] = str(plugin)
     return plugin
-
-
-@fixture
-def input_file(settings: dict, tmpdir, plugins, user_data_files, sectors_files) -> Path:
-    """Creates a whole set of MUSE input files in a temporary directory.
-
-    This fixture creates a temporal directory with all the folders and files required
-    for a successful run of the read_settings function.
-    """
-    # Finally we create the settings file
-    input_file = tmpdir.join("settings.toml")
-    with open(input_file, "w") as f:
-        toml.dump(settings, f)
-
-    return input_file
 
 
 def test_add_known_parameters(settings: dict):

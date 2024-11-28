@@ -23,6 +23,7 @@ class AbstractAgent(ABC):
         interpolation: str = "linear",
         category: Optional[str] = None,
         quantity: Optional[float] = 1,
+        timeslice_level: Optional[str] = None,
     ):
         """Creates a standard MUSE agent.
 
@@ -39,6 +40,9 @@ class AbstractAgent(ABC):
                 together.
             quantity: optional value to classify different agents' share of the
                 population.
+            timeslice_level: the timeslice level over which investments/production
+                will be optimized (e.g "hour", "day"). If None, the agent will use the
+                finest timeslice level.
         """
         from uuid import uuid4
 
@@ -57,6 +61,8 @@ class AbstractAgent(ABC):
         """Attribute to classify different sets of agents."""
         self.quantity = quantity
         """Attribute to classify different agents' share of the population."""
+        self.timeslice_level = timeslice_level
+        """Timeslice level for the agent."""
 
     def filter_input(
         self,
@@ -114,6 +120,7 @@ class Agent(AbstractAgent):
         asset_threshold: float = 1e-4,
         quantity: Optional[float] = 1,
         spend_limit: int = 0,
+        timeslice_level: Optional[str] = None,
         **kwargs,
     ):
         """Creates a standard agent.
@@ -141,6 +148,9 @@ class Agent(AbstractAgent):
             asset_threshold: Threshold below which assets are not added.
             quantity: different agents' share of the population
             spend_limit: The cost above which agents will not invest
+            timeslice_level: the timeslice level over which the agent invesments will
+                be optimized (e.g "hour", "day"). If None, the agent will use the finest
+                timeslice level.
             **kwargs: Extra arguments
         """
         from muse.decisions import factory as decision_factory
@@ -155,6 +165,7 @@ class Agent(AbstractAgent):
             interpolation=interpolation,
             category=category,
             quantity=quantity,
+            timeslice_level=timeslice_level,
         )
 
         self.year = year
@@ -331,6 +342,7 @@ class InvestingAgent(Agent):
             market,
             technologies,
             year=current_year,
+            timeslice_level=self.timeslice_level,
         )
 
         # Calculate investments
@@ -339,6 +351,7 @@ class InvestingAgent(Agent):
             technologies,
             constraints,
             year=current_year,
+            timeslice_level=self.timeslice_level,
         )
 
         # Add investments
@@ -379,7 +392,10 @@ class InvestingAgent(Agent):
 
         # Compute the objectives
         objectives = self.objectives(
-            technologies=techs, demand=reduced_demand, prices=prices.isel(year=1)
+            technologies=techs,
+            demand=reduced_demand,
+            prices=prices.isel(year=1),
+            timeslice_level=self.timeslice_level,
         )
 
         # Compute the decision metric

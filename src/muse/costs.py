@@ -22,6 +22,7 @@ def net_present_value(
     capacity: xr.DataArray,
     production: xr.DataArray,
     consumption: xr.DataArray,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Net present value (NPV) of the relevant technologies.
 
@@ -51,6 +52,7 @@ def net_present_value(
         production: xr.DataArray with commodity production by the relevant technologies
         consumption: xr.DataArray with commodity consumption by the relevant
             technologies
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         xr.DataArray with the NPV calculated for the relevant technologies
@@ -86,7 +88,8 @@ def net_present_value(
             years=years,
             interest_rate=techs.interest_rate,
             mask=years <= life,
-        )
+        ),
+        level=timeslice_level,
     )
 
     # Filters
@@ -101,7 +104,7 @@ def net_present_value(
 
     # Cost of installed capacity
     installed_capacity_costs = distribute_timeslice(
-        techs.cap_par * (capacity**techs.cap_exp),
+        techs.cap_par * (capacity**techs.cap_exp), level=timeslice_level
     )
 
     # Cost related to environmental products
@@ -120,17 +123,21 @@ def net_present_value(
 
     # Fixed costs
     fixed_costs = (
-        distribute_timeslice(techs.fix_par * (capacity**techs.fix_exp)) * rates
+        distribute_timeslice(
+            techs.fix_par * (capacity**techs.fix_exp), level=timeslice_level
+        )
+        * rates
     ).sum("year")
 
     # Variable costs
     tech_activity = (
-        production.sel(commodity=products) / broadcast_timeslice(techs.fixed_outputs)
+        production.sel(commodity=products)
+        / broadcast_timeslice(techs.fixed_outputs, level=timeslice_level)
     ).max("commodity")
     variable_costs = (
         (
-            broadcast_timeslice(techs.var_par)
-            * tech_activity ** broadcast_timeslice(techs.var_exp)
+            broadcast_timeslice(techs.var_par, level=timeslice_level)
+            * tech_activity ** broadcast_timeslice(techs.var_exp, level=timeslice_level)
         )
         * rates
     ).sum("year")
@@ -189,6 +196,7 @@ def equivalent_annual_cost(
     capacity: xr.DataArray,
     production: xr.DataArray,
     consumption: xr.DataArray,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Equivalent annual costs (or annualized cost) of a technology.
 
@@ -207,6 +215,7 @@ def equivalent_annual_cost(
         production: xr.DataArray with commodity production by the relevant technologies
         consumption: xr.DataArray with commodity consumption by the relevant
             technologies
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         xr.DataArray with the EAC calculated for the relevant technologies
@@ -219,7 +228,7 @@ def equivalent_annual_cost(
 
     npc = net_present_cost(technologies, prices, capacity, production, consumption)
     crf = capital_recovery_factor(technologies)
-    return npc * broadcast_timeslice(crf)
+    return npc * broadcast_timeslice(crf, level=timeslice_level)
 
 
 def lifetime_levelized_cost_of_energy(
@@ -228,6 +237,7 @@ def lifetime_levelized_cost_of_energy(
     capacity: xr.DataArray,
     production: xr.DataArray,
     consumption: xr.DataArray,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Levelized cost of energy (LCOE) of technologies over their lifetime.
 
@@ -240,6 +250,7 @@ def lifetime_levelized_cost_of_energy(
         production: xr.DataArray with commodity production by the relevant technologies
         consumption: xr.DataArray with commodity consumption by the relevant
             technologies
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
@@ -274,7 +285,8 @@ def lifetime_levelized_cost_of_energy(
             years=years,
             interest_rate=techs.interest_rate,
             mask=years <= life,
-        )
+        ),
+        level=timeslice_level,
     )
 
     # Filters
@@ -285,7 +297,7 @@ def lifetime_levelized_cost_of_energy(
 
     # Cost of installed capacity
     installed_capacity_costs = distribute_timeslice(
-        techs.cap_par * (capacity**techs.cap_exp),
+        techs.cap_par * (capacity**techs.cap_exp), level=timeslice_level
     )
 
     # Cost related to environmental products
@@ -304,17 +316,21 @@ def lifetime_levelized_cost_of_energy(
 
     # Fixed costs
     fixed_costs = (
-        distribute_timeslice(techs.fix_par * (capacity**techs.fix_exp)) * rates
+        distribute_timeslice(
+            techs.fix_par * (capacity**techs.fix_exp), level=timeslice_level
+        )
+        * rates
     ).sum("year")
 
     # Variable costs
     tech_activity = (
-        production.sel(commodity=products) / broadcast_timeslice(techs.fixed_outputs)
+        production.sel(commodity=products)
+        / broadcast_timeslice(techs.fixed_outputs, level=timeslice_level)
     ).max("commodity")
     variable_costs = (
         (
-            broadcast_timeslice(techs.var_par)
-            * tech_activity ** broadcast_timeslice(techs.var_exp)
+            broadcast_timeslice(techs.var_par, level=timeslice_level)
+            * tech_activity ** broadcast_timeslice(techs.var_exp, level=timeslice_level)
         )
         * rates
     ).sum("year")
@@ -346,6 +362,7 @@ def annual_levelized_cost_of_energy(
     capacity: xr.DataArray,
     production: xr.DataArray,
     consumption: xr.DataArray,
+    timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Undiscounted levelized cost of energy (LCOE) of technologies on each given year.
 
@@ -365,6 +382,7 @@ def annual_levelized_cost_of_energy(
         production: xr.DataArray with commodity production by the relevant technologies
         consumption: xr.DataArray with commodity consumption by the relevant
             technologies
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         The lifetime LCOE in [$/(Eh)] for each technology at each timeslice.
@@ -402,7 +420,9 @@ def annual_levelized_cost_of_energy(
 
     # Cost of installed capacity (annualized)
     installed_capacity_costs = (
-        distribute_timeslice(techs.cap_par * (capacity**techs.cap_exp))
+        distribute_timeslice(
+            techs.cap_par * (capacity**techs.cap_exp), level=timeslice_level
+        )
         / techs.technical_life
     )
 
@@ -419,15 +439,17 @@ def annual_levelized_cost_of_energy(
     material_costs = (consumption * prices_material).sum("commodity")
 
     # Fixed costs
-    fixed_costs = distribute_timeslice(techs.fix_par * (capacity**techs.fix_exp))
+    fixed_costs = distribute_timeslice(
+        techs.fix_par * (capacity**techs.fix_exp), level=timeslice_level
+    )
 
     # Variable costs
-    tech_activity = (production / broadcast_timeslice(techs.fixed_outputs)).max(
-        "commodity"
-    )
+    tech_activity = (
+        production / broadcast_timeslice(techs.fixed_outputs, level=timeslice_level)
+    ).max("commodity")
     variable_costs = broadcast_timeslice(
-        techs.var_par
-    ) * tech_activity ** broadcast_timeslice(techs.var_exp)
+        techs.var_par, level=timeslice_level
+    ) * tech_activity ** broadcast_timeslice(techs.var_exp, level=timeslice_level)
 
     # Production
     prod = (

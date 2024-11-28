@@ -14,6 +14,7 @@ from muse.production import PRODUCTION_SIGNATURE
 from muse.sectors.abstract import AbstractSector
 from muse.sectors.register import register_sector
 from muse.sectors.subsector import Subsector
+from muse.timeslices import compress_timeslice, expand_timeslice, get_level
 
 
 @register_sector(name="default")
@@ -48,6 +49,7 @@ class Sector(AbstractSector):  # type: ignore
                 regions=settings.regions,
                 current_year=int(min(settings.time_framework)),
                 name=subsec_name,
+                timeslice_level=sector_settings.get("timeslice_level", None),
             )
             for subsec_name, subsec_settings in sector_settings.pop("subsectors")
             ._asdict()
@@ -103,25 +105,38 @@ class Sector(AbstractSector):  # type: ignore
         interpolation: str = "linear",
         outputs: Callable | None = None,
         supply_prod: PRODUCTION_SIGNATURE | None = None,
+        timeslice_level: str | None = None,
     ):
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory
         from muse.production import maximum_production
+        from muse.timeslices import TIMESLICE
 
-        self.name: str = name
         """Name of the sector."""
-        self.subsectors: Sequence[Subsector] = list(subsectors)
+        self.name: str = name
+
+        """Timeslice level for the sector (e.g. "month")."""
+        self.timeslice_level = timeslice_level or get_level(TIMESLICE)
+
         """Subsectors controlled by this object."""
-        self.technologies: xr.Dataset = technologies
+        self.subsectors: Sequence[Subsector] = list(subsectors)
+
         """Parameters describing the sector's technologies."""
+        self.technologies: xr.Dataset = technologies
+        if "timeslice" in self.technologies.dims:
+            if not get_level(self.technologies) == self.timeslice_level:
+                raise ValueError(
+                    f"Technodata for {self.name} sector does not match "
+                    "the specified timeslice level for that sector "
+                    f"({self.timeslice_level})"
+                )
+
+        """Interpolation method and arguments when computing years."""
         self.interpolation: Mapping[str, Any] = {
             "method": interpolation,
             "kwargs": {"fill_value": "extrapolate"},
         }
-        """Interpolation method and arguments when computing years."""
-        if interactions is None:
-            interactions = interaction_factory()
-        self.interactions = interactions
+
         """Interactions between agents.
 
         Called right before computing new investments, this function should manage any
@@ -138,20 +153,22 @@ class Sector(AbstractSector):  # type: ignore
 
         :py:mod:`muse.interactions` contains MUSE's base interactions
         """
+        self.interactions = interactions or interaction_factory()
+
+        """A function for outputting data for post-mortem analysis."""
         self.outputs: Callable = (
             cast(Callable, ofactory()) if outputs is None else outputs
         )
-        """A function for outputting data for post-mortem analysis."""
-        self.supply_prod = (
-            supply_prod if supply_prod is not None else maximum_production
-        )
-        """ Computes production as used to return the supply to the MCA.
+
+        """Computes production as used to return the supply to the MCA.
 
         It can be anything registered with
         :py:func:`@register_production<muse.production.register_production>`.
         """
-        self.output_data: xr.Dataset
+        self.supply_prod = supply_prod or maximum_production
+
         """Full supply, consumption and costs data for the most recent year."""
+        self.output_data: xr.Dataset
 
     @property
     def forecast(self):
@@ -187,6 +204,9 @@ class Sector(AbstractSector):  # type: ignore
 
         # Agent interactions
         self.interactions(list(self.agents))
+
+        # Convert market to sector timeslicing
+        mca_market = self.convert_to_sector_timeslicing(mca_market)
 
         # Select appropriate data from the market
         market = mca_market.sel(
@@ -258,7 +278,9 @@ class Sector(AbstractSector):  # type: ignore
             commodity=result.commodity
         )
         result.set_coords("comm_usage")
-        return result
+
+        # Convert result to global timeslicing scheme
+        return self.convert_to_global_timeslicing(result)
 
     def save_outputs(self) -> None:
         """Calls the outputs function with the current output data."""
@@ -276,11 +298,19 @@ class Sector(AbstractSector):  # type: ignore
 
         # Calculate supply
         supply = self.supply_prod(
-            market=market, capacity=capacity, technologies=technologies
+            market=market,
+            capacity=capacity,
+            technologies=technologies,
+            timeslice_level=self.timeslice_level,
         )
 
         # Calculate consumption
-        consume = consumption(technologies, production=supply, prices=market.prices)
+        consume = consumption(
+            technologies,
+            production=supply,
+            prices=market.prices,
+            timeslice_level=self.timeslice_level,
+        )
 
         # Calculate LCOE
         # We select data for the second year, which corresponds to the investment year
@@ -291,6 +321,7 @@ class Sector(AbstractSector):  # type: ignore
             capacity=capacity.isel(year=1),
             production=supply.isel(year=1),
             consumption=consume.isel(year=1),
+            timeslice_level=self.timeslice_level,
         )
 
         # Calculate new commodity prices
@@ -301,6 +332,26 @@ class Sector(AbstractSector):  # type: ignore
         )
 
         return supply, consume, costs
+
+    def convert_to_sector_timeslicing(self, market: xr.Dataset) -> xr.Dataset:
+        """Converts market data to sector timeslicing."""
+        supply = compress_timeslice(
+            market["supply"], level=self.timeslice_level, operation="sum"
+        )
+        consumption = compress_timeslice(
+            market["consumption"], level=self.timeslice_level, operation="sum"
+        )
+        prices = compress_timeslice(
+            market["prices"], level=self.timeslice_level, operation="mean"
+        )
+        return xr.Dataset(dict(supply=supply, consumption=consumption, prices=prices))
+
+    def convert_to_global_timeslicing(self, market: xr.Dataset) -> xr.Dataset:
+        """Converts market data to global timeslicing."""
+        supply = expand_timeslice(market["supply"], operation="distribute")
+        consumption = expand_timeslice(market["consumption"], operation="distribute")
+        costs = expand_timeslice(market["costs"], operation="broadcast")
+        return xr.Dataset(dict(supply=supply, consumption=consumption, costs=costs))
 
     @property
     def capacity(self) -> xr.DataArray:

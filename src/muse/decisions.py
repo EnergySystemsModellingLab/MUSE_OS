@@ -27,15 +27,15 @@ Returns:
 """
 
 __all__ = [
-    "register_decision",
-    "mean",
-    "weighted_sum",
-    "lexical_comparison",
-    "retro_lexical_comparison",
     "epsilon_constraints",
-    "retro_epsilon_constraints",
-    "single_objective",
     "factory",
+    "lexical_comparison",
+    "mean",
+    "register_decision",
+    "retro_epsilon_constraints",
+    "retro_lexical_comparison",
+    "single_objective",
+    "weighted_sum",
 ]
 from collections.abc import Mapping, MutableMapping, Sequence
 from typing import (
