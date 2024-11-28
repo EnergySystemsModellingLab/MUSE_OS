@@ -105,7 +105,11 @@ def factory(
         keyword_args.update(**kwargs)
 
         # Check inputs
-        check_dimensions(market, ["commodity", "year", "timeslice", "region"])
+        check_dimensions(
+            market,
+            ["commodity", "year", "timeslice", "region"],
+            optional=["dst_region"],
+        )
         check_dimensions(
             technologies,
             ["technology", "year", "region"],
