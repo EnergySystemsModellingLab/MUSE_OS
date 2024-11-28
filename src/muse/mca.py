@@ -14,7 +14,7 @@ from xarray import Dataset, zeros_like
 from muse.outputs.cache import OutputCache
 from muse.readers import read_initial_market
 from muse.sectors import SECTORS_REGISTERED, AbstractSector, Sector
-from muse.timeslices import drop_timeslice
+from muse.timeslices import broadcast_timeslice, drop_timeslice
 from muse.utilities import future_propagation
 
 
@@ -41,7 +41,6 @@ class MCA:
         from muse.outputs.mca import factory as ofactory
         from muse.readers import read_settings
         from muse.readers.toml import convert
-        from muse.timeslices import drop_timeslice
 
         if isinstance(settings, (str, Path)):
             settings = read_settings(settings)  # type: ignore
@@ -272,8 +271,6 @@ class MCA:
 
         from xarray import DataArray
 
-        from muse.timeslices import broadcast_timeslice
-
         nyear = len(self.time_framework) - 1
         check_carbon_budget = len(self.carbon_budget) and len(self.carbon_commodities)
         shoots = self.control_undershoot or self.control_overshoot
@@ -358,7 +355,6 @@ def single_year_iteration(
     from copy import deepcopy
 
     from muse.commodities import is_enduse
-    from muse.timeslices import drop_timeslice
 
     sectors = deepcopy(sectors)
     market = market.copy(deep=True)
