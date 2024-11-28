@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import xarray as xr
-from pytest import fixture, mark, raises
+from pytest import fixture, raises
 
 
 @fixture
@@ -53,7 +53,6 @@ def test_subsector_investing_aggregation():
                 assert initial.assets.sum() != final.assets.sum()
 
 
-@mark.xfail  # temporary
 def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_path):
     """Create some default agents and run subsector.
 
