@@ -122,7 +122,7 @@ def factory(
         # Check result
         check_dimensions(
             result, ["timeslice", "commodity"], optional=["asset", "region"]
-        )  # asset should be required
+        )  # TODO: asset should be required, but trade model is failing
         return result
 
     return cast(DEMAND_SHARE_SIGNATURE, demand_share)
