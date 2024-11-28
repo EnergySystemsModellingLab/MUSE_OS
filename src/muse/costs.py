@@ -419,12 +419,9 @@ def annual_levelized_cost_of_energy(
     fuels = is_fuel(technologies.comm_usage)
 
     # Cost of installed capacity (annualized)
-    installed_capacity_costs = (
-        distribute_timeslice(
-            techs.cap_par * (capacity**techs.cap_exp), level=timeslice_level
-        )
-        / techs.technical_life
-    )
+    installed_capacity_costs = distribute_timeslice(
+        techs.cap_par * (capacity**techs.cap_exp), level=timeslice_level
+    ) / broadcast_timeslice(techs.technical_life, level=timeslice_level)
 
     # Cost related to environmental products
     prices_environmental = filter_input(prices, commodity=environmentals)
