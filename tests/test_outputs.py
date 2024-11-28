@@ -28,33 +28,6 @@ def streetcred(save_registries):
         )
 
 
-@fixture
-def limits_path(tmp_path):
-    from textwrap import dedent
-
-    path = tmp_path / "limits.csv"
-    path.write_text(
-        dedent(
-            """
-            Year,Month,Day,Hour,Region,Gas
-            2020,all-year,all-week,night,R1,5
-            2020,all-year,all-week,morning,R1,5
-            2020,all-year,all-week,afternoon,R1,5
-            2020,all-year,all-week,early-peak,R1,5
-            2020,all-year,all-week,late-peak,R1,5
-            2020,all-year,all-week,evening,R1,5
-            2050,all-year,all-week,night,R1,8
-            2050,all-year,all-week,morning,R1,8
-            2050,all-year,all-week,afternoon,R1,8
-            2050,all-year,all-week,early-peak,R1,8
-            2050,all-year,all-week,late-peak,R1,8
-            2050,all-year,all-week,evening,R1,8
-            """
-        )
-    )
-    return path
-
-
 @mark.usefixtures("streetcred")
 def test_save_with_dir(tmpdir):
     from pandas import read_csv
