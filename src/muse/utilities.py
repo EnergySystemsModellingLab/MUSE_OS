@@ -676,8 +676,8 @@ def check_dimensions(
     """
     present = set(data.dims)
     missing = set(required) - present
-    extra = present - set(required + optional)
     if missing:
         raise ValueError(f"Missing required dimensions: {missing}")
+    extra = present - set(required) - set(optional)
     if extra:
         raise ValueError(f"Extra dimensions: {extra}")
