@@ -57,6 +57,8 @@ def net_present_value(
     Return:
         xr.DataArray with the NPV calculated for the relevant technologies
     """
+    from muse.quantities import production_amplitude
+
     assert "year" not in technologies.dims
     assert "year" not in prices.dims
     assert "year" not in capacity.dims
@@ -130,10 +132,7 @@ def net_present_value(
     ).sum("year")
 
     # Variable costs
-    tech_activity = (
-        production.sel(commodity=products)
-        / broadcast_timeslice(techs.fixed_outputs, level=timeslice_level)
-    ).max("commodity")
+    tech_activity = production_amplitude(production, techs, timeslice_level)
     variable_costs = (
         (
             broadcast_timeslice(techs.var_par, level=timeslice_level)
@@ -255,6 +254,8 @@ def lifetime_levelized_cost_of_energy(
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
     """
+    from muse.quantities import production_amplitude
+
     assert "year" not in technologies.dims
     assert "year" not in prices.dims
     assert "year" not in capacity.dims
@@ -323,10 +324,7 @@ def lifetime_levelized_cost_of_energy(
     ).sum("year")
 
     # Variable costs
-    tech_activity = (
-        production.sel(commodity=products)
-        / broadcast_timeslice(techs.fixed_outputs, level=timeslice_level)
-    ).max("commodity")
+    tech_activity = production_amplitude(production, techs, timeslice_level)
     variable_costs = (
         (
             broadcast_timeslice(techs.var_par, level=timeslice_level)
@@ -389,6 +387,8 @@ def annual_levelized_cost_of_energy(
 
     .. _simplified LCOE: https://www.nrel.gov/analysis/tech-lcoe-documentation.html
     """
+    from muse.quantities import production_amplitude
+
     assert "year" not in technologies.dims
     assert "year" not in prices.dims
     assert "year" not in capacity.dims
@@ -441,9 +441,7 @@ def annual_levelized_cost_of_energy(
     )
 
     # Variable costs
-    tech_activity = (
-        production / broadcast_timeslice(techs.fixed_outputs, level=timeslice_level)
-    ).max("commodity")
+    tech_activity = production_amplitude(production, techs, timeslice_level)
     variable_costs = broadcast_timeslice(
         techs.var_par, level=timeslice_level
     ) * tech_activity ** broadcast_timeslice(techs.var_exp, level=timeslice_level)

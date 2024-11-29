@@ -307,10 +307,9 @@ def consumption(
     params_fuels = is_fuel(params.comm_usage)
 
     # Calculate degree of technology activity
-    # We do this by dividing the production by the output flow per unit of activity
-    prod_amplitude = (
-        production / broadcast_timeslice(params.fixed_outputs, level=timeslice_level)
-    ).max("commodity")
+    prod_amplitude = production_amplitude(
+        production, params, timeslice_level=timeslice_level
+    )
 
     # Calculate consumption of fixed commodities
     consumption_fixed = prod_amplitude * broadcast_timeslice(
@@ -537,3 +536,29 @@ def capacity_to_service_demand(
     ) * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     capa_to_service_demand = demand / timeslice_outputs
     return capa_to_service_demand.max(("commodity", "timeslice"))
+
+
+def production_amplitude(
+    production: xr.DataArray,
+    technologies: xr.Dataset,
+    timeslice_level: Optional[str] = None,
+) -> xr.DataArray:
+    """Calculates the degree of technology activity based on production data.
+
+    We do this by dividing the production data by the output flow per unit of activity.
+    Taking the max of this across all commodities, we get the minimum units of
+    technology activity required to meet (at least) the specified production of all
+    commodities.
+
+    Args:
+        production: DataArray with commodity-level production for a set of technologies
+        technologies: Dataset of technology parameters
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day").
+            Must match the timeslice level of `production`
+    """
+    assert set(technologies.dims).issubset(set(production.dims))
+
+    return (
+        production
+        / broadcast_timeslice(technologies.fixed_outputs, level=timeslice_level)
+    ).max("commodity")
