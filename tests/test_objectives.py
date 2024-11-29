@@ -168,7 +168,7 @@ def test_emission_cost(_technologies, _demand, _prices):
     assert set(result.dims) == {"replacement", "asset", "timeslice"}
 
 
-def test_fuel_consumption(_technologies, _demand, _prices):
+def test_fuel_consumption_cost(_technologies, _demand, _prices):
     from muse.objectives import fuel_consumption_cost
 
     result = fuel_consumption_cost(_technologies, _demand, _prices)

@@ -313,7 +313,9 @@ def consumption(
     ).max("commodity")
 
     # Calculate consumption of fixed commodities
-    consumption_fixed = prod_amplitude * broadcast_timeslice(params.fixed_inputs)
+    consumption_fixed = prod_amplitude * broadcast_timeslice(
+        params.fixed_inputs, level=timeslice_level
+    )
 
     # If there are no flexible inputs, then we are done
     if not (params.flexible_inputs.sel(commodity=params_fuels) > 0).any():
@@ -325,7 +327,9 @@ def consumption(
         return consumption_fixed
 
     # Flexible inputs
-    flexs = params.flexible_inputs.where(params_fuels, 0)
+    flexs = broadcast_timeslice(
+        params.flexible_inputs.where(params_fuels, 0), level=timeslice_level
+    )
 
     # Calculate the cheapest fuel for each flexible technology
     priceflex = prices.loc[dict(commodity=flexs.commodity)] * flexs
