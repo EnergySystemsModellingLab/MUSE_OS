@@ -63,6 +63,7 @@ from muse.errors import (
     RetrofitAgentInStandardDemandShare,
 )
 from muse.registration import registrator
+from muse.utilities import check_dimensions
 
 DEMAND_SHARE_SIGNATURE = Callable[
     [Sequence[AbstractAgent], xr.Dataset, xr.Dataset, KwArg(Any)], xr.DataArray
@@ -102,7 +103,27 @@ def factory(
 
         keyword_args = copy(keywords)
         keyword_args.update(**kwargs)
-        return function(agents, market, technologies, **keyword_args)
+
+        # Check inputs
+        check_dimensions(
+            market,
+            ["commodity", "year", "timeslice", "region"],
+            optional=["dst_region"],
+        )
+        check_dimensions(
+            technologies,
+            ["technology", "year", "region"],
+            optional=["timeslice", "commodity", "dst_region"],
+        )
+
+        # Calculate demand share
+        result = function(agents, market, technologies, **keyword_args)
+
+        # Check result
+        check_dimensions(
+            result, ["timeslice", "commodity"], optional=["asset", "region"]
+        )  # TODO: asset should be required, but trade model is failing
+        return result
 
     return cast(DEMAND_SHARE_SIGNATURE, demand_share)
 
