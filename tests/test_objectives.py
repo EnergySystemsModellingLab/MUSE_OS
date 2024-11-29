@@ -61,11 +61,15 @@ def test_computing_objectives(_technologies, _demand, _prices):
     from muse.objectives import factory, register_objective
 
     @register_objective
-    def first(technologies, switch=True, *args, **kwargs):
-        from xarray import full_like
+    def first(technologies, demand, switch=True, *args, **kwargs):
+        from xarray import broadcast, full_like
 
         value = 1 if switch else 2
-        result = full_like(technologies["replacement"], value, dtype=float)
+        result = full_like(
+            broadcast(technologies["replacement"], demand["asset"])[0],
+            value,
+            dtype=float,
+        )
         return result
 
     @register_objective
@@ -105,20 +109,20 @@ def test_computing_objectives(_technologies, _demand, _prices):
         assert (objectives.second.isel(asset=1) == 5).all()
 
 
-def test_comfort(_technologies):
+def test_comfort(_technologies, _demand):
     from muse.objectives import comfort
 
     _technologies["comfort"] = add_var(_technologies, "replacement")
-    result = comfort(_technologies)
-    assert set(result.dims) == {"replacement"}
+    result = comfort(_technologies, _demand)
+    assert set(result.dims) == {"replacement", "asset"}
 
 
-def test_efficiency(_technologies):
+def test_efficiency(_technologies, _demand):
     from muse.objectives import efficiency
 
     _technologies["efficiency"] = add_var(_technologies, "replacement")
-    result = efficiency(_technologies)
-    assert set(result.dims) == {"replacement"}
+    result = efficiency(_technologies, _demand)
+    assert set(result.dims) == {"replacement", "asset"}
 
 
 def test_capacity_to_service_demand(_technologies, _demand):
@@ -149,12 +153,12 @@ def test_fixed_costs(_technologies, _demand):
     assert set(result.dims) == {"replacement", "asset"}
 
 
-def test_capital_costs(_technologies):
+def test_capital_costs(_technologies, _demand):
     from muse.objectives import capital_costs
 
     _technologies["scaling_size"] = add_var(_technologies, "replacement")
-    result = capital_costs(_technologies)
-    assert set(result.dims) == {"replacement"}
+    result = capital_costs(_technologies, _demand)
+    assert set(result.dims) == {"replacement", "asset"}
 
 
 def test_emission_cost(_technologies, _demand, _prices):
