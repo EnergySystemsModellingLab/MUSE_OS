@@ -311,9 +311,9 @@ def test_check_dimensions():
     check_dimensions(data, required=["dim1"], optional=["dim2"])
 
     # Missing required
-    with raises(ValueError):
+    with raises(ValueError, match="Missing required dimensions"):
         check_dimensions(data, required=["dim1", "dim3"], optional=["dim2"])
 
     # Extra dimension
-    with raises(ValueError):
+    with raises(ValueError, match="Extra dimensions"):
         check_dimensions(data, required=["dim1"])
