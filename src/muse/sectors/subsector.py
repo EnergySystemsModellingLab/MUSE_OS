@@ -127,6 +127,8 @@ class Subsector:
         name: str = "subsector",
         timeslice_level: str | None = None,
     ) -> Subsector:
+        from logging import getLogger
+
         from muse import constraints as cs
         from muse import demand_share as ds
         from muse import investments as iv
@@ -138,6 +140,13 @@ class Subsector:
         if hasattr(settings, "asset_threshhold"):
             msg = "Invalid parameter asset_threshhold. Did you mean asset_threshold?"
             raise ValueError(msg)
+
+        # Raise warning if lpsolver is not specified (PR #587)
+        if not hasattr(settings, "lpsolver"):
+            msg = (
+                f"lpsolver not specified for subsector '{name}'. Defaulting to 'scipy'"
+            )
+            getLogger(__name__).warning(msg)
 
         agents = agents_factory(
             settings.agents,
