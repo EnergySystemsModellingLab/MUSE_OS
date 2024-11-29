@@ -592,10 +592,6 @@ def read_csv_agent_parameters(filename) -> list:
             data["maturity_threshold"] = row.MaturityThreshold
         if hasattr(row, "SpendLimit"):
             data["spend_limit"] = row.SpendLimit
-        # if agent_type != "newcapa":
-        # data["share"] = sub(
-        #     r"Agent(\d)", r"agent_share_\1", row.AgentShare
-        # )
         data["share"] = camel_to_snake(row.AgentShare)
         if agent_type == "retrofit" and data["decision"] == "lexo":
             data["decision"] = "retro_lexo"
