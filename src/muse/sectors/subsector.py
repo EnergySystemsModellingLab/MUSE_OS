@@ -147,7 +147,7 @@ class Subsector:
             year=current_year or int(technologies.year.min()),
             asset_threshold=getattr(settings, "asset_threshold", 1e-12),
             # only used by self-investing agents
-            investment=getattr(settings, "lpsolver", "adhoc"),
+            investment=getattr(settings, "lpsolver", "scipy"),
             forecast=getattr(settings, "forecast", 5),
             constraints=getattr(settings, "constraints", ()),
             timeslice_level=timeslice_level,
