@@ -485,7 +485,7 @@ def find_equilibrium(
 
 
 def check_demand_fulfillment(market: Dataset, tol: float) -> bool:
-    """Checks if the supply will fulfill all the demand in the future.
+    """Checks if the supply will fulfill across the full year.
 
     If it does not, it logs a warning.
 
@@ -499,21 +499,28 @@ def check_demand_fulfillment(market: Dataset, tol: float) -> bool:
     from logging import getLogger
 
     future = market.year[-1].item()
-    delta = (market.supply.sum("timeslice") - market.consumption.sum("timeslice")).sel(
-        year=future
-    )
+    supply = market.supply.sum("timeslice").sel(year=future)
+    consumption = market.consumption.sum("timeslice").sel(year=future)
+    delta = supply - consumption
     unmet = (delta < tol).any([u for u in delta.dims if u != "commodity"])
 
     if unmet.any():
-        commodities = ", ".join(unmet.commodity.sel(commodity=unmet.values).values)
+        unmet_commodities = unmet.commodity.sel(commodity=unmet.values).values
+        unmet_details = []
+        for commodity in unmet_commodities:
+            unmet_details.append(
+                f"{commodity} "
+                f"(consumption={consumption.sel(commodity=commodity).item():.2f}, "
+                f"supply={supply.sel(commodity=commodity).item():.2f})"
+            )
+
+        commodities_details = ", ".join(unmet_details)
         msg = (
             f"Consumption exceeds supply in the year {future} for the following "
-            f"commodities: {commodities} "
+            f"commodities: {commodities_details}"
         )
         getLogger(__name__).warning(msg)
-
         return False
-
     return True
 
 
