@@ -5,6 +5,9 @@
 # http://www.sphinx-doc.org/en/master/config
 # -- Project information -----------------------------------------------------
 
+from docutils import nodes
+from docutils.parsers.rst import roles
+
 project = "MUSE"
 copyright = "2024, Imperial College London"
 author = "Imperial College London"
@@ -61,3 +64,15 @@ graphviz_output_format = "svg"
 # -- Options for HTML output -------------------------------------------------
 
 html_theme = "classic"
+
+# -- Render GitHub links -------------------------------------------------
+
+
+def github_role(name, rawtext, text, lineno, inliner, options=None, content=None):
+    base_url = "https://github.com/EnergySystemsModellingLab/MUSE_OS/issues/"
+    url = f"{base_url}{text}"
+    node = nodes.reference(rawtext, f"#{text}", refuri=url, **(options or {}))
+    return [node], []
+
+
+roles.register_canonical_role("github", github_role)
