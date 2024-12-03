@@ -455,7 +455,7 @@ def test_read_technodictionary(default_model):
         type=np.dtype("O"),
         fuel=np.dtype("<U11"),
         enduse=np.dtype("<U4"),
-        agent_share_1=np.dtype("int64"),
+        agent1=np.dtype("int64"),
         tech_type=np.dtype("<U6"),
         efficiency=np.dtype("int64"),
         max_capacity_addition=np.dtype("int64"),
@@ -602,7 +602,7 @@ def test_read_csv_agent_parameters(default_model):
             "quantity": 1,
             "maturity_threshold": -1,
             "spend_limit": np.inf,
-            "share": "agent_share_1",
+            "share": "agent1",
         },
     ]
 
