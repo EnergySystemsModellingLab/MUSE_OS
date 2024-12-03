@@ -73,19 +73,12 @@ def read_technodictionary(filename: Union[str, Path]) -> xr.Dataset:
 
     There are three axes: technologies, regions, and year.
     """
-    from re import sub
-
     from muse.readers import camel_to_snake
-
-    def to_agent_share(name):
-        return sub(r"agent(\d)", r"agent_share_\1", name)
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
     csv.drop(csv.filter(regex="Unname"), axis=1, inplace=True)
-    csv = (
-        csv.rename(columns=camel_to_snake)
-        .rename(columns=to_agent_share)
-        .rename(columns={"end_use": "enduse", "availabiliy year": "availability"})
+    csv = csv.rename(columns=camel_to_snake).rename(
+        columns={"end_use": "enduse", "availabiliy year": "availability"}
     )
     data = csv[csv.process_name != "Unit"]
 
@@ -486,7 +479,7 @@ def read_csv_agent_parameters(filename) -> list:
     Returns a list of dictionaries, where each dictionary can be used to instantiate an
     agent in :py:func:`muse.agents.factories.factory`.
     """
-    from re import sub
+    from muse.readers import camel_to_snake
 
     if (
         isinstance(filename, str)
@@ -552,8 +545,7 @@ def read_csv_agent_parameters(filename) -> list:
             data["maturity_threshold"] = row.MaturityThreshold
         if hasattr(row, "SpendLimit"):
             data["spend_limit"] = row.SpendLimit
-        # if agent_type != "newcapa":
-        data["share"] = sub(r"Agent(\d)", r"agent_share_\1", row.AgentShare)
+        data["share"] = camel_to_snake(row.AgentShare)
         if agent_type == "retrofit" and data["decision"] == "lexo":
             data["decision"] = "retro_lexo"
         result.append(data)
