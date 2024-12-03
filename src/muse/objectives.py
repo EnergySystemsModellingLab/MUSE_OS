@@ -42,9 +42,8 @@ Arguments:
             these parameters.
 
 Returns:
-    A DataArray with at least one dimension corresponding to ``replacement``.
-    Other dimensions can be present, as long as the subsequent decision function knows
-    how to reduce them.
+    A DataArray with at least two dimension corresponding to `replacement` and `asset`.
+    A `timeslice` dimension may also be present.
 """
 
 __all__ = [
@@ -72,7 +71,7 @@ from mypy_extensions import KwArg
 from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
 from muse.timeslices import broadcast_timeslice, distribute_timeslice, drop_timeslice
-from muse.utilities import filter_input
+from muse.utilities import check_dimensions, filter_input
 
 OBJECTIVE_SIGNATURE = Callable[
     [xr.Dataset, xr.DataArray, xr.DataArray, KwArg(Any)], xr.DataArray
@@ -168,25 +167,30 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
     from functools import wraps
 
     @wraps(function)
-    def decorated_objective(technologies: xr.Dataset, *args, **kwargs) -> xr.DataArray:
+    def decorated_objective(
+        technologies: xr.Dataset, demand: xr.DataArray, *args, **kwargs
+    ) -> xr.DataArray:
         from logging import getLogger
 
-        result = function(technologies, *args, **kwargs)
+        # Check inputs
+        check_dimensions(
+            demand, ["asset", "timeslice", "commodity"], optional=["region"]
+        )
+        check_dimensions(
+            technologies, ["replacement", "commodity"], optional=["timeslice"]
+        )
 
+        # Calculate objective
+        result = function(technologies, demand, *args, **kwargs)
+        result.name = function.__name__
+
+        # Check result
         dtype = result.values.dtype
         if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
             msg = f"dtype of objective {function.__name__} is not a number ({dtype})"
             getLogger(function.__module__).warning(msg)
+        check_dimensions(result, ["replacement", "asset"], optional=["timeslice"])
 
-        if "replacement" not in result.dims:
-            raise RuntimeError("Objective should return a dimension 'replacement'")
-        if "technology" in result.dims:
-            raise RuntimeError("Objective should not return a dimension 'technology'")
-        if "technology" in result.coords:
-            raise RuntimeError("Objective should not return a coordinate 'technology'")
-        if "year" in result.dims:
-            raise RuntimeError("Objective should not return a dimension 'year'")
-        result.name = function.__name__
         cache_quantity(**{result.name: result})
         return result
 
@@ -196,21 +200,25 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
 @register_objective
 def comfort(
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     *args,
     **kwargs,
 ) -> xr.DataArray:
     """Comfort value provided by technologies."""
-    return technologies.comfort
+    result = xr.broadcast(technologies.comfort, demand.asset)[0]
+    return result
 
 
 @register_objective
 def efficiency(
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     *args,
     **kwargs,
 ) -> xr.DataArray:
     """Efficiency of the technologies."""
-    return technologies.efficiency
+    result = xr.broadcast(technologies.efficiency, demand.asset)[0]
+    return result
 
 
 @register_objective(name="capacity")
@@ -292,6 +300,7 @@ def fixed_costs(
 @register_objective
 def capital_costs(
     technologies: xr.Dataset,
+    demand: xr.Dataset,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -303,6 +312,7 @@ def capital_costs(
     simulation for each technology.
     """
     result = technologies.cap_par * (technologies.scaling_size**technologies.cap_exp)
+    result = xr.broadcast(result, demand.asset)[0]
     return result
 
 
@@ -373,10 +383,12 @@ def annual_levelized_cost_of_energy(
     """
     from muse.costs import annual_levelized_cost_of_energy as aLCOE
 
-    return filter_input(
+    result = filter_input(
         aLCOE(technologies=technologies, prices=prices).max("timeslice"),
         year=demand.year.item(),
     )
+    result = xr.broadcast(result, demand.asset)[0]
+    return result
 
 
 @register_objective(name=["LCOE", "LLCOE"])

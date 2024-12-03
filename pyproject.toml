@@ -55,6 +55,7 @@ dev = [
 ]
 doc = [
     "sphinx",
+    "sphinx-rtd-theme",
     "ipykernel",
     "nbsphinx",
     "myst-parser",
