@@ -1,12 +1,14 @@
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Callable, Optional
+from unittest.mock import patch
 
 import numpy as np
 from pandas import DataFrame
-from pytest import fixture, mark
+from pytest import fixture
 from xarray import DataArray, Dataset
 
+from muse.__main__ import patched_broadcast_compat_data
 from muse.agents import Agent
 
 
@@ -19,41 +21,12 @@ def logger():
     return logger
 
 
-@fixture(scope="session")
-def cases_directory() -> Optional[Path]:
-    try:
-        import muse_legacy
-    except ImportError:
-        return None
-
-    return Path(muse_legacy.__file__).parent / "data" / "test" / "cases"
-
-
-@fixture(scope="session")
-def regression_directories(cases_directory) -> Mapping[str, Path]:
-    if cases_directory is None:
-        return {}
-    return {
-        directory.name: cases_directory / directory
-        for directory in cases_directory.iterdir()
-        if directory.is_dir()
-        and (directory / "input").is_dir()
-        and (directory / "output").is_dir()
-    }
-
-
-@fixture()
-def sectors_dir(tmpdir):
-    """Copies sectors directory to new dir.
-
-    This gives some assurance the machinery for specifying sectors data actually works.
-    """
-    from shutil import copytree
-
-    from muse.defaults import DEFAULT_SECTORS_DIRECTORY
-
-    copytree(DEFAULT_SECTORS_DIRECTORY, tmpdir.join("sectors_data_dir"))
-    return tmpdir.join("sectors_data_dir")
+@fixture(autouse=True)
+def patch_broadcast_compat_data():
+    with patch(
+        "xarray.core.variable._broadcast_compat_data", patched_broadcast_compat_data
+    ):
+        yield
 
 
 def compare_df(
@@ -102,7 +75,6 @@ def compare_dirs() -> Callable:
     def compare_dirs(actual_dir, expected_dir, **kwargs):
         """Compares all the csv files in a directory."""
         from os import walk
-        from pathlib import Path
 
         from pandas import read_csv
 
@@ -134,37 +106,46 @@ def compare_dirs() -> Callable:
     return compare_dirs
 
 
-def pytest_collection_modifyitems(config, items):
-    try:
-        __import__("SGIModelData")
-    except ImportError:
-        skip_sgi_data = mark.skip(reason="Test requires private data")
-        for item in items:
-            if "sgidata" in item.keywords:
-                item.add_marker(skip_sgi_data)
-    try:
-        __import__("muse_legacy")
-    except ImportError:
-        skip_legacy = mark.skip(reason="Test requires legacy code")
-        for item in items:
-            if "legacy" in item.keywords:
-                item.add_marker(skip_legacy)
-
-
-@fixture
-def save_timeslice_globals():
-    from muse import timeslices
-
-    old = timeslices.TIMESLICE, timeslices.TRANSFORMS
-    yield
-    timeslices.TIMESLICE, timeslices.TRANSFORMS = old
-
-
 @fixture
 def default_timeslice_globals():
-    from muse.timeslices import DEFAULT_TIMESLICE_DESCRIPTION, setup_module
+    from muse.timeslices import setup_module
 
-    setup_module(DEFAULT_TIMESLICE_DESCRIPTION)
+    default_timeslices = """
+    [timeslices]
+    winter.weekday.night = 396
+    winter.weekday.morning = 396
+    winter.weekday.afternoon = 264
+    winter.weekday.early-peak = 66
+    winter.weekday.late-peak = 66
+    winter.weekday.evening = 396
+    winter.weekend.night = 156
+    winter.weekend.morning = 156
+    winter.weekend.afternoon = 156
+    winter.weekend.evening = 156
+    spring-autumn.weekday.night = 792
+    spring-autumn.weekday.morning = 792
+    spring-autumn.weekday.afternoon = 528
+    spring-autumn.weekday.early-peak = 132
+    spring-autumn.weekday.late-peak = 132
+    spring-autumn.weekday.evening = 792
+    spring-autumn.weekend.night = 300
+    spring-autumn.weekend.morning = 300
+    spring-autumn.weekend.afternoon = 300
+    spring-autumn.weekend.evening = 300
+    summer.weekday.night = 396
+    summer.weekday.morning  = 396
+    summer.weekday.afternoon = 264
+    summer.weekday.early-peak = 66
+    summer.weekday.late-peak = 66
+    summer.weekday.evening = 396
+    summer.weekend.night = 150
+    summer.weekend.morning = 150
+    summer.weekend.afternoon = 150
+    summer.weekend.evening = 150
+    level_names = ["month", "day", "hour"]
+    """
+
+    setup_module(default_timeslices)
 
 
 @fixture
@@ -172,22 +153,6 @@ def timeslice(default_timeslice_globals) -> Dataset:
     from muse.timeslices import TIMESLICE
 
     return TIMESLICE
-
-
-@fixture
-def other_timeslice() -> Dataset:
-    from pandas import MultiIndex
-
-    months = ["winter", "spring-autumn", "summer"]
-    days = ["all-week", "all-week", "all-week"]
-    hour = ["all-day", "all-day", "all-day"]
-    coordinates = MultiIndex.from_arrays(
-        [months, days, hour], names=("month", "day", "hour")
-    )
-    result = Dataset(coords={"timeslice": coordinates})
-    result["represent_hours"] = ("timeslice", [2920, 2920, 2920])
-    result = result.set_coords("represent_hours")
-    return result
 
 
 @fixture
@@ -397,18 +362,8 @@ def newcapa_agent(agent_args, technologies, stock) -> Agent:
 
 @fixture
 def retro_agent(agent_args, technologies, stock) -> Agent:
+    agent_args["investment"] = "adhoc"  # fails with scipy solver, see # 587
     return create_agent(agent_args, technologies, stock.capacity, "retrofit")
-
-
-@fixture
-def objective(retro_agent, coords) -> DataArray:
-    from numpy.random import choice, rand
-
-    asset = retro_agent.assets.technology.rename(technology="asset")
-    techs = [i for i in coords["technology"] if choice((True, False))]
-    data = rand(len(asset), len(techs))
-    coords = {"asset": asset, "technology": techs}
-    return DataArray(data, coords=coords, dims=("asset", "technology"))
 
 
 @fixture
@@ -469,21 +424,6 @@ def _stock(
     if "region" in result.data_vars:
         result = result.set_coords("region")
     return result
-
-
-@fixture
-def assets(coords, technologies) -> Dataset:
-    """Stock with repeat technologies."""
-    from xarray import concat
-
-    return concat(
-        (
-            _stock(coords, technologies),
-            _stock(coords, technologies),
-            _stock(coords, technologies),
-        ),
-        dim="technology",
-    )
 
 
 @fixture
@@ -588,11 +528,8 @@ def settings(tmpdir) -> dict:
 def warnings_as_errors(request):
     from warnings import simplefilter
 
-    # disable fixture for some tests using legacy sectors.
+    # disable fixture for some tests
     if (
-        request.module.__name__ == "test_legacy_sector"
-        and request.node.name.startswith("test_legacy_sector_regression[")
-    ) or (
         request.module.__name__ == "test_outputs"
         and request.node.name == "test_save_with_fullpath_to_excel_with_sink"
     ):

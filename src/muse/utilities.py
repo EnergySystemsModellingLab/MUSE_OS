@@ -1,12 +1,12 @@
 """Collection of functions and stand-alone algorithms."""
 
+from __future__ import annotations
+
 from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
 from typing import (
     Any,
     Callable,
     NamedTuple,
-    Optional,
-    Union,
     cast,
 )
 
@@ -14,9 +14,7 @@ import numpy as np
 import xarray as xr
 
 
-def multiindex_to_coords(
-    data: Union[xr.Dataset, xr.DataArray], dimension: str = "asset"
-):
+def multiindex_to_coords(data: xr.Dataset | xr.DataArray, dimension: str = "asset"):
     """Flattens multi-index dimension into multi-coord dimension."""
     from pandas import MultiIndex
 
@@ -33,8 +31,8 @@ def multiindex_to_coords(
 
 
 def coords_to_multiindex(
-    data: Union[xr.Dataset, xr.DataArray], dimension: str = "asset"
-) -> Union[xr.Dataset, xr.DataArray]:
+    data: xr.Dataset | xr.DataArray, dimension: str = "asset"
+) -> xr.Dataset | xr.DataArray:
     """Creates a multi-index from flattened multiple coords."""
     from pandas import MultiIndex
 
@@ -47,11 +45,11 @@ def coords_to_multiindex(
 
 
 def reduce_assets(
-    assets: Union[xr.DataArray, xr.Dataset, Sequence[Union[xr.Dataset, xr.DataArray]]],
-    coords: Optional[Union[str, Sequence[str], Iterable[str]]] = None,
+    assets: xr.DataArray | xr.Dataset | Sequence[xr.Dataset | xr.DataArray],
+    coords: str | Sequence[str] | Iterable[str] | None = None,
     dim: str = "asset",
-    operation: Optional[Callable] = None,
-) -> Union[xr.DataArray, xr.Dataset]:
+    operation: Callable | None = None,
+) -> xr.DataArray | xr.Dataset:
     r"""Combine assets along given asset dimension.
 
     This method simplifies combining assets across multiple agents, or combining assets
@@ -139,7 +137,9 @@ def reduce_assets(
             installed   (asset) int32 12B 1990 1991 1990
         Dimensions without coordinates: asset
     """
-    from copy import copy
+    from copy import deepcopy
+
+    assets = deepcopy(assets)
 
     if operation is None:
 
@@ -148,23 +148,31 @@ def reduce_assets(
 
     assert operation is not None
 
+    # Concatenate assets if a sequence is given
     if not isinstance(assets, (xr.Dataset, xr.DataArray)):
         assets = xr.concat(assets, dim=dim)
     assert isinstance(assets, (xr.Dataset, xr.DataArray))
+
+    # If there are no assets, nothing needs to be done
     if assets[dim].size == 0:
         return assets
+
+    # Coordinates to reduce over (e.g. technology, installed)
     if coords is None:
         coords = [cast(str, k) for k, v in assets.coords.items() if v.dims == (dim,)]
     elif isinstance(coords, str):
         coords = (coords,)
     coords = [k for k in coords if k in assets.coords and assets[k].dims == (dim,)]
-    assets = copy(assets)
+
+    # Create a new dimension to group by
     dtypes = [(d, assets[d].dtype) for d in coords]
     grouper = np.array(
         list(zip(*(cast(Iterator, assets[d].values) for d in coords))), dtype=dtypes
     )
     assert "grouper" not in assets.coords
     assets["grouper"] = "asset", grouper
+
+    # Perform the operation
     result = operation(assets.groupby("grouper")).rename(grouper=dim)
     for i, d in enumerate(coords):
         result[d] = dim, [u[i] for u in result[dim].values]
@@ -172,13 +180,13 @@ def reduce_assets(
 
 
 def broadcast_techs(
-    technologies: Union[xr.Dataset, xr.DataArray],
-    template: Union[xr.DataArray, xr.Dataset],
+    technologies: xr.Dataset | xr.DataArray,
+    template: xr.DataArray | xr.Dataset,
     dimension: str = "asset",
     interpolation: str = "linear",
     installed_as_year: bool = True,
     **kwargs,
-) -> Union[xr.Dataset, xr.DataArray]:
+) -> xr.Dataset | xr.DataArray:
     """Broadcasts technologies to the shape of template in given dimension.
 
     The dimensions of the technologies are fully explicit, in that each concept
@@ -236,7 +244,7 @@ def broadcast_techs(
     return techs.sel(second_sel)
 
 
-def clean_assets(assets: xr.Dataset, years: Union[int, Sequence[int]]):
+def clean_assets(assets: xr.Dataset, years: int | Sequence[int]):
     """Cleans up and prepares asset for current iteration.
 
     - adds current and forecast year by backfilling missing entries
@@ -255,11 +263,11 @@ def clean_assets(assets: xr.Dataset, years: Union[int, Sequence[int]]):
 
 
 def filter_input(
-    dataset: Union[xr.Dataset, xr.DataArray],
-    year: Optional[Union[int, Iterable[int]]] = None,
+    dataset: xr.Dataset | xr.DataArray,
+    year: int | Iterable[int] | None = None,
     interpolation: str = "linear",
     **kwargs,
-) -> Union[xr.Dataset, xr.DataArray]:
+) -> xr.Dataset | xr.DataArray:
     """Filter inputs, taking care to interpolate years."""
     if year is None:
         setyear: set[int] = set()
@@ -290,8 +298,8 @@ def filter_input(
 
 
 def filter_with_template(
-    data: Union[xr.Dataset, xr.DataArray],
-    template: Union[xr.DataArray, xr.Dataset],
+    data: xr.Dataset | xr.DataArray,
+    template: xr.DataArray | xr.Dataset,
     asset_dimension: str = "asset",
     **kwargs,
 ):
@@ -340,7 +348,7 @@ def tupled_dimension(array: np.ndarray, axis: int):
 def lexical_comparison(
     objectives: xr.Dataset,
     binsize: xr.Dataset,
-    order: Optional[Sequence[Hashable]] = None,
+    order: Sequence[Hashable] | None = None,
     bin_last: bool = True,
 ) -> xr.DataArray:
     """Lexical comparison over the objectives.
@@ -385,32 +393,22 @@ def merge_assets(
     dimension: str = "asset",
 ) -> xr.DataArray:
     """Merge two capacity arrays."""
+    # Interpolate capacity arrays to a common time framework
     years = sorted(set(capa_a.year.values).union(capa_b.year.values))
-
     if len(capa_a.year) == 1:
-        result = xr.concat(
-            (
-                capa_a,
-                capa_b.interp(year=years, method=interpolation).fillna(0),
-            ),
-            dim=dimension,
-        ).fillna(0)
+        capa_a_interp = capa_a
+        capa_b_interp = capa_b.interp(year=years, method=interpolation).fillna(0)
     elif len(capa_b.year) == 1:
-        result = xr.concat(
-            (
-                capa_a.interp(year=years, method=interpolation).fillna(0),
-                capa_b,
-            ),
-            dim=dimension,
-        ).fillna(0)
+        capa_a_interp = capa_a.interp(year=years, method=interpolation).fillna(0)
+        capa_b_interp = capa_b
     else:
-        result = xr.concat(
-            (
-                capa_a.interp(year=years, method=interpolation).fillna(0),
-                capa_b.interp(year=years, method=interpolation).fillna(0),
-            ),
-            dim=dimension,
-        )
+        capa_a_interp = capa_a.interp(year=years, method=interpolation).fillna(0)
+        capa_b_interp = capa_b.interp(year=years, method=interpolation).fillna(0)
+
+    # Concatenate the two capacity arrays
+    result = xr.concat((capa_a_interp, capa_b_interp), dim=dimension)
+
+    #
     forgroup = result.pipe(coords_to_multiindex, dimension=dimension)
     if isinstance(forgroup, xr.DataArray):
         forgroup = forgroup.to_dataset()
@@ -438,7 +436,7 @@ def avoid_repetitions(data: xr.DataArray, dim: str = "year") -> xr.DataArray:
     return data.year[years]
 
 
-def nametuple_to_dict(nametup: Union[Mapping, NamedTuple]) -> Mapping:
+def nametuple_to_dict(nametup: Mapping | NamedTuple) -> Mapping:
     """Transforms a nametuple of type GenericDict into an OrderDict."""
     from collections import OrderedDict
     from dataclasses import asdict, is_dataclass
@@ -537,11 +535,11 @@ def future_propagation(
 
 
 def agent_concatenation(
-    data: Mapping[Hashable, Union[xr.DataArray, xr.Dataset]],
+    data: Mapping[Hashable, xr.DataArray | xr.Dataset],
     dim: str = "asset",
     name: str = "agent",
     fill_value: Any = 0,
-) -> Union[xr.DataArray, xr.Dataset]:
+) -> xr.DataArray | xr.Dataset:
     """Concatenates input map along given dimension.
 
     Example:
@@ -613,10 +611,10 @@ def agent_concatenation(
 
 
 def aggregate_technology_model(
-    data: Union[xr.DataArray, xr.Dataset],
+    data: xr.DataArray | xr.Dataset,
     dim: str = "asset",
-    drop: Union[str, Sequence[str]] = "installed",
-) -> Union[xr.DataArray, xr.Dataset]:
+    drop: str | Sequence[str] = "installed",
+) -> xr.DataArray | xr.Dataset:
     """Aggregate together assets with the same installation year.
 
     The assets of a given agent, region, and technology but different installation year
@@ -659,3 +657,27 @@ def aggregate_technology_model(
         data,
         [cast(str, u) for u in data.coords if u not in drop and data[u].dims == (dim,)],
     )
+
+
+def check_dimensions(
+    data: xr.DataArray | xr.Dataset,
+    required: Iterable[str] = (),
+    optional: Iterable[str] = (),
+):
+    """Ensure that an array has the required dimensions.
+
+    This will check that all required dimensions are present, and that no other
+    dimensions are present, apart from those listed as optional.
+
+    Args:
+        data: DataArray or Dataset to check dimensions of
+        required: List of dimension names that must be present
+        optional: List of dimension names that may be present
+    """
+    present = set(data.dims)
+    missing = set(required) - present
+    if missing:
+        raise ValueError(f"Missing required dimensions: {missing}")
+    extra = present - set(required) - set(optional)
+    if extra:
+        raise ValueError(f"Extra dimensions: {extra}")

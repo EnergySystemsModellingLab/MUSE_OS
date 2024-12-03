@@ -1,33 +1,4 @@
-from pytest import fixture, mark
-
-
-@fixture
-def capacity_expansion():
-    from numpy import arange
-    from numpy.random import rand
-    from xarray import Dataset
-
-    from muse.investments import CapacityAddition
-
-    data = Dataset()
-    data["asset"] = "asset", arange(5, 10)
-    data["replacement"] = "replacement", arange(0, 6)
-    data["ranks"] = data.asset + data.replacement // 2
-    data["ranks"] = data.ranks.rank("replacement").astype(int)
-    data["deltas"] = (
-        ("asset", "replacement"),
-        rand(data.asset.size, data.replacement.size),
-    )
-    data["deltas"] *= rand(*data.deltas.shape) > 0.25
-
-    return CapacityAddition(data.ranks, data.deltas)
-
-
-def add_var(coordinates, *dims, factor=100.0):
-    from numpy.random import rand
-
-    shape = tuple(len(coordinates[u]) for u in dims)
-    return dims, (rand(*shape) * factor).astype(type(factor))
+from pytest import mark
 
 
 def test_cliff_retirement_known_profile():
@@ -44,7 +15,7 @@ def test_cliff_retirement_known_profile():
         name="technical_life",
     )
 
-    profile = cliff_retirement_profile(lifetime)
+    profile = cliff_retirement_profile(technical_life=lifetime, investment_year=2020)
     expected = array(
         [
             [True, False, False, False],
@@ -73,12 +44,12 @@ def test_cliff_retirement_random_profile(protected):
     )
     effective_lifetime = (protected // lifetime + 1) * lifetime
 
-    current = 5
+    investment_year = 2020
     profile = cliff_retirement_profile(
-        lifetime, current_year=current, protected=protected
+        technical_life=lifetime.clip(min=protected), investment_year=investment_year
     )
-    assert profile.year.min() == current
-    assert profile.year.max() <= current + effective_lifetime.max() + 1
-    assert profile.astype(int).interp(year=current).all()
-    assert profile.astype(int).interp(year=current + protected).all()
+    assert profile.year.min() == investment_year
+    assert profile.year.max() <= investment_year + effective_lifetime.max() + 1
+    assert profile.astype(int).interp(year=investment_year).all()
+    assert profile.astype(int).interp(year=investment_year + protected - 1).all()
     assert not profile.astype(int).interp(year=profile.year.max()).any()

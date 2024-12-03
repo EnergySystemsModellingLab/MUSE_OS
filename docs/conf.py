@@ -11,7 +11,7 @@ from docutils.parsers.rst import roles
 project = "MUSE"
 copyright = "2024, Imperial College London"
 author = "Imperial College London"
-release = "1.2.3"
+release = "1.3.0"
 version = ".".join(release.split(".")[:2])
 
 # -- General configuration ---------------------------------------------------
@@ -63,7 +63,7 @@ graphviz_output_format = "svg"
 
 # -- Options for HTML output -------------------------------------------------
 
-html_theme = "classic"
+html_theme = "sphinx_rtd_theme"
 
 # -- Render GitHub links -------------------------------------------------
 

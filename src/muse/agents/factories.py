@@ -7,7 +7,6 @@ from typing import Any, Callable, Optional, Union
 import xarray as xr
 
 from muse.agents.agent import Agent, InvestingAgent
-from muse.defaults import DEFAULT_SECTORS_DIRECTORY
 from muse.errors import AgentShareNotDefined, TechnologyNotDefined
 
 
@@ -20,7 +19,7 @@ def create_standard_agent(
     interpolation: str = "linear",
     **kwargs,
 ):
-    """Creates retrofit agent from muse primitives."""
+    """Creates standard (noninvesting) agent from muse primitives."""
     from muse.filters import factory as filter_factory
 
     if share is not None:
@@ -173,96 +172,6 @@ def create_agent(agent_type: str, **kwargs) -> Agent:
     return method(**kwargs)  # type: ignore
 
 
-def factory(
-    existing_capacity_path: Optional[Union[Path, str]] = None,
-    agent_parameters_path: Optional[Union[Path, str]] = None,
-    technodata_path: Optional[Union[Path, str]] = None,
-    technodata_timeslices_path: Optional[Union[str, Path]] = None,
-    sector: Optional[str] = None,
-    sectors_directory: Union[str, Path] = DEFAULT_SECTORS_DIRECTORY,
-    baseyear: int = 2010,
-) -> list[Agent]:
-    """Reads list of agents from standard MUSE input files."""
-    from copy import deepcopy
-    from logging import getLogger
-    from textwrap import dedent
-
-    from muse.readers import (
-        read_csv_agent_parameters,
-        read_initial_assets,
-        read_technodata_timeslices,
-        read_technodictionary,
-    )
-    from muse.readers.csv import find_sectors_file
-
-    if sector is None:
-        assert existing_capacity_path is not None
-        assert agent_parameters_path is not None
-        assert technodata_path is not None
-
-    if existing_capacity_path is None:
-        existing_capacity_path = find_sectors_file(
-            f"Existing{sector}.csv", sector, sectors_directory
-        )
-    if agent_parameters_path is None:
-        agent_parameters_path = find_sectors_file(
-            f"BuildingAgent{sector}.csv", sector, sectors_directory
-        )
-    if technodata_path is None:
-        technodata_path = find_sectors_file(
-            f"technodata{sector}.csv", sector, sectors_directory
-        )
-
-    params = read_csv_agent_parameters(agent_parameters_path)
-    techno = read_technodictionary(technodata_path)
-    capa = read_initial_assets(existing_capacity_path)
-    if technodata_timeslices_path and isinstance(
-        technodata_timeslices_path, (str, Path)
-    ):
-        technodata_timeslices = read_technodata_timeslices(technodata_timeslices_path)
-    else:
-        technodata_timeslices = None
-    result = []
-    for param in params:
-        if param["agent_type"] == "retrofit":
-            param["technologies"] = techno.sel(region=param["region"])
-        if technodata_timeslices is not None:
-            param.drop_vars("utilization_factor")
-            param = param.merge(technodata_timeslices.sel(region=param["region"]))
-        param["category"] = param["agent_type"]
-        param["capacity"] = deepcopy(capa.sel(region=param["region"]))
-        param["year"] = baseyear
-        result.append(create_agent(**param))
-
-    nregs = len({u.region for u in result})
-    types = [u.name for u in result]
-    msg = dedent(
-        """\
-        Read agents for sector {name} from:
-            - agent parameter file {para}
-            - technologies data file {tech}
-            - initial capacity file {ini}
-
-        Found {n} agents across {nregs} regions{end}
-        """.format(
-            n=len(result),
-            name=sector,
-            para=agent_parameters_path,
-            tech=technodata_path,
-            ini=existing_capacity_path,
-            nregs=nregs,
-            end="." if len(result) == 0 else ", with:\n",
-        )
-    )
-    for t in set(types):
-        n = types.count(t)
-        msg += "    - {n} {t} agent{plural}\n".format(
-            n=n, t=t, plural="" if n == 1 else "s"
-        )
-    getLogger(__name__).info(msg)
-    return result
-
-
 def agents_factory(
     params_or_path: Union[str, Path, list],
     capacity: Union[xr.DataArray, str, Path],
@@ -394,7 +303,7 @@ def _standardize_inputs(
 
 def _standardize_investing_inputs(
     search_rules: Optional[Union[str, Sequence[str]]] = None,
-    investment: Union[Callable, str, Mapping] = "adhoc",
+    investment: Union[Callable, str, Mapping] = "scipy",
     constraints: Optional[
         Union[Callable, str, Mapping, Sequence[Union[str, Mapping]]]
     ] = None,

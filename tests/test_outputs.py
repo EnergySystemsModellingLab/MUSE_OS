@@ -28,33 +28,6 @@ def streetcred(save_registries):
         )
 
 
-@fixture
-def limits_path(tmp_path):
-    from textwrap import dedent
-
-    path = tmp_path / "limits.csv"
-    path.write_text(
-        dedent(
-            """
-            Year,Month,Day,Hour,Region,Gas
-            2020,all-year,all-week,night,R1,5
-            2020,all-year,all-week,morning,R1,5
-            2020,all-year,all-week,afternoon,R1,5
-            2020,all-year,all-week,early-peak,R1,5
-            2020,all-year,all-week,late-peak,R1,5
-            2020,all-year,all-week,evening,R1,5
-            2050,all-year,all-week,night,R1,8
-            2050,all-year,all-week,morning,R1,8
-            2050,all-year,all-week,afternoon,R1,8
-            2050,all-year,all-week,early-peak,R1,8
-            2050,all-year,all-week,late-peak,R1,8
-            2050,all-year,all-week,evening,R1,8
-            """
-        )
-    )
-    return path
-
-
 @mark.usefixtures("streetcred")
 def test_save_with_dir(tmpdir):
     from pandas import read_csv
@@ -331,64 +304,6 @@ def test_path_formatting(tmpdir):
             path=tmpdir / "model", Quantity="Dummy", suffix=".dummy"
         )
     )
-
-
-def test_aggregate_resources(market):
-    from muse.outputs.mca import AggregateResources
-
-    commodity = str(market.commodity.isel(commodity=0).values)
-    output = AggregateResources(commodity)
-    a = output(market, []).copy()
-    assert (
-        a == market.consumption.sel(year=2010, commodity=commodity, drop=True)
-    ).all()
-    b = output(market, []).copy()
-    assert (b == 2 * a).all()
-
-
-def test_finite_resources_quantity(limits_path):
-    from muse import examples
-    from muse.outputs.mca import FiniteResources
-
-    market = examples.mca_market()[["consumption"]]
-
-    output = FiniteResources(limits_path=limits_path, commodities="gas")
-    result = output(market, [])
-    assert set(result.dims) == {"region", "timeslice", "commodity"}
-    assert result.all()
-
-    market.consumption.loc[dict(commodity="gas")] = 3.0
-    result = output(market, [])
-    assert result.all()
-
-    result = output(market, [])
-    assert not result.all()
-
-
-def test_finite_resources_in_sim(tmp_path, limits_path):
-    from toml import dump, load
-
-    from muse import examples
-    from muse.mca import MCA
-    from muse.outputs.sinks import FiniteResourceException
-    from muse.readers.toml import read_settings
-
-    examples.copy_model("default", path=tmp_path)
-    toml = load(tmp_path / "model" / "settings.toml")
-    toml["outputs"].append(
-        dict(
-            quantity="finite_resources",
-            limits_path=str(limits_path.resolve()),
-            early_exit=True,
-            commodities="gas",
-        )
-    )
-    with open(tmp_path / "model" / "settings.toml", "w") as fileobj:
-        dump(toml, fileobj)
-
-    mca = MCA.factory(read_settings(tmp_path / "model" / "settings.toml"))
-    with raises(FiniteResourceException):
-        mca.run()
 
 
 def test_register_output_quantity_cache():

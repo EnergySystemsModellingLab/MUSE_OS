@@ -18,15 +18,13 @@ def _capacity(technologies, demand_share):
 
 
 @fixture
-def _production(technologies, _capacity, demand_share):
-    from muse.timeslices import QuantityType, convert_timeslice
+def _production(technologies, _capacity):
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     production = (
-        _capacity
-        * convert_timeslice(
-            technologies.fixed_outputs, demand_share.timeslice, QuantityType.EXTENSIVE
-        )
-        * technologies.utilization_factor
+        broadcast_timeslice(_capacity)
+        * distribute_timeslice(technologies.fixed_outputs)
+        * broadcast_timeslice(technologies.utilization_factor)
     )
     return production
 

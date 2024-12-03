@@ -3,7 +3,6 @@
 __all__ = [
     "read_attribute_table",
     "read_csv_agent_parameters",
-    "read_csv_timeslices",
     "read_global_commodities",
     "read_initial_assets",
     "read_initial_market",
@@ -130,7 +129,7 @@ def read_technodictionary(filename: Union[str, Path]) -> xr.Dataset:
 
 def read_technodata_timeslices(filename: Union[str, Path]) -> xr.Dataset:
     from muse.readers import camel_to_snake
-    from muse.timeslices import TIMESLICE, convert_timeslice
+    from muse.timeslices import sort_timeslices
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
     csv = csv.rename(columns=camel_to_snake)
@@ -164,9 +163,7 @@ def read_technodata_timeslices(filename: Union[str, Path]) -> xr.Dataset:
         if item not in ["technology", "region", "year"]
     ]
     result = result.stack(timeslice=timeslice_levels)
-    result = convert_timeslice(result, TIMESLICE)
-    # sorts timeslices into the correct order
-    return result
+    return sort_timeslices(result)
 
 
 def read_io_technodata(filename: Union[str, Path]) -> xr.Dataset:
@@ -256,7 +253,6 @@ def read_initial_capacity(data: Union[str, Path, pd.DataFrame]) -> xr.DataArray:
         .set_index(["region", "technology", "year"])
     )
     result = xr.DataArray.from_series(data["value"])
-    # inconsistent legacy data files.
     result = result.sel(year=result.year != "2100.1")
     result["year"] = result.year.astype(int)
     return result
@@ -410,35 +406,6 @@ def read_technologies(
     return result
 
 
-def read_csv_timeslices(path: Union[str, Path], **kwargs) -> xr.DataArray:
-    """Reads timeslice information from input."""
-    from logging import getLogger
-
-    getLogger(__name__).info(f"Reading timeslices from {path}")
-    data = pd.read_csv(path, float_precision="high", **kwargs)
-
-    def snake_case(string):
-        from re import sub
-
-        result = sub(r"((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))", r"-\1", string)
-        return result.lower().strip()
-
-    months = [snake_case(u) for u in data.Month.dropna()]
-    days = [snake_case(u) for u in data.Day.dropna()]
-    hours = [snake_case(u) for u in data.Hour.dropna()]
-    ts_index = pd.MultiIndex.from_arrays(
-        (months, days, hours), names=("month", "day", "hour")
-    )
-    result = xr.DataArray(
-        data.RepresentHours.dropna().astype(int),
-        coords={"timeslice": ts_index},
-        dims="timeslice",
-        name="represent_hours",
-    )
-    result.coords["represent_hours"] = result
-    return result.timeslice
-
-
 def read_global_commodities(path: Union[str, Path]) -> xr.Dataset:
     """Reads commodities information from input."""
     from logging import getLogger
@@ -473,7 +440,6 @@ def read_global_commodities(path: Union[str, Path]) -> xr.Dataset:
 def read_timeslice_shares(
     path: Union[str, Path] = DEFAULT_SECTORS_DIRECTORY,
     sector: Optional[str] = None,
-    timeslice: Union[str, Path, xr.DataArray] = "Timeslices{sector}.csv",
 ) -> xr.Dataset:
     """Reads sliceshare information into a xr.Dataset.
 
@@ -492,12 +458,6 @@ def read_timeslice_shares(
             path, filename = path.parent, path.name
             re = match(r"TimesliceShare(.*)\.csv", filename)
             sector = path.name if re is None else re.group(1)
-    if isinstance(timeslice, str) and "{sector}" in timeslice:
-        timeslice = timeslice.format(sector=sector)
-    if isinstance(timeslice, (str, Path)) and not Path(timeslice).is_file():
-        timeslice = find_sectors_file(timeslice, sector, path)
-    if isinstance(timeslice, (str, Path)):
-        timeslice = read_csv_timeslices(timeslice, low_memory=False)
 
     share_path = find_sectors_file(f"TimesliceShare{sector}.csv", sector, path)
     getLogger(__name__).info(f"Reading timeslice shares from {share_path}")
@@ -510,13 +470,6 @@ def read_timeslice_shares(
     data.columns.name = "commodity"
 
     result = xr.DataArray(data).unstack("rt").to_dataset(name="shares")
-
-    if timeslice is None:
-        result = result.drop_vars("timeslice")
-    elif isinstance(timeslice, xr.DataArray) and hasattr(timeslice, "timeslice"):
-        result["timeslice"] = timeslice.timeslice
-    else:
-        result["timeslice"] = timeslice
     return result.shares
 
 
@@ -627,19 +580,16 @@ def read_initial_market(
     projections: Union[xr.DataArray, Path, str],
     base_year_import: Optional[Union[str, Path, xr.DataArray]] = None,
     base_year_export: Optional[Union[str, Path, xr.DataArray]] = None,
-    timeslices: Optional[xr.DataArray] = None,
 ) -> xr.Dataset:
     """Read projections, import and export csv files."""
     from logging import getLogger
 
-    from muse.timeslices import QuantityType, convert_timeslice
+    from muse.timeslices import TIMESLICE, distribute_timeslice
 
     # Projections must always be present
     if isinstance(projections, (str, Path)):
         getLogger(__name__).info(f"Reading projections from {projections}")
         projections = read_attribute_table(projections)
-    if timeslices is not None:
-        projections = convert_timeslice(projections, timeslices, QuantityType.INTENSIVE)
 
     # Base year export is optional. If it is not there, it's set to zero
     if isinstance(base_year_export, (str, Path)):
@@ -657,13 +607,8 @@ def read_initial_market(
         getLogger(__name__).info("Base year import not provided. Set to zero.")
         base_year_import = xr.zeros_like(projections)
 
-    if timeslices is not None:
-        base_year_export = convert_timeslice(
-            base_year_export, timeslices, QuantityType.EXTENSIVE
-        )
-        base_year_import = convert_timeslice(
-            base_year_import, timeslices, QuantityType.EXTENSIVE
-        )
+    base_year_export = distribute_timeslice(base_year_export, level=None)
+    base_year_import = distribute_timeslice(base_year_import, level=None)
     base_year_export.name = "exports"
     base_year_import.name = "imports"
 
@@ -683,7 +628,7 @@ def read_initial_market(
         commodity_price="prices", units_commodity_price="units_prices"
     )
     result["prices"] = (
-        result["prices"].expand_dims({"timeslice": timeslices}).drop_vars("timeslice")
+        result["prices"].expand_dims({"timeslice": TIMESLICE}).drop_vars("timeslice")
     )
 
     return result
@@ -918,33 +863,6 @@ def read_trade(
         )
 
     return result.rename(src_region="region")
-
-
-def read_finite_resources(path: Union[str, Path]) -> xr.DataArray:
-    """Reads finite resources from csv file.
-
-    The CSV file is made up of columns "Region", "Year", as well
-    as three timeslice columns ("Month", "Day", "Hour"). All three sets of columns are
-    optional. The timeslice set should contain a full set of timeslices, if present.
-    Other columns correspond to commodities.
-    """
-    from muse.timeslices import TIMESLICE
-
-    data = pd.read_csv(path)
-    data.columns = [c.lower() for c in data.columns]
-    ts_levels = TIMESLICE.get_index("timeslice").names
-
-    if set(data.columns).issuperset(ts_levels):
-        timeslice = pd.MultiIndex.from_arrays(
-            [data[u] for u in ts_levels], names=ts_levels
-        )
-        timeslice = pd.DataFrame(timeslice, columns=["timeslice"])
-        data = pd.concat((data, timeslice), axis=1)
-        data.drop(columns=ts_levels, inplace=True)
-    indices = list({"year", "region", "timeslice"}.intersection(data.columns))
-    data.set_index(indices, inplace=True)
-
-    return xr.Dataset.from_dataframe(data).to_array(dim="commodity")
 
 
 def check_utilization_and_minimum_service_factors(data, filename):

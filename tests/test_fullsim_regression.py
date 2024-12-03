@@ -5,7 +5,6 @@ from pytest import mark
 from muse.examples import available_examples
 
 
-@mark.usefixtures("save_timeslice_globals")
 @mark.regression
 @mark.example
 @mark.parametrize("model", available_examples())
@@ -40,7 +39,6 @@ def available_tutorials():
     return [d.parent for d in base_path.rglob("*/input") if d.is_dir()]
 
 
-@mark.usefixtures("save_timeslice_globals")
 @mark.regression
 @mark.tutorial
 @mark.parametrize("tutorial_path", available_tutorials())

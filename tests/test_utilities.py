@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-from pytest import approx, mark
+from pytest import approx, mark, raises
 
 
 def make_array(array):
@@ -37,7 +37,7 @@ def test_reduce_assets_with_zero_size(capacity: xr.DataArray):
 
     x = capacity.sel(asset=[])
     actual = reduce_assets(x)
-    assert actual is x
+    assert (actual == x).all()
 
 
 def test_broadcast_tech(technologies, capacity):
@@ -296,3 +296,24 @@ def test_avoid_repetitions():
     assert 3 * len(result.year) == 2 * len(assets.year)
     original = result.interp(year=assets.year, method="linear")
     assert (original == assets).all()
+
+
+def test_check_dimensions():
+    from muse.utilities import check_dimensions
+
+    data = xr.DataArray(
+        np.random.rand(4, 5),
+        dims=["dim1", "dim2"],
+        coords={"dim1": range(4), "dim2": range(5)},
+    )
+
+    # Valid
+    check_dimensions(data, required=["dim1"], optional=["dim2"])
+
+    # Missing required
+    with raises(ValueError, match="Missing required dimensions"):
+        check_dimensions(data, required=["dim1", "dim3"], optional=["dim2"])
+
+    # Extra dimension
+    with raises(ValueError, match="Extra dimensions"):
+        check_dimensions(data, required=["dim1"])

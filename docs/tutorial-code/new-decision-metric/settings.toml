@@ -23,16 +23,6 @@ quantity = "capacity"
 sink = "aggregate"
 filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
-[[outputs]]
-quantity = "timeslice_consumption"
-sink = "aggregate"
-filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-
-[[outputs]]
-quantity = "timeslice_supply"
-sink = "aggregate"
-filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
-
 [carbon_budget_control]
 budget = []
 
@@ -51,7 +41,7 @@ commodities_out = '{path}/technodata/residential/CommOut.csv'
 [sectors.residential.subsectors.all]
 agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
-lpsolver = "scipy"  # Optional, defaults to "adhoc"
+lpsolver = "scipy"  # Optional, defaults to "scipy"
 constraints = [
     # Optional, defaults to the constraints below
     "max_production",

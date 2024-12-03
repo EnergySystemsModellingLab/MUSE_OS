@@ -503,11 +503,9 @@ The dispatch stage when running a sector can be described by the following graph
 
 After the investment stage is completed, then the new capacity of the sector is obtained by aggregating the assets of all agents of the sector. Then, the supply of commodities is calculated as requested by the ``dispatch_production`` argument defined for each sector in the ``settings.toml`` file.
 
-The typical choice used in most examples in MUSE is ``share``, where the utilization across similar assets is the same in percentage. However, there are other options available, like
-
-- ``costed``: assets are ranked by their levelised costs and the cheaper ones are allowed to service the demand first up to their maximum production. Minimum service can be imposed if present.
+There are two possible options for ``dispatch_production`` built into MUSE:
+- ``share``: assets each supply a proportion of demand based on their share of total capacity.
 - ``maximum``: all the assets dispatch their maximum production, regardless of the demand.
-- ``match``: supply matches the demand within the constrains on how much an asset can produce while minimizing the overall associated costs. ``match`` allows the choice between different metrics to rank assets, such as levelised costs and gross margin. See :py:mod:`muse.demand_matching` for the mathematical details.
 
 Once the supply is obtained, the consumed commodities required to achieve that production level are calculated. The cheapest fuel for flexible technologies is used.
 
