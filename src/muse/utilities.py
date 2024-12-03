@@ -1,12 +1,12 @@
 """Collection of functions and stand-alone algorithms."""
 
+from __future__ import annotations
+
 from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
 from typing import (
     Any,
     Callable,
     NamedTuple,
-    Optional,
-    Union,
     cast,
 )
 
@@ -14,9 +14,7 @@ import numpy as np
 import xarray as xr
 
 
-def multiindex_to_coords(
-    data: Union[xr.Dataset, xr.DataArray], dimension: str = "asset"
-):
+def multiindex_to_coords(data: xr.Dataset | xr.DataArray, dimension: str = "asset"):
     """Flattens multi-index dimension into multi-coord dimension."""
     from pandas import MultiIndex
 
@@ -33,8 +31,8 @@ def multiindex_to_coords(
 
 
 def coords_to_multiindex(
-    data: Union[xr.Dataset, xr.DataArray], dimension: str = "asset"
-) -> Union[xr.Dataset, xr.DataArray]:
+    data: xr.Dataset | xr.DataArray, dimension: str = "asset"
+) -> xr.Dataset | xr.DataArray:
     """Creates a multi-index from flattened multiple coords."""
     from pandas import MultiIndex
 
@@ -47,11 +45,11 @@ def coords_to_multiindex(
 
 
 def reduce_assets(
-    assets: Union[xr.DataArray, xr.Dataset, Sequence[Union[xr.Dataset, xr.DataArray]]],
-    coords: Optional[Union[str, Sequence[str], Iterable[str]]] = None,
+    assets: xr.DataArray | xr.Dataset | Sequence[xr.Dataset | xr.DataArray],
+    coords: str | Sequence[str] | Iterable[str] | None = None,
     dim: str = "asset",
-    operation: Optional[Callable] = None,
-) -> Union[xr.DataArray, xr.Dataset]:
+    operation: Callable | None = None,
+) -> xr.DataArray | xr.Dataset:
     r"""Combine assets along given asset dimension.
 
     This method simplifies combining assets across multiple agents, or combining assets
@@ -182,13 +180,13 @@ def reduce_assets(
 
 
 def broadcast_techs(
-    technologies: Union[xr.Dataset, xr.DataArray],
-    template: Union[xr.DataArray, xr.Dataset],
+    technologies: xr.Dataset | xr.DataArray,
+    template: xr.DataArray | xr.Dataset,
     dimension: str = "asset",
     interpolation: str = "linear",
     installed_as_year: bool = True,
     **kwargs,
-) -> Union[xr.Dataset, xr.DataArray]:
+) -> xr.Dataset | xr.DataArray:
     """Broadcasts technologies to the shape of template in given dimension.
 
     The dimensions of the technologies are fully explicit, in that each concept
@@ -246,7 +244,7 @@ def broadcast_techs(
     return techs.sel(second_sel)
 
 
-def clean_assets(assets: xr.Dataset, years: Union[int, Sequence[int]]):
+def clean_assets(assets: xr.Dataset, years: int | Sequence[int]):
     """Cleans up and prepares asset for current iteration.
 
     - adds current and forecast year by backfilling missing entries
@@ -265,11 +263,11 @@ def clean_assets(assets: xr.Dataset, years: Union[int, Sequence[int]]):
 
 
 def filter_input(
-    dataset: Union[xr.Dataset, xr.DataArray],
-    year: Optional[Union[int, Iterable[int]]] = None,
+    dataset: xr.Dataset | xr.DataArray,
+    year: int | Iterable[int] | None = None,
     interpolation: str = "linear",
     **kwargs,
-) -> Union[xr.Dataset, xr.DataArray]:
+) -> xr.Dataset | xr.DataArray:
     """Filter inputs, taking care to interpolate years."""
     if year is None:
         setyear: set[int] = set()
@@ -300,8 +298,8 @@ def filter_input(
 
 
 def filter_with_template(
-    data: Union[xr.Dataset, xr.DataArray],
-    template: Union[xr.DataArray, xr.Dataset],
+    data: xr.Dataset | xr.DataArray,
+    template: xr.DataArray | xr.Dataset,
     asset_dimension: str = "asset",
     **kwargs,
 ):
@@ -350,7 +348,7 @@ def tupled_dimension(array: np.ndarray, axis: int):
 def lexical_comparison(
     objectives: xr.Dataset,
     binsize: xr.Dataset,
-    order: Optional[Sequence[Hashable]] = None,
+    order: Sequence[Hashable] | None = None,
     bin_last: bool = True,
 ) -> xr.DataArray:
     """Lexical comparison over the objectives.
@@ -438,7 +436,7 @@ def avoid_repetitions(data: xr.DataArray, dim: str = "year") -> xr.DataArray:
     return data.year[years]
 
 
-def nametuple_to_dict(nametup: Union[Mapping, NamedTuple]) -> Mapping:
+def nametuple_to_dict(nametup: Mapping | NamedTuple) -> Mapping:
     """Transforms a nametuple of type GenericDict into an OrderDict."""
     from collections import OrderedDict
     from dataclasses import asdict, is_dataclass
@@ -537,11 +535,11 @@ def future_propagation(
 
 
 def agent_concatenation(
-    data: Mapping[Hashable, Union[xr.DataArray, xr.Dataset]],
+    data: Mapping[Hashable, xr.DataArray | xr.Dataset],
     dim: str = "asset",
     name: str = "agent",
     fill_value: Any = 0,
-) -> Union[xr.DataArray, xr.Dataset]:
+) -> xr.DataArray | xr.Dataset:
     """Concatenates input map along given dimension.
 
     Example:
@@ -613,10 +611,10 @@ def agent_concatenation(
 
 
 def aggregate_technology_model(
-    data: Union[xr.DataArray, xr.Dataset],
+    data: xr.DataArray | xr.Dataset,
     dim: str = "asset",
-    drop: Union[str, Sequence[str]] = "installed",
-) -> Union[xr.DataArray, xr.Dataset]:
+    drop: str | Sequence[str] = "installed",
+) -> xr.DataArray | xr.Dataset:
     """Aggregate together assets with the same installation year.
 
     The assets of a given agent, region, and technology but different installation year
@@ -659,3 +657,27 @@ def aggregate_technology_model(
         data,
         [cast(str, u) for u in data.coords if u not in drop and data[u].dims == (dim,)],
     )
+
+
+def check_dimensions(
+    data: xr.DataArray | xr.Dataset,
+    required: Iterable[str] = (),
+    optional: Iterable[str] = (),
+):
+    """Ensure that an array has the required dimensions.
+
+    This will check that all required dimensions are present, and that no other
+    dimensions are present, apart from those listed as optional.
+
+    Args:
+        data: DataArray or Dataset to check dimensions of
+        required: List of dimension names that must be present
+        optional: List of dimension names that may be present
+    """
+    present = set(data.dims)
+    missing = set(required) - present
+    if missing:
+        raise ValueError(f"Missing required dimensions: {missing}")
+    extra = present - set(required) - set(optional)
+    if extra:
+        raise ValueError(f"Extra dimensions: {extra}")

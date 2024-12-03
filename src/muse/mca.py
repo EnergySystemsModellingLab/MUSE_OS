@@ -499,7 +499,9 @@ def check_demand_fulfillment(market: Dataset, tol: float) -> bool:
     from logging import getLogger
 
     future = market.year[-1].item()
-    delta = (market.supply - market.consumption).sel(year=future)
+    delta = (market.supply.sum("timeslice") - market.consumption.sum("timeslice")).sel(
+        year=future
+    )
     unmet = (delta < tol).any([u for u in delta.dims if u != "commodity"])
 
     if unmet.any():

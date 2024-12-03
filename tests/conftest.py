@@ -362,6 +362,7 @@ def newcapa_agent(agent_args, technologies, stock) -> Agent:
 
 @fixture
 def retro_agent(agent_args, technologies, stock) -> Agent:
+    agent_args["investment"] = "adhoc"  # fails with scipy solver, see # 587
     return create_agent(agent_args, technologies, stock.capacity, "retrofit")
 
 
