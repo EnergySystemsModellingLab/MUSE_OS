@@ -86,7 +86,6 @@ class AbstractAgent(ABC):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        time_period: int,
     ) -> None:
         """Increments agent to the next time point (e.g. performing investments)."""
 
@@ -110,7 +109,7 @@ class Agent(AbstractAgent):
         search_rules: Optional[Callable] = None,
         objectives: Optional[Callable] = None,
         decision: Optional[Callable] = None,
-        year: int = 2010,
+        years: list[int] = [2010],
         maturity_threshold: float = 0,
         forecast: int = 5,
         housekeeping: Optional[Callable] = None,
@@ -134,7 +133,7 @@ class Agent(AbstractAgent):
             search_rules: method used to filter the search space
             objectives: One or more objectives by which to decide next investments.
             decision: single decision objective from one or more objectives.
-            year: year the agent is created / current year
+            years: time framework over which the agent will iterate
             maturity_threshold: threshold when filtering replacement
                 technologies with respect to market share
             forecast: Number of years the agent will forecast
@@ -168,8 +167,10 @@ class Agent(AbstractAgent):
             timeslice_level=timeslice_level,
         )
 
-        self.year = year
-        """ Current year. Incremented by one every time next is called."""
+        self.years = iter(years)
+        """Years to iterate over."""
+        self.year = next(self.years)
+        """Current year. Incremented every time next is called."""
         self.forecast = forecast
         """Number of years to look into the future for forecating purposed."""
         if search_rules is None:
@@ -250,9 +251,8 @@ class Agent(AbstractAgent):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        time_period: int,
     ) -> None:
-        self.year += time_period
+        self.year = next(self.years)
 
 
 class InvestingAgent(Agent):
@@ -288,7 +288,6 @@ class InvestingAgent(Agent):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        time_period: int,
     ) -> None:
         """Iterates agent one turn.
 
@@ -301,11 +300,11 @@ class InvestingAgent(Agent):
         """
         from logging import getLogger
 
-        current_year = self.year
+        # Increment the year
+        self.year = next(self.years)
 
         # Skip forward if demand is zero
         if demand.size == 0 or demand.sum() < 1e-12:
-            self.year += time_period
             return None
 
         # Calculate the search space
@@ -316,7 +315,6 @@ class InvestingAgent(Agent):
         # Skip forward if the search space is empty
         if any(u == 0 for u in search_space.shape):
             getLogger(__name__).critical("Search space is empty")
-            self.year += time_period
             return None
 
         # Calculate the decision metric
@@ -341,7 +339,7 @@ class InvestingAgent(Agent):
             search.search_space,
             market,
             technologies,
-            year=current_year,
+            year=self.year,
             timeslice_level=self.timeslice_level,
         )
 
@@ -350,20 +348,18 @@ class InvestingAgent(Agent):
             search[["search_space", "decision"]],
             technologies,
             constraints,
-            year=current_year,
+            year=self.year,
             timeslice_level=self.timeslice_level,
         )
 
         # Add investments
+        time_period = (market.year[1] - market.year[0]).item()
         self.add_investments(
             technologies,
             investments,
-            current_year=current_year,
+            current_year=self.year,
             time_period=time_period,
         )
-
-        # Increment the year
-        self.year += time_period
 
     def compute_decision(
         self,
