@@ -60,4 +60,4 @@ graphviz_output_format = "svg"
 
 # -- Options for HTML output -------------------------------------------------
 
-html_theme = "classic"
+html_theme = "sphinx_rtd_theme"
