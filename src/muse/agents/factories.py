@@ -7,7 +7,7 @@ from typing import Any, Callable, Optional, Union
 import xarray as xr
 
 from muse.agents.agent import Agent, InvestingAgent
-from muse.errors import RetrofitAgentNotDefined, TechnologyNotDefined
+from muse.errors import AgentShareNotDefined, TechnologyNotDefined
 
 
 def create_standard_agent(
@@ -251,7 +251,7 @@ def _shared_capacity(
     try:
         shares = technologies[share]
     except KeyError:
-        raise RetrofitAgentNotDefined
+        raise AgentShareNotDefined
 
     try:
         shares = shares.sel(technology=capacity.technology)

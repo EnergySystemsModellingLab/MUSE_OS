@@ -5,6 +5,9 @@
 # http://www.sphinx-doc.org/en/master/config
 # -- Project information -----------------------------------------------------
 
+from docutils import nodes
+from docutils.parsers.rst import roles
+
 project = "MUSE"
 copyright = "2024, Imperial College London"
 author = "Imperial College London"
@@ -61,3 +64,29 @@ graphviz_output_format = "svg"
 # -- Options for HTML output -------------------------------------------------
 
 html_theme = "sphinx_rtd_theme"
+
+# -- Render GitHub links -------------------------------------------------
+
+
+def github_role(name, rawtext, text, lineno, inliner, options=None, content=None):
+    """Creates links to issues/pull requests on the MUSE_OS GitHub site.
+
+    To use in markdown:
+    {github}`ISSUE_NUMBER` (e.g. {github}`123`)
+
+    To use in rst:
+    :github:`ISSUE_NUMBER` (e.g. :github:`123`)
+
+    In both cases this will create a clickable link (visible as #123) to the relevant
+    GitHub page (i.e. https://github.com/EnergySystemsModellingLab/MUSE_OS/issues/123)
+
+    The base URL is for the issues page, but this will also work for pull requests and
+    discussions, as GitHub will automatically redirect to the appropriate page.
+    """
+    base_url = "https://github.com/EnergySystemsModellingLab/MUSE_OS/issues/"
+    url = f"{base_url}{text}"
+    node = nodes.reference(rawtext, f"#{text}", refuri=url, **(options or {}))
+    return [node], []
+
+
+roles.register_canonical_role("github", github_role)
