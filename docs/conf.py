@@ -69,6 +69,20 @@ html_theme = "classic"
 
 
 def github_role(name, rawtext, text, lineno, inliner, options=None, content=None):
+    """Creates links to issues/pull requests on the MUSE_OS GitHub site.
+
+    To use in markdown:
+    {github}`ISSUE_NUMBER` (e.g. {github}`123`)
+
+    To use in rst:
+    :github:`ISSUE_NUMBER` (e.g. :github:`123`)
+
+    In both cases this will create a clickable link (visible as #123) to the relevant
+    GitHub page (i.e. https://github.com/EnergySystemsModellingLab/MUSE_OS/issues/123)
+
+    The base URL is for the issues page, but this will also work for pull requests and
+    discussions, as GitHub will automatically redirect to the appropriate page.
+    """
     base_url = "https://github.com/EnergySystemsModellingLab/MUSE_OS/issues/"
     url = f"{base_url}{text}"
     node = nodes.reference(rawtext, f"#{text}", refuri=url, **(options or {}))
