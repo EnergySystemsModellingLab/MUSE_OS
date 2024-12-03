@@ -442,7 +442,7 @@ Sectors contain a number of subsections:
         are registered via :py:func:`~muse.investments.register_investment`. At time of
         writing, three are available:
 
-        - "scipy" solver (default): Formulates investment as a true LP problem and solves it using
+        - "scipy" solver (default from v1.3): Formulates investment as a true LP problem and solves it using
           the `scipy solver`_.
 
         - an "adhoc" solver: Simple in-house solver that ranks the technologies
