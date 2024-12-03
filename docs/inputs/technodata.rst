@@ -136,32 +136,31 @@ InterestRate
    is the technology interest rate (called hurdle rates in other models).
    This is used for the interest used in the discount rate and corresponds to the interest built when borrowing money.
 
-Agent_0, ..., Agent_N
-   represent the allocation of the initial capacity to the each agent.
-   The column heading refers each retrofit agent "AgentShare" as defined in the agents' definition (see :ref:`inputs-agents`).
+Agent0, ..., AgentN
+   represent the proportion of initial capacity allocated to each agent.
+   Must match AgentShare names specified in the :ref:`inputs-agents` file.
+   All agents must be represented in the table.
+   If using "New" and "Retrofit" agents, you should create a column with the name of each "Retrofit" agent share.
+   If only using "New" agents, you should create a column with the name of each "New" agent share.
    The value corresponds to the ownership of the initial stock, as defined in the :ref:`inputs-existing-capacity` for the starting year of the simulation.
-   For example, if an initial boiler stock of 10 PJ is available, this is allocated to each agent according to the "AgentShare".
 
-   In a one-agent simulation, assuming that the *AgentShare* equals to *Agent_2* for the retrofit agent, the technodata should indicate the stock ownership as follows.
-   The modelled agent would own the total 10 PJ of the initial stock of boilers.
+   For example, in a one-agent simulation, you should specify the following to indicate full ownership of existing capacity by the agent (assuming an agent share name of "Agent1"):
 
    .. csv-table:: Techno-data: AgentShare - 1 agent
-      :header: ProcessName, RegionName, Time, ..., Agent_2
+      :header: ProcessName, RegionName, Time, ..., Agent1
 
       resBoilerElectric, region1, 2010, ..., 1
       resBoilerElectric, region1, 2030, ..., 1
 
-   In a two-agent simulation, a new column needs to be added for each retrofit agent belonging to the new-retrofit agent pair.
-   The column heading refers each retrofit agent "AgentShare" as defined in the agents' definition (see :ref:`inputs-agents`).
-   Assuming a split of the initial capacity into 30 \% and 70 \% for each retrofit agent, the model table would be setup as follows.
-   The values of the "AgentShare" needs to reflect the demand split represented by the "Quantity" attribute (see :ref:`inputs-agents`),
-   to make sure that the initial demand is fulfilled with the initial stock.
+   In a two-agent simulation, assuming a 30\% / 70\% split of initial capacity between the two agents, the table would be as follows:
 
    .. csv-table:: Techno-data: AgentShare - 2 agents
-      :header: ProcessName, RegionName, Time, ..., Agent_2, Agent_4
+      :header: ProcessName, RegionName, Time, ..., Agent1, Agent2
 
       resBoilerElectric, region1, 2010, ..., 0.3, 0.7
       resBoilerElectric, region1, 2030, ..., 0.3, 0.7
+
+   Values must sum to 1 for each row of the table.
 
 The input data has to be provided for the base year. Additional years within the time
 framework of the overall simulation can be defined. In this case, MUSE would interpolate
