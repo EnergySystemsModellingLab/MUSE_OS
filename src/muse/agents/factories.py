@@ -303,7 +303,7 @@ def _standardize_inputs(
 
 def _standardize_investing_inputs(
     search_rules: Optional[Union[str, Sequence[str]]] = None,
-    investment: Union[Callable, str, Mapping] = "adhoc",
+    investment: Union[Callable, str, Mapping] = "scipy",
     constraints: Optional[
         Union[Callable, str, Mapping, Sequence[Union[str, Mapping]]]
     ] = None,
