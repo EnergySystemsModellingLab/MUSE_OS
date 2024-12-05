@@ -22,29 +22,18 @@ def validate(func):
 
     @wraps(func)
     def wrapper(technologies, prices, capacity, production, consumption, **kwargs):
-        from muse.utilities import check_dimensions
-
-        # Check input dimensions
-        [tech_dim] = set(technologies.dims) - {"commodity", "timeslice", "region"}
-        assert tech_dim in ["technology", "asset", "replacement"]
-        region_dim = "region" if "region" in technologies.dims else None
-        check_dimensions(
-            technologies, [tech_dim, region_dim, "commodity"], optional=["timeslice"]
-        )
-        check_dimensions(prices, [region_dim, "timeslice", "commodity"])
-        check_dimensions(capacity, [tech_dim, region_dim, "asset"])
-        check_dimensions(
-            production, [tech_dim, region_dim, "timeslice", "commodity", "asset"]
-        )
-        check_dimensions(
-            consumption, [tech_dim, region_dim, "timeslice", "commodity", "asset"]
-        )
+        # Check input data
+        assert "year" not in technologies.dims
+        assert "year" not in prices.dims
+        assert "year" not in capacity.dims
+        assert "year" not in production.dims
+        assert "year" not in consumption.dims
 
         # Call the function
         result = func(technologies, prices, capacity, production, consumption, **kwargs)
 
-        # Check output dimensions
-        check_dimensions(result, [tech_dim, region_dim, "timeslice", "asset"])
+        # Check output data
+        assert "year" not in result.dims
         return result
 
     return wrapper
