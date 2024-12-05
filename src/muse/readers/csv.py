@@ -92,8 +92,6 @@ def read_technodictionary(filename: Union[str, Path]) -> xr.Dataset:
     data = data.drop(["process_name", "region_name", "time"], axis=1)
     data = data.apply(to_numeric, axis=0)
 
-    check_utilization_and_minimum_service_factors(data, filename)
-
     result = xr.Dataset.from_dataframe(data.sort_index())
     if "fuel" in result.variables:
         result["fuel"] = result.fuel.isel(region=0, year=0)
@@ -140,7 +138,6 @@ def read_technodata_timeslices(filename: Union[str, Path]) -> xr.Dataset:
     data = csv[csv.technology != "Unit"]
 
     data = data.apply(to_numeric)
-    check_utilization_and_minimum_service_factors(data, filename)
 
     ts = pd.MultiIndex.from_frame(
         data.drop(
@@ -402,6 +399,10 @@ def read_technologies(
     result = result.set_coords("comm_usage")
     if "comm_type" in result.data_vars or "comm_type" in result.coords:
         result = result.drop_vars("comm_type")
+
+    check_utilization_and_minimum_service_factors(
+        result.to_dataframe(), [tpath, ttpath]
+    )
 
     return result
 
@@ -869,7 +870,7 @@ def check_utilization_and_minimum_service_factors(data, filename):
     if "utilization_factor" not in data.columns:
         raise ValueError(
             f"""A technology needs to have a utilization factor defined for every
-             timeslice. Please check file {filename}."""
+             timeslice. Please check files: {filename}."""
         )
 
     _check_utilization_not_all_zero(data, filename)
