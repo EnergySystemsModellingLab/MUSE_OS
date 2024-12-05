@@ -6,8 +6,9 @@ data such as commodity prices, capacity of the technologies, and commodity-produ
 data for the technologies, where appropriate.
 """
 
+from __future__ import annotations
+
 from functools import wraps
-from typing import Optional
 
 import numpy as np
 import xarray as xr
@@ -46,7 +47,7 @@ def net_present_value(
     capacity: xr.DataArray,
     production: xr.DataArray,
     consumption: xr.DataArray,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Net present value (NPV) of the relevant technologies.
 
@@ -209,7 +210,7 @@ def equivalent_annual_cost(
     capacity: xr.DataArray,
     production: xr.DataArray,
     consumption: xr.DataArray,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Equivalent annual costs (or annualized cost) of a technology.
 
@@ -246,7 +247,7 @@ def levelized_cost_of_energy(
     production: xr.DataArray,
     consumption: xr.DataArray,
     method: str = "lifetime",
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Levelized cost of energy (LCOE) of technologies over their lifetime.
 
@@ -363,7 +364,7 @@ def levelized_cost_of_energy(
 
 
 def supply_cost(
-    production: xr.DataArray, lcoe: xr.DataArray, asset_dim: Optional[str] = "asset"
+    production: xr.DataArray, lcoe: xr.DataArray, asset_dim: str | None = "asset"
 ) -> xr.DataArray:
     """Supply cost given production and the levelized cost of energy.
 
