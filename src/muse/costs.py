@@ -84,27 +84,24 @@ def net_present_value(
     """
     from muse.quantities import production_amplitude
 
-    # Filtering of the inputs
-    techs = technologies[
-        [
-            "technical_life",
-            "interest_rate",
-            "cap_par",
-            "cap_exp",
-            "var_par",
-            "var_exp",
-            "fix_par",
-            "fix_exp",
-            "fixed_outputs",
-            "utilization_factor",
-        ]
-    ]
-
     # Filters
     environmentals = is_pollutant(technologies.comm_usage)
     material = is_material(technologies.comm_usage)
     products = is_enduse(technologies.comm_usage)
     fuels = is_fuel(technologies.comm_usage)
+
+    # Evolution of rates with time
+    life = technologies.technical_life.astype(int)
+    iyears = range(life.values.max())
+    years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
+    rates = broadcast_timeslice(
+        discount_factor(
+            years=years,
+            interest_rate=technologies.interest_rate,
+            mask=years <= life,
+        ),
+        level=timeslice_level,
+    )
 
     # Revenue (annual)
     prices_non_env = filter_input(prices, commodity=products)
@@ -112,7 +109,7 @@ def net_present_value(
 
     # Cost of installed capacity
     installed_capacity_costs = distribute_timeslice(
-        techs.cap_par * (capacity**techs.cap_exp), level=timeslice_level
+        technologies.cap_par * (capacity**technologies.cap_exp), level=timeslice_level
     )
 
     # Cost related to environmental products (annual)
@@ -129,26 +126,15 @@ def net_present_value(
 
     # Fixed costs (annual)
     fixed_costs = distribute_timeslice(
-        techs.fix_par * (capacity**techs.fix_exp), level=timeslice_level
+        technologies.fix_par * (capacity**technologies.fix_exp), level=timeslice_level
     )
 
     # Variable costs (annual)
-    tech_activity = production_amplitude(production, techs, timeslice_level)
+    tech_activity = production_amplitude(production, technologies, timeslice_level)
     variable_costs = broadcast_timeslice(
-        techs.var_par, level=timeslice_level
-    ) * tech_activity ** broadcast_timeslice(techs.var_exp, level=timeslice_level)
-
-    # Evolution of rates with time
-    life = techs.technical_life.astype(int)
-    iyears = range(life.values.max())
-    years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
-    rates = broadcast_timeslice(
-        discount_factor(
-            years=years,
-            interest_rate=techs.interest_rate,
-            mask=years <= life,
-        ),
-        level=timeslice_level,
+        technologies.var_par, level=timeslice_level
+    ) * tech_activity ** broadcast_timeslice(
+        technologies.var_exp, level=timeslice_level
     )
 
     # Total costs
@@ -270,34 +256,33 @@ def levelized_cost_of_energy(
     if method not in ["lifetime", "annual"]:
         raise ValueError("method must be either 'lifetime' or 'annual'.")
 
-    techs = technologies[
-        [
-            "technical_life",
-            "interest_rate",
-            "cap_par",
-            "cap_exp",
-            "var_par",
-            "var_exp",
-            "fix_par",
-            "fix_exp",
-            "fixed_outputs",
-            "utilization_factor",
-        ]
-    ]
-
     # Filters
     environmentals = is_pollutant(technologies.comm_usage)
     material = is_material(technologies.comm_usage)
     products = is_enduse(technologies.comm_usage)
     fuels = is_fuel(technologies.comm_usage)
 
+    # Evolution of rates with time
+    if method == "lifetime":
+        life = technologies.technical_life.astype(int)
+        iyears = range(life.values.max())
+        years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
+        rates = discount_factor(
+            years=years,
+            interest_rate=technologies.interest_rate,
+            mask=years <= life,
+        )
+    else:
+        rates = xr.DataArray([1], coords={"year": [0]}, dims="year")
+    rates = broadcast_timeslice(rates, level=timeslice_level)
+
     # Cost of installed capacity
     installed_capacity_costs = distribute_timeslice(
-        techs.cap_par * (capacity**techs.cap_exp), level=timeslice_level
+        technologies.cap_par * (capacity**technologies.cap_exp), level=timeslice_level
     )
     if method == "annual":
         installed_capacity_costs /= broadcast_timeslice(
-            techs.technical_life, level=timeslice_level
+            technologies.technical_life, level=timeslice_level
         )
 
     # Cost related to environmental products (annual)
@@ -314,28 +299,23 @@ def levelized_cost_of_energy(
 
     # Fixed costs (annual)
     fixed_costs = distribute_timeslice(
-        techs.fix_par * (capacity**techs.fix_exp), level=timeslice_level
+        technologies.fix_par * (capacity**technologies.fix_exp), level=timeslice_level
     )
 
     # Variable costs (annual)
-    tech_activity = production_amplitude(production, techs, timeslice_level)
+    tech_activity = production_amplitude(production, technologies, timeslice_level)
     variable_costs = broadcast_timeslice(
-        techs.var_par, level=timeslice_level
-    ) * tech_activity ** broadcast_timeslice(techs.var_exp, level=timeslice_level)
+        technologies.var_par, level=timeslice_level
+    ) * tech_activity ** broadcast_timeslice(
+        technologies.var_exp, level=timeslice_level
+    )
 
-    # Evolution of rates with time
-    if method == "lifetime":
-        life = techs.technical_life.astype(int)
-        iyears = range(life.values.max())
-        years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
-        rates = discount_factor(
-            years=years,
-            interest_rate=techs.interest_rate,
-            mask=years <= life,
-        )
-    else:
-        rates = xr.DataArray([1], coords={"year": [0]}, dims="year")
-    rates = broadcast_timeslice(rates, level=timeslice_level)
+    # Production (annual)
+    prod = (
+        production.where(production > 0.0, 1e-6)
+        .sel(commodity=products)
+        .sum("commodity")
+    )
 
     # Total costs
     total_costs = installed_capacity_costs + (
@@ -349,12 +329,7 @@ def levelized_cost_of_energy(
         * rates
     ).sum("year")
 
-    # Production
-    prod = (
-        production.where(production > 0.0, 1e-6)
-        .sel(commodity=products)
-        .sum("commodity")
-    )
+    # Total production
     total_prod = (prod * rates).sum("year")
 
     # LCOE
