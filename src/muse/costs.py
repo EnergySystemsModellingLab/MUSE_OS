@@ -100,6 +100,44 @@ def net_present_value(
         ]
     ]
 
+    # Filters
+    environmentals = is_pollutant(technologies.comm_usage)
+    material = is_material(technologies.comm_usage)
+    products = is_enduse(technologies.comm_usage)
+    fuels = is_fuel(technologies.comm_usage)
+
+    # Revenue (annual)
+    prices_non_env = filter_input(prices, commodity=products)
+    revenues = (production * prices_non_env).sum("commodity")
+
+    # Cost of installed capacity
+    installed_capacity_costs = distribute_timeslice(
+        techs.cap_par * (capacity**techs.cap_exp), level=timeslice_level
+    )
+
+    # Cost related to environmental products (annual)
+    prices_environmental = filter_input(prices, commodity=environmentals)
+    environmental_costs = (production * prices_environmental).sum("commodity")
+
+    # Fuel/energy costs (annual)
+    prices_fuel = filter_input(prices, commodity=fuels)
+    fuel_costs = (consumption * prices_fuel).sum("commodity")
+
+    # Cost related to material other than fuel/energy and environmentals (annual)
+    prices_material = filter_input(prices, commodity=material)
+    material_costs = (consumption * prices_material).sum("commodity")
+
+    # Fixed costs (annual)
+    fixed_costs = distribute_timeslice(
+        techs.fix_par * (capacity**techs.fix_exp), level=timeslice_level
+    )
+
+    # Variable costs (annual)
+    tech_activity = production_amplitude(production, techs, timeslice_level)
+    variable_costs = broadcast_timeslice(
+        techs.var_par, level=timeslice_level
+    ) * tech_activity ** broadcast_timeslice(techs.var_exp, level=timeslice_level)
+
     # Evolution of rates with time
     life = techs.technical_life.astype(int)
     iyears = range(life.values.max())
@@ -113,62 +151,23 @@ def net_present_value(
         level=timeslice_level,
     )
 
-    # Filters
-    environmentals = is_pollutant(technologies.comm_usage)
-    material = is_material(technologies.comm_usage)
-    products = is_enduse(technologies.comm_usage)
-    fuels = is_fuel(technologies.comm_usage)
-
-    # Revenue
-    prices_non_env = filter_input(prices, commodity=products)
-    raw_revenues = (production * prices_non_env * rates).sum(("commodity", "year"))
-
-    # Cost of installed capacity
-    installed_capacity_costs = distribute_timeslice(
-        techs.cap_par * (capacity**techs.cap_exp), level=timeslice_level
-    )
-
-    # Cost related to environmental products
-    prices_environmental = filter_input(prices, commodity=environmentals)
-    environmental_costs = (production * prices_environmental * rates).sum(
-        ("commodity", "year")
-    )
-
-    # Fuel/energy costs
-    prices_fuel = filter_input(prices, commodity=fuels)
-    fuel_costs = (consumption * prices_fuel * rates).sum(("commodity", "year"))
-
-    # Cost related to material other than fuel/energy and environmentals
-    prices_material = filter_input(prices, commodity=material)
-    material_costs = (consumption * prices_material * rates).sum(("commodity", "year"))
-
-    # Fixed costs
-    fixed_costs = (
-        distribute_timeslice(
-            techs.fix_par * (capacity**techs.fix_exp), level=timeslice_level
-        )
-        * rates
-    ).sum("year")
-
-    # Variable costs
-    tech_activity = production_amplitude(production, techs, timeslice_level)
-    variable_costs = (
+    # Total costs
+    total_costs = installed_capacity_costs + (
         (
-            broadcast_timeslice(techs.var_par, level=timeslice_level)
-            * tech_activity ** broadcast_timeslice(techs.var_exp, level=timeslice_level)
+            environmental_costs
+            + fuel_costs
+            + material_costs
+            + fixed_costs
+            + variable_costs
         )
         * rates
     ).sum("year")
+
+    # Total revenues
+    total_revenues = (revenues * rates).sum("year")
 
     # Net present value
-    result = raw_revenues - (
-        installed_capacity_costs
-        + fuel_costs
-        + environmental_costs
-        + material_costs
-        + fixed_costs
-        + variable_costs
-    )
+    result = total_revenues - total_costs
     return result
 
 
@@ -301,30 +300,30 @@ def levelized_cost_of_energy(
             techs.technical_life, level=timeslice_level
         )
 
-    # Cost related to environmental products
+    # Cost related to environmental products (annual)
     prices_environmental = filter_input(prices, commodity=environmentals)
     environmental_costs = (production * prices_environmental).sum("commodity")
 
-    # Fuel/energy costs
+    # Fuel/energy costs (annual)
     prices_fuel = filter_input(prices, commodity=fuels)
     fuel_costs = (consumption * prices_fuel).sum("commodity")
 
-    # Cost related to material other than fuel/energy and environmentals
+    # Cost related to material other than fuel/energy and environmentals (annual)
     prices_material = filter_input(prices, commodity=material)
     material_costs = (consumption * prices_material).sum("commodity")
 
-    # Fixed costs
+    # Fixed costs (annual)
     fixed_costs = distribute_timeslice(
         techs.fix_par * (capacity**techs.fix_exp), level=timeslice_level
     )
 
-    # Variable costs
+    # Variable costs (annual)
     tech_activity = production_amplitude(production, techs, timeslice_level)
     variable_costs = broadcast_timeslice(
         techs.var_par, level=timeslice_level
     ) * tech_activity ** broadcast_timeslice(techs.var_exp, level=timeslice_level)
 
-    # Rates for running costs
+    # Evolution of rates with time
     if method == "lifetime":
         life = techs.technical_life.astype(int)
         iyears = range(life.values.max())
