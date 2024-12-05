@@ -389,6 +389,7 @@ def annual_levelized_cost_of_energy(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
+    timeslice_level: Optional[str] = None,
     *args,
     **kwargs,
 ):
@@ -400,9 +401,8 @@ def annual_levelized_cost_of_energy(
     See :py:func:`muse.costs.annual_levelized_cost_of_energy` for more details.
 
     """
-    from muse.costs import annual_levelized_cost_of_energy as aLCOE
+    from muse.costs import levelized_cost_of_energy as LCOE
     from muse.quantities import consumption
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     capacity = capacity_to_service_demand(technologies, demand)
     production = (
@@ -414,12 +414,14 @@ def annual_levelized_cost_of_energy(
         technologies=technologies, prices=prices, production=production
     )
 
-    results = aLCOE(
+    results = LCOE(
         technologies=technologies,
         prices=prices,
         capacity=capacity,
         production=production,
         consumption=consump,
+        timeslice_level=timeslice_level,
+        method="annual",
     )
 
     return results.where(np.isfinite(results)).fillna(0.0)
@@ -441,7 +443,7 @@ def lifetime_levelized_cost_of_energy(
     The LCOE is set to zero for those timeslices where the production is zero, normally
     due to a zero utilisation factor.
     """
-    from muse.costs import lifetime_levelized_cost_of_energy as LCOE
+    from muse.costs import levelized_cost_of_energy as LCOE
     from muse.quantities import capacity_to_service_demand, consumption
 
     capacity = capacity_to_service_demand(
@@ -463,6 +465,7 @@ def lifetime_levelized_cost_of_energy(
         production=production,
         consumption=consump,
         timeslice_level=timeslice_level,
+        method="lifetime",
     )
 
     return results.where(np.isfinite(results)).fillna(0.0)

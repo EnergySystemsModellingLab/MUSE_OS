@@ -100,10 +100,10 @@ def test_equivalent_annual_cost(
 def test_lifetime_levelized_cost_of_energy(
     _technologies, _prices, _capacity, _production, _consumption
 ):
-    from muse.costs import lifetime_levelized_cost_of_energy
+    from muse.costs import levelized_cost_of_energy
 
-    result = lifetime_levelized_cost_of_energy(
-        _technologies, _prices, _capacity, _production, _consumption
+    result = levelized_cost_of_energy(
+        _technologies, _prices, _capacity, _production, _consumption, method="lifetime"
     )
     assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
 
@@ -111,19 +111,19 @@ def test_lifetime_levelized_cost_of_energy(
 def test_annual_levelized_cost_of_energy(
     _technologies, _prices, _capacity, _production, _consumption
 ):
-    from muse.costs import annual_levelized_cost_of_energy
+    from muse.costs import levelized_cost_of_energy
 
-    result = annual_levelized_cost_of_energy(
-        _technologies, _prices, _capacity, _production, _consumption
+    result = levelized_cost_of_energy(
+        _technologies, _prices, _capacity, _production, _consumption, method="annual"
     )
     assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
 
 
 def test_supply_cost(_technologies, _prices, _capacity, _production, _consumption):
-    from muse.costs import annual_levelized_cost_of_energy, supply_cost
+    from muse.costs import levelized_cost_of_energy, supply_cost
 
-    lcoe = annual_levelized_cost_of_energy(
-        _technologies, _prices, _capacity, _production, _consumption
+    lcoe = levelized_cost_of_energy(
+        _technologies, _prices, _capacity, _production, _consumption, method="annual"
     )
     result = supply_cost(_production, lcoe)
     assert set(result.dims) == {

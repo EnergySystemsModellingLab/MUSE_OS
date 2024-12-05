@@ -239,12 +239,13 @@ def equivalent_annual_cost(
 
 
 @validate
-def lifetime_levelized_cost_of_energy(
+def levelized_cost_of_energy(
     technologies: xr.Dataset,
     prices: xr.DataArray,
     capacity: xr.DataArray,
     production: xr.DataArray,
     consumption: xr.DataArray,
+    method: str = "lifetime",
     timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Levelized cost of energy (LCOE) of technologies over their lifetime.
@@ -258,12 +259,16 @@ def lifetime_levelized_cost_of_energy(
         production: xr.DataArray with commodity production by the relevant technologies
         consumption: xr.DataArray with commodity consumption by the relevant
             technologies
+        method: "lifetime" or "annual"
         timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
     """
     from muse.quantities import production_amplitude
+
+    if method not in ["lifetime", "annual"]:
+        raise ValueError("method must be either 'lifetime' or 'annual'.")
 
     techs = technologies[
         [
@@ -279,19 +284,6 @@ def lifetime_levelized_cost_of_energy(
             "utilization_factor",
         ]
     ]
-
-    # Evolution of rates with time
-    life = techs.technical_life.astype(int)
-    iyears = range(life.values.max())
-    years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
-    rates = broadcast_timeslice(
-        discount_factor(
-            years=years,
-            interest_rate=techs.interest_rate,
-            mask=years <= life,
-        ),
-        level=timeslice_level,
-    )
 
     # Filters
     environmentals = is_pollutant(technologies.comm_usage)
@@ -303,123 +295,10 @@ def lifetime_levelized_cost_of_energy(
     installed_capacity_costs = distribute_timeslice(
         techs.cap_par * (capacity**techs.cap_exp), level=timeslice_level
     )
-
-    # Cost related to environmental products
-    prices_environmental = filter_input(prices, commodity=environmentals)
-    environmental_costs = (production * prices_environmental * rates).sum(
-        ("commodity", "year")
-    )
-
-    # Fuel/energy costs
-    prices_fuel = filter_input(prices, commodity=fuels)
-    fuel_costs = (consumption * prices_fuel * rates).sum(("commodity", "year"))
-
-    # Cost related to material other than fuel/energy and environmentals
-    prices_material = filter_input(prices, commodity=material)
-    material_costs = (consumption * prices_material * rates).sum(("commodity", "year"))
-
-    # Fixed costs
-    fixed_costs = (
-        distribute_timeslice(
-            techs.fix_par * (capacity**techs.fix_exp), level=timeslice_level
+    if method == "annual":
+        installed_capacity_costs /= broadcast_timeslice(
+            techs.technical_life, level=timeslice_level
         )
-        * rates
-    ).sum("year")
-
-    # Variable costs
-    tech_activity = production_amplitude(production, techs, timeslice_level)
-    variable_costs = (
-        (
-            broadcast_timeslice(techs.var_par, level=timeslice_level)
-            * tech_activity ** broadcast_timeslice(techs.var_exp, level=timeslice_level)
-        )
-        * rates
-    ).sum("year")
-
-    # Production
-    prod = (
-        production.where(production > 0.0, 1e-6)
-        .sel(commodity=products)
-        .sum("commodity")
-    )
-    total_prod = (prod * rates).sum("year")
-
-    # LCOE
-    result = (
-        installed_capacity_costs
-        + fuel_costs
-        + environmental_costs
-        + material_costs
-        + fixed_costs
-        + variable_costs
-    ) / total_prod
-
-    return result
-
-
-@validate
-def annual_levelized_cost_of_energy(
-    technologies: xr.Dataset,
-    prices: xr.DataArray,
-    capacity: xr.DataArray,
-    production: xr.DataArray,
-    consumption: xr.DataArray,
-    timeslice_level: Optional[str] = None,
-) -> xr.DataArray:
-    """Undiscounted levelized cost of energy (LCOE) of technologies on each given year.
-
-    It mostly follows the `simplified LCOE`_ given by NREL. In the argument description,
-    we use the following:
-
-    * [h]: hour
-    * [y]: year
-    * [$]: unit of currency
-    * [E]: unit of energy
-    * [1]: dimensionless
-
-    Arguments:
-        technologies: xr.Dataset of technology parameters
-        prices: xr.DataArray with commodity prices
-        capacity: xr.DataArray with the capacity of the relevant technologies
-        production: xr.DataArray with commodity production by the relevant technologies
-        consumption: xr.DataArray with commodity consumption by the relevant
-            technologies
-        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
-
-    Return:
-        The lifetime LCOE in [$/(Eh)] for each technology at each timeslice.
-
-    .. _simplified LCOE: https://www.nrel.gov/analysis/tech-lcoe-documentation.html
-    """
-    from muse.quantities import production_amplitude
-
-    techs = technologies[
-        [
-            "technical_life",
-            "interest_rate",
-            "cap_par",
-            "cap_exp",
-            "var_par",
-            "var_exp",
-            "fix_par",
-            "fix_exp",
-            "fixed_outputs",
-            "fixed_inputs",
-            "flexible_inputs",
-            "utilization_factor",
-        ]
-    ]
-
-    # Filters
-    environmentals = is_pollutant(technologies.comm_usage)
-    material = is_material(technologies.comm_usage)
-    products = is_enduse(technologies.comm_usage)
-    fuels = is_fuel(technologies.comm_usage)
-
-    # Cost of installed capacity (annualized)
-    installed_capacity_costs = distribute_timeslice(
-        techs.cap_par * (capacity**techs.cap_exp), level=timeslice_level
-    ) / broadcast_timeslice(techs.technical_life, level=timeslice_level)
 
     # Cost related to environmental products
     prices_environmental = filter_input(prices, commodity=environmentals)
@@ -444,23 +323,42 @@ def annual_levelized_cost_of_energy(
         techs.var_par, level=timeslice_level
     ) * tech_activity ** broadcast_timeslice(techs.var_exp, level=timeslice_level)
 
+    # Rates for running costs
+    if method == "lifetime":
+        life = techs.technical_life.astype(int)
+        iyears = range(life.values.max())
+        years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
+        rates = discount_factor(
+            years=years,
+            interest_rate=techs.interest_rate,
+            mask=years <= life,
+        )
+    else:
+        rates = xr.DataArray([1], coords={"year": [0]}, dims="year")
+    rates = broadcast_timeslice(rates, level=timeslice_level)
+
+    # Total costs
+    total_costs = installed_capacity_costs + (
+        (
+            environmental_costs
+            + fuel_costs
+            + material_costs
+            + fixed_costs
+            + variable_costs
+        )
+        * rates
+    ).sum("year")
+
     # Production
     prod = (
         production.where(production > 0.0, 1e-6)
         .sel(commodity=products)
         .sum("commodity")
     )
+    total_prod = (prod * rates).sum("year")
 
     # LCOE
-    result = (
-        installed_capacity_costs
-        + fuel_costs
-        + environmental_costs
-        + material_costs
-        + fixed_costs
-        + variable_costs
-    ) / prod
-
+    result = total_costs / total_prod
     return result
 
 
@@ -478,8 +376,7 @@ def supply_cost(
             `muse.quantities.production`.
         lcoe: Levelized cost of energy for each good produced. In practice, it can be
             obtained from market prices via
-            `muse.costs.annual_levelized_cost_of_energy` or
-            `muse.costs.lifetime_levelized_cost_of_energy`.
+            `muse.costs.levelized_cost_of_energy`.
         asset_dim: Name of the dimension(s) holding assets, processes or technologies.
     """
     data = xr.Dataset(dict(production=production, prices=production * lcoe))
