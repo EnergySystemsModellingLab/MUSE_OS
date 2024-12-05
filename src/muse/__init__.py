@@ -1,8 +1,12 @@
 """MUSE model."""
 
 import os
+from importlib.metadata import PackageNotFoundError, version
 
-VERSION = "1.3.0"
+try:
+    VERSION = version("MUSE_OS")
+except PackageNotFoundError:
+    pass
 
 
 def _create_logger(color: bool = True):
