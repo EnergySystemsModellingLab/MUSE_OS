@@ -4,7 +4,7 @@ import os
 from importlib.metadata import PackageNotFoundError, version
 
 try:
-    VERSION = version("MUSE_OS")
+    __version__ = version("MUSE_OS")
 except PackageNotFoundError:
     pass
 
@@ -105,5 +105,5 @@ __all__ = [
     "objectives",
     "outputs",
     "sectors",
-    VERSION,
+    __version__,
 ]
