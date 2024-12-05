@@ -105,5 +105,4 @@ __all__ = [
     "objectives",
     "outputs",
     "sectors",
-    __version__,
 ]
