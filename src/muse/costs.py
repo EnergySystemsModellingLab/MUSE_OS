@@ -6,6 +6,7 @@ data such as commodity prices, capacity of the technologies, and commodity-produ
 data for the technologies, where appropriate.
 """
 
+from functools import wraps
 from typing import Optional
 
 import numpy as np
@@ -16,6 +17,40 @@ from muse.timeslices import broadcast_timeslice, distribute_timeslice
 from muse.utilities import filter_input
 
 
+def validate(func):
+    """Decorator to validate the input and output dimensions of the cost functions."""
+
+    @wraps(func)
+    def wrapper(technologies, prices, capacity, production, consumption, **kwargs):
+        from muse.utilities import check_dimensions
+
+        # Check input dimensions
+        [tech_dim] = set(technologies.dims) - {"commodity", "timeslice", "region"}
+        assert tech_dim in ["technology", "asset", "replacement"]
+        region_dim = "region" if "region" in technologies.dims else None
+        check_dimensions(
+            technologies, [tech_dim, region_dim, "commodity"], optional=["timeslice"]
+        )
+        check_dimensions(prices, [region_dim, "timeslice", "commodity"])
+        check_dimensions(capacity, [tech_dim, region_dim, "asset"])
+        check_dimensions(
+            production, [tech_dim, region_dim, "timeslice", "commodity", "asset"]
+        )
+        check_dimensions(
+            consumption, [tech_dim, region_dim, "timeslice", "commodity", "asset"]
+        )
+
+        # Call the function
+        result = func(technologies, prices, capacity, production, consumption, **kwargs)
+
+        # Check output dimensions
+        check_dimensions(result, [tech_dim, region_dim, "timeslice", "asset"])
+        return result
+
+    return wrapper
+
+
+@validate
 def net_present_value(
     technologies: xr.Dataset,
     prices: xr.DataArray,
@@ -58,12 +93,6 @@ def net_present_value(
         xr.DataArray with the NPV calculated for the relevant technologies
     """
     from muse.quantities import production_amplitude
-
-    assert "year" not in technologies.dims
-    assert "year" not in prices.dims
-    assert "year" not in capacity.dims
-    assert "year" not in production.dims
-    assert "year" not in consumption.dims
 
     # Filtering of the inputs
     techs = technologies[
@@ -153,6 +182,7 @@ def net_present_value(
     return result
 
 
+@validate
 def net_present_cost(
     technologies: xr.Dataset,
     prices: xr.DataArray,
@@ -180,15 +210,10 @@ def net_present_cost(
     Return:
         xr.DataArray with the NPC calculated for the relevant technologies
     """
-    assert "year" not in technologies.dims
-    assert "year" not in prices.dims
-    assert "year" not in capacity.dims
-    assert "year" not in production.dims
-    assert "year" not in consumption.dims
-
     return -net_present_value(technologies, prices, capacity, production, consumption)
 
 
+@validate
 def equivalent_annual_cost(
     technologies: xr.Dataset,
     prices: xr.DataArray,
@@ -219,17 +244,12 @@ def equivalent_annual_cost(
     Return:
         xr.DataArray with the EAC calculated for the relevant technologies
     """
-    assert "year" not in technologies.dims
-    assert "year" not in prices.dims
-    assert "year" not in capacity.dims
-    assert "year" not in production.dims
-    assert "year" not in consumption.dims
-
     npc = net_present_cost(technologies, prices, capacity, production, consumption)
     crf = capital_recovery_factor(technologies)
     return npc * broadcast_timeslice(crf, level=timeslice_level)
 
 
+@validate
 def lifetime_levelized_cost_of_energy(
     technologies: xr.Dataset,
     prices: xr.DataArray,
@@ -255,12 +275,6 @@ def lifetime_levelized_cost_of_energy(
         xr.DataArray with the LCOE calculated for the relevant technologies
     """
     from muse.quantities import production_amplitude
-
-    assert "year" not in technologies.dims
-    assert "year" not in prices.dims
-    assert "year" not in capacity.dims
-    assert "year" not in production.dims
-    assert "year" not in consumption.dims
 
     techs = technologies[
         [
@@ -354,6 +368,7 @@ def lifetime_levelized_cost_of_energy(
     return result
 
 
+@validate
 def annual_levelized_cost_of_energy(
     technologies: xr.Dataset,
     prices: xr.DataArray,
@@ -388,12 +403,6 @@ def annual_levelized_cost_of_energy(
     .. _simplified LCOE: https://www.nrel.gov/analysis/tech-lcoe-documentation.html
     """
     from muse.quantities import production_amplitude
-
-    assert "year" not in technologies.dims
-    assert "year" not in prices.dims
-    assert "year" not in capacity.dims
-    assert "year" not in production.dims
-    assert "year" not in consumption.dims
 
     techs = technologies[
         [

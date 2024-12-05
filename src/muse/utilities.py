@@ -661,13 +661,15 @@ def aggregate_technology_model(
 
 def check_dimensions(
     data: xr.DataArray | xr.Dataset,
-    required: Iterable[str] = (),
-    optional: Iterable[str] = (),
+    required: Iterable[str | None] = (),
+    optional: Iterable[str | None] = (),
 ):
     """Ensure that an array has the required dimensions.
 
     This will check that all required dimensions are present, and that no other
     dimensions are present, apart from those listed as optional.
+
+    If None is present as a dimensions name, it is ignored.
 
     Args:
         data: DataArray or Dataset to check dimensions of
@@ -675,9 +677,11 @@ def check_dimensions(
         optional: List of dimension names that may be present
     """
     present = set(data.dims)
-    missing = set(required) - present
+    _required = set(filter(None, required))
+    missing = _required - present
     if missing:
         raise ValueError(f"Missing required dimensions: {missing}")
-    extra = present - set(required) - set(optional)
+    _optional = set(filter(None, optional))
+    extra = present - _required - _optional
     if extra:
         raise ValueError(f"Extra dimensions: {extra}")
