@@ -1,9 +1,8 @@
 """MUSE model."""
 
 import os
-from importlib.metadata import PackageNotFoundError, version
-
 from contextlib import suppress
+from importlib.metadata import PackageNotFoundError, version
 
 with suppress(PackageNotFoundError):
     __version__ = version("MUSE_OS")
