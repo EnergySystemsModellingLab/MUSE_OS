@@ -92,8 +92,6 @@ def read_technodictionary(filename: Union[str, Path]) -> xr.Dataset:
     data = data.drop(["process_name", "region_name", "time"], axis=1)
     data = data.apply(to_numeric, axis=0)
 
-    check_utilization_and_minimum_service_factors(data, filename)
-
     result = xr.Dataset.from_dataframe(data.sort_index())
     if "fuel" in result.variables:
         result["fuel"] = result.fuel.isel(region=0, year=0)
@@ -140,7 +138,6 @@ def read_technodata_timeslices(filename: Union[str, Path]) -> xr.Dataset:
     data = csv[csv.technology != "Unit"]
 
     data = data.apply(to_numeric)
-    check_utilization_and_minimum_service_factors(data, filename)
 
     ts = pd.MultiIndex.from_frame(
         data.drop(
@@ -402,6 +399,10 @@ def read_technologies(
     result = result.set_coords("comm_usage")
     if "comm_type" in result.data_vars or "comm_type" in result.coords:
         result = result.drop_vars("comm_type")
+
+    check_utilization_and_minimum_service_factors(
+        result.to_dataframe(), [tpath, ttpath]
+    )
 
     return result
 
@@ -865,11 +866,15 @@ def read_trade(
     return result.rename(src_region="region")
 
 
-def check_utilization_and_minimum_service_factors(data, filename):
+def check_utilization_and_minimum_service_factors(
+    data: pd.DataFrame, filename: Union[str, list[str]]
+) -> None:
+    filename = [filename] if isinstance(filename, (str, Path)) else filename
+    filename = [name for name in filename if name is not None]
     if "utilization_factor" not in data.columns:
         raise ValueError(
             f"""A technology needs to have a utilization factor defined for every
-             timeslice. Please check file {filename}."""
+             timeslice. Please check files: {filename}."""
         )
 
     _check_utilization_not_all_zero(data, filename)
@@ -886,7 +891,7 @@ def _check_utilization_not_all_zero(data, filename):
     if (utilization_sum.utilization_factor == 0).any():
         raise ValueError(
             f"""A technology can not have a utilization factor of 0 for every
-                timeslice. Please check file {filename}."""
+                timeslice. Please check files: {filename}."""
         )
 
 
@@ -895,7 +900,7 @@ def _check_utilization_in_range(data, filename):
     if not np.all((0 <= utilization) & (utilization <= 1)):
         raise ValueError(
             f"""Utilization factor values must all be between 0 and 1 inclusive.
-            Please check file {filename}."""
+            Please check files: {filename}."""
         )
 
 
@@ -912,5 +917,5 @@ def _check_minimum_service_factors_in_range(data, filename):
     if not np.all((0 <= min_service_factor) & (min_service_factor <= 1)):
         raise ValueError(
             f"""Minimum service factor values must all be between 0 and 1 inclusive.
-             Please check file {filename}."""
+             Please check files: {filename}."""
         )
