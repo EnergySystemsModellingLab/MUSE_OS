@@ -33,6 +33,7 @@ def cost(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
         assert "year" not in result.dims
+        assert "timeslice" in result.dims
         return result
 
     return wrapper
