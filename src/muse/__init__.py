@@ -3,10 +3,10 @@
 import os
 from importlib.metadata import PackageNotFoundError, version
 
-try:
+from contextlib import suppress
+
+with suppress(PackageNotFoundError):
     __version__ = version("MUSE_OS")
-except PackageNotFoundError:
-    pass
 
 
 def _create_logger(color: bool = True):
