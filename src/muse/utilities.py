@@ -676,12 +676,13 @@ def check_dimensions(
         required: List of dimension names that must be present
         optional: List of dimension names that may be present
     """
-    present = set(data.dims)
     _required = set(filter(None, required))
+    _optional = set(filter(None, optional))
+
+    present = set(data.dims)
     missing = _required - present
     if missing:
         raise ValueError(f"Missing required dimensions: {missing}")
-    _optional = set(filter(None, optional))
     extra = present - _required - _optional
     if extra:
         raise ValueError(f"Extra dimensions: {extra}")

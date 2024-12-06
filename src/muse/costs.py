@@ -90,7 +90,7 @@ def net_present_value(
     products = is_enduse(technologies.comm_usage)
     fuels = is_fuel(technologies.comm_usage)
 
-    # Evolution of rates with time
+    # Calculate mask for weighted sum of costs across years
     life = technologies.technical_life.astype(int)
     iyears = range(life.values.max())
     years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
@@ -238,6 +238,19 @@ def levelized_cost_of_energy(
 
     It follows the `simplified LCOE` given by NREL.
 
+    Can calculate either a lifetime or annual LCOE.
+    - lifetime: the average cost per unit of production over the entire lifetime of the
+        technology.
+        Annual running costs and production are calculated for the full lifetime of the
+        technology, and adjusted to a present value using the discount rate. Total
+        costs (running costs over the lifetime + initial capital costs) are then divided
+        by total production to get the average cost per unit of production.
+    - annual: the average cost per unit of production in a single year.
+        Annual running costs and production are calculated for a single year. Capital
+        costs are divided by the lifetime of the technology to get an annualized cost.
+        Total costs (annualized capital costs + running costs) are then divided by
+        production to get the average cost per unit of production.
+
     Arguments:
         technologies: xr.Dataset of technology parameters
         prices: xr.DataArray with commodity prices
@@ -262,8 +275,9 @@ def levelized_cost_of_energy(
     products = is_enduse(technologies.comm_usage)
     fuels = is_fuel(technologies.comm_usage)
 
-    # Evolution of rates with time
+    # Calculate mask for weighted sum of costs/production across years
     if method == "lifetime":
+        # Weighting is the discount factor over the lifetime of each technology
         life = technologies.technical_life.astype(int)
         iyears = range(life.values.max())
         years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
@@ -272,7 +286,8 @@ def levelized_cost_of_energy(
             interest_rate=technologies.interest_rate,
             mask=years <= life,
         )
-    else:
+    else:  # method == "annual"
+        # Single year with weight 1
         rates = xr.DataArray([1], coords={"year": [0]}, dims="year")
     rates = broadcast_timeslice(rates, level=timeslice_level)
 
@@ -281,6 +296,7 @@ def levelized_cost_of_energy(
         technologies.cap_par * (capacity**technologies.cap_exp), level=timeslice_level
     )
     if method == "annual":
+        # Divide by lifetime to get annualized cost
         installed_capacity_costs /= broadcast_timeslice(
             technologies.technical_life, level=timeslice_level
         )
@@ -314,7 +330,9 @@ def levelized_cost_of_energy(
     prod = (
         production.where(production > 0.0, 1e-6)
         .sel(commodity=products)
-        .sum("commodity")
+        .sum(
+            "commodity"
+        )  # TODO: is this the correct way to deal with multiple products?
     )
 
     # Total costs
