@@ -20,47 +20,18 @@ from muse.utilities import filter_input
 
 
 def cost(func):
-    """Decorator to validate the input and output dimensions of the cost functions.
+    """Decorator to validate the output dimensions of the cost functions.
 
-    Rules:
-    - Cost functions only support parameter sets for a single year (i.e. no "year"
-        dimension in any of the inputs). Costs are then calculated for a single year
-        with the parameters provided. In the case of lifetime costs (e.g. lifetime
-        LCOE), costs are calculated assuming fixed parameters over the lifetime of the
-        technology.
+    Cost functions should only take parameters for a single year (i.e. no "year"
+    dimension in any of the inputs). Costs are then calculated for a single year
+    with the parameters provided. In the case of lifetime costs (e.g. lifetime
+    LCOE), costs are calculated assuming fixed parameters over the lifetime of the
+    technology.
     """
 
     @wraps(func)
-    def wrapper(
-        technologies: xr.Dataset,
-        prices: xr.DataArray,
-        capacity: xr.DataArray,
-        production: xr.DataArray,
-        consumption: xr.DataArray,
-        timeslice_level: str | None = None,
-        *args,
-        **kwargs,
-    ):
-        # Check input data
-        assert "year" not in technologies.dims
-        assert "year" not in prices.dims
-        assert "year" not in capacity.dims
-        assert "year" not in production.dims
-        assert "year" not in consumption.dims
-
-        # Call the function
-        result = func(
-            technologies,
-            prices,
-            capacity,
-            production,
-            consumption,
-            timeslice_level,
-            *args,
-            **kwargs,
-        )
-
-        # Check output data
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
         assert "year" not in result.dims
         return result
 
@@ -70,10 +41,7 @@ def cost(func):
 @cost
 def capital_costs(
     technologies: xr.Dataset,
-    prices: xr.DataArray,
     capacity: xr.DataArray,
-    production: xr.DataArray,
-    consumption: xr.DataArray,
     timeslice_level: str | None = None,
     method: str = "lifetime",
 ):
@@ -92,6 +60,61 @@ def capital_costs(
 
 
 @cost
+def environmental_costs(
+    technologies: xr.Dataset, prices: xr.DataArray, production: xr.DataArray
+) -> xr.DataArray:
+    environmentals = is_pollutant(technologies.comm_usage)
+    prices_environmental = filter_input(prices, commodity=environmentals)
+    environmental_costs = (production * prices_environmental).sum("commodity")
+    return environmental_costs
+
+
+@cost
+def fuel_costs(
+    technologies: xr.Dataset, prices: xr.DataArray, consumption: xr.DataArray
+) -> xr.DataArray:
+    fuels = is_fuel(technologies.comm_usage)
+    prices_fuel = filter_input(prices, commodity=fuels)
+    fuel_costs = (consumption * prices_fuel).sum("commodity")
+    return fuel_costs
+
+
+@cost
+def material_costs(
+    technologies: xr.Dataset, prices: xr.DataArray, consumption: xr.DataArray
+) -> xr.DataArray:
+    material = is_material(technologies.comm_usage)
+    prices_material = filter_input(prices, commodity=material)
+    material_costs = (consumption * prices_material).sum("commodity")
+    return material_costs
+
+
+@cost
+def fixed_costs(
+    technologies: xr.Dataset, capacity: xr.DataArray, timeslice_level: str | None = None
+) -> xr.DataArray:
+    fixed_costs = distribute_timeslice(
+        technologies.fix_par * (capacity**technologies.fix_exp), level=timeslice_level
+    )
+    return fixed_costs
+
+
+@cost
+def variable_costs(
+    technologies: xr.Dataset,
+    production: xr.DataArray,
+    timeslice_level: str | None = None,
+) -> xr.DataArray:
+    tech_activity = production_amplitude(production, technologies, timeslice_level)
+    variable_costs = broadcast_timeslice(
+        technologies.var_par, level=timeslice_level
+    ) * tech_activity ** broadcast_timeslice(
+        technologies.var_exp, level=timeslice_level
+    )
+    return variable_costs
+
+
+@cost
 def running_costs(
     technologies: xr.Dataset,
     prices: xr.DataArray,
@@ -100,39 +123,21 @@ def running_costs(
     consumption: xr.DataArray,
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
-    # Cost related to environmental products
-    environmentals = is_pollutant(technologies.comm_usage)
-    prices_environmental = filter_input(prices, commodity=environmentals)
-    environmental_costs = (production * prices_environmental).sum("commodity")
+    _environmental_costs = environmental_costs(technologies, prices, production)
+    _fuel_costs = fuel_costs(technologies, prices, consumption)
+    _material_costs = material_costs(technologies, prices, consumption)
+    _fixed_costs = fixed_costs(technologies, capacity, timeslice_level)
+    _variable_costs = variable_costs(technologies, production, timeslice_level)
 
-    # Fuel/energy costs
-    fuels = is_fuel(technologies.comm_usage)
-    prices_fuel = filter_input(prices, commodity=fuels)
-    fuel_costs = (consumption * prices_fuel).sum("commodity")
-
-    # Cost related to material other than fuel/energy and environmentals
-    material = is_material(technologies.comm_usage)
-    prices_material = filter_input(prices, commodity=material)
-    material_costs = (consumption * prices_material).sum("commodity")
-
-    # Fixed costs
-    fixed_costs = distribute_timeslice(
-        technologies.fix_par * (capacity**technologies.fix_exp), level=timeslice_level
+    # Total running costs
+    result = (
+        _environmental_costs
+        + _fuel_costs
+        + _material_costs
+        + _fixed_costs
+        + _variable_costs
     )
-
-    # Variable costs
-    tech_activity = production_amplitude(production, technologies, timeslice_level)
-    variable_costs = broadcast_timeslice(
-        technologies.var_par, level=timeslice_level
-    ) * tech_activity ** broadcast_timeslice(
-        technologies.var_exp, level=timeslice_level
-    )
-
-    # Total costs
-    total_costs = (
-        environmental_costs + fuel_costs + material_costs + fixed_costs + variable_costs
-    )
-    return total_costs
+    return result
 
 
 @cost
@@ -177,15 +182,7 @@ def net_present_value(
         raise ValueError("method must be either 'lifetime' or 'annual'.")
 
     # Capital costs (lifetime or annual depending on method)
-    _capital_costs = capital_costs(
-        technologies,
-        prices,
-        capacity,
-        production,
-        consumption,
-        timeslice_level,
-        method,
-    )
+    _capital_costs = capital_costs(technologies, capacity, timeslice_level, method)
 
     # Revenue (annual)
     products = is_enduse(technologies.comm_usage)
@@ -239,9 +236,10 @@ def net_present_cost(
     Return:
         xr.DataArray with the NPC calculated for the relevant technologies
     """
-    return -net_present_value(
+    result = -net_present_value(
         technologies, prices, capacity, production, consumption, timeslice_level, method
     )
+    return result
 
 
 @cost
@@ -285,7 +283,8 @@ def equivalent_annual_cost(
         method="lifetime",
     )
     crf = capital_recovery_factor(technologies)
-    return npc * broadcast_timeslice(crf, level=timeslice_level)
+    result = npc * broadcast_timeslice(crf, level=timeslice_level)
+    return result
 
 
 @cost
@@ -332,15 +331,7 @@ def levelized_cost_of_energy(
         raise ValueError("method must be either 'lifetime' or 'annual'.")
 
     # Capital costs (lifetime or annual depending on method)
-    _capital_costs = capital_costs(
-        technologies,
-        prices,
-        capacity,
-        production,
-        consumption,
-        timeslice_level,
-        method,
-    )
+    _capital_costs = capital_costs(technologies, capacity, timeslice_level, method)
 
     # Running costs (annual)
     _running_costs = running_costs(
@@ -417,6 +408,8 @@ def capital_recovery_factor(technologies: xr.Dataset) -> xr.DataArray:
 
 
 def annual_to_lifetime(costs, technologies, timeslice_level=None):
+    assert "year" not in costs.dims
+    assert "year" not in technologies.dims
     life = technologies.technical_life.astype(int)
     iyears = range(life.values.max())
     years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
