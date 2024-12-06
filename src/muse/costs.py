@@ -173,11 +173,10 @@ def net_present_value(
     Return:
         xr.DataArray with the NPV calculated for the relevant technologies
     """
-    # Mask for weighted sum of costs/production across years
-    rates = annual_weights(technologies, method)
-    rates = broadcast_timeslice(rates, level=timeslice_level)
+    if method not in ["lifetime", "annual"]:
+        raise ValueError("method must be either 'lifetime' or 'annual'.")
 
-    # Capital costs
+    # Capital costs (lifetime or annual depending on method)
     _capital_costs = capital_costs(
         technologies,
         prices,
@@ -198,14 +197,13 @@ def net_present_value(
         technologies, prices, capacity, production, consumption, timeslice_level
     )
 
-    # Total costs
-    total_costs = _capital_costs + (_running_costs * rates).sum("year")
-
-    # Total revenues
-    total_revenues = (revenues * rates).sum("year")
+    # If method is lifetime, have to adjust running costs and revenues
+    if method == "lifetime":
+        _running_costs = annual_to_lifetime(_running_costs, technologies)
+        revenues = annual_to_lifetime(revenues, technologies)
 
     # Net present value
-    result = total_revenues - total_costs
+    result = revenues - (_capital_costs + _running_costs)
     return result
 
 
@@ -330,11 +328,10 @@ def levelized_cost_of_energy(
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
     """
-    # Mask for weighted sum of costs/production across years
-    rates = annual_weights(technologies, method)
-    rates = broadcast_timeslice(rates, level=timeslice_level)
+    if method not in ["lifetime", "annual"]:
+        raise ValueError("method must be either 'lifetime' or 'annual'.")
 
-    # Capital costs
+    # Capital costs (lifetime or annual depending on method)
     _capital_costs = capital_costs(
         technologies,
         prices,
@@ -360,14 +357,13 @@ def levelized_cost_of_energy(
         )  # TODO: is this the correct way to deal with multiple products?
     )
 
-    # Total costs
-    total_costs = _capital_costs + (_running_costs * rates).sum("year")
-
-    # Total production
-    total_prod = (prod * rates).sum("year")
+    # If method is lifetime, have to adjust running costs and production
+    if method == "lifetime":
+        _running_costs = annual_to_lifetime(_running_costs, technologies)
+        prod = annual_to_lifetime(prod, technologies)
 
     # LCOE
-    result = total_costs / total_prod
+    result = (_capital_costs + _running_costs) / prod
     return result
 
 
@@ -420,40 +416,17 @@ def capital_recovery_factor(technologies: xr.Dataset) -> xr.DataArray:
     return crf
 
 
-def annual_weights(technologies: xr.Dataset, method: str = "lifetime") -> xr.DataArray:
-    """Annual weights used to sum costs over the lifetime of the technologies.
-
-    Methods:
-    - lifetime: weights are the discount factor over the lifetime of the technology,
-        and zero for any years beyond this.
-    - annual: costs are calculated for a single year, so the weight is 1 for this year.
-
-    Args:
-        technologies: xr.Dataset of technology parameters
-        method: "lifetime" or "annual"
-
-    Returns:
-        Dataarray with the weights for each year. In the case of lifetime weights,
-        data will cover all years up to the technology with the highest lifetime.
-    """
-    if method not in ["lifetime", "annual"]:
-        raise ValueError("method must be either 'lifetime' or 'annual'.")
-
-    if method == "lifetime":
-        # Weighting is the discount factor over the lifetime of each technology
-        life = technologies.technical_life.astype(int)
-        iyears = range(life.values.max())
-        years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
-        rates = discount_factor(
-            years=years,
-            interest_rate=technologies.interest_rate,
-            mask=years <= life,
-        )
-    else:  # method == "annual"
-        # Single year with weight 1
-        rates = xr.DataArray([1], coords={"year": [0]}, dims="year")
-    assert "year" in rates.dims
-    return rates
+def annual_to_lifetime(costs, technologies, timeslice_level=None):
+    life = technologies.technical_life.astype(int)
+    iyears = range(life.values.max())
+    years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
+    rates = discount_factor(
+        years=years,
+        interest_rate=technologies.interest_rate,
+        mask=years <= life,
+    )
+    rates = broadcast_timeslice(rates, level=timeslice_level)
+    return (costs * rates).sum("year")
 
 
 def discount_factor(years, interest_rate, mask=1.0):
