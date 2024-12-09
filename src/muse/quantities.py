@@ -535,7 +535,9 @@ def capacity_to_service_demand(
         level=timeslice_level,
     ) * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     capa_to_service_demand = demand / timeslice_outputs
-    return capa_to_service_demand.max(("commodity", "timeslice"))
+    return capa_to_service_demand.where(np.isfinite(capa_to_service_demand), 0).max(
+        ("commodity", "timeslice")
+    )
 
 
 def production_amplitude(
