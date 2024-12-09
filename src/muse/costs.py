@@ -525,6 +525,26 @@ def annual_to_lifetime(
     return (costs * rates).sum("year")
 
 
-def discount_factor(years, interest_rate, mask=1.0):
-    """Calculate an array with the rate (aka discount factor) values over the years."""
-    return mask / (1 + interest_rate) ** years
+def discount_factor(
+    years: xr.DataArray, interest_rate: xr.DataArray, mask: xr.DataArray | None = None
+):
+    """Calculate an array with of discount factor values over the years.
+
+    Args:
+        years: xr.DataArray with the years counting from the present year
+            (i.e. current year = 0)
+        interest_rate: xr.DataArray with the interest rate for different technologies
+        mask: Optional mask to apply to the result (e.g. cutting to zero after the
+            technology lifetime)
+    """
+    assert set(years.dims) == {"year"}
+    assert "year" not in interest_rate.dims
+
+    # Calculate discount factor over the years
+    df = 1 / (1 + interest_rate) ** years
+
+    # Apply mask
+    if mask is not None:
+        assert set(mask.dims) == set(interest_rate.dims) | {"year"}
+        df = df * mask
+    return df

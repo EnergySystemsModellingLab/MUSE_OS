@@ -191,11 +191,12 @@ def test_supply_cost(_technologies, _prices, _capacity, _production, _consumptio
     }
 
 
-def test_capital_recovery_factor(technologies):
+def test_capital_recovery_factor(_technologies):
     from muse.costs import capital_recovery_factor
 
-    result = capital_recovery_factor(technologies)
-    assert set(result.dims) == {"region", "technology", "year"}
+    result = capital_recovery_factor(_technologies)
+    assert set(result.dims) == set(_technologies.interest_rate.dims)
+    # {"region", "technology"}
 
 
 def test_annual_to_lifetime(_technologies, _prices, _consumption):
