@@ -8,7 +8,7 @@ except ImportError:
     raise ImportError(msg)
 
 os.environ["MUSE_COLOR_LOG"] = "False"
-from muse import VERSION
+from muse import __version__
 from muse.__main__ import muse_main
 
 parser = GooeyParser(description="Run a MUSE simulation")
@@ -64,7 +64,7 @@ menu = [
                 "menuTitle": "About MUSE",
                 "name": "MUSE",
                 "description": "ModUlar energy system Simulation Environment",
-                "version": VERSION,
+                "version": __version__,
                 "copyright": "2023",
                 "website": "https://www.imperial.ac.uk/muse-energy/",
                 "developer": "https://www.imperial.ac.uk/muse-energy/muser-group/",
@@ -76,7 +76,7 @@ menu = [
 
 
 @Gooey(
-    program_name=f"MUSE - v{VERSION}",
+    program_name=f"MUSE - v{__version__}",
     program_description="ModUlar energy system Simulation Environment",
     menu=menu,
     default_size=(600, 650),
