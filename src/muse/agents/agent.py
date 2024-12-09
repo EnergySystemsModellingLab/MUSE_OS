@@ -394,7 +394,7 @@ class InvestingAgent(Agent):
         objectives = self.objectives(
             technologies=techs,
             demand=reduced_demand,
-            prices=prices,
+            prices=prices.isel(year=1),
             timeslice_level=self.timeslice_level,
         )
 
