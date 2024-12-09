@@ -494,6 +494,7 @@ def capital_recovery_factor(technologies: xr.Dataset) -> xr.DataArray:
     crf = technologies.interest_rate / (
         1 - (1 / (1 + technologies.interest_rate) ** nyears)
     )
+    assert "year" not in crf.dims
     return crf
 
 
