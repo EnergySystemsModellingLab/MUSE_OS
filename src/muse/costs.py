@@ -1,9 +1,52 @@
 """Collection of functions for calculating cost metrics (e.g. LCOE, EAC).
 
-In general, these functions take a Dataset of technology parameters, and return a
-DataArray of the calculated cost for each technology. Functions may also take additional
-data such as commodity prices, capacity of the technologies, and commodity-production
-data for the technologies, where appropriate.
+All costs functions take a subset of the following arguments:
+- technologies: xr.Dataset of technology parameters
+- prices: xr.DataArray with commodity prices
+- capacity: xr.DataArray with the capacity of the technologies
+- production: xr.DataArray with commodity production by the technologies
+- consumption: xr.DataArray with commodity consumption by the technologies
+- timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
+- method: "lifetime" or "annual"
+
+Data should only be provided for a single year (i.e. no "year" dimension in any of the
+inputs). Prices, production and consumption data should be split across timeslices
+(i.e. have a "timeslice" dimension). Technology parameters may also be specified at
+the timeslice level, but capacity should not be.
+
+`timeslice_level` is given as an argument to some functions, but in this case it must
+match the timeslice level of any timesliced inputs, so is generally not configurable,
+but only included to ensure consistency and provide explicitness.
+
+The `technologies` input will usually contain data for multiple technologies and have
+a "technology" dimension (sometimes called "asset" or "replacement"). In this case,
+it's important that the `capacity`, `production`, and `consumption` inputs have a
+similar dimension to ensure that costs are calculated for all technologies and to
+prevent unwanted broadcasting.
+
+Additional dimensions (such as "region") may be present in the inputs, but it's up to
+the parent functions to ensure that these are consistent between inputs to prevent
+unwanted broadcasting.
+
+The dimensions of the output will be the sum of all dimensions from the input data,
+minus "commodity", plus "timeslice" (if not already present).
+
+Some functions have a `method` argument, which can be "annual" or "lifetime":
+
+Costs can either be annual or lifetime:
+- annual: calculates the cost for each timeslice in a single year
+- lifetime: calculates the total cost in each timeslice over the lifetime of the
+    technology, using the `technical_life` attribute from the `technologies` dataset.
+    - In this case, technology parameters, production, consumption, capacity and prices
+        are assumed to be constant over the lifetime of the technology. The cost in each
+        year is discounted according to the `interest_rate` attribute from the
+        `technologies` dataset, and summed across years.
+    - Capital costs are different, as these are a one time cost for the lifetime of the
+        technology. This can be annualized by dividing by the `technical_life`.
+Some functions can calculate both lifetime and annual costs, with a `method` argument
+to specify. Others can only calculate one or the other (see individual function
+docstrings for more details).
+
 """
 
 from __future__ import annotations
@@ -20,14 +63,7 @@ from muse.utilities import filter_input
 
 
 def cost(func):
-    """Decorator to validate the output dimensions of the cost functions.
-
-    Cost functions should only take parameters for a single year (i.e. no "year"
-    dimension in any of the inputs). Costs are then calculated for a single year
-    with the parameters provided. In the case of lifetime costs (e.g. lifetime
-    LCOE), costs are calculated assuming fixed parameters over the lifetime of the
-    technology.
-    """
+    """Decorator to validate the output dimensions of the cost functions."""
 
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -46,6 +82,17 @@ def capital_costs(
     timeslice_level: str | None = None,
     method: str = "lifetime",
 ):
+    """Calculate capital costs for the relevant technologies.
+
+    This is the cost of installing each technology to the level specified by the
+    `capacity` input.
+
+    Method can be "lifetime" of "annual":
+    - lifetime: returns the full capital costs
+    - annual: returns the capital costs divided by the lifetime of the technology
+
+    Costs are distributed uniformly over timeslices, with the timeslice level specified
+    """
     if method not in ["lifetime", "annual"]:
         raise ValueError("method must be either 'lifetime' or 'annual'.")
 
@@ -53,7 +100,6 @@ def capital_costs(
         technologies.cap_par * (capacity**technologies.cap_exp), level=timeslice_level
     )
     if method == "annual":
-        # Divide by lifetime to get annualized cost
         _capital_costs /= broadcast_timeslice(
             technologies.technical_life, level=timeslice_level
         )
@@ -64,40 +110,59 @@ def capital_costs(
 def environmental_costs(
     technologies: xr.Dataset, prices: xr.DataArray, production: xr.DataArray
 ) -> xr.DataArray:
+    """Calculate annual environmental costs for the relevant technologies.
+
+    This is the total production of pollutants (commodities flagged by `is_pollutant`)
+    multiplied by their prices.
+    """
     environmentals = is_pollutant(technologies.comm_usage)
     prices_environmental = filter_input(prices, commodity=environmentals)
-    environmental_costs = (production * prices_environmental).sum("commodity")
-    return environmental_costs
+    return (production * prices_environmental).sum("commodity")
 
 
 @cost
 def fuel_costs(
     technologies: xr.Dataset, prices: xr.DataArray, consumption: xr.DataArray
 ) -> xr.DataArray:
+    """Calculate annual fuel costs for the relevant technologies.
+
+    This is the total consumption of fuels (commodities flagged by `is_fuel`)
+    multiplied by their prices.
+    """
     fuels = is_fuel(technologies.comm_usage)
     prices_fuel = filter_input(prices, commodity=fuels)
-    fuel_costs = (consumption * prices_fuel).sum("commodity")
-    return fuel_costs
+    return (consumption * prices_fuel).sum("commodity")
 
 
 @cost
 def material_costs(
     technologies: xr.Dataset, prices: xr.DataArray, consumption: xr.DataArray
 ) -> xr.DataArray:
+    """Calculate annual material costs for the relevant technologies.
+
+    This is the total consumption of materials (commodities flagged by `is_material`)
+    multiplied by their prices.
+    """
     material = is_material(technologies.comm_usage)
     prices_material = filter_input(prices, commodity=material)
-    material_costs = (consumption * prices_material).sum("commodity")
-    return material_costs
+    return (consumption * prices_material).sum("commodity")
 
 
 @cost
 def fixed_costs(
     technologies: xr.Dataset, capacity: xr.DataArray, timeslice_level: str | None = None
 ) -> xr.DataArray:
-    fixed_costs = distribute_timeslice(
+    """Calculate annual fixed costs for the relevant technologies.
+
+    This is the fixed running cost over the course of a year corresponding to the
+    `fix_par` and `fix_exp` technology parameters.
+
+    This cost is scaled by the capacity of the technology and distributed uniformly
+    over the timeslices, with the timeslice level specified
+    """
+    return distribute_timeslice(
         technologies.fix_par * (capacity**technologies.fix_exp), level=timeslice_level
     )
-    return fixed_costs
 
 
 @cost
@@ -106,13 +171,22 @@ def variable_costs(
     production: xr.DataArray,
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
+    """Calculate annual variable costs for the relevant technologies.
+
+    This is the cost associated with the `var_par` and `var_exp` technology
+    parameters.
+
+    The `production_amplitude` function is first used to calculate technology activity
+    in each timeslice based on `production`. This is then used to scale the variable
+    costs.
+    """
     tech_activity = production_amplitude(production, technologies, timeslice_level)
-    variable_costs = broadcast_timeslice(
+    result = broadcast_timeslice(
         technologies.var_par, level=timeslice_level
     ) * tech_activity ** broadcast_timeslice(
         technologies.var_exp, level=timeslice_level
     )
-    return variable_costs
+    return result
 
 
 @cost
@@ -124,6 +198,17 @@ def running_costs(
     consumption: xr.DataArray,
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
+    """Total annual running costs (excluding capital costs).
+
+    This is the sum of environmental, fuel, material, fixed and variable costs.
+
+    .. seealso::
+        :py:func:`environmental_costs`
+        :py:func:`fuel_costs`
+        :py:func:`material_costs`
+        :py:func:`fixed_costs`
+        :py:func:`variable_costs`
+    """
     _environmental_costs = environmental_costs(technologies, prices, production)
     _fuel_costs = fuel_costs(technologies, prices, consumption)
     _material_costs = material_costs(technologies, prices, consumption)
@@ -149,7 +234,6 @@ def net_present_value(
     production: xr.DataArray,
     consumption: xr.DataArray,
     timeslice_level: str | None = None,
-    method: str = "lifetime",
 ) -> xr.DataArray:
     """Net present value (NPV) of the relevant technologies.
 
@@ -166,6 +250,10 @@ def net_present_value(
       installed capacity and production (non-environmental), respectively
     - capacity costs are given as technodata inputs and depend on the installed capacity
 
+    .. seealso::
+        :py:func:`capital_costs`
+        :py:func:`running_costs`
+
     Arguments:
         technologies: xr.Dataset of technology parameters
         prices: xr.DataArray with commodity prices
@@ -174,16 +262,14 @@ def net_present_value(
         consumption: xr.DataArray with commodity consumption by the relevant
             technologies
         timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
-        method: "lifetime" or "annual"
 
     Return:
         xr.DataArray with the NPV calculated for the relevant technologies
     """
-    if method not in ["lifetime", "annual"]:
-        raise ValueError("method must be either 'lifetime' or 'annual'.")
-
-    # Capital costs (lifetime or annual depending on method)
-    _capital_costs = capital_costs(technologies, capacity, timeslice_level, method)
+    # Capital costs (lifetime)
+    _capital_costs = capital_costs(
+        technologies, capacity, timeslice_level, method="lifetime"
+    )
 
     # Revenue (annual)
     products = is_enduse(technologies.comm_usage)
@@ -195,10 +281,9 @@ def net_present_value(
         technologies, prices, capacity, production, consumption, timeslice_level
     )
 
-    # If method is lifetime, have to adjust running costs and revenues
-    if method == "lifetime":
-        _running_costs = annual_to_lifetime(_running_costs, technologies)
-        revenues = annual_to_lifetime(revenues, technologies)
+    # Calculate running costs and revenues over lifetime
+    _running_costs = annual_to_lifetime(_running_costs, technologies)
+    revenues = annual_to_lifetime(revenues, technologies)
 
     # Net present value
     result = revenues - (_capital_costs + _running_costs)
@@ -213,7 +298,6 @@ def net_present_cost(
     production: xr.DataArray,
     consumption: xr.DataArray,
     timeslice_level: str | None = None,
-    method: str = "lifetime",
 ) -> xr.DataArray:
     """Net present cost (NPC) of the relevant technologies.
 
@@ -232,13 +316,12 @@ def net_present_cost(
         consumption: xr.DataArray with commodity consumption by the relevant
             technologies
         timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
-        method: "lifetime" or "annual"
 
     Return:
         xr.DataArray with the NPC calculated for the relevant technologies
     """
     result = -net_present_value(
-        technologies, prices, capacity, production, consumption, timeslice_level, method
+        technologies, prices, capacity, production, consumption, timeslice_level
     )
     return result
 
@@ -262,6 +345,9 @@ def equivalent_annual_cost(
     .. _annualized cost:
         https://www.homerenergy.com/products/pro/docs/3.15/annualized_cost.html
 
+    .. seealso::
+        :py:func:`net_present_cost`
+
     Arguments:
         technologies: xr.Dataset of technology parameters
         prices: xr.DataArray with commodity prices
@@ -281,7 +367,6 @@ def equivalent_annual_cost(
         production,
         consumption,
         timeslice_level=timeslice_level,
-        method="lifetime",
     )
     crf = capital_recovery_factor(technologies)
     result = npc * broadcast_timeslice(crf, level=timeslice_level)
@@ -301,6 +386,10 @@ def levelized_cost_of_energy(
     """Levelized cost of energy (LCOE) of technologies over their lifetime.
 
     It follows the `simplified LCOE` given by NREL.
+
+    .. seealso::
+        :py:func:`capital_costs`
+        :py:func:`running_costs`
 
     Can calculate either a lifetime or annual LCOE.
     - lifetime: the average cost per unit of production over the entire lifetime of the
@@ -408,7 +497,20 @@ def capital_recovery_factor(technologies: xr.Dataset) -> xr.DataArray:
     return crf
 
 
-def annual_to_lifetime(costs, technologies, timeslice_level=None):
+def annual_to_lifetime(
+    costs: xr.DataArray, technologies: xr.Dataset, timeslice_level=None
+):
+    """Convert annual costs to lifetime costs.
+
+    Costs are provided for a single year. These same costs are assumed to apply for the
+    full lifetime of the technologies, subject to a discount factor. The costs are then
+    summed over the lifetime of the technologies.
+
+    Args:
+        costs: xr.DataArray of costs for a single year.
+        technologies: xr.Dataset of technology parameters
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
+    """
     assert "year" not in costs.dims
     assert "year" not in technologies.dims
     life = technologies.technical_life.astype(int)
