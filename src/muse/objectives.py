@@ -275,7 +275,10 @@ def consumption(
         * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     )
     consump = consumption(
-        technologies=technologies, prices=prices, production=production
+        technologies=technologies,
+        prices=prices,
+        production=production,
+        timeslice_level=timeslice_level,
     )
     return consump.sum("commodity")
 
@@ -383,7 +386,10 @@ def fuel_consumption_cost(
         * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     )
     consump = consumption(
-        technologies=technologies, prices=prices, production=production
+        technologies=technologies,
+        prices=prices,
+        production=production,
+        timeslice_level=timeslice_level,
     )
     result = fuel_costs(technologies, prices, consump)
     return result
@@ -416,7 +422,10 @@ def annual_levelized_cost_of_energy(
         * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     )
     consump = consumption(
-        technologies=technologies, prices=prices, production=production
+        technologies=technologies,
+        prices=prices,
+        production=production,
+        timeslice_level=timeslice_level,
     )
 
     results = LCOE(
@@ -502,7 +511,10 @@ def net_present_value(
         * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     )
     consump = consumption(
-        technologies=technologies, prices=prices, production=production
+        technologies=technologies,
+        prices=prices,
+        production=production,
+        timeslice_level=timeslice_level,
     )
 
     results = NPV(
@@ -539,7 +551,10 @@ def net_present_cost(
         * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     )
     consump = consumption(
-        technologies=technologies, prices=prices, production=production
+        technologies=technologies,
+        prices=prices,
+        production=production,
+        timeslice_level=timeslice_level,
     )
 
     results = NPC(
@@ -575,7 +590,10 @@ def equivalent_annual_cost(
         * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     )
     consump = consumption(
-        technologies=technologies, prices=prices, production=production
+        technologies=technologies,
+        prices=prices,
+        production=production,
+        timeslice_level=timeslice_level,
     )
 
     results = EAC(
