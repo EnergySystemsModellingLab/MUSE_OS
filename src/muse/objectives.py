@@ -460,7 +460,10 @@ def lifetime_levelized_cost_of_energy(
         * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     )
     consump = consumption(
-        technologies=technologies, prices=prices, production=production
+        technologies=technologies,
+        prices=prices,
+        production=production,
+        timeslice_level=timeslice_level,
     )
 
     results = LCOE(
