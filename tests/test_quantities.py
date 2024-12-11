@@ -287,3 +287,10 @@ def test_supply_capped_by_min_service(technologies, capacity, timeslice):
     )
     assert (spl == approx(demand)).all()
     assert (spl <= minprod).all()
+
+
+def test_production_amplitude(production, technologies):
+    from muse.quantities import production_amplitude
+
+    result = production_amplitude(production, technologies)
+    assert set(result.dims) == set(production.dims) - {"commodity"}
