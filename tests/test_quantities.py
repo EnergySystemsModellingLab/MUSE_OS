@@ -113,10 +113,10 @@ def test_decommissioning_demand(technologies, capacity, timeslice):
     ).values == approx(ufac * fouts * (current - forecast))
 
 
-def test_consumption_no_flex(technologies, production, market):
+def test_consumption(technologies, production, market):
     from muse.quantities import consumption
 
-    # Prices not provided so flexible inputs are ignored
+    # Prices not provided, so flexible inputs are ignored
     consump = consumption(technologies, production)
     assert set(production.dims) == set(consump.dims)
 
@@ -125,12 +125,9 @@ def test_consumption_no_flex(technologies, production, market):
     consump2 = consumption(technologies, production, market.prices)
     assert consump2.values == approx(consump.values)
 
-
-def test_consumption_with_flex(technologies, production, market):
-    from muse.quantities import consumption
-
-    consump = consumption(technologies, production, market.prices)
-    assert set(production.dims) == set(consump.dims)
+    # Flexible inputs considered
+    consump3 = consumption(technologies, production, market.prices)
+    assert set(production.dims) == set(consump3.dims)
 
 
 def test_production_aggregate_asset_view(
