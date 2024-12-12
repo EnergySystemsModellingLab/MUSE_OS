@@ -116,9 +116,11 @@ def test_decommissioning_demand(technologies, capacity, timeslice):
 def test_consumption_no_flex(technologies, production, market):
     from muse.quantities import consumption
 
+    # Prices not provided so flexible inputs are ignored
     consump = consumption(technologies, production)
     assert set(production.dims) == set(consump.dims)
 
+    # Prices provided, but no flexible inputs -> should be the same as above
     technologies.flexible_inputs[:] = 0
     consump2 = consumption(technologies, production, market.prices)
     assert consump2.values == approx(consump.values)

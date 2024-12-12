@@ -289,22 +289,38 @@ def consumption(
     production: xr.DataArray,
     prices: Optional[xr.DataArray] = None,
     timeslice_level: Optional[str] = None,
-    **kwargs,
 ) -> xr.DataArray:
     """Commodity consumption when fulfilling the whole production.
 
-    Currently, the consumption is implemented for commodity_max == +infinity. If prices
-    are not given, then flexible consumption is *not* considered.
+    Firstly, the degree of technology activity is calculated (i.e. the amount of
+    technology flow required to meet the production). Then, the consumption of fixed
+    commodities is calculated in proportion to this activity.
+
+    In addition, if there are flexible inputs, then the single lowest-cost option is
+    selected (minimising price * quantity). If prices are not given, then flexible
+    consumption is *not* considered.
+
+    Arguments:
+        technologies: Dataset of technology parameters. Must contain `fixed_inputs`,
+            `flexible_inputs`, and `fixed_outputs`.
+        production: DataArray of production data. Must have "timeslice" and "commodity"
+            dimensions.
+        prices: DataArray of prices for each commodity. Must have "timeslice" and
+            "commodity" dimensions. If not given, then flexible inputs are not
+            considered.
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
+
+    Return:
+        A data array containing the consumption of each commodity. Will have the same
+        dimensions as `production`.
+
     """
-    from muse.commodities import is_fuel
     from muse.utilities import filter_with_template
 
     params = filter_with_template(
         technologies[["fixed_inputs", "flexible_inputs", "fixed_outputs"]],
         production,
-        **kwargs,
     )
-    params_fuels = is_fuel(params.comm_usage)
 
     # Calculate degree of technology activity
     prod_amplitude = production_amplitude(
@@ -315,9 +331,10 @@ def consumption(
     consumption_fixed = prod_amplitude * broadcast_timeslice(
         params.fixed_inputs, level=timeslice_level
     )
+    assert all(consumption_fixed.commodity.values == production.commodity.values)
 
     # If there are no flexible inputs, then we are done
-    if not (params.flexible_inputs.sel(commodity=params_fuels) > 0).any():
+    if not (params.flexible_inputs > 0).any():
         return consumption_fixed
 
     # If prices are not given, then we can't consider flexible inputs, so just return
@@ -326,12 +343,10 @@ def consumption(
         return consumption_fixed
 
     # Flexible inputs
-    flexs = broadcast_timeslice(
-        params.flexible_inputs.where(params_fuels, 0), level=timeslice_level
-    )
+    flexs = broadcast_timeslice(params.flexible_inputs, level=timeslice_level)
 
     # Calculate the cheapest fuel for each flexible technology
-    priceflex = prices.loc[dict(commodity=flexs.commodity)] * flexs
+    priceflex = prices * flexs
     minprices = flexs.commodity[
         priceflex.where(flexs > 0, priceflex.max() + 1).argmin("commodity")
     ]
