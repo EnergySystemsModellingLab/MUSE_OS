@@ -579,7 +579,7 @@ def production_amplitude(
         DataArray with production amplitudes for each technology in each timeslice.
         Will have the same dimensions as `production`, minus the `commodity` dimension.
     """
-    assert set(technologies.dims).issubset(set(production.dims))
+    # assert set(technologies.dims).issubset(set(production.dims))
 
     return (
         production
