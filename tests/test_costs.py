@@ -206,3 +206,12 @@ def test_annual_to_lifetime(_technologies, _prices, _consumption):
     _fuel_costs_lifetime = annual_to_lifetime(_fuel_costs, _technologies)
     assert set(_fuel_costs.dims) == set(_fuel_costs_lifetime.dims)
     assert (_fuel_costs_lifetime > _fuel_costs).all()
+
+
+def test_lifetime_to_annual(_technologies, _capacity):
+    from muse.costs import capital_costs, lifetime_to_annual
+
+    _capital_costs = capital_costs(_technologies, _capacity)
+    _capital_costs_annual = lifetime_to_annual(_capital_costs, _technologies)
+    assert set(_capital_costs.dims) == set(_capital_costs_annual.dims)
+    # assert (_capital_costs_annual < _capital_costs).all()
