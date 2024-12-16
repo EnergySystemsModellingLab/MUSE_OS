@@ -531,7 +531,7 @@ def annual_to_lifetime(
 def lifetime_to_annual(
     costs: xr.DataArray, technologies: xr.Dataset, timeslice_level: str | None = None
 ):
-    """Convert lifetime costs to annual costs.
+    """Convert lifetime costs to annual costs using the capital recovery factor.
 
     Args:
         costs: xr.DataArray of lifetime costs (e.g. capital costs).
@@ -541,12 +541,8 @@ def lifetime_to_annual(
     assert "year" not in costs.dims
     assert "year" not in technologies.dims
     assert "timeslice" in costs.dims
-    life = technologies.technical_life.astype(int)
-    # rate = technologies.interest_rate / (
-    #     1 - (1 + technologies.interest_rate) ** -life
-    # )
-    rate = 1 / life
-    return costs * broadcast_timeslice(rate, level=timeslice_level)
+    crf = capital_recovery_factor(technologies)
+    return costs * broadcast_timeslice(crf, level=timeslice_level)
 
 
 def discount_factor(
