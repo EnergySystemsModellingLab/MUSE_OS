@@ -89,8 +89,8 @@ def capital_costs(
 
     Method can be "lifetime" or "annual":
     - lifetime: returns the full capital costs
-    - annual: a capital cost for the investment year is calculated based on the lifetime
-        and interest rate (see `lifetime_to_annual`)
+    - annual: total capital costs are multiplied by the capital recovery factor to get
+        annualized costs
 
     Costs are distributed uniformly over timeslices, with the timeslice level specified
     """
@@ -101,9 +101,7 @@ def capital_costs(
         technologies.cap_par * (capacity**technologies.cap_exp), level=timeslice_level
     )
     if method == "annual":
-        _capital_costs = lifetime_to_annual(
-            _capital_costs, technologies, timeslice_level
-        )
+        _capital_costs = _capital_costs * capital_recovery_factor(technologies)
     return _capital_costs
 
 
@@ -526,23 +524,6 @@ def annual_to_lifetime(
     )
     rates = broadcast_timeslice(rates, level=timeslice_level)
     return (costs * rates).sum("year")
-
-
-def lifetime_to_annual(
-    costs: xr.DataArray, technologies: xr.Dataset, timeslice_level: str | None = None
-):
-    """Convert lifetime costs to annual costs using the capital recovery factor.
-
-    Args:
-        costs: xr.DataArray of lifetime costs (e.g. capital costs).
-        technologies: xr.Dataset of technology parameters
-        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
-    """
-    assert "year" not in costs.dims
-    assert "year" not in technologies.dims
-    assert "timeslice" in costs.dims
-    crf = capital_recovery_factor(technologies)
-    return costs * broadcast_timeslice(crf, level=timeslice_level)
 
 
 def discount_factor(
