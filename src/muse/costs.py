@@ -87,7 +87,7 @@ def capital_costs(
     This is the cost of installing each technology to the level specified by the
     `capacity` input.
 
-    Method can be "lifetime" of "annual":
+    Method can be "lifetime" or "annual":
     - lifetime: returns the full capital costs
     - annual: a capital cost for the investment year is calculated based on the lifetime
         and interest rate (see `lifetime_to_annual`)
