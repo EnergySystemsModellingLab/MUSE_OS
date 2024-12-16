@@ -189,7 +189,12 @@ def lexical_comparison(
         parameters = [(u[0], coeff_sign(u[1], u[2])) for u in parameters]
     assert set(objectives.data_vars).issuperset([u[0] for u in parameters])
     order = [u[0] for u in parameters]
-    binsize = (Dataset(dict(parameters)) * objectives).min("replacement")
+
+    binsize = objectives.copy()
+    for obj_name, weight in parameters:
+        binsize[obj_name] = binsize[obj_name] * weight
+    binsize = binsize.min("replacement")
+
     return lexical_comparison(objectives, binsize, order=order, bin_last=False).rank(
         "replacement"
     )

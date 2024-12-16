@@ -1,8 +1,11 @@
 """MUSE model."""
 
 import os
+from contextlib import suppress
+from importlib.metadata import PackageNotFoundError, version
 
-VERSION = "1.3.0"
+with suppress(PackageNotFoundError):
+    __version__ = version("MUSE_OS")
 
 
 def _create_logger(color: bool = True):
@@ -83,15 +86,6 @@ logger = _create_logger(os.environ.get("MUSE_COLOR_LOG") != "False")
 __all__ = [
     "Agent",
     "create_agent",
-    "read_global_commodities",
-    "read_initial_capacity",
-    "read_io_technodata",
-    "read_technodictionary",
-    "read_technologies",
-    "read_timeslice_shares",
-    "read_settings",
-    "read_macro_drivers",
-    "read_csv_agent_parameters",
     "decisions",
     "demand_share",
     "filters",
@@ -100,6 +94,14 @@ __all__ = [
     "investments",
     "objectives",
     "outputs",
+    "read_csv_agent_parameters",
+    "read_global_commodities",
+    "read_initial_capacity",
+    "read_io_technodata",
+    "read_macro_drivers",
+    "read_settings",
+    "read_technodictionary",
+    "read_technologies",
+    "read_timeslice_shares",
     "sectors",
-    VERSION,
 ]

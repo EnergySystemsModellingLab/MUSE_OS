@@ -5,13 +5,15 @@
 # http://www.sphinx-doc.org/en/master/config
 # -- Project information -----------------------------------------------------
 
+from importlib.metadata import version as get_version
+
 from docutils import nodes
 from docutils.parsers.rst import roles
 
 project = "MUSE"
 copyright = "2024, Imperial College London"
 author = "Imperial College London"
-release = "1.3.0"
+release = get_version("MUSE_OS")
 version = ".".join(release.split(".")[:2])
 
 # -- General configuration ---------------------------------------------------
