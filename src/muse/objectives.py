@@ -306,7 +306,12 @@ def fixed_costs(
     from muse.costs import fixed_costs
 
     capacity = capacity_to_service_demand(technologies, demand)
-    result = fixed_costs(technologies, capacity).sum("timeslice")
+    production = (
+        broadcast_timeslice(capacity)
+        * distribute_timeslice(technologies.fixed_outputs)
+        * broadcast_timeslice(technologies.utilization_factor)
+    )
+    result = fixed_costs(technologies, capacity, production).sum("timeslice")
     return result
 
 
@@ -327,7 +332,14 @@ def capital_costs(
     from muse.costs import capital_costs
 
     capacity = capacity_to_service_demand(technologies, demand)
-    result = capital_costs(technologies, capacity, method="lifetime").sum("timeslice")
+    production = (
+        broadcast_timeslice(capacity)
+        * distribute_timeslice(technologies.fixed_outputs)
+        * broadcast_timeslice(technologies.utilization_factor)
+    )
+    result = capital_costs(technologies, capacity, production, method="lifetime").sum(
+        "timeslice"
+    )
     result = xr.broadcast(result, demand.asset)[0]
     return result
 
