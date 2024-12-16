@@ -74,10 +74,10 @@ def test_fixtures(_technologies, _prices, _capacity, _production, _consumption):
     )
 
 
-def test_capital_costs(_technologies, _capacity):
+def test_capital_costs(_technologies, _capacity, _production):
     from muse.costs import capital_costs
 
-    result = capital_costs(_technologies, _capacity)
+    result = capital_costs(_technologies, _capacity, _production)
     assert set(result.dims) == EXPECTED_DIMS
 
 
@@ -102,10 +102,10 @@ def test_material_costs(_technologies, _prices, _consumption):
     assert set(result.dims) == EXPECTED_DIMS
 
 
-def test_fixed_costs(_technologies, _capacity):
+def test_fixed_costs(_technologies, _capacity, _production):
     from muse.costs import fixed_costs
 
-    result = fixed_costs(_technologies, _capacity)
+    result = fixed_costs(_technologies, _capacity, _production)
     assert set(result.dims) == EXPECTED_DIMS
 
 

@@ -79,6 +79,7 @@ def cost(func):
 def capital_costs(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
+    production: xr.DataArray,
     timeslice_level: str | None = None,
     method: str = "lifetime",
 ):
@@ -97,8 +98,12 @@ def capital_costs(
     if method not in ["lifetime", "annual"]:
         raise ValueError("method must be either 'lifetime' or 'annual'.")
 
+    tech_activity = production_amplitude(production, technologies, timeslice_level)
+
     _capital_costs = distribute_timeslice(
-        technologies.cap_par * (capacity**technologies.cap_exp), level=timeslice_level
+        technologies.cap_par * (capacity**technologies.cap_exp),
+        ts=tech_activity,
+        level=timeslice_level,
     )
     if method == "annual":
         crf = capital_recovery_factor(technologies)
@@ -152,7 +157,10 @@ def material_costs(
 
 @cost
 def fixed_costs(
-    technologies: xr.Dataset, capacity: xr.DataArray, timeslice_level: str | None = None
+    technologies: xr.Dataset,
+    capacity: xr.DataArray,
+    production: xr.DataArray,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Calculate annual fixed costs for the relevant technologies.
 
@@ -162,8 +170,12 @@ def fixed_costs(
     This cost is scaled by the capacity of the technology and distributed uniformly
     over the timeslices, with the timeslice level specified
     """
+    tech_activity = production_amplitude(production, technologies, timeslice_level)
+
     return distribute_timeslice(
-        technologies.fix_par * (capacity**technologies.fix_exp), level=timeslice_level
+        technologies.fix_par * (capacity**technologies.fix_exp),
+        ts=tech_activity,
+        level=timeslice_level,
     )
 
 
@@ -214,7 +226,7 @@ def running_costs(
     _environmental_costs = environmental_costs(technologies, prices, production)
     _fuel_costs = fuel_costs(technologies, prices, consumption)
     _material_costs = material_costs(technologies, prices, consumption)
-    _fixed_costs = fixed_costs(technologies, capacity, timeslice_level)
+    _fixed_costs = fixed_costs(technologies, capacity, production, timeslice_level)
     _variable_costs = variable_costs(technologies, production, timeslice_level)
 
     # Total running costs
@@ -270,7 +282,7 @@ def net_present_value(
     """
     # Capital costs (lifetime)
     _capital_costs = capital_costs(
-        technologies, capacity, timeslice_level, method="lifetime"
+        technologies, capacity, production, timeslice_level, method="lifetime"
     )
 
     # Revenue (annual)
@@ -423,7 +435,9 @@ def levelized_cost_of_energy(
         raise ValueError("method must be either 'lifetime' or 'annual'.")
 
     # Capital costs (lifetime or annual depending on method)
-    _capital_costs = capital_costs(technologies, capacity, timeslice_level, method)
+    _capital_costs = capital_costs(
+        technologies, capacity, production, timeslice_level, method
+    )
 
     # Running costs (annual)
     _running_costs = running_costs(
