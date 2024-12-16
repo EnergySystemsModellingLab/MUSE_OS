@@ -199,19 +199,30 @@ def test_capital_recovery_factor(_technologies):
     # {"region", "technology"}
 
 
-def test_annual_to_lifetime(_technologies, _prices, _consumption):
-    from muse.costs import annual_to_lifetime, fuel_costs
+def test_annual_lifetime_conversion(_technologies, _prices, _consumption, _capacity):
+    from muse.costs import (
+        annual_to_lifetime,
+        capital_costs,
+        fuel_costs,
+        lifetime_to_annual,
+    )
 
+    # Convert fuel costs from annual to lifetime
     _fuel_costs = fuel_costs(_technologies, _prices, _consumption)
     _fuel_costs_lifetime = annual_to_lifetime(_fuel_costs, _technologies)
     assert set(_fuel_costs.dims) == set(_fuel_costs_lifetime.dims)
     assert (_fuel_costs_lifetime > _fuel_costs).all()
 
-
-def test_lifetime_to_annual(_technologies, _capacity):
-    from muse.costs import capital_costs, lifetime_to_annual
-
+    # Convert capital costs from lifetime to annual
     _capital_costs = capital_costs(_technologies, _capacity)
     _capital_costs_annual = lifetime_to_annual(_capital_costs, _technologies)
     assert set(_capital_costs.dims) == set(_capital_costs_annual.dims)
     # assert (_capital_costs_annual < _capital_costs).all()
+
+    # Convert lifetime fuel costs back to annual
+    _fuel_costs_annual = lifetime_to_annual(_fuel_costs_lifetime, _technologies)
+    # assert ((_fuel_costs_annual - _fuel_costs) < 1e-5).all()
+
+    # Convert annual capital costs back to lifetime
+    _capital_costs_lifetime = annual_to_lifetime(_capital_costs_annual, _technologies)
+    # assert ((_capital_costs_lifetime - _capital_costs) < 1e-5).all()
