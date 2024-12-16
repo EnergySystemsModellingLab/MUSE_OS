@@ -517,10 +517,10 @@ def annual_to_lifetime(
     assert "year" not in technologies.dims
     assert "timeslice" in costs.dims
     life = technologies.technical_life.astype(int)
-    iyears = range(max(life.values.max(), 1))
+    iyears = range(life.values.max())
     years = xr.DataArray(iyears, coords={"year": iyears}, dims="year")
     rates = discount_factor(
-        years=years + 1,
+        years=years,
         interest_rate=technologies.interest_rate,
         mask=years <= life,
     )
@@ -542,9 +542,10 @@ def lifetime_to_annual(
     assert "year" not in technologies.dims
     assert "timeslice" in costs.dims
     life = technologies.technical_life.astype(int)
-    rate = technologies.interest_rate / (
-        1 - (1 + technologies.interest_rate) ** (-life)
-    )
+    # rate = technologies.interest_rate / (
+    #     1 - (1 + technologies.interest_rate) ** -life
+    # )
+    rate = 1 / life
     return costs * broadcast_timeslice(rate, level=timeslice_level)
 
 
