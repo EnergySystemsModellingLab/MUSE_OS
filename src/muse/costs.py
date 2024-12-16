@@ -101,7 +101,10 @@ def capital_costs(
         technologies.cap_par * (capacity**technologies.cap_exp), level=timeslice_level
     )
     if method == "annual":
-        _capital_costs = _capital_costs * capital_recovery_factor(technologies)
+        crf = capital_recovery_factor(technologies)
+        _capital_costs = _capital_costs * broadcast_timeslice(
+            crf, level=timeslice_level
+        )
     return _capital_costs
 
 
