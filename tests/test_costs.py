@@ -206,3 +206,41 @@ def test_annual_to_lifetime(_technologies, _prices, _consumption):
     _fuel_costs_lifetime = annual_to_lifetime(_fuel_costs, _technologies)
     assert set(_fuel_costs.dims) == set(_fuel_costs_lifetime.dims)
     assert (_fuel_costs_lifetime > _fuel_costs).all()
+
+
+def test_lcoe_scaling(_technologies, _prices, _capacity, _production, _consumption):
+    """Testing that LCOE is independent of input/output scaling.
+
+    In other words, if we change technology flows by a constant factor, the LCOE (which
+    is a cost per unit of production) should remain unchanged.
+
+    This is a bit more complicated if the variable costs are nonlinear, so we'll set
+    the exponent to 1 for simplicity
+    """
+    from muse.costs import levelized_cost_of_energy
+
+    _technologies["var_exp"] = 1
+
+    for method in ["annual", "lifetime"]:
+        # LCOE with original inputs
+        lcoe1 = levelized_cost_of_energy(
+            _technologies, _prices, _capacity, _production, _consumption, method=method
+        )
+
+        # Scale inputs and outputs by a constant factor -> LCOE should be unchanged
+        # var_par also needs to be scaled as this relates to units of technology
+        # activity, not units of commodity consumption/production
+        _technologies_scaled = _technologies.copy()
+        _technologies_scaled["fixed_inputs"] = _technologies["fixed_inputs"] * 2
+        _technologies_scaled["flexible_inpits"] = _technologies["flexible_inputs"] * 2
+        _technologies_scaled["fixed_outputs"] = _technologies["fixed_outputs"] * 2
+        _technologies_scaled["var_par"] = _technologies["var_par"] * 2
+        lcoe2 = levelized_cost_of_energy(
+            _technologies_scaled,
+            _prices,
+            _capacity,
+            _production,
+            _consumption,
+            method=method,
+        )
+        assert (abs(lcoe1 - lcoe2) < 1e-6).all()
