@@ -1,5 +1,5 @@
 from numpy import isclose
-from pytest import fixture
+from pytest import fixture, mark
 
 YEAR = 2030
 
@@ -155,24 +155,14 @@ def test_equivalent_annual_cost(
     assert set(result.dims) == EXPECTED_DIMS
 
 
-def test_lifetime_levelized_cost_of_energy(
-    _technologies, _prices, _capacity, _production, _consumption
+@mark.parametrize("method", ["annual", "lifetime"])
+def test_levelized_cost_of_energy(
+    _technologies, _prices, _capacity, _production, _consumption, method
 ):
     from muse.costs import levelized_cost_of_energy
 
     result = levelized_cost_of_energy(
-        _technologies, _prices, _capacity, _production, _consumption, method="lifetime"
-    )
-    assert set(result.dims) == EXPECTED_DIMS
-
-
-def test_annual_levelized_cost_of_energy(
-    _technologies, _prices, _capacity, _production, _consumption
-):
-    from muse.costs import levelized_cost_of_energy
-
-    result = levelized_cost_of_energy(
-        _technologies, _prices, _capacity, _production, _consumption, method="annual"
+        _technologies, _prices, _capacity, _production, _consumption, method=method
     )
     assert set(result.dims) == EXPECTED_DIMS
 
@@ -209,8 +199,9 @@ def test_annual_to_lifetime(_technologies, _prices, _consumption):
     assert (_fuel_costs_lifetime > _fuel_costs).all()
 
 
+@mark.parametrize("method", ["annual", "lifetime"])
 def test_lcoe_flow_scaling(
-    _technologies, _prices, _capacity, _production, _consumption
+    _technologies, _prices, _capacity, _production, _consumption, method
 ):
     """Testing that LCOE is independent of input/output flow scaling.
 
@@ -224,33 +215,33 @@ def test_lcoe_flow_scaling(
 
     _technologies["var_exp"] = 1
 
-    for method in ["annual", "lifetime"]:
-        # LCOE with original inputs
-        lcoe1 = levelized_cost_of_energy(
-            _technologies, _prices, _capacity, _production, _consumption, method=method
-        )
+    # LCOE with original inputs
+    lcoe1 = levelized_cost_of_energy(
+        _technologies, _prices, _capacity, _production, _consumption, method=method
+    )
 
-        # Scale inputs and outputs by a constant factor -> LCOE should be unchanged
-        # var_par also needs to be scaled as this relates to units of technology
-        # activity, not units of commodity consumption/production
-        _technologies_scaled = _technologies.copy()
-        _technologies_scaled["fixed_inputs"] = _technologies["fixed_inputs"] * 2
-        _technologies_scaled["flexible_inpits"] = _technologies["flexible_inputs"] * 2
-        _technologies_scaled["fixed_outputs"] = _technologies["fixed_outputs"] * 2
-        _technologies_scaled["var_par"] = _technologies["var_par"] * 2
-        lcoe2 = levelized_cost_of_energy(
-            _technologies_scaled,
-            _prices,
-            _capacity,
-            _production,
-            _consumption,
-            method=method,
-        )
-        assert isclose(lcoe1, lcoe2).all()
+    # Scale inputs and outputs by a constant factor -> LCOE should be unchanged
+    # var_par also needs to be scaled as this relates to units of technology
+    # activity, not units of commodity consumption/production
+    _technologies_scaled = _technologies.copy()
+    _technologies_scaled["fixed_inputs"] = _technologies["fixed_inputs"] * 2
+    _technologies_scaled["flexible_inpits"] = _technologies["flexible_inputs"] * 2
+    _technologies_scaled["fixed_outputs"] = _technologies["fixed_outputs"] * 2
+    _technologies_scaled["var_par"] = _technologies["var_par"] * 2
+    lcoe2 = levelized_cost_of_energy(
+        _technologies_scaled,
+        _prices,
+        _capacity,
+        _production,
+        _consumption,
+        method=method,
+    )
+    assert isclose(lcoe1, lcoe2).all()
 
 
+@mark.parametrize("method", ["annual", "lifetime"])
 def test_lcoe_prod_scaling(
-    _technologies, _prices, _capacity, _production, _consumption
+    _technologies, _prices, _capacity, _production, _consumption, method
 ):
     """Testing that LCOE is independent of production scaling.
 
@@ -263,20 +254,19 @@ def test_lcoe_prod_scaling(
     _technologies["cap_exp"] = 1
     _technologies["fix_exp"] = 1
 
-    for method in ["annual", "lifetime"]:
-        # LCOE with original inputs
-        lcoe1 = levelized_cost_of_energy(
-            _technologies, _prices, _capacity, _production, _consumption, method=method
-        )
+    # LCOE with original inputs
+    lcoe1 = levelized_cost_of_energy(
+        _technologies, _prices, _capacity, _production, _consumption, method=method
+    )
 
-        # Scale consumption, production, and capacity by a constant factor -> LCOE
-        # should be unchanged
-        lcoe2 = levelized_cost_of_energy(
-            _technologies,
-            _prices,
-            _capacity * 2,
-            _production * 2,
-            _consumption * 2,
-            method=method,
-        )
-        assert isclose(lcoe1, lcoe2).all()
+    # Scale consumption, production, and capacity by a constant factor -> LCOE
+    # should be unchanged
+    lcoe2 = levelized_cost_of_energy(
+        _technologies,
+        _prices,
+        _capacity * 2,
+        _production * 2,
+        _consumption * 2,
+        method=method,
+    )
+    assert isclose(lcoe1, lcoe2).all()
