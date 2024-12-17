@@ -567,6 +567,10 @@ def production_amplitude(
     technology activity required to meet (at least) the specified production of all
     commodities.
 
+    For example:
+    A technology has the following reaction: 1A -> 2B + 3C
+    If production is 4B & 6C, this is equal to a production amplitude of 2
+
     Args:
         production: DataArray with commodity-level production for a set of technologies.
             Must have `timeslice` and `commodity` dimensions. May also have other
