@@ -402,7 +402,7 @@ def levelized_cost_of_energy(
         by total production to get the average cost per unit of production.
     - annual: the average cost per unit of production in a single year.
         Annual running costs and production are calculated for a single year. Capital
-        costs are divided by the lifetime of the technology to get an annualized cost.
+        costs are multiplied by the capital recovery factor to get an annualized cost.
         Total costs (annualized capital costs + running costs) are then divided by
         production to get the average cost per unit of production.
 
