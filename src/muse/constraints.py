@@ -1198,12 +1198,8 @@ class ScipyAdapter:
 
         assert "year" not in technologies.dims
 
-        coords = sorted([k for k in lpcosts.dims])
-        lpcosts_df = lpcosts.to_dataframe().reset_index().set_index(coords)
-        slpcosts = lpcosts_df.to_xarray()  # sorted lpcosts.dims
-
         data = merge(
-            [lpcosts.rename({k: f"d({k})" for k in slpcosts.dims})]
+            [lpcosts.rename({k: f"d({k})" for k in lpcosts.dims})]
             + [
                 lp_constraint(constraint, lpcosts).rename(
                     b=f"b{i}", capacity=f"capacity{i}", production=f"production{i}"
@@ -1214,10 +1210,11 @@ class ScipyAdapter:
 
         for i, constraint in enumerate(constraints):
             if constraint.kind == ConstraintKind.LOWER_BOUND:
-                data[f"b{i}"] = -data[f"b{i}"]  # type: ignore
-                data[f"capacity{i}"] = -data[f"capacity{i}"]  # type: ignore
-                data[f"production{i}"] = -data[f"production{i}"]  # type: ignore
+                data[f"b{i}"] = -data[f"b{i}"]
+                data[f"capacity{i}"] = -data[f"capacity{i}"]
+                data[f"production{i}"] = -data[f"production{i}"]
 
+        # Enusure consistent ordering of dimensions
         return data.transpose(*data.dims)
 
     @staticmethod
