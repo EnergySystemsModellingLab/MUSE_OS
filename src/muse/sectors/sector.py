@@ -14,7 +14,12 @@ from muse.production import PRODUCTION_SIGNATURE
 from muse.sectors.abstract import AbstractSector
 from muse.sectors.register import register_sector
 from muse.sectors.subsector import Subsector
-from muse.timeslices import compress_timeslice, expand_timeslice, get_level
+from muse.timeslices import (
+    broadcast_timeslice,
+    compress_timeslice,
+    expand_timeslice,
+    get_level,
+)
 
 
 @register_sector(name="default")
@@ -321,14 +326,13 @@ class Sector(AbstractSector):  # type: ignore
             capacity=capacity.isel(year=1),
             production=supply.isel(year=1),
             consumption=consume.isel(year=1),
-            timeslice_level=self.timeslice_level,
             method="annual",
         )
 
         # Calculate new commodity prices
         costs = supply_cost(
             supply.where(~is_pollutant(supply.comm_usage), 0),
-            lcoe,
+            broadcast_timeslice(lcoe, level=self.timeslice_level),
             asset_dim="asset",
         )
 
