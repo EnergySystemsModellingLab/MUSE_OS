@@ -52,6 +52,7 @@ def supply(
         technologies, capacity, timeslice_level=timeslice_level
     )
     size = np.array(maxprod.region).size
+
     # in presence of trade demand needs to map maxprod dst_region
     if (
         "region" in demand.dims
@@ -60,19 +61,6 @@ def supply(
         and size == 1
     ):
         demand = demand.sel(region=maxprod.region)
-        prodsum = set(demand.dims).difference(maxprod.dims)
-        demsum = set(maxprod.dims).difference(demand.dims)
-        expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
-
-    elif (
-        "region" in demand.dims
-        and "region" in maxprod.coords
-        and "dst_region" not in maxprod.dims
-        and size > 1
-    ):
-        prodsum = set(demand.dims).difference(maxprod.dims)
-        demsum = set(maxprod.dims).difference(demand.dims)
-        expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
 
     elif (
         "region" in demand.dims
@@ -80,32 +68,15 @@ def supply(
         and "dst_region" in maxprod.dims
     ):
         demand = demand.rename(region="dst_region")
-        prodsum = {"timeslice"}
-        demsum = {"asset"}
-        expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
 
-    else:
-        prodsum = set(demand.dims).difference(maxprod.dims)
-        demsum = set(maxprod.dims).difference(demand.dims)
-        expanded_demand = (demand * maxprod / maxprod.sum(demsum)).fillna(0)
+    # Share demand among assets
+    if "asset" not in demand.dims:
+        assert set(demand.dims) == set(maxprod.dims) - {"asset"}
+        demand = (demand * maxprod / maxprod.sum("asset")).fillna(0)
 
-    expanded_maxprod = (
-        maxprod
-        * demand
-        / broadcast_timeslice(demand.sum(prodsum), level=timeslice_level)
-    ).fillna(0)
-    expanded_minprod = (
-        minprod
-        * demand
-        / broadcast_timeslice(demand.sum(prodsum), level=timeslice_level)
-    ).fillna(0)
-    expanded_demand = expanded_demand.reindex_like(maxprod)
-    expanded_minprod = expanded_minprod.reindex_like(maxprod)
-
-    result = expanded_demand.where(
-        expanded_demand <= expanded_maxprod, expanded_maxprod
-    )
-    result = result.where(result >= expanded_minprod, expanded_minprod)
+    # Supply is equal to demand, bounded between minprod and maxprod
+    result = np.minimum(demand, maxprod)
+    result = np.maximum(result, minprod)
 
     # add production of environmental pollutants
     env = is_pollutant(technologies.comm_usage)
