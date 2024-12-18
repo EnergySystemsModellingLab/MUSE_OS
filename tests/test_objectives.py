@@ -1,14 +1,15 @@
 from pytest import fixture, mark
 
+YEAR = 2030
+
 
 @fixture
 def _technologies(technologies, retro_agent, search_space):
     techs = retro_agent.filter_input(
         technologies,
         technology=search_space.replacement,
-        year=retro_agent.forecast_year,
     ).drop_vars("technology")
-    return techs
+    return techs.sel(year=YEAR)
 
 
 @fixture
@@ -26,14 +27,14 @@ def _demand(demand_share, search_space):
 @fixture
 def _prices(retro_agent, agent_market):
     prices = retro_agent.filter_input(agent_market.prices)
-    return prices
+    return prices.sel(year=YEAR)
 
 
 def test_fixtures(_technologies, _demand, _prices):
     """Validating that the fixtures have appropriate dimensions."""
     assert set(_technologies.dims) == {"commodity", "replacement"}
     assert set(_demand.dims) == {"asset", "commodity", "timeslice"}
-    assert set(_prices.dims) == {"commodity", "timeslice", "year"}
+    assert set(_prices.dims) == {"commodity", "timeslice"}
 
 
 @mark.usefixtures("save_registries")
@@ -167,7 +168,7 @@ def test_emission_cost(_technologies, _demand, _prices):
     assert set(result.dims) == {"replacement", "asset", "timeslice"}
 
 
-def test_fuel_consumption(_technologies, _demand, _prices):
+def test_fuel_consumption_cost(_technologies, _demand, _prices):
     from muse.objectives import fuel_consumption_cost
 
     result = fuel_consumption_cost(_technologies, _demand, _prices)
