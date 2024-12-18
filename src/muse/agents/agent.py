@@ -386,11 +386,14 @@ class InvestingAgent(Agent):
         # Filter prices according to the region
         prices = self.filter_input(market.prices)
 
+        # Select prices for the investment year
+        investment_year_prices = prices.isel(year=1)
+
         # Compute the objectives
         objectives = self.objectives(
             technologies=techs,
             demand=reduced_demand,
-            prices=prices,
+            prices=investment_year_prices,
             timeslice_level=self.timeslice_level,
         )
 
