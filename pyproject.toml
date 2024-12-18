@@ -49,7 +49,6 @@ dev = [
     "nbformat",
     "mypy",
     "pytest-xdist",
-    "bump2version",
     "pyinstaller",
     "pre-commit"
 ]
@@ -82,9 +81,6 @@ include-package-data = true
 where = ["src"]
 include = ["*"]
 namespaces = true
-
-[tool.setuptools.dynamic]
-version = {attr = "muse.VERSION"}
 
 [tool.setuptools_scm]
 
