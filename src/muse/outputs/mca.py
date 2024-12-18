@@ -414,7 +414,7 @@ def metric_lcoe(
 
 def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Levelized cost of energy () of technologies over their lifetime."""
-    from muse.costs import lifetime_levelized_cost_of_energy as LCOE
+    from muse.costs import levelized_cost_of_energy as LCOE
     from muse.quantities import capacity_to_service_demand
 
     # Filtering of the inputs
@@ -453,13 +453,17 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
                 * distribute_timeslice(techs.fixed_outputs)
                 * techs.utilization_factor
             )
+            consump = consumption(
+                technologies=technologies, prices=prices, production=production
+            )
 
             result = LCOE(
                 prices=prices,
                 technologies=techs,
                 capacity=capacity,
                 production=production,
-                year=agent.year,
+                consumption=consump,
+                method="lifetime",
             )
 
             data_agent = result
