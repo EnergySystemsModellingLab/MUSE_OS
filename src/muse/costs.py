@@ -252,8 +252,8 @@ def net_present_value(
     )
 
     # Calculate running costs and revenues over lifetime
-    _running_costs = annual_to_lifetime(_running_costs, technologies)
-    revenues = annual_to_lifetime(revenues, technologies)
+    _running_costs = annual_to_lifetime(_running_costs, technologies, timeslice_level)
+    revenues = annual_to_lifetime(revenues, technologies, timeslice_level)
 
     # Net present value
     result = revenues - (_capital_costs + _running_costs)
@@ -362,7 +362,7 @@ def levelized_cost_of_energy(
         by total production to get the average cost per unit of production.
     - annual: the average cost per unit of production in a single year.
         Annual running costs and production are calculated for a single year. Capital
-        costs are divided by the lifetime of the technology to get an annualized cost.
+        costs are multiplied by the capital recovery factor to get an annualized cost.
         Total costs (annualized capital costs + running costs) are then divided by
         production to get the average cost per unit of production.
 
@@ -401,8 +401,10 @@ def levelized_cost_of_energy(
 
     # If method is lifetime, have to adjust running costs and production
     if method == "lifetime":
-        _running_costs = annual_to_lifetime(_running_costs, technologies)
-        prod = annual_to_lifetime(prod, technologies)
+        _running_costs = annual_to_lifetime(
+            _running_costs, technologies, timeslice_level
+        )
+        prod = annual_to_lifetime(prod, technologies, timeslice_level)
 
     # LCOE
     result = (_capital_costs + _running_costs) / prod
