@@ -23,8 +23,9 @@ Additional dimensions (such as "region") may be present in the inputs, but it's 
 the parent functions to ensure that these are consistent between inputs to prevent
 unwanted broadcasting.
 
-The dimensions of the output will be the sum of all dimensions from the input data,
-minus "commodity".
+Some costs are calculated at the timeslice level (e.g. fuel costs), while others are
+calculated for the year/lifetime as a whole (e.g. capital costs, LCOE). Refer to the
+individual function docstrings for more details.
 
 Some functions have a `method` argument, which can be "annual" or "lifetime":
 
@@ -99,7 +100,7 @@ def capital_costs(
 def environmental_costs(
     technologies: xr.Dataset, prices: xr.DataArray, production: xr.DataArray
 ) -> xr.DataArray:
-    """Calculate annual environmental costs for the relevant technologies.
+    """Calculate timeslice-level environmental costs for the relevant technologies.
 
     This is the total production of pollutants (commodities flagged by `is_pollutant`)
     multiplied by their prices.
@@ -115,7 +116,7 @@ def environmental_costs(
 def fuel_costs(
     technologies: xr.Dataset, prices: xr.DataArray, consumption: xr.DataArray
 ) -> xr.DataArray:
-    """Calculate annual fuel costs for the relevant technologies.
+    """Calculate timeslice-level fuel costs for the relevant technologies.
 
     This is the total consumption of fuels (commodities flagged by `is_fuel`)
     multiplied by their prices.
@@ -131,7 +132,7 @@ def fuel_costs(
 def material_costs(
     technologies: xr.Dataset, prices: xr.DataArray, consumption: xr.DataArray
 ) -> xr.DataArray:
-    """Calculate annual material costs for the relevant technologies.
+    """Calculate timeslice-level material costs for the relevant technologies.
 
     This is the total consumption of materials (commodities flagged by `is_material`)
     multiplied by their prices.
