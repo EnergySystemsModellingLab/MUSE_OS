@@ -442,7 +442,7 @@ def max_production(
     replacement = replacement.drop_vars(
         [u for u in replacement.coords if u not in replacement.dims]
     )
-    kwargs = dict(technology=replacement, commodity=commodities)
+    kwargs = dict(technology=replacement, year=year, commodity=commodities)
     if "region" in search_space.coords and "region" in technologies.dims:
         kwargs["region"] = search_space.region
     techs = (
