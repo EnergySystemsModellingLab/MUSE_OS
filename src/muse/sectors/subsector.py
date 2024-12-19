@@ -52,7 +52,6 @@ class Subsector:
         self,
         technologies: xr.Dataset,
         market: xr.Dataset,
-        time_period: int,
         current_year: int,
     ) -> None:
         # Expand prices to include destination region (for trade models)
@@ -67,13 +66,12 @@ class Subsector:
             agent.asset_housekeeping()
 
         # Perform the investments
-        self.aggregate_lp(technologies, market, time_period, current_year=current_year)
+        self.aggregate_lp(technologies, market, current_year=current_year)
 
     def aggregate_lp(
         self,
         technologies: xr.Dataset,
         market: xr.Dataset,
-        time_period,
         current_year,
     ) -> None:
         from muse.utilities import agent_concatenation, reduce_assets
@@ -115,7 +113,7 @@ class Subsector:
                 share = demands.sel(asset=demands.agent == agent.uuid)
             else:
                 share = demands
-            agent.next(technologies, agent_market, share, time_period=time_period)
+            agent.next(technologies, agent_market, share)
 
     @classmethod
     def factory(
@@ -123,7 +121,7 @@ class Subsector:
         settings: Any,
         technologies: xr.Dataset,
         regions: Sequence[str] | None = None,
-        current_year: int | None = None,
+        years: list[int] | None = None,
         name: str = "subsector",
         timeslice_level: str | None = None,
     ) -> Subsector:
@@ -153,7 +151,7 @@ class Subsector:
             settings.existing_capacity,
             technologies=technologies,
             regions=regions,
-            year=current_year or int(technologies.year.min()),
+            years=years,
             asset_threshold=getattr(settings, "asset_threshold", 1e-12),
             # only used by self-investing agents
             investment=getattr(settings, "lpsolver", "scipy"),

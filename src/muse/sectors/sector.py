@@ -47,7 +47,7 @@ class Sector(AbstractSector):  # type: ignore
                 subsec_settings,
                 technologies,
                 regions=settings.regions,
-                current_year=int(min(settings.time_framework)),
+                years=list(settings.time_framework),
                 name=subsec_name,
                 timeslice_level=sector_settings.get("timeslice_level", None),
             )
@@ -198,7 +198,6 @@ class Sector(AbstractSector):  # type: ignore
         def group_assets(x: xr.DataArray) -> xr.DataArray:
             return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
 
-        time_period = int(mca_market.year.max() - mca_market.year.min())
         current_year = int(mca_market.year.min())
         getLogger(__name__).info(f"Running {self.name} for year {current_year}")
 
@@ -218,7 +217,6 @@ class Sector(AbstractSector):  # type: ignore
             subsector.invest(
                 self.technologies,
                 market,
-                time_period=time_period,
                 current_year=current_year,
             )
 
