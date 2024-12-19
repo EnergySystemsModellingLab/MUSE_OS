@@ -468,7 +468,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
                 method="lifetime",
             )
 
-            data_agent = broadcast_timeslice(result)
+            data_agent = result
             data_agent["agent"] = agent.name
             data_agent["category"] = agent.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
@@ -550,7 +550,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
                 consumption=consump,
             )
 
-            data_agent = broadcast_timeslice(result)
+            data_agent = result
             data_agent["agent"] = agent.name
             data_agent["category"] = agent.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
