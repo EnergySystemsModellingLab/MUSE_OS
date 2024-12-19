@@ -101,7 +101,7 @@ def fitting(
     Returns:
         new_price: adjusted carbon price to meet budget
     """
-    # Calculate the carbon price and emissions threshold in the investment year
+    # Calculate the carbon price and emissions threshold in the forecast year
     future = market.year[-1]
     threshold = carbon_budget.sel(year=future).values.item()
     price = market.prices.sel(year=future, commodity=commodities).mean().values.item()
@@ -332,7 +332,7 @@ def bisection(
     # Create cache for emissions at different price points
     emissions_cache = EmissionsCache(market, equilibrium, commodities)
 
-    # Carbon price and emissions threshold in the investment year
+    # Carbon price and emissions threshold in the forecast year
     future = market.year[-1]
     target = carbon_budget.sel(year=future).values.item()
     price = market.prices.sel(year=future, commodity=commodities).mean().values.item()

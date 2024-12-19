@@ -17,6 +17,8 @@ class PresetSector(AbstractSector):  # type: ignore
     @classmethod
     def factory(cls, name: str, settings: Any) -> PresetSector:
         """Constructs a PresetSectors from input data."""
+        from collections.abc import Sequence
+
         from xarray import DataArray, zeros_like
 
         from muse.commodities import CommodityUsage
@@ -49,9 +51,15 @@ class PresetSector(AbstractSector):  # type: ignore
             regression_parameters = read_regression_parameters(
                 getattr(sector_conf, "regression_path", None)
             )
+            forecast = getattr(sector_conf, "forecast", 0)
+            if isinstance(forecast, Sequence):
+                forecast = DataArray(
+                    forecast, coords={"forecast": forecast}, dims="forecast"
+                )
             consumption = endogenous_demand(
                 drivers=macro_drivers,
                 regression_parameters=regression_parameters,
+                forecast=forecast,
             )
             if hasattr(sector_conf, "filters"):
                 consumption = consumption.sel(sector_conf.filters._asdict())
@@ -141,4 +149,23 @@ class PresetSector(AbstractSector):  # type: ignore
         return result
 
     def _interpolate(self, data: DataArray, years: DataArray) -> DataArray:
+        """Chooses interpolation depending on whether forecast is available."""
+        if "forecast" in data.dims:
+            baseyear = int(years.min())
+            forecasted = (years - baseyear).values
+            result = (
+                data.interp(
+                    year=baseyear,
+                    method=self.interpolation_mode,
+                    kwargs={"fill_value": "extrapolate"},
+                )
+                .interp(
+                    forecast=forecasted,
+                    method=self.interpolation_mode,
+                    kwargs={"fill_value": "extrapolate"},
+                )
+                .drop_vars(("year", "forecast"))
+            )
+            result["year"] = "forecast", years.values
+            return result.set_index(forecast="year").rename(forecast="year")
         return data.interp(year=years, method=self.interpolation_mode).ffill("year")
