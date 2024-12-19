@@ -188,9 +188,7 @@ def cliff_retirement_profile(
     if kwargs:
         technical_life = technical_life.sel(**kwargs)
     if "year" in technical_life.dims:
-        technical_life = technical_life.interp(
-            year=investment_year, method=interpolation
-        )
+        technical_life = technical_life.sel(year=investment_year)
 
     # Create profile across all years
     if len(technical_life) > 0:

@@ -170,15 +170,6 @@ class Sector(AbstractSector):  # type: ignore
         """Full supply, consumption and costs data for the most recent year."""
         self.output_data: xr.Dataset
 
-    @property
-    def forecast(self):
-        """Maximum forecast horizon across agents.
-
-        It cannot be lower than 1 year.
-        """
-        forecasts = [getattr(agent, "forecast") for agent in self.agents]
-        return max(1, max(forecasts))
-
     def next(
         self,
         mca_market: xr.Dataset,
@@ -212,10 +203,13 @@ class Sector(AbstractSector):  # type: ignore
             commodity=self.technologies.commodity, region=self.technologies.region
         )
 
+        # Select technology data for the current year
+        techs = self.technologies.sel(year=market.year.values[0], drop=True)
+
         # Investments
         for subsector in self.subsectors:
             subsector.invest(
-                self.technologies,
+                techs,
                 market,
                 current_year=current_year,
             )
