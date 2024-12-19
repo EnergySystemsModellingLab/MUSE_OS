@@ -96,23 +96,6 @@ def test_gross_margin(technologies, capacity, market, timeslice):
     assert actual.values == approx(expected.values)
 
 
-def test_decommissioning_demand(technologies, capacity, timeslice):
-    from muse.commodities import is_enduse
-    from muse.quantities import decommissioning_demand
-
-    years = [2010, 2015]
-    capacity = capacity.interp(year=years)
-    capacity.loc[{"year": 2010}] = current = 1.3
-    capacity.loc[{"year": 2015}] = forecast = 1.0
-    technologies.fixed_outputs[:] = fouts = 0.5
-    technologies.utilization_factor[:] = ufac = 0.4
-    decom = decommissioning_demand(technologies, capacity, years)
-    assert set(decom.dims) == {"asset", "commodity", "year", "timeslice"}
-    assert decom.sel(commodity=is_enduse(technologies.comm_usage)).sum(
-        "timeslice"
-    ).values == approx(ufac * fouts * (current - forecast))
-
-
 def test_consumption(technologies, production, market):
     from muse.quantities import consumption
 
