@@ -112,7 +112,7 @@ def factory(
         )
         check_dimensions(
             technologies,
-            ["technology", "year", "region"],
+            ["technology", "region"],
             optional=["timeslice", "commodity", "dst_region"],
         )
 
