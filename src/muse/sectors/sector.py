@@ -287,7 +287,7 @@ class Sector(AbstractSector):  # type: ignore
     def market_variables(self, market: xr.Dataset, technologies: xr.Dataset) -> Any:
         """Computes resulting market: production, consumption, and costs."""
         from muse.commodities import is_pollutant
-        from muse.costs import annual_levelized_cost_of_energy, supply_cost
+        from muse.costs import levelized_cost_of_energy, supply_cost
         from muse.quantities import consumption
         from muse.utilities import broadcast_techs
 
@@ -304,18 +304,29 @@ class Sector(AbstractSector):  # type: ignore
 
         # Calculate consumption
         consume = consumption(
-            technologies, supply, market.prices, timeslice_level=self.timeslice_level
+            technologies,
+            production=supply,
+            prices=market.prices,
+            timeslice_level=self.timeslice_level,
         )
 
-        # Calculate commodity prices
+        # Calculate LCOE
+        # We select data for the second year, which corresponds to the investment year
         technodata = cast(xr.Dataset, broadcast_techs(technologies, supply))
+        lcoe = levelized_cost_of_energy(
+            prices=market.prices.sel(region=supply.region).isel(year=1),
+            technologies=technodata,
+            capacity=capacity.isel(year=1),
+            production=supply.isel(year=1),
+            consumption=consume.isel(year=1),
+            timeslice_level=self.timeslice_level,
+            method="annual",
+        )
+
+        # Calculate new commodity prices
         costs = supply_cost(
             supply.where(~is_pollutant(supply.comm_usage), 0),
-            annual_levelized_cost_of_energy(
-                prices=market.prices.sel(region=supply.region),
-                technologies=technodata,
-                timeslice_level=self.timeslice_level,
-            ),
+            lcoe,
             asset_dim="asset",
         )
 
