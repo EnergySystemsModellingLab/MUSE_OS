@@ -251,8 +251,6 @@ def new_and_retro(
     from muse.utilities import agent_concatenation, reduce_assets
 
     def decommissioning(capacity):
-        from muse.quantities import decommissioning_demand
-
         return decommissioning_demand(
             technologies,
             capacity,
@@ -384,8 +382,6 @@ def standard_demand(
     from muse.utilities import agent_concatenation, reduce_assets
 
     def decommissioning(capacity):
-        from muse.quantities import decommissioning_demand
-
         return decommissioning_demand(
             technologies,
             capacity,
@@ -680,3 +676,55 @@ def new_and_retro_demands(
     result = xr.Dataset({"new": new_demand, "retrofit": retro_demand})
     assert "year" not in result.new.dims
     return result
+
+
+def decommissioning_demand(
+    technologies: xr.Dataset,
+    capacity: xr.DataArray,
+    year: Optional[Sequence[int]] = None,
+    timeslice_level: Optional[str] = None,
+) -> xr.DataArray:
+    r"""Computes demand from process decommissioning.
+
+    If `year` is not given, it defaults to all years in capacity. If there are more than
+    two years, then decommissioning is with respect to first (or minimum) year.
+
+    Let :math:`M_t^r(y)` be the retrofit demand, :math:`^{(s)}\mathcal{D}_t^r(y)` be the
+    decommissioning demand at the level of the sector, and :math:`A^r_{t, \iota}(y)` be
+    the assets owned by the agent. Then, the decommissioning demand for agent :math:`i`
+    is :
+
+    .. math::
+
+        \mathcal{D}^{r, i}_{t, c}(y) =
+            \sum_\iota \alpha_{t, \iota}^r \beta_{t, \iota, c}^r
+                \left(A^{i, r}_{t, \iota}(y) - A^{i, r}_{t, \iota, c}(y + 1) \right)
+
+    given the utilization factor :math:`\alpha_{t, \iota}` and the fixed output factor
+    :math:`\beta_{t, \iota, c}`.
+
+    Furthermore, decommissioning demand is non-zero only for end-use commodities.
+
+    ncsearch-nohlsearch).. SeeAlso:
+        :ref:`indices`, :ref:`quantities`,
+        :py:func:`~muse.quantities.maximum_production`
+        :py:func:`~muse.commodities.is_enduse`
+    """
+    from muse.quantities import maximum_production
+
+    if year is None:
+        year = capacity.year.values
+    year = sorted(year)
+    capacity = capacity.interp(year=year, kwargs={"fill_value": 0.0})
+    baseyear = min(year)
+    dyears = [u for u in year if u != baseyear]
+
+    # Calculate the decrease in capacity from the current year to future years
+    capacity_decrease = capacity.sel(year=baseyear) - capacity.sel(year=dyears)
+
+    # Calculate production associated with this capacity
+    return maximum_production(
+        technologies,
+        capacity_decrease,
+        timeslice_level=timeslice_level,
+    ).clip(min=0)
