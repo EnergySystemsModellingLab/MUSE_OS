@@ -35,7 +35,7 @@ from mypy_extensions import KwArg
 from muse.outputs.sector import market_quantity
 from muse.registration import registrator
 from muse.sectors import AbstractSector
-from muse.timeslices import distribute_timeslice
+from muse.timeslices import broadcast_timeslice, distribute_timeslice
 from muse.utilities import multiindex_to_coords
 
 OUTPUT_QUANTITY_SIGNATURE = Callable[
@@ -415,7 +415,7 @@ def metric_lcoe(
 def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Levelized cost of energy () of technologies over their lifetime."""
     from muse.costs import levelized_cost_of_energy as LCOE
-    from muse.quantities import capacity_to_service_demand
+    from muse.quantities import capacity_to_service_demand, consumption
 
     # Filtering of the inputs
     data_sector: list[xr.DataArray] = []
@@ -445,21 +445,23 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
                 technologies,
                 year=agent.year,
             )
-            prices = agent_market["prices"].sel(commodity=techs.commodity)
+            prices = agent_market["prices"].sel(
+                commodity=techs.commodity, year=agent.year
+            )
             demand = agent_market.consumption.sel(commodity=included)
             capacity = agent.filter_input(capacity_to_service_demand(demand, techs))
             production = (
-                capacity
+                broadcast_timeslice(capacity)
                 * distribute_timeslice(techs.fixed_outputs)
-                * techs.utilization_factor
+                * broadcast_timeslice(techs.utilization_factor)
             )
             consump = consumption(
-                technologies=technologies, prices=prices, production=production
+                technologies=techs, prices=prices, production=production
             )
 
             result = LCOE(
-                prices=prices,
                 technologies=techs,
+                prices=prices,
                 capacity=capacity,
                 production=production,
                 consumption=consump,
@@ -496,7 +498,7 @@ def metric_eac(
 def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
     """Net Present Value of technologies over their lifetime."""
     from muse.costs import equivalent_annual_cost as EAC
-    from muse.quantities import capacity_to_service_demand
+    from muse.quantities import capacity_to_service_demand, consumption
 
     # Filtering of the inputs
     data_sector: list[xr.DataArray] = []
@@ -526,21 +528,26 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
                 technologies,
                 year=agent.year,
             )
-            prices = agent_market["prices"].sel(commodity=techs.commodity)
+            prices = agent_market["prices"].sel(
+                commodity=techs.commodity, year=agent.year
+            )
             demand = agent_market.consumption.sel(commodity=included)
             capacity = agent.filter_input(capacity_to_service_demand(demand, techs))
             production = (
-                capacity
+                broadcast_timeslice(capacity)
                 * distribute_timeslice(techs.fixed_outputs)
-                * techs.utilization_factor
+                * broadcast_timeslice(techs.utilization_factor)
+            )
+            consump = consumption(
+                technologies=techs, prices=prices, production=production
             )
 
             result = EAC(
-                prices=prices,
                 technologies=techs,
+                prices=prices,
                 capacity=capacity,
                 production=production,
-                year=agent.year,
+                consumption=consump,
             )
 
             data_agent = result
