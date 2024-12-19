@@ -251,12 +251,14 @@ def new_and_retro(
     from muse.utilities import agent_concatenation, reduce_assets
 
     def decommissioning(capacity):
+        current_capacity = capacity.interp(year=current_year)  # TODO
+        future_capacity = capacity.interp(year=current_year + forecast)  # TODO
         return decommissioning_demand(
             technologies,
-            capacity,
-            year=[current_year, current_year + forecast],
+            current_capacity,
+            future_capacity,
             timeslice_level=timeslice_level,
-        ).squeeze("year")
+        )
 
     # Select market and capacity data
     current_market = market.isel(year=0, drop=True)
@@ -382,12 +384,14 @@ def standard_demand(
     from muse.utilities import agent_concatenation, reduce_assets
 
     def decommissioning(capacity):
+        current_capacity = capacity.interp(year=current_year)  # TODO
+        future_capacity = capacity.interp(year=current_year + forecast)  # TODO
         return decommissioning_demand(
             technologies,
-            capacity,
-            year=[current_year, current_year + forecast],
+            current_capacity,
+            future_capacity,
             timeslice_level=timeslice_level,
-        ).squeeze("year")
+        )
 
     # Make sure there are no retrofit agents
     for agent in agents:
@@ -680,8 +684,8 @@ def new_and_retro_demands(
 
 def decommissioning_demand(
     technologies: xr.Dataset,
-    capacity: xr.DataArray,
-    year: Optional[Sequence[int]] = None,
+    current_capacity: xr.DataArray,
+    future_capacity: xr.DataArray,
     timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     r"""Computes demand from process decommissioning.
@@ -712,19 +716,14 @@ def decommissioning_demand(
     """
     from muse.quantities import maximum_production
 
-    if year is None:
-        year = capacity.year.values
-    year = sorted(year)
-    capacity = capacity.interp(year=year, kwargs={"fill_value": 0.0})
-    baseyear = min(year)
-    dyears = [u for u in year if u != baseyear]
-
-    # Calculate the decrease in capacity from the current year to future years
-    capacity_decrease = capacity.sel(year=baseyear) - capacity.sel(year=dyears)
+    # Calculate the decrease in capacity from the current year to future year
+    capacity_decrease = current_capacity - future_capacity
 
     # Calculate production associated with this capacity
-    return maximum_production(
+    result = maximum_production(
         technologies,
         capacity_decrease,
         timeslice_level=timeslice_level,
     ).clip(min=0)
+    assert "year" not in result.dims
+    return result
