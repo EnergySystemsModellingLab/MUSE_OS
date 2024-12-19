@@ -3,6 +3,8 @@ Release notes
 
 This is the list of changes to MUSE between each release.
 
+To update to the latest version, run `pip install --upgrade muse-os`
+
 .. toctree::
    :maxdepth: 1
 
