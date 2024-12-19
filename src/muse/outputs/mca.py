@@ -468,15 +468,13 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
                 method="lifetime",
             )
 
-            data_agent = broadcast_timeslice(result)
+            data_agent = result
             data_agent["agent"] = agent.name
             data_agent["category"] = agent.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
             data_agent["year"] = output_year
             data_agent = data_agent.fillna(0)
-            data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
-                "LCOE"
-            )
+            data_agent = data_agent.to_dataframe("LCOE")
             if not data_agent.empty:
                 data_sector.append(data_agent)
 
@@ -550,14 +548,12 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
                 consumption=consump,
             )
 
-            data_agent = broadcast_timeslice(result)
+            data_agent = result
             data_agent["agent"] = agent.name
             data_agent["category"] = agent.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
             data_agent["year"] = output_year
-            data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
-                "capital_costs"
-            )
+            data_agent = data_agent.to_dataframe("capital_costs")
             if not data_agent.empty:
                 data_sector.append(data_agent)
     if len(data_sector) > 0:
