@@ -466,6 +466,8 @@ def max_production(
 
     from muse.commodities import is_enduse
 
+    assert "year" not in technologies.dims
+
     if year is None:
         year = int(market.year.min())
     commodities = technologies.commodity.sel(
@@ -475,7 +477,7 @@ def max_production(
     replacement = replacement.drop_vars(
         [u for u in replacement.coords if u not in replacement.dims]
     )
-    kwargs = dict(technology=replacement, year=year, commodity=commodities)
+    kwargs = dict(technology=replacement, commodity=commodities)
     if "region" in search_space.coords and "region" in technologies.dims:
         kwargs["region"] = search_space.region
     techs = (
