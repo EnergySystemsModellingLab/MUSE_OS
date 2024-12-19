@@ -306,7 +306,7 @@ def fixed_costs(
     from muse.costs import fixed_costs
 
     capacity = capacity_to_service_demand(technologies, demand)
-    result = fixed_costs(technologies, capacity)
+    result = fixed_costs(technologies, capacity).sum("timeslice")
     return result
 
 
@@ -327,7 +327,7 @@ def capital_costs(
     from muse.costs import capital_costs
 
     capacity = capacity_to_service_demand(technologies, demand)
-    result = capital_costs(technologies, capacity, method="lifetime")
+    result = capital_costs(technologies, capacity, method="lifetime").sum("timeslice")
     result = xr.broadcast(result, demand.asset)[0]
     return result
 
@@ -434,6 +434,7 @@ def annual_levelized_cost_of_energy(
         capacity=capacity,
         production=production,
         consumption=consump,
+        timeslice_level=timeslice_level,
         method="annual",
     )
 
@@ -480,6 +481,7 @@ def lifetime_levelized_cost_of_energy(
         capacity=capacity,
         production=production,
         consumption=consump,
+        timeslice_level=timeslice_level,
         method="lifetime",
     )
 
@@ -521,6 +523,7 @@ def net_present_value(
         capacity=capacity,
         production=production,
         consumption=consump,
+        timeslice_level=timeslice_level,
     )
     return results
 
@@ -599,5 +602,6 @@ def equivalent_annual_cost(
         capacity=capacity,
         production=production,
         consumption=consump,
+        timeslice_level=timeslice_level,
     )
     return results

@@ -396,7 +396,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
         data_agent["category"] = agent.category
         data_agent["sector"] = getattr(sector, "name", "unnamed")
         data_agent["year"] = current_year
-        data_agent = data_agent.to_dataframe("lcoe")
+        data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe("lcoe")
         data_sector.append(data_agent)
 
     output = pd.concat(data_sector, sort=True).reset_index()
@@ -443,7 +443,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
         data_agent["category"] = agent.category
         data_agent["sector"] = getattr(sector, "name", "unnamed")
         data_agent["year"] = current_year
-        data_agent = data_agent.to_dataframe("lcoe")
+        data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe("lcoe")
         data_sector.append(data_agent)
 
     output = pd.concat(data_sector, sort=True).reset_index()
