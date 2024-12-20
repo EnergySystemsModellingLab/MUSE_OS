@@ -242,7 +242,7 @@ def sector_fuel_costs(
     agents = sorted(getattr(sector, "agents"), key=attrgetter("name"))
 
     # Select data for the current year
-    current_year = agents[0].year - agents[0].forecast
+    current_year = agents[0].year - agents[0].forecast  # TODO: temporary hack, see #541
     _technologies = technologies.sel(year=current_year)
     _market = market.sel(year=current_year, commodity=_technologies.commodity)
 
