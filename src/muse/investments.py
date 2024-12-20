@@ -188,9 +188,7 @@ def cliff_retirement_profile(
     if kwargs:
         technical_life = technical_life.sel(**kwargs)
     if "year" in technical_life.dims:
-        technical_life = technical_life.interp(
-            year=investment_year, method=interpolation
-        )
+        technical_life = technical_life.sel(year=investment_year)
 
     # Create profile across all years
     if len(technical_life) > 0:
@@ -346,7 +344,7 @@ def cvxopt_match_demand(
     if "year" in technologies.dims and year is None:
         raise ValueError("Missing year argument")
     elif "year" in technologies.dims:
-        techs = technologies.interp(year=year).drop_vars("year")
+        techs = technologies.sel(year=year, drop=True)
     else:
         techs = technologies
 

@@ -233,9 +233,7 @@ def broadcast_techs(
         elif (not installed_as_year) and "year" in template.dims:
             year = template["year"]
         if year is not None and len(year) > 0:
-            techs = techs.interp(
-                year=sorted(set(cast(Iterable, year.values))), method=interpolation
-            )
+            techs = techs.sel(year=sorted(set(cast(Iterable, year.values))))
         if installed_as_year and "installed" in names:
             techs = techs.rename(year="installed")
 

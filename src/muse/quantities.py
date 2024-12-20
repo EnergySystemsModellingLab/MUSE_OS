@@ -199,7 +199,7 @@ def gross_margin(
         prices.sel(region=capacity.region)
     else:
         prices = prices.where(prices.region == capacity.region, drop=True)
-    prices = prices.interp(year=capacity.year.values)
+    prices = prices.sel(year=capacity.year.values)
 
     # Filters for pollutants and output commodities
     environmentals = is_pollutant(technologies.comm_usage)
