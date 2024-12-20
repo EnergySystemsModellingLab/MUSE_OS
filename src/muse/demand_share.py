@@ -470,8 +470,8 @@ def unmet_forecasted_demand(
 
     year = current_year + forecast
     comm_usage = technologies.comm_usage.sel(commodity=market.commodity)
-    smarket: xr.Dataset = market.where(is_enduse(comm_usage), 0).interp(year=year)
-    capacity = reduce_assets([u.assets.capacity.interp(year=year) for u in agents])
+    smarket: xr.Dataset = market.where(is_enduse(comm_usage), 0).sel(year=year)
+    capacity = reduce_assets([u.assets.capacity.sel(year=year) for u in agents])
     capacity = cast(xr.DataArray, capacity)
     result = unmet_demand(
         smarket, capacity, technologies, timeslice_level=timeslice_level
@@ -597,11 +597,11 @@ def new_consumption(
     from numpy import minimum
 
     # Interpolate capacity to forecast year
-    capa = capacity.interp(year=current_year + forecast)
+    capa = capacity.sel(year=current_year + forecast)
     assert isinstance(capa, xr.DataArray)
 
     # Interpolate market to forecast year
-    market = market.interp(year=[current_year, current_year + forecast])
+    market = market.sel(year=[current_year, current_year + forecast])
     current = market.sel(year=current_year, drop=True)
     forecasted = market.sel(year=current_year + forecast, drop=True)
 
@@ -635,7 +635,7 @@ def new_and_retro_demands(
     from muse.quantities import maximum_production
 
     # Interpolate market to forecast year
-    smarket: xr.Dataset = market.interp(year=[current_year, current_year + forecast])
+    smarket: xr.Dataset = market.sel(year=[current_year, current_year + forecast])
 
     # Interpolate capacity to forecast year
     capa = capacity.interp(year=[current_year, current_year + forecast])

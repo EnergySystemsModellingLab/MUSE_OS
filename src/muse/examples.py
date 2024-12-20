@@ -194,19 +194,15 @@ def mca_market(model: str = "default") -> xr.Dataset:
         path = copy_model(model, tmpdir)
         settings = read_settings(path / "settings.toml")
 
-        market = (
-            read_initial_market(
-                settings.global_input_files.projections,
-                base_year_export=getattr(
-                    settings.global_input_files, "base_year_export", None
-                ),
-                base_year_import=getattr(
-                    settings.global_input_files, "base_year_import", None
-                ),
-            )
-            .sel(region=settings.regions)
-            .interp(year=settings.time_framework, method=settings.interpolation_mode)
-        )
+        market = read_initial_market(
+            settings.global_input_files.projections,
+            base_year_export=getattr(
+                settings.global_input_files, "base_year_export", None
+            ),
+            base_year_import=getattr(
+                settings.global_input_files, "base_year_import", None
+            ),
+        ).sel(region=settings.regions, year=settings.time_framework)
         market["supply"] = drop_timeslice(zeros_like(market.exports))
         market["consumption"] = drop_timeslice(zeros_like(market.exports))
 
