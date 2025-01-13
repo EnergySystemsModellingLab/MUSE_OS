@@ -3,9 +3,12 @@ Release notes
 
 This is the list of changes to MUSE between each release.
 
+To update to the latest version, run `pip install --upgrade muse-os`
+
 .. toctree::
    :maxdepth: 1
 
+   v1.3.1
    v1.3.0
    v1.2.3
    v1.2.2
@@ -15,5 +18,3 @@ This is the list of changes to MUSE between each release.
 .. toctree::
    :caption: Upcoming releases:
    :maxdepth: 1
-
-   v1.3.1
