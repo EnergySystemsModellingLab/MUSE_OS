@@ -22,7 +22,7 @@ def residential(model):
 
 @fixture
 def technologies(residential):
-    return residential.technologies.squeeze("region")
+    return residential.technologies.squeeze("region").sel(year=2025)
 
 
 @fixture
@@ -47,13 +47,10 @@ def costs(search_space):
 
 
 @fixture
-def lpcosts(technologies, market, costs):
+def lpcosts(technologies, costs):
     from muse.constraints import lp_costs
 
-    return lp_costs(
-        technologies.interp(year=market.year.min() + 5).drop_vars("year"),
-        costs=costs,
-    )
+    return lp_costs(technologies, costs=costs)
 
 
 @fixture
@@ -66,7 +63,7 @@ def market_demand(assets, technologies):
     from muse.quantities import maximum_production
 
     return 0.8 * maximum_production(
-        technologies.interp(year=2025),
+        technologies,
         assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
     ).rename(technology="asset")
 
@@ -201,8 +198,6 @@ def test_lp_constraint(constraint, lpcosts):
 def test_to_scipy_adapter_maxprod(technologies, costs, max_production):
     from muse.constraints import ScipyAdapter, lp_costs
 
-    technologies = technologies.interp(year=2025)
-
     adapter = ScipyAdapter.factory(technologies, costs, max_production)
     assert set(adapter.kwargs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
     assert adapter.bounds == (0, np.inf)
@@ -225,8 +220,6 @@ def test_to_scipy_adapter_maxprod(technologies, costs, max_production):
 
 def test_to_scipy_adapter_demand(technologies, costs, demand_constraint):
     from muse.constraints import ScipyAdapter, lp_costs
-
-    technologies = technologies.interp(year=2025)
 
     adapter = ScipyAdapter.factory(technologies, costs, demand_constraint)
     assert set(adapter.kwargs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
@@ -259,8 +252,6 @@ def test_to_scipy_adapter_max_capacity_expansion(
 ):
     from muse.constraints import ScipyAdapter, lp_costs
 
-    technologies = technologies.interp(year=2025)
-
     adapter = ScipyAdapter.factory(technologies, costs, max_capacity_expansion)
     assert set(adapter.kwargs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
     assert adapter.bounds == (0, np.inf)
@@ -288,8 +279,6 @@ def test_to_scipy_adapter_max_capacity_expansion(
 def test_to_scipy_adapter_no_constraint(technologies, costs):
     from muse.constraints import ScipyAdapter, lp_costs
 
-    technologies = technologies.interp(year=2025)
-
     adapter = ScipyAdapter.factory(technologies, costs)
     assert set(adapter.kwargs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
     assert adapter.bounds == (0, np.inf)
@@ -308,8 +297,6 @@ def test_to_scipy_adapter_no_constraint(technologies, costs):
 def test_back_to_muse_capacity(technologies, costs):
     from muse.constraints import ScipyAdapter, lp_costs
 
-    technologies = technologies.interp(year=2025)
-
     lpcosts = lp_costs(technologies, costs)
     data = ScipyAdapter._unified_dataset(technologies, lpcosts)
     lpquantity = ScipyAdapter._selected_quantity(data, "capacity")
@@ -322,8 +309,6 @@ def test_back_to_muse_capacity(technologies, costs):
 
 def test_back_to_muse_production(technologies, costs):
     from muse.constraints import ScipyAdapter, lp_costs
-
-    technologies = technologies.interp(year=2025)
 
     lpcosts = lp_costs(technologies, costs)
     data = ScipyAdapter._unified_dataset(technologies, lpcosts)
@@ -343,7 +328,6 @@ def test_back_to_muse_production(technologies, costs):
 def test_back_to_muse_all(technologies, costs, rng: np.random.Generator):
     from muse.constraints import ScipyAdapter, lp_costs
 
-    technologies = technologies.interp(year=2025)
     lpcosts = lp_costs(technologies, costs)
 
     data = ScipyAdapter._unified_dataset(technologies, lpcosts)
@@ -374,7 +358,6 @@ def test_back_to_muse_all(technologies, costs, rng: np.random.Generator):
 def test_scipy_adapter_back_to_muse(technologies, costs, rng):
     from muse.constraints import ScipyAdapter, lp_costs
 
-    technologies = technologies.interp(year=2025)
     lpcosts = lp_costs(technologies, costs)
 
     data = ScipyAdapter._unified_dataset(technologies, lpcosts)
@@ -412,8 +395,6 @@ def _as_list(data: Union[xr.DataArray, xr.Dataset]) -> Union[xr.DataArray, xr.Da
 
 def test_scipy_adapter_standard_constraints(technologies, costs, constraints):
     from muse.constraints import ScipyAdapter
-
-    technologies = technologies.interp(year=2025)
 
     adapter = ScipyAdapter.factory(technologies, costs, *constraints)
     maxprod = next(cs for cs in constraints if cs.name == "max_production")

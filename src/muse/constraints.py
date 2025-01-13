@@ -180,6 +180,7 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
         **kwargs,
     ) -> Constraint | None:
         """Computes and standardizes a constraint."""
+        assert "year" not in technologies.dims
         constraint = function(  # type: ignore
             demand, assets, search_space, market, technologies, **kwargs
         )
@@ -252,7 +253,6 @@ def factory(
     ) -> list[Constraint]:
         if year is None:
             year = int(market.year.min())
-        assert "year" not in technologies.dims
         constraints = [
             function(
                 demand,
