@@ -252,6 +252,7 @@ def factory(
     ) -> list[Constraint]:
         if year is None:
             year = int(market.year.min())
+        assert "year" not in technologies.dims
         constraints = [
             function(
                 demand,
@@ -361,7 +362,6 @@ def max_capacity_expansion(
             ["max_capacity_addition", "max_capacity_growth", "total_capacity_limit"]
         ],
         technology=replacement,
-        year=year,
     ).drop_vars("technology")
     regions = getattr(capacity, "region", None)
     if regions is not None and "region" in technologies.dims:
@@ -475,7 +475,7 @@ def max_production(
     replacement = replacement.drop_vars(
         [u for u in replacement.coords if u not in replacement.dims]
     )
-    kwargs = dict(technology=replacement, year=year, commodity=commodities)
+    kwargs = dict(technology=replacement, commodity=commodities)
     if "region" in search_space.coords and "region" in technologies.dims:
         kwargs["region"] = search_space.region
     techs = (
@@ -756,7 +756,7 @@ def minimum_service(
     replacement = replacement.drop_vars(
         [u for u in replacement.coords if u not in replacement.dims]
     )
-    kwargs = dict(technology=replacement, year=year, commodity=commodities)
+    kwargs = dict(technology=replacement, commodity=commodities)
     if "region" in search_space.coords and "region" in technologies.dims:
         kwargs["region"] = assets.region
     techs = (
