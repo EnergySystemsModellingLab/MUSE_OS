@@ -393,9 +393,6 @@ def demand(
     assets: xr.Dataset,
     search_space: xr.DataArray,
     technologies: xr.Dataset,
-    year: int | None = None,
-    forecast: int = 5,
-    interpolation: str = "linear",
     **kwargs,
 ) -> Constraint:
     """Constraints production to meet demand."""
@@ -417,8 +414,6 @@ def search_space(
     assets: xr.Dataset,
     search_space: xr.DataArray,
     technologies: xr.Dataset,
-    year: int | None = None,
-    forecast: int = 5,
     **kwargs,
 ) -> Constraint | None:
     """Removes disabled technologies."""
