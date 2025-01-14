@@ -76,9 +76,9 @@ the following signature:
         pass
 
 demand:
-    The demand for the sectors products. In practice it is a demand share obtained in
-    :py:mod:`~muse.demand_share`. It is a data-array with dimensions including `asset`,
-    `commodity`, `timeslice`.
+    The demand for the sectors products in the investment year. In practice it is a
+    demand share obtained in :py:mod:`~muse.demand_share`. It is a data-array with
+    dimensions including `asset`, `commodity`, `timeslice`.
 capacity:
     A data-array with dimensions `technology` and `year` defining the existing capacity
     of each technology in the current year and investment year.
@@ -86,7 +86,7 @@ search_space:
     A matrix `asset` vs `replacement` technology defining which replacement technologies
     will be considered for each existing asset.
 technologies:
-    Technodata characterizing the competing technologies.
+    Technodata characterizing the competing technologies in the investment year.
 ``**kwargs``:
     Any other parameter.
 """

@@ -339,7 +339,7 @@ class InvestingAgent(Agent):
         # Get technology parameters for the investment year
         techs = self.filter_input(technologies, year=current_year + time_period)
 
-        # Calculate capacity
+        # Calculate capacity in current and forecast year
         capacity = reduce_assets(
             self.assets.capacity, coords=("technology", "region")
         ).interp(year=[current_year, current_year + self.forecast], method="linear")
