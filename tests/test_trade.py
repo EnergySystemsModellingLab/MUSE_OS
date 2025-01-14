@@ -18,12 +18,10 @@ def constraints_args(sector="power", model="trade") -> Mapping[str, Any]:
     capacity = reduce_assets(assets.capacity, coords=("region", "technology"))
     return dict(
         demand=market.consumption.sel(year=market.year.min(), drop=True),
-        assets=capacity,
+        capacity=capacity,
         search_space=search_space,
         market=market,
         technologies=power.technologies.sel(year=market.year.min(), drop=True),
-        year=market.year.min(),
-        forecast=5,
     )
 
 

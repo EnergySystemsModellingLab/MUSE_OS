@@ -351,7 +351,6 @@ class InvestingAgent(Agent):
             search_space=search.search_space,
             technologies=techs,
             year=current_year,
-            forecast=self.forecast,
             timeslice_level=self.timeslice_level,
         )
 

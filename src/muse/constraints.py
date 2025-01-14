@@ -71,7 +71,6 @@ the following signature:
         capacity: xr.DataArray,
         search_space: xr.DataArray,
         technologies: xr.Dataset,
-        year: int | None = None,
         **kwargs,
     ) -> Constraint:
         pass
@@ -88,8 +87,6 @@ search_space:
     will be considered for each existing asset.
 technologies:
     Technodata characterizing the competing technologies.
-year:
-    current year.
 ``**kwargs``:
     Any other parameter.
 """
@@ -248,8 +245,6 @@ def factory(
         capacity: xr.DataArray,
         search_space: xr.DataArray,
         technologies: xr.Dataset,
-        year: int,
-        forecast: int,
         timeslice_level: str | None = None,
     ) -> list[Constraint]:
         constraints = [
@@ -258,9 +253,7 @@ def factory(
                 capacity,
                 search_space,
                 technologies,
-                year=year,
                 timeslice_level=timeslice_level,
-                forecast=forecast,
             )
             for function in constraint_closures
         ]
@@ -275,8 +268,6 @@ def max_capacity_expansion(
     capacity: xr.DataArray,
     search_space: xr.DataArray,
     technologies: xr.Dataset,
-    year: int,
-    forecast: int,
     **kwargs,
 ) -> Constraint:
     r"""Max-capacity addition, max-capacity growth, and capacity limits constraints.
@@ -427,7 +418,6 @@ def max_production(
     capacity: xr.DataArray,
     search_space: xr.DataArray,
     technologies: xr.Dataset,
-    year: int,
     timeslice_level: str | None = None,
     **kwargs,
 ) -> Constraint:
@@ -455,30 +445,27 @@ def max_production(
         .sel(**kwargs)
         .drop_vars("technology")
     )
-    capacity = distribute_timeslice(
+    capa = distribute_timeslice(
         techs.fixed_outputs, level=timeslice_level
     ) * broadcast_timeslice(techs.utilization_factor, level=timeslice_level)
-    if "asset" not in capacity.dims and "asset" in search_space.dims:
-        capacity = capacity.expand_dims(asset=search_space.asset)
-    production = ones_like(capacity)
+    if "asset" not in capa.dims and "asset" in search_space.dims:
+        capa = capa.expand_dims(asset=search_space.asset)
+    production = ones_like(capa)
     b = zeros_like(production)
     # Include maxaddition constraint in max production to match region-dst_region
     if "dst_region" in technologies.dims:
         b = b.expand_dims(dst_region=technologies.dst_region)
-        capacity = capacity.rename(region="src_region")
+        capa = capa.rename(region="src_region")
         production = production.rename(region="src_region")
         maxadd = technologies.max_capacity_addition.rename(region="src_region")
-        if "year" in maxadd.dims:
-            maxadd = maxadd.sel(year=year)
-
         maxadd = maxadd.rename(technology="replacement")
         maxadd = maxadd.where(maxadd == 0, 0.0)
         maxadd = maxadd.where(maxadd > 0, -1.0)
-        capacity = capacity * broadcast_timeslice(maxadd, level=timeslice_level)
+        capa = capa * broadcast_timeslice(maxadd, level=timeslice_level)
         production = production * broadcast_timeslice(maxadd, level=timeslice_level)
         b = b.rename(region="src_region")
     return xr.Dataset(
-        dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
+        dict(capacity=-cast(np.ndarray, capa), production=production, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
     )
 
@@ -489,7 +476,6 @@ def demand_limiting_capacity(
     capacity: xr.DataArray,
     search_space: xr.DataArray,
     technologies: xr.Dataset,
-    year: int,
     timeslice_level: str | None = None,
     **kwargs,
 ) -> Constraint:
@@ -511,10 +497,9 @@ def demand_limiting_capacity(
         capacity,
         search_space,
         technologies,
-        year=year,
         timeslice_level=timeslice_level,
     )
-    demand_constraint = demand(demand_, capacity, search_space, technologies, year=year)
+    demand_constraint = demand(demand_, capacity, search_space, technologies)
 
     # We are interested in the demand of the demand constraint and the capacity of the
     # capacity constraint.
@@ -701,7 +686,6 @@ def minimum_service(
     capacity: xr.DataArray,
     search_space: xr.DataArray,
     technologies: xr.Dataset,
-    year: int,
     timeslice_level: str | None = None,
     **kwargs,
 ) -> Constraint | None:
@@ -895,8 +879,7 @@ def lp_constraint_matrix(
          >>> capacity = reduce_assets(assets.capacity, coords=("region", "technology"))
          >>> demand = None # not used in max production
          >>> constraint = cs.max_production(demand, capacity, search,
-         ...                                technologies, year=market.year.min(),
-         ...                                forecast=5) # noqa: E501
+         ...                                technologies) # noqa: E501
          >>> lpcosts = cs.lp_costs(
          ...     (
          ...         technologies
@@ -1036,9 +1019,7 @@ class ScipyAdapter:
         ... ).rename(technology="asset")
         >>> costs = search * np.arange(np.prod(search.shape)).reshape(search.shape)
         >>> constraint = cs.max_capacity_expansion(
-        ...     market_demand, capacity, search, technologies,
-        ...     year=market.year.min(), forecast=5,
-        ... )
+        ...     market_demand, capacity, search, technologies)
 
         The constraint acts over capacity decision variables only:
 
