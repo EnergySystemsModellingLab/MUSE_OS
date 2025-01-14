@@ -342,7 +342,6 @@ class InvestingAgent(Agent):
             search.demand,
             self.assets,
             search.search_space,
-            market,
             techs,
             year=current_year,
             forecast=self.forecast,

@@ -29,13 +29,6 @@ def technologies(residential):
 
 
 @fixture
-def market(model):
-    from muse import examples
-
-    return examples.residential_market(model)
-
-
-@fixture
 def search_space(model, assets):
     from muse import examples
 
@@ -72,12 +65,10 @@ def market_demand(assets, technologies):
 
 
 @fixture
-def max_production(market_demand, assets, search_space, market, technologies):
+def max_production(market_demand, assets, search_space, technologies):
     from muse.constraints import max_production
 
-    return max_production(
-        market_demand, assets, search_space, market, technologies, year=YEAR
-    )
+    return max_production(market_demand, assets, search_space, technologies, year=YEAR)
 
 
 @fixture
@@ -86,21 +77,20 @@ def constraint(max_production):
 
 
 @fixture
-def demand_constraint(market_demand, assets, search_space, market, technologies):
+def demand_constraint(market_demand, assets, search_space, technologies):
     from muse.constraints import demand
 
-    return demand(market_demand, assets, search_space, market, technologies)
+    return demand(market_demand, assets, search_space, technologies)
 
 
 @fixture
-def max_capacity_expansion(market_demand, assets, search_space, market, technologies):
+def max_capacity_expansion(market_demand, assets, search_space, technologies):
     from muse.constraints import max_capacity_expansion
 
     return max_capacity_expansion(
         market_demand,
         assets,
         search_space,
-        market,
         technologies,
         year=YEAR,
         forecast=FORECAST,
@@ -108,28 +98,25 @@ def max_capacity_expansion(market_demand, assets, search_space, market, technolo
 
 
 @fixture
-def demand_limiting_capacity(market_demand, assets, search_space, market, technologies):
+def demand_limiting_capacity(market_demand, assets, search_space, technologies):
     from muse.constraints import demand_limiting_capacity
 
     return demand_limiting_capacity(
-        market_demand, assets, search_space, market, technologies, year=YEAR
+        market_demand, assets, search_space, technologies, year=YEAR
     )
 
 
 @fixture(params=["timeslice_as_list", "timeslice_as_multindex"])
-def constraints(request, market_demand, assets, search_space, market, technologies):
+def constraints(request, market_demand, assets, search_space, technologies):
     from muse import constraints as cs
 
     constraints = [
-        cs.max_production(
-            market_demand, assets, search_space, market, technologies, year=YEAR
-        ),
-        cs.demand(market_demand, assets, search_space, market, technologies),
+        cs.max_production(market_demand, assets, search_space, technologies, year=YEAR),
+        cs.demand(market_demand, assets, search_space, technologies),
         cs.max_capacity_expansion(
             market_demand,
             assets,
             search_space,
-            market,
             technologies,
             year=YEAR,
             forecast=FORECAST,
@@ -441,12 +428,12 @@ def test_scipy_solver(technologies, costs, constraints):
 
 
 def test_minimum_service(
-    market_demand, assets, search_space, market, technologies, costs, constraints
+    market_demand, assets, search_space, technologies, costs, constraints
 ):
     from muse.constraints import minimum_service
 
     minimum_service_constraint = minimum_service(
-        market_demand, assets, search_space, market, technologies, year=YEAR
+        market_demand, assets, search_space, technologies, year=YEAR
     )
 
     # test it is none (when appropriate)
@@ -458,7 +445,7 @@ def test_minimum_service(
 
     # append minimum_service_constraint to constraints
     minimum_service_constraint = minimum_service(
-        market_demand, assets, search_space, market, technologies, year=YEAR
+        market_demand, assets, search_space, technologies, year=YEAR
     )
     constraints.append(minimum_service_constraint)
 

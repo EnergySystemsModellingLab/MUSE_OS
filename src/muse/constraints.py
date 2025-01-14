@@ -70,7 +70,6 @@ the following signature:
         demand: xr.DataArray,
         assets: xr.Dataset,
         search_space: xr.DataArray,
-        market: xr.Dataset,
         technologies: xr.Dataset,
         year: int | None = None,
         **kwargs,
@@ -86,8 +85,6 @@ assets:
 search_space:
     A matrix `asset` vs `replacement` technology defining which replacement technologies
     will be considered for each existing asset.
-market:
-    The market as obtained from the MCA.
 technologies:
     Technodata characterizing the competing technologies.
 year:
@@ -175,14 +172,13 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
         demand: xr.DataArray,
         assets: xr.Dataset,
         search_space: xr.DataArray,
-        market: xr.Dataset,
         technologies: xr.Dataset,
         **kwargs,
     ) -> Constraint | None:
         """Computes and standardizes a constraint."""
         assert "year" not in technologies.dims
         constraint = function(  # type: ignore
-            demand, assets, search_space, market, technologies, **kwargs
+            demand, assets, search_space, technologies, **kwargs
         )
         if constraint is not None:
             if "kind" not in constraint.attrs:
@@ -246,7 +242,6 @@ def factory(
         demand: xr.DataArray,
         assets: xr.Dataset,
         search_space: xr.DataArray,
-        market: xr.Dataset,
         technologies: xr.Dataset,
         year: int,
         forecast: int,
@@ -257,7 +252,6 @@ def factory(
                 demand,
                 assets,
                 search_space,
-                market,
                 technologies,
                 year=year,
                 timeslice_level=timeslice_level,
@@ -275,7 +269,6 @@ def max_capacity_expansion(
     demand: xr.DataArray,
     assets: xr.Dataset,
     search_space: xr.DataArray,
-    market: xr.Dataset,
     technologies: xr.Dataset,
     year: int,
     forecast: int,
@@ -399,7 +392,6 @@ def demand(
     demand: xr.DataArray,
     assets: xr.Dataset,
     search_space: xr.DataArray,
-    market: xr.Dataset,
     technologies: xr.Dataset,
     year: int | None = None,
     forecast: int = 5,
@@ -424,7 +416,6 @@ def search_space(
     demand: xr.DataArray,
     assets: xr.Dataset,
     search_space: xr.DataArray,
-    market: xr.Dataset,
     technologies: xr.Dataset,
     year: int | None = None,
     forecast: int = 5,
@@ -445,7 +436,6 @@ def max_production(
     demand: xr.DataArray,
     assets: xr.Dataset,
     search_space: xr.DataArray,
-    market: xr.Dataset,
     technologies: xr.Dataset,
     year: int,
     timeslice_level: str | None = None,
@@ -508,7 +498,6 @@ def demand_limiting_capacity(
     demand_: xr.DataArray,
     assets: xr.Dataset,
     search_space: xr.DataArray,
-    market: xr.Dataset,
     technologies: xr.Dataset,
     year: int,
     timeslice_level: str | None = None,
@@ -531,14 +520,11 @@ def demand_limiting_capacity(
         demand_,
         assets,
         search_space,
-        market,
         technologies,
         year=year,
         timeslice_level=timeslice_level,
     )
-    demand_constraint = demand(
-        demand_, assets, search_space, market, technologies, year=year
-    )
+    demand_constraint = demand(demand_, assets, search_space, technologies, year=year)
 
     # We are interested in the demand of the demand constraint and the capacity of the
     # capacity constraint.
@@ -724,7 +710,6 @@ def minimum_service(
     demand: xr.DataArray,
     assets: xr.Dataset,
     search_space: xr.DataArray,
-    market: xr.Dataset,
     technologies: xr.Dataset,
     year: int,
     timeslice_level: str | None = None,
@@ -917,7 +902,7 @@ def lp_constraint_matrix(
          >>> search = examples.search_space("residential", model="medium")
          >>> assets = next(a.assets for a in res.agents)
          >>> demand = None # not used in max production
-         >>> constraint = cs.max_production(demand, assets, search, market,
+         >>> constraint = cs.max_production(demand, assets, search,
          ...                                technologies, year=market.year.min(),
          ...                                forecast=5) # noqa: E501
          >>> lpcosts = cs.lp_costs(
@@ -1057,7 +1042,7 @@ class ScipyAdapter:
         ... ).rename(technology="asset")
         >>> costs = search * np.arange(np.prod(search.shape)).reshape(search.shape)
         >>> constraint = cs.max_capacity_expansion(
-        ...     market_demand, assets, search, market, technologies,
+        ...     market_demand, assets, search, technologies,
         ...     year=market.year.min(), forecast=5,
         ... )
 
