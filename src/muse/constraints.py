@@ -174,11 +174,16 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
         **kwargs,
     ) -> Constraint | None:
         """Computes and standardizes a constraint."""
+        # Check inputs
         assert "year" not in technologies.dims
 
         # Calculate constraint
         constraint = function(  # type: ignore
-            demand, capacity, search_space, technologies, **kwargs
+            demand,
+            capacity=capacity,
+            search_space=search_space,
+            technologies=technologies,
+            **kwargs,
         )
 
         # Standardize constraint
@@ -250,9 +255,9 @@ def factory(
         constraints = [
             function(
                 demand,
-                capacity,
-                search_space,
-                technologies,
+                capacity=capacity,
+                search_space=search_space,
+                technologies=technologies,
                 timeslice_level=timeslice_level,
             )
             for function in constraint_closures

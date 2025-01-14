@@ -350,7 +350,6 @@ class InvestingAgent(Agent):
             capacity=capacity,
             search_space=search.search_space,
             technologies=techs,
-            year=current_year,
             timeslice_level=self.timeslice_level,
         )
 
