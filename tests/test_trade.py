@@ -23,7 +23,7 @@ def constraints_args(sector="power", model="trade") -> Mapping[str, Any]:
         assets=assets,
         search_space=search_space,
         market=market,
-        technologies=power.technologies,
+        technologies=power.technologies.sel(year=market.year.min(), drop=True),
     )
 
 
@@ -60,8 +60,7 @@ def test_max_production(constraints_args):
     }
     assert set(constraint.capacity.dims) == dims
     assert set(constraint.production.dims) == dims
-    assert constraint.year.dims == ()
-    assert set(constraint.agent.coords) == {"region", "agent", "year"}
+    assert set(constraint.agent.coords) == {"region", "agent"}
 
 
 def test_minimum_service(constraints_args):
@@ -76,8 +75,7 @@ def test_minimum_service(constraints_args):
     assert set(constraint.production.dims) == dims
     assert set(constraint.b.dims) == dims
     assert (constraint.capacity <= 0).all()
-    assert constraint.year.dims == ()
-    assert set(constraint.asset.coords) == {"region", "agent", "year"}
+    assert set(constraint.asset.coords) == {"region", "agent"}
 
 
 def test_search_space(constraints_args):
