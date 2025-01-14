@@ -325,7 +325,7 @@ class MCA:
             self.outputs_cache.consolidate_cache(year=self.time_framework[year_idx])
 
             getLogger(__name__).info(
-                f"Finish simulation year {years[0]} ({year_idx+1}/{nyear})!"
+                f"Finish simulation year {years[0]} ({year_idx + 1}/{nyear})!"
             )
 
 
