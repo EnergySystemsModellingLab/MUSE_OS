@@ -922,8 +922,8 @@ def lp_constraint_matrix(
          >>> from muse import examples
          >>> from muse import constraints as cs
          >>> res = examples.sector("residential", model="medium")
-         >>> technologies = res.technologies
          >>> market = examples.residential_market("medium")
+         >>> technologies = res.technologies.sel(year=market.year.min() + 5)
          >>> search = examples.search_space("residential", model="medium")
          >>> assets = next(a.assets for a in res.agents)
          >>> demand = None # not used in max production
@@ -932,8 +932,6 @@ def lp_constraint_matrix(
          >>> lpcosts = cs.lp_costs(
          ...     (
          ...         technologies
-         ...         .interp(year=market.year.min() + 5)
-         ...         .drop_vars("year")
          ...         .sel(region=assets.region)
          ...     ),
          ...     costs=search * np.arange(np.prod(search.shape)).reshape(search.shape),
@@ -1059,15 +1057,16 @@ class ScipyAdapter:
         >>> from muse import constraints as cs
         >>> res = examples.sector("residential", model="medium")
         >>> market = examples.residential_market("medium")
+        >>> technologies = res.technologies.sel(year=market.year.min() + 5)
         >>> search = examples.search_space("residential", model="medium")
         >>> assets = next(a.assets for a in res.agents)
         >>> market_demand =  0.8 * maximum_production(
-        ...     res.technologies.interp(year=2025),
+        ...     technologies,
         ...     assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
         ... ).rename(technology="asset")
         >>> costs = search * np.arange(np.prod(search.shape)).reshape(search.shape)
         >>> constraint = cs.max_capacity_expansion(
-        ...     market_demand, assets, search, market, res.technologies,
+        ...     market_demand, assets, search, market, technologies,
         ... )
 
         The constraint acts over capacity decision variables only:
