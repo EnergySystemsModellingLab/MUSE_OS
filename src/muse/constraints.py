@@ -177,9 +177,13 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
     ) -> Constraint | None:
         """Computes and standardizes a constraint."""
         assert "year" not in technologies.dims
+
+        # Calculate constraint
         constraint = function(  # type: ignore
             demand, assets, search_space, technologies, **kwargs
         )
+
+        # Standardize constraint
         if constraint is not None:
             if "kind" not in constraint.attrs:
                 constraint.attrs["kind"] = ConstraintKind.UPPER_BOUND
@@ -272,7 +276,6 @@ def max_capacity_expansion(
     technologies: xr.Dataset,
     year: int,
     forecast: int,
-    interpolation: str = "linear",
     **kwargs,
 ) -> Constraint:
     r"""Max-capacity addition, max-capacity growth, and capacity limits constraints.
@@ -312,14 +315,12 @@ def max_capacity_expansion(
     """
     from muse.utilities import filter_input, reduce_assets
 
-    forecast_year = year + forecast
-
     capacity = (
         reduce_assets(
             assets.capacity,
             coords={"technology", "region"}.intersection(assets.capacity.coords),
         )
-        .interp(year=[year, forecast_year], method=interpolation)
+        .interp(year=[year, year + forecast], method="linear")
         .ffill("year")
     )
     # case with technology and region in asset dimension
@@ -355,11 +356,12 @@ def max_capacity_expansion(
         techs = techs.sel(region=regions)
 
     # Existing and forecasted capacity
-    initial = capacity.sel(year=year, drop=True)
-    forecasted = capacity.sel(year=forecast_year, drop=True)
+    initial = capacity.isel(year=0, drop=True)
+    forecasted = capacity.isel(year=1, drop=True)
 
     # Max capacity addition constraint
-    add_cap = techs.max_capacity_addition * forecast
+    time_frame = capacity.year[1] - capacity.year[0]
+    add_cap = techs.max_capacity_addition * time_frame
 
     # Total capacity limit constraint
     limit = techs.total_capacity_limit
@@ -367,7 +369,7 @@ def max_capacity_expansion(
 
     # Max capacity growth constraint
     max_growth = techs.max_capacity_growth
-    growth_cap = initial * (max_growth + 1) ** forecast - forecasted
+    growth_cap = initial * (max_growth + 1) ** time_frame - forecasted
 
     # Relax growth constraint if no existing capacity
     growth_cap = growth_cap.where(growth_cap > 0, np.inf)
