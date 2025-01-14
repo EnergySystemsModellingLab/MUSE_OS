@@ -315,13 +315,8 @@ def max_capacity_expansion(
     """
     from muse.utilities import filter_input, reduce_assets
 
-    capacity = (
-        reduce_assets(
-            assets.capacity,
-            coords={"technology", "region"}.intersection(assets.capacity.coords),
-        )
-        .interp(year=[year, year + forecast], method="linear")
-        .ffill("year")
+    capacity = reduce_assets(assets.capacity, coords=("technology", "region")).interp(
+        year=[year, year + forecast], method="linear"
     )
     # case with technology and region in asset dimension
     if capacity.region.dims != ():
