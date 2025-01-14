@@ -72,12 +72,12 @@ def test_minimum_service(constraints_args):
 
     constraints_args["technologies"]["minimum_service_factor"] = 0.5
     constraint = cs.minimum_service(**constraints_args)
-    dims = {"replacement", "asset", "commodity", "timeslice"}
+    dims = {"replacement", "agent", "commodity", "timeslice"}
     assert set(constraint.capacity.dims) == dims
     assert set(constraint.production.dims) == dims
     assert set(constraint.b.dims) == dims
     assert (constraint.capacity <= 0).all()
-    assert set(constraint.asset.coords) == {"region", "agent"}
+    assert set(constraint.agent.coords) == {"region", "agent"}
 
 
 def test_search_space(constraints_args):

@@ -400,7 +400,7 @@ def demand(
 
     enduse = technologies.commodity.sel(commodity=is_enduse(technologies.comm_usage))
     b = demand.sel(commodity=demand.commodity.isin(enduse))
-    if "region" in b.dims and "dst_region" in assets.dims:
+    if "region" in b.dims and "dst_region" in technologies.dims:
         b = b.rename(region="dst_region")
     assert "year" not in b.dims
     return xr.Dataset(
@@ -468,8 +468,8 @@ def max_production(
     production = ones_like(capacity)
     b = zeros_like(production)
     # Include maxaddition constraint in max production to match region-dst_region
-    if "dst_region" in assets.dims:
-        b = b.expand_dims(dst_region=assets.dst_region)
+    if "dst_region" in technologies.dims:
+        b = b.expand_dims(dst_region=technologies.dst_region)
         capacity = capacity.rename(region="src_region")
         production = production.rename(region="src_region")
         maxadd = technologies.max_capacity_addition.rename(region="src_region")
@@ -728,7 +728,7 @@ def minimum_service(
     )
     kwargs = dict(technology=replacement, commodity=commodities)
     if "region" in search_space.coords and "region" in technologies.dims:
-        kwargs["region"] = assets.region
+        kwargs["region"] = search_space.region
     techs = (
         technologies[["fixed_outputs", "minimum_service_factor"]]
         .sel(**kwargs)
@@ -737,7 +737,7 @@ def minimum_service(
     capacity = distribute_timeslice(
         techs.fixed_outputs, level=timeslice_level
     ) * broadcast_timeslice(techs.minimum_service_factor, level=timeslice_level)
-    if "asset" not in capacity.dims:
+    if "asset" not in capacity.dims and "asset" in search_space.dims:
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
     b = zeros_like(production)
