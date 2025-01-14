@@ -248,11 +248,10 @@ def factory(
         search_space: xr.DataArray,
         market: xr.Dataset,
         technologies: xr.Dataset,
-        year: int | None = None,
+        year: int,
+        forecast: int,
         timeslice_level: str | None = None,
     ) -> list[Constraint]:
-        if year is None:
-            year = int(market.year.min())
         constraints = [
             function(
                 demand,
@@ -262,6 +261,7 @@ def factory(
                 technologies,
                 year=year,
                 timeslice_level=timeslice_level,
+                forecast=forecast,
             )
             for function in constraint_closures
         ]
@@ -277,8 +277,8 @@ def max_capacity_expansion(
     search_space: xr.DataArray,
     market: xr.Dataset,
     technologies: xr.Dataset,
-    year: int | None = None,
-    forecast: int | None = None,
+    year: int,
+    forecast: int,
     interpolation: str = "linear",
     **kwargs,
 ) -> Constraint:
@@ -319,12 +319,6 @@ def max_capacity_expansion(
     """
     from muse.utilities import filter_input, reduce_assets
 
-    if year is None:
-        year = int(market.year.min())
-    if forecast is None and len(getattr(market, "year", [])) <= 1:
-        forecast = 5
-    elif forecast is None:
-        forecast = next(int(u) for u in sorted(market.year - year) if u > 0)
     forecast_year = year + forecast
 
     capacity = (
@@ -453,7 +447,7 @@ def max_production(
     search_space: xr.DataArray,
     market: xr.Dataset,
     technologies: xr.Dataset,
-    year: int | None = None,
+    year: int,
     timeslice_level: str | None = None,
     **kwargs,
 ) -> Constraint:
@@ -466,8 +460,6 @@ def max_production(
 
     from muse.commodities import is_enduse
 
-    if year is None:
-        year = int(market.year.min())
     commodities = technologies.commodity.sel(
         commodity=is_enduse(technologies.comm_usage)
     )
@@ -518,7 +510,7 @@ def demand_limiting_capacity(
     search_space: xr.DataArray,
     market: xr.Dataset,
     technologies: xr.Dataset,
-    year: int | None = None,
+    year: int,
     timeslice_level: str | None = None,
     **kwargs,
 ) -> Constraint:
@@ -734,7 +726,7 @@ def minimum_service(
     search_space: xr.DataArray,
     market: xr.Dataset,
     technologies: xr.Dataset,
-    year: int | None = None,
+    year: int,
     timeslice_level: str | None = None,
     **kwargs,
 ) -> Constraint | None:
@@ -747,8 +739,6 @@ def minimum_service(
         return None
     if np.all(technologies["minimum_service_factor"] == 0):
         return None
-    if year is None:
-        year = int(market.year.min())
     commodities = technologies.commodity.sel(
         commodity=is_enduse(technologies.comm_usage)
     )
@@ -928,7 +918,8 @@ def lp_constraint_matrix(
          >>> assets = next(a.assets for a in res.agents)
          >>> demand = None # not used in max production
          >>> constraint = cs.max_production(demand, assets, search, market,
-         ...                                technologies) # noqa: E501
+         ...                                technologies, year=market.year.min(),
+         ...                                forecast=5) # noqa: E501
          >>> lpcosts = cs.lp_costs(
          ...     (
          ...         technologies
@@ -1067,6 +1058,7 @@ class ScipyAdapter:
         >>> costs = search * np.arange(np.prod(search.shape)).reshape(search.shape)
         >>> constraint = cs.max_capacity_expansion(
         ...     market_demand, assets, search, market, technologies,
+        ...     year=market.year.min(), forecast=5,
         ... )
 
         The constraint acts over capacity decision variables only:

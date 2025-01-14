@@ -345,6 +345,7 @@ class InvestingAgent(Agent):
             market,
             techs,
             year=current_year,
+            forecast=self.forecast,
             timeslice_level=self.timeslice_level,
         )
 

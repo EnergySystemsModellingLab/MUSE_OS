@@ -24,6 +24,8 @@ def constraints_args(sector="power", model="trade") -> Mapping[str, Any]:
         search_space=search_space,
         market=market,
         technologies=power.technologies.sel(year=market.year.min(), drop=True),
+        year=market.year.min(),
+        forecast=5,
     )
 
 
