@@ -76,8 +76,6 @@ class Subsector:
         time_period,
         current_year,
     ) -> None:
-        from muse.utilities import agent_concatenation, reduce_assets
-
         # Split demand across agents
         demands = self.demand_share(
             self.agents,
@@ -96,26 +94,13 @@ class Subsector:
             """
             raise ValueError(msg)
 
-        # Concatenate assets
-        assets = agent_concatenation(
-            {agent.uuid: agent.assets for agent in self.agents}
-        )
-
-        # Calculate existing capacity
-        agent_market = market.copy()
-        agent_market["capacity"] = (
-            reduce_assets(assets.capacity, coords=("region", "technology"))
-            .interp(year=market.year, method="linear", kwargs={"fill_value": 0.0})
-            .swap_dims(dict(asset="technology"))
-        )
-
         # Increment each agent (perform investments)
         for agent in self.agents:
             if "agent" in demands.coords:
                 share = demands.sel(asset=demands.agent == agent.uuid)
             else:
                 share = demands
-            agent.next(technologies, agent_market, share, time_period=time_period)
+            agent.next(technologies, market, share, time_period=time_period)
 
     @classmethod
     def factory(
