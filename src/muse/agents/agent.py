@@ -339,10 +339,10 @@ class InvestingAgent(Agent):
 
         # Calculate constraints
         constraints = self.constraints(
-            search.demand,
-            self.assets,
-            search.search_space,
-            techs,
+            demand=search.demand,
+            assets=self.assets,
+            search_space=search.search_space,
+            technologies=techs,
             year=current_year,
             forecast=self.forecast,
             timeslice_level=self.timeslice_level,
