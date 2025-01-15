@@ -340,7 +340,7 @@ def create_agent(agent_args, technologies, stock, agent_type="retrofit") -> Agen
         agent_type=agent_type,
         technologies=technologies,
         capacity=stock,
-        year=2010,
+        years=[2010, 2030],
         **agent_args,
     )
 
