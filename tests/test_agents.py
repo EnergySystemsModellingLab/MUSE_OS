@@ -38,7 +38,7 @@ def test_create_retrofit(agent_args, technologies, stock):
         agent_type="Retrofit",
         technologies=technologies,
         capacity=stock.capacity,
-        year=2010,
+        years=[2010, 2030],
         **agent_args,
     )
     assert isinstance(agent, Agent)
@@ -53,7 +53,7 @@ def test_create_retrofit(agent_args, technologies, stock):
         agent_type="Retrofit",
         technologies=technologies,
         capacity=stock.capacity,
-        year=2010,
+        years=[2010, 2030],
         **agent_args,
     )
     assert isinstance(agent, Agent)
@@ -73,7 +73,7 @@ def test_create_newcapa(agent_args, technologies, stock):
         agent_type="Newcapa",
         technologies=technologies,
         capacity=stock.capacity,
-        year=2010,
+        years=[2010, 2030],
         **agent_args,
     )
     assert isinstance(agent, Agent)
@@ -89,7 +89,7 @@ def test_create_newcapa(agent_args, technologies, stock):
         agent_type="Newcapa",
         technologies=technologies,
         capacity=stock.capacity,
-        year=2010,
+        years=[2010, 2030],
         **agent_args,
     )
     assert isinstance(agent, Agent)
@@ -105,7 +105,7 @@ def test_create_newcapa(agent_args, technologies, stock):
         agent_type="Newcapa",
         technologies=technologies,
         capacity=stock.capacity,
-        year=2010,
+        years=[2010, 2030],
         **agent_args,
     )
 
@@ -126,7 +126,7 @@ def test_issue_835_and_842(agent_args, technologies, stock):
         technologies=technologies,
         capacity=stock.capacity,
         search_rules="from_techs->compress",
-        year=2010,
+        years=[2010, 2030],
         **agent_args,
     )
     assert isinstance(agent, Agent)
@@ -143,7 +143,7 @@ def test_run_retro_agent(retro_agent, technologies, agent_market, demand_share):
     technologies.max_capacity_addition[:] = retro_agent.assets.capacity.sum() * 100
     technologies.max_capacity_growth[:] = retro_agent.assets.capacity.sum() * 100
 
-    retro_agent.next(technologies, agent_market, demand_share, year=2025)
+    retro_agent.next(technologies, agent_market, demand_share)
 
 
 def test_merge_assets(assets):
