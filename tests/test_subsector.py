@@ -46,9 +46,11 @@ def test_subsector_investing_aggregation():
             ).interp(year=[2020, 2025])
             subsector = Subsector(agents, commodities)
             initial_agents = deepcopy(agents)
-            assert {agent.year for agent in agents} == {int(market.year.min())}
+            assert {agent.current_year for agent in agents} == {int(market.year.min())}
             subsector.aggregate_lp(technologies, market, current_year=2025)
-            assert {agent.year for agent in agents} == {int(market.year.min() + 5)}
+            assert {agent.current_year for agent in agents} == {
+                int(market.year.min() + 5)
+            }
             for initial, final in zip(initial_agents, agents):
                 assert initial.assets.sum() != final.assets.sum()
 
@@ -103,7 +105,7 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
     market = market.sel(
         commodity=technologies.commodity, region=technologies.region
     ).interp(year=[2020, 2025])
-    assert all(agent.year == 2020 for agent in agents)
+    assert all(agent.current_year == 2020 for agent in agents)
     subsector.aggregate_lp(technologies, market, current_year=2020)
 
 

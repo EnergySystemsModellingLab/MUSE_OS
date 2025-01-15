@@ -169,7 +169,7 @@ class Agent(AbstractAgent):
 
         self.years = iter(years)
         """Years to iterate over."""
-        self.year = next(self.years)
+        self.current_year = next(self.years)
         """Current year. Incremented every time next is called."""
         self.forecast = forecast
         """Number of years to look into the future for forecating purposed."""
@@ -228,9 +228,10 @@ class Agent(AbstractAgent):
         """Threshold below which assets are not added."""
 
     @property
-    def forecast_year(self):
+    def investment_year(self):
         """Year to consider when forecasting."""
-        return self.year + self.forecast
+        # TODO
+        return self.current_year + self.forecast
 
     def asset_housekeeping(self):
         """Reduces memory footprint of assets.
@@ -252,7 +253,7 @@ class Agent(AbstractAgent):
         market: xr.Dataset,
         demand: xr.DataArray,
     ) -> None:
-        self.year = next(self.years)
+        self.current_year = next(self.years)
 
 
 class InvestingAgent(Agent):
@@ -303,7 +304,7 @@ class InvestingAgent(Agent):
         from muse.utilities import reduce_assets
 
         # Increment the year
-        self.year = next(self.years)
+        self.current_year = next(self.years)
 
         # Skip forward if demand is zero
         if demand.size == 0 or demand.sum() < 1e-12:
@@ -335,12 +336,14 @@ class InvestingAgent(Agent):
         search = search.sel(asset=condtechs)
 
         # Get technology parameters for the investment year
-        techs = self.filter_input(technologies, year=self.year + self.forecast)
+        techs = self.filter_input(technologies, year=self.current_year + self.forecast)
 
         # Calculate capacity in current and forecast year
         capacity = reduce_assets(
             self.assets.capacity, coords=("technology", "region")
-        ).interp(year=[self.year, self.year + self.forecast], method="linear")
+        ).interp(
+            year=[self.current_year, self.current_year + self.forecast], method="linear"
+        )
 
         # Calculate constraints
         constraints = self.constraints(
@@ -356,7 +359,7 @@ class InvestingAgent(Agent):
             search[["search_space", "decision"]],
             technologies,
             constraints,
-            year=self.year,
+            year=self.current_year,
             timeslice_level=self.timeslice_level,
         )
 
@@ -365,7 +368,7 @@ class InvestingAgent(Agent):
         self.add_investments(
             technologies,
             investments,
-            current_year=self.year,
+            current_year=self.current_year,
             time_period=time_period,
         )
 
@@ -376,11 +379,11 @@ class InvestingAgent(Agent):
         demand: xr.DataArray,
         search_space: xr.DataArray,
     ) -> xr.DataArray:
-        # Filter technologies according to the search space, forecast year and region
+        # Filter technologies according to the search space, investment year and region
         techs = self.filter_input(
             technologies,
             technology=search_space.replacement,
-            year=self.forecast_year,
+            year=self.investment_year,
         ).drop_vars("technology")
 
         # Reduce dimensions of the demand array

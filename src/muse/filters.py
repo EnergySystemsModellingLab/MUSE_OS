@@ -246,7 +246,7 @@ def same_enduse(
 
     tech_enduses = agent.filter_input(
         technologies.fixed_outputs,
-        year=agent.year,
+        year=agent.current_year,
         commodity=is_enduse(technologies.comm_usage),
     )
     tech_enduses = (tech_enduses > 0).astype(int).rename(technology="replacement")
@@ -295,7 +295,7 @@ def currently_existing_tech(
     capacity in the current year. See `currently_referenced_tech` for a similar filter
     that does not check the capacity.
     """
-    capacity = agent.filter_input(market.capacity, year=agent.year).rename(
+    capacity = agent.filter_input(market.capacity, year=agent.current_year).rename(
         technology="replacement"
     )
     result = search_space & search_space.replacement.isin(capacity.replacement)
@@ -319,7 +319,7 @@ def currently_referenced_tech(
     currently sits at zero capacity (unlike `currently_existing_tech` which requires
     non-zero capacity in the current year).
     """
-    capacity = agent.filter_input(market.capacity, year=agent.year).rename(
+    capacity = agent.filter_input(market.capacity, year=agent.current_year).rename(
         technology="replacement"
     )
     return search_space & search_space.replacement.isin(capacity.replacement)
@@ -338,7 +338,7 @@ def maturity(
 
     Specifically, the market share refers to the capacity for each end- use.
     """
-    capacity = agent.filter_input(market.capacity, year=agent.year)
+    capacity = agent.filter_input(market.capacity, year=agent.current_year)
     total_capacity = capacity.sum("technology")
     enduse_market_share = agent.maturity_threshold * total_capacity
     condition = enduse_market_share <= capacity
@@ -368,7 +368,7 @@ def spend_limit(
 ) -> xr.DataArray:
     """Only allows technologies with a unit capital cost lower than the spend limit."""
     limit = agent.spend_limit
-    unit_capex = agent.filter_input(technologies.cap_par, year=agent.year)
+    unit_capex = agent.filter_input(technologies.cap_par, year=agent.current_year)
     condition = (unit_capex <= limit).rename("spend_limit")
     techs = (
         condition.technology.where(condition, drop=True).drop_vars("technology").values

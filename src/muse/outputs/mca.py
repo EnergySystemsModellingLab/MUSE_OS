@@ -423,7 +423,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
     agents = retro if len(retro) > 0 else new
     if len(technologies) > 0:
         for agent in agents:
-            agent_market = market.sel(year=agent.year).copy()
+            agent_market = market.sel(year=agent.current_year).copy()
             agent_market["consumption"] = agent_market.consumption * agent.quantity
             included = [
                 i
@@ -434,15 +434,15 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
                 i for i in agent_market["commodity"].values if i not in included
             ]
             agent_market.loc[dict(commodity=excluded)] = 0
-            years = [agent.year, agent.forecast_year]
+            years = [agent.current_year, agent.investment_year]
             agent_market["prices"] = agent.filter_input(market["prices"], year=years)
 
             techs = agent.filter_input(
                 technologies,
-                year=agent.year,
+                year=agent.current_year,
             )
             prices = agent_market["prices"].sel(
-                commodity=techs.commodity, year=agent.year
+                commodity=techs.commodity, year=agent.current_year
             )
             demand = agent_market.consumption.sel(commodity=included)
             capacity = agent.filter_input(capacity_to_service_demand(demand, techs))
@@ -468,7 +468,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
             data_agent["agent"] = agent.name
             data_agent["category"] = agent.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
-            data_agent["year"] = agent.year
+            data_agent["year"] = agent.current_year
             data_agent = data_agent.fillna(0)
             data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
                 "LCOE"
@@ -505,7 +505,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
     agents = retro if len(retro) > 0 else new
     if len(technologies) > 0:
         for agent in agents:
-            agent_market = market.sel(year=agent.year).copy()
+            agent_market = market.sel(year=agent.current_year).copy()
             agent_market["consumption"] = agent_market.consumption * agent.quantity
             included = [
                 i
@@ -516,15 +516,15 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
                 i for i in agent_market["commodity"].values if i not in included
             ]
             agent_market.loc[dict(commodity=excluded)] = 0
-            years = [agent.year, agent.forecast_year]
+            years = [agent.current_year, agent.investment_year]
             agent_market["prices"] = agent.filter_input(market["prices"], year=years)
 
             techs = agent.filter_input(
                 technologies,
-                year=agent.year,
+                year=agent.current_year,
             )
             prices = agent_market["prices"].sel(
-                commodity=techs.commodity, year=agent.year
+                commodity=techs.commodity, year=agent.current_year
             )
             demand = agent_market.consumption.sel(commodity=included)
             capacity = agent.filter_input(capacity_to_service_demand(demand, techs))
@@ -549,7 +549,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
             data_agent["agent"] = agent.name
             data_agent["category"] = agent.category
             data_agent["sector"] = getattr(sector, "name", "unnamed")
-            data_agent["year"] = agent.year
+            data_agent["year"] = agent.current_year
             data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
                 "capital_costs"
             )

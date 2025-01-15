@@ -69,7 +69,7 @@ def test_same_enduse(retro_agent, technologies, search_space):
     result = same_enduse(retro_agent, search_space, technologies)
     enduses = is_enduse(technologies.comm_usage)
     finputs = technologies.sel(
-        region=retro_agent.region, year=retro_agent.year, commodity=enduses
+        region=retro_agent.region, year=retro_agent.current_year, commodity=enduses
     )
     finputs = finputs.fixed_outputs > 0
 
@@ -146,7 +146,7 @@ def test_currently_existing(retro_agent, search_space, technologies, agent_marke
     assert sorted(actual.dims) == sorted(search_space.dims)
     assert not actual.sel(replacement=~in_market).any()
     current_cap = agent_market.capacity.sel(
-        year=retro_agent.year, region=retro_agent.region
+        year=retro_agent.current_year, region=retro_agent.region
     ).rename(technology="replacement")
     expected = (current_cap > retro_agent.tolerance).rename("expected")
     assert (actual.sel(replacement=in_market) == expected).all()

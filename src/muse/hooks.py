@@ -130,7 +130,7 @@ def clean(agent: Agent, assets: Dataset) -> Dataset:
     """Removes empty assets."""
     from muse.utilities import clean_assets
 
-    years = [agent.year, agent.forecast_year]
+    years = [agent.current_year, agent.investment_year]
     return clean_assets(assets, years)
 
 
