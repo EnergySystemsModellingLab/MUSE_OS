@@ -20,7 +20,7 @@ have the following signature:
         search_space: xr.DataArray,
         technologies: xr.Dataset,
         constraints: List[Constraint],
-        year: int,
+        current_year: int,
         **kwargs
     ) -> xr.DataArray:
         pass
@@ -34,7 +34,7 @@ Arguments:
     technologies: a dataset containing all constant data characterizing the
         technologies.
     constraints: a list of constraints as defined in :py:mod:`~muse.constraints`.
-    year: the current year.
+    current_year: the current year.
 
 Returns:
     A data array with dimensions `asset` and `technology` specifying the amount
@@ -224,7 +224,7 @@ def adhoc_match_demand(
     search_space: xr.DataArray,
     technologies: xr.Dataset,
     constraints: list[Constraint],
-    year: int,
+    current_year: int,
     timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     from muse.demand_matching import demand_matching
@@ -236,7 +236,7 @@ def adhoc_match_demand(
     max_prod = maximum_production(
         technologies,
         max_capacity,
-        year=year,
+        year=current_year,
         technology=costs.replacement,
         commodity=demand.commodity,
         timeslice_level=timeslice_level,
@@ -258,7 +258,7 @@ def adhoc_match_demand(
     capacity = capacity_in_use(
         production,
         technologies,
-        year=year,
+        year=current_year,
         technology=production.replacement,
         timeslice_level=timeslice_level,
     ).drop_vars("technology")
@@ -275,7 +275,7 @@ def scipy_match_demand(
     search_space: xr.DataArray,
     technologies: xr.Dataset,
     constraints: list[Constraint],
-    year: Optional[int] = None,
+    current_year: Optional[int] = None,
     timeslice_level: Optional[str] = None,
     **options,
 ) -> xr.DataArray:
@@ -289,10 +289,10 @@ def scipy_match_demand(
         costs = timeslice_max(costs)
 
     # Select technodata for the current year
-    if "year" in technologies.dims and year is None:
+    if "year" in technologies.dims and current_year is None:
         raise ValueError("Missing year argument")
     elif "year" in technologies.dims:
-        techs = technologies.sel(year=year).drop_vars("year")
+        techs = technologies.sel(year=current_year).drop_vars("year")
     else:
         techs = technologies
 

@@ -522,7 +522,7 @@ def check_equilibrium(
     int_market: Dataset,
     tolerance: float,
     equilibrium_variable: str,
-    year: int | None = None,
+    investment_year: int,
 ) -> bool:
     """Checks if equilibrium has been reached.
 
@@ -535,24 +535,23 @@ def check_equilibrium(
         int_market: The market values in the previous iteration.
         tolerance: Tolerance for reaching equilibrium.
         equilibrium_variable: Variable to use to calculate the equilibrium condition.
-        year: year for which to check changes. Default to minimum year in market.
+        investment_year: year for which to check changes.
 
     Returns:
         True if converged, False otherwise.
     """
     from numpy import abs
 
-    if year is None:
-        year = market.year.min()
-
     if equilibrium_variable == "demand":
         delta = (
-            market.consumption.sel(year=year)
-            - market.supply.sel(year=year)
-            - int_market.consumption.sel(year=year)
-            + int_market.supply.sel(year=year)
+            market.consumption.sel(year=investment_year)
+            - market.supply.sel(year=investment_year)
+            - int_market.consumption.sel(year=investment_year)
+            + int_market.supply.sel(year=investment_year)
         )
     else:
-        delta = market.prices.sel(year=year) - int_market.prices.sel(year=year)
+        delta = market.prices.sel(year=investment_year) - int_market.prices.sel(
+            year=investment_year
+        )
 
     return bool((abs(delta) < tolerance).all())

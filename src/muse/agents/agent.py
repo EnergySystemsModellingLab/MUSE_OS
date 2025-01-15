@@ -366,7 +366,7 @@ class InvestingAgent(Agent):
         )
 
         # Add investments
-        time_period = (market.year[1] - market.year[0]).item()
+        time_period = self.investment_year - self.current_year
         self.add_investments(
             technologies,
             investments,
