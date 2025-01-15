@@ -169,7 +169,7 @@ class Agent(AbstractAgent):
 
         self.years = iter(years)
         """Years to iterate over."""
-        self.current_year = next(self.years)
+        self.current_year = None
         """Current year. Incremented every time next is called."""
         self.forecast = forecast
         """Number of years to look into the future for forecating purposed."""

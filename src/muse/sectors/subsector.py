@@ -99,6 +99,7 @@ class Subsector:
             else:
                 share = demands
             agent.next(technologies, market, share)
+            assert agent.current_year == current_year
 
     @classmethod
     def factory(
