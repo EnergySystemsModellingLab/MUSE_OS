@@ -47,7 +47,7 @@ class Sector(AbstractSector):  # type: ignore
                 subsec_settings,
                 technologies,
                 regions=settings.regions,
-                years=list(settings.time_framework),
+                years=settings.time_framework.tolist(),
                 name=subsec_name,
                 timeslice_level=sector_settings.get("timeslice_level", None),
             )
