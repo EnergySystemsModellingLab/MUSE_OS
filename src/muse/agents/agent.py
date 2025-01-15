@@ -300,6 +300,8 @@ class InvestingAgent(Agent):
         """
         from logging import getLogger
 
+        from muse.utilities import reduce_assets
+
         # Increment the year
         self.year = next(self.years)
 
@@ -332,14 +334,20 @@ class InvestingAgent(Agent):
         ).values
         search = search.sel(asset=condtechs)
 
+        # Get technology parameters for the investment year
+        techs = self.filter_input(technologies, year=self.year + self.forecast)
+
+        # Calculate capacity in current and forecast year
+        capacity = reduce_assets(
+            self.assets.capacity, coords=("technology", "region")
+        ).interp(year=[self.year, self.year + self.forecast], method="linear")
+
         # Calculate constraints
         constraints = self.constraints(
-            search.demand,
-            self.assets,
-            search.search_space,
-            market,
-            technologies,
-            year=self.year,
+            demand=search.demand,
+            capacity=capacity,
+            search_space=search.search_space,
+            technologies=techs,
             timeslice_level=self.timeslice_level,
         )
 
