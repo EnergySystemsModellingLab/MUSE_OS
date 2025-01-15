@@ -134,13 +134,13 @@ def new_and_retro(
     market: xr.Dataset,
     technologies: xr.Dataset,
     current_year: int,
-    forecast: int,
+    investment_year: int,
     timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     r"""Splits demand across new and retro agents.
 
     The input demand is split amongst both *new* and *retrofit* agents. *New* agents get
-    a share of the increase in demand for the forecast year, whereas *retrofit* agents
+    a share of the increase in demand for the investment year, whereas *retrofit* agents
     are assigned a share of the demand that occurs from decommissioned assets.
 
     Args:
@@ -153,7 +153,7 @@ def new_and_retro(
             commodities produced by the current sector.
         technologies: quantities describing the technologies.
         current_year: Current year of simulation
-        forecast: How many years to forecast ahead
+        investment_year: Investment year
         timeslice_level: the timeslice level of the sector (e.g. "hour", "day")
 
     Pseudo-code:
@@ -205,7 +205,7 @@ def new_and_retro(
             + R_{c, s}^r
 
        In other words, it is the share of the forecasted consumption that is serviced
-       neither by the current assets still present in the forecast year, nor by the
+       neither by the current assets still present in the investment year, nor by the
        *new* agent.
 
     #. then each *new* agent gets a share of :math:`N` proportional to it's
@@ -252,7 +252,7 @@ def new_and_retro(
 
     def decommissioning(capacity):
         current_capacity = capacity.interp(year=current_year)  # TODO
-        future_capacity = capacity.interp(year=current_year + forecast)  # TODO
+        future_capacity = capacity.interp(year=investment_year)  # TODO
         return decommissioning_demand(
             technologies,
             current_capacity,
@@ -354,13 +354,13 @@ def standard_demand(
     market: xr.Dataset,
     technologies: xr.Dataset,
     current_year: int,
-    forecast: int,
+    investment_year: int,
     timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     r"""Splits demand across new agents.
 
     The input demand is split amongst *new* agents. *New* agents get a
-    share of the increase in demand for the forecast years, as well as the demand that
+    share of the increase in demand for the investment year, as well as the demand that
     occurs from decommissioned assets.
 
     Args:
@@ -373,7 +373,7 @@ def standard_demand(
             commodities produced by the current sector.
         technologies: quantities describing the technologies.
         current_year: Current year of simulation
-        forecast: How many years to forecast ahead
+        investment_year: Investment year
         timeslice_level: the timeslice level of the sector (e.g. "hour", "day")
 
     """
@@ -385,7 +385,7 @@ def standard_demand(
 
     def decommissioning(capacity):
         current_capacity = capacity.interp(year=current_year)  # TODO
-        future_capacity = capacity.interp(year=current_year + forecast)  # TODO
+        future_capacity = capacity.interp(year=investment_year)  # TODO
         return decommissioning_demand(
             technologies,
             current_capacity,
@@ -468,17 +468,20 @@ def unmet_forecasted_demand(
     market: xr.Dataset,
     technologies: xr.Dataset,
     current_year: int,
-    forecast: int,
+    investment_year: int,
     timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
     from muse.commodities import is_enduse
     from muse.utilities import reduce_assets
 
-    year = current_year + forecast
     comm_usage = technologies.comm_usage.sel(commodity=market.commodity)
-    smarket: xr.Dataset = market.where(is_enduse(comm_usage), 0).interp(year=year)
-    capacity = reduce_assets([u.assets.capacity.interp(year=year) for u in agents])
+    smarket: xr.Dataset = market.where(is_enduse(comm_usage), 0).interp(
+        year=investment_year
+    )
+    capacity = reduce_assets(
+        [u.assets.capacity.interp(year=investment_year) for u in agents]
+    )
     capacity = cast(xr.DataArray, capacity)
     result = unmet_demand(
         market=smarket,
@@ -659,7 +662,7 @@ def new_and_retro_demands(
         timeslice_level=timeslice_level,
     )
 
-    # Maximum production in the forecast year by existing assets
+    # Maximum production in the investment year by existing assets
     service = (
         maximum_production(
             technologies=technologies,

@@ -47,7 +47,7 @@ class Sector(AbstractSector):  # type: ignore
                 subsec_settings,
                 technologies,
                 regions=settings.regions,
-                years=settings.time_framework.tolist(),
+                time_framework=settings.time_framework.tolist(),
                 name=subsec_name,
                 timeslice_level=sector_settings.get("timeslice_level", None),
             )
@@ -198,7 +198,10 @@ class Sector(AbstractSector):  # type: ignore
         def group_assets(x: xr.DataArray) -> xr.DataArray:
             return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
 
+        # Get current year and investment year
+        # TODO: this is really hacky
         current_year = int(mca_market.year.min())
+        investment_year = int(mca_market.year.max())
         getLogger(__name__).info(f"Running {self.name} for year {current_year}")
 
         # Agent interactions
@@ -221,6 +224,7 @@ class Sector(AbstractSector):  # type: ignore
                 techs,
                 market,
                 current_year=current_year,
+                investment_year=investment_year,
             )
 
         # Full output data

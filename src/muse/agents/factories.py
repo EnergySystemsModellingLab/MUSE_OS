@@ -15,7 +15,7 @@ from muse.errors import AgentShareNotDefined, TechnologyNotDefined
 def create_standard_agent(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
-    years: list[int],
+    time_framework: list[int],
     region: str,
     share: str | None = None,
     interpolation: str = "linear",
@@ -26,10 +26,15 @@ def create_standard_agent(
 
     if share is not None:
         capacity = _shared_capacity(
-            technologies, capacity, region, share, years[0], interpolation=interpolation
+            technologies,
+            capacity,
+            region,
+            share,
+            time_framework[0],
+            interpolation=interpolation,
         )
     else:
-        existing = capacity.interp(year=years[0], method=interpolation) > 0
+        existing = capacity.interp(year=time_framework[0], method=interpolation) > 0
         existing = existing.any([u for u in existing.dims if u != "asset"])
         years = [capacity.year.min().values, capacity.year.max().values]
         capacity = xr.zeros_like(capacity.sel(asset=existing.values, year=years))
@@ -40,7 +45,7 @@ def create_standard_agent(
         assets=assets,
         region=region,
         search_rules=filter_factory(kwargs.pop("search_rules", None)),
-        years=years,
+        time_framework=years,
         **kwargs,
     )
 
@@ -49,7 +54,7 @@ def create_retrofit_agent(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
     share: str,
-    years: list[int],
+    time_framework: list[int],
     region: str,
     interpolation: str = "linear",
     decision: Callable | str | Mapping = "mean",
@@ -71,7 +76,12 @@ def create_retrofit_agent(
             getLogger(__name__).warning(msg)
 
     assets = _shared_capacity(
-        technologies, capacity, region, share, years[0], interpolation=interpolation
+        technologies,
+        capacity,
+        region,
+        share,
+        time_framework[0],
+        interpolation=interpolation,
     )
 
     kwargs = _standardize_investing_inputs(decision=decision, **kwargs)
@@ -85,14 +95,14 @@ def create_retrofit_agent(
         assets=xr.Dataset(dict(capacity=assets)),
         region=region,
         search_rules=filter_factory(search_rules),
-        year=years[0],
+        year=time_framework[0],
         **kwargs,
     )
 
 
 def create_newcapa_agent(
     capacity: xr.DataArray,
-    years: list[int],
+    time_framework: list[int],
     region: str,
     share: str,
     search_rules: str | Sequence[str] = "all",
@@ -114,18 +124,23 @@ def create_newcapa_agent(
     if "region" in capacity.dims:
         capacity = capacity.sel(region=region)
 
-    existing = capacity.interp(year=years[0], method=interpolation) > 0
+    existing = capacity.interp(year=time_framework[0], method=interpolation) > 0
     assert set(existing.dims) == {"asset"}
 
     assets = xr.Dataset()
     if retrofit_present:
         assets["capacity"] = xr.zeros_like(
-            capacity.sel(asset=existing.values, year=years[0])
+            capacity.sel(asset=existing.values, year=time_framework[0])
         )
     else:
         technologies = kwargs["technologies"]
         assets["capacity"] = _shared_capacity(
-            technologies, capacity, region, share, years[0], interpolation=interpolation
+            technologies,
+            capacity,
+            region,
+            share,
+            time_framework[0],
+            interpolation=interpolation,
         )
         merge_transform = "merge"
 
@@ -154,7 +169,7 @@ def create_newcapa_agent(
         assets=assets,
         region=region,
         search_rules=filter_factory(search_rules),
-        years=years,
+        time_framework=time_framework,
         **kwargs,
     )
     result.quantity = quantity  # type: ignore
@@ -178,7 +193,7 @@ def agents_factory(
     capacity: xr.DataArray | str | Path,
     technologies: xr.Dataset,
     regions: Sequence[str] | None = None,
-    years: list[int] | None = None,
+    time_framework: list[int] | None = None,
     **kwargs,
 ) -> list[Agent]:
     """Creates a list of agents for the chosen sector."""
@@ -216,7 +231,7 @@ def agents_factory(
         # We deepcopy the capacity  as it changes every iteration and needs to be
         # a separate object
         param["capacity"] = deepcopy(capacity.sel(region=param["region"]))
-        param["years"] = years
+        param["time_framework"] = time_framework
         param.update(kwargs)
         result.append(create_agent(**param, retrofit_present=retrofit_present))
 

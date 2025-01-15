@@ -109,7 +109,7 @@ class Agent(AbstractAgent):
         search_rules: Optional[Callable] = None,
         objectives: Optional[Callable] = None,
         decision: Optional[Callable] = None,
-        years: list[int] = [2010],
+        time_framework: list[int] = [2010],
         maturity_threshold: float = 0,
         housekeeping: Optional[Callable] = None,
         merge_transform: Optional[Callable] = None,
@@ -132,7 +132,7 @@ class Agent(AbstractAgent):
             search_rules: method used to filter the search space
             objectives: One or more objectives by which to decide next investments.
             decision: single decision objective from one or more objectives.
-            years: time framework over which the agent will iterate
+            time_framework: time framework over which the agent will iterate
             maturity_threshold: threshold when filtering replacement
                 technologies with respect to market share
             housekeeping: transform applied to the assets at the start of
@@ -166,13 +166,13 @@ class Agent(AbstractAgent):
         )
 
         """Years to iterate over."""
-        self.years = iter(years)
+        self.time_framework = iter(time_framework)
 
         """Current year. Incremented every time `next` is called."""
         self.current_year: int | None = None
 
         """Investment year"""
-        self.investment_year: int = next(self.years)
+        self.investment_year: int = next(self.time_framework)
 
         """Search rule(s) determining potential replacement technologies.
 
@@ -256,7 +256,7 @@ class Agent(AbstractAgent):
         demand: xr.DataArray,
     ) -> None:
         self.current_year = self.investment_year
-        self.investment_year = next(self.years)
+        self.investment_year = next(self.time_framework)
 
 
 class InvestingAgent(Agent):
@@ -308,7 +308,7 @@ class InvestingAgent(Agent):
 
         # Increment the year
         self.current_year = self.investment_year
-        self.investment_year = next(self.years)
+        self.investment_year = next(self.time_framework)
 
         # Skip forward if demand is zero
         if demand.size == 0 or demand.sum() < 1e-12:

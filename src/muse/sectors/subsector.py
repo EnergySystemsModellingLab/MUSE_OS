@@ -53,6 +53,7 @@ class Subsector:
         technologies: xr.Dataset,
         market: xr.Dataset,
         current_year: int,
+        investment_year: int,
     ) -> None:
         # Expand prices to include destination region (for trade models)
         if self.expand_market_prices:
@@ -66,13 +67,19 @@ class Subsector:
             agent.asset_housekeeping()
 
         # Perform the investments
-        self.aggregate_lp(technologies, market, current_year=current_year)
+        self.aggregate_lp(
+            technologies,
+            market,
+            current_year=current_year,
+            investment_year=investment_year,
+        )
 
     def aggregate_lp(
         self,
         technologies: xr.Dataset,
         market: xr.Dataset,
         current_year,
+        investment_year,
     ) -> None:
         # Split demand across agents
         demands = self.demand_share(
@@ -80,7 +87,7 @@ class Subsector:
             market,
             technologies,
             current_year=current_year,
-            forecast=self.forecast,
+            investment_year=investment_year,
             timeslice_level=self.timeslice_level,
         )
 
@@ -107,7 +114,7 @@ class Subsector:
         settings: Any,
         technologies: xr.Dataset,
         regions: Sequence[str] | None = None,
-        years: list[int] | None = None,
+        time_framework: list[int] | None = None,
         name: str = "subsector",
         timeslice_level: str | None = None,
     ) -> Subsector:
@@ -137,7 +144,7 @@ class Subsector:
             settings.existing_capacity,
             technologies=technologies,
             regions=regions,
-            years=years,
+            time_framework=time_framework,
             asset_threshold=getattr(settings, "asset_threshold", 1e-12),
             # only used by self-investing agents
             investment=getattr(settings, "lpsolver", "scipy"),
