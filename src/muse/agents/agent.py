@@ -111,7 +111,6 @@ class Agent(AbstractAgent):
         decision: Optional[Callable] = None,
         years: list[int] = [2010],
         maturity_threshold: float = 0,
-        forecast: int = 5,
         housekeeping: Optional[Callable] = None,
         merge_transform: Optional[Callable] = None,
         demand_threshold: Optional[float] = None,
@@ -136,7 +135,6 @@ class Agent(AbstractAgent):
             years: time framework over which the agent will iterate
             maturity_threshold: threshold when filtering replacement
                 technologies with respect to market share
-            forecast: Number of years the agent will forecast
             housekeeping: transform applied to the assets at the start of
                 iteration. Defaults to doing nothing.
             merge_transform: transform merging current and newly invested assets
@@ -167,15 +165,15 @@ class Agent(AbstractAgent):
             timeslice_level=timeslice_level,
         )
 
-        self.years = iter(years)
         """Years to iterate over."""
-        self.current_year = None
-        """Current year. Incremented every time next is called."""
-        self.forecast = forecast
-        """Number of years to look into the future for forecating purposed."""
-        if search_rules is None:
-            search_rules = filter_factory()
-        self.search_rules: Callable = search_rules
+        self.years = iter(years)
+
+        """Current year. Incremented every time `next` is called."""
+        self.current_year: int | None = None
+
+        """Investment year"""
+        self.investment_year: int = next(self.years)
+
         """Search rule(s) determining potential replacement technologies.
 
         This is a string referring to a filter, or a sequence of strings
@@ -183,25 +181,29 @@ class Agent(AbstractAgent):
         function registered via `muse.filters.register_filter` can be
         used to filter the search space.
         """
-        self.maturity_threshold = maturity_threshold
-        """ Market share threshold.
+        if search_rules is None:
+            search_rules = filter_factory()
+        self.search_rules: Callable = search_rules
+
+        """Market share threshold.
 
         Threshold when and if filtering replacement technologies with respect
         to market share.
         """
+        self.maturity_threshold = maturity_threshold
+
         self.spend_limit = spend_limit
 
+        """One or more objectives by which to decide next investments."""
         if objectives is None:
             objectives = objectives_factory()
         self.objectives = objectives
-        """One or more objectives by which to decide next investments."""
+
+        """Creates single decision objective from one or more objectives."""
         if decision is None:
             decision = decision_factory()
         self.decision = decision
-        """Creates single decision objective from one or more objectives."""
-        if housekeeping is None:
-            housekeeping = housekeeping_factory()
-        self._housekeeping = housekeeping
+
         """Transforms applied on the assets at the start of each iteration.
 
         It could mean keeping the assets as are, or removing assets with no
@@ -209,29 +211,29 @@ class Agent(AbstractAgent):
         It can be any function registered with
         :py:func:`~muse.hooks.register_initial_asset_transform`.
         """
-        if merge_transform is None:
-            merge_transform = asset_merge_factory()
-        self.merge_transform = merge_transform
+        if housekeeping is None:
+            housekeeping = housekeeping_factory()
+        self._housekeeping = housekeeping
+
         """Transforms applied on the old and new assets.
 
         It could mean using only the new assets, or merging old and new, etc...
         It can be any function registered with
         :py:func:`~muse.hooks.register_final_asset_transform`.
         """
-        self.demand_threshold = demand_threshold
+        if merge_transform is None:
+            merge_transform = asset_merge_factory()
+        self.merge_transform = merge_transform
+
         """Threshold below which the demand share is zero.
 
         This criteria avoids fulfilling demand for very small values. If None,
         then the criteria is not applied.
         """
-        self.asset_threshold = asset_threshold
-        """Threshold below which assets are not added."""
+        self.demand_threshold = demand_threshold
 
-    @property
-    def investment_year(self):
-        """Year to consider when forecasting."""
-        # TODO
-        return self.current_year + self.forecast
+        """Threshold below which assets are not added."""
+        self.asset_threshold = asset_threshold
 
     def asset_housekeeping(self):
         """Reduces memory footprint of assets.
@@ -253,7 +255,8 @@ class Agent(AbstractAgent):
         market: xr.Dataset,
         demand: xr.DataArray,
     ) -> None:
-        self.current_year = next(self.years)
+        self.current_year = self.investment_year
+        self.investment_year = next(self.years)
 
 
 class InvestingAgent(Agent):
@@ -304,7 +307,8 @@ class InvestingAgent(Agent):
         from muse.utilities import reduce_assets
 
         # Increment the year
-        self.current_year = next(self.years)
+        self.current_year = self.investment_year
+        self.investment_year = next(self.years)
 
         # Skip forward if demand is zero
         if demand.size == 0 or demand.sum() < 1e-12:
@@ -336,14 +340,12 @@ class InvestingAgent(Agent):
         search = search.sel(asset=condtechs)
 
         # Get technology parameters for the investment year
-        techs = self.filter_input(technologies, year=self.current_year + self.forecast)
+        techs = self.filter_input(technologies, year=self.investment_year)
 
-        # Calculate capacity in current and forecast year
+        # Calculate capacity in current and investment year
         capacity = reduce_assets(
             self.assets.capacity, coords=("technology", "region")
-        ).interp(
-            year=[self.current_year, self.current_year + self.forecast], method="linear"
-        )
+        ).interp(year=[self.current_year, self.investment_year], method="linear")
 
         # Calculate constraints
         constraints = self.constraints(
