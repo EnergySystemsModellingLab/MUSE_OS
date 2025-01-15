@@ -361,7 +361,7 @@ class InvestingAgent(Agent):
             search[["search_space", "decision"]],
             technologies,
             constraints,
-            year=self.current_year,
+            current_year=self.current_year,
             timeslice_level=self.timeslice_level,
         )
 
