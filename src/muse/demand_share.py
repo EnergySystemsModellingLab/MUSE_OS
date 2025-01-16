@@ -464,10 +464,14 @@ def unmet_forecasted_demand(
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
+    from muse.commodities import is_enduse
     from muse.utilities import reduce_assets
 
     current_year = int(market.year[0])
     investment_year = int(market.year[1])
+
+    comm_usage = technologies.comm_usage.sel(commodity=market.commodity)
+    smarket: xr.Dataset = market.where(is_enduse(comm_usage), 0)
 
     # Calculate existing capacity
     capacity = reduce_assets([agent.assets.capacity for agent in agents]).sel(
@@ -475,7 +479,7 @@ def unmet_forecasted_demand(
     )
 
     # Select data for future years
-    future_market = market.sel(year=investment_year, drop=True)
+    future_market = smarket.sel(year=investment_year, drop=True)
     future_capacity = capacity.sel(year=investment_year)
 
     # Calculate unmet demand
@@ -485,6 +489,7 @@ def unmet_forecasted_demand(
         technologies=technologies,
         timeslice_level=timeslice_level,
     )
+    assert "year" not in result.dims
     return result
 
 
