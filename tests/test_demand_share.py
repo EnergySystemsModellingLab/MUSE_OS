@@ -150,7 +150,6 @@ def test_demand_split(_capacity, _market, _technologies):
         return decommissioning_demand(
             _technologies.sel(region="USA"),
             capacity,
-            year=[CURRENT_YEAR, INVESTMENT_YEAR],
         )
 
     demand = _market.consumption.sel(
@@ -161,8 +160,8 @@ def test_demand_split(_capacity, _market, _technologies):
     share = inner_split(agents, demand, method, quantity)
 
     enduse = is_enduse(_technologies.comm_usage)
-    assert (share["scully"].squeeze("year").sel(commodity=~enduse) == 0).all()
-    assert (share["mulder"].squeeze("year").sel(commodity=~enduse) == 0).all()
+    assert (share["scully"].sel(commodity=~enduse) == 0).all()
+    assert (share["mulder"].sel(commodity=~enduse) == 0).all()
 
     total = (share["scully"] + share["mulder"]).sum("asset")
     demand = demand.where(enduse, 0)
@@ -185,7 +184,6 @@ def test_demand_split_zero_share(_capacity, _market, _technologies):
         return 0 * decommissioning_demand(
             _technologies.sel(region="USA"),
             capacity,
-            year=[CURRENT_YEAR, INVESTMENT_YEAR],
         )
 
     demand = _market.consumption.sel(
@@ -196,8 +194,8 @@ def test_demand_split_zero_share(_capacity, _market, _technologies):
     share = inner_split(agents, demand, method, quantity)
 
     enduse = is_enduse(_technologies.comm_usage)
-    assert (share["scully"].squeeze("year").sel(commodity=~enduse) == 0).all()
-    assert (share["mulder"].squeeze("year").sel(commodity=~enduse) == 0).all()
+    assert (share["scully"].sel(commodity=~enduse) == 0).all()
+    assert (share["mulder"].sel(commodity=~enduse) == 0).all()
 
     total = (share["scully"] + share["mulder"]).sum("asset")
     demand = demand.where(enduse, 0)

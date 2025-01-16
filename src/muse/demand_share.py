@@ -257,9 +257,8 @@ def new_and_retro(
         return decommissioning_demand(
             technologies,
             capacity,
-            year=[current_year, investment_year],
             timeslice_level=timeslice_level,
-        ).squeeze("year")
+        )
 
     capacity = reduce_assets([u.assets.capacity for u in agents]).interp(
         year=[current_year, investment_year]
@@ -385,9 +384,8 @@ def standard_demand(
         return decommissioning_demand(
             technologies,
             capacity,
-            year=[current_year, investment_year],
             timeslice_level=timeslice_level,
-        ).squeeze("year")
+        )
 
     # Make sure there are no retrofit agents
     for agent in agents:

@@ -9,7 +9,6 @@ Functions for calculating costs (e.g. LCOE, EAC) are in the `costs` module.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import cast
 
 import numpy as np
@@ -239,13 +238,9 @@ def gross_margin(
 def decommissioning_demand(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
-    year: Sequence[int] | None = None,
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
     r"""Computes demand from process decommissioning.
-
-    If `year` is not given, it defaults to all years in capacity. If there are more than
-    two years, then decommissioning is with respect to first (or minimum) year.
 
     Let :math:`M_t^r(y)` be the retrofit demand, :math:`^{(s)}\mathcal{D}_t^r(y)` be the
     decommissioning demand at the level of the sector, and :math:`A^r_{t, \iota}(y)` be
@@ -268,22 +263,23 @@ def decommissioning_demand(
         :py:func:`~muse.quantities.maximum_production`
         :py:func:`~muse.commodities.is_enduse`
     """
-    if year is None:
-        year = capacity.year.values
-    year = sorted(year)
-    capacity = capacity.interp(year=year, kwargs={"fill_value": 0.0})
-    baseyear = min(year)
-    dyears = [u for u in year if u != baseyear]
+    assert len(capacity.year) == 2
+    assert "timeslice" not in technologies.dims
+    current_year, investment_year = capacity.year.values
 
     # Calculate the decrease in capacity from the current year to future years
-    capacity_decrease = capacity.sel(year=baseyear) - capacity.sel(year=dyears)
+    capacity_decrease = capacity.sel(year=current_year) - capacity.sel(
+        year=investment_year
+    )
 
     # Calculate production associated with this capacity
-    return maximum_production(
+    result = maximum_production(
         technologies,
         capacity_decrease,
         timeslice_level=timeslice_level,
     ).clip(min=0)
+    assert "year" not in result.dims
+    return result
 
 
 def consumption(
