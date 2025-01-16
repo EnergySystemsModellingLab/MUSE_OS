@@ -248,7 +248,7 @@ def new_and_retro(
     from muse.quantities import maximum_production
     from muse.utilities import agent_concatenation, reduce_assets
 
-    current_year, investment_year = market.year.values
+    current_year, investment_year = map(int, market.year.values)
 
     def decommissioning(capacity):
         return decommissioning_demand(
@@ -374,7 +374,7 @@ def standard_demand(
     from muse.quantities import maximum_production
     from muse.utilities import agent_concatenation, reduce_assets
 
-    current_year, investment_year = market.year.values
+    current_year, investment_year = map(int, market.year.values)
 
     def decommissioning(capacity):
         return decommissioning_demand(
@@ -463,7 +463,7 @@ def unmet_forecasted_demand(
     from muse.commodities import is_enduse
     from muse.utilities import reduce_assets
 
-    current_year, investment_year = market.year.values
+    current_year, investment_year = map(int, market.year.values)
 
     comm_usage = technologies.comm_usage.sel(commodity=market.commodity)
     smarket: xr.Dataset = market.where(is_enduse(comm_usage), 0)
@@ -614,7 +614,7 @@ def new_consumption(
     assert len(capacity.year) == 2
     assert (market.year.values == capacity.year.values).all()
     assert "year" not in technologies.dims
-    current_year, investment_year = capacity.year.values
+    current_year, investment_year = map(int, market.year.values)
 
     # Select data for current/future years
     current_market = market.sel(year=current_year, drop=True)
@@ -730,7 +730,7 @@ def decommissioning_demand(
 
     assert len(capacity.year) == 2
     assert "year" not in technologies.dims
-    current_year, investment_year = capacity.year.values
+    current_year, investment_year = map(int, capacity.year.values)
 
     # Calculate the decrease in capacity from the current year to future years
     capacity_decrease = capacity.sel(year=current_year) - capacity.sel(
