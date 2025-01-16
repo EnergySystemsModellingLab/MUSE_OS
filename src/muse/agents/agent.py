@@ -328,7 +328,6 @@ class InvestingAgent(Agent):
         current_year = int(market.year[0])
         assert current_year == self.year
         investment_year = int(market.year[1])
-        time_period = investment_year - current_year
 
         # Skip forward if demand is zero
         if demand.size == 0 or demand.sum() < 1e-12:
@@ -377,18 +376,17 @@ class InvestingAgent(Agent):
 
         # Calculate investments
         investments = self.invest(
-            search[["search_space", "decision"]],
-            technologies,
-            constraints,
+            search=search[["search_space", "decision"]],
+            technologies=technologies,
+            constraints=constraints,
             timeslice_level=self.timeslice_level,
         )
 
         # Add investments
         self.add_investments(
-            technologies,
-            investments,
-            current_year=current_year,
-            time_period=time_period,
+            technologies=technologies,
+            investments=investments,
+            investment_year=investment_year,
         )
 
         # Increment the year
@@ -438,15 +436,14 @@ class InvestingAgent(Agent):
         self,
         technologies: xr.Dataset,
         investments: xr.DataArray,
-        current_year: int,
-        time_period: int,
+        investment_year: int,
     ) -> None:
         """Add new assets to the agent."""
         assert "year" not in technologies.dims
 
         # Calculate retirement profile of new assets
         new_capacity = self.retirement_profile(
-            technologies, investments, current_year, time_period
+            technologies, investments, investment_year
         )
         if new_capacity is None:
             return
@@ -462,8 +459,7 @@ class InvestingAgent(Agent):
         self,
         technologies: xr.Dataset,
         investments: xr.DataArray,
-        current_year: int,
-        time_period: int,
+        investment_year: int,
     ) -> Optional[xr.DataArray]:
         from muse.investments import cliff_retirement_profile
 
@@ -489,17 +485,17 @@ class InvestingAgent(Agent):
         lifetime = self.filter_input(
             technologies.technical_life,
             technology=investments.replacement,
-        ).clip(min=time_period)
+        )
         profile = cliff_retirement_profile(
             lifetime,
-            investment_year=current_year + time_period,
+            investment_year=investment_year,
         )
         if "dst_region" in investments.coords:
             investments = investments.reindex_like(profile, method="ffill")
 
         # Apply the retirement profile to the investments
         new_assets = (investments * profile).rename(replacement="asset")
-        new_assets["installed"] = "asset", [current_year] * len(new_assets.asset)
+        new_assets["installed"] = "asset", [investment_year] * len(new_assets.asset)
 
         # The new assets have picked up quite a few coordinates along the way.
         # we try and keep only those that were there originally.
