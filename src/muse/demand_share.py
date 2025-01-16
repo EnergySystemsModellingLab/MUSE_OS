@@ -253,12 +253,14 @@ def new_and_retro(
     def decommissioning(capacity):
         return decommissioning_demand(
             technologies=technologies,
-            capacity=capacity.interp(year=[current_year, investment_year]),
+            capacity=capacity.interp(
+                year=[current_year, investment_year], kwargs={"fill_value": 0.0}
+            ),
             timeslice_level=timeslice_level,
         )
 
     capacity = reduce_assets([u.assets.capacity for u in agents]).interp(
-        year=[current_year, investment_year]
+        year=[current_year, investment_year], kwargs={"fill_value": 0.0}
     )
 
     demands = new_and_retro_demands(
@@ -377,7 +379,9 @@ def standard_demand(
     def decommissioning(capacity):
         return decommissioning_demand(
             technologies=technologies,
-            capacity=capacity.interp(year=[current_year, investment_year]),
+            capacity=capacity.interp(
+                year=[current_year, investment_year], kwargs={"fill_value": 0.0}
+            ),
             timeslice_level=timeslice_level,
         )
 
@@ -388,7 +392,7 @@ def standard_demand(
 
     # Calculate existing capacity
     capacity = reduce_assets([agent.assets.capacity for agent in agents]).interp(
-        year=[current_year, investment_year]
+        year=[current_year, investment_year], kwargs={"fill_value": 0.0}
     )
 
     # Calculate new and retrofit demands
@@ -466,7 +470,7 @@ def unmet_forecasted_demand(
 
     # Calculate existing capacity
     capacity = reduce_assets([agent.assets.capacity for agent in agents]).interp(
-        year=[current_year, investment_year]
+        year=[current_year, investment_year], kwargs={"fill_value": 0.0}
     )
 
     # Select data for future years
