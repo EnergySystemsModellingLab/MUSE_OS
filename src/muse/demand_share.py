@@ -248,13 +248,12 @@ def new_and_retro(
     from muse.quantities import maximum_production
     from muse.utilities import agent_concatenation, reduce_assets
 
-    current_year = int(market.year[0])
-    investment_year = int(market.year[1])
+    current_year, investment_year = market.year.values
 
     def decommissioning(capacity):
         return decommissioning_demand(
-            technologies,
-            capacity,
+            technologies=technologies,
+            capacity=capacity.sel(year=[current_year, investment_year]),
             timeslice_level=timeslice_level,
         )
 
@@ -373,13 +372,12 @@ def standard_demand(
     from muse.quantities import maximum_production
     from muse.utilities import agent_concatenation, reduce_assets
 
-    current_year = int(market.year[0])
-    investment_year = int(market.year[1])
+    current_year, investment_year = market.year.values
 
     def decommissioning(capacity):
         return decommissioning_demand(
-            technologies,
-            capacity,
+            technologies=technologies,
+            capacity=capacity.sel(year=[current_year, investment_year]),
             timeslice_level=timeslice_level,
         )
 
@@ -461,8 +459,7 @@ def unmet_forecasted_demand(
     from muse.commodities import is_enduse
     from muse.utilities import reduce_assets
 
-    current_year = int(market.year[0])
-    investment_year = int(market.year[1])
+    current_year, investment_year = market.year.values
 
     comm_usage = technologies.comm_usage.sel(commodity=market.commodity)
     smarket: xr.Dataset = market.where(is_enduse(comm_usage), 0)
@@ -613,8 +610,7 @@ def new_consumption(
     assert len(capacity.year) == 2
     assert (market.year.values == capacity.year.values).all()
     assert "year" not in technologies.dims
-    current_year = int(market.year[0])
-    investment_year = int(market.year[1])
+    current_year, investment_year = capacity.year.values
 
     # Select data for current/future years
     current_market = market.sel(year=current_year, drop=True)
