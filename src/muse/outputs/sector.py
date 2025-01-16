@@ -19,8 +19,10 @@ technologies in the market. It returns a single xr.DataArray object.
 The function should never modify it's arguments.
 """
 
+from __future__ import annotations
+
 from collections.abc import Mapping, MutableMapping
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Union
 
 import pandas as pd
 import xarray as xr
@@ -100,7 +102,7 @@ def _factory(
     quantities = [_quantity_factory(param, registry) for param in params]
     sinks = [sink_factory(param, sector_name=sector_name) for param in params]
 
-    def save_multiple_outputs(market, *args, year: Optional[int] = None) -> list[Any]:
+    def save_multiple_outputs(market, *args, year: int | None = None) -> list[Any]:
         if year is None:
             year = int(market.year.min())
 
@@ -151,8 +153,8 @@ def capacity(
 
 def market_quantity(
     quantity: xr.DataArray,
-    sum_over: Optional[Union[str, list[str]]] = None,
-    drop: Optional[Union[str, list[str]]] = None,
+    sum_over: str | list[str] | None = None,
+    drop: str | list[str] | None = None,
 ) -> xr.DataArray:
     from pandas import MultiIndex
 
@@ -177,8 +179,8 @@ def market_quantity(
 def consumption(
     market: xr.Dataset,
     capacity: xr.DataArray,
-    sum_over: Optional[list[str]] = None,
-    drop: Optional[list[str]] = None,
+    sum_over: list[str] | None = None,
+    drop: list[str] | None = None,
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current consumption."""
@@ -197,8 +199,8 @@ def consumption(
 def supply(
     market: xr.Dataset,
     capacity: xr.DataArray,
-    sum_over: Optional[list[str]] = None,
-    drop: Optional[list[str]] = None,
+    sum_over: list[str] | None = None,
+    drop: list[str] | None = None,
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current supply."""
@@ -217,8 +219,8 @@ def supply(
 def costs(
     market: xr.Dataset,
     capacity: xr.DataArray,
-    sum_over: Optional[list[str]] = None,
-    drop: Optional[list[str]] = None,
+    sum_over: list[str] | None = None,
+    drop: list[str] | None = None,
     rounding: int = 4,
 ) -> xr.DataArray:
     """Current costs."""

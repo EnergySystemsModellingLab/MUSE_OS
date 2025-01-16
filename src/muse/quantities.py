@@ -7,8 +7,10 @@ functions are used in different areas of the model.
 Functions for calculating costs (e.g. LCOE, EAC) are in the `costs` module.
 """
 
+from __future__ import annotations
+
 from collections.abc import Sequence
-from typing import Optional, Union, cast
+from typing import cast
 
 import numpy as np
 import xarray as xr
@@ -19,8 +21,8 @@ from muse.timeslices import broadcast_timeslice, distribute_timeslice
 def supply(
     capacity: xr.DataArray,
     demand: xr.DataArray,
-    technologies: Union[xr.Dataset, xr.DataArray],
-    timeslice_level: Optional[str] = None,
+    technologies: xr.Dataset | xr.DataArray,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Production and emission for a given capacity servicing a given demand.
 
@@ -122,7 +124,7 @@ def supply(
 def emission(
     production: xr.DataArray,
     fixed_outputs: xr.DataArray,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
 ):
     """Computes emission from current products.
 
@@ -156,7 +158,7 @@ def gross_margin(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
     prices: xr.Dataset,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """The percentage of revenue after direct expenses have been subtracted.
 
@@ -237,8 +239,8 @@ def gross_margin(
 def decommissioning_demand(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
-    year: Optional[Sequence[int]] = None,
-    timeslice_level: Optional[str] = None,
+    year: Sequence[int] | None = None,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     r"""Computes demand from process decommissioning.
 
@@ -287,8 +289,8 @@ def decommissioning_demand(
 def consumption(
     technologies: xr.Dataset,
     production: xr.DataArray,
-    prices: Optional[xr.DataArray] = None,
-    timeslice_level: Optional[str] = None,
+    prices: xr.DataArray | None = None,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Commodity consumption when fulfilling the whole production.
 
@@ -363,7 +365,7 @@ def consumption(
 def maximum_production(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
     **filters,
 ):
     r"""Production for a given capacity.
@@ -420,8 +422,8 @@ def maximum_production(
 def capacity_in_use(
     production: xr.DataArray,
     technologies: xr.Dataset,
-    max_dim: Optional[Union[str, tuple[str]]] = "commodity",
-    timeslice_level: Optional[str] = None,
+    max_dim: str | tuple[str] | None = "commodity",
+    timeslice_level: str | None = None,
     **filters,
 ):
     """Capacity-in-use for each asset, given production.
@@ -475,7 +477,7 @@ def capacity_in_use(
 def minimum_production(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
     **filters,
 ):
     r"""Minimum production for a given capacity.
@@ -542,7 +544,7 @@ def minimum_production(
 def capacity_to_service_demand(
     demand: xr.DataArray,
     technologies: xr.Dataset,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
     timeslice_outputs = distribute_timeslice(
@@ -558,7 +560,7 @@ def capacity_to_service_demand(
 def production_amplitude(
     production: xr.DataArray,
     technologies: xr.Dataset,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Calculates the degree of technology activity based on production data.
 
