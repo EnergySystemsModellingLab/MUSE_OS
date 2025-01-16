@@ -1,8 +1,9 @@
 """Methods and types around commodities."""
 
+from __future__ import annotations
+
 from collections.abc import Sequence
 from enum import IntFlag, auto
-from typing import Union
 
 from numpy import ndarray
 from xarray import DataArray, Dataset
@@ -117,7 +118,7 @@ class CommodityUsage(IntFlag):
 
 def check_usage(
     data: Sequence[CommodityUsage],
-    flag: Union[str, CommodityUsage, None],
+    flag: str | CommodityUsage | None,
     match: str = "all",
 ) -> ndarray:
     """Match usage flags with input data array.

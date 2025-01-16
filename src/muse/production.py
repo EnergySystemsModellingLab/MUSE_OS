@@ -30,6 +30,8 @@ Returns:
     A `xr.DataArray` with the amount produced for each good from each asset.
 """
 
+from __future__ import annotations
+
 __all__ = [
     "PRODUCTION_SIGNATURE",
     "factory",
@@ -37,8 +39,9 @@ __all__ = [
     "register_production",
     "supply",
 ]
+
 from collections.abc import Mapping, MutableMapping
-from typing import Any, Callable, Optional, Union, cast
+from typing import Any, Callable, cast
 
 import xarray as xr
 
@@ -63,7 +66,7 @@ def register_production(function: PRODUCTION_SIGNATURE = None):
 
 
 def factory(
-    settings: Union[str, Mapping] = "maximum_production", **kwargs
+    settings: str | Mapping = "maximum_production", **kwargs
 ) -> PRODUCTION_SIGNATURE:
     """Creates a production functor.
 
@@ -101,7 +104,7 @@ def maximum_production(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Production when running at full capacity.
 
@@ -118,7 +121,7 @@ def supply(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Service current demand equally from all assets.
 

@@ -1,5 +1,7 @@
 """MUSE model."""
 
+from __future__ import annotations
+
 import os
 from contextlib import suppress
 from importlib.metadata import PackageNotFoundError, version

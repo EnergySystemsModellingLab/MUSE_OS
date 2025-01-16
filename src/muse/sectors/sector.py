@@ -198,8 +198,10 @@ class Sector(AbstractSector):  # type: ignore
         def group_assets(x: xr.DataArray) -> xr.DataArray:
             return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
 
-        time_period = int(mca_market.year.max() - mca_market.year.min())
-        current_year = int(mca_market.year.min())
+        # Time period from the market object
+        assert len(mca_market.year) == 2
+        current_year = int(mca_market.year[0])
+        investment_year = int(mca_market.year[1])
         getLogger(__name__).info(f"Running {self.name} for year {current_year}")
 
         # Agent interactions
@@ -214,12 +216,11 @@ class Sector(AbstractSector):  # type: ignore
         )
 
         # Investments
+        # uses technology data from the investment year
         for subsector in self.subsectors:
             subsector.invest(
-                self.technologies,
-                market,
-                time_period=time_period,
-                current_year=current_year,
+                technologies=self.technologies.sel(year=investment_year),
+                market=market,
             )
 
         # Full output data

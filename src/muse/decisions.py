@@ -26,6 +26,8 @@ Returns:
     A data array with ranked replacement technologies.
 """
 
+from __future__ import annotations
+
 __all__ = [
     "epsilon_constraints",
     "factory",
@@ -37,12 +39,11 @@ __all__ = [
     "single_objective",
     "weighted_sum",
 ]
+
 from collections.abc import Mapping, MutableMapping, Sequence
 from typing import (
     Any,
     Callable,
-    Optional,
-    Union,
 )
 
 from xarray import DataArray, Dataset
@@ -96,7 +97,7 @@ def coeff_sign(minimise: bool, coeff: Any):
     return coeff if minimise else -coeff
 
 
-def factory(settings: Union[str, Mapping] = "mean") -> Callable:
+def factory(settings: str | Mapping = "mean") -> Callable:
     """Creates a decision method based on the input settings."""
     if isinstance(settings, str):
         function = DECISIONS[settings]
@@ -169,7 +170,7 @@ def weighted_sum(objectives: Dataset, parameters: Mapping[str, float]) -> DataAr
 
 @register_decision(name="lexo")
 def lexical_comparison(
-    objectives: Dataset, parameters: Union[PARAMS_TYPE, Sequence[tuple[str, float]]]
+    objectives: Dataset, parameters: PARAMS_TYPE | Sequence[tuple[str, float]]
 ) -> DataArray:
     """Lexical comparison over the objectives.
 
@@ -202,7 +203,7 @@ def lexical_comparison(
 
 @register_decision(name="retro_lexo")
 def retro_lexical_comparison(
-    objectives: Dataset, parameters: Union[PARAMS_TYPE, Sequence[tuple[str, float]]]
+    objectives: Dataset, parameters: PARAMS_TYPE | Sequence[tuple[str, float]]
 ) -> DataArray:
     """Lexical comparison over the objectives.
 
@@ -231,7 +232,7 @@ def retro_lexical_comparison(
 
 
 def _epsilon_constraints(
-    objectives: Dataset, optimize: str, mask: Optional[Any] = None, **epsilons
+    objectives: Dataset, optimize: str, mask: Any | None = None, **epsilons
 ) -> DataArray:
     """Minimizes one objective subject to constraints on other objectives."""
     constraints = True
@@ -247,8 +248,8 @@ def _epsilon_constraints(
 @register_decision(name=("epsilon", "epsilon_con"))
 def epsilon_constraints(
     objectives: Dataset,
-    parameters: Union[PARAMS_TYPE, Sequence[tuple[str, bool, float]]],
-    mask: Optional[Any] = None,
+    parameters: PARAMS_TYPE | Sequence[tuple[str, bool, float]],
+    mask: Any | None = None,
 ) -> DataArray:
     r"""Minimizes first objective subject to constraints on other objectives.
 
@@ -310,7 +311,7 @@ def retro_epsilon_constraints(
 @register_decision(name=("single", "singleObj"))
 def single_objective(
     objectives: Dataset,
-    parameters: Union[str, tuple[str, bool], tuple[str, bool, float], PARAMS_TYPE],
+    parameters: str | tuple[str, bool] | tuple[str, bool, float] | PARAMS_TYPE,
 ) -> DataArray:
     """Single objective decision method.
 

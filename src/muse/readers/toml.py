@@ -1,5 +1,7 @@
 """Ensemble of functions to read MUSE data."""
 
+from __future__ import annotations
+
 __all__ = ["read_settings"]
 
 import importlib.util as implib
@@ -11,8 +13,6 @@ from pathlib import Path
 from typing import (
     IO,
     Any,
-    Optional,
-    Union,
 )
 
 import numpy as np
@@ -72,10 +72,10 @@ class FormatDict(dict):
 
 def format_path(
     filepath: str,
-    replacements: Optional[Mapping] = None,
-    path: Optional[Union[str, Path]] = None,
-    cwd: Optional[Union[str, Path]] = None,
-    muse_sectors: Optional[str] = None,
+    replacements: Mapping | None = None,
+    path: str | Path | None = None,
+    cwd: str | Path | None = None,
+    muse_sectors: str | None = None,
 ):
     """Replaces known patterns in a path.
 
@@ -102,10 +102,10 @@ def format_path(
 
 def format_paths(
     settings: Mapping,
-    replacements: Optional[Mapping] = None,
-    path: Optional[Union[str, Path]] = None,
-    cwd: Optional[Union[str, Path]] = None,
-    muse_sectors: Optional[str] = None,
+    replacements: Mapping | None = None,
+    path: str | Path | None = None,
+    cwd: str | Path | None = None,
+    muse_sectors: str | None = None,
     suffixes: Sequence[str] = (".csv", ".nc", ".xls", ".xlsx", ".py", ".toml"),
 ):
     """Format paths passed to settings.
@@ -249,8 +249,8 @@ def format_paths(
 
 
 def read_split_toml(
-    tomlfile: Union[str, Path, IO[str], Mapping],
-    path: Optional[Union[str, Path]] = None,
+    tomlfile: str | Path | IO[str] | Mapping,
+    path: str | Path | None = None,
 ) -> MutableMapping:
     """Reads and consolidate TOML files.
 
@@ -342,8 +342,8 @@ def read_split_toml(
 
 
 def read_settings(
-    settings_file: Union[str, Path, IO[str], Mapping],
-    path: Optional[Union[str, Path]] = None,
+    settings_file: str | Path | IO[str] | Mapping,
+    path: str | Path | None = None,
 ) -> Any:
     """Loads the input settings for any MUSE simulation.
 
@@ -660,10 +660,10 @@ def check_sectors_files(settings: dict) -> None:
 
 def read_technodata(
     settings: Any,
-    sector_name: Optional[str] = None,
-    time_framework: Optional[Sequence[int]] = None,
-    commodities: Optional[Union[str, Path]] = None,
-    regions: Optional[Sequence[str]] = None,
+    sector_name: str | None = None,
+    time_framework: Sequence[int] | None = None,
+    commodities: str | Path | None = None,
+    regions: Sequence[str] | None = None,
     **kwargs,
 ) -> xr.Dataset:
     """Helper function to create technodata for a given sector."""

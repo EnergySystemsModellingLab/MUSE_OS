@@ -46,6 +46,8 @@ Returns:
     A `timeslice` dimension may also be present.
 """
 
+from __future__ import annotations
+
 __all__ = [
     "capacity_to_service_demand",
     "capital_costs",
@@ -62,7 +64,7 @@ __all__ = [
 ]
 
 from collections.abc import Mapping, MutableMapping, Sequence
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Union
 
 import numpy as np
 import xarray as xr
@@ -95,7 +97,7 @@ def objective_factory(settings=Union[str, Mapping]):
 
 
 def factory(
-    settings: Union[str, Mapping, Sequence[Union[str, Mapping]]] = "LCOE",
+    settings: str | Mapping | Sequence[str | Mapping] = "LCOE",
 ) -> Callable:
     """Creates a function computing multiple objectives.
 
@@ -129,7 +131,7 @@ def factory(
         technologies: xr.Dataset,
         demand: xr.DataArray,
         prices: xr.DataArray,
-        timeslice_level: Optional[str] = None,
+        timeslice_level: str | None = None,
         *args,
         **kwargs,
     ) -> xr.Dataset:
@@ -257,7 +259,7 @@ def consumption(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -337,7 +339,7 @@ def emission_cost(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -370,7 +372,7 @@ def fuel_consumption_cost(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ):
@@ -400,7 +402,7 @@ def annual_levelized_cost_of_energy(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ):
@@ -446,7 +448,7 @@ def lifetime_levelized_cost_of_energy(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ):
@@ -493,7 +495,7 @@ def net_present_value(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ):
@@ -533,7 +535,7 @@ def net_present_cost(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ):
@@ -572,7 +574,7 @@ def equivalent_annual_cost(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ):

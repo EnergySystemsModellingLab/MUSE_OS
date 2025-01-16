@@ -425,7 +425,6 @@ def test_scipy_solver(technologies, costs, constraints):
         search_space=xr.ones_like(costs),
         technologies=technologies,
         constraints=constraints,
-        year=2025,
     )
     assert isinstance(solution, xr.DataArray)
     assert set(solution.dims) == {"asset", "replacement"}

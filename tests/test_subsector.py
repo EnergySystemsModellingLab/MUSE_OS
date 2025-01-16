@@ -47,7 +47,7 @@ def test_subsector_investing_aggregation():
             subsector = Subsector(agents, commodities)
             initial_agents = deepcopy(agents)
             assert {agent.year for agent in agents} == {int(market.year.min())}
-            subsector.aggregate_lp(technologies, market, time_period=5, current_year=5)
+            subsector.aggregate_lp(technologies.sel(year=2020), market)
             assert {agent.year for agent in agents} == {int(market.year.min() + 5)}
             for initial, final in zip(initial_agents, agents):
                 assert initial.assets.sum() != final.assets.sum()
@@ -104,7 +104,7 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
         commodity=technologies.commodity, region=technologies.region
     ).interp(year=[2020, 2025])
     assert all(agent.year == 2020 for agent in agents)
-    subsector.aggregate_lp(technologies, market, time_period=5, current_year=2020)
+    subsector.aggregate_lp(technologies.sel(year=2020), market)
 
 
 def test_factory_smoke_test(model, technologies, tmp_path):

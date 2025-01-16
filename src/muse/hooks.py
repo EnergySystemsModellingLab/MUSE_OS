@@ -1,5 +1,7 @@
 """Pre and post hooks on agents."""
 
+from __future__ import annotations
+
 __all__ = [
     "asset_merge_factory",
     "clean",
@@ -11,8 +13,9 @@ __all__ = [
     "register_final_asset_transform",
     "register_initial_asset_transform",
 ]
+
 from collections.abc import Mapping, MutableMapping
-from typing import Callable, Union
+from typing import Callable
 
 from xarray import Dataset
 
@@ -25,7 +28,7 @@ FINAL_ASSET_TRANSFORM: MutableMapping[str, Callable] = {}
 """ Transform at the end of each step, including new assets. """
 
 
-def housekeeping_factory(settings: Union[str, Mapping] = "noop") -> Callable:
+def housekeeping_factory(settings: str | Mapping = "noop") -> Callable:
     """Returns a function for performing initial housekeeping.
 
     For instance, remove technologies with no capacity now or in the future.
@@ -49,7 +52,7 @@ def housekeeping_factory(settings: Union[str, Mapping] = "noop") -> Callable:
     return initial_assets_transform
 
 
-def asset_merge_factory(settings: Union[str, Mapping] = "new") -> Callable:
+def asset_merge_factory(settings: str | Mapping = "new") -> Callable:
     """Returns a function for merging new investments into assets.
 
     Available merging functions should be registered with

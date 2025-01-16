@@ -1,5 +1,7 @@
 """Makes MUSE executable."""
 
+from __future__ import annotations
+
 import pathlib
 from argparse import ArgumentParser
 

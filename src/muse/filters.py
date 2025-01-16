@@ -73,6 +73,8 @@ Returns:
     An initial search space
 """
 
+from __future__ import annotations
+
 __all__ = [
     "compress",
     "currently_existing_tech",
@@ -94,8 +96,6 @@ from collections.abc import Mapping, MutableMapping, Sequence
 from typing import (
     Any,
     Callable,
-    Optional,
-    Union,
     cast,
 )
 
@@ -162,7 +162,7 @@ def register_initializer(function: SSI_SIGNATURE) -> Callable:
 
 
 def factory(
-    settings: Optional[Union[str, Mapping, Sequence[Union[str, Mapping]]]] = None,
+    settings: str | Mapping | Sequence[str | Mapping] | None = None,
     separator: str = "->",
 ):
     """Creates filters from input TOML data.

@@ -25,9 +25,11 @@ The same models can be instantiated in a python script as follows:
     model.run()
 """
 
+from __future__ import annotations
+
 from logging import getLogger
 from pathlib import Path
-from typing import Optional, Union, cast
+from typing import cast
 
 import numpy as np
 import xarray as xr
@@ -81,7 +83,7 @@ def model(name: str = "default", test: bool = False) -> MCA:
 
 def copy_model(
     name: str = "default",
-    path: Optional[Union[str, Path]] = None,
+    path: str | Path | None = None,
     overwrite: bool = False,
 ) -> Path:
     """Copy model files to given path.

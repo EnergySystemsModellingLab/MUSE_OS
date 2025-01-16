@@ -1,5 +1,7 @@
 """Timeslice utility functions."""
 
+from __future__ import annotations
+
 __all__ = [
     "broadcast_timeslice",
     "compress_timeslice",
@@ -14,7 +16,6 @@ __all__ = [
 ]
 
 from collections.abc import Mapping, Sequence
-from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -24,7 +25,7 @@ TIMESLICE: DataArray = None  # type: ignore
 
 
 def read_timeslices(
-    settings: Union[Mapping, str],
+    settings: Mapping | str,
     level_names: Sequence[str] = ("month", "day", "hour"),
 ) -> DataArray:
     from functools import reduce
@@ -75,14 +76,14 @@ def read_timeslices(
     return DataArray(ts, coords={"timeslice": indices}, dims="timeslice")
 
 
-def setup_module(settings: Union[str, Mapping]):
+def setup_module(settings: str | Mapping):
     """Sets up module singletons."""
     global TIMESLICE
     TIMESLICE = read_timeslices(settings)
 
 
 def broadcast_timeslice(
-    data: DataArray, ts: Optional[DataArray] = None, level: Optional[str] = None
+    data: DataArray, ts: DataArray | None = None, level: str | None = None
 ) -> DataArray:
     """Convert a non-timesliced array to a timesliced array by broadcasting.
 
@@ -119,7 +120,7 @@ def broadcast_timeslice(
 
 
 def distribute_timeslice(
-    data: DataArray, ts: Optional[DataArray] = None, level=None
+    data: DataArray, ts: DataArray | None = None, level=None
 ) -> DataArray:
     """Convert a non-timesliced array to a timesliced array by distribution.
 
@@ -153,8 +154,8 @@ def distribute_timeslice(
 
 def compress_timeslice(
     data: DataArray,
-    ts: Optional[DataArray] = None,
-    level: Optional[str] = None,
+    ts: DataArray | None = None,
+    level: str | None = None,
     operation: str = "sum",
 ) -> DataArray:
     """Convert a fully timesliced array to a coarser level.
@@ -214,7 +215,7 @@ def compress_timeslice(
 
 
 def expand_timeslice(
-    data: DataArray, ts: Optional[DataArray] = None, operation: str = "distribute"
+    data: DataArray, ts: DataArray | None = None, operation: str = "distribute"
 ) -> DataArray:
     """Convert a timesliced array to a finer level.
 
@@ -294,7 +295,7 @@ def get_level(data: DataArray) -> str:
     return data.timeslice.to_index().names[-1]
 
 
-def sort_timeslices(data: DataArray, ts: Optional[DataArray] = None) -> DataArray:
+def sort_timeslices(data: DataArray, ts: DataArray | None = None) -> DataArray:
     """Sorts the timeslices of a DataArray according to a reference timeslice.
 
     This will only sort timeslices to match the reference if the data is at the same
@@ -315,7 +316,7 @@ def sort_timeslices(data: DataArray, ts: Optional[DataArray] = None) -> DataArra
     return data.sortby("timeslice")
 
 
-def timeslice_max(data: DataArray, ts: Optional[DataArray] = None) -> DataArray:
+def timeslice_max(data: DataArray, ts: DataArray | None = None) -> DataArray:
     """Find the max value over the timeslice dimension, normalized for timeslice length.
 
     This first annualizes the value in each timeslice by dividing by the fraction of the

@@ -43,10 +43,10 @@ on production :math:`\sum_d X_{d, i} \leq M_i`. The algorithms in this module tr
 solve these constrained problems one way or another.
 """
 
+from __future__ import annotations
+
 __all__ = ["demand_matching"]
 
-
-from typing import Optional
 
 import pandas as pd
 from xarray import DataArray
@@ -58,7 +58,7 @@ def demand_matching(
     demand: DataArray,
     cost: DataArray,
     *constraints: DataArray,
-    protected_dims: Optional[set] = None,
+    protected_dims: set | None = None,
 ) -> DataArray:
     r"""Demand matching over heterogeneous dimensions.
 
