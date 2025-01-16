@@ -145,7 +145,7 @@ def test_demand_split(_capacity, _market, _technologies):
     from muse.demand_share import _inner_split as inner_split
 
     def method(capacity):
-        from muse.quantities import decommissioning_demand
+        from muse.demand_share import decommissioning_demand
 
         return decommissioning_demand(
             _technologies.sel(region="USA"),
@@ -179,7 +179,7 @@ def test_demand_split_zero_share(_capacity, _market, _technologies):
     from muse.demand_share import _inner_split as inner_split
 
     def method(capacity):
-        from muse.quantities import decommissioning_demand
+        from muse.demand_share import decommissioning_demand
 
         return 0 * decommissioning_demand(
             _technologies.sel(region="USA"),
@@ -370,3 +370,18 @@ def test_unmet_forecast_demand(_technologies, timeslice, stock):
     assert result.sel(commodity=enduse).values == approx(
         0.5 * market.consumption.sel(commodity=enduse, year=2031).values
     )
+
+
+def test_decommissioning_demand(_technologies, _capacity, timeslice):
+    from muse.commodities import is_enduse
+    from muse.demand_share import decommissioning_demand
+
+    _capacity.loc[{"year": CURRENT_YEAR}] = current = 1.3
+    _capacity.loc[{"year": INVESTMENT_YEAR}] = forecast = 1.0
+    _technologies.fixed_outputs[:] = fouts = 0.5
+    _technologies.utilization_factor[:] = ufac = 0.4
+    decom = decommissioning_demand(_technologies, _capacity)
+    assert set(decom.dims) == {"asset", "commodity", "region", "timeslice"}
+    assert decom.sel(commodity=is_enduse(_technologies.comm_usage)).sum(
+        "timeslice"
+    ).values == approx(ufac * fouts * (current - forecast))

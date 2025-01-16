@@ -252,8 +252,6 @@ def new_and_retro(
     investment_year = int(market.year[1])
 
     def decommissioning(capacity):
-        from muse.quantities import decommissioning_demand
-
         return decommissioning_demand(
             technologies,
             capacity,
@@ -379,8 +377,6 @@ def standard_demand(
     investment_year = int(market.year[1])
 
     def decommissioning(capacity):
-        from muse.quantities import decommissioning_demand
-
         return decommissioning_demand(
             technologies,
             capacity,
@@ -700,3 +696,52 @@ def new_and_retro_demands(
     assert "year" not in retro_demand.dims
 
     return xr.Dataset({"new": new_demand, "retrofit": retro_demand})
+
+
+def decommissioning_demand(
+    technologies: xr.Dataset,
+    capacity: xr.DataArray,
+    timeslice_level: str | None = None,
+) -> xr.DataArray:
+    r"""Computes demand from process decommissioning.
+
+    Let :math:`M_t^r(y)` be the retrofit demand, :math:`^{(s)}\mathcal{D}_t^r(y)` be the
+    decommissioning demand at the level of the sector, and :math:`A^r_{t, \iota}(y)` be
+    the assets owned by the agent. Then, the decommissioning demand for agent :math:`i`
+    is :
+
+    .. math::
+
+        \mathcal{D}^{r, i}_{t, c}(y) =
+            \sum_\iota \alpha_{t, \iota}^r \beta_{t, \iota, c}^r
+                \left(A^{i, r}_{t, \iota}(y) - A^{i, r}_{t, \iota, c}(y + 1) \right)
+
+    given the utilization factor :math:`\alpha_{t, \iota}` and the fixed output factor
+    :math:`\beta_{t, \iota, c}`.
+
+    Furthermore, decommissioning demand is non-zero only for end-use commodities.
+
+    ncsearch-nohlsearch).. SeeAlso:
+        :ref:`indices`, :ref:`quantities`,
+        :py:func:`~muse.quantities.maximum_production`
+        :py:func:`~muse.commodities.is_enduse`
+    """
+    from muse.quantities import maximum_production
+
+    assert len(capacity.year) == 2
+    assert "year" not in technologies.dims
+    current_year, investment_year = capacity.year.values
+
+    # Calculate the decrease in capacity from the current year to future years
+    capacity_decrease = capacity.sel(year=current_year) - capacity.sel(
+        year=investment_year
+    )
+
+    # Calculate production associated with this capacity
+    result = maximum_production(
+        technologies,
+        capacity_decrease,
+        timeslice_level=timeslice_level,
+    ).clip(min=0)
+    assert "year" not in result.dims
+    return result
