@@ -1,8 +1,10 @@
 """Holds all building agents."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Callable, Optional, Union
+from typing import Callable
 
 import xarray as xr
 
@@ -19,11 +21,11 @@ class AbstractAgent(ABC):
         self,
         name: str = "Agent",
         region: str = "",
-        assets: Optional[xr.Dataset] = None,
+        assets: xr.Dataset | None = None,
         interpolation: str = "linear",
-        category: Optional[str] = None,
-        quantity: Optional[float] = 1,
-        timeslice_level: Optional[str] = None,
+        category: str | None = None,
+        quantity: float | None = 1,
+        timeslice_level: str | None = None,
     ):
         """Creates a standard MUSE agent.
 
@@ -66,10 +68,10 @@ class AbstractAgent(ABC):
 
     def filter_input(
         self,
-        dataset: Union[xr.Dataset, xr.DataArray],
-        year: Optional[Union[Sequence[int], int]] = None,
+        dataset: xr.Dataset | xr.DataArray,
+        year: Sequence[int] | int | None = None,
         **kwargs,
-    ) -> Union[xr.Dataset, xr.DataArray]:
+    ) -> xr.Dataset | xr.DataArray:
         """Filter inputs for usage in agent.
 
         For instance, filters down to agent's region, etc.
@@ -113,22 +115,22 @@ class Agent(AbstractAgent):
         self,
         name: str = "Agent",
         region: str = "USA",
-        assets: Optional[xr.Dataset] = None,
+        assets: xr.Dataset | None = None,
         interpolation: str = "linear",
-        search_rules: Optional[Callable] = None,
-        objectives: Optional[Callable] = None,
-        decision: Optional[Callable] = None,
+        search_rules: Callable | None = None,
+        objectives: Callable | None = None,
+        decision: Callable | None = None,
         year: int = 2010,
         maturity_threshold: float = 0,
         forecast: int = 5,
-        housekeeping: Optional[Callable] = None,
-        merge_transform: Optional[Callable] = None,
-        demand_threshold: Optional[float] = None,
-        category: Optional[str] = None,
+        housekeeping: Callable | None = None,
+        merge_transform: Callable | None = None,
+        demand_threshold: float | None = None,
+        category: str | None = None,
         asset_threshold: float = 1e-4,
-        quantity: Optional[float] = 1,
+        quantity: float | None = 1,
         spend_limit: int = 0,
-        timeslice_level: Optional[str] = None,
+        timeslice_level: str | None = None,
         **kwargs,
     ):
         """Creates a standard agent.
@@ -278,8 +280,8 @@ class InvestingAgent(Agent):
     def __init__(
         self,
         *args,
-        constraints: Optional[Callable] = None,
-        investment: Optional[Callable] = None,
+        constraints: Callable | None = None,
+        investment: Callable | None = None,
         **kwargs,
     ):
         """Creates an investing agent.
@@ -465,7 +467,7 @@ class InvestingAgent(Agent):
         technologies: xr.Dataset,
         investments: xr.DataArray,
         investment_year: int,
-    ) -> Optional[xr.DataArray]:
+    ) -> xr.DataArray | None:
         from muse.investments import cliff_retirement_profile
 
         assert "year" not in technologies.dims

@@ -16,13 +16,14 @@ The function should never modify it's arguments. It can return either a pandas d
 or an xarray xr.DataArray.
 """
 
+from __future__ import annotations
+
 from collections.abc import Mapping, MutableMapping
 from operator import attrgetter
 from pathlib import Path
 from typing import (
     Any,
     Callable,
-    Optional,
     Union,
     cast,
 )
@@ -52,7 +53,7 @@ OUTPUTS_PARAMETERS = Union[str, Mapping]
 
 @registrator(registry=OUTPUT_QUANTITIES)
 def register_output_quantity(
-    function: Optional[OUTPUT_QUANTITY_SIGNATURE] = None,
+    function: OUTPUT_QUANTITY_SIGNATURE | None = None,
 ) -> Callable:
     """Registers a function to compute an output quantity."""
     from functools import wraps

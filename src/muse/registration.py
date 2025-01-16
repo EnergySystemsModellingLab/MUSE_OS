@@ -1,9 +1,11 @@
 """Registrators that allow pluggable data to logic transforms."""
 
+from __future__ import annotations
+
 __all__ = ["registrator"]
 
 from collections.abc import MutableMapping, Sequence
-from typing import Callable, Optional, Union
+from typing import Callable
 
 
 def name_variations(*args):
@@ -38,10 +40,10 @@ def name_variations(*args):
 
 
 def registrator(
-    decorator: Optional[Callable] = None,
-    registry: Optional[MutableMapping] = None,
-    logname: Optional[str] = None,
-    loglevel: Optional[str] = "Debug",
+    decorator: Callable | None = None,
+    registry: MutableMapping | None = None,
+    logname: str | None = None,
+    loglevel: str | None = "Debug",
 ) -> Callable:
     """A decorator to create a decorator that registers functions with MUSE.
 
@@ -133,7 +135,7 @@ def registrator(
     @wraps(decorator)
     def register(
         function=None,
-        name: Optional[Union[str, Sequence[str]]] = None,
+        name: str | Sequence[str] | None = None,
         vary_name: bool = True,
         overwrite: bool = False,
     ):

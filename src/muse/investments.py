@@ -39,17 +39,19 @@ Returns:
     of newly invested capacity.
 """
 
+from __future__ import annotations
+
 __all__ = [
     "INVESTMENT_SIGNATURE",
     "adhoc_match_demand",
     "cliff_retirement_profile",
     "register_investment",
 ]
+
 from collections.abc import Mapping, MutableMapping
 from typing import (
     Any,
     Callable,
-    Optional,
     Union,
     cast,
 )
@@ -109,7 +111,7 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
     return decorated
 
 
-def factory(settings: Optional[Union[str, Mapping]] = None) -> Callable:
+def factory(settings: str | Mapping | None = None) -> Callable:
     if settings is None:
         name = "match_demand"
         params: dict = {}
@@ -219,7 +221,7 @@ def adhoc_match_demand(
     search_space: xr.DataArray,
     technologies: xr.Dataset,
     constraints: list[Constraint],
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     from muse.demand_matching import demand_matching
     from muse.quantities import capacity_in_use, maximum_production
@@ -269,7 +271,7 @@ def scipy_match_demand(
     search_space: xr.DataArray,
     technologies: xr.Dataset,
     constraints: list[Constraint],
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     from logging import getLogger
 

@@ -17,6 +17,8 @@ The signature of a sink is:
         pass
 """
 
+from __future__ import annotations
+
 from collections.abc import Mapping, MutableMapping, Sequence
 from typing import (
     Any,
@@ -37,7 +39,7 @@ OUTPUT_SINK_SIGNATURE = Callable[
 ]
 """Signature of functions used to save quantities."""
 
-OUTPUT_SINKS: MutableMapping[str, Union[OUTPUT_SINK_SIGNATURE, Callable]] = {}
+OUTPUT_SINKS: MutableMapping[str, OUTPUT_SINK_SIGNATURE | Callable] = {}
 """Stores a quantity somewhere."""
 
 
@@ -52,7 +54,7 @@ def factory(parameters: Mapping, sector_name: str = "default") -> Callable:
     config.pop("quantity", None)
 
     def normalize(
-        params: Optional[Mapping], filename: Optional[str] = None
+        params: Mapping | None, filename: str | None = None
     ) -> MutableMapping:
         if isinstance(params, Mapping):
             params = dict(**params)
@@ -106,10 +108,10 @@ def sink_to_file(suffix: str):
 
     from muse.defaults import DEFAULT_OUTPUT_DIRECTORY
 
-    def decorator(function: Callable[[Union[pd.DataFrame, xr.DataArray], str], None]):
+    def decorator(function: Callable[[pd.DataFrame | xr.DataArray, str], None]):
         @wraps(function)
         def decorated(
-            quantity: Union[pd.DataFrame, xr.DataArray], year: int, **config
+            quantity: pd.DataFrame | xr.DataArray, year: int, **config
         ) -> Path:
             params = config.copy()
             filestring = str(
@@ -161,7 +163,7 @@ def sink_to_file(suffix: str):
 
 
 def standardize_quantity(
-    function: Callable[[Union[pd.DataFrame, xr.DataArray], str], None],
+    function: Callable[[pd.DataFrame | xr.DataArray, str], None],
 ):
     """Helps standardize how the quantities are specified.
 
@@ -184,12 +186,12 @@ def standardize_quantity(
 
     @wraps(function)
     def decorated(
-        quantity: Union[pd.DataFrame, xr.DataArray],
+        quantity: pd.DataFrame | xr.DataArray,
         *args,
-        set_index: Union[Any, NotSpecified] = NotSpecified,
-        sort_index: Union[Any, NotSpecified, bool] = NotSpecified,
-        keep_columns: Union[str, Sequence[str], NotSpecified] = NotSpecified,
-        group_by: Union[Any, NotSpecified] = NotSpecified,
+        set_index: Any | NotSpecified = NotSpecified,
+        sort_index: Any | NotSpecified | bool = NotSpecified,
+        keep_columns: str | Sequence[str] | NotSpecified = NotSpecified,
+        group_by: Any | NotSpecified = NotSpecified,
         **config,
     ) -> None:
         any_calls = (
@@ -226,9 +228,7 @@ def standardize_quantity(
 @register_output_sink(name="csv")
 @sink_to_file(".csv")
 @standardize_quantity
-def to_csv(
-    quantity: Union[pd.DataFrame, xr.DataArray], filename: str, **params
-) -> None:
+def to_csv(quantity: pd.DataFrame | xr.DataArray, filename: str, **params) -> None:
     """Saves data array to csv format, using pandas.to_csv.
 
     Arguments:
@@ -252,9 +252,7 @@ def to_csv(
 
 @register_output_sink(name=("netcdf", "nc"))
 @sink_to_file(".nc")
-def to_netcdf(
-    quantity: Union[xr.DataArray, pd.DataFrame], filename: str, **params
-) -> None:
+def to_netcdf(quantity: xr.DataArray | pd.DataFrame, filename: str, **params) -> None:
     """Saves data array to csv format, using xarray.to_netcdf.
 
     Arguments:
@@ -274,9 +272,7 @@ def to_netcdf(
 @register_output_sink(name=("excel", "xlsx"))
 @sink_to_file(".xlsx")
 @standardize_quantity
-def to_excel(
-    quantity: Union[pd.DataFrame, xr.DataArray], filename: str, **params
-) -> None:
+def to_excel(quantity: pd.DataFrame | xr.DataArray, filename: str, **params) -> None:
     """Saves data array to csv format, using pandas.to_excel.
 
     Arguments:
@@ -302,7 +298,7 @@ class YearlyAggregate:
 
     def __init__(
         self,
-        final_sink: Optional[MutableMapping[str, Any]] = None,
+        final_sink: MutableMapping[str, Any] | None = None,
         sector: str = "",
         axis="year",
         **kwargs,
@@ -317,10 +313,10 @@ class YearlyAggregate:
         ):
             final_sink["overwrite"] = True
         self.sink = factory(final_sink, sector_name=sector)
-        self.aggregate: Optional[pd.Dataframe] = None
+        self.aggregate: pd.Dataframe | None = None
         self.axis = axis
 
-    def __call__(self, data: Union[pd.DataFrame, xr.DataArray], year: int):
+    def __call__(self, data: pd.DataFrame | xr.DataArray, year: int):
         if isinstance(data, xr.DataArray):
             dataframe = data.to_dataframe()
         else:
@@ -345,7 +341,7 @@ class FiniteResourceException(Exception):
 
 @register_output_sink
 def finite_resource_logger(
-    data: Union[pd.DataFrame, xr.DataArray], year: int, early_exit=False, **kwargs
+    data: pd.DataFrame | xr.DataArray, year: int, early_exit=False, **kwargs
 ):
     from logging import getLogger
 
