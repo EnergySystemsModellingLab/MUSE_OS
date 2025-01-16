@@ -253,7 +253,7 @@ def new_and_retro(
     def decommissioning(capacity):
         return decommissioning_demand(
             technologies=technologies,
-            capacity=capacity.sel(year=[current_year, investment_year]),
+            capacity=capacity.interp(year=[current_year, investment_year]),
             timeslice_level=timeslice_level,
         )
 
@@ -377,7 +377,7 @@ def standard_demand(
     def decommissioning(capacity):
         return decommissioning_demand(
             technologies=technologies,
-            capacity=capacity.sel(year=[current_year, investment_year]),
+            capacity=capacity.interp(year=[current_year, investment_year]),
             timeslice_level=timeslice_level,
         )
 
