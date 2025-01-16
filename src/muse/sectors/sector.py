@@ -200,8 +200,7 @@ class Sector(AbstractSector):  # type: ignore
 
         # Time period from the market object
         assert len(mca_market.year) == 2
-        current_year = int(mca_market.year[0])
-        investment_year = int(mca_market.year[1])
+        current_year, investment_year = mca_market.year.values
         getLogger(__name__).info(f"Running {self.name} for year {current_year}")
 
         # Agent interactions

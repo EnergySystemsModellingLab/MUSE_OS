@@ -77,15 +77,12 @@ class Subsector:
     ) -> None:
         assert "year" not in technologies.dims
         assert len(market.year) == 2
-        current_year = int(market.year[0])
 
         # Split demand across agents
         demands = self.demand_share(
-            self.agents,
-            market,
-            technologies,
-            current_year=current_year,
-            forecast=self.forecast,
+            agents=self.agents,
+            market=market,
+            technologies=technologies,
             timeslice_level=self.timeslice_level,
         )
 
