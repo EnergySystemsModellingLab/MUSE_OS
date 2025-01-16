@@ -123,7 +123,7 @@ def test_power_sector_no_investment():
     from muse.utilities import agent_concatenation
 
     power = examples.sector("power", "trade")
-    market = examples.matching_market("power", "trade").sel(year=[2020, 2025, 2030])
+    market = examples.matching_market("power", "trade").sel(year=[2020, 2025])
 
     initial = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
     power.next(market)
@@ -137,12 +137,12 @@ def test_power_sector_some_investment():
     from muse.utilities import agent_concatenation
 
     power = examples.sector("power", "trade")
-    market = examples.matching_market("power", "trade").sel(year=[2020, 2025, 2030])
+    market = examples.matching_market("power", "trade").sel(year=[2020, 2025])
     market.consumption[:] *= 1.5
 
     initial = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
     result = power.next(market)
     final = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
     assert "windturbine" not in initial.technology
-    assert final.sel(asset=final.technology == "windturbine", year=2030).sum() < 1
+    assert final.sel(asset=final.technology == "windturbine", year=2025).sum() < 1
     assert "dst_region" not in result.dims
