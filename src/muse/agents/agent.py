@@ -399,11 +399,16 @@ class InvestingAgent(Agent):
         demand: xr.DataArray,
         search_space: xr.DataArray,
     ) -> xr.DataArray:
-        # Filter technologies according to the search space, forecast year and region
+        # Check inputs
+        assert "year" not in technologies.dims
+        assert "year" not in demand.dims
+        assert "year" not in search_space.dims
+        assert len(market.year) == 2
+
+        # Filter technologies according to the search space and region
         techs = self.filter_input(
             technologies,
             technology=search_space.replacement,
-            year=self.forecast_year,
         ).drop_vars("technology")
 
         # Reduce dimensions of the demand array
