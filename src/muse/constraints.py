@@ -176,6 +176,7 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
         """Computes and standardizes a constraint."""
         # Check inputs
         assert "year" not in technologies.dims
+        assert len(capacity.year) == 2
 
         # Calculate constraint
         constraint = function(  # type: ignore
