@@ -261,7 +261,7 @@ def new_and_retro(
             timeslice_level=timeslice_level,
         ).squeeze("year")
 
-    capacity = reduce_assets([u.assets.capacity for u in agents]).sel(
+    capacity = reduce_assets([u.assets.capacity for u in agents]).interp(
         year=[current_year, investment_year]
     )
 
@@ -395,7 +395,7 @@ def standard_demand(
             raise RetrofitAgentInStandardDemandShare()
 
     # Calculate existing capacity
-    capacity = reduce_assets([agent.assets.capacity for agent in agents]).sel(
+    capacity = reduce_assets([agent.assets.capacity for agent in agents]).interp(
         year=[current_year, investment_year]
     )
 
@@ -474,7 +474,7 @@ def unmet_forecasted_demand(
     smarket: xr.Dataset = market.where(is_enduse(comm_usage), 0)
 
     # Calculate existing capacity
-    capacity = reduce_assets([agent.assets.capacity for agent in agents]).sel(
+    capacity = reduce_assets([agent.assets.capacity for agent in agents]).interp(
         year=[current_year, investment_year]
     )
 
