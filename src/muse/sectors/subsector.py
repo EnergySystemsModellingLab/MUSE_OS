@@ -52,9 +52,10 @@ class Subsector:
         self,
         technologies: xr.Dataset,
         market: xr.Dataset,
-        time_period: int,
-        current_year: int,
     ) -> None:
+        assert "year" not in technologies.dims
+        assert len(market.year) == 2
+
         # Expand prices to include destination region (for trade models)
         if self.expand_market_prices:
             market = market.copy()
@@ -67,15 +68,17 @@ class Subsector:
             agent.asset_housekeeping()
 
         # Perform the investments
-        self.aggregate_lp(technologies, market, time_period, current_year=current_year)
+        self.aggregate_lp(technologies, market)
 
     def aggregate_lp(
         self,
         technologies: xr.Dataset,
         market: xr.Dataset,
-        time_period,
-        current_year,
     ) -> None:
+        assert "year" not in technologies.dims
+        assert len(market.year) == 2
+        current_year = int(market.year[0])
+
         # Split demand across agents
         demands = self.demand_share(
             self.agents,
@@ -100,7 +103,7 @@ class Subsector:
                 share = demands.sel(asset=demands.agent == agent.uuid)
             else:
                 share = demands
-            agent.next(technologies, market, share, time_period=time_period)
+            agent.next(technologies=technologies, market=market, demand=share)
 
     @classmethod
     def factory(

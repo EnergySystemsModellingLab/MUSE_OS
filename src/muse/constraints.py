@@ -349,7 +349,7 @@ def max_capacity_expansion(
     forecasted = capacity.isel(year=1, drop=True)
 
     # Max capacity addition constraint
-    time_frame = capacity.year[1] - capacity.year[0]
+    time_frame = int(capacity.year[1] - capacity.year[0])
     add_cap = techs.max_capacity_addition * time_frame
 
     # Total capacity limit constraint

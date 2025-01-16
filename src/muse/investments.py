@@ -20,7 +20,6 @@ have the following signature:
         search_space: xr.DataArray,
         technologies: xr.Dataset,
         constraints: List[Constraint],
-        year: int,
         **kwargs
     ) -> xr.DataArray:
         pass
@@ -34,7 +33,6 @@ Arguments:
     technologies: a dataset containing all constant data characterizing the
         technologies.
     constraints: a list of constraints as defined in :py:mod:`~muse.constraints`.
-    year: the current year.
 
 Returns:
     A data array with dimensions `asset` and `technology` specifying the amount
@@ -187,10 +185,7 @@ def cliff_retirement_profile(
 
     if kwargs:
         technical_life = technical_life.sel(**kwargs)
-    if "year" in technical_life.dims:
-        technical_life = technical_life.interp(
-            year=investment_year, method=interpolation
-        )
+    assert "year" not in technical_life.dims
 
     # Create profile across all years
     if len(technical_life) > 0:
@@ -224,11 +219,12 @@ def adhoc_match_demand(
     search_space: xr.DataArray,
     technologies: xr.Dataset,
     constraints: list[Constraint],
-    year: int,
     timeslice_level: Optional[str] = None,
 ) -> xr.DataArray:
     from muse.demand_matching import demand_matching
     from muse.quantities import capacity_in_use, maximum_production
+
+    assert "year" not in technologies.dims
 
     demand = next(c for c in constraints if c.name == "demand").b
 
@@ -236,7 +232,6 @@ def adhoc_match_demand(
     max_prod = maximum_production(
         technologies,
         max_capacity,
-        year=year,
         technology=costs.replacement,
         commodity=demand.commodity,
         timeslice_level=timeslice_level,
@@ -258,7 +253,6 @@ def adhoc_match_demand(
     capacity = capacity_in_use(
         production,
         technologies,
-        year=year,
         technology=production.replacement,
         timeslice_level=timeslice_level,
     ).drop_vars("technology")
@@ -275,9 +269,7 @@ def scipy_match_demand(
     search_space: xr.DataArray,
     technologies: xr.Dataset,
     constraints: list[Constraint],
-    year: Optional[int] = None,
     timeslice_level: Optional[str] = None,
-    **options,
 ) -> xr.DataArray:
     from logging import getLogger
 
@@ -285,20 +277,17 @@ def scipy_match_demand(
 
     from muse.constraints import ScipyAdapter
 
+    assert "year" not in technologies.dims
+
     if "timeslice" in costs.dims:
         costs = timeslice_max(costs)
 
-    # Select technodata for the current year
-    if "year" in technologies.dims and year is None:
-        raise ValueError("Missing year argument")
-    elif "year" in technologies.dims:
-        techs = technologies.sel(year=year).drop_vars("year")
-    else:
-        techs = technologies
-
     # Run scipy optimization with highs solver
     adapter = ScipyAdapter.factory(
-        techs, cast(np.ndarray, costs), *constraints, timeslice_level=timeslice_level
+        technologies,
+        cast(np.ndarray, costs),
+        *constraints,
+        timeslice_level=timeslice_level,
     )
     res = linprog(**adapter.kwargs, method="highs")
 
