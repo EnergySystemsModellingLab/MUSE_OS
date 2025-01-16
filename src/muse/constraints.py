@@ -176,6 +176,7 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
         """Computes and standardizes a constraint."""
         # Check inputs
         assert "year" not in technologies.dims
+        assert len(capacity.year) == 2  # current year and investment year
 
         # Calculate constraint
         constraint = function(  # type: ignore
@@ -349,7 +350,7 @@ def max_capacity_expansion(
     forecasted = capacity.isel(year=1, drop=True)
 
     # Max capacity addition constraint
-    time_frame = capacity.year[1] - capacity.year[0]
+    time_frame = int(capacity.year[1] - capacity.year[0])
     add_cap = techs.max_capacity_addition * time_frame
 
     # Total capacity limit constraint
@@ -878,13 +879,13 @@ def lp_constraint_matrix(
          >>> from muse.utilities import reduce_assets
          >>> res = examples.sector("residential", model="medium")
          >>> market = examples.residential_market("medium")
-         >>> technologies = res.technologies.sel(year=market.year.min() + 5)
+         >>> technologies = res.technologies.sel(year=2025)
          >>> search = examples.search_space("residential", model="medium")
          >>> assets = next(a.assets for a in res.agents)
          >>> capacity = reduce_assets(assets.capacity, coords=("region", "technology"))
          >>> demand = None # not used in max production
-         >>> constraint = cs.max_production(demand, capacity, search,
-         ...                                technologies) # noqa: E501
+         >>> constraint = cs.max_production(demand, capacity.sel(year=[2020, 2025]),
+         ...                                search, technologies) # noqa: E501
          >>> lpcosts = cs.lp_costs(
          ...     (
          ...         technologies
@@ -1014,17 +1015,17 @@ class ScipyAdapter:
         >>> from muse import constraints as cs
         >>> res = examples.sector("residential", model="medium")
         >>> market = examples.residential_market("medium")
-        >>> technologies = res.technologies.sel(year=market.year.min() + 5)
+        >>> technologies = res.technologies.sel(year=2025)
         >>> search = examples.search_space("residential", model="medium")
         >>> assets = next(a.assets for a in res.agents)
         >>> capacity = reduce_assets(assets.capacity, coords=("region", "technology"))
-        >>> market_demand =  0.8 * maximum_production(
+        >>> market_demand = 0.8 * maximum_production(
         ...     technologies,
         ...     assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
         ... ).rename(technology="asset")
         >>> costs = search * np.arange(np.prod(search.shape)).reshape(search.shape)
         >>> constraint = cs.max_capacity_expansion(
-        ...     market_demand, capacity, search, technologies)
+        ...     market_demand, capacity.sel(year=[2020, 2025]), search, technologies)
 
         The constraint acts over capacity decision variables only:
 

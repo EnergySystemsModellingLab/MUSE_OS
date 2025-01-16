@@ -86,9 +86,17 @@ class AbstractAgent(ABC):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        time_period: int,
     ) -> None:
-        """Increments agent to the next time point (e.g. performing investments)."""
+        """Increments agent to the next time point (e.g. performing investments).
+
+        Performs investments to meet demands, and increments agent.year to the
+        investment year.
+
+        Arguments:
+            technologies: dataset of technology parameters for the investment year
+            market: market dataset covering the current year and investment year
+            demand: data array of demand for the investment year
+        """
 
     def __repr__(self):
         return (
@@ -168,13 +176,12 @@ class Agent(AbstractAgent):
             timeslice_level=timeslice_level,
         )
 
-        self.year = year
         """ Current year. Incremented by one every time next is called."""
-        self.forecast = forecast
+        self.year = year
+
         """Number of years to look into the future for forecating purposed."""
-        if search_rules is None:
-            search_rules = filter_factory()
-        self.search_rules: Callable = search_rules
+        self.forecast = forecast
+
         """Search rule(s) determining potential replacement technologies.
 
         This is a string referring to a filter, or a sequence of strings
@@ -182,25 +189,29 @@ class Agent(AbstractAgent):
         function registered via `muse.filters.register_filter` can be
         used to filter the search space.
         """
-        self.maturity_threshold = maturity_threshold
+        if search_rules is None:
+            search_rules = filter_factory()
+        self.search_rules: Callable = search_rules
+
         """ Market share threshold.
 
         Threshold when and if filtering replacement technologies with respect
         to market share.
         """
+        self.maturity_threshold = maturity_threshold
+
         self.spend_limit = spend_limit
 
+        """One or more objectives by which to decide next investments."""
         if objectives is None:
             objectives = objectives_factory()
         self.objectives = objectives
-        """One or more objectives by which to decide next investments."""
+
+        """Creates single decision objective from one or more objectives."""
         if decision is None:
             decision = decision_factory()
         self.decision = decision
-        """Creates single decision objective from one or more objectives."""
-        if housekeeping is None:
-            housekeeping = housekeeping_factory()
-        self._housekeeping = housekeeping
+
         """Transforms applied on the assets at the start of each iteration.
 
         It could mean keeping the assets as are, or removing assets with no
@@ -208,23 +219,29 @@ class Agent(AbstractAgent):
         It can be any function registered with
         :py:func:`~muse.hooks.register_initial_asset_transform`.
         """
-        if merge_transform is None:
-            merge_transform = asset_merge_factory()
-        self.merge_transform = merge_transform
+        if housekeeping is None:
+            housekeeping = housekeeping_factory()
+        self._housekeeping = housekeeping
+
         """Transforms applied on the old and new assets.
 
         It could mean using only the new assets, or merging old and new, etc...
         It can be any function registered with
         :py:func:`~muse.hooks.register_final_asset_transform`.
         """
-        self.demand_threshold = demand_threshold
+        if merge_transform is None:
+            merge_transform = asset_merge_factory()
+        self.merge_transform = merge_transform
+
         """Threshold below which the demand share is zero.
 
         This criteria avoids fulfilling demand for very small values. If None,
         then the criteria is not applied.
         """
-        self.asset_threshold = asset_threshold
+        self.demand_threshold = demand_threshold
+
         """Threshold below which assets are not added."""
+        self.asset_threshold = asset_threshold
 
     @property
     def forecast_year(self):
@@ -250,9 +267,9 @@ class Agent(AbstractAgent):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        time_period: int,
     ) -> None:
-        self.year += time_period
+        investment_year = int(market.year[1])
+        self.year = investment_year
 
 
 class InvestingAgent(Agent):
@@ -288,7 +305,6 @@ class InvestingAgent(Agent):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        time_period: int,
     ) -> None:
         """Iterates agent one turn.
 
@@ -303,11 +319,20 @@ class InvestingAgent(Agent):
 
         from muse.utilities import reduce_assets
 
-        current_year = self.year
+        # Check inputs
+        assert len(market.year) == 2
+        assert "year" not in technologies.dims
+        assert "year" not in demand.dims
+
+        # Time period
+        current_year = int(market.year[0])
+        assert current_year == self.year
+        investment_year = int(market.year[1])
+        time_period = investment_year - current_year
 
         # Skip forward if demand is zero
         if demand.size == 0 or demand.sum() < 1e-12:
-            self.year += time_period
+            self.year = investment_year
             return None
 
         # Calculate the search space
@@ -318,7 +343,7 @@ class InvestingAgent(Agent):
         # Skip forward if the search space is empty
         if any(u == 0 for u in search_space.shape):
             getLogger(__name__).critical("Search space is empty")
-            self.year += time_period
+            self.year = investment_year
             return None
 
         # Calculate the decision metric
@@ -336,20 +361,17 @@ class InvestingAgent(Agent):
         ).values
         search = search.sel(asset=condtechs)
 
-        # Get technology parameters for the investment year
-        techs = self.filter_input(technologies, year=current_year + time_period)
-
-        # Calculate capacity in current and forecast year
+        # Calculate capacity in current and investment year
         capacity = reduce_assets(
             self.assets.capacity, coords=("technology", "region")
-        ).interp(year=[current_year, current_year + self.forecast], method="linear")
+        ).interp(year=[current_year, investment_year], method="linear")
 
         # Calculate constraints
         constraints = self.constraints(
             demand=search.demand,
             capacity=capacity,
             search_space=search.search_space,
-            technologies=techs,
+            technologies=technologies,
             timeslice_level=self.timeslice_level,
         )
 
@@ -358,7 +380,6 @@ class InvestingAgent(Agent):
             search[["search_space", "decision"]],
             technologies,
             constraints,
-            year=current_year,
             timeslice_level=self.timeslice_level,
         )
 
@@ -371,7 +392,7 @@ class InvestingAgent(Agent):
         )
 
         # Increment the year
-        self.year += time_period
+        self.year = investment_year
 
     def compute_decision(
         self,
@@ -421,6 +442,8 @@ class InvestingAgent(Agent):
         time_period: int,
     ) -> None:
         """Add new assets to the agent."""
+        assert "year" not in technologies.dims
+
         # Calculate retirement profile of new assets
         new_capacity = self.retirement_profile(
             technologies, investments, current_year, time_period
@@ -444,6 +467,8 @@ class InvestingAgent(Agent):
     ) -> Optional[xr.DataArray]:
         from muse.investments import cliff_retirement_profile
 
+        assert "year" not in technologies.dims
+
         # Sum investments
         if "asset" in investments.dims:
             investments = investments.sum("asset")
@@ -463,7 +488,6 @@ class InvestingAgent(Agent):
         # Note: technical life must be at least the length of the time period
         lifetime = self.filter_input(
             technologies.technical_life,
-            year=current_year,
             technology=investments.replacement,
         ).clip(min=time_period)
         profile = cliff_retirement_profile(

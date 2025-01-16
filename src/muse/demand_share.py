@@ -110,9 +110,10 @@ def factory(
             ["commodity", "year", "timeslice", "region"],
             optional=["dst_region"],
         )
+        assert len(market.year) == 2
         check_dimensions(
             technologies,
-            ["technology", "year", "region"],
+            ["technology", "region"],
             optional=["timeslice", "commodity", "dst_region"],
         )
 

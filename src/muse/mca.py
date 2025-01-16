@@ -185,25 +185,20 @@ class MCA:
     def find_equilibrium(
         self,
         market: Dataset,
-        sectors: list[AbstractSector] | None = None,
-        maxiter: int | None = None,
     ) -> FindEquilibriumResults:
         """Specialised version of the find_equilibrium function.
 
         Arguments:
             market: Commodities market, with the prices, supply, consumption and demand.
-            sectors: A list of the sectors participating in the simulation.
-            maxiter: Maximum number of iterations.
 
         Returns:
             A tuple with the updated market (prices, supply, consumption and demand) and
             sector.
         """
-        maxiter = self.maximum_iterations if not maxiter else maxiter
         return find_equilibrium(
             market=market,
-            sectors=self.sectors if sectors is None else sectors,
-            maxiter=maxiter,
+            sectors=self.sectors,
+            maxiter=self.maximum_iterations,
             tol=self.tolerance,
             equilibrium_variable=self.equilibrium_variable,
             tol_unmet_demand=self.tolerance_unmet_demand,
