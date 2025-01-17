@@ -106,7 +106,9 @@ def broadcast_timeslice(
 
     # If data already has timeslices, check that it matches the reference timeslice.
     if "timeslice" in data.dims:
-        if data.timeslice.reset_coords(drop=True).equals(ts.timeslice):
+        if data.timeslice.reset_coords(drop=True).equals(
+            ts.timeslice.reset_coords(drop=True)
+        ):
             return data
         raise ValueError(
             "Data is already timesliced, but does not match the reference."
@@ -141,14 +143,16 @@ def distribute_timeslice(
 
     # If data already has timeslices, check that it matches the reference timeslice.
     if "timeslice" in data.dims:
-        if data.timeslice.reset_coords(drop=True).equals(ts.timeslice):
+        if data.timeslice.reset_coords(drop=True).equals(
+            ts.timeslice.reset_coords(drop=True)
+        ):
             return data
         raise ValueError(
             "Data is already timesliced, but does not match the reference."
         )
 
     broadcasted = broadcast_timeslice(data, ts=ts)
-    timeslice_fractions = ts / broadcast_timeslice(ts.sum(), ts=ts)
+    timeslice_fractions = ts / broadcast_timeslice(ts.sum("timeslice"), ts=ts)
     return broadcasted * timeslice_fractions
 
 
@@ -178,7 +182,9 @@ def compress_timeslice(
     # Raise error if data is not timesliced appropriately
     if "timeslice" not in data.dims:
         raise ValueError("Data must have a 'timeslice' dimension.")
-    if not data.timeslice.reset_coords(drop=True).equals(ts.timeslice):
+    if not data.timeslice.reset_coords(drop=True).equals(
+        ts.timeslice.reset_coords(drop=True)
+    ):
         raise ValueError("Data has incompatible timeslicing with reference.")
 
     # If level is not specified, don't compress
@@ -332,5 +338,5 @@ def timeslice_max(data: DataArray, ts: DataArray | None = None) -> DataArray:
     timeslice_level = get_level(data)
     timeslice_fractions = compress_timeslice(
         ts, ts=ts, level=timeslice_level, operation="sum"
-    ) / broadcast_timeslice(ts.sum(), ts=ts, level=timeslice_level)
+    ) / broadcast_timeslice(ts.sum("timeslice"), ts=ts, level=timeslice_level)
     return (data / timeslice_fractions).max("timeslice")

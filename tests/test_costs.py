@@ -3,14 +3,6 @@ from pytest import fixture, mark
 
 YEAR = 2030
 
-"""Expected dimensions for the output data of the cost functions.
-
-This should be the same for all cost functions. In general, this is the sum of all
-dimensions from the input data, minus "commodity", plus "timeslice" (if not already
-present).
-"""
-EXPECTED_DIMS = {"asset", "region", "technology", "timeslice"}
-
 
 @fixture
 def _prices(market):
@@ -79,49 +71,49 @@ def test_capital_costs(_technologies, _capacity):
     from muse.costs import capital_costs
 
     result = capital_costs(_technologies, _capacity)
-    assert set(result.dims) == EXPECTED_DIMS
+    assert set(result.dims) == {"asset", "region", "technology"}
 
 
 def test_environmental_costs(_technologies, _prices, _production):
     from muse.costs import environmental_costs
 
     result = environmental_costs(_technologies, _prices, _production)
-    assert set(result.dims) == EXPECTED_DIMS
+    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
 
 
 def test_fuel_costs(_technologies, _prices, _consumption):
     from muse.costs import fuel_costs
 
     result = fuel_costs(_technologies, _prices, _consumption)
-    assert set(result.dims) == EXPECTED_DIMS
+    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
 
 
 def test_material_costs(_technologies, _prices, _consumption):
     from muse.costs import material_costs
 
     result = material_costs(_technologies, _prices, _consumption)
-    assert set(result.dims) == EXPECTED_DIMS
+    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
 
 
 def test_fixed_costs(_technologies, _capacity):
     from muse.costs import fixed_costs
 
     result = fixed_costs(_technologies, _capacity)
-    assert set(result.dims) == EXPECTED_DIMS
+    assert set(result.dims) == {"asset", "region", "technology"}
 
 
 def test_variable_costs(_technologies, _production):
     from muse.costs import variable_costs
 
     result = variable_costs(_technologies, _production)
-    assert set(result.dims) == EXPECTED_DIMS
+    assert set(result.dims) == {"asset", "region", "technology"}
 
 
 def test_running_costs(_technologies, _prices, _capacity, _production, _consumption):
     from muse.costs import running_costs
 
     result = running_costs(_technologies, _prices, _capacity, _production, _consumption)
-    assert set(result.dims) == EXPECTED_DIMS
+    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
 
 
 def test_net_present_value(
@@ -132,7 +124,7 @@ def test_net_present_value(
     result = net_present_value(
         _technologies, _prices, _capacity, _production, _consumption
     )
-    assert set(result.dims) == EXPECTED_DIMS
+    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
 
 
 def test_net_present_cost(_technologies, _prices, _capacity, _production, _consumption):
@@ -141,7 +133,7 @@ def test_net_present_cost(_technologies, _prices, _capacity, _production, _consu
     result = net_present_cost(
         _technologies, _prices, _capacity, _production, _consumption
     )
-    assert set(result.dims) == EXPECTED_DIMS
+    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
 
 
 def test_equivalent_annual_cost(
@@ -152,7 +144,7 @@ def test_equivalent_annual_cost(
     result = equivalent_annual_cost(
         _technologies, _prices, _capacity, _production, _consumption
     )
-    assert set(result.dims) == EXPECTED_DIMS
+    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
 
 
 @mark.parametrize("method", ["annual", "lifetime"])
@@ -164,7 +156,7 @@ def test_levelized_cost_of_energy(
     result = levelized_cost_of_energy(
         _technologies, _prices, _capacity, _production, _consumption, method=method
     )
-    assert set(result.dims) == EXPECTED_DIMS
+    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
 
 
 def test_supply_cost(_technologies, _prices, _capacity, _production, _consumption):

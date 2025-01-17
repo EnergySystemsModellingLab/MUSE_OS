@@ -321,7 +321,6 @@ class Sector(AbstractSector):  # type: ignore
             capacity=capacity.isel(year=1),
             production=supply.isel(year=1),
             consumption=consume.isel(year=1),
-            timeslice_level=self.timeslice_level,
             method="annual",
         )
 
