@@ -327,9 +327,8 @@ class InvestingAgent(Agent):
         assert "year" not in demand.dims
 
         # Time period
-        current_year = int(market.year[0])
+        current_year, investment_year = map(int, market.year.values)
         assert current_year == self.year
-        investment_year = int(market.year[1])
 
         # Skip forward if demand is zero
         if demand.size == 0 or demand.sum() < 1e-12:

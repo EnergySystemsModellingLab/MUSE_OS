@@ -9,7 +9,6 @@ Functions for calculating costs (e.g. LCOE, EAC) are in the `costs` module.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import cast
 
 import numpy as np
@@ -234,56 +233,6 @@ def gross_margin(
     # Gross margin is defined as a ratio on revenues and as a percentage
     result *= 100 / revenues
     return result
-
-
-def decommissioning_demand(
-    technologies: xr.Dataset,
-    capacity: xr.DataArray,
-    year: Sequence[int] | None = None,
-    timeslice_level: str | None = None,
-) -> xr.DataArray:
-    r"""Computes demand from process decommissioning.
-
-    If `year` is not given, it defaults to all years in capacity. If there are more than
-    two years, then decommissioning is with respect to first (or minimum) year.
-
-    Let :math:`M_t^r(y)` be the retrofit demand, :math:`^{(s)}\mathcal{D}_t^r(y)` be the
-    decommissioning demand at the level of the sector, and :math:`A^r_{t, \iota}(y)` be
-    the assets owned by the agent. Then, the decommissioning demand for agent :math:`i`
-    is :
-
-    .. math::
-
-        \mathcal{D}^{r, i}_{t, c}(y) =
-            \sum_\iota \alpha_{t, \iota}^r \beta_{t, \iota, c}^r
-                \left(A^{i, r}_{t, \iota}(y) - A^{i, r}_{t, \iota, c}(y + 1) \right)
-
-    given the utilization factor :math:`\alpha_{t, \iota}` and the fixed output factor
-    :math:`\beta_{t, \iota, c}`.
-
-    Furthermore, decommissioning demand is non-zero only for end-use commodities.
-
-    ncsearch-nohlsearch).. SeeAlso:
-        :ref:`indices`, :ref:`quantities`,
-        :py:func:`~muse.quantities.maximum_production`
-        :py:func:`~muse.commodities.is_enduse`
-    """
-    if year is None:
-        year = capacity.year.values
-    year = sorted(year)
-    capacity = capacity.interp(year=year, kwargs={"fill_value": 0.0})
-    baseyear = min(year)
-    dyears = [u for u in year if u != baseyear]
-
-    # Calculate the decrease in capacity from the current year to future years
-    capacity_decrease = capacity.sel(year=baseyear) - capacity.sel(year=dyears)
-
-    # Calculate production associated with this capacity
-    return maximum_production(
-        technologies,
-        capacity_decrease,
-        timeslice_level=timeslice_level,
-    ).clip(min=0)
 
 
 def consumption(
