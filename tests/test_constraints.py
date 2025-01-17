@@ -8,8 +8,8 @@ from pytest import approx, fixture
 from muse.timeslices import drop_timeslice
 from muse.utilities import reduce_assets
 
-YEAR = 2020
-FORECAST = 5
+CURRENT_YEAR = 2020
+INVESTMENT_YEAR = 2025
 
 
 @fixture
@@ -26,7 +26,7 @@ def residential(model):
 
 @fixture
 def technologies(residential):
-    return residential.technologies.squeeze("region").sel(year=YEAR + FORECAST)
+    return residential.technologies.squeeze("region").sel(year=INVESTMENT_YEAR)
 
 
 @fixture
@@ -58,7 +58,7 @@ def assets(residential):
 @fixture
 def capacity(assets):
     return reduce_assets(assets.capacity, coords=("technology", "region")).interp(
-        year=[YEAR, YEAR + FORECAST], method="linear"
+        year=[CURRENT_YEAR, INVESTMENT_YEAR], method="linear"
     )
 
 
@@ -68,7 +68,7 @@ def market_demand(assets, technologies):
 
     return 0.8 * maximum_production(
         technologies,
-        assets.capacity.sel(year=YEAR).groupby("technology").sum("asset"),
+        assets.capacity.sel(year=CURRENT_YEAR).groupby("technology").sum("asset"),
     ).rename(technology="asset")
 
 
@@ -100,7 +100,6 @@ def max_capacity_expansion(market_demand, capacity, search_space, technologies):
         capacity,
         search_space,
         technologies,
-        forecast=FORECAST,
     )
 
 
@@ -123,7 +122,6 @@ def constraints(request, market_demand, capacity, search_space, technologies):
             capacity,
             search_space,
             technologies,
-            forecast=FORECAST,
         ),
     ]
     if request.param == "timeslice_as_multindex":
