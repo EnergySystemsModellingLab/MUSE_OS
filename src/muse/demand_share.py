@@ -622,11 +622,9 @@ def new_consumption(
     future_capacity = capacity.sel(year=investment_year)
 
     # Calculate the increase in consumption over the forecast period
-    # TODO: unmet_demand should use future_market instead of current_market
-    # will fix in a separate PR
     delta = (future_market.consumption - current_market.consumption).clip(min=0)
     missing = unmet_demand(
-        market=current_market,
+        market=future_market,
         capacity=future_capacity,
         technologies=technologies,
         timeslice_level=timeslice_level,
