@@ -419,7 +419,7 @@ def levelized_cost_of_energy(
     # Capital costs (lifetime or annual depending on method)
     _capital_costs = capital_costs(technologies, capacity, method)
 
-    # Split capital costs across timeslices in proporion to production
+    # Split capital costs across timeslices in proportion to production
     tech_activity = production_amplitude(production, technologies)
     _capital_costs = distribute_timeslice(
         _capital_costs, ts=tech_activity, level=get_level(production)

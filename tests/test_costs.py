@@ -262,3 +262,55 @@ def test_lcoe_prod_scaling(
         method=method,
     )
     assert isclose(lcoe1, lcoe2).all()
+
+
+@mark.parametrize("method", ["annual", "lifetime"])
+def test_lcoe_equal_prices(
+    _technologies, _prices, _capacity, _production, _consumption, method
+):
+    """If commodity prices are equal in every timeslice, LCOE should always be equal."""
+    from muse.costs import levelized_cost_of_energy
+    from muse.timeslices import broadcast_timeslice
+
+    # LCOE with original inputs -> should vary between timeslices
+    lcoe1 = levelized_cost_of_energy(
+        _technologies, _prices, _capacity, _production, _consumption, method=method
+    )
+    assert (
+        not (lcoe1 - broadcast_timeslice(lcoe1.isel(timeslice=0, drop=True))).max()
+        < 1e-3
+    )
+
+    # LCOE with uniform prices -> should be the same for all timeslices
+    _prices = broadcast_timeslice(_prices.mean("timeslice"))
+    lcoe2 = levelized_cost_of_energy(
+        _technologies, _prices, _capacity, _production, _consumption, method=method
+    )
+    assert (
+        lcoe2 - broadcast_timeslice(lcoe2.isel(timeslice=0, drop=True))
+    ).max() < 1e-3
+
+
+@mark.parametrize("method", ["annual", "lifetime"])
+def test_lcoe_zero_production(
+    _technologies, _prices, _capacity, _production, _consumption, method
+):
+    """If production and consumption are zero, LCOE should always be zero.
+
+    Note: if production/consumption are zero in every timeslice, LCOE is undefined (nan)
+    """
+    from muse.costs import levelized_cost_of_energy
+
+    # LCOE with original inputs
+    lcoe1 = levelized_cost_of_energy(
+        _technologies, _prices, _capacity, _production, _consumption, method=method
+    )
+    assert not (lcoe1.isel(timeslice=0) == 0).all()
+
+    # LCOE with zero production/consumption in first timeslice -> LCOE should be zero
+    _production.isel(timeslice=0)[:] = 0
+    _consumption.isel(timeslice=0)[:] = 0
+    lcoe2 = levelized_cost_of_energy(
+        _technologies, _prices, _capacity, _production, _consumption, method=method
+    )
+    assert (lcoe2.isel(timeslice=0) == 0).all()
