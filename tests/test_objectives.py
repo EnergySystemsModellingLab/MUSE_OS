@@ -179,14 +179,14 @@ def test_annual_levelized_cost_of_energy(_technologies, _demand, _prices):
     from muse.objectives import annual_levelized_cost_of_energy
 
     result = annual_levelized_cost_of_energy(_technologies, _demand, _prices)
-    assert set(result.dims) == {"replacement", "asset", "timeslice"}
+    assert set(result.dims) == {"replacement", "asset"}
 
 
 def test_lifetime_levelized_cost_of_energy(_technologies, _demand, _prices):
     from muse.objectives import lifetime_levelized_cost_of_energy
 
     result = lifetime_levelized_cost_of_energy(_technologies, _demand, _prices)
-    assert set(result.dims) == {"replacement", "asset", "timeslice"}
+    assert set(result.dims) == {"replacement", "asset"}
 
 
 def test_net_present_value(_technologies, _demand, _prices):
