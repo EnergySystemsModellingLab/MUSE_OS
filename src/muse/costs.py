@@ -379,6 +379,7 @@ def levelized_cost_of_energy(
     production: xr.DataArray,
     consumption: xr.DataArray,
     method: str = "lifetime",
+    aggregate_timeslices: bool = False,
 ) -> xr.DataArray:
     """Levelized cost of energy (LCOE) of technologies over their lifetime.
 
@@ -409,6 +410,8 @@ def levelized_cost_of_energy(
         consumption: xr.DataArray with commodity consumption by the relevant
             technologies
         method: "lifetime" or "annual"
+        aggregate_timeslices: If True, the LCOE is aggregated over timeslices (result
+            will not have a "timeslice" dimension)
 
     Return:
         xr.DataArray with the LCOE calculated for the relevant technologies
@@ -448,6 +451,12 @@ def levelized_cost_of_energy(
     # LCOE
     result = (_capital_costs + _running_costs) / prod
     assert "timeslice" in result.dims
+
+    # Aggregate timeslices
+    if aggregate_timeslices:
+        result = (result * prod).sum("timeslice") / prod.sum("timeslice")
+        assert "timeslice" not in result.dims
+
     return result
 
 
