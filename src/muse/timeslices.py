@@ -152,7 +152,8 @@ def distribute_timeslice(
         )
 
     broadcasted = broadcast_timeslice(data, ts=ts)
-    timeslice_fractions = ts / broadcast_timeslice(ts.sum("timeslice"), ts=ts)
+    timeslice_sum = ts.sum("timeslice").clip(1e-6)  # prevents zero division
+    timeslice_fractions = ts / broadcast_timeslice(timeslice_sum, ts=ts)
     return broadcasted * timeslice_fractions
 
 
@@ -336,7 +337,8 @@ def timeslice_max(data: DataArray, ts: DataArray | None = None) -> DataArray:
         ts = TIMESLICE
 
     timeslice_level = get_level(data)
+    timeslice_sum = ts.sum("timeslice").clip(1e-6)  # prevents zero division
     timeslice_fractions = compress_timeslice(
         ts, ts=ts, level=timeslice_level, operation="sum"
-    ) / broadcast_timeslice(ts.sum("timeslice"), ts=ts, level=timeslice_level)
+    ) / broadcast_timeslice(timeslice_sum, ts=ts, level=timeslice_level)
     return (data / timeslice_fractions).max("timeslice")
