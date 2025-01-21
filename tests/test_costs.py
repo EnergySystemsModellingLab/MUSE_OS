@@ -1,5 +1,5 @@
 from numpy import isclose
-from pytest import fixture, mark
+from pytest import fixture, mark, raises
 
 YEAR = 2030
 
@@ -269,6 +269,8 @@ def test_lcoe_equal_prices(
     _technologies, _prices, _capacity, _production, _consumption, method
 ):
     """If commodity prices are equal in every timeslice, LCOE should always be equal."""
+    from xarray.testing import assert_allclose
+
     from muse.costs import levelized_cost_of_energy
     from muse.timeslices import broadcast_timeslice
 
@@ -276,19 +278,15 @@ def test_lcoe_equal_prices(
     lcoe1 = levelized_cost_of_energy(
         _technologies, _prices, _capacity, _production, _consumption, method=method
     )
-    assert (
-        not (lcoe1 - broadcast_timeslice(lcoe1.isel(timeslice=0, drop=True))).max()
-        < 1e-3
-    )
+    with raises(AssertionError):
+        assert_allclose(lcoe1, broadcast_timeslice(lcoe1.isel(timeslice=0)))
 
     # LCOE with uniform prices -> should be the same for all timeslices
     _prices = broadcast_timeslice(_prices.mean("timeslice"))
     lcoe2 = levelized_cost_of_energy(
         _technologies, _prices, _capacity, _production, _consumption, method=method
     )
-    assert (
-        lcoe2 - broadcast_timeslice(lcoe2.isel(timeslice=0, drop=True))
-    ).max() < 1e-3
+    assert_allclose(lcoe2, broadcast_timeslice(lcoe2.isel(timeslice=0)))
 
 
 @mark.parametrize("method", ["annual", "lifetime"])
