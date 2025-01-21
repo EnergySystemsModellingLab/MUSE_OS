@@ -439,8 +439,7 @@ def annual_levelized_cost_of_energy(
         method="annual",
         aggregate_timeslices=True,
     )
-
-    return results.where(np.isfinite(results)).fillna(0.0)
+    return results
 
 
 @register_objective(name=["LCOE", "LLCOE"])
