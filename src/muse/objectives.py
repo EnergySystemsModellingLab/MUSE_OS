@@ -439,6 +439,7 @@ def annual_levelized_cost_of_energy(
         method="annual",
         aggregate_timeslices=True,
     )
+    assert not (results == 0).any()
     return results
 
 
@@ -485,6 +486,7 @@ def lifetime_levelized_cost_of_energy(
         method="lifetime",
         aggregate_timeslices=True,
     )
+    assert not (results == 0).any()
     return results
 
 
