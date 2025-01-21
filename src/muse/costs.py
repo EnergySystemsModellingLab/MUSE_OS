@@ -429,17 +429,18 @@ def levelized_cost_of_energy(
     _capital_costs = capital_costs(technologies, capacity, method)
 
     # Split capital costs across timeslices in proportion to production
-    tech_activity = production_amplitude(production, technologies)
-    _capital_costs = distribute_timeslice(
-        _capital_costs, ts=tech_activity, level=get_level(production)
-    )
+    if not aggregate_timeslices:
+        tech_activity = production_amplitude(production, technologies)
+        _capital_costs = distribute_timeslice(
+            _capital_costs, ts=tech_activity, level=get_level(production)
+        )
 
-    # Running costs (annual)
+    # Running costs (annual, timesliced)
     _running_costs = running_costs(
         technologies, prices, capacity, production, consumption
     )
 
-    # Production (annual)
+    # Production (annual, timesliced)
     products = is_enduse(technologies.comm_usage)
     prod = (
         production.where(production > 0.0, 1e-6)
@@ -454,15 +455,13 @@ def levelized_cost_of_energy(
         _running_costs = annual_to_lifetime(_running_costs, technologies)
         prod = annual_to_lifetime(prod, technologies)
 
-    # LCOE
-    result = (_capital_costs + _running_costs) / prod
-    assert "timeslice" in result.dims
-
     # Aggregate timeslices
     if aggregate_timeslices:
-        result = (result * prod).sum("timeslice") / prod.sum("timeslice")
-        assert "timeslice" not in result.dims
+        _running_costs = _running_costs.sum("timeslice")
+        prod = prod.sum("timeslice")
 
+    # LCOE
+    result = (_capital_costs + _running_costs) / prod
     return result
 
 
