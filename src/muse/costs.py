@@ -63,8 +63,14 @@ def cost(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
+
+        # Check dimensions of the result
         assert "year" not in result.dims
         assert "commodity" not in result.dims
+
+        # Check that there are no infs or nans in the result
+        assert not result.isnull().any()
+        assert not np.isinf(result).any()
         return result
 
     return wrapper

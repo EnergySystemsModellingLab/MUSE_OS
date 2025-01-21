@@ -486,8 +486,7 @@ def lifetime_levelized_cost_of_energy(
         method="lifetime",
         aggregate_timeslices=True,
     )
-
-    return results.where(np.isfinite(results)).fillna(0.0)
+    return results
 
 
 @register_objective(name="NPV")
