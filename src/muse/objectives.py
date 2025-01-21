@@ -438,8 +438,7 @@ def annual_levelized_cost_of_energy(
         consumption=consump,
         method="annual",
     )
-
-    return results.where(np.isfinite(results)).fillna(0.0)
+    return results
 
 
 @register_objective(name=["LCOE", "LLCOE"])
