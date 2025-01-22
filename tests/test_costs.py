@@ -342,3 +342,35 @@ def test_lcoe_zero_production(
         _technologies, _prices, _capacity, _production, _consumption, method=method
     )
     assert (lcoe2.isel(timeslice=0) == 0).all()
+
+
+@mark.parametrize("method", ["annual", "lifetime"])
+def test_lcoe_aggregate(
+    _technologies, _prices, _capacity, _production, _consumption, method
+):
+    from muse.costs import levelized_cost_of_energy
+
+    result = levelized_cost_of_energy(
+        _technologies,
+        _prices,
+        _capacity,
+        _production,
+        _consumption,
+        method=method,
+        aggregate_timeslices=True,
+    )
+    assert set(result.dims) == {"asset", "region", "technology"}  # no timeslice dim
+
+
+def test_npv_aggregate(_technologies, _prices, _capacity, _production, _consumption):
+    from muse.costs import net_present_value
+
+    result = net_present_value(
+        _technologies,
+        _prices,
+        _capacity,
+        _production,
+        _consumption,
+        aggregate_timeslices=True,
+    )
+    assert set(result.dims) == {"asset", "region", "technology"}  # no timeslice dim

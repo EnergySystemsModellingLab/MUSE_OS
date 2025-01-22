@@ -437,6 +437,7 @@ def annual_levelized_cost_of_energy(
         production=production,
         consumption=consump,
         method="annual",
+        aggregate_timeslices=True,
     )
     return results
 
@@ -482,6 +483,7 @@ def lifetime_levelized_cost_of_energy(
         production=production,
         consumption=consump,
         method="lifetime",
+        aggregate_timeslices=True,
     )
     return results
 
@@ -521,6 +523,7 @@ def net_present_value(
         capacity=capacity,
         production=production,
         consumption=consump,
+        aggregate_timeslices=True,
     )
     return results
 
@@ -560,6 +563,7 @@ def net_present_cost(
         capacity=capacity,
         production=production,
         consumption=consump,
+        aggregate_timeslices=True,
     )
     return results
 
@@ -599,5 +603,6 @@ def equivalent_annual_cost(
         capacity=capacity,
         production=production,
         consumption=consump,
+        aggregate_timeslices=True,
     )
     return results
