@@ -360,3 +360,17 @@ def test_lcoe_aggregate(
         aggregate_timeslices=True,
     )
     assert set(result.dims) == {"asset", "region", "technology"}  # no timeslice dim
+
+
+def test_npv_aggregate(_technologies, _prices, _capacity, _production, _consumption):
+    from muse.costs import net_present_value
+
+    result = net_present_value(
+        _technologies,
+        _prices,
+        _capacity,
+        _production,
+        _consumption,
+        aggregate_timeslices=True,
+    )
+    assert set(result.dims) == {"asset", "region", "technology"}  # no timeslice dim
