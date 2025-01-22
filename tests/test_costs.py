@@ -289,6 +289,36 @@ def test_lcoe_equal_prices(
     assert_allclose(lcoe2, broadcast_timeslice(lcoe2.isel(timeslice=0)))
 
 
+def test_npv_equal_prices(_technologies, _prices, _capacity, _production, _consumption):
+    """Test NPV with equal commodity prices in every timeslice.
+
+    If commodity prices are equal in every timeslice, NPV should be proportional to
+    production.
+    """
+    from xarray.testing import assert_allclose
+
+    from muse.costs import net_present_value
+    from muse.quantities import production_amplitude
+    from muse.timeslices import broadcast_timeslice
+
+    # NPV with original inputs -> should not be linear with production
+    npv1 = net_present_value(
+        _technologies, _prices, _capacity, _production, _consumption
+    )
+    tech_activity = production_amplitude(_production, _technologies)
+    npv1_scaled = npv1 / tech_activity
+    with raises(AssertionError):
+        assert_allclose(npv1_scaled, broadcast_timeslice(npv1_scaled.isel(timeslice=0)))
+
+    # NPV with uniform prices -> should be linear with production
+    _prices = broadcast_timeslice(_prices.mean("timeslice"))
+    npv2 = net_present_value(
+        _technologies, _prices, _capacity, _production, _consumption
+    )
+    npv2_scaled = npv2 / tech_activity
+    assert_allclose(npv2_scaled, broadcast_timeslice(npv2_scaled.isel(timeslice=0)))
+
+
 @mark.parametrize("method", ["annual", "lifetime"])
 def test_lcoe_zero_production(
     _technologies, _prices, _capacity, _production, _consumption, method

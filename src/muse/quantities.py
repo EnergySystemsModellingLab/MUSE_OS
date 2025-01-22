@@ -524,8 +524,6 @@ def production_amplitude(
             Must have `timeslice` and `commodity` dimensions. May also have other
             dimensions e.g. `region`, `year`, etc.
         technologies: Dataset of technology parameters
-        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day").
-            Must match the timeslice level of `production`
 
     Returns:
         DataArray with production amplitudes for each technology in each timeslice.
