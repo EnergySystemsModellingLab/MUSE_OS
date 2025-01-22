@@ -274,9 +274,7 @@ def consumption(
     )
 
     # Calculate degree of technology activity
-    prod_amplitude = production_amplitude(
-        production, params, timeslice_level=timeslice_level
-    )
+    prod_amplitude = production_amplitude(production, params)
 
     # Calculate consumption of fixed commodities
     consumption_fixed = prod_amplitude * broadcast_timeslice(
@@ -509,7 +507,6 @@ def capacity_to_service_demand(
 def production_amplitude(
     production: xr.DataArray,
     technologies: xr.Dataset,
-    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Calculates the degree of technology activity based on production data.
 
@@ -527,14 +524,15 @@ def production_amplitude(
             Must have `timeslice` and `commodity` dimensions. May also have other
             dimensions e.g. `region`, `year`, etc.
         technologies: Dataset of technology parameters
-        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day").
-            Must match the timeslice level of `production`
 
     Returns:
         DataArray with production amplitudes for each technology in each timeslice.
         Will have the same dimensions as `production`, minus the `commodity` dimension.
     """
+    from muse.timeslices import get_level
+
     assert set(technologies.dims).issubset(set(production.dims))
+    timeslice_level = get_level(production)
 
     return (
         production
