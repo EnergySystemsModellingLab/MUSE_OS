@@ -92,7 +92,7 @@ def broadcast_timeslice(
 
     Args:
         data: Array to broadcast.
-        ts: Dataarray with timeslice lengths. If None, defaults to the global timeslice.
+        ts: Dataarray with timeslice weights. If None, defaults to the global timeslice.
         level: Level to broadcast to. If None, use the finest level of ts.
 
     """
@@ -126,12 +126,14 @@ def distribute_timeslice(
 ) -> DataArray:
     """Convert a non-timesliced array to a timesliced array by distribution.
 
-    If data is already timesliced in the appropriate scheme, it will be returned
-    unchanged.
+    Takes non-timesliced data and distributes it over the timeslice dimension according
+    to the timeslice weights in `ts`. The sum of the output over all timeslices will be
+    equal to the input. If data is already timesliced in the appropriate scheme, it will
+    be returned unchanged.
 
     Args:
         data: Array to distribute.
-        ts: Dataarray with timeslice lengths. If None, defaults to the global timeslice.
+        ts: Dataarray with timeslice weights. If None, defaults to the global timeslice.
         level: Level to distribute to. If None, use the finest level of ts.
 
     """
@@ -168,11 +170,11 @@ def compress_timeslice(
     The operation can be either 'sum', or 'mean':
     - sum: sum values at each compressed timeslice level
     - mean: take a weighted average of values at each compressed timeslice level,
-        according to timeslice length
+        according to the timeslice weights in ts
 
     Args:
         data: Timesliced array to compress. Must have the same timeslicing as ts.
-        ts: Dataarray with timeslice lengths. If None, defaults to the global timeslice.
+        ts: Dataarray with timeslice weights. If None, defaults to the global timeslice.
         level: Level to compress to. If None, don't compress.
         operation: Operation to perform ("sum" or "mean"). Defaults to "sum".
 
@@ -228,13 +230,13 @@ def expand_timeslice(
 
     The operation can be either 'distribute', or 'broadcast'
     - distribute: distribute values over the new timeslice level(s) according to
-        timeslice lengths, such that the sum of the output over all timeslices is equal
-        to the sum of the input
+        timeslice weights in `ts`, such that the sum of the output over all timeslices
+        is equal to the sum of the input
     - broadcast: broadcast values across over the new timeslice level(s)
 
     Args:
         data: Timesliced array to expand.
-        ts: Dataarray with timeslice lengths. If None, defaults to the global timeslice.
+        ts: Dataarray with timeslice weights. If None, defaults to the global timeslice.
         operation: Operation to perform ("distribute" or "broadcast").
             Defaults to "distribute".
 
@@ -331,7 +333,8 @@ def timeslice_max(data: DataArray, ts: DataArray | None = None) -> DataArray:
 
     Args:
         data: Timesliced DataArray to find the max of.
-        ts: Dataarray with timeslice lengths. If None, defaults to the global timeslice.
+        ts: Dataarray with relative timeslice lengths. If None, defaults to the global
+        timeslice.
     """
     if ts is None:
         ts = TIMESLICE
