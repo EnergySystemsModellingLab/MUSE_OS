@@ -193,21 +193,21 @@ def test_net_present_value(_technologies, _demand, _prices):
     from muse.objectives import net_present_value
 
     result = net_present_value(_technologies, _demand, _prices)
-    assert set(result.dims) == {"replacement", "asset", "timeslice"}
+    assert set(result.dims) == {"replacement", "asset"}
 
 
 def test_net_present_cost(_technologies, _demand, _prices):
     from muse.objectives import net_present_cost
 
     result = net_present_cost(_technologies, _demand, _prices)
-    assert set(result.dims) == {"replacement", "asset", "timeslice"}
+    assert set(result.dims) == {"replacement", "asset"}
 
 
 def test_equivalent_annual_cost(_technologies, _demand, _prices):
     from muse.objectives import equivalent_annual_cost
 
     result = equivalent_annual_cost(_technologies, _demand, _prices)
-    assert set(result.dims) == {"replacement", "asset", "timeslice"}
+    assert set(result.dims) == {"replacement", "asset"}
 
 
 def add_var(coordinates, *dims, factor=100.0):

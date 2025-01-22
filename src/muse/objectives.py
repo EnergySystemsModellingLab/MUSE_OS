@@ -523,6 +523,7 @@ def net_present_value(
         capacity=capacity,
         production=production,
         consumption=consump,
+        aggregate_timeslices=True,
     )
     return results
 
@@ -562,6 +563,7 @@ def net_present_cost(
         capacity=capacity,
         production=production,
         consumption=consump,
+        aggregate_timeslices=True,
     )
     return results
 
@@ -601,5 +603,6 @@ def equivalent_annual_cost(
         capacity=capacity,
         production=production,
         consumption=consump,
+        aggregate_timeslices=True,
     )
     return results
