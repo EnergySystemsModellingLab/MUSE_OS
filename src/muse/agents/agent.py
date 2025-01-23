@@ -122,7 +122,6 @@ class Agent(AbstractAgent):
         decision: Callable | None = None,
         year: int = 2010,
         maturity_threshold: float = 0,
-        forecast: int = 5,
         housekeeping: Callable | None = None,
         merge_transform: Callable | None = None,
         demand_threshold: float | None = None,
@@ -147,7 +146,6 @@ class Agent(AbstractAgent):
             year: year the agent is created / current year
             maturity_threshold: threshold when filtering replacement
                 technologies with respect to market share
-            forecast: Number of years the agent will forecast
             housekeeping: transform applied to the assets at the start of
                 iteration. Defaults to doing nothing.
             merge_transform: transform merging current and newly invested assets
@@ -180,9 +178,6 @@ class Agent(AbstractAgent):
 
         """ Current year. Incremented by one every time next is called."""
         self.year = year
-
-        """Number of years to look into the future for forecating purposed."""
-        self.forecast = forecast
 
         """Search rule(s) determining potential replacement technologies.
 
@@ -244,11 +239,6 @@ class Agent(AbstractAgent):
 
         """Threshold below which assets are not added."""
         self.asset_threshold = asset_threshold
-
-    @property
-    def forecast_year(self):
-        """Year to consider when forecasting."""
-        return self.year + self.forecast
 
     def asset_housekeeping(self):
         """Reduces memory footprint of assets.
