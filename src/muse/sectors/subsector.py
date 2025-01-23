@@ -63,9 +63,9 @@ class Subsector:
                 np.maximum(market.prices, market.prices.rename(region="dst_region"))
             )
 
-        # Agent housekeeping
-        for agent in self.agents:
-            agent.asset_housekeeping()
+        # # Agent housekeeping
+        # for agent in self.agents:
+        #     agent.asset_housekeeping()
 
         # Perform the investments
         self.aggregate_lp(technologies, market)
