@@ -76,7 +76,7 @@ class MCA:
         )
 
         extras = {
-            "foresight",
+            "foresight",  # legacy
             "regions",
             "interest_rate",
             "log_level",

@@ -394,6 +394,9 @@ def read_settings(
     setup_module(settings)
     settings.pop("timeslices", None)
 
+    # Set up time framework
+    settings["time_framework"] = np.array(sorted(settings["time_framework"]), dtype=int)
+
     # Finally, we run some checks to make sure all makes sense and files exist.
     validate_settings(settings)
 
@@ -552,27 +555,6 @@ def check_budget_parameters(settings: dict) -> None:
         )
     else:
         settings["carbon_budget_control"]["budget"] = xr.DataArray([])
-
-
-@register_settings_check(vary_name=False)
-def check_foresight(settings: dict) -> None:
-    """Check that foresight is a multiple of the smaller time_framework difference.
-
-    If so, we update the time framework adding the foresight year to the list and
-    transforming it into an array
-    """
-    tfmin = np.diff(settings["time_framework"]).min()
-    msg = "ERROR - foresight is not a multiple of the smaller time_framework difference"
-    assert settings["foresight"] % tfmin == 0, msg
-
-    settings["time_framework"].sort()
-
-    # This adds to the years list a new year separated from the last one a “foresight”
-    # number of years.
-    settings["time_framework"].append(
-        settings["time_framework"][-1] + settings["foresight"]
-    )
-    settings["time_framework"] = np.array(settings["time_framework"], dtype=int)
 
 
 @register_settings_check(vary_name=False)
