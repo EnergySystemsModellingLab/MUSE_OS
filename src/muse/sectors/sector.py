@@ -289,7 +289,7 @@ class Sector(AbstractSector):  # type: ignore
         from muse.utilities import broadcast_over_assets
 
         years = market.year.values
-        capacity = self.capacity.sel(year=years)
+        capacity = self.capacity.interp(year=years)
 
         # Select technology data for each asset
         # Each asset uses the technology data from the year it was installed

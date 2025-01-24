@@ -322,7 +322,7 @@ def filter_input(
         dataset = dataset.drop_vars("year")
 
     if "year" in dataset.dims and year is not None:
-        dataset = dataset.sel(year=year)
+        dataset = dataset.interp(year=year)
         if "year" not in dataset.dims and "year" in dataset.coords:
             dataset = dataset.drop_vars("year")
         elif "year" in dataset.dims:

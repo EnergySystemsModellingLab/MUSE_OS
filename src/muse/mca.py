@@ -48,15 +48,19 @@ class MCA:
             settings = convert(settings)
         settings = cast(Any, settings)
         # We create the initial market
-        market = read_initial_market(
-            settings.global_input_files.projections,
-            base_year_export=getattr(
-                settings.global_input_files, "base_year_export", None
-            ),
-            base_year_import=getattr(
-                settings.global_input_files, "base_year_import", None
-            ),
-        ).sel(region=settings.regions, year=settings.time_framework)
+        market = (
+            read_initial_market(
+                settings.global_input_files.projections,
+                base_year_export=getattr(
+                    settings.global_input_files, "base_year_export", None
+                ),
+                base_year_import=getattr(
+                    settings.global_input_files, "base_year_import", None
+                ),
+            )
+            .sel(region=settings.regions)
+            .interp(year=settings.time_framework)
+        )
 
         market["supply"] = drop_timeslice(zeros_like(market.exports))
         market["consumption"] = drop_timeslice(zeros_like(market.exports))
