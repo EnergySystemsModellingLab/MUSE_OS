@@ -544,8 +544,8 @@ def check_budget_parameters(settings: dict) -> None:
             assert length == len(settings["time_framework"]), msg
             coords = settings["time_framework"]
         else:
-            assert length + 1 == len(settings["time_framework"]), msg
-            coords = settings["time_framework"][:-1]
+            assert length == len(settings["time_framework"]), msg
+            coords = settings["time_framework"]
 
         # If Ok, we transform the list into an xr.DataArray
         settings["carbon_budget_control"]["budget"] = xr.DataArray(
