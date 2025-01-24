@@ -22,7 +22,6 @@ class AbstractAgent(ABC):
         name: str = "Agent",
         region: str = "",
         assets: xr.Dataset | None = None,
-        interpolation: str = "linear",
         category: str | None = None,
         quantity: float | None = 1,
         timeslice_level: str | None = None,
@@ -33,7 +32,6 @@ class AbstractAgent(ABC):
             name: Name of the agent, used for cross-refencing external tables
             region: Region where the agent operates, used for cross-referencing
                 external tables.
-            interpolation: interpolation method. see `xarray.interp`.
             assets: dataset holding information about the assets owned by this
                 instance. The information should not be anything describing the
                 technologies themselves, but rather the stock of assets held by
@@ -57,8 +55,6 @@ class AbstractAgent(ABC):
         """Current stock of technologies."""
         self.uuid = uuid4()
         """A unique identifier for the agent."""
-        self.interpolation = interpolation
-        """Interpolation method."""
         self.category = category
         """Attribute to classify different sets of agents."""
         self.quantity = quantity
@@ -116,7 +112,6 @@ class Agent(AbstractAgent):
         name: str = "Agent",
         region: str = "USA",
         assets: xr.Dataset | None = None,
-        interpolation: str = "linear",
         search_rules: Callable | None = None,
         objectives: Callable | None = None,
         decision: Callable | None = None,
@@ -140,7 +135,6 @@ class Agent(AbstractAgent):
             region: Region where the agent operates, used for cross-referencing
                 external tables.
             assets: Current stock of technologies.
-            interpolation: interpolation method. see `xarray.interp`.
             search_rules: method used to filter the search space
             objectives: One or more objectives by which to decide next investments.
             decision: single decision objective from one or more objectives.
@@ -172,7 +166,6 @@ class Agent(AbstractAgent):
             name=name,
             region=region,
             assets=assets,
-            interpolation=interpolation,
             category=category,
             quantity=quantity,
             timeslice_level=timeslice_level,
@@ -363,7 +356,7 @@ class InvestingAgent(Agent):
         # Calculate capacity in current and investment year
         capacity = reduce_assets(
             self.assets.capacity, coords=("technology", "region")
-        ).sel(year=[current_year, investment_year])
+        ).interp(year=[current_year, investment_year])
 
         # Calculate constraints
         constraints = self.constraints(
