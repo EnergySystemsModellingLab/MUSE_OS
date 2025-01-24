@@ -1,7 +1,6 @@
 # Global settings - most REQUIRED
 
 time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
-foresight = 5  # Has to be a multiple of the minimum separation between the years in time framework
 regions = ["R1"]
 interest_rate = 0.1
 interpolation_mode = 'Active'
@@ -67,6 +66,11 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
 lpsolver = "scipy"
 demand_share = "standard_demand"
+
+[[sectors.power.outputs]]
+quantity = "supply"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/{Sector}_{Quantity}.csv"
 
 [sectors.gas]
 type = 'default'
