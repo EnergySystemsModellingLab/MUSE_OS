@@ -299,10 +299,9 @@ def clean_assets(assets: xr.Dataset, year: int):
 def filter_input(
     dataset: xr.Dataset | xr.DataArray,
     year: int | Iterable[int] | None = None,
-    interpolation: str = "linear",
     **kwargs,
 ) -> xr.Dataset | xr.DataArray:
-    """Filter inputs, taking care to interpolate years."""
+    """Filter inputs, selecting data for the specified year."""
     if year is None:
         setyear: set[int] = set()
     else:
@@ -323,7 +322,7 @@ def filter_input(
         dataset = dataset.drop_vars("year")
 
     if "year" in dataset.dims and year is not None:
-        dataset = dataset.interp(year=year, method=interpolation)
+        dataset = dataset.sel(year=year)
         if "year" not in dataset.dims and "year" in dataset.coords:
             dataset = dataset.drop_vars("year")
         elif "year" in dataset.dims:
