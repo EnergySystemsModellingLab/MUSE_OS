@@ -18,18 +18,15 @@ def create_standard_agent(
     year: int,
     region: str,
     share: str | None = None,
-    interpolation: str = "linear",
     **kwargs,
 ):
     """Creates standard (noninvesting) agent from muse primitives."""
     from muse.filters import factory as filter_factory
 
     if share is not None:
-        capacity = _shared_capacity(
-            technologies, capacity, region, share, year, interpolation=interpolation
-        )
+        capacity = _shared_capacity(technologies, capacity, region, share, year)
     else:
-        existing = capacity.interp(year=year, method=interpolation) > 0
+        existing = capacity.sel(year=year) > 0
         existing = existing.any([u for u in existing.dims if u != "asset"])
         years = [capacity.year.min().values, capacity.year.max().values]
         capacity = xr.zeros_like(capacity.sel(asset=existing.values, year=years))
@@ -51,7 +48,6 @@ def create_retrofit_agent(
     share: str,
     year: int,
     region: str,
-    interpolation: str = "linear",
     decision: Callable | str | Mapping = "mean",
     **kwargs,
 ):
@@ -70,9 +66,7 @@ def create_retrofit_agent(
             )
             getLogger(__name__).warning(msg)
 
-    assets = _shared_capacity(
-        technologies, capacity, region, share, year, interpolation=interpolation
-    )
+    assets = _shared_capacity(technologies, capacity, region, share, year)
 
     kwargs = _standardize_investing_inputs(decision=decision, **kwargs)
 
@@ -96,7 +90,6 @@ def create_newcapa_agent(
     region: str,
     share: str,
     search_rules: str | Sequence[str] = "all",
-    interpolation: str = "linear",
     merge_transform: str | Mapping | Callable = "new",
     quantity: float = 0.3,
     housekeeping: str | Mapping | Callable = "clean",
@@ -114,7 +107,7 @@ def create_newcapa_agent(
     if "region" in capacity.dims:
         capacity = capacity.sel(region=region)
 
-    existing = capacity.interp(year=year, method=interpolation) > 0
+    existing = capacity.sel(year=year) > 0
     assert set(existing.dims) == {"asset"}
     years = [capacity.year.min().values, capacity.year.max().values]
 
@@ -126,7 +119,7 @@ def create_newcapa_agent(
     else:
         technologies = kwargs["technologies"]
         assets["capacity"] = _shared_capacity(
-            technologies, capacity, region, share, year, interpolation=interpolation
+            technologies, capacity, region, share, year
         )
         merge_transform = "merge"
 
@@ -243,7 +236,6 @@ def _shared_capacity(
     region: str,
     share: str,
     year: int,
-    interpolation: str = "linear",
 ) -> xr.DataArray:
     if "region" in capacity.dims:
         capacity = capacity.sel(region=region)
@@ -263,9 +255,9 @@ def _shared_capacity(
     if "region" in shares.dims:
         shares = shares.sel(region=region)
     if "year" in shares.dims:
-        shares = shares.interp({"year": year}, method=interpolation)
+        shares = shares.sel({"year": year})
 
-    existing = capacity.interp({"year": year}, method=interpolation)
+    existing = capacity.sel({"year": year})
 
     techs = (existing > 0) & (shares > 0)
     techs = techs.any([u for u in techs.dims if u != "asset"])
