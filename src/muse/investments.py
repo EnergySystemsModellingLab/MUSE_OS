@@ -160,7 +160,6 @@ def factory(settings: str | Mapping | None = None) -> Callable:
 def cliff_retirement_profile(
     technical_life: xr.DataArray,
     investment_year: int,
-    interpolation: str = "linear",
     **kwargs,
 ) -> xr.DataArray:
     """Cliff-like retirement profile from current year.
@@ -176,7 +175,6 @@ def cliff_retirement_profile(
     Arguments:
         technical_life: lifetimes for each technology
         investment_year: The year in which the investment is made
-        interpolation: Interpolation type
         **kwargs: arguments by which to filter technical_life, if any.
 
     Returns:

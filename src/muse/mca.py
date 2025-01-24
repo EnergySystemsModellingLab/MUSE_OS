@@ -48,17 +48,15 @@ class MCA:
             settings = convert(settings)
         settings = cast(Any, settings)
         # We create the initial market
-        market = (
-            read_initial_market(
-                settings.global_input_files.projections,
-                base_year_export=getattr(
-                    settings.global_input_files, "base_year_export", None
-                ),
-                base_year_import=getattr(
-                    settings.global_input_files, "base_year_import", None
-                ),
-            ).sel(region=settings.regions)
-        ).interp(year=settings.time_framework, method=settings.interpolation_mode)
+        market = read_initial_market(
+            settings.global_input_files.projections,
+            base_year_export=getattr(
+                settings.global_input_files, "base_year_export", None
+            ),
+            base_year_import=getattr(
+                settings.global_input_files, "base_year_import", None
+            ),
+        ).sel(region=settings.regions, year=settings.time_framework)
 
         market["supply"] = drop_timeslice(zeros_like(market.exports))
         market["consumption"] = drop_timeslice(zeros_like(market.exports))
@@ -167,9 +165,7 @@ class MCA:
 
         # Carbon budget parameters
         if isinstance(carbon_budget, DataArray) and "year" in carbon_budget.dims:
-            self.carbon_budget: DataArray = (
-                carbon_budget.interp(year=time_framework).ffill("year").bfill("year")
-            )
+            self.carbon_budget: DataArray = carbon_budget.sel(year=time_framework)
         elif isinstance(carbon_budget, DataArray):
             self.carbon_budget = carbon_budget
         elif carbon_budget is not None and len(carbon_budget) > 0:

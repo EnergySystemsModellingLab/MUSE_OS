@@ -363,7 +363,7 @@ class InvestingAgent(Agent):
         # Calculate capacity in current and investment year
         capacity = reduce_assets(
             self.assets.capacity, coords=("technology", "region")
-        ).interp(year=[current_year, investment_year], method="linear")
+        ).sel(year=[current_year, investment_year])
 
         # Calculate constraints
         constraints = self.constraints(
