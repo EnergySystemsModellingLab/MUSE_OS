@@ -275,7 +275,7 @@ def _shared_capacity(
 
 
 def _standardize_inputs(
-    housekeeping: str | Mapping | Callable = "clean",
+    housekeeping: str | Mapping | Callable = "noop",
     merge_transform: str | Mapping | Callable = "merge",
     objectives: Callable | str | Mapping | Sequence[str | Mapping] = "fixed_costs",
     decision: Callable | str | Mapping = "mean",
