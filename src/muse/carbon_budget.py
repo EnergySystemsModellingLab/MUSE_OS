@@ -334,7 +334,7 @@ def bisection(
     # Create cache for emissions at different price points
     emissions_cache = EmissionsCache(market, equilibrium, commodities)
 
-    # Carbon price and emissions threshold in the forecast year
+    # Carbon price and emissions threshold in the investment year
     future = market.year[-1]
     target = carbon_budget.sel(year=future).values.item()
     price = market.prices.sel(year=future, commodity=commodities).mean().values.item()
