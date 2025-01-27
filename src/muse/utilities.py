@@ -244,6 +244,24 @@ def broadcast_techs(
     return techs.sel(second_sel)
 
 
+def clean_assets(assets: xr.Dataset, years: int | Sequence[int]):
+    """Cleans up and prepares asset for current iteration.
+
+    - adds current and forecast year by backfilling missing entries
+    - removes assets for which there is no capacity now or in the future
+    """
+    if isinstance(years, Sequence):
+        current = min(*years)
+        years = sorted(set(assets.year[assets.year >= current].values).union(years))
+    else:
+        x = set(assets.year[assets.year >= years].values)
+        x.add(years)
+        years = sorted(x)
+    result = assets.reindex(year=years, method="backfill").fillna(0)
+    not_asset = [u for u in result.dims if u != "asset"]
+    return result.sel(asset=result.capacity.any(not_asset))
+
+
 def filter_input(
     dataset: xr.Dataset | xr.DataArray,
     year: int | Iterable[int] | None = None,

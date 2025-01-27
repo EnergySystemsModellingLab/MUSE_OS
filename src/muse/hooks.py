@@ -4,6 +4,7 @@ from __future__ import annotations
 
 __all__ = [
     "asset_merge_factory",
+    "clean",
     "housekeeping_factory",
     "merge_assets",
     "new_assets_only",
@@ -125,6 +126,15 @@ def register_final_asset_transform(
 def noop(agent: Agent, assets: Dataset) -> Dataset:
     """Return assets as they are."""
     return assets
+
+
+@register_initial_asset_transform
+def clean(agent: Agent, assets: Dataset) -> Dataset:
+    """Removes empty assets."""
+    from muse.utilities import clean_assets
+
+    years = [agent.year, agent.forecast_year]
+    return clean_assets(assets, years)
 
 
 @register_final_asset_transform(name="new")
