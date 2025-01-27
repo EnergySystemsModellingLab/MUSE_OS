@@ -30,15 +30,18 @@ Returns:
     A `xr.DataArray` with the amount produced for each good from each asset.
 """
 
+from __future__ import annotations
+
 __all__ = [
+    "PRODUCTION_SIGNATURE",
     "factory",
     "maximum_production",
     "register_production",
     "supply",
-    "PRODUCTION_SIGNATURE",
 ]
+
 from collections.abc import Mapping, MutableMapping
-from typing import Any, Callable, Union, cast
+from typing import Any, Callable, cast
 
 import xarray as xr
 
@@ -63,7 +66,7 @@ def register_production(function: PRODUCTION_SIGNATURE = None):
 
 
 def factory(
-    settings: Union[str, Mapping] = "maximum_production", **kwargs
+    settings: str | Mapping = "maximum_production", **kwargs
 ) -> PRODUCTION_SIGNATURE:
     """Creates a production functor.
 
@@ -98,7 +101,10 @@ def factory(
 
 @register_production(name=("max", "maximum"))
 def maximum_production(
-    market: xr.Dataset, capacity: xr.DataArray, technologies: xr.Dataset
+    market: xr.Dataset,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Production when running at full capacity.
 
@@ -107,12 +113,15 @@ def maximum_production(
     """
     from muse.quantities import maximum_production
 
-    return maximum_production(technologies, capacity)
+    return maximum_production(technologies, capacity, timeslice_level)
 
 
 @register_production(name=("share", "shares"))
 def supply(
-    market: xr.Dataset, capacity: xr.DataArray, technologies: xr.Dataset
+    market: xr.Dataset,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Service current demand equally from all assets.
 
@@ -121,4 +130,6 @@ def supply(
     """
     from muse.quantities import supply
 
-    return supply(capacity, market.consumption, technologies)
+    return supply(
+        capacity, market.consumption, technologies, timeslice_level=timeslice_level
+    )

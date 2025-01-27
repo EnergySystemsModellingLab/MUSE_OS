@@ -73,29 +73,29 @@ Returns:
     An initial search space
 """
 
+from __future__ import annotations
+
 __all__ = [
-    "factory",
-    "register_filter",
-    "register_initializer",
-    "identity",
-    "reduce_asset",
-    "similar_technology",
-    "same_enduse",
-    "same_fuels",
+    "compress",
     "currently_existing_tech",
     "currently_referenced_tech",
-    "maturity",
-    "compress",
-    "with_asset_technology",
+    "factory",
+    "identity",
     "initialize_from_technologies",
+    "maturity",
+    "reduce_asset",
+    "register_filter",
+    "register_initializer",
+    "same_enduse",
+    "same_fuels",
+    "similar_technology",
+    "with_asset_technology",
 ]
 
 from collections.abc import Mapping, MutableMapping, Sequence
 from typing import (
     Any,
     Callable,
-    Optional,
-    Union,
     cast,
 )
 
@@ -162,7 +162,7 @@ def register_initializer(function: SSI_SIGNATURE) -> Callable:
 
 
 def factory(
-    settings: Optional[Union[str, Mapping, Sequence[Union[str, Mapping]]]] = None,
+    settings: str | Mapping | Sequence[str | Mapping] | None = None,
     separator: str = "->",
 ):
     """Creates filters from input TOML data.
@@ -366,13 +366,10 @@ def spend_limit(
     enduse_label: str = "service",
     **kwargs,
 ) -> xr.DataArray:
-    """Only allows technologies that have achieve a given market share.
-
-    Specifically, the market share refers to the capacity for each end- use.
-    """
-    spend_limit = agent.spend_limit
+    """Only allows technologies with a unit capital cost lower than the spend limit."""
+    limit = agent.spend_limit
     unit_capex = agent.filter_input(technologies.cap_par, year=agent.year)
-    condition = (unit_capex <= spend_limit).rename("spend_limit")
+    condition = (unit_capex <= limit).rename("spend_limit")
     techs = (
         condition.technology.where(condition, drop=True).drop_vars("technology").values
     )

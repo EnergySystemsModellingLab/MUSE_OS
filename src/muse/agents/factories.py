@@ -1,13 +1,15 @@
 """Holds all building agents."""
 
+from __future__ import annotations
+
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable
 
 import xarray as xr
 
 from muse.agents.agent import Agent, InvestingAgent
-from muse.errors import RetrofitAgentNotDefined, TechnologyNotDefined
+from muse.errors import AgentShareNotDefined, TechnologyNotDefined
 
 
 def create_standard_agent(
@@ -15,7 +17,7 @@ def create_standard_agent(
     capacity: xr.DataArray,
     year: int,
     region: str,
-    share: Optional[str] = None,
+    share: str | None = None,
     interpolation: str = "linear",
     **kwargs,
 ):
@@ -50,7 +52,7 @@ def create_retrofit_agent(
     year: int,
     region: str,
     interpolation: str = "linear",
-    decision: Union[Callable, str, Mapping] = "mean",
+    decision: Callable | str | Mapping = "mean",
     **kwargs,
 ):
     """Creates retrofit agent from muse primitives."""
@@ -93,11 +95,11 @@ def create_newcapa_agent(
     year: int,
     region: str,
     share: str,
-    search_rules: Union[str, Sequence[str]] = "all",
+    search_rules: str | Sequence[str] = "all",
     interpolation: str = "linear",
-    merge_transform: Union[str, Mapping, Callable] = "new",
+    merge_transform: str | Mapping | Callable = "new",
     quantity: float = 0.3,
-    housekeeping: Union[str, Mapping, Callable] = "noop",
+    housekeeping: str | Mapping | Callable = "noop",
     retrofit_present: bool = True,
     **kwargs,
 ):
@@ -173,11 +175,11 @@ def create_agent(agent_type: str, **kwargs) -> Agent:
 
 
 def agents_factory(
-    params_or_path: Union[str, Path, list],
-    capacity: Union[xr.DataArray, str, Path],
+    params_or_path: str | Path | list,
+    capacity: xr.DataArray | str | Path,
     technologies: xr.Dataset,
-    regions: Optional[Sequence[str]] = None,
-    year: Optional[int] = None,
+    regions: Sequence[str] | None = None,
+    year: int | None = None,
     **kwargs,
 ) -> list[Agent]:
     """Creates a list of agents for the chosen sector."""
@@ -247,7 +249,7 @@ def _shared_capacity(
     try:
         shares = technologies[share]
     except KeyError:
-        raise RetrofitAgentNotDefined
+        raise AgentShareNotDefined
 
     try:
         shares = shares.sel(technology=capacity.technology)
@@ -269,12 +271,10 @@ def _shared_capacity(
 
 
 def _standardize_inputs(
-    housekeeping: Union[str, Mapping, Callable] = "clean",
-    merge_transform: Union[str, Mapping, Callable] = "merge",
-    objectives: Union[
-        Callable, str, Mapping, Sequence[Union[str, Mapping]]
-    ] = "fixed_costs",
-    decision: Union[Callable, str, Mapping] = "mean",
+    housekeeping: str | Mapping | Callable = "clean",
+    merge_transform: str | Mapping | Callable = "merge",
+    objectives: Callable | str | Mapping | Sequence[str | Mapping] = "fixed_costs",
+    decision: Callable | str | Mapping = "mean",
     **kwargs,
 ):
     from muse.decisions import factory as decision_factory
@@ -298,11 +298,9 @@ def _standardize_inputs(
 
 
 def _standardize_investing_inputs(
-    search_rules: Optional[Union[str, Sequence[str]]] = None,
-    investment: Union[Callable, str, Mapping] = "adhoc",
-    constraints: Optional[
-        Union[Callable, str, Mapping, Sequence[Union[str, Mapping]]]
-    ] = None,
+    search_rules: str | Sequence[str] | None = None,
+    investment: Callable | str | Mapping = "scipy",
+    constraints: Callable | str | Mapping | Sequence[str | Mapping] | None = None,
     **kwargs,
 ) -> dict[str, Any]:
     from muse.constraints import factory as constraints_factory

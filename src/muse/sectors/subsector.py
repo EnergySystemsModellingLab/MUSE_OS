@@ -24,6 +24,7 @@ class Subsector:
         investment: Callable | None = None,
         name: str = "subsector",
         forecast: int = 5,
+        timeslice_level: str | None = None,
     ):
         from muse import constraints as cs
         from muse import demand_share as ds
@@ -36,50 +37,37 @@ class Subsector:
         self.investment = investment or iv.factory()
         self.forecast = forecast
         self.name = name
+        self.timeslice_level = timeslice_level
 
     def invest(
         self,
         technologies: xr.Dataset,
         market: xr.Dataset,
-        time_period: int,
-        current_year: int,
     ) -> None:
+        assert "year" not in technologies.dims
+        assert len(market.year) == 2
+
         # Agent housekeeping
         for agent in self.agents:
             agent.asset_housekeeping()
 
         # Perform the investments
-        self.aggregate_lp(technologies, market, time_period, current_year=current_year)
+        self.aggregate_lp(technologies, market)
 
     def aggregate_lp(
         self,
         technologies: xr.Dataset,
         market: xr.Dataset,
-        time_period,
-        current_year,
     ) -> None:
-        from muse.utilities import agent_concatenation, reduce_assets
+        assert "year" not in technologies.dims
+        assert len(market.year) == 2
 
         # Split demand across agents
         demands = self.demand_share(
-            self.agents,
-            market,
-            technologies,
-            current_year=current_year,
-            forecast=self.forecast,
-        )
-
-        # Concatenate assets
-        assets = agent_concatenation(
-            {agent.uuid: agent.assets for agent in self.agents}
-        )
-
-        # Calculate existing capacity
-        agent_market = market.copy()
-        agent_market["capacity"] = (
-            reduce_assets(assets.capacity, coords=("region", "technology"))
-            .interp(year=market.year, method="linear", kwargs={"fill_value": 0.0})
-            .swap_dims(dict(asset="technology"))
+            agents=self.agents,
+            market=market,
+            technologies=technologies,
+            timeslice_level=self.timeslice_level,
         )
 
         # Increment each agent (perform investments)
@@ -88,7 +76,7 @@ class Subsector:
                 share = demands.sel(asset=demands.agent == agent.uuid)
             else:
                 share = demands
-            agent.next(technologies, agent_market, share, time_period=time_period)
+            agent.next(technologies=technologies, market=market, demand=share)
 
     @classmethod
     def factory(
@@ -98,7 +86,10 @@ class Subsector:
         regions: Sequence[str] | None = None,
         current_year: int | None = None,
         name: str = "subsector",
+        timeslice_level: str | None = None,
     ) -> Subsector:
+        from logging import getLogger
+
         from muse import constraints as cs
         from muse import demand_share as ds
         from muse import investments as iv
@@ -111,6 +102,13 @@ class Subsector:
             msg = "Invalid parameter asset_threshhold. Did you mean asset_threshold?"
             raise ValueError(msg)
 
+        # Raise warning if lpsolver is not specified (PR #587)
+        if not hasattr(settings, "lpsolver"):
+            msg = (
+                f"lpsolver not specified for subsector '{name}'. Defaulting to 'scipy'"
+            )
+            getLogger(__name__).warning(msg)
+
         agents = agents_factory(
             settings.agents,
             settings.existing_capacity,
@@ -119,9 +117,10 @@ class Subsector:
             year=current_year or int(technologies.year.min()),
             asset_threshold=getattr(settings, "asset_threshold", 1e-12),
             # only used by self-investing agents
-            investment=getattr(settings, "lpsolver", "adhoc"),
+            investment=getattr(settings, "lpsolver", "scipy"),
             forecast=getattr(settings, "forecast", 5),
             constraints=getattr(settings, "constraints", ()),
+            timeslice_level=timeslice_level,
         )
         # technologies can have nans where a commodity
         # does not apply to a technology at all
@@ -168,6 +167,7 @@ class Subsector:
             investment=investment,
             forecast=forecast,
             name=name,
+            timeslice_level=timeslice_level,
         )
 
 

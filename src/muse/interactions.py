@@ -14,16 +14,18 @@ interaction. The second registrator registers the interaction proper: it takes a
 arguments and returns nothing. It is expected to modify the agents in-place.
 """
 
+from __future__ import annotations
+
 __all__ = [
-    "register_interaction_net",
-    "register_agent_interaction",
     "factory",
     "new_to_retro_net",
+    "register_agent_interaction",
+    "register_interaction_net",
     "transfer_assets",
 ]
 
 from collections.abc import Mapping, Sequence
-from typing import Callable, Optional, Union
+from typing import Callable
 
 from muse.agents import AbstractAgent, Agent
 from muse.errors import NoInteractionsFound
@@ -87,7 +89,7 @@ def register_agent_interaction(function: AGENT_INTERACTION_SIGNATURE):
 
 
 def factory(
-    inputs: Optional[Sequence[Union[Mapping, tuple[str, str]]]] = None,
+    inputs: Sequence[Mapping | tuple[str, str]] | None = None,
 ) -> Callable[[Sequence[AbstractAgent]], None]:
     """Creates an interaction functor."""
     if inputs is None:

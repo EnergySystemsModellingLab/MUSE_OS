@@ -319,6 +319,32 @@ A sector accepts these attributes:
    Additional methods can be registered with
    :py:func:`muse.production.register_production`
 
+*technodata*
+   Path to a csv file containing the characterization of the technologies involved in
+   the sector, e.g. lifetime, capital costs, etc... See :ref:`inputs-technodata`.
+
+*technodata_timeslices*
+    Optional. Path to a csv file describing the utilization factor and minimum service
+    factor of each technology in each timeslice.
+    See :ref:`user_guide/inputs/technodata_timeslices`.
+
+*commodities_in*
+   Path to a csv file describing the inputs of each technology involved in the sector.
+   See :ref:`inputs-iocomms`.
+
+*commodities_out*
+   Path to a csv file describing the outputs of each technology involved in the sector.
+   See :ref:`inputs-iocomms`.
+
+*timeslice_level*
+   Optional. This represents the level of timeslice granularity over which commodity
+   flows out of the sector are balanced (e.g. if "day", the sector will aim to meet
+   commodity demands on a daily basis, rather than an hourly basis).
+   If not given, defaults to the finest level defined in the global `timeslices` section.
+   Note: If *technodata_timeslices* is used, the data in this file must match the timeslice
+   level of the sector (e.g. with global timeslice levels "month", "day" and "hour", if a sector has "day" as
+   the timeslice level, then *technodata_timeslices* must have columns "month" and "day", but not "hour")
+
 Sectors contain a number of subsections:
 *interactions*
    Defines interactions between agents. These interactions take place right before new
@@ -372,32 +398,6 @@ Sectors contain a number of subsections:
    "new_to_retro" type of network has been defined but no retro agents are included in
    the sector.
 
-*technodata*
-
-   Defines technologies and their features, in terms of costs, efficiencies, and emissions.
-
-   *technodata* are specified as an inline TOML table, e.g. with single
-   brackets. A technodata section would look like:
-
-   .. code-block:: TOML
-
-      [sectors.residential.technodata]
-        technodata = '{path}/technodata/residential/Technodata.csv'
-        commodities_in = '{path}/technodata/residential/CommIn.csv'
-        commodities_out = '{path}/technodata/residential/CommOut.csv'
-
-   Where:
-   *technodata*
-      Path to a csv file containing the characterization of the technologies involved in
-      the sector, e.g. lifetime, capital costs, etc... See :ref:`inputs-technodata`.
-
-   *commodities_in*
-      Path to a csv file describing the inputs of each technology involved in the sector.
-      See :ref:`inputs-iocomms`.
-
-   *commodities_out*
-      Path to a csv file describing the outputs of each technology involved in the sector.
-      See :ref:`inputs-iocomms`.
 
 *subsectors*
 
@@ -442,11 +442,11 @@ Sectors contain a number of subsections:
         are registered via :py:func:`~muse.investments.register_investment`. At time of
         writing, three are available:
 
+        - "scipy" solver (default from v1.3): Formulates investment as a true LP problem and solves it using
+          the `scipy solver`_.
+
         - an "adhoc" solver: Simple in-house solver that ranks the technologies
           according to cost and service the demand incrementally.
-
-        - "scipy" solver: Formulates investment as a true LP problem and solves it using
-          the `scipy solver`_.
 
         - "cvxopt" solver: Formulates investment as a true LP problem and solves it
           using the python package `cvxopt`_. `cvxopt`_ is *not* installed by default.

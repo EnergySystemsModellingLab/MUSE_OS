@@ -23,21 +23,6 @@ def user_data_files(settings: dict) -> None:
 
 
 @fixture
-def sectors_files(settings: dict):
-    """Creates the files related to the sector."""
-    for data in settings["sectors"].values():
-        for path in data.values():
-            if not isinstance(path, (Path, str)):
-                continue
-            path = Path(path)
-            if path.suffix != ".csv":
-                continue
-
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text("Some data")
-
-
-@fixture
 def plugins(settings: dict, tmp_path) -> Path:
     """Creates the files related to the custom modules."""
     plugin = tmp_path / "plugins" / "cat.py"
@@ -46,21 +31,6 @@ def plugins(settings: dict, tmp_path) -> Path:
 
     settings["plugins"] = str(plugin)
     return plugin
-
-
-@fixture
-def input_file(settings: dict, tmpdir, plugins, user_data_files, sectors_files) -> Path:
-    """Creates a whole set of MUSE input files in a temporary directory.
-
-    This fixture creates a temporal directory with all the folders and files required
-    for a successful run of the read_settings function.
-    """
-    # Finally we create the settings file
-    input_file = tmpdir.join("settings.toml")
-    with open(input_file, "w") as f:
-        toml.dump(settings, f)
-
-    return input_file
 
 
 def test_add_known_parameters(settings: dict):
@@ -406,7 +376,7 @@ def test_read_technodictionary(default_model):
         type=np.dtype("O"),
         fuel=np.dtype("<U11"),
         enduse=np.dtype("<U4"),
-        agent_share_1=np.dtype("int64"),
+        agent1=np.dtype("int64"),
         tech_type=np.dtype("<U6"),
         efficiency=np.dtype("int64"),
         max_capacity_addition=np.dtype("int64"),
@@ -553,7 +523,7 @@ def test_read_csv_agent_parameters(default_model):
             "quantity": 1,
             "maturity_threshold": -1,
             "spend_limit": np.inf,
-            "share": "agent_share_1",
+            "share": "agent1",
         },
     ]
 
@@ -767,7 +737,7 @@ def test_check_utilization_and_minimum_service_factors(*mocks):
     )
     check_utilization_and_minimum_service_factors(df, "file.csv")
     for mock in mocks:
-        mock.assert_called_once_with(df, "file.csv")
+        mock.assert_called_once_with(df, ["file.csv"])
 
 
 @patch("muse.readers.csv._check_utilization_in_range")
@@ -784,7 +754,7 @@ def test_check_utilization_and_minimum_service_factors_no_min(
     df = pd.DataFrame({"utilization_factor": (0, 0, 1)})
     check_utilization_and_minimum_service_factors(df, "file.csv")
     for mock in mocks:
-        mock.assert_called_once_with(df, "file.csv")
+        mock.assert_called_once_with(df, ["file.csv"])
     min_service_factor_mock.assert_not_called()
     utilization_below_min_mock.assert_not_called()
 

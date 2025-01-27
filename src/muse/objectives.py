@@ -42,24 +42,25 @@ Arguments:
             these parameters.
 
 Returns:
-    A DataArray with at least one dimension corresponding to ``replacement``.
-    Other dimensions can be present, as long as the subsequent decision function knows
-    how to reduce them.
+    A DataArray with at least two dimension corresponding to `replacement` and `asset`.
+    A `timeslice` dimension may also be present.
 """
 
+from __future__ import annotations
+
 __all__ = [
-    "register_objective",
+    "capacity_to_service_demand",
+    "capital_costs",
     "comfort",
     "efficiency",
-    "fixed_costs",
-    "capital_costs",
     "emission_cost",
+    "equivalent_annual_cost",
+    "factory",
+    "fixed_costs",
     "fuel_consumption_cost",
     "lifetime_levelized_cost_of_energy",
     "net_present_value",
-    "equivalent_annual_cost",
-    "capacity_to_service_demand",
-    "factory",
+    "register_objective",
 ]
 
 from collections.abc import Mapping, MutableMapping, Sequence
@@ -71,8 +72,8 @@ from mypy_extensions import KwArg
 
 from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
-from muse.timeslices import drop_timeslice
-from muse.utilities import filter_input
+from muse.timeslices import broadcast_timeslice, distribute_timeslice, drop_timeslice
+from muse.utilities import check_dimensions
 
 OBJECTIVE_SIGNATURE = Callable[
     [xr.Dataset, xr.DataArray, xr.DataArray, KwArg(Any)], xr.DataArray
@@ -96,7 +97,7 @@ def objective_factory(settings=Union[str, Mapping]):
 
 
 def factory(
-    settings: Union[str, Mapping, Sequence[Union[str, Mapping]]] = "LCOE",
+    settings: str | Mapping | Sequence[str | Mapping] = "LCOE",
 ) -> Callable:
     """Creates a function computing multiple objectives.
 
@@ -130,18 +131,22 @@ def factory(
         technologies: xr.Dataset,
         demand: xr.DataArray,
         prices: xr.DataArray,
+        timeslice_level: str | None = None,
         *args,
         **kwargs,
     ) -> xr.Dataset:
-        from muse.timeslices import broadcast_timeslice
-
         result = xr.Dataset()
         for name, objective in functions:
             obj = objective(
-                technologies=technologies, demand=demand, prices=prices, *args, **kwargs
+                technologies=technologies,
+                demand=demand,
+                prices=prices,
+                timeslice_level=timeslice_level,
+                *args,
+                **kwargs,
             )
             if "timeslice" not in obj.dims:
-                obj = broadcast_timeslice(obj)
+                obj = broadcast_timeslice(obj, level=timeslice_level)
             if "timeslice" in result.dims:
                 obj = drop_timeslice(obj)
             result[name] = obj
@@ -164,25 +169,30 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
     from functools import wraps
 
     @wraps(function)
-    def decorated_objective(technologies: xr.Dataset, *args, **kwargs) -> xr.DataArray:
+    def decorated_objective(
+        technologies: xr.Dataset, demand: xr.DataArray, *args, **kwargs
+    ) -> xr.DataArray:
         from logging import getLogger
 
-        result = function(technologies, *args, **kwargs)
+        # Check inputs
+        check_dimensions(
+            demand, ["asset", "timeslice", "commodity"], optional=["region"]
+        )
+        check_dimensions(
+            technologies, ["replacement", "commodity"], optional=["timeslice"]
+        )
 
+        # Calculate objective
+        result = function(technologies, demand, *args, **kwargs)
+        result.name = function.__name__
+
+        # Check result
         dtype = result.values.dtype
         if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
             msg = f"dtype of objective {function.__name__} is not a number ({dtype})"
             getLogger(function.__module__).warning(msg)
+        check_dimensions(result, ["replacement", "asset"], optional=["timeslice"])
 
-        if "replacement" not in result.dims:
-            raise RuntimeError("Objective should return a dimension 'replacement'")
-        if "technology" in result.dims:
-            raise RuntimeError("Objective should not return a dimension 'technology'")
-        if "technology" in result.coords:
-            raise RuntimeError("Objective should not return a coordinate 'technology'")
-        if "year" in result.dims:
-            raise RuntimeError("Objective should not return a dimension 'year'")
-        result.name = function.__name__
         cache_quantity(**{result.name: result})
         return result
 
@@ -192,21 +202,25 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
 @register_objective
 def comfort(
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     *args,
     **kwargs,
 ) -> xr.DataArray:
     """Comfort value provided by technologies."""
-    return technologies.comfort
+    result = xr.broadcast(technologies.comfort, demand.asset)[0]
+    return result
 
 
 @register_objective
 def efficiency(
     technologies: xr.Dataset,
+    demand: xr.DataArray,
     *args,
     **kwargs,
 ) -> xr.DataArray:
     """Efficiency of the technologies."""
-    return technologies.efficiency
+    result = xr.broadcast(technologies.efficiency, demand.asset)[0]
+    return result
 
 
 @register_objective(name="capacity")
@@ -245,6 +259,7 @@ def consumption(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -253,9 +268,21 @@ def consumption(
     Currently, the consumption is implemented for commodity_max == +infinity.
     """
     from muse.quantities import consumption
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    result = consumption(technologies=technologies, prices=prices, production=demand)
-    return result.sum("commodity")
+    capacity = capacity_to_service_demand(technologies, demand)
+    production = (
+        broadcast_timeslice(capacity, level=timeslice_level)
+        * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
+        * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
+    )
+    consump = consumption(
+        technologies=technologies,
+        prices=prices,
+        production=production,
+        timeslice_level=timeslice_level,
+    )
+    return consump.sum("commodity")
 
 
 @register_objective
@@ -278,16 +305,17 @@ def fixed_costs(
     :math:`\alpha` and :math:`\beta` are "fix_par" and "fix_exp" in
     :ref:`inputs-technodata`, respectively.
     """
-    from muse.quantities import capacity_to_service_demand
+    from muse.costs import fixed_costs
 
-    capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
-    result = technologies.fix_par * (capacity**technologies.fix_exp)
+    capacity = capacity_to_service_demand(technologies, demand)
+    result = fixed_costs(technologies, capacity)
     return result
 
 
 @register_objective
 def capital_costs(
     technologies: xr.Dataset,
+    demand: xr.Dataset,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -298,7 +326,11 @@ def capital_costs(
     :math:`\alpha` is "cap_exp". In other words, capital costs are constant across the
     simulation for each technology.
     """
-    result = technologies.cap_par * (technologies.scaling_size**technologies.cap_exp)
+    from muse.costs import capital_costs
+
+    capacity = capacity_to_service_demand(technologies, demand)
+    result = capital_costs(technologies, capacity, method="lifetime")
+    result = xr.broadcast(result, demand.asset)[0]
     return result
 
 
@@ -307,6 +339,7 @@ def emission_cost(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -322,16 +355,16 @@ def emission_cost(
 
     with :math:`s` the timeslices and :math:`c` the commodity.
     """
-    from muse.commodities import is_enduse, is_pollutant
-    from muse.timeslices import distribute_timeslice
+    from muse.costs import environmental_costs
 
-    enduses = is_enduse(technologies.comm_usage.sel(commodity=demand.commodity))
-    total = demand.sel(commodity=enduses).sum("commodity")
-    envs = is_pollutant(technologies.comm_usage)
-    prices = filter_input(prices, year=demand.year.item(), commodity=envs)
-    return total * (distribute_timeslice(technologies.fixed_outputs) * prices).sum(
-        "commodity"
+    capacity = capacity_to_service_demand(technologies, demand)
+    production = (
+        broadcast_timeslice(capacity, level=timeslice_level)
+        * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
+        * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     )
+    result = environmental_costs(technologies, prices, production)
+    return result
 
 
 @register_objective
@@ -339,17 +372,29 @@ def fuel_consumption_cost(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ):
     """Cost of fuels when fulfilling whole demand."""
-    from muse.commodities import is_fuel
+    from muse.costs import fuel_costs
     from muse.quantities import consumption
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    commodity = is_fuel(technologies.comm_usage.sel(commodity=demand.commodity))
-    fcons = consumption(technologies=technologies, prices=prices, production=demand)
-    prices = filter_input(prices, year=demand.year.item(), commodity=commodity)
-    return (fcons * prices).sum("commodity")
+    capacity = capacity_to_service_demand(technologies, demand)
+    production = (
+        broadcast_timeslice(capacity, level=timeslice_level)
+        * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
+        * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
+    )
+    consump = consumption(
+        technologies=technologies,
+        prices=prices,
+        production=production,
+        timeslice_level=timeslice_level,
+    )
+    result = fuel_costs(technologies, prices, consump)
+    return result
 
 
 @register_objective(name=["ALCOE"])
@@ -357,6 +402,7 @@ def annual_levelized_cost_of_energy(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ):
@@ -367,12 +413,32 @@ def annual_levelized_cost_of_energy(
     See :py:func:`muse.costs.annual_levelized_cost_of_energy` for more details.
 
     """
-    from muse.costs import annual_levelized_cost_of_energy as aLCOE
+    from muse.costs import levelized_cost_of_energy as LCOE
+    from muse.quantities import consumption
 
-    return filter_input(
-        aLCOE(technologies=technologies, prices=prices).max("timeslice"),
-        year=demand.year.item(),
+    capacity = capacity_to_service_demand(technologies, demand)
+    production = (
+        broadcast_timeslice(capacity, level=timeslice_level)
+        * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
+        * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     )
+    consump = consumption(
+        technologies=technologies,
+        prices=prices,
+        production=production,
+        timeslice_level=timeslice_level,
+    )
+
+    results = LCOE(
+        technologies=technologies,
+        prices=prices,
+        capacity=capacity,
+        production=production,
+        consumption=consump,
+        method="annual",
+        aggregate_timeslices=True,
+    )
+    return results
 
 
 @register_objective(name=["LCOE", "LLCOE"])
@@ -380,6 +446,7 @@ def lifetime_levelized_cost_of_energy(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ):
@@ -390,15 +457,22 @@ def lifetime_levelized_cost_of_energy(
     The LCOE is set to zero for those timeslices where the production is zero, normally
     due to a zero utilisation factor.
     """
-    from muse.costs import lifetime_levelized_cost_of_energy as LCOE
-    from muse.quantities import capacity_to_service_demand
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
+    from muse.costs import levelized_cost_of_energy as LCOE
+    from muse.quantities import capacity_to_service_demand, consumption
 
-    capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
+    capacity = capacity_to_service_demand(
+        technologies=technologies, demand=demand, timeslice_level=timeslice_level
+    )
     production = (
-        broadcast_timeslice(capacity)
-        * distribute_timeslice(technologies.fixed_outputs)
-        * broadcast_timeslice(technologies.utilization_factor)
+        broadcast_timeslice(capacity, level=timeslice_level)
+        * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
+        * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
+    )
+    consump = consumption(
+        technologies=technologies,
+        prices=prices,
+        production=production,
+        timeslice_level=timeslice_level,
     )
 
     results = LCOE(
@@ -406,10 +480,11 @@ def lifetime_levelized_cost_of_energy(
         prices=prices,
         capacity=capacity,
         production=production,
-        year=demand.year.item(),
+        consumption=consump,
+        method="lifetime",
+        aggregate_timeslices=True,
     )
-
-    return results.where(np.isfinite(results)).fillna(0.0)
+    return results
 
 
 @register_objective(name="NPV")
@@ -417,6 +492,7 @@ def net_present_value(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ):
@@ -425,14 +501,19 @@ def net_present_value(
     See :py:func:`muse.costs.net_present_value` for more details.
     """
     from muse.costs import net_present_value as NPV
-    from muse.quantities import capacity_to_service_demand
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
+    from muse.quantities import capacity_to_service_demand, consumption
 
     capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
     production = (
-        broadcast_timeslice(capacity)
-        * distribute_timeslice(technologies.fixed_outputs)
-        * broadcast_timeslice(technologies.utilization_factor)
+        broadcast_timeslice(capacity, level=timeslice_level)
+        * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
+        * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
+    )
+    consump = consumption(
+        technologies=technologies,
+        prices=prices,
+        production=production,
+        timeslice_level=timeslice_level,
     )
 
     results = NPV(
@@ -440,7 +521,8 @@ def net_present_value(
         prices=prices,
         capacity=capacity,
         production=production,
-        year=demand.year.item(),
+        consumption=consump,
+        aggregate_timeslices=True,
     )
     return results
 
@@ -450,6 +532,7 @@ def net_present_cost(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ):
@@ -458,14 +541,19 @@ def net_present_cost(
     See :py:func:`muse.costs.net_present_cost` for more details.
     """
     from muse.costs import net_present_cost as NPC
-    from muse.quantities import capacity_to_service_demand
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
+    from muse.quantities import capacity_to_service_demand, consumption
 
     capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
     production = (
-        broadcast_timeslice(capacity)
-        * distribute_timeslice(technologies.fixed_outputs)
-        * broadcast_timeslice(technologies.utilization_factor)
+        broadcast_timeslice(capacity, level=timeslice_level)
+        * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
+        * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
+    )
+    consump = consumption(
+        technologies=technologies,
+        prices=prices,
+        production=production,
+        timeslice_level=timeslice_level,
     )
 
     results = NPC(
@@ -473,7 +561,8 @@ def net_present_cost(
         prices=prices,
         capacity=capacity,
         production=production,
-        year=demand.year.item(),
+        consumption=consump,
+        aggregate_timeslices=True,
     )
     return results
 
@@ -483,6 +572,7 @@ def equivalent_annual_cost(
     technologies: xr.Dataset,
     demand: xr.DataArray,
     prices: xr.DataArray,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ):
@@ -491,14 +581,19 @@ def equivalent_annual_cost(
     See :py:func:`muse.costs.equivalent_annual_cost` for more details.
     """
     from muse.costs import equivalent_annual_cost as EAC
-    from muse.quantities import capacity_to_service_demand
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
+    from muse.quantities import capacity_to_service_demand, consumption
 
     capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
     production = (
-        broadcast_timeslice(capacity)
-        * distribute_timeslice(technologies.fixed_outputs)
-        * broadcast_timeslice(technologies.utilization_factor)
+        broadcast_timeslice(capacity, level=timeslice_level)
+        * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
+        * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
+    )
+    consump = consumption(
+        technologies=technologies,
+        prices=prices,
+        production=production,
+        timeslice_level=timeslice_level,
     )
 
     results = EAC(
@@ -506,6 +601,7 @@ def equivalent_annual_cost(
         prices=prices,
         capacity=capacity,
         production=production,
-        year=demand.year.item(),
+        consumption=consump,
+        aggregate_timeslices=True,
     )
     return results

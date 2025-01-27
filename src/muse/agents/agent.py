@@ -1,8 +1,10 @@
 """Holds all building agents."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Callable, Optional, Union
+from typing import Callable
 
 import xarray as xr
 
@@ -19,10 +21,11 @@ class AbstractAgent(ABC):
         self,
         name: str = "Agent",
         region: str = "",
-        assets: Optional[xr.Dataset] = None,
+        assets: xr.Dataset | None = None,
         interpolation: str = "linear",
-        category: Optional[str] = None,
-        quantity: Optional[float] = 1,
+        category: str | None = None,
+        quantity: float | None = 1,
+        timeslice_level: str | None = None,
     ):
         """Creates a standard MUSE agent.
 
@@ -39,6 +42,9 @@ class AbstractAgent(ABC):
                 together.
             quantity: optional value to classify different agents' share of the
                 population.
+            timeslice_level: the timeslice level over which investments/production
+                will be optimized (e.g "hour", "day"). If None, the agent will use the
+                finest timeslice level.
         """
         from uuid import uuid4
 
@@ -57,13 +63,15 @@ class AbstractAgent(ABC):
         """Attribute to classify different sets of agents."""
         self.quantity = quantity
         """Attribute to classify different agents' share of the population."""
+        self.timeslice_level = timeslice_level
+        """Timeslice level for the agent."""
 
     def filter_input(
         self,
-        dataset: Union[xr.Dataset, xr.DataArray],
-        year: Optional[Union[Sequence[int], int]] = None,
+        dataset: xr.Dataset | xr.DataArray,
+        year: Sequence[int] | int | None = None,
         **kwargs,
-    ) -> Union[xr.Dataset, xr.DataArray]:
+    ) -> xr.Dataset | xr.DataArray:
         """Filter inputs for usage in agent.
 
         For instance, filters down to agent's region, etc.
@@ -80,9 +88,17 @@ class AbstractAgent(ABC):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        time_period: int,
     ) -> None:
-        """Increments agent to the next time point (e.g. performing investments)."""
+        """Increments agent to the next time point (e.g. performing investments).
+
+        Performs investments to meet demands, and increments agent.year to the
+        investment year.
+
+        Arguments:
+            technologies: dataset of technology parameters for the investment year
+            market: market dataset covering the current year and investment year
+            demand: data array of demand for the investment year
+        """
 
     def __repr__(self):
         return (
@@ -99,21 +115,22 @@ class Agent(AbstractAgent):
         self,
         name: str = "Agent",
         region: str = "USA",
-        assets: Optional[xr.Dataset] = None,
+        assets: xr.Dataset | None = None,
         interpolation: str = "linear",
-        search_rules: Optional[Callable] = None,
-        objectives: Optional[Callable] = None,
-        decision: Optional[Callable] = None,
+        search_rules: Callable | None = None,
+        objectives: Callable | None = None,
+        decision: Callable | None = None,
         year: int = 2010,
         maturity_threshold: float = 0,
         forecast: int = 5,
-        housekeeping: Optional[Callable] = None,
-        merge_transform: Optional[Callable] = None,
-        demand_threshold: Optional[float] = None,
-        category: Optional[str] = None,
+        housekeeping: Callable | None = None,
+        merge_transform: Callable | None = None,
+        demand_threshold: float | None = None,
+        category: str | None = None,
         asset_threshold: float = 1e-4,
-        quantity: Optional[float] = 1,
+        quantity: float | None = 1,
         spend_limit: int = 0,
+        timeslice_level: str | None = None,
         **kwargs,
     ):
         """Creates a standard agent.
@@ -141,6 +158,9 @@ class Agent(AbstractAgent):
             asset_threshold: Threshold below which assets are not added.
             quantity: different agents' share of the population
             spend_limit: The cost above which agents will not invest
+            timeslice_level: the timeslice level over which the agent invesments will
+                be optimized (e.g "hour", "day"). If None, the agent will use the finest
+                timeslice level.
             **kwargs: Extra arguments
         """
         from muse.decisions import factory as decision_factory
@@ -155,15 +175,15 @@ class Agent(AbstractAgent):
             interpolation=interpolation,
             category=category,
             quantity=quantity,
+            timeslice_level=timeslice_level,
         )
 
-        self.year = year
         """ Current year. Incremented by one every time next is called."""
-        self.forecast = forecast
+        self.year = year
+
         """Number of years to look into the future for forecating purposed."""
-        if search_rules is None:
-            search_rules = filter_factory()
-        self.search_rules: Callable = search_rules
+        self.forecast = forecast
+
         """Search rule(s) determining potential replacement technologies.
 
         This is a string referring to a filter, or a sequence of strings
@@ -171,25 +191,29 @@ class Agent(AbstractAgent):
         function registered via `muse.filters.register_filter` can be
         used to filter the search space.
         """
-        self.maturity_threshold = maturity_threshold
+        if search_rules is None:
+            search_rules = filter_factory()
+        self.search_rules: Callable = search_rules
+
         """ Market share threshold.
 
         Threshold when and if filtering replacement technologies with respect
         to market share.
         """
+        self.maturity_threshold = maturity_threshold
+
         self.spend_limit = spend_limit
 
+        """One or more objectives by which to decide next investments."""
         if objectives is None:
             objectives = objectives_factory()
         self.objectives = objectives
-        """One or more objectives by which to decide next investments."""
+
+        """Creates single decision objective from one or more objectives."""
         if decision is None:
             decision = decision_factory()
         self.decision = decision
-        """Creates single decision objective from one or more objectives."""
-        if housekeeping is None:
-            housekeeping = housekeeping_factory()
-        self._housekeeping = housekeeping
+
         """Transforms applied on the assets at the start of each iteration.
 
         It could mean keeping the assets as are, or removing assets with no
@@ -197,23 +221,29 @@ class Agent(AbstractAgent):
         It can be any function registered with
         :py:func:`~muse.hooks.register_initial_asset_transform`.
         """
-        if merge_transform is None:
-            merge_transform = asset_merge_factory()
-        self.merge_transform = merge_transform
+        if housekeeping is None:
+            housekeeping = housekeeping_factory()
+        self._housekeeping = housekeeping
+
         """Transforms applied on the old and new assets.
 
         It could mean using only the new assets, or merging old and new, etc...
         It can be any function registered with
         :py:func:`~muse.hooks.register_final_asset_transform`.
         """
-        self.demand_threshold = demand_threshold
+        if merge_transform is None:
+            merge_transform = asset_merge_factory()
+        self.merge_transform = merge_transform
+
         """Threshold below which the demand share is zero.
 
         This criteria avoids fulfilling demand for very small values. If None,
         then the criteria is not applied.
         """
-        self.asset_threshold = asset_threshold
+        self.demand_threshold = demand_threshold
+
         """Threshold below which assets are not added."""
+        self.asset_threshold = asset_threshold
 
     @property
     def forecast_year(self):
@@ -239,9 +269,9 @@ class Agent(AbstractAgent):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        time_period: int,
     ) -> None:
-        self.year += time_period
+        investment_year = int(market.year[1])
+        self.year = investment_year
 
 
 class InvestingAgent(Agent):
@@ -250,8 +280,8 @@ class InvestingAgent(Agent):
     def __init__(
         self,
         *args,
-        constraints: Optional[Callable] = None,
-        investment: Optional[Callable] = None,
+        constraints: Callable | None = None,
+        investment: Callable | None = None,
         **kwargs,
     ):
         """Creates an investing agent.
@@ -277,7 +307,6 @@ class InvestingAgent(Agent):
         technologies: xr.Dataset,
         market: xr.Dataset,
         demand: xr.DataArray,
-        time_period: int,
     ) -> None:
         """Iterates agent one turn.
 
@@ -290,11 +319,20 @@ class InvestingAgent(Agent):
         """
         from logging import getLogger
 
-        current_year = self.year
+        from muse.utilities import reduce_assets
+
+        # Check inputs
+        assert len(market.year) == 2
+        assert "year" not in technologies.dims
+        assert "year" not in demand.dims
+
+        # Time period
+        current_year, investment_year = map(int, market.year.values)
+        assert current_year == self.year
 
         # Skip forward if demand is zero
         if demand.size == 0 or demand.sum() < 1e-12:
-            self.year += time_period
+            self.year = investment_year
             return None
 
         # Calculate the search space
@@ -305,7 +343,7 @@ class InvestingAgent(Agent):
         # Skip forward if the search space is empty
         if any(u == 0 for u in search_space.shape):
             getLogger(__name__).critical("Search space is empty")
-            self.year += time_period
+            self.year = investment_year
             return None
 
         # Calculate the decision metric
@@ -323,34 +361,37 @@ class InvestingAgent(Agent):
         ).values
         search = search.sel(asset=condtechs)
 
+        # Calculate capacity in current and investment year
+        capacity = reduce_assets(
+            self.assets.capacity, coords=("technology", "region")
+        ).interp(year=[current_year, investment_year], method="linear")
+
         # Calculate constraints
         constraints = self.constraints(
-            search.demand,
-            self.assets,
-            search.search_space,
-            market,
-            technologies,
-            year=current_year,
+            demand=search.demand,
+            capacity=capacity,
+            search_space=search.search_space,
+            technologies=technologies,
+            timeslice_level=self.timeslice_level,
         )
 
         # Calculate investments
         investments = self.invest(
-            search[["search_space", "decision"]],
-            technologies,
-            constraints,
-            year=current_year,
+            search=search[["search_space", "decision"]],
+            technologies=technologies,
+            constraints=constraints,
+            timeslice_level=self.timeslice_level,
         )
 
         # Add investments
         self.add_investments(
-            technologies,
-            investments,
-            current_year=current_year,
-            time_period=time_period,
+            technologies=technologies,
+            investments=investments,
+            investment_year=investment_year,
         )
 
         # Increment the year
-        self.year += time_period
+        self.year = investment_year
 
     def compute_decision(
         self,
@@ -359,11 +400,16 @@ class InvestingAgent(Agent):
         demand: xr.DataArray,
         search_space: xr.DataArray,
     ) -> xr.DataArray:
-        # Filter technologies according to the search space, forecast year and region
+        # Check inputs
+        assert "year" not in technologies.dims
+        assert "year" not in demand.dims
+        assert "year" not in search_space.dims
+        assert len(market.year) == 2
+
+        # Filter technologies according to the search space and region
         techs = self.filter_input(
             technologies,
             technology=search_space.replacement,
-            year=self.forecast_year,
         ).drop_vars("technology")
 
         # Reduce dimensions of the demand array
@@ -377,9 +423,15 @@ class InvestingAgent(Agent):
         # Filter prices according to the region
         prices = self.filter_input(market.prices)
 
+        # Select prices for the investment year
+        investment_year_prices = prices.isel(year=1)
+
         # Compute the objectives
         objectives = self.objectives(
-            technologies=techs, demand=reduced_demand, prices=prices
+            technologies=techs,
+            demand=reduced_demand,
+            prices=investment_year_prices,
+            timeslice_level=self.timeslice_level,
         )
 
         # Compute the decision metric
@@ -390,13 +442,14 @@ class InvestingAgent(Agent):
         self,
         technologies: xr.Dataset,
         investments: xr.DataArray,
-        current_year: int,
-        time_period: int,
+        investment_year: int,
     ) -> None:
         """Add new assets to the agent."""
+        assert "year" not in technologies.dims
+
         # Calculate retirement profile of new assets
         new_capacity = self.retirement_profile(
-            technologies, investments, current_year, time_period
+            technologies, investments, investment_year
         )
         if new_capacity is None:
             return
@@ -412,10 +465,11 @@ class InvestingAgent(Agent):
         self,
         technologies: xr.Dataset,
         investments: xr.DataArray,
-        current_year: int,
-        time_period: int,
-    ) -> Optional[xr.DataArray]:
+        investment_year: int,
+    ) -> xr.DataArray | None:
         from muse.investments import cliff_retirement_profile
+
+        assert "year" not in technologies.dims
 
         # Sum investments
         if "asset" in investments.dims:
@@ -436,17 +490,16 @@ class InvestingAgent(Agent):
         # Note: technical life must be at least the length of the time period
         lifetime = self.filter_input(
             technologies.technical_life,
-            year=current_year,
             technology=investments.replacement,
-        ).clip(min=time_period)
+        )
         profile = cliff_retirement_profile(
             lifetime,
-            investment_year=current_year + time_period,
+            investment_year=investment_year,
         )
 
         # Apply the retirement profile to the investments
         new_assets = (investments * profile).rename(replacement="asset")
-        new_assets["installed"] = "asset", [current_year] * len(new_assets.asset)
+        new_assets["installed"] = "asset", [investment_year] * len(new_assets.asset)
 
         # The new assets have picked up quite a few coordinates along the way.
         # we try and keep only those that were there originally.

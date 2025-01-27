@@ -1,33 +1,4 @@
-from pytest import fixture, mark
-
-
-@fixture
-def capacity_expansion():
-    from numpy import arange
-    from numpy.random import rand
-    from xarray import Dataset
-
-    from muse.investments import CapacityAddition
-
-    data = Dataset()
-    data["asset"] = "asset", arange(5, 10)
-    data["replacement"] = "replacement", arange(0, 6)
-    data["ranks"] = data.asset + data.replacement // 2
-    data["ranks"] = data.ranks.rank("replacement").astype(int)
-    data["deltas"] = (
-        ("asset", "replacement"),
-        rand(data.asset.size, data.replacement.size),
-    )
-    data["deltas"] *= rand(*data.deltas.shape) > 0.25
-
-    return CapacityAddition(data.ranks, data.deltas)
-
-
-def add_var(coordinates, *dims, factor=100.0):
-    from numpy.random import rand
-
-    shape = tuple(len(coordinates[u]) for u in dims)
-    return dims, (rand(*shape) * factor).astype(type(factor))
+from pytest import mark
 
 
 def test_cliff_retirement_known_profile():

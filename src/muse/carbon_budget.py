@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import MutableMapping, Sequence
 from typing import Callable
 
@@ -101,7 +103,7 @@ def fitting(
     Returns:
         new_price: adjusted carbon price to meet budget
     """
-    # Calculate the carbon price and emissions threshold in the forecast year
+    # Calculate the carbon price and emissions threshold in the investment year
     future = market.year[-1]
     threshold = carbon_budget.sel(year=future).values.item()
     price = market.prices.sel(year=future, commodity=commodities).mean().values.item()
