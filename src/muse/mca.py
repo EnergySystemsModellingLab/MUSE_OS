@@ -185,25 +185,20 @@ class MCA:
     def find_equilibrium(
         self,
         market: Dataset,
-        sectors: list[AbstractSector] | None = None,
-        maxiter: int | None = None,
     ) -> FindEquilibriumResults:
         """Specialised version of the find_equilibrium function.
 
         Arguments:
             market: Commodities market, with the prices, supply, consumption and demand.
-            sectors: A list of the sectors participating in the simulation.
-            maxiter: Maximum number of iterations.
 
         Returns:
             A tuple with the updated market (prices, supply, consumption and demand) and
             sector.
         """
-        maxiter = self.maximum_iterations if not maxiter else maxiter
         return find_equilibrium(
             market=market,
-            sectors=self.sectors if sectors is None else sectors,
-            maxiter=maxiter,
+            sectors=self.sectors,
+            maxiter=self.maximum_iterations,
             tol=self.tolerance,
             equilibrium_variable=self.equilibrium_variable,
             tol_unmet_demand=self.tolerance_unmet_demand,
@@ -325,7 +320,7 @@ class MCA:
             self.outputs_cache.consolidate_cache(year=self.time_framework[year_idx])
 
             getLogger(__name__).info(
-                f"Finish simulation year {years[0]} ({year_idx+1}/{nyear})!"
+                f"Finish simulation year {years[0]} ({year_idx + 1}/{nyear})!"
             )
 
 
@@ -499,7 +494,9 @@ def check_demand_fulfillment(market: Dataset, tol: float) -> bool:
     from logging import getLogger
 
     future = market.year[-1].item()
-    delta = (market.supply - market.consumption).sel(year=future)
+    delta = (market.supply.sum("timeslice") - market.consumption.sum("timeslice")).sel(
+        year=future
+    )
     unmet = (delta < tol).any([u for u in delta.dims if u != "commodity"])
 
     if unmet.any():

@@ -418,7 +418,7 @@ def test_read_technodictionary(default_model):
         type=np.dtype("O"),
         fuel=np.dtype("<U11"),
         enduse=np.dtype("<U4"),
-        agent_share_1=np.dtype("int64"),
+        agent1=np.dtype("int64"),
         tech_type=np.dtype("<U6"),
         efficiency=np.dtype("int64"),
         max_capacity_addition=np.dtype("int64"),
@@ -565,7 +565,7 @@ def test_read_csv_agent_parameters(default_model):
             "quantity": 1,
             "maturity_threshold": -1,
             "spend_limit": np.inf,
-            "share": "agent_share_1",
+            "share": "agent1",
         },
     ]
 
@@ -779,7 +779,7 @@ def test_check_utilization_and_minimum_service_factors(*mocks):
     )
     check_utilization_and_minimum_service_factors(df, "file.csv")
     for mock in mocks:
-        mock.assert_called_once_with(df, "file.csv")
+        mock.assert_called_once_with(df, ["file.csv"])
 
 
 @patch("muse.readers.csv._check_utilization_in_range")
@@ -796,7 +796,7 @@ def test_check_utilization_and_minimum_service_factors_no_min(
     df = pd.DataFrame({"utilization_factor": (0, 0, 1)})
     check_utilization_and_minimum_service_factors(df, "file.csv")
     for mock in mocks:
-        mock.assert_called_once_with(df, "file.csv")
+        mock.assert_called_once_with(df, ["file.csv"])
     min_service_factor_mock.assert_not_called()
     utilization_below_min_mock.assert_not_called()
 

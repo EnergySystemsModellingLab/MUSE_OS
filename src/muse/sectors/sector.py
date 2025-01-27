@@ -198,8 +198,9 @@ class Sector(AbstractSector):  # type: ignore
         def group_assets(x: xr.DataArray) -> xr.DataArray:
             return xr.Dataset(dict(x=x)).groupby("region").sum("asset").x
 
-        time_period = int(mca_market.year.max() - mca_market.year.min())
-        current_year = int(mca_market.year.min())
+        # Time period from the market object
+        assert len(mca_market.year) == 2
+        current_year, investment_year = map(int, mca_market.year.values)
         getLogger(__name__).info(f"Running {self.name} for year {current_year}")
 
         # Agent interactions
@@ -214,12 +215,11 @@ class Sector(AbstractSector):  # type: ignore
         )
 
         # Investments
+        # uses technology data from the investment year
         for subsector in self.subsectors:
             subsector.invest(
-                self.technologies,
-                market,
-                time_period=time_period,
-                current_year=current_year,
+                technologies=self.technologies.sel(year=investment_year),
+                market=market,
             )
 
         # Full output data
@@ -289,7 +289,7 @@ class Sector(AbstractSector):  # type: ignore
     def market_variables(self, market: xr.Dataset, technologies: xr.Dataset) -> Any:
         """Computes resulting market: production, consumption, and costs."""
         from muse.commodities import is_pollutant
-        from muse.costs import annual_levelized_cost_of_energy, supply_cost
+        from muse.costs import levelized_cost_of_energy, supply_cost
         from muse.quantities import consumption
         from muse.utilities import broadcast_techs
 
@@ -306,18 +306,28 @@ class Sector(AbstractSector):  # type: ignore
 
         # Calculate consumption
         consume = consumption(
-            technologies, supply, market.prices, timeslice_level=self.timeslice_level
+            technologies,
+            production=supply,
+            prices=market.prices,
+            timeslice_level=self.timeslice_level,
         )
 
-        # Calculate commodity prices
+        # Calculate LCOE
+        # We select data for the second year, which corresponds to the investment year
         technodata = cast(xr.Dataset, broadcast_techs(technologies, supply))
+        lcoe = levelized_cost_of_energy(
+            prices=market.prices.sel(region=supply.region).isel(year=1),
+            technologies=technodata,
+            capacity=capacity.isel(year=1),
+            production=supply.isel(year=1),
+            consumption=consume.isel(year=1),
+            method="annual",
+        )
+
+        # Calculate new commodity prices
         costs = supply_cost(
             supply.where(~is_pollutant(supply.comm_usage), 0),
-            annual_levelized_cost_of_energy(
-                prices=market.prices.sel(region=supply.region),
-                technologies=technodata,
-                timeslice_level=self.timeslice_level,
-            ),
+            lcoe,
             asset_dim="asset",
         )
 

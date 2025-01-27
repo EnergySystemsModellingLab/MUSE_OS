@@ -7,8 +7,9 @@ functions are used in different areas of the model.
 Functions for calculating costs (e.g. LCOE, EAC) are in the `costs` module.
 """
 
-from collections.abc import Sequence
-from typing import Optional, Union, cast
+from __future__ import annotations
+
+from typing import cast
 
 import numpy as np
 import xarray as xr
@@ -19,8 +20,8 @@ from muse.timeslices import broadcast_timeslice, distribute_timeslice
 def supply(
     capacity: xr.DataArray,
     demand: xr.DataArray,
-    technologies: Union[xr.Dataset, xr.DataArray],
-    timeslice_level: Optional[str] = None,
+    technologies: xr.Dataset | xr.DataArray,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Production and emission for a given capacity servicing a given demand.
 
@@ -122,7 +123,7 @@ def supply(
 def emission(
     production: xr.DataArray,
     fixed_outputs: xr.DataArray,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
 ):
     """Computes emission from current products.
 
@@ -156,7 +157,7 @@ def gross_margin(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
     prices: xr.Dataset,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """The percentage of revenue after direct expenses have been subtracted.
 
@@ -234,115 +235,84 @@ def gross_margin(
     return result
 
 
-def decommissioning_demand(
-    technologies: xr.Dataset,
-    capacity: xr.DataArray,
-    year: Optional[Sequence[int]] = None,
-    timeslice_level: Optional[str] = None,
-) -> xr.DataArray:
-    r"""Computes demand from process decommissioning.
-
-    If `year` is not given, it defaults to all years in capacity. If there are more than
-    two years, then decommissioning is with respect to first (or minimum) year.
-
-    Let :math:`M_t^r(y)` be the retrofit demand, :math:`^{(s)}\mathcal{D}_t^r(y)` be the
-    decommissioning demand at the level of the sector, and :math:`A^r_{t, \iota}(y)` be
-    the assets owned by the agent. Then, the decommissioning demand for agent :math:`i`
-    is :
-
-    .. math::
-
-        \mathcal{D}^{r, i}_{t, c}(y) =
-            \sum_\iota \alpha_{t, \iota}^r \beta_{t, \iota, c}^r
-                \left(A^{i, r}_{t, \iota}(y) - A^{i, r}_{t, \iota, c}(y + 1) \right)
-
-    given the utilization factor :math:`\alpha_{t, \iota}` and the fixed output factor
-    :math:`\beta_{t, \iota, c}`.
-
-    Furthermore, decommissioning demand is non-zero only for end-use commodities.
-
-    ncsearch-nohlsearch).. SeeAlso:
-        :ref:`indices`, :ref:`quantities`,
-        :py:func:`~muse.quantities.maximum_production`
-        :py:func:`~muse.commodities.is_enduse`
-    """
-    if year is None:
-        year = capacity.year.values
-    year = sorted(year)
-    capacity = capacity.interp(year=year, kwargs={"fill_value": 0.0})
-    baseyear = min(year)
-    dyears = [u for u in year if u != baseyear]
-
-    # Calculate the decrease in capacity from the current year to future years
-    capacity_decrease = capacity.sel(year=baseyear) - capacity.sel(year=dyears)
-
-    # Calculate production associated with this capacity
-    return maximum_production(
-        technologies,
-        capacity_decrease,
-        timeslice_level=timeslice_level,
-    ).clip(min=0)
-
-
 def consumption(
     technologies: xr.Dataset,
     production: xr.DataArray,
-    prices: Optional[xr.DataArray] = None,
-    timeslice_level: Optional[str] = None,
-    **kwargs,
+    prices: xr.DataArray | None = None,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Commodity consumption when fulfilling the whole production.
 
-    Currently, the consumption is implemented for commodity_max == +infinity. If prices
-    are not given, then flexible consumption is *not* considered.
+    Firstly, the degree of technology activity is calculated (i.e. the amount of
+    technology flow required to meet the production). Then, the consumption of fixed
+    commodities is calculated in proportion to this activity.
+
+    In addition, if there are flexible inputs, then the single lowest-cost option is
+    selected (minimising price * quantity). If prices are not given, then flexible
+    consumption is *not* considered.
+
+    Arguments:
+        technologies: Dataset of technology parameters. Must contain `fixed_inputs`,
+            `flexible_inputs`, and `fixed_outputs`.
+        production: DataArray of production data. Must have "timeslice" and "commodity"
+            dimensions.
+        prices: DataArray of prices for each commodity. Must have "timeslice" and
+            "commodity" dimensions. If not given, then flexible inputs are not
+            considered.
+        timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
+
+    Return:
+        A data array containing the consumption of each commodity. Will have the same
+        dimensions as `production`.
+
     """
-    from muse.commodities import is_enduse, is_fuel
     from muse.utilities import filter_with_template
 
     params = filter_with_template(
-        technologies[["fixed_inputs", "flexible_inputs"]], production, **kwargs
+        technologies[["fixed_inputs", "flexible_inputs", "fixed_outputs"]],
+        production,
     )
 
-    # sum over end-use products, if the dimension exists in the input
+    # Calculate degree of technology activity
+    prod_amplitude = production_amplitude(production, params)
 
-    comm_usage = technologies.comm_usage.sel(commodity=production.commodity)
-
-    production = production.sel(commodity=is_enduse(comm_usage)).sum("commodity")
-    params_fuels = is_fuel(params.comm_usage)
-    consumption = production * broadcast_timeslice(
-        params.fixed_inputs.where(params_fuels, 0), level=timeslice_level
+    # Calculate consumption of fixed commodities
+    consumption_fixed = prod_amplitude * broadcast_timeslice(
+        params.fixed_inputs, level=timeslice_level
     )
+    assert all(consumption_fixed.commodity.values == production.commodity.values)
 
+    # If there are no flexible inputs, then we are done
+    if not (params.flexible_inputs > 0).any():
+        return consumption_fixed
+
+    # If prices are not given, then we can't consider flexible inputs, so just return
+    # the fixed consumption
     if prices is None:
-        return consumption
+        return consumption_fixed
 
-    if not (params.flexible_inputs.sel(commodity=params_fuels) > 0).any():
-        return consumption
+    # Flexible inputs
+    flexs = broadcast_timeslice(params.flexible_inputs, level=timeslice_level)
 
-    prices = filter_with_template(prices, production, installed_as_year=False, **kwargs)
-    # technology with flexible inputs
-    flexs = params.flexible_inputs.where(params_fuels, 0)
-    # cheapest fuel for each flexible technology
-    assert prices is not None
-    flexprice = [i for i in flexs.commodity.values if i in prices.commodity.values]
-    assert all(flexprice)
-    priceflex = prices.loc[dict(commodity=flexs.commodity)]
+    # Calculate the cheapest fuel for each flexible technology
+    priceflex = prices * flexs
     minprices = flexs.commodity[
         priceflex.where(flexs > 0, priceflex.max() + 1).argmin("commodity")
     ]
-    # add consumption from cheapest fuel
-    assert all(flexs.commodity.values == consumption.commodity.values)
+
+    # Consumption of flexible commodities
+    assert all(flexs.commodity.values == consumption_fixed.commodity.values)
     flex = flexs.where(
-        minprices == broadcast_timeslice(flexs.commodity, level=timeslice_level), 0
+        broadcast_timeslice(flexs.commodity, level=timeslice_level) == minprices, 0
     )
-    flex = flex / (flex > 0).sum("commodity").clip(min=1)
-    return consumption + flex * production
+    consumption_flex = flex * prod_amplitude
+    return consumption_fixed + consumption_flex
 
 
 def maximum_production(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
     **filters,
 ):
     r"""Production for a given capacity.
@@ -366,8 +336,6 @@ def maximum_production(
         technologies: xr.Dataset describing the features of the technologies of
             interests.  It should contain `fixed_outputs` and `utilization_factor`. It's
             shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
-        timeslices: xr.DataArray of the timeslicing scheme. Production data will be
-            returned in this format.
         filters: keyword arguments are used to filter down the capacity and
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are
@@ -401,8 +369,8 @@ def maximum_production(
 def capacity_in_use(
     production: xr.DataArray,
     technologies: xr.Dataset,
-    max_dim: Optional[Union[str, tuple[str]]] = "commodity",
-    timeslice_level: Optional[str] = None,
+    max_dim: str | tuple[str] | None = "commodity",
+    timeslice_level: str | None = None,
     **filters,
 ):
     """Capacity-in-use for each asset, given production.
@@ -456,7 +424,7 @@ def capacity_in_use(
 def minimum_production(
     technologies: xr.Dataset,
     capacity: xr.DataArray,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
     **filters,
 ):
     r"""Minimum production for a given capacity.
@@ -523,7 +491,7 @@ def minimum_production(
 def capacity_to_service_demand(
     demand: xr.DataArray,
     technologies: xr.Dataset,
-    timeslice_level: Optional[str] = None,
+    timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
     timeslice_outputs = distribute_timeslice(
@@ -531,4 +499,42 @@ def capacity_to_service_demand(
         level=timeslice_level,
     ) * broadcast_timeslice(technologies.utilization_factor, level=timeslice_level)
     capa_to_service_demand = demand / timeslice_outputs
-    return capa_to_service_demand.max(("commodity", "timeslice"))
+    return capa_to_service_demand.where(np.isfinite(capa_to_service_demand), 0).max(
+        ("commodity", "timeslice")
+    )
+
+
+def production_amplitude(
+    production: xr.DataArray,
+    technologies: xr.Dataset,
+) -> xr.DataArray:
+    """Calculates the degree of technology activity based on production data.
+
+    We do this by dividing the production data by the output flow per unit of activity.
+    Taking the max of this across all commodities, we get the minimum units of
+    technology activity required to meet (at least) the specified production of all
+    commodities.
+
+    For example:
+    A technology has the following reaction: 1A -> 2B + 3C
+    If production is 4B & 6C, this is equal to a production amplitude of 2
+
+    Args:
+        production: DataArray with commodity-level production for a set of technologies.
+            Must have `timeslice` and `commodity` dimensions. May also have other
+            dimensions e.g. `region`, `year`, etc.
+        technologies: Dataset of technology parameters
+
+    Returns:
+        DataArray with production amplitudes for each technology in each timeslice.
+        Will have the same dimensions as `production`, minus the `commodity` dimension.
+    """
+    from muse.timeslices import get_level
+
+    assert set(technologies.dims).issubset(set(production.dims))
+    timeslice_level = get_level(production)
+
+    return (
+        production
+        / broadcast_timeslice(technologies.fixed_outputs, level=timeslice_level)
+    ).max("commodity")

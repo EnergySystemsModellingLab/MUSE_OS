@@ -14,16 +14,14 @@ def constraints_args(sector="power", model="trade") -> Mapping[str, Any]:
     power = examples.sector(model=model, sector=sector)
     search_space = examples.search_space("power", model="trade")
     market = examples.matching_market("power", "trade")
-    assets = reduce_assets(
-        agent_concatenation({u.uuid: u.assets for u in list(power.agents)}),
-        coords=["agent", "technology", "region"],
-    ).set_coords(["agent", "technology", "region"])
+    assets = agent_concatenation({u.uuid: u.assets for u in list(power.agents)})
+    capacity = reduce_assets(assets.capacity, coords=("region", "technology"))
     return dict(
-        demand=market.consumption.sel(year=market.year.min(), drop=True),
-        assets=assets,
+        demand=market.consumption.sel(year=2025, drop=True),
+        capacity=capacity.sel(year=[2020, 2025]),
         search_space=search_space,
         market=market,
-        technologies=power.technologies,
+        technologies=power.technologies.sel(year=2025, drop=True),
     )
 
 
@@ -60,8 +58,7 @@ def test_max_production(constraints_args):
     }
     assert set(constraint.capacity.dims) == dims
     assert set(constraint.production.dims) == dims
-    assert constraint.year.dims == ()
-    assert set(constraint.agent.coords) == {"region", "agent", "year"}
+    assert set(constraint.agent.coords) == {"region", "agent"}
 
 
 def test_minimum_service(constraints_args):
@@ -71,13 +68,12 @@ def test_minimum_service(constraints_args):
 
     constraints_args["technologies"]["minimum_service_factor"] = 0.5
     constraint = cs.minimum_service(**constraints_args)
-    dims = {"replacement", "asset", "commodity", "timeslice"}
+    dims = {"replacement", "agent", "commodity", "timeslice"}
     assert set(constraint.capacity.dims) == dims
     assert set(constraint.production.dims) == dims
     assert set(constraint.b.dims) == dims
     assert (constraint.capacity <= 0).all()
-    assert constraint.year.dims == ()
-    assert set(constraint.asset.coords) == {"region", "agent", "year"}
+    assert set(constraint.agent.coords) == {"region", "agent"}
 
 
 def test_search_space(constraints_args):
@@ -127,7 +123,7 @@ def test_power_sector_no_investment():
     from muse.utilities import agent_concatenation
 
     power = examples.sector("power", "trade")
-    market = examples.matching_market("power", "trade").sel(year=[2020, 2025, 2030])
+    market = examples.matching_market("power", "trade").sel(year=[2020, 2025])
 
     initial = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
     power.next(market)
@@ -141,12 +137,12 @@ def test_power_sector_some_investment():
     from muse.utilities import agent_concatenation
 
     power = examples.sector("power", "trade")
-    market = examples.matching_market("power", "trade").sel(year=[2020, 2025, 2030])
+    market = examples.matching_market("power", "trade").sel(year=[2020, 2025])
     market.consumption[:] *= 1.5
 
     initial = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
     result = power.next(market)
     final = agent_concatenation({u.uuid: u.assets.capacity for u in power.agents})
     assert "windturbine" not in initial.technology
-    assert final.sel(asset=final.technology == "windturbine", year=2030).sum() < 1
+    assert final.sel(asset=final.technology == "windturbine", year=2025).sum() < 1
     assert "dst_region" not in result.dims

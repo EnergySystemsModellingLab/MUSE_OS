@@ -10,12 +10,21 @@ def non_timesliced_dataarray():
     return DataArray([1, 2, 3], dims=["x"])
 
 
-@fixture
-def timeslice():
+@fixture(params=[False, True])
+def timeslice(request):
+    """Fixture to generate a timeslice DataArray.
+
+    Creates two versions:
+    - A one-dimensional DataArray with a single "timeslice" dimension representing the
+        weights of each timeslice.
+    - A two-dimensional DataArray with an additional "x" dimension. This allows each "x"
+        coordinate to have different timeslice weights.
+    """
     from toml import loads
 
     from muse.timeslices import read_timeslices
 
+    # Define timeslice inputs
     inputs = loads(
         """
         [timeslices]
@@ -40,9 +49,17 @@ def timeslice():
         """
     )
 
+    # Read timeslices
     ts = read_timeslices(inputs)
     assert isinstance(ts, DataArray)
     assert "timeslice" in ts.coords
+
+    # Expand dimensions if requested
+    if request.param:
+        ts = ts.expand_dims({"x": 3})
+        # Add some randomization so that each "x" coord has different timeslice weights
+        ts = ts + np.random.randint(0, 10, ts.shape)
+
     return ts
 
 

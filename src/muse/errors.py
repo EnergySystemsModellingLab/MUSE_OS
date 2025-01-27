@@ -1,13 +1,12 @@
-class RetrofitAgentNotDefined(Exception):
-    """Indicates that the retrofit agent has not been defined."""
+class AgentShareNotDefined(Exception):
+    """Indicates that an agent share is missing from a technodata file."""
 
-    msg = """The retrofit agent has not been defined. This might be because it actually
-has not been defined in the agents file or specified in the technodata file or it cannot
-be found because there is a typo in its name in either the agents and or technodata
-files. When a retrofit agent is defined in the agent file, the same name should be
-reported as an additional column in the technodata, assigning the fraction of the
-initial stock assigned to each retrofit agent. In presence of multiple retrofit agents,
-a new column needs to be added per agent."""
+    msg = """All agents must be represented in the technodata file.
+If using "New" and "Retrofit" agents, you need a column with the name of each "Retrofit"
+agent share. If only using "New" agents, you need a column with the name of each "New"
+agent share. Please check that all agents are represented in the technodata file, and
+that the agent share names match those specified in your agents file.
+"""
 
     def __str__(self):
         return self.msg

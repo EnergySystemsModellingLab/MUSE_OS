@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping, Sequence
-from typing import Callable, Optional, Union
+from typing import Callable
 
 from muse.sectors.abstract import AbstractSector
 
@@ -8,8 +10,8 @@ SECTORS_REGISTERED: Mapping[str, Callable] = {}
 
 
 def register_sector(
-    sector_class: Optional[type[AbstractSector]] = None,
-    name: Optional[Union[str, Sequence[str]]] = None,
+    sector_class: type[AbstractSector] | None = None,
+    name: str | Sequence[str] | None = None,
 ) -> type[AbstractSector]:
     """Registers a sector so it is available MUSE-wide.
 

@@ -1,5 +1,7 @@
 """Timeslice utility functions."""
 
+from __future__ import annotations
+
 __all__ = [
     "broadcast_timeslice",
     "compress_timeslice",
@@ -14,7 +16,6 @@ __all__ = [
 ]
 
 from collections.abc import Mapping, Sequence
-from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -24,7 +25,7 @@ TIMESLICE: DataArray = None  # type: ignore
 
 
 def read_timeslices(
-    settings: Union[Mapping, str],
+    settings: Mapping | str,
     level_names: Sequence[str] = ("month", "day", "hour"),
 ) -> DataArray:
     from functools import reduce
@@ -75,14 +76,14 @@ def read_timeslices(
     return DataArray(ts, coords={"timeslice": indices}, dims="timeslice")
 
 
-def setup_module(settings: Union[str, Mapping]):
+def setup_module(settings: str | Mapping):
     """Sets up module singletons."""
     global TIMESLICE
     TIMESLICE = read_timeslices(settings)
 
 
 def broadcast_timeslice(
-    data: DataArray, ts: Optional[DataArray] = None, level: Optional[str] = None
+    data: DataArray, ts: DataArray | None = None, level: str | None = None
 ) -> DataArray:
     """Convert a non-timesliced array to a timesliced array by broadcasting.
 
@@ -91,7 +92,7 @@ def broadcast_timeslice(
 
     Args:
         data: Array to broadcast.
-        ts: Dataarray with timeslice lengths. If None, defaults to the global timeslice.
+        ts: Dataarray with timeslice weights. If None, defaults to the global timeslice.
         level: Level to broadcast to. If None, use the finest level of ts.
 
     """
@@ -105,7 +106,9 @@ def broadcast_timeslice(
 
     # If data already has timeslices, check that it matches the reference timeslice.
     if "timeslice" in data.dims:
-        if data.timeslice.reset_coords(drop=True).equals(ts.timeslice):
+        if data.timeslice.reset_coords(drop=True).equals(
+            ts.timeslice.reset_coords(drop=True)
+        ):
             return data
         raise ValueError(
             "Data is already timesliced, but does not match the reference."
@@ -119,16 +122,18 @@ def broadcast_timeslice(
 
 
 def distribute_timeslice(
-    data: DataArray, ts: Optional[DataArray] = None, level=None
+    data: DataArray, ts: DataArray | None = None, level=None
 ) -> DataArray:
     """Convert a non-timesliced array to a timesliced array by distribution.
 
-    If data is already timesliced in the appropriate scheme, it will be returned
-    unchanged.
+    Takes non-timesliced data and distributes it over the timeslice dimension according
+    to the timeslice weights in `ts`. The sum of the output over all timeslices will be
+    equal to the input. If data is already timesliced in the appropriate scheme, it will
+    be returned unchanged.
 
     Args:
         data: Array to distribute.
-        ts: Dataarray with timeslice lengths. If None, defaults to the global timeslice.
+        ts: Dataarray with timeslice weights. If None, defaults to the global timeslice.
         level: Level to distribute to. If None, use the finest level of ts.
 
     """
@@ -140,21 +145,24 @@ def distribute_timeslice(
 
     # If data already has timeslices, check that it matches the reference timeslice.
     if "timeslice" in data.dims:
-        if data.timeslice.reset_coords(drop=True).equals(ts.timeslice):
+        if data.timeslice.reset_coords(drop=True).equals(
+            ts.timeslice.reset_coords(drop=True)
+        ):
             return data
         raise ValueError(
             "Data is already timesliced, but does not match the reference."
         )
 
     broadcasted = broadcast_timeslice(data, ts=ts)
-    timeslice_fractions = ts / broadcast_timeslice(ts.sum(), ts=ts)
+    timeslice_sum = ts.sum("timeslice").clip(1e-6)  # prevents zero division
+    timeslice_fractions = ts / broadcast_timeslice(timeslice_sum, ts=ts)
     return broadcasted * timeslice_fractions
 
 
 def compress_timeslice(
     data: DataArray,
-    ts: Optional[DataArray] = None,
-    level: Optional[str] = None,
+    ts: DataArray | None = None,
+    level: str | None = None,
     operation: str = "sum",
 ) -> DataArray:
     """Convert a fully timesliced array to a coarser level.
@@ -162,11 +170,11 @@ def compress_timeslice(
     The operation can be either 'sum', or 'mean':
     - sum: sum values at each compressed timeslice level
     - mean: take a weighted average of values at each compressed timeslice level,
-        according to timeslice length
+        according to the timeslice weights in ts
 
     Args:
         data: Timesliced array to compress. Must have the same timeslicing as ts.
-        ts: Dataarray with timeslice lengths. If None, defaults to the global timeslice.
+        ts: Dataarray with timeslice weights. If None, defaults to the global timeslice.
         level: Level to compress to. If None, don't compress.
         operation: Operation to perform ("sum" or "mean"). Defaults to "sum".
 
@@ -177,7 +185,9 @@ def compress_timeslice(
     # Raise error if data is not timesliced appropriately
     if "timeslice" not in data.dims:
         raise ValueError("Data must have a 'timeslice' dimension.")
-    if not data.timeslice.reset_coords(drop=True).equals(ts.timeslice):
+    if not data.timeslice.reset_coords(drop=True).equals(
+        ts.timeslice.reset_coords(drop=True)
+    ):
         raise ValueError("Data has incompatible timeslicing with reference.")
 
     # If level is not specified, don't compress
@@ -214,19 +224,19 @@ def compress_timeslice(
 
 
 def expand_timeslice(
-    data: DataArray, ts: Optional[DataArray] = None, operation: str = "distribute"
+    data: DataArray, ts: DataArray | None = None, operation: str = "distribute"
 ) -> DataArray:
     """Convert a timesliced array to a finer level.
 
     The operation can be either 'distribute', or 'broadcast'
     - distribute: distribute values over the new timeslice level(s) according to
-        timeslice lengths, such that the sum of the output over all timeslices is equal
-        to the sum of the input
+        timeslice weights in `ts`, such that the sum of the output over all timeslices
+        is equal to the sum of the input
     - broadcast: broadcast values across over the new timeslice level(s)
 
     Args:
         data: Timesliced array to expand.
-        ts: Dataarray with timeslice lengths. If None, defaults to the global timeslice.
+        ts: Dataarray with timeslice weights. If None, defaults to the global timeslice.
         operation: Operation to perform ("distribute" or "broadcast").
             Defaults to "distribute".
 
@@ -294,7 +304,7 @@ def get_level(data: DataArray) -> str:
     return data.timeslice.to_index().names[-1]
 
 
-def sort_timeslices(data: DataArray, ts: Optional[DataArray] = None) -> DataArray:
+def sort_timeslices(data: DataArray, ts: DataArray | None = None) -> DataArray:
     """Sorts the timeslices of a DataArray according to a reference timeslice.
 
     This will only sort timeslices to match the reference if the data is at the same
@@ -315,7 +325,7 @@ def sort_timeslices(data: DataArray, ts: Optional[DataArray] = None) -> DataArra
     return data.sortby("timeslice")
 
 
-def timeslice_max(data: DataArray, ts: Optional[DataArray] = None) -> DataArray:
+def timeslice_max(data: DataArray, ts: DataArray | None = None) -> DataArray:
     """Find the max value over the timeslice dimension, normalized for timeslice length.
 
     This first annualizes the value in each timeslice by dividing by the fraction of the
@@ -323,13 +333,15 @@ def timeslice_max(data: DataArray, ts: Optional[DataArray] = None) -> DataArray:
 
     Args:
         data: Timesliced DataArray to find the max of.
-        ts: Dataarray with timeslice lengths. If None, defaults to the global timeslice.
+        ts: Dataarray with relative timeslice lengths. If None, defaults to the global
+        timeslice.
     """
     if ts is None:
         ts = TIMESLICE
 
     timeslice_level = get_level(data)
+    timeslice_sum = ts.sum("timeslice").clip(1e-6)  # prevents zero division
     timeslice_fractions = compress_timeslice(
         ts, ts=ts, level=timeslice_level, operation="sum"
-    ) / broadcast_timeslice(ts.sum(), ts=ts, level=timeslice_level)
+    ) / broadcast_timeslice(timeslice_sum, ts=ts, level=timeslice_level)
     return (data / timeslice_fractions).max("timeslice")
