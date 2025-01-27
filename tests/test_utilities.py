@@ -43,11 +43,11 @@ def test_reduce_assets_with_zero_size(capacity: xr.DataArray):
 def test_broadcast_tech(technologies, capacity):
     from muse.utilities import broadcast_techs
 
+    technologies = technologies.sel(year=2010)
     regions = make_array(technologies.region)
     commodities = make_array(technologies.commodity)
-    years = make_array(technologies.year)
     techs = make_array(technologies.technology)
-    technologies["fixed_outputs"] = regions * commodities * years * techs
+    technologies["fixed_outputs"] = regions * commodities * techs
 
     actual = broadcast_techs(technologies.fixed_outputs, capacity)
 
@@ -57,16 +57,15 @@ def test_broadcast_tech(technologies, capacity):
 
     for asset in capacity.asset:
         region = regions.sel(region=asset.region)
-        year = years.interp(year=asset.installed, method="linear")
         tech = techs.sel(technology=asset.technology)
-        expected = region * year * tech * commodities
+        expected = region * tech * commodities
         assert actual.isel(asset=int(asset)).values == approx(expected.values)
 
 
 def test_broadcast_tech_idempotent(technologies, capacity):
     from muse.utilities import broadcast_techs
 
-    first = broadcast_techs(technologies, capacity)
+    first = broadcast_techs(technologies.sel(year=2010), capacity)
     second = broadcast_techs(first, capacity)
     assert (first == second).all()
 
