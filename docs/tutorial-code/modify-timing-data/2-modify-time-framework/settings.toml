@@ -51,7 +51,6 @@ constraints = [
     "demand_limiting_capacity"
 ]
 demand_share = "standard_demand"  # Optional, default to standard_demand
-forecast = 2  # Optional, defaults to 5
 
 [sectors.power]
 type = 'default'
@@ -66,7 +65,6 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
 lpsolver = "scipy"
 demand_share = "standard_demand"
-forecast = 2
 
 [sectors.gas]
 type = 'default'
@@ -81,7 +79,6 @@ agents = '{path}/technodata/Agents.csv'
 existing_capacity = '{path}/technodata/gas/ExistingCapacity.csv'
 lpsolver = "scipy"
 demand_share = "standard_demand"
-forecast = 2
 
 [sectors.residential_presets]
 type = 'presets'

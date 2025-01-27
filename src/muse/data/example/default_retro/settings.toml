@@ -51,7 +51,6 @@ constraints = [
     "demand_limiting_capacity"
 ]
 demand_share = "new_and_retro"  # Optional, default to standard_demand
-forecast = 5  # Optional, defaults to 5
 
 [[sectors.residential.interactions]]
 net = 'new_to_retro'

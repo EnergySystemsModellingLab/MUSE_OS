@@ -257,7 +257,7 @@ def sector_fuel_costs(
     agent_market = market.copy()
     if len(technologies) > 0:
         for a in agents:
-            output_year = a.year - a.forecast
+            output_year = a.year
             agent_market["consumption"] = (market.consumption * a.quantity).sel(
                 year=output_year
             )
@@ -315,7 +315,7 @@ def sector_capital_costs(
 
     if len(technologies) > 0:
         for a in agents:
-            output_year = a.year - a.forecast
+            output_year = a.year
             capacity = a.filter_input(a.assets.capacity, year=output_year).fillna(0.0)
             data = a.filter_input(
                 technologies[["cap_par", "cap_exp"]],
@@ -362,7 +362,7 @@ def sector_emission_costs(
     agent_market = market.copy()
     if len(technologies) > 0:
         for a in agents:
-            output_year = a.year - a.forecast
+            output_year = a.year
             agent_market["consumption"] = (market.consumption * a.quantity).sel(
                 year=output_year
             )
@@ -427,7 +427,7 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
     agents = retro if len(retro) > 0 else new
     if len(technologies) > 0:
         for agent in agents:
-            output_year = agent.year - agent.forecast
+            output_year = agent.year
             agent_market = market.sel(year=output_year).copy()
             agent_market["consumption"] = agent_market.consumption * agent.quantity
             included = [
@@ -510,7 +510,7 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
     agents = retro if len(retro) > 0 else new
     if len(technologies) > 0:
         for agent in agents:
-            output_year = agent.year - agent.forecast
+            output_year = agent.year
             agent_market = market.sel(year=output_year).copy()
             agent_market["consumption"] = agent_market.consumption * agent.quantity
             included = [

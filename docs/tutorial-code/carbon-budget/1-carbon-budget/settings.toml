@@ -64,7 +64,6 @@ constraints = [
     "demand_limiting_capacity"
 ]
 demand_share = "standard_demand"  # Optional, default to standard_demand
-forecast = 5  # Optional, defaults to 5
 
 [sectors.power]
 type = 'default'
