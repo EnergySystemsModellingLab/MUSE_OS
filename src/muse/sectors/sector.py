@@ -246,7 +246,6 @@ class Sector(AbstractSector):  # type: ignore
             )
 
         result = output_data.copy(deep=True)
-        result = self.convert_market_timeslice(result, mca_market.timeslice)
         result["comm_usage"] = self.technologies.comm_usage.sel(
             commodity=result.commodity
         )
