@@ -577,7 +577,6 @@ function of macro-economic data, i.e. population and gdp.
     macrodrivers_path = '{path}/technodata/Macrodrivers.csv'
     regression_path = '{path}/technodata/regressionparameters.csv'
     timeslices_levels = {'day': ['all-day']}
-    forecast = [0, 5]
 
 The following attributes are accepted:
 
