@@ -201,6 +201,9 @@ def broadcast_over_assets(
     example, it could also be used on a dataset of commodity prices to select prices
     relevant to each asset (e.g. if assets exist in multiple regions).
 
+    This function does not support technologies with a 'year' dimension. Please select
+    technology data for a specific year before calling this function.
+
     Arguments:
         data: The dataset/data-array to broadcast
         template: The dataset/data-array to use as a template
