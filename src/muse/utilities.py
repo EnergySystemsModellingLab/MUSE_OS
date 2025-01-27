@@ -183,9 +183,6 @@ def broadcast_techs(
     technologies: xr.Dataset | xr.DataArray,
     template: xr.DataArray | xr.Dataset,
     dimension: str = "asset",
-    interpolation: str = "linear",
-    installed_as_year: bool = True,
-    **kwargs,
 ) -> xr.Dataset | xr.DataArray:
     """Broadcasts technologies to the shape of template in given dimension.
 
@@ -209,30 +206,23 @@ def broadcast_techs(
         template: the dataset or data-array to use as a template
         dimension: the name of the dimensiom from `template` over which to
             broadcast
-        interpolation: interpolation method used across `year`
-        installed_as_year: if the coordinate `installed` exists, then it is
-            applied to the `year` dimension of the technologies dataset
         kwargs: further arguments are used initial filters over the
             `technologies` dataset.
     """
     assert "year" not in technologies.dims
-
-    # this assert will trigger if 'year' is changed to 'installed' in
-    # technologies, because then this function should be modified.
     assert "installed" not in technologies.dims
+
+    # Attributes of `dimension` (e.g. "technology", "region", "installed")
     names = [u for u in template.coords if template[u].dims == (dimension,)]
-    # the first selection reduces the size of technologies without affecting the
-    # dimensions.
+
+    # Select technologies only present in the template
     first_sel = {
-        n: technologies[n].isin(template[n])
-        for n in names
-        if n in technologies.dims and n != "year"
+        n: technologies[n].isin(template[n]) for n in names if n in technologies.dims
     }
-    first_sel.update({k: v for k, v in kwargs.items() if k != "year"})
     techs = technologies.sel(first_sel)
 
+    # Restructure the technology dataset to match the template
     second_sel = {n: template[n] for n in template.coords if n in techs.dims}
-
     return techs.sel(second_sel)
 
 
@@ -313,7 +303,7 @@ def filter_with_template(
         `data` transformed to match the form of `template`
     """
     if asset_dimension in template.dims:
-        return broadcast_techs(data, template, dimension=asset_dimension, **kwargs)
+        return broadcast_techs(data, template, dimension=asset_dimension)
 
     match_indices = set(data.dims).intersection(template.dims) - set(kwargs)
     match = {d: template[d].isin(data[d]).values for d in match_indices if d != "year"}
