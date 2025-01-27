@@ -216,14 +216,12 @@ class Sector(AbstractSector):  # type: ignore
 
         # Investments
         # uses technology data from the investment year
+        techs = self.technologies.sel(year=investment_year, drop=True)
         for subsector in self.subsectors:
-            subsector.invest(
-                technologies=self.technologies.sel(year=investment_year),
-                market=market,
-            )
+            subsector.invest(technologies=techs, market=market)
 
         # Full output data
-        supply, consume, costs = self.market_variables(market, self.technologies)
+        supply, consume, costs = self.market_variables(market, techs)
         self.output_data = xr.Dataset(
             dict(
                 supply=supply,
@@ -293,6 +291,7 @@ class Sector(AbstractSector):  # type: ignore
         from muse.quantities import consumption
         from muse.utilities import broadcast_techs
 
+        assert "year" not in technologies.dims
         years = market.year.values
         capacity = self.capacity.interp(year=years, **self.interpolation)
 

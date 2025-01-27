@@ -201,6 +201,9 @@ def broadcast_techs(
     This function broadcast the first representation to the shape and coordinates
     of the second.
 
+    This function does not support technologies with a 'year' dimension. Please select
+    technology data for a specific year before calling this function.
+
     Arguments:
         technologies: The dataset to broadcast
         template: the dataset or data-array to use as a template
@@ -212,6 +215,8 @@ def broadcast_techs(
         kwargs: further arguments are used initial filters over the
             `technologies` dataset.
     """
+    assert "year" not in technologies.dims
+
     # this assert will trigger if 'year' is changed to 'installed' in
     # technologies, because then this function should be modified.
     assert "installed" not in technologies.dims
@@ -225,19 +230,6 @@ def broadcast_techs(
     }
     first_sel.update({k: v for k, v in kwargs.items() if k != "year"})
     techs = technologies.sel(first_sel)
-
-    if "year" in technologies.dims:
-        year = None
-        if installed_as_year and "installed" in names:
-            year = template["installed"]
-        elif (not installed_as_year) and "year" in template.dims:
-            year = template["year"]
-        if year is not None and len(year) > 0:
-            techs = techs.interp(
-                year=sorted(set(cast(Iterable, year.values))), method=interpolation
-            )
-        if installed_as_year and "installed" in names:
-            techs = techs.rename(year="installed")
 
     second_sel = {n: template[n] for n in template.coords if n in techs.dims}
 
