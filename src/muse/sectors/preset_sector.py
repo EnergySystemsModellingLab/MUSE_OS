@@ -143,29 +143,9 @@ class PresetSector(AbstractSector):  # type: ignore
         consumption = self._interpolate(presets.consumption, mca_market.year)
         costs = self._interpolate(presets.costs, mca_market.year)
 
-        result = Dataset({"supply": supply, "consumption": consumption})
-        result["costs"] = drop_timeslice(costs)
+        result = Dataset({"supply": supply, "consumption": consumption, "costs": costs})
         assert isinstance(result, Dataset)
         return result
 
     def _interpolate(self, data: DataArray, years: DataArray) -> DataArray:
-        """Chooses interpolation depending on whether forecast is available."""
-        if "forecast" in data.dims:
-            baseyear = int(years.min())
-            forecasted = (years - baseyear).values
-            result = (
-                data.interp(
-                    year=baseyear,
-                    method=self.interpolation_mode,
-                    kwargs={"fill_value": "extrapolate"},
-                )
-                .interp(
-                    forecast=forecasted,
-                    method=self.interpolation_mode,
-                    kwargs={"fill_value": "extrapolate"},
-                )
-                .drop_vars(("year", "forecast"))
-            )
-            result["year"] = "forecast", years.values
-            return result.set_index(forecast="year").rename(forecast="year")
         return data.interp(year=years, method=self.interpolation_mode).ffill("year")
