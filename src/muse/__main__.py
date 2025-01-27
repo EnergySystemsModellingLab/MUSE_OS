@@ -89,6 +89,11 @@ def patched_broadcast_compat_data(self, other):
             "`broadcast_timeslice` or `distribute_timeslice` (see `muse.timeslices`)."
         )
 
+    if (isinstance(other, Variable)) and {"technology", "asset"}.issubset(
+        set(self.dims) | set(getattr(other, "dims", []))
+    ):
+        raise ValueError()
+
     # The rest of the function is copied directly from
     # xarray.core.variable._broadcast_compat_data
     if all(hasattr(other, attr) for attr in ["dims", "data", "shape", "encoding"]):
