@@ -102,6 +102,13 @@ def patched_broadcast_compat_data(self, other):
         self_data = self.data
         other_data = other
         dims = self.dims
+
+    # Check output dimensions
+    if "asset" in dims and any(
+        dim in dims for dim in ["region", "technology", "installed"]
+    ):
+        raise ValueError()
+
     return self_data, other_data, dims
 
 
