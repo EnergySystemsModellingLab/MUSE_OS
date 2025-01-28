@@ -290,7 +290,7 @@ def technologies(coords) -> Dataset:
 
 
 @fixture
-def agent_market(coords, technologies, timeslice) -> Dataset:
+def agent_market(coords, timeslice) -> Dataset:
     from numpy.random import rand
 
     result = Dataset(coords=timeslice.coords)
@@ -312,7 +312,7 @@ def agent_market(coords, technologies, timeslice) -> Dataset:
 
 
 @fixture
-def market(coords, technologies, timeslice) -> Dataset:
+def market(coords, timeslice) -> Dataset:
     from numpy.random import rand
 
     result = Dataset(coords=timeslice.coords)
@@ -369,11 +369,6 @@ def retro_agent(agent_args, technologies, stock) -> Agent:
 @fixture
 def stock(coords, technologies) -> Dataset:
     return _stock(coords, technologies)
-
-
-@fixture
-def stock_factory() -> Callable:
-    return _stock
 
 
 def _stock(
