@@ -5,22 +5,31 @@ YEAR = 2030
 
 
 @fixture
-def _capacity(technologies, demand_share):
-    """Capacity for a set of assets."""
+def _capacity(_technologies, demand_share):
+    """Capacity for each asset."""
     from muse.quantities import capacity_to_service_demand
-    from muse.utilities import broadcast_techs
 
-    techs = broadcast_techs(technologies.sel(year=YEAR), demand_share)
-    capacity = capacity_to_service_demand(technologies=techs, demand=demand_share)
+    capacity = capacity_to_service_demand(
+        technologies=_technologies, demand=demand_share
+    )
     return capacity
 
 
 @fixture
-def _technologies(technologies, _capacity):
+def _technologies(technologies, demand_share):
     """Technology parameters for each asset."""
     from muse.utilities import broadcast_techs
 
-    return broadcast_techs(technologies.sel(year=YEAR), _capacity)
+    return broadcast_techs(technologies.sel(year=YEAR), demand_share)
+
+
+@fixture
+def _prices(market, demand_share):
+    """Prices relevant to each asset."""
+    from muse.utilities import broadcast_techs
+
+    prices = market.prices.sel(year=YEAR)
+    return broadcast_techs(prices, demand_share)
 
 
 @fixture
@@ -47,15 +56,6 @@ def _consumption(_technologies, _capacity):
         * broadcast_timeslice(_technologies.utilization_factor)
     )
     return consumption
-
-
-@fixture
-def _prices(market, _capacity):
-    """Prices relevant to each asset."""
-    from muse.utilities import broadcast_techs
-
-    prices = market.prices.sel(year=YEAR)
-    return broadcast_techs(prices, _capacity)
 
 
 def test_fixtures(_technologies, _prices, _capacity, _production, _consumption):

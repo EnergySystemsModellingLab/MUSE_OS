@@ -1,6 +1,6 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 from unittest.mock import patch
 
 import numpy as np
@@ -374,68 +374,39 @@ def stock(coords, technologies) -> Dataset:
 def _stock(
     coords,
     technologies,
-    region: Optional[Sequence[str]] = None,
-    nassets: Optional[int] = None,
 ) -> Dataset:
     from numpy import cumprod, stack
-    from numpy.random import choice, rand, randint
+    from numpy.random import choice, rand
     from xarray import Dataset
 
+    from muse.utilities import broadcast_techs
+
+    n_assets = 10
     ymin, ymax = min(coords["year"]), max(coords["year"]) + 1
 
-    if nassets is None:
-        nmin = max(1, 0 if region is None else len(region))
-        n = randint(nmin, max(nmin, 10))
-    else:
-        n = nassets
-    tech_subset = choice(
-        coords["technology"], randint(2, len(coords["technology"])), replace=False
-    )
-    asset = {
-        (choice(tech_subset), choice(range(ymin, min(ymin + 3, ymax))))
-        for u in range(2 * n)
+    # Create assets
+    asset_coords = {
+        "technology": ("asset", choice(coords["technology"], n_assets, replace=True)),
+        "region": ("asset", choice(coords["region"], n_assets, replace=True)),
+        "installed": ("asset", choice(range(ymin, ymax), n_assets)),
     }
-    technology = [u[0] for u in asset][:n]
-    installed = [u[1] for u in asset][:n]
+    assets = Dataset(coords=asset_coords)
 
-    factors = cumprod(
-        rand(len(installed), len(coords["year"])) / 4 + 0.75, axis=1
-    ).clip(max=1)
-    capacity = 0.75 * technologies.total_capacity_limit.sel(
-        technology=technology, year=2010, region="USA", drop=True
+    # Create random capacity data
+    capacity_limits = broadcast_techs(technologies.total_capacity_limit, assets)
+    factors = cumprod(rand(n_assets, len(coords["year"])) / 4 + 0.75, axis=1).clip(
+        max=1
     )
     capacity = stack(
-        [capacity * factors[:, i] for i in range(factors.shape[1])], axis=1
+        [0.75 * capacity_limits * factors[:, i] for i in range(factors.shape[1])],
+        axis=1,
     )
 
-    result = Dataset()
-    result["technology"] = "asset", technology
-    result["installed"] = "asset", installed
-    if region is not None and len(region) > 0:
-        result["region"] = "asset", choice(region, len(installed))
-    result["year"] = "year", [ymin, max(max(installed), ymax)]
+    # Create capacity dataset
+    result = assets.copy()
+    result["year"] = "year", [ymin, ymax]
     result["capacity"] = ("asset", "year"), capacity
-    result = result.set_coords(("technology", "installed"))
-    if "region" in result.data_vars:
-        result = result.set_coords("region")
     return result
-
-
-@fixture
-def search_space(retro_agent, technologies):
-    """Example search space, as would be computed by an agent."""
-    from numpy.random import randint
-
-    coords = {
-        "asset": list(set(retro_agent.assets.technology.values)),
-        "replacement": technologies.technology.values,
-    }
-    return DataArray(
-        randint(0, 4, tuple(len(u) for u in coords.values())) == 0,
-        coords=coords,
-        dims=coords.keys(),
-        name="search_space",
-    )
 
 
 @fixture
