@@ -446,15 +446,26 @@ def search_space(retro_agent, technologies):
 @fixture
 def demand_share(coords, timeslice):
     """Example demand share, as would be computed by an agent."""
-    from numpy.random import rand
+    from numpy.random import choice, rand
 
+    n_assets = 5
     axes = {
         "commodity": coords["commodity"],
-        "asset": list(set(coords["technology"])),
         "timeslice": timeslice.timeslice,
+        "technology": (["asset"], choice(coords["technology"], n_assets, replace=True)),
+        "region": (["asset"], choice(coords["region"], n_assets, replace=True)),
     }
-    shape = len(axes["commodity"]), len(axes["asset"]), len(axes["timeslice"])
-    result = DataArray(rand(*shape), coords=axes, dims=axes.keys(), name="demand_share")
+    shape = (
+        len(axes["commodity"]),
+        len(axes["timeslice"]),
+        n_assets,
+    )
+    result = DataArray(
+        rand(*shape),
+        dims=["commodity", "timeslice", "asset"],
+        coords=axes,
+        name="demand_share",
+    )
     return result
 
 
