@@ -180,7 +180,7 @@ def reduce_assets(
 
 
 def broadcast_techs(
-    technologies: xr.Dataset | xr.DataArray,
+    x: xr.Dataset | xr.DataArray,
     template: xr.DataArray | xr.Dataset,
     dimension: str = "asset",
 ) -> xr.Dataset | xr.DataArray:
@@ -198,32 +198,49 @@ def broadcast_techs(
     This function broadcast the first representation to the shape and coordinates
     of the second.
 
-    This function does not support technologies with a 'year' dimension. Please select
-    technology data for a specific year before calling this function.
+    This function does not support arrays with a 'year' dimension. Please select
+    data for a specific year before calling this function.
 
     Arguments:
-        technologies: The dataset to broadcast
+        x: The dataset to broadcast
         template: the dataset or data-array to use as a template
-        dimension: the name of the dimensiom from `template` over which to
-            broadcast
-        kwargs: further arguments are used initial filters over the
-            `technologies` dataset.
+        dimension: TODO
+
+    Example:
+        Define the example array:
+        >>> import xarray as xr
+        >>> x = xr.DataArray(
+        ...     data=[[1, 2, 3], [4, 5, 6]],
+        ...     dims=['technology', 'region'],
+        ...     coords={'technology': ['gasboiler', 'heatpump'],
+        ...             'region': ['R1', 'R2', 'R3']},
+        ... )
+
+        Define the assets template:
+        >>> template = xr.DataArray(
+        ...     data=[0, 0],
+        ...     dims=["asset"],
+        ...     coords={
+        ...         "region": (["asset"], ["R1", "R2"]),
+        ...         "technology": (["asset"], ["gasboiler", "heatpump"]),
+        ...         "installed": (["asset"], [2020, 2025])},
+        ... )
+
+        Reshape the data to match the template:
+        >>> broadcast_techs(x, template)
+        <xarray.DataArray (asset: 2)> Size: 16B
+        array([1, 5])
+        Coordinates:
+            technology  (asset) <U9 72B 'gasboiler' 'heatpump'
+            region      (asset) <U2 16B 'R1' 'R2'
+            installed   (asset) int64 16B 2020 2025
+        Dimensions without coordinates: asset
     """
-    assert "year" not in technologies.dims
-    assert "installed" not in technologies.dims
+    assert "year" not in x.dims
+    assert "installed" not in x.dims
 
-    # Attributes of `dimension` (e.g. "technology", "region", "installed")
-    names = [u for u in template.coords if template[u].dims == (dimension,)]
-
-    # Select technologies only present in the template
-    first_sel = {
-        n: technologies[n].isin(template[n]) for n in names if n in technologies.dims
-    }
-    techs = technologies.sel(first_sel)
-
-    # Restructure the technology dataset to match the template
-    second_sel = {n: template[n] for n in template.coords if n in techs.dims}
-    return techs.sel(second_sel)
+    sel = {n: template[n] for n in template.coords if n in x.dims}
+    return x.sel(sel)
 
 
 def clean_assets(assets: xr.Dataset, years: int | Sequence[int]):
