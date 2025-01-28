@@ -120,7 +120,7 @@ def registrator(
     """
     from functools import wraps
 
-    # allows specifyng the registered name as a keyword argument
+    # allows specifiyng the registered name as a keyword argument
     if decorator is None:
         return lambda x: registrator(
             x, loglevel=loglevel, logname=logname, registry=registry
