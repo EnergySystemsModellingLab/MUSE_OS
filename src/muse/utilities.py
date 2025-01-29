@@ -182,9 +182,6 @@ def reduce_assets(
 def broadcast_techs(
     technologies: xr.Dataset | xr.DataArray,
     template: xr.DataArray | xr.Dataset,
-    interpolation: str = "linear",
-    installed_as_year: bool = True,
-    **kwargs,
 ) -> xr.Dataset | xr.DataArray:
     """Broadcasts technologies to the shape of template in given dimension.
 
@@ -200,14 +197,13 @@ def broadcast_techs(
     This function broadcast the first representation to the shape and coordinates
     of the second.
 
+    Note: this is not necessarily limited to `technology` datasets. For
+    example, it could also be used on a dataset of commodity prices to select prices
+    relevant to each asset (e.g. if assets exist in multiple regions).
+
     Arguments:
         technologies: The dataset to broadcast
         template: the dataset or data-array to use as a template
-        interpolation: interpolation method used across `year`
-        installed_as_year: if the coordinate `installed` exists, then it is
-            applied to the `year` dimension of the technologies dataset
-        kwargs: further arguments are used initial filters over the
-            `technologies` dataset.
 
     Example:
         Define the technology array:
@@ -250,19 +246,17 @@ def broadcast_techs(
         output is the value in the original technology array that matches the
         technology & region of each asset.
     """
+    # Name of asset coordinates (e.g. "technology", "region", "installed")
     names = [u for u in template.coords if template[u].dims == ("asset",)]
-    # the first selection reduces the size of technologies without affecting the
+    assert "year" not in names
+
+    # The first selection reduces the size of technologies without affecting the
     # dimensions.
-    first_sel = {
-        n: technologies[n].isin(template[n])
-        for n in names
-        if n in technologies.dims and n != "year"
-    }
-    first_sel.update({k: v for k, v in kwargs.items() if k != "year"})
+    first_sel = {n: technologies[n].isin(template[n]) for n in names}
     techs = technologies.sel(first_sel)
 
+    # Reshape the technology array to match the template
     second_sel = {n: template[n] for n in template.coords if n in techs.dims}
-
     return techs.sel(second_sel)
 
 
