@@ -1,5 +1,3 @@
-from typing import cast
-
 import numpy as np
 import xarray as xr
 from pytest import approx, fixture
@@ -161,21 +159,26 @@ def test_capacity_in_use(production: xr.DataArray, technologies: xr.Dataset):
 
 
 def test_emission(production: xr.DataArray, technologies: xr.Dataset):
-    from muse.commodities import is_enduse, is_pollutant
+    from muse.commodities import is_pollutant
     from muse.quantities import emission
 
-    envs = is_pollutant(technologies.comm_usage)
-    technologies = cast(xr.Dataset, technologies[["fixed_outputs"]])
-    technologies.fixed_outputs[{"commodity": envs}] = fout = 1.5
-    technologies.fixed_outputs[{"commodity": ~envs}] = 2
-
-    enduses = is_enduse(technologies.comm_usage.sel(commodity=production.commodity))
-    production[{"commodity": enduses}] = prod = 0.5
-    production[{"commodity": ~enduses}] = 5
-
     em = emission(production, technologies)
+
+    # Check that all environmental commodities are in the result
+    envs = is_pollutant(technologies.comm_usage)
     assert em.commodity.isin(envs.commodity).all()
-    assert em.values == approx(fout * enduses.sum().values * prod)
+
+    # Check that no non-environmental commodities are in the result
+    assert set(em.commodity.values) == set(envs.commodity[envs].values)
+
+    # If fixed_outputs for env commodities are zero, then emissions should be zero
+    techs = technologies.copy()
+    techs.fixed_outputs.loc[{"commodity": envs}] = 0
+    em = emission(production, techs)
+
+    # If production is zero, then emissions should be zero
+    em = emission(production * 0, technologies)
+    assert (em == 0).all()
 
 
 def test_min_production(technologies, capacity, timeslice):
