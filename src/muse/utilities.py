@@ -250,9 +250,6 @@ def broadcast_techs(
         output is the value in the original technology array that matches the
         technology & region of each asset.
     """
-    # this assert will trigger if 'year' is changed to 'installed' in
-    # technologies, because then this function should be modified.
-    assert "installed" not in technologies.dims
     names = [u for u in template.coords if template[u].dims == ("asset",)]
     # the first selection reduces the size of technologies without affecting the
     # dimensions.
@@ -263,19 +260,6 @@ def broadcast_techs(
     }
     first_sel.update({k: v for k, v in kwargs.items() if k != "year"})
     techs = technologies.sel(first_sel)
-
-    if "year" in technologies.dims:
-        year = None
-        if installed_as_year and "installed" in names:
-            year = template["installed"]
-        elif (not installed_as_year) and "year" in template.dims:
-            year = template["year"]
-        if year is not None and len(year) > 0:
-            techs = techs.interp(
-                year=sorted(set(cast(Iterable, year.values))), method=interpolation
-            )
-        if installed_as_year and "installed" in names:
-            techs = techs.rename(year="installed")
 
     second_sel = {n: template[n] for n in template.coords if n in techs.dims}
 
