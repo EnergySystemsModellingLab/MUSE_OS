@@ -314,7 +314,7 @@ class Sector(AbstractSector):  # type: ignore
 
         # Select technology data for each asset
         # Each asset uses the technology data from the year it was installed
-        technodata = broadcast_techs(technologies.rename(year="installed"), supply)
+        technodata = broadcast_techs(technologies, supply, installed_as_year=True)
 
         # Calculate LCOE
         # We select data for the second year, which corresponds to the investment year

@@ -182,6 +182,7 @@ def reduce_assets(
 def broadcast_techs(
     technologies: xr.Dataset | xr.DataArray,
     template: xr.DataArray | xr.Dataset,
+    installed_as_year: bool = True,
 ) -> xr.Dataset | xr.DataArray:
     """Broadcasts technologies to the shape of template in given dimension.
 
@@ -204,6 +205,10 @@ def broadcast_techs(
     Arguments:
         technologies: The dataset to broadcast
         template: the dataset or data-array to use as a template
+        installed_as_year: True means that the "year" dimension in the technologies
+            dataset corresponds to the year that the asset was installed. Will commonly
+            be True for technology parameters (e.g. var_par/fix_par are specified the
+            year that an asset is installed, and fixed for the lifetime of the asset).
 
     Example:
         Define the technology array:
@@ -249,6 +254,11 @@ def broadcast_techs(
     # Name of asset coordinates (e.g. "technology", "region", "installed")
     names = [u for u in template.coords if template[u].dims == ("asset",)]
     assert "year" not in names
+
+    # If installed_as_year is True, we need to rename the installed dimension to "year"
+    if installed_as_year:
+        assert "installed" in names
+        technologies = technologies.rename(year="installed")
 
     # The first selection reduces the size of technologies without affecting the
     # dimensions.

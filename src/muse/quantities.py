@@ -74,9 +74,11 @@ def supply(
 
     else:
         # Multi-region models
-        demand = broadcast_techs(demand, maxprod)
+        demand = broadcast_techs(demand, maxprod, installed_as_year=False)
         total_maxprod_by_region = maxprod.groupby("region").sum(dim="asset")
-        share_by_asset = maxprod / broadcast_techs(total_maxprod_by_region, maxprod)
+        share_by_asset = maxprod / broadcast_techs(
+            total_maxprod_by_region, maxprod, installed_as_year=False
+        )
         demand_by_asset = (demand * share_by_asset).fillna(0)
 
     # Supply is equal to demand, bounded between minprod and maxprod
@@ -117,7 +119,7 @@ def emission(
     assert "asset" in production.dims
 
     # Calculate the production amplitude of each asset
-    techs = broadcast_techs(technologies.rename(year="installed"), production)
+    techs = broadcast_techs(technologies, production, installed_as_year=True)
     prod_amplitude = production_amplitude(production, techs)
 
     # Calculate the production of environmental pollutants
@@ -163,9 +165,7 @@ def consumption(
     from muse.utilities import filter_with_template
 
     params = filter_with_template(
-        technologies[["fixed_inputs", "flexible_inputs", "fixed_outputs"]].rename(
-            year="installed"
-        ),
+        technologies[["fixed_inputs", "flexible_inputs", "fixed_outputs"]],
         production,
     )
 
@@ -249,8 +249,9 @@ def maximum_production(
         capacity, **{k: v for k, v in filters.items() if k in capacity.dims}
     )
     btechs = broadcast_techs(
-        technologies[["fixed_outputs", "utilization_factor"]].rename(year="installed"),
+        technologies[["fixed_outputs", "utilization_factor"]],
         capa,
+        installed_as_year=True,
     )
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
@@ -299,7 +300,7 @@ def capacity_in_use(
 
     techs = technologies[["fixed_outputs", "utilization_factor"]]
     assert isinstance(techs, xr.Dataset)
-    btechs = broadcast_techs(techs, prod)
+    btechs = broadcast_techs(techs, prod, installed_as_year=True)
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in technologies.dims}
     )
@@ -368,10 +369,9 @@ def minimum_production(
         return broadcast_timeslice(xr.zeros_like(capa), level=timeslice_level)
 
     btechs = broadcast_techs(
-        technologies[["fixed_outputs", "minimum_service_factor"]].rename(
-            year="installed"
-        ),
+        technologies[["fixed_outputs", "minimum_service_factor"]],
         capa,
+        installed_as_year=True,
     )
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
