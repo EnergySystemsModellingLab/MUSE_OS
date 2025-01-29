@@ -638,55 +638,6 @@ def agent_concatenation(
     return result
 
 
-def aggregate_technology_model(
-    data: xr.DataArray | xr.Dataset,
-    dim: str = "asset",
-    drop: str | Sequence[str] = "installed",
-) -> xr.DataArray | xr.Dataset:
-    """Aggregate together assets with the same installation year.
-
-    The assets of a given agent, region, and technology but different installation year
-    are grouped together and summed over.
-
-    Example:
-        We first create a random set of agent assets and aggregate them.
-        Some of these agents own assets from the same technology but potentially with
-        different installation year. This function will aggregate together all assets
-        of a given agent with same technology.
-
-        >>> from muse.examples import random_agent_assets
-        >>> from muse.utilities import agent_concatenation, aggregate_technology_model
-        >>> rng = np.random.default_rng(1234)
-        >>> agent_assets = {i: random_agent_assets(rng) for i in range(5)}
-        >>> assets = agent_concatenation(agent_assets)
-        >>> reduced = aggregate_technology_model(assets)
-
-        We can check that the tuples (agent, technology) are unique (each agent works in
-        a single region):
-
-        >>> ids = list(zip(reduced.agent.values, reduced.technology.values))
-        >>> assert len(set(ids)) == len(ids)
-
-        And we can check they correspond to the right summation:
-
-        >>> for agent, technology in set(ids):
-        ...     techsel = assets.technology == technology
-        ...     agsel = assets.agent == agent
-        ...     expected = assets.sel(asset=techsel & agsel).sum("asset")
-        ...     techsel = reduced.technology == technology
-        ...     agsel = reduced.agent == agent
-        ...     actual = reduced.sel(asset=techsel & agsel)
-        ...     assert len(actual.asset) == 1
-        ...     assert (actual == expected).all()
-    """
-    if isinstance(drop, str):
-        drop = (drop,)
-    return reduce_assets(
-        data,
-        [cast(str, u) for u in data.coords if u not in drop and data[u].dims == (dim,)],
-    )
-
-
 def check_dimensions(
     data: xr.DataArray | xr.Dataset,
     required: Iterable[str] = (),
