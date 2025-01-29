@@ -218,6 +218,7 @@ def broadcast_techs(
         ...     coords={'technology': ['gasboiler', 'heatpump'],
         ...             'region': ['R1', 'R2', 'R3']},
         ... )
+
         This array contains a value for every combination of technology and region (e.g.
         this could refer to the efficiency of each technology in each region).
 
@@ -229,6 +230,7 @@ def broadcast_techs(
         ...         "region": (["asset"], ["R1", "R2"]),
         ...         "technology": (["asset"], ["gasboiler", "heatpump"])},
         ... )
+
         We have two assets: a gas boiler in region R1 and a heat pump in region R2. In
         this case the values don't matter, but could correspond to the installed
         capacity of each asset, for example.
@@ -236,7 +238,7 @@ def broadcast_techs(
         We want to select the values from the technology array that correspond to each
         asset in the template. To do this, we perform `broadcast_techs` on
         `technologies` using `assets` as a template:
-        >>> broadcast_techs(x, template)
+        >>> broadcast_techs(technologies, assets)
         <xarray.DataArray (asset: 2)> Size: 16B
         array([1, 5])
         Coordinates:
