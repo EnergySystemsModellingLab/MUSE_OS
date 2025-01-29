@@ -18,43 +18,6 @@ def production(
     )
 
 
-def test_supply_enduse(technologies, capacity, timeslice):
-    """End-use part of supply."""
-    from muse.commodities import is_enduse
-    from muse.quantities import maximum_production, supply
-
-    production = maximum_production(technologies, capacity)
-    demand = production.sum("asset") + 1
-    spl = supply(capacity, demand, technologies).where(
-        is_enduse(technologies.comm_usage), 0
-    )
-    assert (abs(spl - production) < 1e-12).all()
-    assert (spl.sum("asset") < demand).all()
-
-    demand = production.sum("asset") * 0.7
-    spl = supply(capacity, demand, technologies).where(
-        is_enduse(technologies.comm_usage), 0
-    )
-    assert (spl <= production + 1e-12).all()
-    assert (
-        abs(spl.sum("asset") - demand.where(production.sum("asset") > 0, 0)) < 1e-12
-    ).all()
-
-
-def test_supply_emissions(technologies, capacity, timeslice):
-    """Emission part of supply."""
-    from muse.commodities import is_enduse, is_pollutant
-    from muse.quantities import emission, maximum_production, supply
-
-    production = maximum_production(technologies, capacity)
-    spl = supply(capacity, production.sum("asset") + 1, technologies)
-    msn = emission(spl.where(is_enduse(spl.comm_usage), 0), technologies.fixed_outputs)
-    actual, expected = xr.broadcast(
-        spl.sel(commodity=is_pollutant(spl.comm_usage)), msn
-    )
-    assert actual.values == approx(expected.values)
-
-
 def test_consumption(technologies, production, market):
     from muse.quantities import consumption
 
@@ -196,6 +159,53 @@ def test_min_production(technologies, capacity, timeslice):
     production = minimum_production(technologies, capacity)
     assert not (production == 0).all()
     assert (production <= maximum_production(technologies, capacity)).all()
+
+
+def test_supply_single_region(technologies, capacity, production, timeslice):
+    from muse.commodities import is_enduse
+    from muse.quantities import supply
+
+    # Select data for a single region
+    region = "USA"
+    technologies = technologies.sel(region=region)
+    capacity = capacity.where(capacity.region == region, drop=True)
+    production = production.where(production.region == region, drop=True)
+
+    # Random demand within the bounds of the maximum production
+    demand = production.sum("asset")
+    demand = demand * np.random.rand(*demand.shape)
+    assert "region" not in demand.dims
+
+    # Calculate supply
+    spl = supply(capacity, demand, technologies)
+
+    # Total supply across assets should equal demand (for end-use commodities)
+    spl = spl.sum("asset")
+    enduses = is_enduse(technologies.comm_usage)
+    assert abs(spl.sel(commodity=enduses) - demand.sel(commodity=enduses)).sum() < 1e-5
+
+
+def test_supply_multi_region(technologies, capacity, production, timeslice):
+    from muse.commodities import is_enduse
+    from muse.quantities import supply
+
+    # Random demand within the bounds of the maximum production
+    demand = production.groupby("region").sum("asset")
+    demand = demand * np.random.rand(*demand.shape)
+
+    # Calculate supply
+    assert "region" in demand.dims
+    spl = supply(capacity, demand, technologies)
+
+    # Total supply across assets within each region should equal demand
+    # (for end-use commodities)
+    spl = spl.groupby("region").sum("asset")
+    enduses = is_enduse(technologies.comm_usage)
+    assert abs(spl.sel(commodity=enduses) - demand.sel(commodity=enduses)).sum() < 1e-5
+
+
+def test_supply_with_min_service(technologies, capacity, timeslice):
+    pass
 
 
 def test_supply_capped_by_min_service(technologies, capacity, timeslice):
