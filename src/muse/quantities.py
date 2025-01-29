@@ -56,12 +56,13 @@ def supply(
         technologies, capacity, timeslice_level=timeslice_level
     )
 
-    # Split demand over assets (calculate commodity-level demands for each asset)
-    if np.array(maxprod.region).size == 1:
+    # Split commodity-level demands over assets in proportion to maxprod
+    if len(set(maxprod.region.values.flatten())) == 1:
         # Single region models
-        region_demand = demand.sel(region=maxprod.region)
+        if "region" in demand.dims:
+            demand = demand.sel(region=maxprod.region)
         share_by_asset = maxprod / maxprod.sum("asset")
-        demand_by_asset = (region_demand * share_by_asset).fillna(0)
+        demand_by_asset = (demand * share_by_asset).fillna(0)
 
     elif "dst_region" in maxprod.dims:
         # Trade models
@@ -69,7 +70,7 @@ def supply(
         total_maxprod_by_dst_region = maxprod.groupby("dst_region").sum(dim="asset")
         share_by_asset = maxprod / total_maxprod_by_dst_region
         demand_by_asset = (demand * share_by_asset).fillna(0)
-        # TODO: Not convinced this is correct - to examine in the future
+        # TODO: Not 100% sure this is correct - to examine in the future
 
     else:
         # Multi-region models
