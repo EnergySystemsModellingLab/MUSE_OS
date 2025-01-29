@@ -29,7 +29,7 @@ def _prices(market, demand_share):
     from muse.utilities import broadcast_techs
 
     prices = market.prices.sel(year=YEAR)
-    return broadcast_techs(prices, demand_share)
+    return broadcast_techs(prices, demand_share, installed_as_year=False)
 
 
 @fixture
