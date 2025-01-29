@@ -312,9 +312,12 @@ class Sector(AbstractSector):  # type: ignore
             timeslice_level=self.timeslice_level,
         )
 
+        # Select technology data for each asset
+        # Each asset uses the technology data from the year it was installed
+        technodata = broadcast_techs(technologies.rename(year="installed"), supply)
+
         # Calculate LCOE
         # We select data for the second year, which corresponds to the investment year
-        technodata = broadcast_techs(technologies, supply)
         lcoe = levelized_cost_of_energy(
             prices=market.prices.sel(region=supply.region).isel(year=1),
             technologies=technodata,
