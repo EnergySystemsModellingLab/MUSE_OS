@@ -336,10 +336,13 @@ def create_agent(agent_args, technologies, stock, agent_type="retrofit") -> Agen
 
     from muse.agents.factories import create_agent
 
+    region = agent_args["region"]
     agent = create_agent(
         agent_type=agent_type,
-        technologies=technologies,
-        capacity=stock,
+        technologies=technologies.sel(region=region),
+        capacity=stock.where(stock.region == region, drop=True).assign_coords(
+            region=region
+        ),
         year=2010,
         **agent_args,
     )
@@ -364,7 +367,6 @@ def newcapa_agent(agent_args, technologies, stock) -> Agent:
 
 @fixture
 def retro_agent(agent_args, technologies, stock) -> Agent:
-    agent_args["investment"] = "adhoc"  # fails with scipy solver, see # 587
     return create_agent(agent_args, technologies, stock.capacity, "retrofit")
 
 
