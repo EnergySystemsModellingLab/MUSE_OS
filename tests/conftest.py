@@ -348,10 +348,12 @@ def create_agent(agent_args, technologies, stock, agent_type="retrofit") -> Agen
     # encompass every single technology.
     # This is not quite representative of the use case in the code, so in that
     # case, we add a bit of structure by removing some of the assets.
-    technology = set([u for u in technologies.technology.values])
-    if set(agent.assets.technology.values) == technology:
-        techs = choice(technology, len(technology) // 2, replace=False)
-        agent.assets = agent.assets.sel(asset=techs)
+    technology_names = set(technologies.technology.values)
+    if set(agent.assets.technology.values) == technology_names:
+        techs = choice(
+            list(technology_names), len(technology_names) // 2, replace=False
+        )
+        agent.assets = agent.assets.where(agent.assets.technology.isin(techs))
     return agent
 
 
