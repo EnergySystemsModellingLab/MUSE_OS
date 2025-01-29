@@ -252,7 +252,9 @@ def broadcast_techs(
 
     # The first selection reduces the size of technologies without affecting the
     # dimensions.
-    first_sel = {n: technologies[n].isin(template[n]) for n in names}
+    first_sel = {
+        n: technologies[n].isin(template[n]) for n in names if n in technologies.dims
+    }
     techs = technologies.sel(first_sel)
 
     # Reshape the technology array to match the template
