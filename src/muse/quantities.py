@@ -48,6 +48,7 @@ def supply(
     assert "asset" not in demand.dims
     assert "asset" in capacity.dims
 
+    # Maximum and minimum production for each asset
     maxprod = maximum_production(
         technologies, capacity, timeslice_level=timeslice_level
     )
@@ -55,36 +56,37 @@ def supply(
         technologies, capacity, timeslice_level=timeslice_level
     )
 
-    # Single region models
+    # Split demand over assets (calculate commodity-level demands for each asset)
     if np.array(maxprod.region).size == 1:
+        # Single region models
         region_demand = demand.sel(region=maxprod.region)
         share_by_asset = maxprod / maxprod.sum("asset")
-        supply_by_asset = (region_demand * share_by_asset).fillna(0)
+        demand_by_asset = (region_demand * share_by_asset).fillna(0)
 
-    # Trade models
     elif "dst_region" in maxprod.dims:
+        # Trade models
         demand = demand.rename(region="dst_region")
         total_maxprod_by_dst_region = maxprod.groupby("dst_region").sum(dim="asset")
         share_by_asset = maxprod / total_maxprod_by_dst_region
-        supply_by_asset = (demand * share_by_asset).fillna(0)
-        # TODO: Not convinced this is correct - needs to be checked carefully
+        demand_by_asset = (demand * share_by_asset).fillna(0)
+        # TODO: Not convinced this is correct - to examine in the future
 
-    # Multi-region models
     else:
-        demand_by_asset = broadcast_techs(demand, maxprod)
+        # Multi-region models
+        demand = broadcast_techs(demand, maxprod)
         total_maxprod_by_region = maxprod.groupby("region").sum(dim="asset")
         share_by_asset = maxprod / broadcast_techs(total_maxprod_by_region, maxprod)
-        supply_by_asset = (demand_by_asset * share_by_asset).fillna(0)
+        demand_by_asset = (demand * share_by_asset).fillna(0)
 
     # Supply is equal to demand, bounded between minprod and maxprod
-    assert "asset" in supply_by_asset.dims
-    result = np.minimum(supply_by_asset, maxprod)
+    assert "asset" in demand_by_asset.dims
+    result = np.minimum(demand_by_asset, maxprod)
     result = np.maximum(result, minprod)
 
-    # add production of environmental pollutants
+    # Add production of environmental pollutants
     env = is_pollutant(technologies.comm_usage)
     result[{"commodity": env}] = emission(
-        result, technologies.fixed_outputs, timeslice_level=timeslice_level
+        result, technologies, timeslice_level=timeslice_level
     ).transpose(*result.dims)
     result[
         {"commodity": ~check_usage(technologies.comm_usage, CommodityUsage.PRODUCT)}
@@ -95,34 +97,35 @@ def supply(
 
 def emission(
     production: xr.DataArray,
-    fixed_outputs: xr.DataArray,
+    technologies: xr.Dataset,
     timeslice_level: str | None = None,
 ):
     """Computes emission from current products.
 
-    Emissions are computed as `sum(product) * fixed_outputs`.
-
     Arguments:
-        production: Produced goods. Only those with non-environmental products are used
-            when computing emissions.
-        fixed_outputs: factor relating total production to emissions. For convenience,
-            this can also be a `technologies` dataset containing `fixed_output`.
+        production: Commodity-level production for a series of assets.
+        technologies: `technologies` dataset containing `fixed_output`.
         timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
 
     Return:
         A data array containing emissions (and only emissions).
     """
-    from muse.commodities import is_enduse, is_pollutant
+    from muse.commodities import is_pollutant
     from muse.utilities import broadcast_techs
 
-    # just in case we are passed a technologies dataset, like in other functions
-    fixed_outputs = getattr(fixed_outputs, "fixed_outputs", fixed_outputs)
-    fouts = broadcast_techs(fixed_outputs, production)
-    envs = is_pollutant(fouts.comm_usage)
-    enduses = is_enduse(fouts.comm_usage)
-    return production.sel(commodity=enduses).sum("commodity") * broadcast_timeslice(
-        fouts.sel(commodity=envs), level=timeslice_level
+    assert "asset" in production.dims
+
+    # Calculate the production amplitude of each asset
+    techs = broadcast_techs(technologies, production)
+    prod_amplitude = production_amplitude(production, techs)
+
+    # Calculate the production of environmental pollutants
+    # = prod_amplitude * fixed_outputs
+    envs = is_pollutant(techs.comm_usage)
+    envs_production = prod_amplitude * broadcast_timeslice(
+        techs.sel(commodity=envs).fixed_outputs, level=timeslice_level
     )
+    return envs_production
 
 
 def consumption(
