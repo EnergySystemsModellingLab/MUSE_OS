@@ -182,7 +182,6 @@ def reduce_assets(
 def broadcast_techs(
     technologies: xr.Dataset | xr.DataArray,
     template: xr.DataArray | xr.Dataset,
-    dimension: str = "asset",
     interpolation: str = "linear",
     installed_as_year: bool = True,
     **kwargs,
@@ -211,11 +210,41 @@ def broadcast_techs(
             applied to the `year` dimension of the technologies dataset
         kwargs: further arguments are used initial filters over the
             `technologies` dataset.
+
+    Example:
+        Define the example array:
+        >>> import xarray as xr
+        >>> x = xr.DataArray(
+        ...     data=[[1, 2, 3], [4, 5, 6]],
+        ...     dims=['technology', 'region'],
+        ...     coords={'technology': ['gasboiler', 'heatpump'],
+        ...             'region': ['R1', 'R2', 'R3']},
+        ... )
+
+        Define the assets template:
+        >>> template = xr.DataArray(
+        ...     data=[0, 0],
+        ...     dims=["asset"],
+        ...     coords={
+        ...         "region": (["asset"], ["R1", "R2"]),
+        ...         "technology": (["asset"], ["gasboiler", "heatpump"]),
+        ...         "installed": (["asset"], [2020, 2025])},
+        ... )
+
+        Reshape/select the data to match the template:
+        >>> broadcast_techs(x, template)
+        <xarray.DataArray (asset: 2)> Size: 16B
+        array([1, 5])
+        Coordinates:
+            technology  (asset) <U9 72B 'gasboiler' 'heatpump'
+            region      (asset) <U2 16B 'R1' 'R2'
+            installed   (asset) int64 16B 2020 2025
+        Dimensions without coordinates: asset
     """
     # this assert will trigger if 'year' is changed to 'installed' in
     # technologies, because then this function should be modified.
     assert "installed" not in technologies.dims
-    names = [u for u in template.coords if template[u].dims == (dimension,)]
+    names = [u for u in template.coords if template[u].dims == ("asset",)]
     # the first selection reduces the size of technologies without affecting the
     # dimensions.
     first_sel = {
@@ -300,7 +329,6 @@ def filter_input(
 def filter_with_template(
     data: xr.Dataset | xr.DataArray,
     template: xr.DataArray | xr.Dataset,
-    asset_dimension: str = "asset",
     **kwargs,
 ):
     """Filters data to match template.
@@ -320,8 +348,8 @@ def filter_with_template(
     Returns:
         `data` transformed to match the form of `template`
     """
-    if asset_dimension in template.dims:
-        return broadcast_techs(data, template, dimension=asset_dimension, **kwargs)
+    if "asset" in template.dims:
+        return broadcast_techs(data, template)
 
     match_indices = set(data.dims).intersection(template.dims) - set(kwargs)
     match = {d: template[d].isin(data[d]).values for d in match_indices if d != "year"}
