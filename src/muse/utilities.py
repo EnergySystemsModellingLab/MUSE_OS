@@ -200,15 +200,18 @@ def broadcast_techs(
 
     Note: this is not necessarily limited to `technology` datasets. For
     example, it could also be used on a dataset of commodity prices to select prices
-    relevant to each asset (e.g. if assets exist in multiple regions).
+    relevant to each asset (e.g. if assets exist in multiple regions). In this example,
+    installed_as_year should be set to False (see below).
 
     Arguments:
         technologies: The dataset to broadcast
         template: the dataset or data-array to use as a template
         installed_as_year: True means that the "year" dimension in the technologies
             dataset corresponds to the year that the asset was installed. Will commonly
-            be True for technology parameters (e.g. var_par/fix_par are specified the
-            year that an asset is installed, and fixed for the lifetime of the asset).
+            be True for most technology parameters (e.g. var_par/fix_par are specified
+            the year that an asset is installed, and fixed for the lifetime of the
+            asset). If True, the technologies dataset must have data for every possible
+            "installed" year in the template.
 
     Example:
         Define the technology array:
@@ -256,8 +259,9 @@ def broadcast_techs(
     assert "year" not in names
 
     # If installed_as_year is True, we need to rename the installed dimension to "year"
+    # TODO: this should be stricter, and enforce that the template has "installed" data
+    # if installed_as_year:
     if installed_as_year and "installed" in names:
-        # TODO: this should be stricter, and enforce that the template has "installed"
         # assert "installed" in names
         technologies = technologies.rename(year="installed")
 
