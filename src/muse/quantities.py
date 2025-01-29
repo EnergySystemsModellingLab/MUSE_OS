@@ -43,6 +43,10 @@ def supply(
         input commodities).
     """
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
+    from muse.utilities import broadcast_techs
+
+    assert "asset" not in demand.dims
+    assert "asset" in capacity.dims
 
     maxprod = maximum_production(
         technologies, capacity, timeslice_level=timeslice_level
@@ -50,31 +54,31 @@ def supply(
     minprod = minimum_production(
         technologies, capacity, timeslice_level=timeslice_level
     )
-    size = np.array(maxprod.region).size
 
-    # in presence of trade demand needs to map maxprod dst_region
-    if (
-        "region" in demand.dims
-        and "region" in maxprod.coords
-        and "dst_region" not in maxprod.dims
-        and size == 1
-    ):
-        demand = demand.sel(region=maxprod.region)
+    # Single region models
+    if np.array(maxprod.region).size == 1:
+        region_demand = demand.sel(region=maxprod.region)
+        share_by_asset = maxprod / maxprod.sum("asset")
+        supply_by_asset = (region_demand * share_by_asset).fillna(0)
 
-    elif (
-        "region" in demand.dims
-        and "region" in maxprod.coords
-        and "dst_region" in maxprod.dims
-    ):
+    # Trade models
+    elif "dst_region" in maxprod.dims:
         demand = demand.rename(region="dst_region")
+        total_maxprod_by_dst_region = maxprod.groupby("dst_region").sum(dim="asset")
+        share_by_asset = maxprod / total_maxprod_by_dst_region
+        supply_by_asset = (demand * share_by_asset).fillna(0)
+        # TODO: Not convinced this is correct - needs to be checked carefully
 
-    # Share demand among assets
-    if "asset" not in demand.dims:
-        assert set(demand.dims) == set(maxprod.dims) - {"asset"}
-        demand = (demand * maxprod / maxprod.sum("asset")).fillna(0)
+    # Multi-region models
+    else:
+        demand_by_asset = broadcast_techs(demand, maxprod)
+        total_maxprod_by_region = maxprod.groupby("region").sum(dim="asset")
+        share_by_asset = maxprod / broadcast_techs(total_maxprod_by_region, maxprod)
+        supply_by_asset = (demand_by_asset * share_by_asset).fillna(0)
 
     # Supply is equal to demand, bounded between minprod and maxprod
-    result = np.minimum(demand, maxprod)
+    assert "asset" in supply_by_asset.dims
+    result = np.minimum(supply_by_asset, maxprod)
     result = np.maximum(result, minprod)
 
     # add production of environmental pollutants
