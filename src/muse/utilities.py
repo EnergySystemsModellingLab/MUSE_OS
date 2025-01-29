@@ -203,8 +203,6 @@ def broadcast_techs(
     Arguments:
         technologies: The dataset to broadcast
         template: the dataset or data-array to use as a template
-        dimension: the name of the dimensiom from `template` over which to
-            broadcast
         interpolation: interpolation method used across `year`
         installed_as_year: if the coordinate `installed` exists, then it is
             applied to the `year` dimension of the technologies dataset
@@ -227,8 +225,7 @@ def broadcast_techs(
         ...     dims=["asset"],
         ...     coords={
         ...         "region": (["asset"], ["R1", "R2"]),
-        ...         "technology": (["asset"], ["gasboiler", "heatpump"]),
-        ...         "installed": (["asset"], [2020, 2025])},
+        ...         "technology": (["asset"], ["gasboiler", "heatpump"])},
         ... )
 
         Reshape/select the data to match the template:
@@ -238,8 +235,11 @@ def broadcast_techs(
         Coordinates:
             technology  (asset) <U9 72B 'gasboiler' 'heatpump'
             region      (asset) <U2 16B 'R1' 'R2'
-            installed   (asset) int64 16B 2020 2025
         Dimensions without coordinates: asset
+
+        Note that the output has the same shape as the template. Each value in the
+        result corresponds to the value in the original data array that matches the
+        technology & region of each asset
     """
     # this assert will trigger if 'year' is changed to 'installed' in
     # technologies, because then this function should be modified.
