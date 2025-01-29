@@ -10,11 +10,13 @@ def production(
     technologies: xr.Dataset, capacity: xr.DataArray, timeslice
 ) -> xr.DataArray:
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
+    from muse.utilities import broadcast_techs
 
+    techs = broadcast_techs(technologies, capacity)
     return (
         broadcast_timeslice(capacity)
-        * distribute_timeslice(technologies.fixed_outputs)
-        * broadcast_timeslice(technologies.utilization_factor)
+        * distribute_timeslice(techs.fixed_outputs)
+        * broadcast_timeslice(techs.utilization_factor)
     )
 
 
@@ -52,47 +54,6 @@ def test_supply_emissions(technologies, capacity, timeslice):
     actual, expected = xr.broadcast(
         spl.sel(commodity=is_pollutant(spl.comm_usage)), msn
     )
-    assert actual.values == approx(expected.values)
-
-
-def test_gross_margin(technologies, capacity, market, timeslice):
-    from muse.commodities import is_enduse, is_fuel, is_pollutant
-    from muse.quantities import gross_margin
-
-    """
-    Gross margin refers to the calculation
-    .. _here:
-    https://www.investopedia.com/terms/g/grossmargin.asp
-    """
-    # we modify the variables to have just the values we want for the testing
-    selected = capacity.technology.values[0]
-
-    technologies = technologies.sel(technology=technologies.technology == selected)
-    capa = capacity.where(capacity.technology == selected, drop=True)
-
-    # Filtering commodity outputs
-    usage = technologies.comm_usage
-
-    technologies.var_par[:] = vp = 2
-    technologies.var_exp[:] = ve = 0.5
-    technologies.fixed_inputs[{"commodity": is_fuel(usage)}] = fuels = 2
-    technologies.fixed_outputs[{"commodity": is_pollutant(usage)}] = envs = 10
-    technologies.fixed_outputs[{"commodity": is_enduse(usage)}] = prod = 5
-
-    market.prices[:] = prices = 3
-    market.prices[{"commodity": is_pollutant(usage)}] = env_prices = 6
-    # We expect a xr.DataArray with 1 replacement technology
-    actual = gross_margin(technologies, capa, market.prices)
-
-    revenues = prices * prod * sum(is_enduse(usage))
-    env_costs = env_prices * envs * sum(is_pollutant(usage))
-    cons_costs = prices * fuels * sum(is_fuel(usage))
-    var_costs = vp * ((prod * sum(is_enduse(usage))) ** ve)
-
-    expected = revenues - env_costs - cons_costs - var_costs
-    expected *= 100 / revenues
-
-    expected, actual = xr.broadcast(expected, actual)
     assert actual.values == approx(expected.values)
 
 
@@ -273,6 +234,8 @@ def test_supply_capped_by_min_service(technologies, capacity, timeslice):
 
 def test_production_amplitude(production, technologies):
     from muse.quantities import production_amplitude
+    from muse.utilities import broadcast_techs
 
-    result = production_amplitude(production, technologies)
+    techs = broadcast_techs(technologies, production)
+    result = production_amplitude(production, techs)
     assert set(result.dims) == set(production.dims) - {"commodity"}
