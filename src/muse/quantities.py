@@ -9,8 +9,6 @@ Functions for calculating costs (e.g. LCOE, EAC) are in the `costs` module.
 
 from __future__ import annotations
 
-from typing import cast
-
 import numpy as np
 import xarray as xr
 
@@ -143,9 +141,8 @@ def emission(
     from muse.utilities import broadcast_techs
 
     # just in case we are passed a technologies dataset, like in other functions
-    fouts = broadcast_techs(
-        getattr(fixed_outputs, "fixed_outputs", fixed_outputs), production
-    )
+    fixed_outputs = getattr(fixed_outputs, "fixed_outputs", fixed_outputs)
+    fouts = broadcast_techs(fixed_outputs, production)
     envs = is_pollutant(fouts.comm_usage)
     enduses = is_enduse(fouts.comm_usage)
     return production.sel(commodity=enduses).sum("commodity") * broadcast_timeslice(
@@ -270,8 +267,8 @@ def maximum_production(
     capa = filter_input(
         capacity, **{k: v for k, v in filters.items() if k in capacity.dims}
     )
-    btechs = broadcast_techs(  # type: ignore
-        cast(xr.Dataset, technologies[["fixed_outputs", "utilization_factor"]]), capa
+    btechs = broadcast_techs(
+        technologies[["fixed_outputs", "utilization_factor"]], capa
     )
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
@@ -388,12 +385,8 @@ def minimum_production(
     if "minimum_service_factor" not in technologies:
         return broadcast_timeslice(xr.zeros_like(capa), level=timeslice_level)
 
-    btechs = broadcast_techs(  # type: ignore
-        cast(
-            xr.Dataset,
-            technologies[["fixed_outputs", "minimum_service_factor"]],
-        ),
-        capa,
+    btechs = broadcast_techs(
+        technologies[["fixed_outputs", "minimum_service_factor"]], capa
     )
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
