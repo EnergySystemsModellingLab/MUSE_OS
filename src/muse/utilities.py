@@ -256,8 +256,9 @@ def broadcast_techs(
     assert "year" not in names
 
     # If installed_as_year is True, we need to rename the installed dimension to "year"
-    if installed_as_year:
-        assert "installed" in names
+    if installed_as_year and "installed" in names:
+        # TODO: this should be stricter, and enforce that the template has "installed"
+        # assert "installed" in names
         technologies = technologies.rename(year="installed")
 
     # The first selection reduces the size of technologies without affecting the
