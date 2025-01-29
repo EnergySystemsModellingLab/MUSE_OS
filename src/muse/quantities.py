@@ -117,7 +117,7 @@ def emission(
     assert "asset" in production.dims
 
     # Calculate the production amplitude of each asset
-    techs = broadcast_techs(technologies, production)
+    techs = broadcast_techs(technologies.rename(year="installed"), production)
     prod_amplitude = production_amplitude(production, techs)
 
     # Calculate the production of environmental pollutants
@@ -163,7 +163,9 @@ def consumption(
     from muse.utilities import filter_with_template
 
     params = filter_with_template(
-        technologies[["fixed_inputs", "flexible_inputs", "fixed_outputs"]],
+        technologies[["fixed_inputs", "flexible_inputs", "fixed_outputs"]].rename(
+            year="installed"
+        ),
         production,
     )
 
@@ -247,7 +249,8 @@ def maximum_production(
         capacity, **{k: v for k, v in filters.items() if k in capacity.dims}
     )
     btechs = broadcast_techs(
-        technologies[["fixed_outputs", "utilization_factor"]], capa
+        technologies[["fixed_outputs", "utilization_factor"]].rename(year="installed"),
+        capa,
     )
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
@@ -365,7 +368,10 @@ def minimum_production(
         return broadcast_timeslice(xr.zeros_like(capa), level=timeslice_level)
 
     btechs = broadcast_techs(
-        technologies[["fixed_outputs", "minimum_service_factor"]], capa
+        technologies[["fixed_outputs", "minimum_service_factor"]].rename(
+            year="installed"
+        ),
+        capa,
     )
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
