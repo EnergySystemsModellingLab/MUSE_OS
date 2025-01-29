@@ -210,25 +210,32 @@ def broadcast_techs(
             `technologies` dataset.
 
     Example:
-        Define the example array:
+        Define the technology array:
         >>> import xarray as xr
-        >>> x = xr.DataArray(
+        >>> technologies = xr.DataArray(
         ...     data=[[1, 2, 3], [4, 5, 6]],
         ...     dims=['technology', 'region'],
         ...     coords={'technology': ['gasboiler', 'heatpump'],
         ...             'region': ['R1', 'R2', 'R3']},
         ... )
+        This array contains a value for every combination of technology and region (e.g.
+        this could refer to the efficiency of each technology in each region).
 
         Define the assets template:
-        >>> template = xr.DataArray(
-        ...     data=[0, 0],
+        >>> assets = xr.DataArray(
+        ...     data=[10, 50],
         ...     dims=["asset"],
         ...     coords={
         ...         "region": (["asset"], ["R1", "R2"]),
         ...         "technology": (["asset"], ["gasboiler", "heatpump"])},
         ... )
+        We have two assets: a gas boiler in region R1 and a heat pump in region R2. In
+        this case the values don't matter, but could correspond to the installed
+        capacity of each asset, for example.
 
-        Reshape/select the data to match the template:
+        We want to select the values from the technology array that correspond to each
+        asset in the template. To do this, we perform `broadcast_techs` on
+        `technologies` using `assets` as a template:
         >>> broadcast_techs(x, template)
         <xarray.DataArray (asset: 2)> Size: 16B
         array([1, 5])
@@ -237,9 +244,9 @@ def broadcast_techs(
             region      (asset) <U2 16B 'R1' 'R2'
         Dimensions without coordinates: asset
 
-        Note that the output has the same shape as the template. Each value in the
-        result corresponds to the value in the original data array that matches the
-        technology & region of each asset
+        The output array has the same shape as the assets template. Each value in the
+        output is the value in the original technology array that matches the
+        technology & region of each asset.
     """
     # this assert will trigger if 'year' is changed to 'installed' in
     # technologies, because then this function should be modified.
