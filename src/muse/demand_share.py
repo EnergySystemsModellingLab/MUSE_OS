@@ -140,7 +140,7 @@ def new_and_retro(
     r"""Splits demand across new and retro agents.
 
     The input demand is split amongst both *new* and *retrofit* agents. *New* agents get
-    a share of the increase in demand for the forecast year, whereas *retrofit* agents
+    a share of the increase in demand for the investment year, whereas *retrofit* agents
     are assigned a share of the demand that occurs from decommissioned assets.
 
     Args:
@@ -203,7 +203,7 @@ def new_and_retro(
             + R_{c, s}^r
 
        In other words, it is the share of the forecasted consumption that is serviced
-       neither by the current assets still present in the forecast year, nor by the
+       neither by the current assets still present in the investment year, nor by the
        *new* agent.
 
     #. then each *new* agent gets a share of :math:`N` proportional to it's
@@ -353,7 +353,7 @@ def standard_demand(
     r"""Splits demand across new agents.
 
     The input demand is split amongst *new* agents. *New* agents get a
-    share of the increase in demand for the forecast years, as well as the demand that
+    share of the increase in demand for the investment year, as well as the demand that
     occurs from decommissioned assets.
 
     Args:
@@ -621,7 +621,7 @@ def new_consumption(
     future_market = market.sel(year=investment_year, drop=True)
     future_capacity = capacity.sel(year=investment_year)
 
-    # Calculate the increase in consumption over the forecast period
+    # Calculate the increase in consumption over the investment period
     delta = (future_market.consumption - current_market.consumption).clip(min=0)
     missing = unmet_demand(
         market=future_market,
@@ -642,7 +642,7 @@ def new_and_retro_demands(
 ) -> xr.Dataset:
     """Splits demand into *new* and *retrofit* demand.
 
-    The demand (.i.e. `market.consumption`) in the forecast year is split three ways:
+    The demand (.i.e. `market.consumption`) in the investment year is split three ways:
 
     #. the demand that can be serviced by the assets that will still be operational that
         year.
