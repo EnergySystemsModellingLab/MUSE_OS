@@ -259,9 +259,10 @@ def broadcast_techs(
     assert "year" not in names
 
     # If installed_as_year is True, we need to rename the installed dimension to "year"
-    # TODO: this should be stricter, and enforce that the template has "installed" data
+    # TODO: this should be stricter, and enforce that the template has "installed" data,
+    # and that the technologies dataset has a "year" dimension.
     # if installed_as_year:
-    if installed_as_year and "installed" in names:
+    if installed_as_year and "installed" in names and "year" in technologies.dims:
         # assert "installed" in names
         technologies = technologies.rename(year="installed")
 

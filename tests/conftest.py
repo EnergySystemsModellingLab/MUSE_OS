@@ -386,13 +386,12 @@ def _stock(
     from muse.utilities import broadcast_techs
 
     n_assets = 10
-    ymin, ymax = min(coords["year"]), max(coords["year"]) + 1
 
     # Create assets
     asset_coords = {
         "technology": ("asset", choice(coords["technology"], n_assets, replace=True)),
         "region": ("asset", choice(coords["region"], n_assets, replace=True)),
-        "installed": ("asset", choice(range(ymin, ymax), n_assets)),
+        "installed": ("asset", choice(coords["year"], n_assets)),
     }
     assets = Dataset(coords=asset_coords)
 
@@ -408,7 +407,7 @@ def _stock(
 
     # Create capacity dataset
     result = assets.copy()
-    result["year"] = "year", [ymin, ymax]
+    result["year"] = "year", coords["year"]
     result["capacity"] = ("asset", "year"), capacity
     return result
 
