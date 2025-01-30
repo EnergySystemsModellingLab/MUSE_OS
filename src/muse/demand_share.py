@@ -250,9 +250,9 @@ def new_and_retro(
 
     current_year, investment_year = map(int, market.year.values)
 
-    def decommissioning(capacity):
+    def decommissioning(capacity, technologies):
         return decommissioning_demand(
-            technologies=technodata,
+            technologies=technologies,
             capacity=capacity.interp(
                 year=[current_year, investment_year], kwargs={"fill_value": 0.0}
             ),
@@ -292,13 +292,15 @@ def new_and_retro(
             for agent in agents
             if agent.category == "retrofit" and agent.region == region
         }
-
+        retro_technodata: MutableMapping[Hashable, xr.Dataset] = {
+            agent_uuid: technodata.sel(asset=retro_capacity[agent_uuid].asset)
+            for agent_uuid in retro_capacity.keys()
+        }
         name_to_id = {
             (agent.name, agent.region): agent.uuid
             for agent in agents
             if agent.category == "retrofit" and agent.region == region
         }
-
         id_to_rquantity = {
             agent.uuid: (agent.name, agent.region, agent.quantity)
             for agent in agents
@@ -307,6 +309,7 @@ def new_and_retro(
 
         retro_demands: MutableMapping[Hashable, xr.DataArray] = _inner_split(
             retro_capacity,
+            retro_technodata,
             demands.retrofit.sel(region=region),
             decommissioning,
             id_to_rquantity,
@@ -321,7 +324,10 @@ def new_and_retro(
             for agent in agents
             if agent.category != "retrofit" and agent.region == region
         }
-
+        new_technodata: MutableMapping[Hashable, xr.Dataset] = {
+            agent_uuid: technodata.sel(asset=new_capacity[agent_uuid].asset)
+            for agent_uuid in new_capacity.keys()
+        }
         id_to_nquantity = {
             agent.uuid: (agent.name, agent.region, agent.quantity)
             for agent in agents
@@ -329,10 +335,10 @@ def new_and_retro(
         }
         new_demands = _inner_split(
             new_capacity,
+            new_technodata,
             demands.new.sel(region=region),
             partial(
                 maximum_production,
-                technologies=technodata,
                 year=current_year,
                 timeslice_level=timeslice_level,
             ),
@@ -378,9 +384,9 @@ def standard_demand(
 
     current_year, investment_year = map(int, market.year.values)
 
-    def decommissioning(capacity):
+    def decommissioning(capacity, technologies):
         return decommissioning_demand(
-            technologies=technodata,
+            technologies=technologies,
             capacity=capacity.interp(
                 year=[current_year, investment_year], kwargs={"fill_value": 0.0}
             ),
@@ -421,6 +427,10 @@ def standard_demand(
             for agent in agents
             if agent.region == region
         }
+        current_technodata: MutableMapping[Hashable, xr.Dataset] = {
+            agent_uuid: technodata.sel(asset=current_capacity[agent_uuid].asset)
+            for agent_uuid in current_capacity.keys()
+        }
 
         # Split demands between agents
         id_to_quantity = {
@@ -430,16 +440,17 @@ def standard_demand(
         }
         retro_demands: MutableMapping[Hashable, xr.DataArray] = _inner_split(
             current_capacity,
+            current_technodata,
             demands.retrofit.sel(region=region),
             decommissioning,
             id_to_quantity,
         )
         new_demands = _inner_split(
             current_capacity,
+            current_technodata,
             demands.new.sel(region=region),
             partial(
                 maximum_production,
-                technologies=technodata,
                 year=current_year,
                 timeslice_level=timeslice_level,
             ),
@@ -495,6 +506,7 @@ def unmet_forecasted_demand(
 
 def _inner_split(
     assets: Mapping[Hashable, xr.DataArray],
+    technologies: Mapping[Hashable, xr.DataSet],
     demand: xr.DataArray,
     method: Callable,
     quantity: Mapping,
@@ -508,7 +520,7 @@ def _inner_split(
 
     # Find decrease in capacity production by each asset over time
     shares: Mapping[Hashable, xr.DataArray] = {
-        key: method(capacity=capacity)
+        key: method(capacity=capacity, technologies=technologies[key])
         .groupby("technology")
         .sum("asset")
         .rename(technology="asset")
