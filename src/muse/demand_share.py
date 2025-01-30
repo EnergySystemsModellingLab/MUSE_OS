@@ -477,7 +477,7 @@ def unmet_forecasted_demand(
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
     from muse.commodities import is_enduse
-    from muse.utilities import reduce_assets
+    from muse.utilities import broadcast_techs, reduce_assets
 
     current_year, investment_year = map(int, market.year.values)
 
@@ -493,11 +493,14 @@ def unmet_forecasted_demand(
     future_market = smarket.sel(year=investment_year, drop=True)
     future_capacity = capacity.sel(year=investment_year)
 
+    # Select technology data for assets
+    techs = broadcast_techs(technologies, capacity, installed_as_year=True)
+
     # Calculate unmet demand
     result = unmet_demand(
         market=future_market,
         capacity=future_capacity,
-        technologies=technologies,
+        technologies=techs,
         timeslice_level=timeslice_level,
     )
     assert "year" not in result.dims
