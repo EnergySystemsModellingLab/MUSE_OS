@@ -224,7 +224,8 @@ def broadcast_techs(
         ... )
 
         This array contains a value for every combination of technology and region (e.g.
-        this could refer to the efficiency of each technology in each region).
+        this could refer to the efficiency of each technology in each region). For
+        simplicity, we are not including a "year" dimension in this example.
 
         Define the assets template:
         >>> assets = xr.DataArray(
@@ -242,7 +243,7 @@ def broadcast_techs(
         We want to select the values from the technology array that correspond to each
         asset in the template. To do this, we perform `broadcast_techs` on
         `technologies` using `assets` as a template:
-        >>> broadcast_techs(technologies, assets)
+        >>> broadcast_techs(technologies, assets, installed_as_year=False)
         <xarray.DataArray (asset: 2)> Size: 16B
         array([1, 5])
         Coordinates:

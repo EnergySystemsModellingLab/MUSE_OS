@@ -1021,8 +1021,8 @@ class ScipyAdapter:
         >>> capacity = reduce_assets(assets.capacity, coords=("region", "technology"))
         >>> market_demand = 0.8 * maximum_production(
         ...     technologies,
-        ...     assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
-        ... ).rename(technology="asset")
+        ...     assets.capacity,
+        ... ).sel(year=2025)
         >>> costs = search * np.arange(np.prod(search.shape)).reshape(search.shape)
         >>> constraint = cs.max_capacity_expansion(
         ...     market_demand, capacity.sel(year=[2020, 2025]), search, technologies)
