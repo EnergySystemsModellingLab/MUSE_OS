@@ -246,13 +246,13 @@ def new_and_retro(
 
     from muse.commodities import is_enduse
     from muse.quantities import maximum_production
-    from muse.utilities import agent_concatenation, reduce_assets
+    from muse.utilities import agent_concatenation, broadcast_techs, reduce_assets
 
     current_year, investment_year = map(int, market.year.values)
 
     def decommissioning(capacity):
         return decommissioning_demand(
-            technologies=technologies,
+            technologies=technodata,
             capacity=capacity.interp(
                 year=[current_year, investment_year], kwargs={"fill_value": 0.0}
             ),
@@ -263,10 +263,13 @@ def new_and_retro(
         year=[current_year, investment_year], kwargs={"fill_value": 0.0}
     )
 
+    # Select technodata for assets
+    technodata = broadcast_techs(technologies, capacity, installed_as_year=True)
+
     demands = new_and_retro_demands(
         capacity,
         market,
-        technologies,
+        technodata,
         timeslice_level=timeslice_level,
     )
 
@@ -284,7 +287,6 @@ def new_and_retro(
 
     id_to_share: MutableMapping[Hashable, xr.DataArray] = {}
     for region in demands.region.values:
-        regional_techs = technologies.sel(region=region)
         retro_capacity: MutableMapping[Hashable, xr.DataArray] = {
             agent.uuid: agent.assets.capacity
             for agent in agents
@@ -330,7 +332,7 @@ def new_and_retro(
             demands.new.sel(region=region),
             partial(
                 maximum_production,
-                technologies=regional_techs,
+                technologies=technodata,
                 year=current_year,
                 timeslice_level=timeslice_level,
             ),
@@ -372,13 +374,13 @@ def standard_demand(
 
     from muse.commodities import is_enduse
     from muse.quantities import maximum_production
-    from muse.utilities import agent_concatenation, reduce_assets
+    from muse.utilities import agent_concatenation, broadcast_techs, reduce_assets
 
     current_year, investment_year = map(int, market.year.values)
 
     def decommissioning(capacity):
         return decommissioning_demand(
-            technologies=technologies,
+            technologies=technodata,
             capacity=capacity.interp(
                 year=[current_year, investment_year], kwargs={"fill_value": 0.0}
             ),
@@ -395,11 +397,14 @@ def standard_demand(
         year=[current_year, investment_year], kwargs={"fill_value": 0.0}
     )
 
+    # Select technodata for assets
+    technodata = broadcast_techs(technologies, capacity, installed_as_year=True)
+
     # Calculate new and retrofit demands
     demands = new_and_retro_demands(
         capacity=capacity,
         market=market,
-        technologies=technologies,
+        technologies=technodata,
         timeslice_level=timeslice_level,
     )
 
@@ -434,7 +439,7 @@ def standard_demand(
             demands.new.sel(region=region),
             partial(
                 maximum_production,
-                technologies=technologies.sel(region=region),
+                technologies=technodata,
                 year=current_year,
                 timeslice_level=timeslice_level,
             ),

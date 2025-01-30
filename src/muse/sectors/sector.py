@@ -296,25 +296,25 @@ class Sector(AbstractSector):  # type: ignore
         years = market.year.values
         capacity = self.capacity.interp(year=years, **self.interpolation)
 
+        # Select technology data for each asset
+        # Each asset uses the technology data from the year it was installed
+        technodata = broadcast_techs(technologies, capacity, installed_as_year=True)
+
         # Calculate supply
         supply = self.supply_prod(
             market=market,
             capacity=capacity,
-            technologies=technologies,
+            technologies=technodata,
             timeslice_level=self.timeslice_level,
         )
 
         # Calculate consumption
         consume = consumption(
-            technologies,
+            technologies=technodata,
             production=supply,
             prices=market.prices,
             timeslice_level=self.timeslice_level,
         )
-
-        # Select technology data for each asset
-        # Each asset uses the technology data from the year it was installed
-        technodata = broadcast_techs(technologies, supply, installed_as_year=True)
 
         # Calculate LCOE
         # We select data for the second year, which corresponds to the investment year
