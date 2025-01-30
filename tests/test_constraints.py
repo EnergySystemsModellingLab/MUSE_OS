@@ -58,9 +58,10 @@ def capacity(assets):
 @fixture
 def market_demand(assets, technologies):
     from muse.quantities import maximum_production
+    from muse.utilities import broadcast_techs
 
     return 0.8 * maximum_production(
-        technologies,
+        broadcast_techs(technologies, assets),
         assets.capacity,
     ).sel(year=INVESTMENT_YEAR).groupby("technology").sum("asset").rename(
         technology="asset"
