@@ -4,17 +4,22 @@ from pytest import approx, fixture, mark
 
 
 @fixture
+def technologies(technologies, capacity, timeslice):
+    from muse.utilities import broadcast_techs
+
+    return broadcast_techs(technologies, capacity)
+
+
+@fixture
 def production(
     technologies: xr.Dataset, capacity: xr.DataArray, timeslice
 ) -> xr.DataArray:
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
-    from muse.utilities import broadcast_techs
 
-    techs = broadcast_techs(technologies, capacity)
     return (
         broadcast_timeslice(capacity)
-        * distribute_timeslice(techs.fixed_outputs)
-        * broadcast_timeslice(techs.utilization_factor)
+        * distribute_timeslice(technologies.fixed_outputs)
+        * broadcast_timeslice(technologies.utilization_factor)
     )
 
 
@@ -36,7 +41,7 @@ def test_consumption(technologies, production, market):
 
 
 def test_production_aggregate_asset_view(
-    capacity: xr.DataArray, technologies: xr.Dataset
+    technologies: xr.Dataset, capacity: xr.DataArray
 ):
     """Production when capacity has format of agent.sector.
 
@@ -85,7 +90,7 @@ def test_production_aggregate_asset_view(
 
 @mark.xfail
 def test_production_agent_asset_view(
-    capacity: xr.DataArray, technologies: xr.Dataset, timeslice
+    technologies: xr.Dataset, capacity: xr.DataArray, timeslice
 ):
     """Production when capacity has format of agent.assets.capacity.
 
@@ -95,7 +100,7 @@ def test_production_agent_asset_view(
     from muse.utilities import coords_to_multiindex, reduce_assets
 
     capacity = coords_to_multiindex(reduce_assets(capacity)).unstack("asset").fillna(0)
-    test_production_aggregate_asset_view(capacity, technologies)
+    test_production_aggregate_asset_view(technologies, capacity)
 
 
 def test_capacity_in_use(production: xr.DataArray, technologies: xr.Dataset):
@@ -172,7 +177,7 @@ def test_supply_single_region(technologies, capacity, production, timeslice):
 
     # Select data for a single region
     region = "USA"
-    technologies = technologies.sel(region=region)
+    technologies = technologies.where(technologies.region == region, drop=True)
     capacity = capacity.where(capacity.region == region, drop=True)
     production = production.where(production.region == region, drop=True)
 
