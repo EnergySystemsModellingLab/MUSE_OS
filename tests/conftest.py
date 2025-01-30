@@ -442,23 +442,23 @@ def create_fake_capacity(n: int, technologies: Dataset) -> DataArray:
     from numpy.random import choice, rand
     from xarray import Dataset
 
-    n = 20
-    baseyear = int(technologies.year.min())
+    years = technologies.year
     techs = choice(technologies.technology.values, 5)
     regions = choice(technologies.region.values, 5)
+
     data = Dataset()
     data["year"] = "year", technologies.year.values
-    data["installed"] = "asset", choice(range(baseyear, baseyear + 5), n)
-    data["technology"] = "asset", choice(techs, len(data.installed))
-    data["region"] = "asset", choice(regions, len(data.installed))
+    data["installed"] = "asset", choice(years, n)
+    data["technology"] = "asset", choice(techs, n)
+    data["region"] = "asset", choice(regions, n)
     data = data.set_coords(("installed", "technology", "region"))
-    data["capacity"] = ("year", "asset"), rand(len(data.year), len(data.asset))
+    data["capacity"] = ("year", "asset"), rand(len(years), n)
     return data.capacity
 
 
 @fixture
 def capacity(technologies: Dataset) -> DataArray:
-    return create_fake_capacity(50, technologies)
+    return create_fake_capacity(20, technologies)
 
 
 @fixture

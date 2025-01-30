@@ -250,10 +250,12 @@ def broadcast_techs(
             region      (asset) <U2 16B 'R1' 'R2'
         Dimensions without coordinates: asset
 
-        The output array has the same shape as the assets template. Each value in the
-        output is the value in the original technology array that matches the
+        The output array has an "asset" dimension which matches the template. Each value
+        in the output is the value in the original technology array that matches the
         technology & region of each asset.
     """
+    assert "asset" in template.dims
+
     # Name of asset coordinates (e.g. "technology", "region", "installed")
     names = [u for u in template.coords if template[u].dims == ("asset",)]
     assert "year" not in names

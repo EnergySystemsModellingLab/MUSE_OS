@@ -70,7 +70,7 @@ def supply(
         total_maxprod_by_dst_region = maxprod.groupby("dst_region").sum(dim="asset")
         share_by_asset = maxprod / total_maxprod_by_dst_region
         demand_by_asset = (demand * share_by_asset).fillna(0)
-        # TODO: Not 100% sure this is correct - to examine in the future
+        # TODO: Haven't verified that this is correct - to examine in the future
 
     else:
         # Multi-region models
