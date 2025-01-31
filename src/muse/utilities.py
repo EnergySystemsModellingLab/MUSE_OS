@@ -244,6 +244,17 @@ def broadcast_techs(
     return techs.sel(second_sel)
 
 
+def clean_assets(assets: xr.Dataset, year: int):
+    """Cleans up and prepares asset for current iteration.
+
+    - removes data from before the specified year
+    - removes assets for which there is no capacity now or in the future
+    """
+    assets = assets.sel(year=slice(year, None))
+    assets = assets.where(assets.capacity.any(dim="year"), drop=True)
+    return assets
+
+
 def filter_input(
     dataset: xr.Dataset | xr.DataArray,
     year: int | Iterable[int] | None = None,

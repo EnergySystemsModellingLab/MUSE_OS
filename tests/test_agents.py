@@ -168,31 +168,31 @@ def test_merge_assets(assets):
     assert (multi_actual == multi_assets).all()
 
 
-# def test_clean_assets(assets):
-#     from numpy.random import choice
+def test_clean_assets(assets):
+    from numpy.random import choice
 
-#     from muse.utilities import clean_assets
+    from muse.utilities import clean_assets
 
-#     current_year = choice(range(assets.year.min().values, assets.year.max().values))
-#     iempties = assets.asset[range(0, len(assets.asset), 3)].asset
-#     assets.capacity[:] = 1
-#     assets.capacity.loc[{"asset": iempties, "year": assets.year >= current_year}] = 0
+    current_year = choice(range(assets.year.min().values, assets.year.max().values))
+    iempties = assets.asset[range(0, len(assets.asset), 3)].asset
+    assets.capacity[:] = 1
+    assets.capacity.loc[{"asset": iempties, "year": assets.year >= current_year}] = 0
 
-#     cleaned = clean_assets(assets, current_year)
-#     assert (cleaned.year >= current_year).all()
+    cleaned = clean_assets(assets, current_year)
+    assert (cleaned.year >= current_year).all()
 
-#     # fmt: disable
-#     empties = set(
-#         zip(
-#             assets.sel(asset=iempties).technology.values,
-#             assets.sel(asset=iempties).installed.values,
-#         )
-#     )
-#     # fmt: enable
-#     cleanies = set(zip(cleaned.technology.values, cleaned.installed.values))
-#     originals = set(zip(assets.technology.values, assets.installed.values))
-#     assert empties.isdisjoint(cleanies)
-#     assert empties.union(cleanies) == originals
+    # fmt: disable
+    empties = set(
+        zip(
+            assets.sel(asset=iempties).technology.values,
+            assets.sel(asset=iempties).installed.values,
+        )
+    )
+    # fmt: enable
+    cleanies = set(zip(cleaned.technology.values, cleaned.installed.values))
+    originals = set(zip(assets.technology.values, assets.installed.values))
+    assert empties.isdisjoint(cleanies)
+    assert empties.union(cleanies) == originals
 
 
 def test_initial_assets(tmp_path):
