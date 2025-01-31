@@ -134,6 +134,11 @@ def clean(agent: Agent, assets: Dataset) -> Dataset:
     from muse.utilities import clean_assets
 
     assets_clean = clean_assets(assets, agent.year)
+
+    # Will run into issues if there are no assets, so just return the original array
+    # TODO: need a more robust solution for this problem
+    if len(assets_clean.asset) == 0:
+        return assets
     return assets_clean
 
 
