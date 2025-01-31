@@ -130,11 +130,13 @@ def noop(agent: Agent, assets: Dataset) -> Dataset:
 
 @register_initial_asset_transform
 def clean(agent: Agent, assets: Dataset) -> Dataset:
-    """Removes empty assets."""
-    from muse.utilities import clean_assets
+    """Returns a cleaned assets array without stale data."""
+    # Remove data from before the current year
+    assets_clean = assets.sel(year=slice(agent.year, None))
 
-    years = [agent.year, agent.forecast_year]
-    return clean_assets(assets, years)
+    # Remove assets with zero capacity now and in the future
+    assets_clean = assets_clean.where(assets_clean.capacity.any(dim="year"), drop=True)
+    return assets_clean
 
 
 @register_final_asset_transform(name="new")
