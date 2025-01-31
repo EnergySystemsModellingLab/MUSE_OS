@@ -28,7 +28,7 @@ FINAL_ASSET_TRANSFORM: MutableMapping[str, Callable] = {}
 """ Transform at the end of each step, including new assets. """
 
 
-def housekeeping_factory(settings: str | Mapping = "noop") -> Callable:
+def housekeeping_factory(settings: str | Mapping = "clean") -> Callable:
     """Returns a function for performing initial housekeeping.
 
     For instance, remove technologies with no capacity now or in the future.
