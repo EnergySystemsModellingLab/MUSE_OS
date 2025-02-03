@@ -179,7 +179,7 @@ def register_objective(function: OBJECTIVE_SIGNATURE):
             demand, ["asset", "timeslice", "commodity"], optional=["region"]
         )
         check_dimensions(
-            technologies, ["replacement", "commodity"], optional=["timeslice"]
+            technologies, ["replacement", "commodity"], optional=["timeslice", "asset"]
         )
 
         # Calculate objective

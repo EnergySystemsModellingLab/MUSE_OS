@@ -7,7 +7,7 @@ from muse.examples import available_examples
 
 @mark.regression
 @mark.example
-@mark.parametrize("model", available_examples())
+@mark.parametrize("model", available_examples)
 def test_fullsim_regression(model, tmpdir, compare_dirs):
     from warnings import simplefilter
 

@@ -40,17 +40,23 @@ from muse.timeslices import drop_timeslice
 
 __all__ = ["model", "technodata"]
 
+available_examples = [
+    "default",
+    "default_retro",
+    "default_adhoc",
+    "default_timeslice",
+    "medium",
+    "multiple_agents",
+    "minimum_service",
+    "trade",
+]
+
 
 def example_data_dir() -> Path:
     """Gets the examples folder."""
     import muse
 
     return Path(muse.__file__).parent / "data" / "example"
-
-
-def available_examples() -> list[str]:
-    """List examples available in the examples folder."""
-    return [d.stem for d in example_data_dir().iterdir() if d.is_dir()]
 
 
 def model(name: str = "default", test: bool = False) -> MCA:
@@ -96,7 +102,7 @@ def copy_model(
     """
     from shutil import rmtree
 
-    if name.lower() not in available_examples():
+    if name.lower() not in available_examples:
         raise ValueError(f"Unknown model {name}")
 
     path = Path() if path is None else Path(path)
@@ -116,6 +122,8 @@ def copy_model(
         _copy_default(path)
     elif name.lower() == "default_retro":
         _copy_default_retro(path)
+    elif name.lower() == "default_adhoc":
+        _copy_default_adhoc(path)
     elif name.lower() == "default_timeslice":
         _copy_default_timeslice(path)
     elif name.lower() == "medium":
@@ -303,6 +311,24 @@ def _copy_default_retro(path: Path):
     copyfile(
         example_data_dir() / "default_retro" / "settings.toml", path / "settings.toml"
     )
+
+
+def _copy_default_adhoc(path: Path):
+    from shutil import copyfile, copytree
+
+    from muse.wizard import modify_toml
+
+    copytree(example_data_dir() / "default" / "input", path / "input")
+    copytree(example_data_dir() / "default" / "technodata", path / "technodata")
+    copyfile(example_data_dir() / "default" / "settings.toml", path / "settings.toml")
+
+    def update_lpsolver(data):
+        for sector in data.get("sectors", {}):
+            subsectors = data["sectors"][sector].get("subsectors", {})
+            for sub in subsectors:
+                subsectors[sub]["lpsolver"] = "adhoc"
+
+    modify_toml(path / "settings.toml", update_lpsolver)
 
 
 def _copy_default_timeslice(path: Path):

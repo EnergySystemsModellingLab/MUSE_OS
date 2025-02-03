@@ -8,18 +8,22 @@ INVESTMENT_YEAR = 2015
 
 
 @fixture
-def _technologies(technologies):
-    return technologies.interp(year=INVESTMENT_YEAR)
-
-
-@fixture
 def _capacity(stock):
     return stock.capacity.interp(year=[CURRENT_YEAR, INVESTMENT_YEAR])
 
 
 @fixture
+def _technologies(technologies, _capacity):
+    """Technology parameters for the sector."""
+    return technologies.interp(year=INVESTMENT_YEAR)
+
+
+@fixture
 def _market(_technologies, _capacity, timeslice):
     """A market which matches stocks exactly."""
+    from muse.utilities import broadcast_techs
+
+    _technologies = broadcast_techs(_technologies, _capacity)
     return _matching_market(_technologies, _capacity).transpose(
         "timeslice", "region", "commodity", "year"
     )
@@ -33,12 +37,20 @@ def _matching_market(technologies, capacity):
 
     market = xr.Dataset()
     production = maximum_production(technologies, capacity)
+    consumption = consumption(technologies, production)
+    if "region" in production.coords:
+        production = production.groupby("region")
+        consumption = consumption.groupby("region")
     market["supply"] = production.sum("asset")
-    market["consumption"] = drop_timeslice(
-        consumption(technologies, production).sum("asset") + market.supply
-    )
+    market["consumption"] = drop_timeslice(consumption.sum("asset") + market.supply)
     market["prices"] = market.supply.dims, random(market.supply.shape)
     return market
+
+
+def test_fixtures(_capacity, _market, _technologies):
+    assert set(_capacity.dims) == {"asset", "year"}
+    assert set(_market.dims) == {"commodity", "region", "year", "timeslice"}
+    assert set(_technologies.dims) == {"technology", "region", "commodity"}
 
 
 def test_new_retro_split_zero_unmet(_capacity, _market, _technologies):
@@ -216,13 +228,13 @@ def test_new_retro_demand_share(_technologies, market, timeslice, stock):
     from muse.commodities import is_enduse
     from muse.demand_share import new_and_retro
 
-    asia_stock = stock.expand_dims(region=["ASEAN"])
-    usa_stock = stock.expand_dims(region=["USA"])
+    asia_stock = stock.where(stock.region == "ASEAN", drop=True)
+    usa_stock = stock.where(stock.region == "USA", drop=True)
 
     asia_market = _matching_market(_technologies, asia_stock.capacity)
     usa_market = _matching_market(_technologies, usa_stock.capacity)
     market = xr.concat((asia_market, usa_market), dim="region")
-    market.consumption.loc[{"year": 2031}] *= 2
+    market.consumption.loc[{"year": 2030}] *= 2
 
     # spoof some agents
     @dataclass
@@ -235,12 +247,12 @@ def test_new_retro_demand_share(_technologies, market, timeslice, stock):
         quantity: float
 
     agents = [
-        Agent(0.3 * usa_stock.squeeze("region"), "retrofit", uuid4(), "a", "USA", 0.3),
-        Agent(0.0 * usa_stock.squeeze("region"), "new", uuid4(), "a", "USA", 0.0),
-        Agent(0.7 * usa_stock.squeeze("region"), "retrofit", uuid4(), "b", "USA", 0.7),
-        Agent(0.0 * usa_stock.squeeze("region"), "new", uuid4(), "b", "USA", 0.0),
-        Agent(asia_stock.squeeze("region"), "retrofit", uuid4(), "a", "ASEAN", 1.0),
-        Agent(0 * asia_stock.squeeze("region"), "new", uuid4(), "a", "ASEAN", 0.0),
+        Agent(0.3 * usa_stock, "retrofit", uuid4(), "a", "USA", 0.3),
+        Agent(0.0 * usa_stock, "new", uuid4(), "a", "USA", 0.0),
+        Agent(0.7 * usa_stock, "retrofit", uuid4(), "b", "USA", 0.7),
+        Agent(0.0 * usa_stock, "new", uuid4(), "b", "USA", 0.0),
+        Agent(asia_stock, "retrofit", uuid4(), "a", "ASEAN", 1.0),
+        Agent(0 * asia_stock, "new", uuid4(), "a", "ASEAN", 0.0),
     ]
 
     results = new_and_retro(agents, market, _technologies)
@@ -270,13 +282,13 @@ def test_standard_demand_share(_technologies, timeslice, stock):
     from muse.demand_share import standard_demand
     from muse.errors import RetrofitAgentInStandardDemandShare
 
-    asia_stock = stock.expand_dims(region=["ASEAN"])
-    usa_stock = stock.expand_dims(region=["USA"])
+    asia_stock = stock.where(stock.region == "ASEAN", drop=True)
+    usa_stock = stock.where(stock.region == "USA", drop=True)
 
     asia_market = _matching_market(_technologies, asia_stock.capacity)
     usa_market = _matching_market(_technologies, usa_stock.capacity)
     market = xr.concat((asia_market, usa_market), dim="region")
-    market.consumption.loc[{"year": 2031}] *= 2
+    market.consumption.loc[{"year": 2030}] *= 2
 
     # spoof some agents
     @dataclass
@@ -289,12 +301,12 @@ def test_standard_demand_share(_technologies, timeslice, stock):
         quantity: float
 
     agents = [
-        Agent(0.3 * usa_stock.squeeze("region"), "retrofit", uuid4(), "a", "USA", 0.3),
-        Agent(0.0 * usa_stock.squeeze("region"), "new", uuid4(), "a", "USA", 0.0),
-        Agent(0.7 * usa_stock.squeeze("region"), "retrofit", uuid4(), "b", "USA", 0.7),
-        Agent(0.0 * usa_stock.squeeze("region"), "new", uuid4(), "b", "USA", 0.0),
-        Agent(asia_stock.squeeze("region"), "retrofit", uuid4(), "a", "ASEAN", 1.0),
-        Agent(0 * asia_stock.squeeze("region"), "new", uuid4(), "a", "ASEAN", 0.0),
+        Agent(0.3 * usa_stock, "retrofit", uuid4(), "a", "USA", 0.3),
+        Agent(0.0 * usa_stock, "new", uuid4(), "a", "USA", 0.0),
+        Agent(0.7 * usa_stock, "retrofit", uuid4(), "b", "USA", 0.7),
+        Agent(0.0 * usa_stock, "new", uuid4(), "b", "USA", 0.0),
+        Agent(asia_stock, "retrofit", uuid4(), "a", "ASEAN", 1.0),
+        Agent(0 * asia_stock, "new", uuid4(), "a", "ASEAN", 0.0),
     ]
 
     with raises(RetrofitAgentInStandardDemandShare):
@@ -321,8 +333,8 @@ def test_unmet_forecast_demand(_technologies, timeslice, stock):
     from muse.commodities import is_enduse
     from muse.demand_share import unmet_forecasted_demand
 
-    asia_stock = stock.expand_dims(region=["ASEAN"])
-    usa_stock = stock.expand_dims(region=["USA"])
+    asia_stock = stock.where(stock.region == "ASEAN", drop=True)
+    usa_stock = stock.where(stock.region == "USA", drop=True)
 
     asia_market = _matching_market(_technologies, asia_stock.capacity)
     usa_market = _matching_market(_technologies, usa_stock.capacity)
@@ -335,9 +347,9 @@ def test_unmet_forecast_demand(_technologies, timeslice, stock):
 
     # First ensure that the demand is fully met
     agents = [
-        Agent(0.3 * usa_stock.squeeze("region")),
-        Agent(0.7 * usa_stock.squeeze("region")),
-        Agent(asia_stock.squeeze("region")),
+        Agent(0.3 * usa_stock),
+        Agent(0.7 * usa_stock),
+        Agent(asia_stock),
     ]
     result = unmet_forecasted_demand(agents, market, _technologies)
     assert set(result.dims) == set(market.consumption.dims) - {"year"}
@@ -345,9 +357,9 @@ def test_unmet_forecast_demand(_technologies, timeslice, stock):
 
     # Then try with too little demand
     agents = [
-        Agent(0.4 * usa_stock.squeeze("region")),
-        Agent(0.8 * usa_stock.squeeze("region")),
-        Agent(1.1 * asia_stock.squeeze("region")),
+        Agent(0.4 * usa_stock),
+        Agent(0.8 * usa_stock),
+        Agent(1.1 * asia_stock),
     ]
     result = unmet_forecasted_demand(
         agents,
@@ -359,8 +371,8 @@ def test_unmet_forecast_demand(_technologies, timeslice, stock):
 
     # Then try too little capacity
     agents = [
-        Agent(0.5 * usa_stock.squeeze("region")),
-        Agent(0.5 * asia_stock.squeeze("region")),
+        Agent(0.5 * usa_stock),
+        Agent(0.5 * asia_stock),
     ]
     result = unmet_forecasted_demand(agents, market, _technologies)
     comm_usage = _technologies.comm_usage.sel(commodity=market.commodity)
@@ -368,7 +380,7 @@ def test_unmet_forecast_demand(_technologies, timeslice, stock):
     assert (result.commodity == comm_usage.commodity).all()
     assert result.sel(commodity=~enduse).values == approx(0)
     assert result.sel(commodity=enduse).values == approx(
-        0.5 * market.consumption.sel(commodity=enduse, year=2031).values
+        0.5 * market.consumption.sel(commodity=enduse, year=2030).values
     )
 
 
@@ -381,7 +393,7 @@ def test_decommissioning_demand(_technologies, _capacity, timeslice):
     _technologies.fixed_outputs[:] = fouts = 0.5
     _technologies.utilization_factor[:] = ufac = 0.4
     decom = decommissioning_demand(_technologies, _capacity)
-    assert set(decom.dims) == {"asset", "commodity", "region", "timeslice"}
+    assert set(decom.dims) == {"asset", "commodity", "timeslice"}
     assert decom.sel(commodity=is_enduse(_technologies.comm_usage)).sum(
         "timeslice"
     ).values == approx(ufac * fouts * (current - forecast))

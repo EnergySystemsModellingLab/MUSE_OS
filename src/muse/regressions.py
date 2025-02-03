@@ -207,7 +207,7 @@ def register_regression(
 
     from muse.registration import name_variations
 
-    # allows specifyng the registered name as a keyword argument
+    # allows specifying the registered name as a keyword argument
     if Functor is None:
         return lambda x: register_regression(x, name=name)
 

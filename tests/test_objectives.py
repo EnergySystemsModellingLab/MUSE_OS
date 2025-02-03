@@ -4,37 +4,31 @@ YEAR = 2030
 
 
 @fixture
-def _technologies(technologies, retro_agent, search_space):
-    techs = retro_agent.filter_input(
-        technologies,
-        technology=search_space.replacement,
-    ).drop_vars("technology")
-    return techs.sel(year=YEAR)
+def _demand(demand_share):
+    return demand_share
 
 
 @fixture
-def _demand(demand_share, search_space):
-    reduced_demand = demand_share.sel(
-        {
-            k: search_space[k]
-            for k in set(demand_share.dims).intersection(search_space.dims)
-        }
-    )
-    reduced_demand["year"] = 2030
-    return reduced_demand
+def _technologies(technologies, demand_share):
+    from muse.utilities import broadcast_techs
+
+    techs = technologies.sel(year=YEAR).rename(technology="replacement")
+    return broadcast_techs(techs, demand_share)
 
 
 @fixture
-def _prices(retro_agent, agent_market):
-    prices = retro_agent.filter_input(agent_market.prices)
-    return prices.sel(year=YEAR)
+def _prices(market, demand_share):
+    from muse.utilities import broadcast_techs
+
+    prices = market.prices.sel(year=YEAR)
+    return broadcast_techs(prices, demand_share, installed_as_year=False)
 
 
 def test_fixtures(_technologies, _demand, _prices):
     """Validating that the fixtures have appropriate dimensions."""
-    assert set(_technologies.dims) == {"commodity", "replacement"}
+    assert set(_technologies.dims) == {"asset", "commodity", "replacement"}
     assert set(_demand.dims) == {"asset", "commodity", "timeslice"}
-    assert set(_prices.dims) == {"commodity", "timeslice"}
+    assert set(_prices.dims) == {"asset", "commodity", "timeslice"}
 
 
 @mark.usefixtures("save_registries")
