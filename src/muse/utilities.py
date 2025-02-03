@@ -182,10 +182,7 @@ def reduce_assets(
 def broadcast_techs(
     technologies: xr.Dataset | xr.DataArray,
     template: xr.DataArray | xr.Dataset,
-    dimension: str = "asset",
-    interpolation: str = "linear",
     installed_as_year: bool = True,
-    **kwargs,
 ) -> xr.Dataset | xr.DataArray:
     """Broadcasts technologies to the shape of template in given dimension.
 
@@ -201,65 +198,100 @@ def broadcast_techs(
     This function broadcast the first representation to the shape and coordinates
     of the second.
 
+    Note: this is not necessarily limited to `technology` datasets. For
+    example, it could also be used on a dataset of commodity prices to select prices
+    relevant to each asset (e.g. if assets exist in multiple regions). In this example,
+    installed_as_year should be set to False (see below).
+
     Arguments:
         technologies: The dataset to broadcast
         template: the dataset or data-array to use as a template
-        dimension: the name of the dimensiom from `template` over which to
-            broadcast
-        interpolation: interpolation method used across `year`
-        installed_as_year: if the coordinate `installed` exists, then it is
-            applied to the `year` dimension of the technologies dataset
-        kwargs: further arguments are used initial filters over the
-            `technologies` dataset.
+        installed_as_year: True means that the "year" dimension in the technologies
+            dataset corresponds to the year that the asset was installed. Will commonly
+            be True for most technology parameters (e.g. var_par/fix_par are specified
+            the year that an asset is installed, and fixed for the lifetime of the
+            asset). If True, the technologies dataset must have data for every possible
+            "installed" year in the template.
+
+    Example:
+        Define the technology array:
+        >>> import xarray as xr
+        >>> technologies = xr.DataArray(
+        ...     data=[[1, 2, 3], [4, 5, 6]],
+        ...     dims=['technology', 'region'],
+        ...     coords={'technology': ['gasboiler', 'heatpump'],
+        ...             'region': ['R1', 'R2', 'R3']},
+        ... )
+
+        This array contains a value for every combination of technology and region (e.g.
+        this could refer to the efficiency of each technology in each region). For
+        simplicity, we are not including a "year" dimension in this example.
+
+        Define the assets template:
+        >>> assets = xr.DataArray(
+        ...     data=[10, 50],
+        ...     dims=["asset"],
+        ...     coords={
+        ...         "region": (["asset"], ["R1", "R2"]),
+        ...         "technology": (["asset"], ["gasboiler", "heatpump"])},
+        ... )
+
+        We have two assets: a gas boiler in region R1 and a heat pump in region R2. In
+        this case the values don't matter, but could correspond to the installed
+        capacity of each asset, for example.
+
+        We want to select the values from the technology array that correspond to each
+        asset in the template. To do this, we perform `broadcast_techs` on
+        `technologies` using `assets` as a template:
+        >>> broadcast_techs(technologies, assets, installed_as_year=False)
+        <xarray.DataArray (asset: 2)> Size: 16B
+        array([1, 5])
+        Coordinates:
+            technology  (asset) <U9 72B 'gasboiler' 'heatpump'
+            region      (asset) <U2 16B 'R1' 'R2'
+        Dimensions without coordinates: asset
+
+        The output array has an "asset" dimension which matches the template. Each value
+        in the output is the value in the original technology array that matches the
+        technology & region of each asset.
     """
-    # this assert will trigger if 'year' is changed to 'installed' in
-    # technologies, because then this function should be modified.
-    assert "installed" not in technologies.dims
-    names = [u for u in template.coords if template[u].dims == (dimension,)]
-    # the first selection reduces the size of technologies without affecting the
+    # TODO: this will return `technologies` unchanged if the template has no "asset"
+    # dimension, but strictly speaking we shouldn't allow this.
+    # assert "asset" in template.dims
+
+    # Name of asset coordinates (e.g. "technology", "region", "installed")
+    names = [u for u in template.coords if template[u].dims == ("asset",)]
+    assert "year" not in names
+
+    # If installed_as_year is True, we need to rename the installed dimension to "year"
+    # TODO: this should be stricter, and enforce that the template has "installed" data,
+    # and that the technologies dataset has a "year" dimension.
+    # if installed_as_year:
+    if installed_as_year and "installed" in names and "year" in technologies.dims:
+        # assert "installed" in names
+        technologies = technologies.rename(year="installed")
+
+    # The first selection reduces the size of technologies without affecting the
     # dimensions.
     first_sel = {
-        n: technologies[n].isin(template[n])
-        for n in names
-        if n in technologies.dims and n != "year"
+        n: technologies[n].isin(template[n]) for n in names if n in technologies.dims
     }
-    first_sel.update({k: v for k, v in kwargs.items() if k != "year"})
     techs = technologies.sel(first_sel)
 
-    if "year" in technologies.dims:
-        year = None
-        if installed_as_year and "installed" in names:
-            year = template["installed"]
-        elif (not installed_as_year) and "year" in template.dims:
-            year = template["year"]
-        if year is not None and len(year) > 0:
-            techs = techs.interp(
-                year=sorted(set(cast(Iterable, year.values))), method=interpolation
-            )
-        if installed_as_year and "installed" in names:
-            techs = techs.rename(year="installed")
-
+    # Reshape the technology array to match the template
     second_sel = {n: template[n] for n in template.coords if n in techs.dims}
-
     return techs.sel(second_sel)
 
 
-def clean_assets(assets: xr.Dataset, years: int | Sequence[int]):
+def clean_assets(assets: xr.Dataset, year: int):
     """Cleans up and prepares asset for current iteration.
 
-    - adds current and forecast year by backfilling missing entries
+    - removes data from before the specified year
     - removes assets for which there is no capacity now or in the future
     """
-    if isinstance(years, Sequence):
-        current = min(*years)
-        years = sorted(set(assets.year[assets.year >= current].values).union(years))
-    else:
-        x = set(assets.year[assets.year >= years].values)
-        x.add(years)
-        years = sorted(x)
-    result = assets.reindex(year=years, method="backfill").fillna(0)
-    not_asset = [u for u in result.dims if u != "asset"]
-    return result.sel(asset=result.capacity.any(not_asset))
+    assets = assets.sel(year=slice(year, None))
+    assets = assets.where(assets.capacity.any(dim="year"), drop=True)
+    return assets
 
 
 def filter_input(
@@ -300,7 +332,6 @@ def filter_input(
 def filter_with_template(
     data: xr.Dataset | xr.DataArray,
     template: xr.DataArray | xr.Dataset,
-    asset_dimension: str = "asset",
     **kwargs,
 ):
     """Filters data to match template.
@@ -320,8 +351,8 @@ def filter_with_template(
     Returns:
         `data` transformed to match the form of `template`
     """
-    if asset_dimension in template.dims:
-        return broadcast_techs(data, template, dimension=asset_dimension, **kwargs)
+    if "asset" in template.dims:
+        return broadcast_techs(data, template)
 
     match_indices = set(data.dims).intersection(template.dims) - set(kwargs)
     match = {d: template[d].isin(data[d]).values for d in match_indices if d != "year"}
@@ -608,55 +639,6 @@ def agent_concatenation(
     if fill_value is not np.nan:
         result = result.fillna(fill_value)
     return result
-
-
-def aggregate_technology_model(
-    data: xr.DataArray | xr.Dataset,
-    dim: str = "asset",
-    drop: str | Sequence[str] = "installed",
-) -> xr.DataArray | xr.Dataset:
-    """Aggregate together assets with the same installation year.
-
-    The assets of a given agent, region, and technology but different installation year
-    are grouped together and summed over.
-
-    Example:
-        We first create a random set of agent assets and aggregate them.
-        Some of these agents own assets from the same technology but potentially with
-        different installation year. This function will aggregate together all assets
-        of a given agent with same technology.
-
-        >>> from muse.examples import random_agent_assets
-        >>> from muse.utilities import agent_concatenation, aggregate_technology_model
-        >>> rng = np.random.default_rng(1234)
-        >>> agent_assets = {i: random_agent_assets(rng) for i in range(5)}
-        >>> assets = agent_concatenation(agent_assets)
-        >>> reduced = aggregate_technology_model(assets)
-
-        We can check that the tuples (agent, technology) are unique (each agent works in
-        a single region):
-
-        >>> ids = list(zip(reduced.agent.values, reduced.technology.values))
-        >>> assert len(set(ids)) == len(ids)
-
-        And we can check they correspond to the right summation:
-
-        >>> for agent, technology in set(ids):
-        ...     techsel = assets.technology == technology
-        ...     agsel = assets.agent == agent
-        ...     expected = assets.sel(asset=techsel & agsel).sum("asset")
-        ...     techsel = reduced.technology == technology
-        ...     agsel = reduced.agent == agent
-        ...     actual = reduced.sel(asset=techsel & agsel)
-        ...     assert len(actual.asset) == 1
-        ...     assert (actual == expected).all()
-    """
-    if isinstance(drop, str):
-        drop = (drop,)
-    return reduce_assets(
-        data,
-        [cast(str, u) for u in data.coords if u not in drop and data[u].dims == (dim,)],
-    )
 
 
 def check_dimensions(

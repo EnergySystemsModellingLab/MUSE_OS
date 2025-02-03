@@ -34,7 +34,7 @@ def run_model(name: str) -> Union[str, None]:
 
 if __name__ == "__main__":
     with ProcessPoolExecutor() as executor:
-        futures = {executor.submit(run_model, model) for model in available_examples()}
+        futures = {executor.submit(run_model, model) for model in available_examples}
     for future in futures:
         error_message = future.result()
         if error_message:

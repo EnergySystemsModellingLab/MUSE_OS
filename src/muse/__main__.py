@@ -18,7 +18,7 @@ parser.add_argument(
 parser.add_argument(
     "--model",
     default=None,
-    choices=examples.available_examples(),
+    choices=examples.available_examples,
     help="Runs a model distributed with MUSE. "
     "If provided, the 'settings' input is ignored.",
 )
@@ -102,6 +102,22 @@ def patched_broadcast_compat_data(self, other):
         self_data = self.data
         other_data = other
         dims = self.dims
+
+    # Check output dimensions
+    if "asset" in dims and any(
+        dim in dims for dim in ["region", "technology", "installed"]
+    ):
+        raise ValueError(
+            "DataArrays with an 'asset' dimension cannot be broadcasted along "
+            "'region', 'technology', or 'installed' dimensions. "
+            "This error is usually raised when attempting to combine asset-level data "
+            "(e.g. a capacity dataset with an 'asset' dimension) with a fully explicit "
+            "technology dataset (e.g. a technology dataset with 'region' and "
+            "'technology' dimensions). "
+            "Please use `broadcast_techs` on the latter object before performing this "
+            "operation."
+        )
+
     return self_data, other_data, dims
 
 

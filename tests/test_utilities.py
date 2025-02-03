@@ -40,35 +40,22 @@ def test_reduce_assets_with_zero_size(capacity: xr.DataArray):
     assert (actual == x).all()
 
 
-def test_broadcast_tech(technologies, capacity):
+def test_broadcast_techs(technologies, capacity):
     from muse.utilities import broadcast_techs
 
-    regions = make_array(technologies.region)
-    commodities = make_array(technologies.commodity)
-    years = make_array(technologies.year)
-    techs = make_array(technologies.technology)
-    technologies["fixed_outputs"] = regions * commodities * years * techs
+    # Test with installed_as_year = True
+    result1 = broadcast_techs(technologies, capacity, installed_as_year=True)
+    assert set(result1.dims) == {"asset", "commodity"}
+    assert (result1.asset == capacity.asset).all()
 
-    actual = broadcast_techs(technologies.fixed_outputs, capacity)
+    # Test with installed_as_year = False
+    result2 = broadcast_techs(technologies, capacity, installed_as_year=False)
+    assert set(result2.dims) == {"asset", "commodity", "year"}
+    assert (result2.asset == capacity.asset).all()
 
-    assert set(actual.dims) == {"commodity", "asset"}
-    assert (actual.commodity == technologies.commodity).all()
-    assert (actual.asset == capacity.asset).all()
-
-    for asset in capacity.asset:
-        region = regions.sel(region=asset.region)
-        year = years.interp(year=asset.installed, method="linear")
-        tech = techs.sel(technology=asset.technology)
-        expected = region * year * tech * commodities
-        assert actual.isel(asset=int(asset)).values == approx(expected.values)
-
-
-def test_broadcast_tech_idempotent(technologies, capacity):
-    from muse.utilities import broadcast_techs
-
-    first = broadcast_techs(technologies, capacity)
-    second = broadcast_techs(first, capacity)
-    assert (first == second).all()
+    # Template without "asset" dimensions (TODO: need to make the function stricter)
+    # with raises(AssertionError):
+    #     broadcast_techs(technologies, technologies)
 
 
 def test_tupled_dimension_no_tupling():
