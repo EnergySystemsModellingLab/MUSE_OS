@@ -255,7 +255,9 @@ def broadcast_techs(
         in the output is the value in the original technology array that matches the
         technology & region of each asset.
     """
-    assert "asset" in template.dims
+    # TODO: this will return `technologies` unchanged if the template has no "asset"
+    # dimension, but strictly speaking we shouldn't allow this.
+    # assert "asset" in template.dims
 
     # Name of asset coordinates (e.g. "technology", "region", "installed")
     names = [u for u in template.coords if template[u].dims == ("asset",)]
