@@ -28,7 +28,7 @@ FINAL_ASSET_TRANSFORM: MutableMapping[str, Callable] = {}
 """ Transform at the end of each step, including new assets. """
 
 
-def housekeeping_factory(settings: str | Mapping = "noop") -> Callable:
+def housekeeping_factory(settings: str | Mapping = "clean") -> Callable:
     """Returns a function for performing initial housekeeping.
 
     For instance, remove technologies with no capacity now or in the future.
@@ -133,8 +133,13 @@ def clean(agent: Agent, assets: Dataset) -> Dataset:
     """Removes empty assets."""
     from muse.utilities import clean_assets
 
-    years = [agent.year, agent.forecast_year]
-    return clean_assets(assets, years)
+    assets_clean = clean_assets(assets, agent.year)
+
+    # Will run into issues if there are no assets, so just return the original array
+    # TODO: need a more robust solution for this problem
+    if len(assets_clean.asset) == 0:
+        return assets
+    return assets_clean
 
 
 @register_final_asset_transform(name="new")
