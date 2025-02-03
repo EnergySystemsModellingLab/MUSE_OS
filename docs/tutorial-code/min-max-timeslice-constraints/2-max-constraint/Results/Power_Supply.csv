@@ -1,12 +1,4 @@
 asset,comm_usage,commodity,day,hour,installed,month,region,supply,technology,timeslice,units_prices,year
-<<<<<<< HEAD
-0,10,electricity,all-week,night,2020,all-year,R1,0.05210000000,gasCCGT,0,MUS$2010/PJ,2025
-1,10,electricity,all-week,night,2025,all-year,R1,0.37010000000,windturbine,0,MUS$2010/PJ,2025
-0,6,CO2f,all-week,night,2020,all-year,R1,4.77840000000,gasCCGT,0,MUS$2010/kt,2025
-0,10,electricity,all-week,morning,2020,all-year,R1,0.07820000000,gasCCGT,1,MUS$2010/PJ,2025
-1,10,electricity,all-week,morning,2025,all-year,R1,0.55510000000,windturbine,1,MUS$2010/PJ,2025
-0,6,CO2f,all-week,morning,2020,all-year,R1,7.16760000000,gasCCGT,1,MUS$2010/kt,2025
-=======
 0,10,electricity,all-week,night,2020,all-year,R1,0.03330000000,gasCCGT,0,MUS$2010/PJ,2020
 0,6,CO2f,all-week,night,2020,all-year,R1,3.05570000000,gasCCGT,0,MUS$2010/kt,2020
 0,10,electricity,all-week,morning,2020,all-year,R1,0.06670000000,gasCCGT,1,MUS$2010/PJ,2020
@@ -15,13 +7,12 @@ asset,comm_usage,commodity,day,hour,installed,month,region,supply,technology,tim
 0,6,CO2f,all-week,afternoon,2020,all-year,R1,9.16700000000,gasCCGT,2,MUS$2010/kt,2020
 0,10,electricity,all-week,early-peak,2020,all-year,R1,0.06670000000,gasCCGT,3,MUS$2010/PJ,2020
 0,6,CO2f,all-week,early-peak,2020,all-year,R1,6.11130000000,gasCCGT,3,MUS$2010/kt,2020
-0,10,electricity,all-week,night,2020,all-year,R1,0.05280000000,gasCCGT,0,MUS$2010/PJ,2025
-1,10,electricity,all-week,night,2025,all-year,R1,0.36940000000,windturbine,0,MUS$2010/PJ,2025
-0,6,CO2f,all-week,night,2020,all-year,R1,4.83810000000,gasCCGT,0,MUS$2010/kt,2025
-0,10,electricity,all-week,morning,2020,all-year,R1,0.07920000000,gasCCGT,1,MUS$2010/PJ,2025
-1,10,electricity,all-week,morning,2025,all-year,R1,0.55420000000,windturbine,1,MUS$2010/PJ,2025
-0,6,CO2f,all-week,morning,2020,all-year,R1,7.25720000000,gasCCGT,1,MUS$2010/kt,2025
->>>>>>> 085c075a (Update results)
+0,10,electricity,all-week,night,2020,all-year,R1,0.05210000000,gasCCGT,0,MUS$2010/PJ,2025
+1,10,electricity,all-week,night,2025,all-year,R1,0.37010000000,windturbine,0,MUS$2010/PJ,2025
+0,6,CO2f,all-week,night,2020,all-year,R1,4.77840000000,gasCCGT,0,MUS$2010/kt,2025
+0,10,electricity,all-week,morning,2020,all-year,R1,0.07820000000,gasCCGT,1,MUS$2010/PJ,2025
+1,10,electricity,all-week,morning,2025,all-year,R1,0.55510000000,windturbine,1,MUS$2010/PJ,2025
+0,6,CO2f,all-week,morning,2020,all-year,R1,7.16760000000,gasCCGT,1,MUS$2010/kt,2025
 0,10,electricity,all-week,afternoon,2020,all-year,R1,0.10000000000,gasCCGT,2,MUS$2010/PJ,2025
 1,10,electricity,all-week,afternoon,2025,all-year,R1,0.37010000000,windturbine,2,MUS$2010/PJ,2025
 0,6,CO2f,all-week,afternoon,2020,all-year,R1,9.16700000000,gasCCGT,2,MUS$2010/kt,2025
