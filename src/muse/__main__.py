@@ -18,7 +18,7 @@ parser.add_argument(
 parser.add_argument(
     "--model",
     default=None,
-    choices=examples.available_examples(),
+    choices=examples.available_examples,
     help="Runs a model distributed with MUSE. "
     "If provided, the 'settings' input is ignored.",
 )

@@ -507,7 +507,7 @@ def settings(tmpdir) -> dict:
 
 @fixture(autouse=True)
 def warnings_as_errors(request):
-    from warnings import simplefilter
+    from warnings import filterwarnings, simplefilter
 
     # disable fixture for some tests
     if (
@@ -516,9 +516,20 @@ def warnings_as_errors(request):
     ):
         return
 
+    # Fail test if the following warnings are raised
     simplefilter("error", FutureWarning)
     simplefilter("error", DeprecationWarning)
     simplefilter("error", PendingDeprecationWarning)
+
+    # The following warning is safe to ignore (raised by adhoc solver with Python 3.9)
+    # TODO: may be able to remove this once support for Python 3.9 is dropped
+    if request.module.__name__ == "test_fullsim_regression":
+        filterwarnings(
+            "ignore",
+            message="__array__ implementation doesn't accept a copy keyword",
+            category=DeprecationWarning,
+            module="xarray.core.variable",
+        )
 
 
 @fixture

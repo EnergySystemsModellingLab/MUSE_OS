@@ -99,7 +99,7 @@ def create_newcapa_agent(
     interpolation: str = "linear",
     merge_transform: str | Mapping | Callable = "new",
     quantity: float = 0.3,
-    housekeeping: str | Mapping | Callable = "noop",
+    housekeeping: str | Mapping | Callable = "clean",
     retrofit_present: bool = True,
     **kwargs,
 ):
