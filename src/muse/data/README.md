@@ -7,6 +7,14 @@ It contains a residential, conversion, and gas supply sectors.
 The time framework covers 2020-2050.
 It uses 6 timeslices.
 
+## default_adhoc
+
+Same as the default model, but uses the adhoc solver instead of the scipy solver.
+
+## default_retro
+
+Same as the default model, but uses retrofit agents.
+
 ## default_timeslice
 
 This is developed from the default model.

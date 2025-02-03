@@ -19,6 +19,13 @@
             "args": ["--model", "default_retro"]
         },
         {
+            "name": "Model: default_adhoc",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "muse",
+            "args": ["--model", "default_adhoc"]
+        },
+        {
             "name": "Model: multiple_agents",
             "type": "debugpy",
             "request": "launch",
