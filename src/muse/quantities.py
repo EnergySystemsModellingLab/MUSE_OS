@@ -9,8 +9,6 @@ Functions for calculating costs (e.g. LCOE, EAC) are in the `costs` module.
 
 from __future__ import annotations
 
-from typing import cast
-
 import numpy as np
 import xarray as xr
 
@@ -143,96 +141,13 @@ def emission(
     from muse.utilities import broadcast_techs
 
     # just in case we are passed a technologies dataset, like in other functions
-    fouts = broadcast_techs(
-        getattr(fixed_outputs, "fixed_outputs", fixed_outputs), production
-    )
+    fixed_outputs = getattr(fixed_outputs, "fixed_outputs", fixed_outputs)
+    fouts = broadcast_techs(fixed_outputs, production)
     envs = is_pollutant(fouts.comm_usage)
     enduses = is_enduse(fouts.comm_usage)
     return production.sel(commodity=enduses).sum("commodity") * broadcast_timeslice(
         fouts.sel(commodity=envs), level=timeslice_level
     )
-
-
-def gross_margin(
-    technologies: xr.Dataset,
-    capacity: xr.DataArray,
-    prices: xr.Dataset,
-    timeslice_level: str | None = None,
-) -> xr.DataArray:
-    """The percentage of revenue after direct expenses have been subtracted.
-
-    .. _reference:
-    https://www.investopedia.com/terms/g/grossmargin.asp
-    We first calculate the revenues, which depend on prices
-    We then deduct the direct expenses
-    - energy commodities INPUTS are related to fuel costs
-    - environmental commodities OUTPUTS are related to environmental costs
-    - variable costs is given as technodata inputs
-    - non-environmental commodities OUTPUTS are related to revenues.
-    """
-    from muse.commodities import is_enduse, is_pollutant
-    from muse.utilities import broadcast_techs
-
-    tech = broadcast_techs(  # type: ignore
-        cast(
-            xr.Dataset,
-            technologies[
-                [
-                    "technical_life",
-                    "interest_rate",
-                    "var_par",
-                    "var_exp",
-                    "fixed_outputs",
-                    "fixed_inputs",
-                ]
-            ],
-        ),
-        capacity,
-    )
-
-    var_par = tech.var_par
-    var_exp = tech.var_exp
-    fixed_outputs = tech.fixed_outputs
-    fixed_inputs = tech.fixed_inputs
-    # We separate the case where we have one or more regions
-    caparegions = np.array(capacity.region.values).reshape(-1)
-    if len(caparegions) > 1:
-        prices.sel(region=capacity.region)
-    else:
-        prices = prices.where(prices.region == capacity.region, drop=True)
-    prices = prices.interp(year=capacity.year.values)
-
-    # Filters for pollutants and output commodities
-    environmentals = is_pollutant(technologies.comm_usage)
-    enduses = is_enduse(technologies.comm_usage)
-
-    # Variable costs depend on factors such as labour
-    variable_costs = distribute_timeslice(
-        var_par * ((fixed_outputs.sel(commodity=enduses)).sum("commodity")) ** var_exp,
-        level=timeslice_level,
-    )
-
-    # The individual prices are selected
-    # costs due to consumables, direct inputs
-    consumption_costs = (
-        prices * distribute_timeslice(fixed_inputs, level=timeslice_level)
-    ).sum("commodity")
-    # costs due to pollutants
-    production_costs = prices * distribute_timeslice(
-        fixed_outputs, level=timeslice_level
-    )
-    environmental_costs = (production_costs.sel(commodity=environmentals)).sum(
-        "commodity"
-    )
-    # revenues due to product sales
-    revenues = (production_costs.sel(commodity=enduses)).sum("commodity")
-
-    # Gross margin is the net between revenues and all costs
-    result = revenues - environmental_costs - variable_costs - consumption_costs
-
-    # Gross margin is defined as a ratio on revenues and as a percentage
-    result *= 100 / revenues
-    return result
 
 
 def consumption(
@@ -352,8 +267,8 @@ def maximum_production(
     capa = filter_input(
         capacity, **{k: v for k, v in filters.items() if k in capacity.dims}
     )
-    btechs = broadcast_techs(  # type: ignore
-        cast(xr.Dataset, technologies[["fixed_outputs", "utilization_factor"]]), capa
+    btechs = broadcast_techs(
+        technologies[["fixed_outputs", "utilization_factor"]], capa
     )
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
@@ -470,12 +385,8 @@ def minimum_production(
     if "minimum_service_factor" not in technologies:
         return broadcast_timeslice(xr.zeros_like(capa), level=timeslice_level)
 
-    btechs = broadcast_techs(  # type: ignore
-        cast(
-            xr.Dataset,
-            technologies[["fixed_outputs", "minimum_service_factor"]],
-        ),
-        capa,
+    btechs = broadcast_techs(
+        technologies[["fixed_outputs", "minimum_service_factor"]], capa
     )
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in btechs.dims}

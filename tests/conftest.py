@@ -1,6 +1,6 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 from unittest.mock import patch
 
 import numpy as np
@@ -290,7 +290,7 @@ def technologies(coords) -> Dataset:
 
 
 @fixture
-def agent_market(coords, technologies, timeslice) -> Dataset:
+def agent_market(coords, timeslice) -> Dataset:
     from numpy.random import rand
 
     result = Dataset(coords=timeslice.coords)
@@ -312,7 +312,7 @@ def agent_market(coords, technologies, timeslice) -> Dataset:
 
 
 @fixture
-def market(coords, technologies, timeslice) -> Dataset:
+def market(coords, timeslice) -> Dataset:
     from numpy.random import rand
 
     result = Dataset(coords=timeslice.coords)
@@ -336,10 +336,13 @@ def create_agent(agent_args, technologies, stock, agent_type="retrofit") -> Agen
 
     from muse.agents.factories import create_agent
 
+    region = agent_args["region"]
     agent = create_agent(
         agent_type=agent_type,
-        technologies=technologies,
-        capacity=stock,
+        technologies=technologies.sel(region=region),
+        capacity=stock.where(stock.region == region, drop=True).assign_coords(
+            region=region
+        ),
         year=2010,
         **agent_args,
     )
@@ -348,10 +351,12 @@ def create_agent(agent_args, technologies, stock, agent_type="retrofit") -> Agen
     # encompass every single technology.
     # This is not quite representative of the use case in the code, so in that
     # case, we add a bit of structure by removing some of the assets.
-    technology = set([u for u in technologies.technology.values])
-    if set(agent.assets.technology.values) == technology:
-        techs = choice(technology, len(technology) // 2, replace=False)
-        agent.assets = agent.assets.sel(asset=techs)
+    technology_names = set(technologies.technology.values)
+    if set(agent.assets.technology.values) == technology_names:
+        techs = choice(
+            list(technology_names), len(technology_names) // 2, replace=False
+        )
+        agent.assets = agent.assets.where(agent.assets.technology.isin(techs))
     return agent
 
 
@@ -362,7 +367,6 @@ def newcapa_agent(agent_args, technologies, stock) -> Agent:
 
 @fixture
 def retro_agent(agent_args, technologies, stock) -> Agent:
-    agent_args["investment"] = "adhoc"  # fails with scipy solver, see # 587
     return create_agent(agent_args, technologies, stock.capacity, "retrofit")
 
 
@@ -371,90 +375,67 @@ def stock(coords, technologies) -> Dataset:
     return _stock(coords, technologies)
 
 
-@fixture
-def stock_factory() -> Callable:
-    return _stock
-
-
 def _stock(
     coords,
     technologies,
-    region: Optional[Sequence[str]] = None,
-    nassets: Optional[int] = None,
 ) -> Dataset:
     from numpy import cumprod, stack
-    from numpy.random import choice, rand, randint
+    from numpy.random import choice, rand
     from xarray import Dataset
 
+    from muse.utilities import broadcast_techs
+
+    n_assets = 10
     ymin, ymax = min(coords["year"]), max(coords["year"]) + 1
 
-    if nassets is None:
-        nmin = max(1, 0 if region is None else len(region))
-        n = randint(nmin, max(nmin, 10))
-    else:
-        n = nassets
-    tech_subset = choice(
-        coords["technology"], randint(2, len(coords["technology"])), replace=False
-    )
-    asset = {
-        (choice(tech_subset), choice(range(ymin, min(ymin + 3, ymax))))
-        for u in range(2 * n)
+    # Create assets
+    asset_coords = {
+        "technology": ("asset", choice(coords["technology"], n_assets, replace=True)),
+        "region": ("asset", choice(coords["region"], n_assets, replace=True)),
+        "installed": ("asset", choice(range(ymin, ymax), n_assets)),
     }
-    technology = [u[0] for u in asset][:n]
-    installed = [u[1] for u in asset][:n]
+    assets = Dataset(coords=asset_coords)
 
-    factors = cumprod(
-        rand(len(installed), len(coords["year"])) / 4 + 0.75, axis=1
-    ).clip(max=1)
-    capacity = 0.75 * technologies.total_capacity_limit.sel(
-        technology=technology, year=2010, region="USA", drop=True
+    # Create random capacity data
+    capacity_limits = broadcast_techs(technologies.total_capacity_limit, assets)
+    factors = cumprod(rand(n_assets, len(coords["year"])) / 4 + 0.75, axis=1).clip(
+        max=1
     )
     capacity = stack(
-        [capacity * factors[:, i] for i in range(factors.shape[1])], axis=1
+        [0.75 * capacity_limits * factors[:, i] for i in range(factors.shape[1])],
+        axis=1,
     )
 
-    result = Dataset()
-    result["technology"] = "asset", technology
-    result["installed"] = "asset", installed
-    if region is not None and len(region) > 0:
-        result["region"] = "asset", choice(region, len(installed))
-    result["year"] = "year", [ymin, max(max(installed), ymax)]
+    # Create capacity dataset
+    result = assets.copy()
+    result["year"] = "year", [ymin, ymax]
     result["capacity"] = ("asset", "year"), capacity
-    result = result.set_coords(("technology", "installed"))
-    if "region" in result.data_vars:
-        result = result.set_coords("region")
     return result
-
-
-@fixture
-def search_space(retro_agent, technologies):
-    """Example search space, as would be computed by an agent."""
-    from numpy.random import randint
-
-    coords = {
-        "asset": list(set(retro_agent.assets.technology.values)),
-        "replacement": technologies.technology.values,
-    }
-    return DataArray(
-        randint(0, 4, tuple(len(u) for u in coords.values())) == 0,
-        coords=coords,
-        dims=coords.keys(),
-        name="search_space",
-    )
 
 
 @fixture
 def demand_share(coords, timeslice):
     """Example demand share, as would be computed by an agent."""
-    from numpy.random import rand
+    from numpy.random import choice, rand
 
+    n_assets = 5
     axes = {
         "commodity": coords["commodity"],
-        "asset": list(set(coords["technology"])),
         "timeslice": timeslice.timeslice,
+        "technology": (["asset"], choice(coords["technology"], n_assets, replace=True)),
+        "region": (["asset"], choice(coords["region"], n_assets, replace=True)),
     }
-    shape = len(axes["commodity"]), len(axes["asset"]), len(axes["timeslice"])
-    result = DataArray(rand(*shape), coords=axes, dims=axes.keys(), name="demand_share")
+    shape = (
+        len(axes["commodity"]),
+        len(axes["timeslice"]),
+        n_assets,
+    )
+    result = DataArray(
+        rand(*shape),
+        dims=["commodity", "timeslice", "asset"],
+        coords=axes,
+        name="demand_share",
+    )
     return result
 
 
