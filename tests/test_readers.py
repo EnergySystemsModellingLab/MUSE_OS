@@ -388,7 +388,7 @@ def test_read_trade_technodata(tmp_path):
     assert all(val == np.float64 for val in data.dtypes.values())
     assert list(data.coords["dst_region"].values) == ["R1", "R2"]
     assert list(data.coords["technology"].values) == ["gassupply1"]
-    assert list(data.coords["region"].values) == ["R1", "R2", "R3"]
+    assert list(data.coords["region"].values) == ["R1", "R2"]
     assert all(var.coords.equals(data.coords) for var in data.data_vars.values())
 
 

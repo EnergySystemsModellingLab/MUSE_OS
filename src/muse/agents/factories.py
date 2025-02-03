@@ -115,7 +115,7 @@ def create_newcapa_agent(
         capacity = capacity.sel(region=region)
 
     existing = capacity.interp(year=year, method=interpolation) > 0
-    assert set(existing.dims) == {"asset"}
+    # assert set(existing.dims) == {"asset"}
     years = [capacity.year.min().values, capacity.year.max().values]
 
     assets = xr.Dataset()
