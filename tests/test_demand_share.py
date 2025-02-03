@@ -234,7 +234,7 @@ def test_new_retro_demand_share(_technologies, market, timeslice, stock):
     asia_market = _matching_market(_technologies, asia_stock.capacity)
     usa_market = _matching_market(_technologies, usa_stock.capacity)
     market = xr.concat((asia_market, usa_market), dim="region")
-    market.consumption.loc[{"year": 2031}] *= 2
+    market.consumption.loc[{"year": 2030}] *= 2
 
     # spoof some agents
     @dataclass
@@ -288,7 +288,7 @@ def test_standard_demand_share(_technologies, timeslice, stock):
     asia_market = _matching_market(_technologies, asia_stock.capacity)
     usa_market = _matching_market(_technologies, usa_stock.capacity)
     market = xr.concat((asia_market, usa_market), dim="region")
-    market.consumption.loc[{"year": 2031}] *= 2
+    market.consumption.loc[{"year": 2030}] *= 2
 
     # spoof some agents
     @dataclass
@@ -380,7 +380,7 @@ def test_unmet_forecast_demand(_technologies, timeslice, stock):
     assert (result.commodity == comm_usage.commodity).all()
     assert result.sel(commodity=~enduse).values == approx(0)
     assert result.sel(commodity=enduse).values == approx(
-        0.5 * market.consumption.sel(commodity=enduse, year=2031).values
+        0.5 * market.consumption.sel(commodity=enduse, year=2030).values
     )
 
 

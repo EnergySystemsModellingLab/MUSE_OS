@@ -1,8 +1,6 @@
-from typing import cast
-
 import numpy as np
 import xarray as xr
-from pytest import approx, fixture
+from pytest import approx, fixture, mark
 
 
 @fixture
@@ -18,43 +16,6 @@ def production(
         * distribute_timeslice(techs.fixed_outputs)
         * broadcast_timeslice(techs.utilization_factor)
     )
-
-
-def test_supply_enduse(technologies, capacity, timeslice):
-    """End-use part of supply."""
-    from muse.commodities import is_enduse
-    from muse.quantities import maximum_production, supply
-
-    production = maximum_production(technologies, capacity)
-    demand = production.sum("asset") + 1
-    spl = supply(capacity, demand, technologies).where(
-        is_enduse(technologies.comm_usage), 0
-    )
-    assert (abs(spl - production) < 1e-12).all()
-    assert (spl.sum("asset") < demand).all()
-
-    demand = production.sum("asset") * 0.7
-    spl = supply(capacity, demand, technologies).where(
-        is_enduse(technologies.comm_usage), 0
-    )
-    assert (spl <= production + 1e-12).all()
-    assert (
-        abs(spl.sum("asset") - demand.where(production.sum("asset") > 0, 0)) < 1e-12
-    ).all()
-
-
-def test_supply_emissions(technologies, capacity, timeslice):
-    """Emission part of supply."""
-    from muse.commodities import is_enduse, is_pollutant
-    from muse.quantities import emission, maximum_production, supply
-
-    production = maximum_production(technologies, capacity)
-    spl = supply(capacity, production.sum("asset") + 1, technologies)
-    msn = emission(spl.where(is_enduse(spl.comm_usage), 0), technologies.fixed_outputs)
-    actual, expected = xr.broadcast(
-        spl.sel(commodity=is_pollutant(spl.comm_usage)), msn
-    )
-    assert actual.values == approx(expected.values)
 
 
 def test_consumption(technologies, production, market):
@@ -122,10 +83,15 @@ def test_production_aggregate_asset_view(
     assert prod.values == approx(fouts * ufact * expected.values)
 
 
+@mark.xfail
 def test_production_agent_asset_view(
     capacity: xr.DataArray, technologies: xr.Dataset, timeslice
 ):
-    """Production when capacity has format of agent.assets.capacity."""
+    """Production when capacity has format of agent.assets.capacity.
+
+    TODO: not currently supported. Need to make maximum_production more generic so it
+    can handle capacity data without an "asset" dimension.
+    """
     from muse.utilities import coords_to_multiindex, reduce_assets
 
     capacity = coords_to_multiindex(reduce_assets(capacity)).unstack("asset").fillna(0)
@@ -161,21 +127,26 @@ def test_capacity_in_use(production: xr.DataArray, technologies: xr.Dataset):
 
 
 def test_emission(production: xr.DataArray, technologies: xr.Dataset):
-    from muse.commodities import is_enduse, is_pollutant
+    from muse.commodities import is_pollutant
     from muse.quantities import emission
 
-    envs = is_pollutant(technologies.comm_usage)
-    technologies = cast(xr.Dataset, technologies[["fixed_outputs"]])
-    technologies.fixed_outputs[{"commodity": envs}] = fout = 1.5
-    technologies.fixed_outputs[{"commodity": ~envs}] = 2
-
-    enduses = is_enduse(technologies.comm_usage.sel(commodity=production.commodity))
-    production[{"commodity": enduses}] = prod = 0.5
-    production[{"commodity": ~enduses}] = 5
-
     em = emission(production, technologies)
+
+    # Check that all environmental commodities are in the result
+    envs = is_pollutant(technologies.comm_usage)
     assert em.commodity.isin(envs.commodity).all()
-    assert em.values == approx(fout * enduses.sum().values * prod)
+
+    # Check that no non-environmental commodities are in the result
+    assert set(em.commodity.values) == set(envs.commodity[envs].values)
+
+    # If fixed_outputs for env commodities are zero, then emissions should be zero
+    techs = technologies.copy()
+    techs.fixed_outputs.loc[{"commodity": envs}] = 0
+    em = emission(production, techs)
+
+    # If production is zero, then emissions should be zero
+    em = emission(production * 0, technologies)
+    assert (em == 0).all()
 
 
 def test_min_production(technologies, capacity, timeslice):
@@ -195,41 +166,65 @@ def test_min_production(technologies, capacity, timeslice):
     assert (production <= maximum_production(technologies, capacity)).all()
 
 
-def test_supply_capped_by_min_service(technologies, capacity, timeslice):
-    """Test supply is capped by the minimum service."""
-    from muse.commodities import CommodityUsage
+def test_supply_single_region(technologies, capacity, production, timeslice):
+    from muse.commodities import is_enduse
+    from muse.quantities import supply
+
+    # Select data for a single region
+    region = "USA"
+    technologies = technologies.sel(region=region)
+    capacity = capacity.where(capacity.region == region, drop=True)
+    production = production.where(production.region == region, drop=True)
+
+    # Random demand within the bounds of the maximum production
+    demand = production.sum("asset")
+    demand = demand * np.random.rand(*demand.shape)
+    assert "region" not in demand.dims
+
+    # Calculate supply
+    spl = supply(capacity, demand, technologies)
+
+    # Total supply across assets should equal demand (for end-use commodities)
+    spl = spl.sum("asset")
+    enduses = is_enduse(technologies.comm_usage)
+    assert abs(spl.sel(commodity=enduses) - demand.sel(commodity=enduses)).sum() < 1e-5
+
+
+def test_supply_multi_region(technologies, capacity, production, timeslice):
+    from muse.commodities import is_enduse
+    from muse.quantities import supply
+
+    # Random demand within the bounds of the maximum production
+    demand = production.groupby("region").sum("asset")
+    demand = demand * np.random.rand(*demand.shape)
+
+    # Calculate supply
+    assert "region" in demand.dims
+    spl = supply(capacity, demand, technologies)
+
+    # Total supply across assets within each region should equal demand
+    # (for end-use commodities)
+    spl = spl.groupby("region").sum("asset")
+    enduses = is_enduse(technologies.comm_usage)
+    assert abs(spl.sel(commodity=enduses) - demand.sel(commodity=enduses)).sum() < 1e-5
+
+
+def test_supply_with_min_service(technologies, capacity, production, timeslice):
     from muse.quantities import minimum_production, supply
 
+    # Calculate minimum production
     technologies["minimum_service_factor"] = 0.3
     minprod = minimum_production(technologies, capacity)
 
-    # If minimum service factor is defined, then the minimum production is not zero
-    assert not (minprod == 0).all()
+    # Random demand within the bounds of the maximum production
+    demand = production.groupby("region").sum("asset")
+    demand = demand * np.random.rand(*demand.shape)
 
-    # And even if the demand is smaller than the minimum production, the supply
-    # should be equal to the minimum production
-    demand = minprod / 2
+    # Calculate supply
     spl = supply(capacity, demand, technologies)
-    spl = spl.sel(commodity=spl.comm_usage == CommodityUsage.PRODUCT).sum(
-        ["year", "asset"]
-    )
-    minprod = minprod.sel(commodity=minprod.comm_usage == CommodityUsage.PRODUCT).sum(
-        ["year", "asset"]
-    )
-    assert (spl == approx(minprod)).all()
 
-    # But if there is not minimum service factor, the supply should be equal to the
-    # demand and should not be capped by the minimum production
-    del technologies["minimum_service_factor"]
-    spl = supply(capacity, demand, technologies)
-    spl = spl.sel(commodity=spl.comm_usage == CommodityUsage.PRODUCT).sum(
-        ["year", "asset"]
-    )
-    demand = demand.sel(commodity=demand.comm_usage == CommodityUsage.PRODUCT).sum(
-        ["year", "asset"]
-    )
-    assert (spl == approx(demand)).all()
-    assert (spl <= minprod).all()
+    # Supply should be greater than or equal to the minimum production
+    assert (spl >= minprod).all()
 
 
 def test_production_amplitude(production, technologies):

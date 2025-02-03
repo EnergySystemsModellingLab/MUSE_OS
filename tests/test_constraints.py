@@ -44,13 +44,6 @@ def costs(search_space):
 
 
 @fixture
-def lpcosts(technologies, costs):
-    from muse.constraints import lp_costs
-
-    return lp_costs(technologies, costs=costs)
-
-
-@fixture
 def assets(residential):
     return next(a.assets for a in residential.agents)
 
@@ -68,8 +61,26 @@ def market_demand(assets, technologies):
 
     return 0.8 * maximum_production(
         technologies,
-        assets.capacity.sel(year=CURRENT_YEAR).groupby("technology").sum("asset"),
-    ).rename(technology="asset")
+        assets.capacity,
+    ).sel(year=INVESTMENT_YEAR).groupby("technology").sum("asset").rename(
+        technology="asset"
+    )
+
+
+def test_fixtures(technologies, search_space, costs, assets, capacity, market_demand):
+    assert set(technologies.dims) == {"technology", "commodity"}
+    assert set(search_space.dims) == {"asset", "replacement"}
+    assert set(costs.dims) == {"asset", "replacement"}
+    assert set(assets.dims) == {"asset", "year"}
+    assert set(capacity.dims) == {"asset", "year"}
+    assert set(market_demand.dims) == {"asset", "commodity", "timeslice"}
+
+
+@fixture
+def lpcosts(technologies, costs):
+    from muse.constraints import lp_costs
+
+    return lp_costs(technologies, costs=costs)
 
 
 @fixture
