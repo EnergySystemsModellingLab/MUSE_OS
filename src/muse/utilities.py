@@ -244,22 +244,15 @@ def broadcast_techs(
     return techs.sel(second_sel)
 
 
-def clean_assets(assets: xr.Dataset, years: int | Sequence[int]):
+def clean_assets(assets: xr.Dataset, year: int):
     """Cleans up and prepares asset for current iteration.
 
-    - adds current and forecast year by backfilling missing entries
+    - removes data from before the specified year
     - removes assets for which there is no capacity now or in the future
     """
-    if isinstance(years, Sequence):
-        current = min(*years)
-        years = sorted(set(assets.year[assets.year >= current].values).union(years))
-    else:
-        x = set(assets.year[assets.year >= years].values)
-        x.add(years)
-        years = sorted(x)
-    result = assets.reindex(year=years, method="backfill").fillna(0)
-    not_asset = [u for u in result.dims if u != "asset"]
-    return result.sel(asset=result.capacity.any(not_asset))
+    assets = assets.sel(year=slice(year, None))
+    assets = assets.where(assets.capacity.any(dim="year"), drop=True)
+    return assets
 
 
 def filter_input(
@@ -608,55 +601,6 @@ def agent_concatenation(
     if fill_value is not np.nan:
         result = result.fillna(fill_value)
     return result
-
-
-def aggregate_technology_model(
-    data: xr.DataArray | xr.Dataset,
-    dim: str = "asset",
-    drop: str | Sequence[str] = "installed",
-) -> xr.DataArray | xr.Dataset:
-    """Aggregate together assets with the same installation year.
-
-    The assets of a given agent, region, and technology but different installation year
-    are grouped together and summed over.
-
-    Example:
-        We first create a random set of agent assets and aggregate them.
-        Some of these agents own assets from the same technology but potentially with
-        different installation year. This function will aggregate together all assets
-        of a given agent with same technology.
-
-        >>> from muse.examples import random_agent_assets
-        >>> from muse.utilities import agent_concatenation, aggregate_technology_model
-        >>> rng = np.random.default_rng(1234)
-        >>> agent_assets = {i: random_agent_assets(rng) for i in range(5)}
-        >>> assets = agent_concatenation(agent_assets)
-        >>> reduced = aggregate_technology_model(assets)
-
-        We can check that the tuples (agent, technology) are unique (each agent works in
-        a single region):
-
-        >>> ids = list(zip(reduced.agent.values, reduced.technology.values))
-        >>> assert len(set(ids)) == len(ids)
-
-        And we can check they correspond to the right summation:
-
-        >>> for agent, technology in set(ids):
-        ...     techsel = assets.technology == technology
-        ...     agsel = assets.agent == agent
-        ...     expected = assets.sel(asset=techsel & agsel).sum("asset")
-        ...     techsel = reduced.technology == technology
-        ...     agsel = reduced.agent == agent
-        ...     actual = reduced.sel(asset=techsel & agsel)
-        ...     assert len(actual.asset) == 1
-        ...     assert (actual == expected).all()
-    """
-    if isinstance(drop, str):
-        drop = (drop,)
-    return reduce_assets(
-        data,
-        [cast(str, u) for u in data.coords if u not in drop and data[u].dims == (dim,)],
-    )
 
 
 def check_dimensions(
