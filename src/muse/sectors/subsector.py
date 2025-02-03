@@ -10,7 +10,6 @@ import numpy as np
 import xarray as xr
 
 from muse.agents import Agent
-from muse.timeslices import drop_timeslice
 
 
 class Subsector:
@@ -25,7 +24,6 @@ class Subsector:
         investment: Callable | None = None,
         name: str = "subsector",
         forecast: int = 5,
-        expand_market_prices: bool = False,
         timeslice_level: str | None = None,
     ):
         from muse import constraints as cs
@@ -39,14 +37,7 @@ class Subsector:
         self.investment = investment or iv.factory()
         self.forecast = forecast
         self.name = name
-        self.expand_market_prices = expand_market_prices
         self.timeslice_level = timeslice_level
-        """Whether to expand prices to include destination region.
-
-        If ``True``, the input market prices are expanded of the missing "dst_region"
-        dimension by setting them to the maximum between the source and destination
-        region.
-        """
 
     def invest(
         self,
@@ -55,13 +46,6 @@ class Subsector:
     ) -> None:
         assert "year" not in technologies.dims
         assert len(market.year) == 2
-
-        # Expand prices to include destination region (for trade models)
-        if self.expand_market_prices:
-            market = market.copy()
-            market["prices"] = drop_timeslice(
-                np.maximum(market.prices, market.prices.rename(region="dst_region"))
-            )
 
         # Agent housekeeping
         for agent in self.agents:
@@ -86,14 +70,6 @@ class Subsector:
             timeslice_level=self.timeslice_level,
         )
 
-        if "dst_region" in demands.dims:
-            msg = """
-                dst_region found in demand dimensions. This is unexpected. Demands
-                should only have a region dimension rather both a source and destination
-                dimension.
-            """
-            raise ValueError(msg)
-
         # Increment each agent (perform investments)
         for agent in self.agents:
             if "agent" in demands.coords:
@@ -117,7 +93,7 @@ class Subsector:
         from muse import constraints as cs
         from muse import demand_share as ds
         from muse import investments as iv
-        from muse.agents import InvestingAgent, agents_factory
+        from muse.agents import agents_factory
         from muse.commodities import is_enduse
         from muse.readers.toml import undo_damage
 
@@ -183,12 +159,6 @@ class Subsector:
         investment = iv.factory(getattr(settings, "lpsolver", "scipy"))
         forecast = getattr(settings, "forecast", 5)
 
-        expand_market_prices = getattr(settings, "expand_market_prices", None)
-        if expand_market_prices is None:
-            expand_market_prices = "dst_region" in technologies.dims and not any(
-                isinstance(u, InvestingAgent) for u in agents
-            )
-
         return cls(
             agents=agents,
             commodities=commodities,
@@ -197,7 +167,6 @@ class Subsector:
             investment=investment,
             forecast=forecast,
             name=name,
-            expand_market_prices=expand_market_prices,
             timeslice_level=timeslice_level,
         )
 

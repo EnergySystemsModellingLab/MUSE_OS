@@ -84,7 +84,6 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
             del param["share"]
 
         param["agent_type"] = "default"
-        param["category"] = "trade"
         param["year"] = 2020
         param["search_rules"] = "from_assets -> compress -> reduce_assets"
         param["objectives"] = "ALCOE"
