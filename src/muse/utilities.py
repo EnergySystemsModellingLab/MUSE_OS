@@ -393,6 +393,7 @@ def avoid_repetitions(data: xr.DataArray, dim: str = "year") -> xr.DataArray:
     It removes the central year of any three consecutive years where all data is
     the same. This means the original data can be reobtained via a linear
     interpolation or a forward fill.
+    See :py:func:`muse.utilities.interpolate_capacity`.
 
     The first and last year are always preserved.
     """
@@ -406,8 +407,12 @@ def interpolate_capacity(
 ) -> xr.DataArray:
     """Interpolates capacity data to the given years.
 
-    Capacity between years is interpolated linearly. Capacity beyond the final year is
-    set to zero.
+    Capacity between years is interpolated linearly. Capacity outside the range of the
+    data is set to zero.
+
+    Arguments:
+        data: DataArray containing the capacity data
+        year: Year or years to interpolate to
     """
     return data.interp(
         year=year,
