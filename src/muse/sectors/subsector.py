@@ -131,6 +131,14 @@ class Subsector:
             )
             getLogger(__name__).warning(msg)
 
+        # Raise warning if deprecated forecast parameter is used (PR #645)
+        if hasattr(settings, "forecast"):
+            msg = (
+                "The 'forecast' parameter has been deprecated. "
+                "Please remove from your settings file."
+            )
+            getLogger(__name__).warning(msg)
+
         agents = agents_factory(
             settings.agents,
             settings.existing_capacity,
