@@ -1,4 +1,3 @@
-
 """Output quantities.
 
 Functions that compute MCA quantities for post-simulation analysis should all follow the
