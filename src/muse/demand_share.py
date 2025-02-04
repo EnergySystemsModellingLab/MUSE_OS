@@ -288,7 +288,9 @@ def new_and_retro(
     id_to_share: MutableMapping[Hashable, xr.DataArray] = {}
     for region in demands.region.values:
         retro_capacity: MutableMapping[Hashable, xr.DataArray] = {
-            agent.uuid: agent.assets.capacity
+            agent.uuid: agent.assets.capacity.interp(
+                year=[current_year, investment_year]
+            )
             for agent in agents
             if agent.category == "retrofit" and agent.region == region
         }
@@ -423,7 +425,9 @@ def standard_demand(
     for region in demands.region.values:
         # Calculate current capacity
         current_capacity: MutableMapping[Hashable, xr.DataArray] = {
-            agent.uuid: agent.assets.capacity
+            agent.uuid: agent.assets.capacity.interp(
+                year=[current_year, investment_year]
+            )
             for agent in agents
             if agent.region == region
         }
