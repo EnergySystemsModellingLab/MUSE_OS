@@ -522,15 +522,27 @@ def check_interpolation_mode(settings: dict) -> None:
     """
     settings["interpolation_mode"] = settings["interpolation_mode"].lower()
 
-    valid_modes = ["off", "false", "linear", "active", "cubic"]
-    msg = 'ERROR - Valid interpolation modes are "off", "linear" and "cubic"'
+    valid_modes = [
+        "linear",
+        "nearest",
+        "zero",
+        "slinear",
+        "quadratic",
+        "cubic",
+        "previous",
+        "next",
+        "active",  # legacy: see below
+    ]
+    msg = (
+        'ERROR - Valid interpolation modes are "linear", "nearest", "zero", '
+        '"slinear", "quadratic", "cubic", "previous", "next"'
+    )
     assert settings["interpolation_mode"] in valid_modes, msg
 
-    # And we normalize the interpolation mode
-    # If there's no interpolation, we get the nearest value
-    if settings["interpolation_mode"] in ["off", "false"]:
-        settings["interpolation_mode"] = "nearest"
-    elif settings["interpolation_mode"] in ["linear", "active"]:
+    # Legacy: "Active" was previous default - switch to "linear" (#642)
+    if settings["interpolation_mode"] == "active":
+        msg = "'Active' interpolation mode is deprecated. Defaulting to 'linear'."
+        getLogger(__name__).warning(msg)
         settings["interpolation_mode"] = "linear"
 
 
