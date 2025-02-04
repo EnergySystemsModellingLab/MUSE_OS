@@ -216,7 +216,7 @@ class Sector(AbstractSector):  # type: ignore
             subsector.invest(technologies=techs, market=market)
 
         # Full output data
-        supply, consume, costs = self.market_variables(market, techs)
+        supply, consume, costs = self.market_variables(market, self.technologies)
         self.output_data = xr.Dataset(
             dict(
                 supply=supply,
@@ -286,7 +286,6 @@ class Sector(AbstractSector):  # type: ignore
         from muse.quantities import consumption
         from muse.utilities import broadcast_over_assets
 
-        assert "year" not in technologies.dims
         years = market.year.values
         capacity = self.capacity.interp(year=years)
 
