@@ -280,7 +280,9 @@ class MCA:
 
         for year_idx in range(nyear):
             years = self.time_framework[year_idx : year_idx + 2]
-            getLogger(__name__).info(f"Running simulation year {years[0]}...")
+            getLogger(__name__).info(
+                f"Running simulation years {years[0]} to {years[1]}"
+            )
             new_market = self.market[variables].sel(year=years)
             assert isinstance(new_market, Dataset)
             new_market.supply[:] = 0
