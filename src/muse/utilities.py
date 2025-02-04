@@ -355,7 +355,6 @@ def lexical_comparison(
 def merge_assets(
     capa_a: xr.DataArray,
     capa_b: xr.DataArray,
-    interpolation: str = "linear",
     dimension: str = "asset",
 ) -> xr.DataArray:
     """Merge two capacity arrays."""
@@ -363,13 +362,13 @@ def merge_assets(
     years = sorted(set(capa_a.year.values).union(capa_b.year.values))
     if len(capa_a.year) == 1:
         capa_a_interp = capa_a
-        capa_b_interp = capa_b.interp(year=years, method=interpolation).fillna(0)
+        capa_b_interp = interpolate_capacity(capa_b, year=years)
     elif len(capa_b.year) == 1:
-        capa_a_interp = capa_a.interp(year=years, method=interpolation).fillna(0)
+        capa_a_interp = interpolate_capacity(capa_a, year=years)
         capa_b_interp = capa_b
     else:
-        capa_a_interp = capa_a.interp(year=years, method=interpolation).fillna(0)
-        capa_b_interp = capa_b.interp(year=years, method=interpolation).fillna(0)
+        capa_a_interp = interpolate_capacity(capa_a, year=years)
+        capa_b_interp = interpolate_capacity(capa_b, year=years)
 
     # Concatenate the two capacity arrays
     result = xr.concat((capa_a_interp, capa_b_interp), dim=dimension)
@@ -400,6 +399,21 @@ def avoid_repetitions(data: xr.DataArray, dim: str = "year") -> xr.DataArray:
     roll = data.rolling({dim: 3}, center=True).construct("window")
     years = ~(roll == roll.isel(window=0)).all([u for u in roll.dims if u != dim])
     return data.year[years]
+
+
+def interpolate_capacity(
+    data: xr.DataArray, year: int | Sequence[int] | xr.DataArray
+) -> xr.DataArray:
+    """Interpolates capacity data to the given years.
+
+    Capacity between years is interpolated linearly. Capacity beyond the final year is
+    set to zero.
+    """
+    return data.interp(
+        year=year,
+        method="linear",
+        kwargs={"fill_value": 0.0},
+    )
 
 
 def nametuple_to_dict(nametup: Mapping | NamedTuple) -> Mapping:
