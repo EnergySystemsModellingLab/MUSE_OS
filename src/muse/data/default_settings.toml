@@ -3,7 +3,7 @@
 time_framework = 'REQUIRED'
 regions = 'REQUIRED'
 interest_rate = 0.1
-interpolation_mode = 'Active'
+interpolation_mode = 'linear'
 log_level = 'info'
 # Convergence parameters
 equilibrium = true

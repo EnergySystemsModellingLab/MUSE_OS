@@ -215,7 +215,7 @@ def mca_market(model: str = "default") -> xr.Dataset:
                 ),
             )
             .sel(region=settings.regions)
-            .interp(year=settings.time_framework)
+            .interp(year=settings.time_framework, method=settings.interpolation_mode)
         )
         market["supply"] = drop_timeslice(zeros_like(market.exports))
         market["consumption"] = drop_timeslice(zeros_like(market.exports))

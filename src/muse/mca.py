@@ -59,7 +59,7 @@ class MCA:
                 ),
             )
             .sel(region=settings.regions)
-            .interp(year=settings.time_framework)
+            .interp(year=settings.time_framework, method=settings.interpolation_mode)
         )
 
         market["supply"] = drop_timeslice(zeros_like(market.exports))
