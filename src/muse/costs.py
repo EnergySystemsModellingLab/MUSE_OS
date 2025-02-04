@@ -54,7 +54,6 @@ import xarray as xr
 from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
 from muse.quantities import production_amplitude
 from muse.timeslices import broadcast_timeslice, distribute_timeslice, get_level
-from muse.utilities import filter_input
 
 
 def cost(func):
@@ -113,7 +112,7 @@ def environmental_costs(
     multiplied by their prices.
     """
     environmentals = is_pollutant(technologies.comm_usage)
-    prices_environmental = filter_input(prices, commodity=environmentals)
+    prices_environmental = prices.sel(commodity=environmentals)
     result = (production * prices_environmental).sum("commodity")
     assert "timeslice" in result.dims
     return result
@@ -129,7 +128,7 @@ def fuel_costs(
     multiplied by their prices.
     """
     fuels = is_fuel(technologies.comm_usage)
-    prices_fuel = filter_input(prices, commodity=fuels)
+    prices_fuel = prices.sel(commodity=fuels)
     result = (consumption * prices_fuel).sum("commodity")
     assert "timeslice" in result.dims
     return result
@@ -145,7 +144,7 @@ def material_costs(
     multiplied by their prices.
     """
     material = is_material(technologies.comm_usage)
-    prices_material = filter_input(prices, commodity=material)
+    prices_material = prices.sel(commodity=material)
     result = (consumption * prices_material).sum("commodity")
     assert "timeslice" in result.dims
     return result
@@ -292,7 +291,7 @@ def net_present_value(
 
     # Revenue (annual)
     products = is_enduse(technologies.comm_usage)
-    prices_non_env = filter_input(prices, commodity=products)
+    prices_non_env = prices.sel(commodity=products)
     revenues = (production * prices_non_env).sum("commodity")
     if aggregate_timeslices:
         revenues = revenues.sum("timeslice")

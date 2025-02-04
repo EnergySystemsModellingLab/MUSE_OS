@@ -231,15 +231,12 @@ def maximum_production(
         filters and the set of technologies in `capacity`.
     """
     from muse.commodities import is_enduse
-    from muse.utilities import filter_input
 
-    capa = filter_input(
-        capacity, **{k: v for k, v in filters.items() if k in capacity.dims}
+    capa = capacity.sel(**{k: v for k, v in filters.items() if k in capacity.dims})
+    ftechs = technologies.sel(
+        **{k: v for k, v in filters.items() if k in technologies.dims}
     )
 
-    ftechs = filter_input(
-        technologies, **{k: v for k, v in filters.items() if k in technologies.dims}
-    )
     result = (
         broadcast_timeslice(capa, level=timeslice_level)
         * distribute_timeslice(ftechs.fixed_outputs, level=timeslice_level)
@@ -275,14 +272,10 @@ def capacity_in_use(
         Capacity-in-use for each technology, whittled down by the filters.
     """
     from muse.commodities import is_enduse
-    from muse.utilities import filter_input
 
-    prod = filter_input(
-        production, **{k: v for k, v in filters.items() if k in production.dims}
-    )
-
-    ftechs = filter_input(
-        technologies, **{k: v for k, v in filters.items() if k in technologies.dims}
+    prod = production.sel(**{k: v for k, v in filters.items() if k in production.dims})
+    ftechs = technologies.sel(
+        **{k: v for k, v in filters.items() if k in technologies.dims}
     )
 
     factor = 1 / (ftechs.fixed_outputs * ftechs.utilization_factor)
@@ -338,17 +331,14 @@ def minimum_production(
         the filters and the set of technologies in `capacity`.
     """
     from muse.commodities import is_enduse
-    from muse.utilities import filter_input
 
-    capa = filter_input(
-        capacity, **{k: v for k, v in filters.items() if k in capacity.dims}
-    )
+    capa = capacity.sel(**{k: v for k, v in filters.items() if k in capacity.dims})
 
     if "minimum_service_factor" not in technologies:
         return broadcast_timeslice(xr.zeros_like(capa), level=timeslice_level)
 
-    ftechs = filter_input(
-        technologies, **{k: v for k, v in filters.items() if k in technologies.dims}
+    ftechs = technologies.sel(
+        **{k: v for k, v in filters.items() if k in technologies.dims}
     )
     result = (
         broadcast_timeslice(capa, level=timeslice_level)

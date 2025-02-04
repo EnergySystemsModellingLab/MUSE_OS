@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
 from typing import Callable
 
 import xarray as xr
@@ -65,18 +64,15 @@ class AbstractAgent(ABC):
     def filter_input(
         self,
         dataset: xr.Dataset | xr.DataArray,
-        year: Sequence[int] | int | None = None,
         **kwargs,
     ) -> xr.Dataset | xr.DataArray:
         """Filter inputs for usage in agent.
 
         For instance, filters down to agent's region, etc.
         """
-        from muse.utilities import filter_input
-
         if "region" in dataset.dims and "region" not in kwargs:
             kwargs["region"] = self.region
-        return filter_input(dataset, year=year, **kwargs)
+        return dataset.sel(**kwargs)
 
     @abstractmethod
     def next(

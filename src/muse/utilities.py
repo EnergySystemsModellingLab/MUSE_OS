@@ -298,35 +298,9 @@ def clean_assets(assets: xr.Dataset, year: int):
 
 def filter_input(
     dataset: xr.Dataset | xr.DataArray,
-    year: int | Iterable[int] | None = None,
     **kwargs,
 ) -> xr.Dataset | xr.DataArray:
     """Filter inputs, selecting data for the specified year."""
-    if year is None:
-        setyear: set[int] = set()
-    else:
-        try:
-            setyear = {int(year)}  # type: ignore
-        except TypeError:
-            setyear = set(int(u) for u in year)  # type: ignore
-    withyear = (
-        "year" in dataset.dims
-        and year is not None
-        and setyear.issubset(dataset.year.values)
-    )
-    if withyear:
-        kwargs["year"] = year
-        year = None
-    dataset = dataset.sel(**kwargs)
-    if withyear and "year" not in dataset.dims and "year" in dataset.coords:
-        dataset = dataset.drop_vars("year")
-
-    if "year" in dataset.dims and year is not None:
-        dataset = dataset.interp(year=year)
-        if "year" not in dataset.dims and "year" in dataset.coords:
-            dataset = dataset.drop_vars("year")
-        elif "year" in dataset.dims:
-            dataset = dataset.ffill("year")
     return dataset
 
 
