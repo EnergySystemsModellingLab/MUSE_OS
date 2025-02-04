@@ -180,41 +180,45 @@ def reduce_assets(
 
 
 def broadcast_over_assets(
-    technologies: xr.Dataset | xr.DataArray,
+    data: xr.Dataset | xr.DataArray,
     template: xr.DataArray | xr.Dataset,
     installed_as_year: bool = True,
 ) -> xr.Dataset | xr.DataArray:
-    """Broadcasts technologies to the shape of template in given dimension.
+    """Broadcasts an array to the shape of a template containing asset-level data.
 
-    The dimensions of the technologies are fully explicit, in that each concept
-    'technology', 'region', 'year' (for year of issue) is a separate dimension.
-    However, the dataset or data arrays representing other quantities, such as
-    capacity, are often flattened out with coordinates 'region', 'installed',
-    and 'technology' represented in a single 'asset' dimension. This latter
-    representation is sparse if not all combinations of 'region', 'installed',
-    and 'technology' are present, whereas the former representation makes it
-    easier to select a subset of the same.
+    The dimensions of many arrays (such as technology datasets) are fully explicit, in
+    that each concept (e.g. 'technology', 'region', 'year') is a separate dimension.
+    However, other datasets (e.g capacity), are presented on a per-asset basis,
+    containing a single 'asset' dimension with with coordinates such as 'region',
+    'installed' (year of installation), and 'technology'. This latter representation is
+    sparse if not all combinations of 'region', 'installed' and 'technology' are
+    present.
 
-    This function broadcast the first representation to the shape and coordinates
-    of the second.
+    This function broadcasts the first representation to the shape and coordinates
+    of the second, selecting the appropriate values for each asset (see example below).
 
-    Note: this is not necessarily limited to `technology` datasets. For
+    Note: this is not necessarily limited to technology datasets. For
     example, it could also be used on a dataset of commodity prices to select prices
-    relevant to each asset (e.g. if assets exist in multiple regions). In this example,
-    installed_as_year should be set to False (see below).
+    relevant to each asset (e.g. if assets exist in multiple regions).
 
     Arguments:
-        technologies: The dataset to broadcast
-        template: the dataset or data-array to use as a template
-        installed_as_year: True means that the "year" dimension in the technologies
-            dataset corresponds to the year that the asset was installed. Will commonly
-            be True for most technology parameters (e.g. var_par/fix_par are specified
-            the year that an asset is installed, and fixed for the lifetime of the
-            asset). If True, the technologies dataset must have data for every possible
-            "installed" year in the template.
+        data: The dataset/data-array to broadcast
+        template: The dataset/data-array to use as a template
+        installed_as_year: True means that the "year" dimension in 'data`
+            corresponds to the year that the asset was installed. This will commonly
+            be the case for most technology parameters (e.g. var_par/fix_par are
+            specified the year that an asset is installed, and fixed for the lifetime of
+            the asset). In this case, `data` must have a year coordinate for every
+            possible "installed" year in the template.
+
+            Conversely, if the values in `data` apply to the year of activity, rather
+            than the year of installation, `installed_as_year` should be False.
+            An example would be commodity prices, which can change over the lifetime
+            of an asset. In this case, if "year" is present as a dimension in `data`,
+            it will be maintained as a separate dimension in the output.
 
     Example:
-        Define the technology array:
+        Define the data array:
         >>> import xarray as xr
         >>> technologies = xr.DataArray(
         ...     data=[[1, 2, 3], [4, 5, 6]],
@@ -255,7 +259,7 @@ def broadcast_over_assets(
         in the output is the value in the original technology array that matches the
         technology & region of each asset.
     """
-    # TODO: this will return `technologies` unchanged if the template has no "asset"
+    # TODO: this will return `data` unchanged if the template has no "asset"
     # dimension, but strictly speaking we shouldn't allow this.
     # assert "asset" in template.dims
 
@@ -267,18 +271,16 @@ def broadcast_over_assets(
     # TODO: this should be stricter, and enforce that the template has "installed" data,
     # and that the technologies dataset has a "year" dimension.
     # if installed_as_year:
-    if installed_as_year and "installed" in names and "year" in technologies.dims:
+    if installed_as_year and "installed" in names and "year" in data.dims:
         # assert "installed" in names
-        technologies = technologies.rename(year="installed")
+        data = data.rename(year="installed")
 
-    # The first selection reduces the size of technologies without affecting the
+    # The first selection reduces the size of the data without affecting the
     # dimensions.
-    first_sel = {
-        n: technologies[n].isin(template[n]) for n in names if n in technologies.dims
-    }
-    techs = technologies.sel(first_sel)
+    first_sel = {n: data[n].isin(template[n]) for n in names if n in data.dims}
+    techs = data.sel(first_sel)
 
-    # Reshape the technology array to match the template
+    # Reshape the array to match the template
     second_sel = {n: template[n] for n in template.coords if n in techs.dims}
     return techs.sel(second_sel)
 
