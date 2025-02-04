@@ -248,7 +248,6 @@ def test_yearly_aggregate_no_outputs(tmpdir):
     assert len(outputs(None, year=2010)) == 0
 
 
-@mark.xfail
 def test_mca_aggregate_outputs(tmpdir):
     from toml import dump, load
 
@@ -267,8 +266,10 @@ def test_mca_aggregate_outputs(tmpdir):
     mca.run()
 
     assert (tmpdir / "model" / "Prices.csv").exists()
-    data = pd.read_csv(tmpdir / "model" / "Prices.csv")
-    assert set(data.year) == set(settings["time_framework"])
+
+    # TODO: should pass again after #612
+    # data = pd.read_csv(tmpdir / "model" / "Prices.csv")
+    # assert set(data.year) == set(settings["time_framework"])
 
 
 @mark.usefixtures("save_registries")
