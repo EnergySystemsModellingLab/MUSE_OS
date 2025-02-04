@@ -95,15 +95,3 @@ fuel3,all-week,all-day,spring-autumn,0.08600000000,R1,2,MUS$2010/PJ,2045
 fuel1,all-week,all-day,spring-autumn,1.14040000000,R1,2,MUS$2010/PJ,2045
 fuel2,all-week,all-day,spring-autumn,11.69200000000,R1,2,MUS$2010/PJ,2045
 ammonia,all-week,all-day,spring-autumn,458.21660000000,R1,2,MUS$2010/Mt,2045
-fuel3,all-week,all-day,winter,0.08600000000,R1,0,MUS$2010/PJ,2050
-fuel1,all-week,all-day,winter,1.14040000000,R1,0,MUS$2010/PJ,2050
-fuel2,all-week,all-day,winter,11.69200000000,R1,0,MUS$2010/PJ,2050
-ammonia,all-week,all-day,winter,455.91800000000,R1,0,MUS$2010/Mt,2050
-fuel3,all-week,all-day,summer,0.08600000000,R1,1,MUS$2010/PJ,2050
-fuel1,all-week,all-day,summer,1.14040000000,R1,1,MUS$2010/PJ,2050
-fuel2,all-week,all-day,summer,11.69200000000,R1,1,MUS$2010/PJ,2050
-ammonia,all-week,all-day,summer,455.94940000000,R1,1,MUS$2010/Mt,2050
-fuel3,all-week,all-day,spring-autumn,0.08600000000,R1,2,MUS$2010/PJ,2050
-fuel1,all-week,all-day,spring-autumn,1.14040000000,R1,2,MUS$2010/PJ,2050
-fuel2,all-week,all-day,spring-autumn,11.69200000000,R1,2,MUS$2010/PJ,2050
-ammonia,all-week,all-day,spring-autumn,455.91800000000,R1,2,MUS$2010/Mt,2050
