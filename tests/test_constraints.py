@@ -6,7 +6,7 @@ import xarray as xr
 from pytest import approx, fixture
 
 from muse.timeslices import drop_timeslice
-from muse.utilities import reduce_assets
+from muse.utilities import interpolate_capacity, reduce_assets
 
 CURRENT_YEAR = 2020
 INVESTMENT_YEAR = 2025
@@ -50,8 +50,9 @@ def assets(residential):
 
 @fixture
 def capacity(assets):
-    return reduce_assets(assets.capacity, coords=("technology", "region")).interp(
-        year=[CURRENT_YEAR, INVESTMENT_YEAR], method="linear"
+    return interpolate_capacity(
+        reduce_assets(assets.capacity, coords=("technology", "region")),
+        year=[CURRENT_YEAR, INVESTMENT_YEAR],
     )
 
 

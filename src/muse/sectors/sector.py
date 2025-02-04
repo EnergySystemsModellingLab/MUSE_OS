@@ -284,10 +284,10 @@ class Sector(AbstractSector):  # type: ignore
         from muse.commodities import is_pollutant
         from muse.costs import levelized_cost_of_energy, supply_cost
         from muse.quantities import consumption
-        from muse.utilities import broadcast_over_assets
+        from muse.utilities import broadcast_over_assets, interpolate_capacity
 
         years = market.year.values
-        capacity = self.capacity.interp(year=years)
+        capacity = interpolate_capacity(self.capacity, year=years)
 
         # Select technology data for each asset
         # Each asset uses the technology data from the year it was installed
@@ -359,7 +359,7 @@ class Sector(AbstractSector):  # type: ignore
         dimensions: asset (technology, installation date,
         region), year.
         """
-        from muse.utilities import reduce_assets
+        from muse.utilities import interpolate_capacity, reduce_assets
 
         traded = [
             u.assets.capacity
@@ -381,13 +381,14 @@ class Sector(AbstractSector):  # type: ignore
             ]
             flat_list = [item for sublist in full_list for item in sublist]
             years = sorted(list(set(flat_list)))
-            return reduce_assets(
+            capacity = reduce_assets(
                 [
                     u.assets.capacity
                     for u in self.agents
                     if "dst_region" not in u.assets.capacity.dims
                 ]
-            ).interp(year=years, kwargs={"fill_value": 0.0})
+            )
+            return interpolate_capacity(capacity, year=years)
 
         # Only traded assets
         elif not nontraded:
@@ -398,25 +399,27 @@ class Sector(AbstractSector):  # type: ignore
             ]
             flat_list = [item for sublist in full_list for item in sublist]
             years = sorted(list(set(flat_list)))
-            return reduce_assets(
+            capacity = reduce_assets(
                 [
                     u.assets.capacity
                     for u in self.agents
                     if "dst_region" in u.assets.capacity.dims
                 ]
-            ).interp(year=years, kwargs={"fill_value": 0.0})
+            )
+            return interpolate_capacity(capacity, year=years)
 
         # Both traded and nontraded assets
         else:
             traded_results = reduce_assets(traded)
             nontraded_results = reduce_assets(nontraded)
-            return reduce_assets(
+            capacity = reduce_assets(
                 [
                     traded_results,
                     nontraded_results
                     * (nontraded_results.region == traded_results.dst_region),
                 ]
             )
+            return interpolate_capacity(capacity, year=years)
 
     @property
     def agents(self) -> Iterator[AbstractAgent]:
