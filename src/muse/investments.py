@@ -232,9 +232,8 @@ def adhoc_match_demand(
     demand = next(c for c in constraints if c.name == "demand").b
 
     max_capacity = next(c for c in constraints if c.name == "max capacity expansion").b
-    techs = broadcast_over_assets(technologies, max_capacity)
     max_prod = maximum_production(
-        techs,
+        broadcast_over_assets(technologies, max_capacity),
         max_capacity,
         technology=costs.replacement,
         commodity=demand.commodity,
@@ -256,7 +255,7 @@ def adhoc_match_demand(
 
     capacity = capacity_in_use(
         production,
-        technologies,
+        broadcast_over_assets(technologies, production),
         technology=production.replacement,
         timeslice_level=timeslice_level,
     ).drop_vars("technology")

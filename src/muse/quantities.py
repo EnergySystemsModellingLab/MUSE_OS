@@ -275,17 +275,14 @@ def capacity_in_use(
         Capacity-in-use for each technology, whittled down by the filters.
     """
     from muse.commodities import is_enduse
-    from muse.utilities import broadcast_over_assets, filter_input
+    from muse.utilities import filter_input
 
     prod = filter_input(
         production, **{k: v for k, v in filters.items() if k in production.dims}
     )
 
-    techs = technologies[["fixed_outputs", "utilization_factor"]]
-    assert isinstance(techs, xr.Dataset)
-    btechs = broadcast_over_assets(techs, prod, installed_as_year=True)
     ftechs = filter_input(
-        btechs, **{k: v for k, v in filters.items() if k in technologies.dims}
+        technologies, **{k: v for k, v in filters.items() if k in technologies.dims}
     )
 
     factor = 1 / (ftechs.fixed_outputs * ftechs.utilization_factor)
