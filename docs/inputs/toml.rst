@@ -292,6 +292,13 @@ A sector accepts these attributes:
 
    Defaults to "last".
 
+*interpolation*
+   Interpolation method used to fill missing years in the *technodata* (defaults to "linear").
+   Available interpolation methods depend on the underlying `scipy method's kind attribute`_.
+   Years outside the data range will always be back/forward filled with the closest available data.
+
+   .. _scipy method's kind attribute: https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
+
 *dispatch_production*
    The method used to calculate supply of commodities after investments have been made.
 
