@@ -43,7 +43,7 @@ def supply(
         input commodities).
     """
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
-    from muse.utilities import broadcast_techs
+    from muse.utilities import broadcast_over_assets
 
     assert "asset" not in demand.dims
     assert "asset" in capacity.dims
@@ -74,9 +74,9 @@ def supply(
 
     else:
         # Multi-region models
-        demand = broadcast_techs(demand, maxprod, installed_as_year=False)
+        demand = broadcast_over_assets(demand, maxprod, installed_as_year=False)
         total_maxprod_by_region = maxprod.groupby("region").sum(dim="asset")
-        share_by_asset = maxprod / broadcast_techs(
+        share_by_asset = maxprod / broadcast_over_assets(
             total_maxprod_by_region, maxprod, installed_as_year=False
         )
         demand_by_asset = (demand * share_by_asset).fillna(0)
@@ -226,8 +226,7 @@ def maximum_production(
         capacity: Capacity of each technology of interest. In practice, the capacity can
             refer to asset capacity, the max capacity, or the capacity-in-use.
         technologies: xr.Dataset describing the features of the technologies of
-            interests.  It should contain `fixed_outputs` and `utilization_factor`. It's
-            shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
+            interests.  It should contain `fixed_outputs` and `utilization_factor`.
         filters: keyword arguments are used to filter down the capacity and
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are
@@ -270,8 +269,7 @@ def capacity_in_use(
     Arguments:
         production: Production from each technology of interest.
         technologies: xr.Dataset describing the features of the technologies of
-            interests.  It should contain `fixed_outputs` and `utilization_factor`. It's
-            shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
+            interests.  It should contain `fixed_outputs` and `utilization_factor`.
         max_dim: reduces the given dimensions using `max`. Defaults to "commodity". If
             None, then no reduction is performed.
         filters: keyword arguments are used to filter down the capacity and
@@ -284,7 +282,7 @@ def capacity_in_use(
         Capacity-in-use for each technology, whittled down by the filters.
     """
     from muse.commodities import is_enduse
-    from muse.utilities import broadcast_techs, filter_input
+    from muse.utilities import broadcast_over_assets, filter_input
 
     prod = filter_input(
         production, **{k: v for k, v in filters.items() if k in production.dims}
@@ -292,7 +290,7 @@ def capacity_in_use(
 
     techs = technologies[["fixed_outputs", "utilization_factor"]]
     assert isinstance(techs, xr.Dataset)
-    btechs = broadcast_techs(techs, prod, installed_as_year=True)
+    btechs = broadcast_over_assets(techs, prod, installed_as_year=True)
     ftechs = filter_input(
         btechs, **{k: v for k, v in filters.items() if k in technologies.dims}
     )
@@ -337,7 +335,6 @@ def minimum_production(
             refer to asset capacity, the max capacity, or the capacity-in-use.
         technologies: xr.Dataset describing the features of the technologies of
             interests.  It should contain `fixed_outputs` and `minimum_service_factor`.
-            Its shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
         timeslices: xr.DataArray of the timeslicing scheme. Production data will be
             returned in this format.
         filters: keyword arguments are used to filter down the capacity and

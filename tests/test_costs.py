@@ -18,18 +18,18 @@ def _capacity(_technologies, demand_share):
 @fixture
 def _technologies(technologies, demand_share):
     """Technology parameters for each asset."""
-    from muse.utilities import broadcast_techs
+    from muse.utilities import broadcast_over_assets
 
-    return broadcast_techs(technologies.sel(year=YEAR), demand_share)
+    return broadcast_over_assets(technologies.sel(year=YEAR), demand_share)
 
 
 @fixture
 def _prices(market, demand_share):
     """Prices relevant to each asset."""
-    from muse.utilities import broadcast_techs
+    from muse.utilities import broadcast_over_assets
 
     prices = market.prices.sel(year=YEAR)
-    return broadcast_techs(prices, demand_share, installed_as_year=False)
+    return broadcast_over_assets(prices, demand_share, installed_as_year=False)
 
 
 @fixture

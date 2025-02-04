@@ -383,7 +383,7 @@ def _stock(
     from numpy.random import choice, rand
     from xarray import Dataset
 
-    from muse.utilities import broadcast_techs
+    from muse.utilities import broadcast_over_assets
 
     n_assets = 10
 
@@ -396,7 +396,7 @@ def _stock(
     assets = Dataset(coords=asset_coords)
 
     # Create random capacity data
-    capacity_limits = broadcast_techs(technologies.total_capacity_limit, assets)
+    capacity_limits = broadcast_over_assets(technologies.total_capacity_limit, assets)
     factors = cumprod(rand(n_assets, len(coords["year"])) / 4 + 0.75, axis=1).clip(
         max=1
     )

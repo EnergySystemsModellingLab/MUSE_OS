@@ -291,14 +291,16 @@ class Sector(AbstractSector):  # type: ignore
         from muse.commodities import is_pollutant
         from muse.costs import levelized_cost_of_energy, supply_cost
         from muse.quantities import consumption
-        from muse.utilities import broadcast_techs
+        from muse.utilities import broadcast_over_assets
 
         years = market.year.values
         capacity = self.capacity.interp(year=years, **self.interpolation)
 
         # Select technology data for each asset
         # Each asset uses the technology data from the year it was installed
-        technodata = broadcast_techs(technologies, capacity, installed_as_year=True)
+        technodata = broadcast_over_assets(
+            technologies, capacity, installed_as_year=True
+        )
 
         # Calculate supply
         supply = self.supply_prod(

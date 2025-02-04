@@ -40,22 +40,22 @@ def test_reduce_assets_with_zero_size(capacity: xr.DataArray):
     assert (actual == x).all()
 
 
-def test_broadcast_techs(technologies, capacity):
-    from muse.utilities import broadcast_techs
+def test_broadcast_over_assets(technologies, capacity):
+    from muse.utilities import broadcast_over_assets
 
     # Test with installed_as_year = True
-    result1 = broadcast_techs(technologies, capacity, installed_as_year=True)
+    result1 = broadcast_over_assets(technologies, capacity, installed_as_year=True)
     assert set(result1.dims) == {"asset", "commodity"}
     assert (result1.asset == capacity.asset).all()
 
     # Test with installed_as_year = False
-    result2 = broadcast_techs(technologies, capacity, installed_as_year=False)
+    result2 = broadcast_over_assets(technologies, capacity, installed_as_year=False)
     assert set(result2.dims) == {"asset", "commodity", "year"}
     assert (result2.asset == capacity.asset).all()
 
     # Template without "asset" dimensions (TODO: need to make the function stricter)
     # with raises(AssertionError):
-    #     broadcast_techs(technologies, technologies)
+    #     broadcast_over_assets(technologies, technologies)
 
 
 def test_tupled_dimension_no_tupling():

@@ -5,9 +5,9 @@ from pytest import approx, fixture, mark
 
 @fixture
 def technologies(technologies, capacity, timeslice):
-    from muse.utilities import broadcast_techs
+    from muse.utilities import broadcast_over_assets
 
-    return broadcast_techs(technologies, capacity)
+    return broadcast_over_assets(technologies, capacity)
 
 
 @fixture
@@ -234,8 +234,8 @@ def test_supply_with_min_service(technologies, capacity, production, timeslice):
 
 def test_production_amplitude(production, technologies):
     from muse.quantities import production_amplitude
-    from muse.utilities import broadcast_techs
+    from muse.utilities import broadcast_over_assets
 
-    techs = broadcast_techs(technologies, production)
+    techs = broadcast_over_assets(technologies, production)
     result = production_amplitude(production, techs)
     assert set(result.dims) == set(production.dims) - {"commodity"}

@@ -179,7 +179,7 @@ def reduce_assets(
     return result.drop_vars("asset")
 
 
-def broadcast_techs(
+def broadcast_over_assets(
     technologies: xr.Dataset | xr.DataArray,
     template: xr.DataArray | xr.Dataset,
     installed_as_year: bool = True,
@@ -241,9 +241,9 @@ def broadcast_techs(
         capacity of each asset, for example.
 
         We want to select the values from the technology array that correspond to each
-        asset in the template. To do this, we perform `broadcast_techs` on
+        asset in the template. To do this, we perform `broadcast_over_assets` on
         `technologies` using `assets` as a template:
-        >>> broadcast_techs(technologies, assets, installed_as_year=False)
+        >>> broadcast_over_assets(technologies, assets, installed_as_year=False)
         <xarray.DataArray (asset: 2)> Size: 16B
         array([1, 5])
         Coordinates:
@@ -337,22 +337,20 @@ def filter_with_template(
     """Filters data to match template.
 
     If the `asset_dimension` is present in `template.dims`, then the call is
-    forwarded to `broadcast_techs`. Otherwise, the set of dimensions and indices
+    forwarded to `broadcast_over_assets`. Otherwise, the set of dimensions and indices
     in common between `template` and `data` are determined, and the resulting
     call is forwarded to `filter_input`.
 
     Arguments:
         data: Data to transform
         template: Data from which to figure coordinates and dimensions
-        asset_dimension: Name of the dimension which if present indicates the
-            format is that of an *asset* (see `broadcast_techs`)
-        kwargs: passed on to `broadcast_techs` or `filter_input`
+        kwargs: passed on to `broadcast_over_assets` or `filter_input`
 
     Returns:
         `data` transformed to match the form of `template`
     """
     if "asset" in template.dims:
-        return broadcast_techs(data, template)
+        return broadcast_over_assets(data, template)
 
     match_indices = set(data.dims).intersection(template.dims) - set(kwargs)
     match = {d: template[d].isin(data[d]).values for d in match_indices if d != "year"}

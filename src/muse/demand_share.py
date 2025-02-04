@@ -246,7 +246,7 @@ def new_and_retro(
 
     from muse.commodities import is_enduse
     from muse.quantities import maximum_production
-    from muse.utilities import agent_concatenation, broadcast_techs, reduce_assets
+    from muse.utilities import agent_concatenation, broadcast_over_assets, reduce_assets
 
     current_year, investment_year = map(int, market.year.values)
 
@@ -264,7 +264,7 @@ def new_and_retro(
     )
 
     # Select technodata for assets
-    technodata = broadcast_techs(technologies, capacity, installed_as_year=True)
+    technodata = broadcast_over_assets(technologies, capacity, installed_as_year=True)
 
     demands = new_and_retro_demands(
         capacity,
@@ -380,7 +380,7 @@ def standard_demand(
 
     from muse.commodities import is_enduse
     from muse.quantities import maximum_production
-    from muse.utilities import agent_concatenation, broadcast_techs, reduce_assets
+    from muse.utilities import agent_concatenation, broadcast_over_assets, reduce_assets
 
     current_year, investment_year = map(int, market.year.values)
 
@@ -404,7 +404,7 @@ def standard_demand(
     )
 
     # Select technodata for assets
-    technodata = broadcast_techs(technologies, capacity, installed_as_year=True)
+    technodata = broadcast_over_assets(technologies, capacity, installed_as_year=True)
 
     # Calculate new and retrofit demands
     demands = new_and_retro_demands(
@@ -477,7 +477,7 @@ def unmet_forecasted_demand(
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
     from muse.commodities import is_enduse
-    from muse.utilities import broadcast_techs, reduce_assets
+    from muse.utilities import broadcast_over_assets, reduce_assets
 
     current_year, investment_year = map(int, market.year.values)
 
@@ -494,7 +494,7 @@ def unmet_forecasted_demand(
     future_capacity = capacity.sel(year=investment_year)
 
     # Select technology data for assets
-    techs = broadcast_techs(technologies, capacity, installed_as_year=True)
+    techs = broadcast_over_assets(technologies, capacity, installed_as_year=True)
 
     # Calculate unmet demand
     result = unmet_demand(
