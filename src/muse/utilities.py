@@ -296,14 +296,6 @@ def clean_assets(assets: xr.Dataset, year: int):
     return assets
 
 
-def filter_input(
-    dataset: xr.Dataset | xr.DataArray,
-    **kwargs,
-) -> xr.Dataset | xr.DataArray:
-    """Filter inputs, selecting data for the specified year."""
-    return dataset
-
-
 def tupled_dimension(array: np.ndarray, axis: int):
     """Transforms one axis into a tuples."""
     if array.shape[axis] == 1:
