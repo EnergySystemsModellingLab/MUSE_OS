@@ -94,8 +94,8 @@ def test_production_agent_asset_view(
 ):
     """Production when capacity has format of agent.assets.capacity.
 
-    TODO: not currently supported. Need to make maximum_production more generic so it
-    can handle capacity data without an "asset" dimension.
+    TODO: This requires a fully-explicit technologies dataset. Need to rework the
+    fixtures.
     """
     from muse.utilities import coords_to_multiindex, reduce_assets
 
