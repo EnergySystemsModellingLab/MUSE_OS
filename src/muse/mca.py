@@ -76,7 +76,6 @@ class MCA:
         )
 
         extras = {
-            "foresight",  # legacy
             "regions",
             "interest_rate",
             "log_level",
@@ -92,8 +91,16 @@ class MCA:
             for k, v in settings._asdict().items()
             if not hasattr(v, "_asdict") and k not in extras
         }
-        if "equilibrium" in global_kw:
-            global_kw["equilibrium"] = global_kw.pop("equilibrium")
+
+        # Legacy: warn user about deprecation of "foresight" parameter (#641)
+        if "foresight" in global_kw:
+            msg = (
+                "The `foresight` parameter has been deprecated. "
+                "Please remove from your settings file."
+            )
+            getLogger(__name__).warning(msg)
+            global_kw.pop("foresight")
+
         carbon_kw = {
             k: v._asdict() if hasattr(v, "_asdict") else v
             for k, v in settings.carbon_budget_control._asdict().items()
