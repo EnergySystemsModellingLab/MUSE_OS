@@ -248,7 +248,6 @@ def test_yearly_aggregate_no_outputs(tmpdir):
     assert len(outputs(None, year=2010)) == 0
 
 
-@mark.xfail
 def test_mca_aggregate_outputs(tmpdir):
     from toml import dump, load
 
