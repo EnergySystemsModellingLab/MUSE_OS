@@ -646,7 +646,7 @@ def read_technodata(
     time_framework: Sequence[int] | None = None,
     commodities: str | Path | None = None,
     regions: Sequence[str] | None = None,
-    **kwargs,
+    interpolation_mode: str = "linear",
 ) -> xr.Dataset:
     """Helper function to create technodata for a given sector."""
     from muse.readers.csv import read_technologies, read_trade
@@ -741,5 +741,5 @@ def read_technodata(
         technologies["year"] = "year", years
 
     year = sorted(set(time_framework).union(technologies.year.data.tolist()))
-    technologies = technologies.interp(year=year, **kwargs)
+    technologies = technologies.interp(year=year, method=interpolation_mode)
     return technologies

@@ -37,9 +37,15 @@ class Sector(AbstractSector):  # type: ignore
             raise RuntimeError(f"Missing 'subsectors' section in sector {name}")
         if len(sector_settings["subsectors"]._asdict()) == 0:
             raise RuntimeError(f"Empty 'subsectors' section in sector {name}")
+        interpolation_mode = sector_settings.pop("interpolation_mode", "linear")
 
         # Read technologies
-        technologies = read_technodata(settings, name, settings.time_framework)
+        technologies = read_technodata(
+            settings,
+            name,
+            settings.time_framework,
+            interpolation_mode=interpolation_mode,
+        )
 
         # Create subsectors
         subsectors = [
