@@ -331,36 +331,6 @@ def filter_input(
     return dataset
 
 
-def filter_with_template(
-    data: xr.Dataset | xr.DataArray,
-    template: xr.DataArray | xr.Dataset,
-    **kwargs,
-):
-    """Filters data to match template.
-
-    If the `asset_dimension` is present in `template.dims`, then the call is
-    forwarded to `broadcast_over_assets`. Otherwise, the set of dimensions and indices
-    in common between `template` and `data` are determined, and the resulting
-    call is forwarded to `filter_input`.
-
-    Arguments:
-        data: Data to transform
-        template: Data from which to figure coordinates and dimensions
-        kwargs: passed on to `broadcast_over_assets` or `filter_input`
-
-    Returns:
-        `data` transformed to match the form of `template`
-    """
-    if "asset" in template.dims:
-        return broadcast_over_assets(data, template)
-
-    match_indices = set(data.dims).intersection(template.dims) - set(kwargs)
-    match = {d: template[d].isin(data[d]).values for d in match_indices if d != "year"}
-    if "year" in match_indices:
-        match["year"] = template.year.values
-    return filter_input(data, **match, **kwargs)  # type: ignore
-
-
 def tupled_dimension(array: np.ndarray, axis: int):
     """Transforms one axis into a tuples."""
     if array.shape[axis] == 1:

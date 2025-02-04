@@ -158,24 +158,17 @@ def consumption(
         dimensions as `production`.
 
     """
-    from muse.utilities import filter_with_template
-
-    params = filter_with_template(
-        technologies[["fixed_inputs", "flexible_inputs", "fixed_outputs"]],
-        production,
-    )
-
     # Calculate degree of technology activity
-    prod_amplitude = production_amplitude(production, params)
+    prod_amplitude = production_amplitude(production, technologies)
 
     # Calculate consumption of fixed commodities
     consumption_fixed = prod_amplitude * broadcast_timeslice(
-        params.fixed_inputs, level=timeslice_level
+        technologies.fixed_inputs, level=timeslice_level
     )
     assert all(consumption_fixed.commodity.values == production.commodity.values)
 
     # If there are no flexible inputs, then we are done
-    if not (params.flexible_inputs > 0).any():
+    if not (technologies.flexible_inputs > 0).any():
         return consumption_fixed
 
     # If prices are not given, then we can't consider flexible inputs, so just return
@@ -184,7 +177,7 @@ def consumption(
         return consumption_fixed
 
     # Flexible inputs
-    flexs = broadcast_timeslice(params.flexible_inputs, level=timeslice_level)
+    flexs = broadcast_timeslice(technologies.flexible_inputs, level=timeslice_level)
 
     # Calculate the cheapest fuel for each flexible technology
     priceflex = prices * flexs
