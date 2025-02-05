@@ -327,7 +327,8 @@ class MCA:
             # Global outputs
             investment_year = years[1]
             self.outputs(self.market, self.sectors, year=investment_year)
-            self.outputs_cache.consolidate_cache(year=investment_year)
+            self.outputs_cache.consolidate_cache(year=years[0])
+            # TODO: change cache to investment_year (not working properly anyway)
 
             getLogger(__name__).info(
                 f"Finished simulation period {years[0]} to {years[1]} "
