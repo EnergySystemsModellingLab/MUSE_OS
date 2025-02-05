@@ -1,8 +1,4 @@
 agent,capacity,dst_region,installed,region,sector,technology,type,year
-A1,5.00000000000,R1,2020,R1,residential,gasboiler,newcapa,2020
-A2,5.00000000000,R1,2020,R1,residential,gasboiler,newcapa,2020
-A1,1.00000000000,R1,2020,R1,power,gasCCGT,newcapa,2020
-A1,15.00000000000,R1,2020,R1,gas,gassupply1,newcapa,2020
 A1,2.50000000000,R1,2020,R1,residential,gasboiler,newcapa,2025
 A1,9.50000000000,R1,2025,R1,residential,heatpump,newcapa,2025
 A2,2.50000000000,R1,2020,R1,residential,gasboiler,newcapa,2025
@@ -58,3 +54,16 @@ A1,6.00000000000,R1,2040,R1,power,windturbine,newcapa,2045
 A1,6.00000000000,R1,2045,R1,power,windturbine,newcapa,2045
 A1,4.12600000000,R1,2025,R1,gas,gassupply1,newcapa,2045
 A1,7.35250000000,R1,2035,R1,gas,gassupply1,newcapa,2045
+A1,15.50000000000,R1,2045,R1,residential,heatpump,newcapa,2050
+A1,11.50000000000,R1,2050,R1,residential,heatpump,newcapa,2050
+A2,15.50000000000,R1,2045,R1,residential,heatpump,newcapa,2050
+A2,11.50000000000,R1,2050,R1,residential,heatpump,newcapa,2050
+A1,6.59380000000,R1,2025,R1,power,gasCCGT,newcapa,2050
+A1,0.27960000000,R1,2030,R1,power,gasCCGT,newcapa,2050
+A1,12.62080000000,R1,2030,R1,power,windturbine,newcapa,2050
+A1,6.00000000000,R1,2035,R1,power,windturbine,newcapa,2050
+A1,6.00000000000,R1,2040,R1,power,windturbine,newcapa,2050
+A1,6.00000000000,R1,2045,R1,power,windturbine,newcapa,2050
+A1,7.91410000000,R1,2050,R1,power,windturbine,newcapa,2050
+A1,4.12600000000,R1,2025,R1,gas,gassupply1,newcapa,2050
+A1,7.35250000000,R1,2035,R1,gas,gassupply1,newcapa,2050

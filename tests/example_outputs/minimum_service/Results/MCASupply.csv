@@ -1,10 +1,4 @@
 commodity,day,hour,month,region,supply,timeslice,units_prices,year
-ammonia,all-week,all-day,winter,R1,14.73330000000,0,MUS$2010/Mt,2010
-CO2f,all-week,all-day,winter,R1,53628.56500000000,0,MUS$2010/kt,2010
-ammonia,all-week,all-day,summer,R1,14.73330000000,1,MUS$2010/Mt,2010
-CO2f,all-week,all-day,summer,R1,53628.56500000000,1,MUS$2010/kt,2010
-ammonia,all-week,all-day,spring-autumn,R1,14.73330000000,2,MUS$2010/Mt,2010
-CO2f,all-week,all-day,spring-autumn,R1,53628.56500000000,2,MUS$2010/kt,2010
 ammonia,all-week,all-day,winter,R1,14.92000000000,0,MUS$2010/Mt,2015
 CO2f,all-week,all-day,winter,R1,55092.44800000000,0,MUS$2010/kt,2015
 ammonia,all-week,all-day,summer,R1,15.37220000000,1,MUS$2010/Mt,2015
@@ -47,3 +41,9 @@ ammonia,all-week,all-day,summer,R1,14.52450000000,1,MUS$2010/Mt,2045
 CO2f,all-week,all-day,summer,R1,58000.48940000000,1,MUS$2010/kt,2045
 ammonia,all-week,all-day,spring-autumn,R1,14.09730000000,2,MUS$2010/Mt,2045
 CO2f,all-week,all-day,spring-autumn,R1,56294.59260000000,2,MUS$2010/kt,2045
+ammonia,all-week,all-day,winter,R1,13.74870000000,0,MUS$2010/Mt,2050
+CO2f,all-week,all-day,winter,R1,54623.16370000000,0,MUS$2010/kt,2050
+ammonia,all-week,all-day,summer,R1,14.10330000000,1,MUS$2010/Mt,2050
+CO2f,all-week,all-day,summer,R1,56035.99150000000,1,MUS$2010/kt,2050
+ammonia,all-week,all-day,spring-autumn,R1,13.74870000000,2,MUS$2010/Mt,2050
+CO2f,all-week,all-day,spring-autumn,R1,54623.16370000000,2,MUS$2010/kt,2050
