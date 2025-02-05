@@ -201,7 +201,8 @@ def cliff_retirement_profile(
 
     # Minimize the number of years needed to represent the profile fully
     # This is done by removing the central year of any three repeating years, ensuring
-    # the removed year can be recovered by linear interpolation.
+    # the removed year can be recovered by linear interpolation
+    # (see `interpolate_capacity`).
     goodyears = avoid_repetitions(profile.astype(int))
     return profile.sel(year=goodyears).astype(bool)
 

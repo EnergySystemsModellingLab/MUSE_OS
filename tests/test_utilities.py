@@ -204,7 +204,7 @@ def test_lexical_nobin(order):
 def test_merge_assets():
     from numpy import arange
 
-    from muse.utilities import merge_assets
+    from muse.utilities import interpolate_capacity, merge_assets
 
     def fake(year, order=("installed", "technology")):
         result = xr.Dataset()
@@ -244,17 +244,17 @@ def test_merge_assets():
         ab_side = actual.sel(
             asset=((actual.installed == inst) & (actual.technology == tech))
         ).squeeze("asset")
-        a_side = (
-            capa_a.sel(asset=((capa_a.installed == inst) & (capa_a.technology == tech)))
-            .sum("asset")
-            .interp(year=ab_side.year, method="linear")
-            .fillna(0)
+        a_side = interpolate_capacity(
+            capa_a.sel(
+                asset=((capa_a.installed == inst) & (capa_a.technology == tech))
+            ).sum("asset"),
+            year=ab_side.year,
         )
-        b_side = (
-            capa_b.sel(asset=((capa_b.installed == inst) & (capa_b.technology == tech)))
-            .sum("asset")
-            .interp(year=ab_side.year, method="linear")
-            .fillna(0)
+        b_side = interpolate_capacity(
+            capa_b.sel(
+                asset=((capa_b.installed == inst) & (capa_b.technology == tech))
+            ).sum("asset"),
+            year=ab_side.year,
         )
         assert (ab_side.capacity == approx((a_side + b_side).values)).all()
 

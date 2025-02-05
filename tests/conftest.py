@@ -489,7 +489,7 @@ def settings(tmpdir) -> dict:
         "equilibrium": False,
         "maximum_iterations": 3,
         "tolerance": 0.1,
-        "interpolation_mode": "Active",
+        "interpolation_mode": "linear",
     }
     out.update(required)
 

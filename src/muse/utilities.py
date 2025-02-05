@@ -296,14 +296,6 @@ def clean_assets(assets: xr.Dataset, year: int):
     return assets
 
 
-def filter_input(
-    dataset: xr.Dataset | xr.DataArray,
-    **kwargs,
-) -> xr.Dataset | xr.DataArray:
-    """Filter inputs, selecting data for the specified year."""
-    return dataset
-
-
 def tupled_dimension(array: np.ndarray, axis: int):
     """Transforms one axis into a tuples."""
     if array.shape[axis] == 1:
@@ -363,7 +355,6 @@ def lexical_comparison(
 def merge_assets(
     capa_a: xr.DataArray,
     capa_b: xr.DataArray,
-    interpolation: str = "linear",
     dimension: str = "asset",
 ) -> xr.DataArray:
     """Merge two capacity arrays."""
@@ -371,13 +362,13 @@ def merge_assets(
     years = sorted(set(capa_a.year.values).union(capa_b.year.values))
     if len(capa_a.year) == 1:
         capa_a_interp = capa_a
-        capa_b_interp = capa_b.interp(year=years, method=interpolation).fillna(0)
+        capa_b_interp = interpolate_capacity(capa_b, year=years)
     elif len(capa_b.year) == 1:
-        capa_a_interp = capa_a.interp(year=years, method=interpolation).fillna(0)
+        capa_a_interp = interpolate_capacity(capa_a, year=years)
         capa_b_interp = capa_b
     else:
-        capa_a_interp = capa_a.interp(year=years, method=interpolation).fillna(0)
-        capa_b_interp = capa_b.interp(year=years, method=interpolation).fillna(0)
+        capa_a_interp = interpolate_capacity(capa_a, year=years)
+        capa_b_interp = interpolate_capacity(capa_b, year=years)
 
     # Concatenate the two capacity arrays
     result = xr.concat((capa_a_interp, capa_b_interp), dim=dimension)
@@ -402,12 +393,32 @@ def avoid_repetitions(data: xr.DataArray, dim: str = "year") -> xr.DataArray:
     It removes the central year of any three consecutive years where all data is
     the same. This means the original data can be reobtained via a linear
     interpolation or a forward fill.
+    See :py:func:`muse.utilities.interpolate_capacity`.
 
     The first and last year are always preserved.
     """
     roll = data.rolling({dim: 3}, center=True).construct("window")
     years = ~(roll == roll.isel(window=0)).all([u for u in roll.dims if u != dim])
     return data.year[years]
+
+
+def interpolate_capacity(
+    data: xr.DataArray, year: int | Sequence[int] | xr.DataArray
+) -> xr.DataArray:
+    """Interpolates capacity data to the given years.
+
+    Capacity between years is interpolated linearly. Capacity outside the range of the
+    data is set to zero.
+
+    Arguments:
+        data: DataArray containing the capacity data
+        year: Year or years to interpolate to
+    """
+    return data.interp(
+        year=year,
+        method="linear",
+        kwargs={"fill_value": 0.0},
+    )
 
 
 def nametuple_to_dict(nametup: Mapping | NamedTuple) -> Mapping:

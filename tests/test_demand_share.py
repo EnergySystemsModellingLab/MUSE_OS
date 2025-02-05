@@ -2,6 +2,7 @@ import xarray as xr
 from pytest import approx, fixture, raises
 
 from muse.timeslices import drop_timeslice
+from muse.utilities import interpolate_capacity
 
 CURRENT_YEAR = 2010
 INVESTMENT_YEAR = 2015
@@ -9,7 +10,7 @@ INVESTMENT_YEAR = 2015
 
 @fixture
 def _capacity(stock):
-    return stock.capacity.interp(year=[CURRENT_YEAR, INVESTMENT_YEAR])
+    return interpolate_capacity(stock.capacity, year=[CURRENT_YEAR, INVESTMENT_YEAR])
 
 
 @fixture

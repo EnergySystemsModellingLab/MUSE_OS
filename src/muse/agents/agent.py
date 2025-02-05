@@ -297,7 +297,7 @@ class InvestingAgent(Agent):
         """
         from logging import getLogger
 
-        from muse.utilities import reduce_assets
+        from muse.utilities import interpolate_capacity, reduce_assets
 
         # Check inputs
         assert len(market.year) == 2
@@ -340,9 +340,10 @@ class InvestingAgent(Agent):
         search = search.sel(asset=condtechs)
 
         # Calculate capacity in current and investment year
-        capacity = reduce_assets(
-            self.assets.capacity, coords=("technology", "region")
-        ).interp(year=[current_year, investment_year])
+        capacity = interpolate_capacity(
+            reduce_assets(self.assets.capacity, coords=("technology", "region")),
+            year=[current_year, investment_year],
+        )
 
         # Calculate constraints
         constraints = self.constraints(

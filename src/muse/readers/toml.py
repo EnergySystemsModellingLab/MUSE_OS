@@ -522,15 +522,27 @@ def check_interpolation_mode(settings: dict) -> None:
     """
     settings["interpolation_mode"] = settings["interpolation_mode"].lower()
 
-    valid_modes = ["off", "false", "linear", "active", "cubic"]
-    msg = 'ERROR - Valid interpolation modes are "off", "linear" and "cubic"'
+    valid_modes = [
+        "linear",
+        "nearest",
+        "zero",
+        "slinear",
+        "quadratic",
+        "cubic",
+        "previous",
+        "next",
+        "active",  # legacy: see below
+    ]
+    msg = (
+        'ERROR - Valid interpolation modes are "linear", "nearest", "zero", '
+        '"slinear", "quadratic", "cubic", "previous", "next"'
+    )
     assert settings["interpolation_mode"] in valid_modes, msg
 
-    # And we normalize the interpolation mode
-    # If there's no interpolation, we get the nearest value
-    if settings["interpolation_mode"] in ["off", "false"]:
-        settings["interpolation_mode"] = "nearest"
-    elif settings["interpolation_mode"] in ["linear", "active"]:
+    # Legacy: "Active" was previous default - switch to "linear" (#642)
+    if settings["interpolation_mode"] == "active":
+        msg = "'Active' interpolation mode is deprecated. Defaulting to 'linear'."
+        getLogger(__name__).warning(msg)
         settings["interpolation_mode"] = "linear"
 
 
@@ -646,7 +658,7 @@ def read_technodata(
     time_framework: Sequence[int] | None = None,
     commodities: str | Path | None = None,
     regions: Sequence[str] | None = None,
-    **kwargs,
+    interpolation_mode: str = "linear",
 ) -> xr.Dataset:
     """Helper function to create technodata for a given sector."""
     from muse.readers.csv import read_technologies, read_trade
@@ -725,7 +737,7 @@ def read_technodata(
             technologies[name] = data
 
     # make sure technologies includes the requisite years
-    maxyear = getattr(settings, "forecast", 5) + max(time_framework)
+    maxyear = max(time_framework)
     if technologies.year.max() < maxyear:
         msg = "Forward-filling technodata to fit simulation timeframe"
         getLogger(__name__).info(msg)
@@ -741,5 +753,5 @@ def read_technodata(
         technologies["year"] = "year", years
 
     year = sorted(set(time_framework).union(technologies.year.data.tolist()))
-    technologies = technologies.interp(year=year, **kwargs)
+    technologies = technologies.interp(year=year, method=interpolation_mode)
     return technologies
