@@ -107,7 +107,7 @@ def _factory(
             year = int(market.year.max())
 
         return [
-            sink(quantity(market, *args), year=year)
+            sink(quantity(market, *args, year=year), year=year)
             for quantity, sink in zip(quantities, sinks)
         ]
 
@@ -182,6 +182,7 @@ def consumption(
     sum_over: list[str] | None = None,
     drop: list[str] | None = None,
     rounding: int = 4,
+    **kwargs,
 ) -> xr.DataArray:
     """Current consumption."""
     moutput = market.copy(deep=True).reset_index("timeslice")
@@ -202,6 +203,7 @@ def supply(
     sum_over: list[str] | None = None,
     drop: list[str] | None = None,
     rounding: int = 4,
+    **kwargs,
 ) -> xr.DataArray:
     """Current supply."""
     moutput = market.copy(deep=True).reset_index("timeslice")
@@ -222,6 +224,7 @@ def costs(
     sum_over: list[str] | None = None,
     drop: list[str] | None = None,
     rounding: int = 4,
+    **kwargs,
 ) -> xr.DataArray:
     """Current costs."""
     from muse.commodities import is_pollutant

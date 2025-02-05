@@ -306,7 +306,9 @@ class MCA:
             # Save sector outputs
             for sector in self.sectors:
                 if type(sector) is Sector:
-                    sector.save_outputs()
+                    if year_idx == 0:
+                        sector.save_outputs(years[0])
+                    sector.save_outputs(years[1])
 
             # If we need to account for the carbon budget, we might need to change
             # the budget for the future, too.
@@ -323,6 +325,10 @@ class MCA:
             self.market.prices.loc[dims] = future_propagation(
                 self.market.prices.sel(dims), new_market.prices.sel(year=years[1])
             )
+
+            if year_idx == 0:
+                # Necessary to get global outputs for the first year of the framework
+                self.outputs(self.market, self.sectors, year=years[0])
 
             # Global outputs
             investment_year = years[1]

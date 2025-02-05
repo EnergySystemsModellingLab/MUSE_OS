@@ -8,7 +8,9 @@ same signature:
     @register_output_quantity
     def quantity(
         sectors: List[AbstractSector],
-        market: xr.Dataset, **kwargs
+        market: xr.Dataset,
+        year: int,
+        **kwargs
     ) -> Union[pd.DataFrame, xr.DataArray]:
         pass
 
@@ -76,9 +78,13 @@ def round_values(function: Callable) -> OUTPUT_QUANTITY_SIGNATURE:
 
     @wraps(function)
     def rounded(
-        market: xr.Dataset, sectors: list[AbstractSector], rounding: int = 4, **kwargs
+        market: xr.Dataset,
+        sectors: list[AbstractSector],
+        year: int,
+        rounding: int = 4,
+        **kwargs,
     ) -> xr.DataArray:
-        result = function(market, sectors, **kwargs)
+        result = function(market=market, sectors=sectors, year=year, **kwargs)
 
         if hasattr(result, "to_dataframe"):
             result = result.to_dataframe()
@@ -150,7 +156,7 @@ def factory(
 @register_output_quantity
 @round_values
 def consumption(
-    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], year: int, **kwargs
 ) -> pd.DataFrame:
     """Current consumption."""
     return market_quantity(market.consumption, **kwargs).to_dataframe().reset_index()
@@ -158,7 +164,9 @@ def consumption(
 
 @register_output_quantity
 @round_values
-def supply(market: xr.Dataset, sectors: list[AbstractSector], **kwargs) -> pd.DataFrame:
+def supply(
+    market: xr.Dataset, sectors: list[AbstractSector], year: int, **kwargs
+) -> pd.DataFrame:
     """Current supply."""
     return market_quantity(market.supply, **kwargs).to_dataframe().reset_index()
 
@@ -168,6 +176,7 @@ def supply(market: xr.Dataset, sectors: list[AbstractSector], **kwargs) -> pd.Da
 def prices(
     market: xr.Dataset,
     sectors: list[AbstractSector],
+    year: int,
     **kwargs,
 ) -> pd.DataFrame:
     """Current MCA market prices."""
@@ -177,7 +186,7 @@ def prices(
 @register_output_quantity
 @round_values
 def capacity(
-    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], year: int, **kwargs
 ) -> pd.DataFrame:
     """Current capacity across all sectors."""
     return _aggregate_sectors(sectors, op=sector_capacity)
@@ -236,14 +245,14 @@ def _aggregate_sectors(
 
 @register_output_quantity(name=["fuel_costs"])
 def metric_fuel_costs(
-    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], year: int, **kwargs
 ) -> pd.DataFrame:
     """Current fuel costs across all sectors."""
-    return _aggregate_sectors(sectors, market, op=sector_fuel_costs)
+    return _aggregate_sectors(sectors, market, year, op=sector_fuel_costs)
 
 
 def sector_fuel_costs(
-    sector: AbstractSector, market: xr.Dataset, **kwargs
+    sector: AbstractSector, market: xr.Dataset, year: int, **kwargs
 ) -> pd.DataFrame:
     """Sector fuel costs with agent annotations."""
     from muse.commodities import is_fuel
@@ -299,14 +308,14 @@ def sector_fuel_costs(
 
 @register_output_quantity(name=["capital_costs"])
 def metric_capital_costs(
-    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], year: int, **kwargs
 ) -> pd.DataFrame:
     """Current capital costs across all sectors."""
-    return _aggregate_sectors(sectors, market, op=sector_capital_costs)
+    return _aggregate_sectors(sectors, market, year, op=sector_capital_costs)
 
 
 def sector_capital_costs(
-    sector: AbstractSector, market: xr.Dataset, **kwargs
+    sector: AbstractSector, market: xr.Dataset, year: int, **kwargs
 ) -> pd.DataFrame:
     """Sector capital costs with agent annotations."""
     data_sector: list[xr.DataArray] = []
@@ -342,14 +351,14 @@ def sector_capital_costs(
 
 @register_output_quantity(name=["emission_costs"])
 def metric_emission_costs(
-    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], year: int, **kwargs
 ) -> pd.DataFrame:
     """Current emission costs across all sectors."""
-    return _aggregate_sectors(sectors, market, op=sector_emission_costs)
+    return _aggregate_sectors(sectors, market, year, op=sector_emission_costs)
 
 
 def sector_emission_costs(
-    sector: AbstractSector, market: xr.Dataset, **kwargs
+    sector: AbstractSector, market: xr.Dataset, year: int, **kwargs
 ) -> pd.DataFrame:
     """Sector emission costs with agent annotations."""
     from muse.commodities import is_enduse, is_pollutant
@@ -407,13 +416,15 @@ def sector_emission_costs(
 
 @register_output_quantity(name=["LCOE"])
 def metric_lcoe(
-    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], year: int, **kwargs
 ) -> pd.DataFrame:
     """Current lifetime levelised cost across all sectors."""
-    return _aggregate_sectors(sectors, market, op=sector_lcoe)
+    return _aggregate_sectors(sectors, market, year, op=sector_lcoe)
 
 
-def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
+def sector_lcoe(
+    sector: AbstractSector, market: xr.Dataset, year: int, **kwargs
+) -> pd.DataFrame:
     """Levelized cost of energy () of technologies over their lifetime."""
     from muse.costs import levelized_cost_of_energy as LCOE
     from muse.quantities import capacity_to_service_demand, consumption
@@ -490,13 +501,15 @@ def sector_lcoe(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.Data
 
 @register_output_quantity(name=["EAC"])
 def metric_eac(
-    market: xr.Dataset, sectors: list[AbstractSector], **kwargs
+    market: xr.Dataset, sectors: list[AbstractSector], year: int, **kwargs
 ) -> pd.DataFrame:
     """Current emission costs across all sectors."""
-    return _aggregate_sectors(sectors, market, op=sector_eac)
+    return _aggregate_sectors(sectors, market, year, op=sector_eac)
 
 
-def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
+def sector_eac(
+    sector: AbstractSector, market: xr.Dataset, year: int, **kwargs
+) -> pd.DataFrame:
     """Net Present Value of technologies over their lifetime."""
     from muse.costs import equivalent_annual_cost as EAC
     from muse.quantities import capacity_to_service_demand, consumption
