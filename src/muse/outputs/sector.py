@@ -102,10 +102,7 @@ def _factory(
     quantities = [_quantity_factory(param, registry) for param in params]
     sinks = [sink_factory(param, sector_name=sector_name) for param in params]
 
-    def save_multiple_outputs(market, *args, year: int | None = None) -> list[Any]:
-        if year is None:
-            year = int(market.year.min())
-
+    def save_multiple_outputs(market, *args, year: int) -> list[Any]:
         return [
             sink(quantity(market, *args), year=year)
             for quantity, sink in zip(quantities, sinks)
