@@ -114,8 +114,8 @@ def patched_broadcast_compat_data(self, other):
             "(e.g. a capacity dataset with an 'asset' dimension) with a fully explicit "
             "technology dataset (e.g. a technology dataset with 'region' and "
             "'technology' dimensions). "
-            "Please use `broadcast_techs` on the latter object before performing this "
-            "operation."
+            "Please use `broadcast_over_assets` on the latter object before performing "
+            "this operation."
         )
 
     return self_data, other_data, dims

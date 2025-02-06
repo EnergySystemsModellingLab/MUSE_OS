@@ -257,7 +257,6 @@ class Agent(AbstractAgent):
 
         - remove empty assets
         - remove years prior to current
-        - interpolate current year and forecasted year
         """
         # TODO: move this into search and make sure filters, demand_share and
         #  what not use assets from search. That would remove another bit of

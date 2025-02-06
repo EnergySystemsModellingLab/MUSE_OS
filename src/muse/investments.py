@@ -225,6 +225,7 @@ def adhoc_match_demand(
 ) -> xr.DataArray:
     from muse.demand_matching import demand_matching
     from muse.quantities import capacity_in_use, maximum_production
+    from muse.utilities import broadcast_over_assets
 
     assert "year" not in technologies.dims
 
@@ -232,7 +233,7 @@ def adhoc_match_demand(
 
     max_capacity = next(c for c in constraints if c.name == "max capacity expansion").b
     max_prod = maximum_production(
-        technologies,
+        broadcast_over_assets(technologies, max_capacity),
         max_capacity,
         technology=costs.replacement,
         commodity=demand.commodity,
@@ -254,7 +255,7 @@ def adhoc_match_demand(
 
     capacity = capacity_in_use(
         production,
-        technologies,
+        broadcast_over_assets(technologies, production),
         technology=production.replacement,
         timeslice_level=timeslice_level,
     ).drop_vars("technology")

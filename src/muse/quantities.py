@@ -43,7 +43,7 @@ def supply(
         input commodities).
     """
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
-    from muse.utilities import broadcast_techs
+    from muse.utilities import broadcast_over_assets
 
     assert "asset" not in demand.dims
     assert "asset" in capacity.dims
@@ -74,9 +74,9 @@ def supply(
 
     else:
         # Multi-region models
-        demand = broadcast_techs(demand, maxprod, installed_as_year=False)
+        demand = broadcast_over_assets(demand, maxprod, installed_as_year=False)
         total_maxprod_by_region = maxprod.groupby("region").sum(dim="asset")
-        share_by_asset = maxprod / broadcast_techs(
+        share_by_asset = maxprod / broadcast_over_assets(
             total_maxprod_by_region, maxprod, installed_as_year=False
         )
         demand_by_asset = (demand * share_by_asset).fillna(0)
@@ -114,19 +114,15 @@ def emission(
         A data array containing emissions (and only emissions).
     """
     from muse.commodities import is_pollutant
-    from muse.utilities import broadcast_techs
-
-    assert "asset" in production.dims
 
     # Calculate the production amplitude of each asset
-    techs = broadcast_techs(technologies, production, installed_as_year=True)
-    prod_amplitude = production_amplitude(production, techs)
+    prod_amplitude = production_amplitude(production, technologies)
 
     # Calculate the production of environmental pollutants
     # = prod_amplitude * fixed_outputs
-    envs = is_pollutant(techs.comm_usage)
+    envs = is_pollutant(technologies.comm_usage)
     envs_production = prod_amplitude * broadcast_timeslice(
-        techs.sel(commodity=envs).fixed_outputs, level=timeslice_level
+        technologies.sel(commodity=envs).fixed_outputs, level=timeslice_level
     )
     return envs_production
 
@@ -162,24 +158,17 @@ def consumption(
         dimensions as `production`.
 
     """
-    from muse.utilities import filter_with_template
-
-    params = filter_with_template(
-        technologies[["fixed_inputs", "flexible_inputs", "fixed_outputs"]],
-        production,
-    )
-
     # Calculate degree of technology activity
-    prod_amplitude = production_amplitude(production, params)
+    prod_amplitude = production_amplitude(production, technologies)
 
     # Calculate consumption of fixed commodities
     consumption_fixed = prod_amplitude * broadcast_timeslice(
-        params.fixed_inputs, level=timeslice_level
+        technologies.fixed_inputs, level=timeslice_level
     )
     assert all(consumption_fixed.commodity.values == production.commodity.values)
 
     # If there are no flexible inputs, then we are done
-    if not (params.flexible_inputs > 0).any():
+    if not (technologies.flexible_inputs > 0).any():
         return consumption_fixed
 
     # If prices are not given, then we can't consider flexible inputs, so just return
@@ -188,7 +177,7 @@ def consumption(
         return consumption_fixed
 
     # Flexible inputs
-    flexs = broadcast_timeslice(params.flexible_inputs, level=timeslice_level)
+    flexs = broadcast_timeslice(technologies.flexible_inputs, level=timeslice_level)
 
     # Calculate the cheapest fuel for each flexible technology
     priceflex = prices * flexs
@@ -230,8 +219,7 @@ def maximum_production(
         capacity: Capacity of each technology of interest. In practice, the capacity can
             refer to asset capacity, the max capacity, or the capacity-in-use.
         technologies: xr.Dataset describing the features of the technologies of
-            interests.  It should contain `fixed_outputs` and `utilization_factor`. It's
-            shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
+            interests.  It should contain `fixed_outputs` and `utilization_factor`.
         filters: keyword arguments are used to filter down the capacity and
             technologies. Filters not relevant to the quantities of interest, i.e.
             filters that are not a dimension of `capacity` or `technologies`, are
@@ -243,18 +231,14 @@ def maximum_production(
         filters and the set of technologies in `capacity`.
     """
     from muse.commodities import is_enduse
-    from muse.utilities import broadcast_techs, filter_input
+    from muse.utilities import filter_input
 
     capa = filter_input(
         capacity, **{k: v for k, v in filters.items() if k in capacity.dims}
     )
-    btechs = broadcast_techs(
-        technologies[["fixed_outputs", "utilization_factor"]],
-        capa,
-        installed_as_year=True,
-    )
+
     ftechs = filter_input(
-        btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
+        technologies, **{k: v for k, v in filters.items() if k in technologies.dims}
     )
     result = (
         broadcast_timeslice(capa, level=timeslice_level)
@@ -278,8 +262,7 @@ def capacity_in_use(
     Arguments:
         production: Production from each technology of interest.
         technologies: xr.Dataset describing the features of the technologies of
-            interests.  It should contain `fixed_outputs` and `utilization_factor`. It's
-            shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
+            interests.  It should contain `fixed_outputs` and `utilization_factor`.
         max_dim: reduces the given dimensions using `max`. Defaults to "commodity". If
             None, then no reduction is performed.
         filters: keyword arguments are used to filter down the capacity and
@@ -292,17 +275,14 @@ def capacity_in_use(
         Capacity-in-use for each technology, whittled down by the filters.
     """
     from muse.commodities import is_enduse
-    from muse.utilities import broadcast_techs, filter_input
+    from muse.utilities import filter_input
 
     prod = filter_input(
         production, **{k: v for k, v in filters.items() if k in production.dims}
     )
 
-    techs = technologies[["fixed_outputs", "utilization_factor"]]
-    assert isinstance(techs, xr.Dataset)
-    btechs = broadcast_techs(techs, prod, installed_as_year=True)
     ftechs = filter_input(
-        btechs, **{k: v for k, v in filters.items() if k in technologies.dims}
+        technologies, **{k: v for k, v in filters.items() if k in technologies.dims}
     )
 
     factor = 1 / (ftechs.fixed_outputs * ftechs.utilization_factor)
@@ -345,7 +325,6 @@ def minimum_production(
             refer to asset capacity, the max capacity, or the capacity-in-use.
         technologies: xr.Dataset describing the features of the technologies of
             interests.  It should contain `fixed_outputs` and `minimum_service_factor`.
-            Its shape is matched to `capacity` using `muse.utilities.broadcast_techs`.
         timeslices: xr.DataArray of the timeslicing scheme. Production data will be
             returned in this format.
         filters: keyword arguments are used to filter down the capacity and
@@ -359,7 +338,7 @@ def minimum_production(
         the filters and the set of technologies in `capacity`.
     """
     from muse.commodities import is_enduse
-    from muse.utilities import broadcast_techs, filter_input
+    from muse.utilities import filter_input
 
     capa = filter_input(
         capacity, **{k: v for k, v in filters.items() if k in capacity.dims}
@@ -368,13 +347,8 @@ def minimum_production(
     if "minimum_service_factor" not in technologies:
         return broadcast_timeslice(xr.zeros_like(capa), level=timeslice_level)
 
-    btechs = broadcast_techs(
-        technologies[["fixed_outputs", "minimum_service_factor"]],
-        capa,
-        installed_as_year=True,
-    )
     ftechs = filter_input(
-        btechs, **{k: v for k, v in filters.items() if k in btechs.dims}
+        technologies, **{k: v for k, v in filters.items() if k in technologies.dims}
     )
     result = (
         broadcast_timeslice(capa, level=timeslice_level)
