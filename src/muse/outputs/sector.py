@@ -144,6 +144,7 @@ def capacity(
     market: xr.Dataset,
     capacity: xr.DataArray,
     rounding: int = 4,
+    **kwargs,
 ) -> pd.DataFrame:
     """Current capacity."""
     result = capacity.to_dataframe().round(rounding)
