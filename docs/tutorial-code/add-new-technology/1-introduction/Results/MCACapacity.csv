@@ -27,10 +27,3 @@ A1,13.25000000000,R1,2030,R1,power,solarPV,newcapa,2045
 A1,6.00000000000,R1,2035,R1,power,solarPV,newcapa,2045
 A1,6.00000000000,R1,2040,R1,power,solarPV,newcapa,2045
 A1,6.00000000000,R1,2045,R1,power,solarPV,newcapa,2045
-A1,31.00000000000,R1,2045,R1,residential,heatpump,newcapa,2050
-A1,23.00000000000,R1,2050,R1,residential,heatpump,newcapa,2050
-A1,13.25000000000,R1,2030,R1,power,solarPV,newcapa,2050
-A1,6.00000000000,R1,2035,R1,power,solarPV,newcapa,2050
-A1,6.00000000000,R1,2040,R1,power,solarPV,newcapa,2050
-A1,6.00000000000,R1,2045,R1,power,solarPV,newcapa,2050
-A1,22.75000000000,R1,2050,R1,power,solarPV,newcapa,2050

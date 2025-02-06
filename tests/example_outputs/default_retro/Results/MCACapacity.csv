@@ -41,14 +41,3 @@ A1,6.00000000000,R1,2035,R1,power,windturbine,retrofit,2045
 A1,6.00000000000,R1,2040,R1,power,windturbine,retrofit,2045
 A1,5.54670000000,R1,2025,R1,gas,gassupply1,retrofit,2045
 A1,6.88560000000,R1,2035,R1,gas,gassupply1,retrofit,2045
-A1,6.00000000000,R1,2050,R1,residential,heatpump,newcapa,2050
-A1,31.00000000000,R1,2045,R1,residential,heatpump,retrofit,2050
-A1,17.00000000000,R1,2050,R1,residential,heatpump,retrofit,2050
-A1,6.00000000000,R1,2050,R1,power,windturbine,newcapa,2050
-A1,7.44440000000,R1,2025,R1,power,gasCCGT,retrofit,2050
-A1,13.25000000000,R1,2030,R1,power,windturbine,retrofit,2050
-A1,6.00000000000,R1,2035,R1,power,windturbine,retrofit,2050
-A1,6.00000000000,R1,2040,R1,power,windturbine,retrofit,2050
-A1,6.00000000000,R1,2045,R1,power,windturbine,retrofit,2050
-A1,5.54670000000,R1,2025,R1,gas,gassupply1,retrofit,2050
-A1,6.88560000000,R1,2035,R1,gas,gassupply1,retrofit,2050
