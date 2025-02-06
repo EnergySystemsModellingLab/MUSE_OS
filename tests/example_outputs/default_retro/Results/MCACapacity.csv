@@ -1,4 +1,7 @@
 agent,capacity,dst_region,installed,region,sector,technology,type,year
+A1,10.00000000000,R1,2020,R1,residential,gasboiler,retrofit,2020
+A1,1.00000000000,R1,2020,R1,power,gasCCGT,retrofit,2020
+A1,15.00000000000,R1,2020,R1,gas,gassupply1,retrofit,2020
 A1,6.00000000000,R1,2025,R1,residential,heatpump,newcapa,2025
 A1,5.00000000000,R1,2020,R1,residential,gasboiler,retrofit,2025
 A1,13.00000000000,R1,2025,R1,residential,heatpump,retrofit,2025

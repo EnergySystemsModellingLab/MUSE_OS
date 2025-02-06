@@ -1,4 +1,6 @@
 agent,capacity,dst_region,installed,region,sector,technology,type,year
+A1,26.00000000000,R1,2010,R1,industry,procammonia_1,newcapa,2010
+A1,26.00000000000,R1,2010,R1,industry,procammonia_2,newcapa,2010
 A1,21.66670000000,R1,2010,R1,industry,procammonia_1,newcapa,2015
 A1,8.47450000000,R1,2015,R1,industry,procammonia_1,newcapa,2015
 A1,21.66670000000,R1,2010,R1,industry,procammonia_2,newcapa,2015
