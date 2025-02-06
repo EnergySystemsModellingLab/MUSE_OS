@@ -264,21 +264,19 @@ def matching_market(sector: str, model: str = "default") -> xr.Dataset:
     from muse.examples import sector as load_sector
     from muse.quantities import consumption, maximum_production
     from muse.sectors import Sector
-    from muse.utilities import agent_concatenation
+    from muse.utilities import agent_concatenation, broadcast_over_assets
 
     loaded_sector = cast(Sector, load_sector(sector, model))
     assets = agent_concatenation({u.uuid: u.assets for u in list(loaded_sector.agents)})
 
     market = xr.Dataset()
-    production = cast(
-        xr.DataArray,
-        maximum_production(loaded_sector.technologies, assets.capacity),
-    )
+    techs = broadcast_over_assets(loaded_sector.technologies, assets.capacity)
+    production = maximum_production(techs, assets.capacity)
     market["supply"] = production.sum("asset")
     if "dst_region" in market.dims:
         market = market.rename(dst_region="region")
     if market.region.dims:
-        consump = consumption(loaded_sector.technologies, production)
+        consump = consumption(techs, production)
         market["consumption"] = drop_timeslice(
             consump.groupby("region").sum(
                 {"asset", "dst_region"}.intersection(consump.dims)
@@ -287,7 +285,7 @@ def matching_market(sector: str, model: str = "default") -> xr.Dataset:
         )
     else:
         market["consumption"] = (
-            consumption(loaded_sector.technologies, production).sum(
+            consumption(techs, production).sum(
                 {"asset", "dst_region"}.intersection(market.dims)
             )
             + market.supply

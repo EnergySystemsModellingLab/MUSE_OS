@@ -30,10 +30,3 @@ A1,5.40000000000,R1,2030,R1,power,windturbine,newcapa,2045
 A1,2.40000000000,R1,2035,R1,power,windturbine,newcapa,2045
 A1,2.40000000000,R1,2040,R1,power,windturbine,newcapa,2045
 A1,2.40000000000,R1,2045,R1,power,windturbine,newcapa,2045
-A1,31.00000000000,R1,2045,R1,residential,heatpump,newcapa,2050
-A1,23.00000000000,R1,2050,R1,residential,heatpump,newcapa,2050
-A1,5.40000000000,R1,2030,R1,power,windturbine,newcapa,2050
-A1,2.40000000000,R1,2035,R1,power,windturbine,newcapa,2050
-A1,2.40000000000,R1,2040,R1,power,windturbine,newcapa,2050
-A1,2.40000000000,R1,2045,R1,power,windturbine,newcapa,2050
-A1,9.00000000000,R1,2050,R1,power,windturbine,newcapa,2050

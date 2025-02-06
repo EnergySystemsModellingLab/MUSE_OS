@@ -311,8 +311,6 @@ def max_capacity_expansion(
 
             \Gamma_t^{r, i} \geq 0
     """
-    from muse.utilities import filter_input
-
     # case with technology and region in asset dimension
     if capacity.region.dims != ():
         names = [u for u in capacity.asset.coords if capacity[u].dims == ("asset",)]
@@ -335,12 +333,7 @@ def max_capacity_expansion(
     replacement = replacement.drop_vars(
         [u for u in replacement.coords if u not in replacement.dims]
     )
-    techs = filter_input(
-        technologies[
-            ["max_capacity_addition", "max_capacity_growth", "total_capacity_limit"]
-        ],
-        technology=replacement,
-    ).drop_vars("technology")
+    techs = technologies.sel(technology=replacement).drop_vars("technology")
     regions = getattr(capacity, "region", None)
     if regions is not None and "region" in technologies.dims:
         techs = techs.sel(region=regions)
@@ -1021,8 +1014,8 @@ class ScipyAdapter:
         >>> capacity = reduce_assets(assets.capacity, coords=("region", "technology"))
         >>> market_demand = 0.8 * maximum_production(
         ...     technologies,
-        ...     assets.capacity.sel(year=2025).groupby("technology").sum("asset"),
-        ... ).rename(technology="asset")
+        ...     assets.capacity,
+        ... ).sel(year=2025)
         >>> costs = search * np.arange(np.prod(search.shape)).reshape(search.shape)
         >>> constraint = cs.max_capacity_expansion(
         ...     market_demand, capacity.sel(year=[2020, 2025]), search, technologies)

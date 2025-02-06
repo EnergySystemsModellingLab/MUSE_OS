@@ -5,18 +5,8 @@ YEAR = 2030
 
 
 @fixture
-def _prices(market):
-    prices = market.prices
-    return prices.sel(year=YEAR)
-
-
-@fixture
-def _technologies(technologies):
-    return technologies.sel(year=YEAR)
-
-
-@fixture
 def _capacity(_technologies, demand_share):
+    """Capacity for each asset."""
     from muse.quantities import capacity_to_service_demand
 
     capacity = capacity_to_service_demand(
@@ -26,7 +16,25 @@ def _capacity(_technologies, demand_share):
 
 
 @fixture
+def _technologies(technologies, demand_share):
+    """Technology parameters for each asset."""
+    from muse.utilities import broadcast_over_assets
+
+    return broadcast_over_assets(technologies.sel(year=YEAR), demand_share)
+
+
+@fixture
+def _prices(market, demand_share):
+    """Prices relevant to each asset."""
+    from muse.utilities import broadcast_over_assets
+
+    prices = market.prices.sel(year=YEAR)
+    return broadcast_over_assets(prices, demand_share, installed_as_year=False)
+
+
+@fixture
 def _production(_technologies, _capacity):
+    """Production data for each asset."""
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     production = (
@@ -39,6 +47,7 @@ def _production(_technologies, _capacity):
 
 @fixture
 def _consumption(_technologies, _capacity):
+    """Consumption data for each asset."""
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     consumption = (
@@ -51,17 +60,15 @@ def _consumption(_technologies, _capacity):
 
 def test_fixtures(_technologies, _prices, _capacity, _production, _consumption):
     """Validating that the fixtures have appropriate dimensions."""
-    assert set(_technologies.dims) == {"commodity", "region", "technology"}
-    assert set(_prices.dims) == {"commodity", "region", "timeslice"}
-    assert set(_capacity.dims) == {"asset", "region", "technology"}
+    assert set(_technologies.dims) == {"asset", "commodity"}
+    assert set(_prices.dims) == {"asset", "commodity", "timeslice"}
+    assert set(_capacity.dims) == {"asset"}
     assert (
         set(_production.dims)
         == set(_consumption.dims)
         == {
             "asset",
             "commodity",
-            "region",
-            "technology",
             "timeslice",
         }
     )
@@ -71,49 +78,49 @@ def test_capital_costs(_technologies, _capacity):
     from muse.costs import capital_costs
 
     result = capital_costs(_technologies, _capacity)
-    assert set(result.dims) == {"asset", "region", "technology"}
+    assert set(result.dims) == {"asset"}
 
 
 def test_environmental_costs(_technologies, _prices, _production):
     from muse.costs import environmental_costs
 
     result = environmental_costs(_technologies, _prices, _production)
-    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
+    assert set(result.dims) == {"asset", "timeslice"}
 
 
 def test_fuel_costs(_technologies, _prices, _consumption):
     from muse.costs import fuel_costs
 
     result = fuel_costs(_technologies, _prices, _consumption)
-    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
+    assert set(result.dims) == {"asset", "timeslice"}
 
 
 def test_material_costs(_technologies, _prices, _consumption):
     from muse.costs import material_costs
 
     result = material_costs(_technologies, _prices, _consumption)
-    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
+    assert set(result.dims) == {"asset", "timeslice"}
 
 
 def test_fixed_costs(_technologies, _capacity):
     from muse.costs import fixed_costs
 
     result = fixed_costs(_technologies, _capacity)
-    assert set(result.dims) == {"asset", "region", "technology"}
+    assert set(result.dims) == {"asset"}
 
 
 def test_variable_costs(_technologies, _production):
     from muse.costs import variable_costs
 
     result = variable_costs(_technologies, _production)
-    assert set(result.dims) == {"asset", "region", "technology"}
+    assert set(result.dims) == {"asset"}
 
 
 def test_running_costs(_technologies, _prices, _capacity, _production, _consumption):
     from muse.costs import running_costs
 
     result = running_costs(_technologies, _prices, _capacity, _production, _consumption)
-    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
+    assert set(result.dims) == {"asset", "timeslice"}
 
 
 def test_net_present_value(
@@ -124,7 +131,7 @@ def test_net_present_value(
     result = net_present_value(
         _technologies, _prices, _capacity, _production, _consumption
     )
-    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
+    assert set(result.dims) == {"asset", "timeslice"}
 
 
 def test_net_present_cost(_technologies, _prices, _capacity, _production, _consumption):
@@ -133,7 +140,7 @@ def test_net_present_cost(_technologies, _prices, _capacity, _production, _consu
     result = net_present_cost(
         _technologies, _prices, _capacity, _production, _consumption
     )
-    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
+    assert set(result.dims) == {"asset", "timeslice"}
 
 
 def test_equivalent_annual_cost(
@@ -144,7 +151,7 @@ def test_equivalent_annual_cost(
     result = equivalent_annual_cost(
         _technologies, _prices, _capacity, _production, _consumption
     )
-    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
+    assert set(result.dims) == {"asset", "timeslice"}
 
 
 @mark.parametrize("method", ["annual", "lifetime"])
@@ -156,7 +163,7 @@ def test_levelized_cost_of_energy(
     result = levelized_cost_of_energy(
         _technologies, _prices, _capacity, _production, _consumption, method=method
     )
-    assert set(result.dims) == {"asset", "region", "technology", "timeslice"}
+    assert set(result.dims) == {"asset", "timeslice"}
 
 
 def test_supply_cost(_technologies, _prices, _capacity, _production, _consumption):
@@ -169,7 +176,6 @@ def test_supply_cost(_technologies, _prices, _capacity, _production, _consumptio
     assert set(result.dims) == {
         "commodity",
         "region",
-        "technology",
         "timeslice",
     }
 
@@ -359,7 +365,7 @@ def test_lcoe_aggregate(
         method=method,
         aggregate_timeslices=True,
     )
-    assert set(result.dims) == {"asset", "region", "technology"}  # no timeslice dim
+    assert set(result.dims) == {"asset"}  # no timeslice dim
 
 
 def test_npv_aggregate(_technologies, _prices, _capacity, _production, _consumption):
@@ -373,4 +379,4 @@ def test_npv_aggregate(_technologies, _prices, _capacity, _production, _consumpt
         _consumption,
         aggregate_timeslices=True,
     )
-    assert set(result.dims) == {"asset", "region", "technology"}  # no timeslice dim
+    assert set(result.dims) == {"asset"}  # no timeslice dim

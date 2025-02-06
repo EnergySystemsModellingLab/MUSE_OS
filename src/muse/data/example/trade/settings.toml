@@ -1,10 +1,9 @@
 # Global settings - most REQUIRED
 
 time_framework = [2020, 2025, 2030, 2035]
-foresight = 5  # Has to be a multiple of the minimum separation between the years in time framework
 regions = ["R1", "R2"]
 interest_rate = 0.1
-interpolation_mode = 'Active'
+interpolation_mode = 'linear'
 log_level = 'info'
 excluded_commodities = ["wind"]
 # Convergence parameters

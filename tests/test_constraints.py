@@ -6,7 +6,7 @@ import xarray as xr
 from pytest import approx, fixture
 
 from muse.timeslices import drop_timeslice
-from muse.utilities import reduce_assets
+from muse.utilities import interpolate_capacity, reduce_assets
 
 CURRENT_YEAR = 2020
 INVESTMENT_YEAR = 2025
@@ -44,32 +44,45 @@ def costs(search_space):
 
 
 @fixture
-def lpcosts(technologies, costs):
-    from muse.constraints import lp_costs
-
-    return lp_costs(technologies, costs=costs)
-
-
-@fixture
 def assets(residential):
     return next(a.assets for a in residential.agents)
 
 
 @fixture
 def capacity(assets):
-    return reduce_assets(assets.capacity, coords=("technology", "region")).interp(
-        year=[CURRENT_YEAR, INVESTMENT_YEAR], method="linear"
+    return interpolate_capacity(
+        reduce_assets(assets.capacity, coords=("technology", "region")),
+        year=[CURRENT_YEAR, INVESTMENT_YEAR],
     )
 
 
 @fixture
 def market_demand(assets, technologies):
     from muse.quantities import maximum_production
+    from muse.utilities import broadcast_over_assets
 
     return 0.8 * maximum_production(
-        technologies,
-        assets.capacity.sel(year=CURRENT_YEAR).groupby("technology").sum("asset"),
-    ).rename(technology="asset")
+        broadcast_over_assets(technologies, assets),
+        assets.capacity,
+    ).sel(year=INVESTMENT_YEAR).groupby("technology").sum("asset").rename(
+        technology="asset"
+    )
+
+
+def test_fixtures(technologies, search_space, costs, assets, capacity, market_demand):
+    assert set(technologies.dims) == {"technology", "commodity"}
+    assert set(search_space.dims) == {"asset", "replacement"}
+    assert set(costs.dims) == {"asset", "replacement"}
+    assert set(assets.dims) == {"asset", "year"}
+    assert set(capacity.dims) == {"asset", "year"}
+    assert set(market_demand.dims) == {"asset", "commodity", "timeslice"}
+
+
+@fixture
+def lpcosts(technologies, costs):
+    from muse.constraints import lp_costs
+
+    return lp_costs(technologies, costs=costs)
 
 
 @fixture

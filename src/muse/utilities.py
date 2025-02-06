@@ -179,68 +179,109 @@ def reduce_assets(
     return result.drop_vars("asset")
 
 
-def broadcast_techs(
-    technologies: xr.Dataset | xr.DataArray,
+def broadcast_over_assets(
+    data: xr.Dataset | xr.DataArray,
     template: xr.DataArray | xr.Dataset,
-    dimension: str = "asset",
-    interpolation: str = "linear",
     installed_as_year: bool = True,
-    **kwargs,
 ) -> xr.Dataset | xr.DataArray:
-    """Broadcasts technologies to the shape of template in given dimension.
+    """Broadcasts an array to the shape of a template containing asset-level data.
 
-    The dimensions of the technologies are fully explicit, in that each concept
-    'technology', 'region', 'year' (for year of issue) is a separate dimension.
-    However, the dataset or data arrays representing other quantities, such as
-    capacity, are often flattened out with coordinates 'region', 'installed',
-    and 'technology' represented in a single 'asset' dimension. This latter
-    representation is sparse if not all combinations of 'region', 'installed',
-    and 'technology' are present, whereas the former representation makes it
-    easier to select a subset of the same.
+    The dimensions of many arrays (such as technology datasets) are fully explicit, in
+    that each concept (e.g. 'technology', 'region', 'year') is a separate dimension.
+    However, other datasets (e.g capacity), are presented on a per-asset basis,
+    containing a single 'asset' dimension with with coordinates such as 'region',
+    'installed' (year of installation), and 'technology'. This latter representation is
+    sparse if not all combinations of 'region', 'installed' and 'technology' are
+    present.
 
-    This function broadcast the first representation to the shape and coordinates
-    of the second.
+    This function broadcasts the first representation to the shape and coordinates
+    of the second, selecting the appropriate values for each asset (see example below).
+
+    Note: this is not necessarily limited to technology datasets. For
+    example, it could also be used on a dataset of commodity prices to select prices
+    relevant to each asset (e.g. if assets exist in multiple regions).
 
     Arguments:
-        technologies: The dataset to broadcast
-        template: the dataset or data-array to use as a template
-        dimension: the name of the dimensiom from `template` over which to
-            broadcast
-        interpolation: interpolation method used across `year`
-        installed_as_year: if the coordinate `installed` exists, then it is
-            applied to the `year` dimension of the technologies dataset
-        kwargs: further arguments are used initial filters over the
-            `technologies` dataset.
+        data: The dataset/data-array to broadcast
+        template: The dataset/data-array to use as a template
+        installed_as_year: True means that the "year" dimension in 'data`
+            corresponds to the year that the asset was installed. This will commonly
+            be the case for most technology parameters (e.g. var_par/fix_par are
+            specified the year that an asset is installed, and fixed for the lifetime of
+            the asset). In this case, `data` must have a year coordinate for every
+            possible "installed" year in the template.
+
+            Conversely, if the values in `data` apply to the year of activity, rather
+            than the year of installation, `installed_as_year` should be False.
+            An example would be commodity prices, which can change over the lifetime
+            of an asset. In this case, if "year" is present as a dimension in `data`,
+            it will be maintained as a separate dimension in the output.
+
+    Example:
+        Define the data array:
+        >>> import xarray as xr
+        >>> technologies = xr.DataArray(
+        ...     data=[[1, 2, 3], [4, 5, 6]],
+        ...     dims=['technology', 'region'],
+        ...     coords={'technology': ['gasboiler', 'heatpump'],
+        ...             'region': ['R1', 'R2', 'R3']},
+        ... )
+
+        This array contains a value for every combination of technology and region (e.g.
+        this could refer to the efficiency of each technology in each region). For
+        simplicity, we are not including a "year" dimension in this example.
+
+        Define the assets template:
+        >>> assets = xr.DataArray(
+        ...     data=[10, 50],
+        ...     dims=["asset"],
+        ...     coords={
+        ...         "region": (["asset"], ["R1", "R2"]),
+        ...         "technology": (["asset"], ["gasboiler", "heatpump"])},
+        ... )
+
+        We have two assets: a gas boiler in region R1 and a heat pump in region R2. In
+        this case the values don't matter, but could correspond to the installed
+        capacity of each asset, for example.
+
+        We want to select the values from the technology array that correspond to each
+        asset in the template. To do this, we perform `broadcast_over_assets` on
+        `technologies` using `assets` as a template:
+        >>> broadcast_over_assets(technologies, assets, installed_as_year=False)
+        <xarray.DataArray (asset: 2)> Size: 16B
+        array([1, 5])
+        Coordinates:
+            technology  (asset) <U9 72B 'gasboiler' 'heatpump'
+            region      (asset) <U2 16B 'R1' 'R2'
+        Dimensions without coordinates: asset
+
+        The output array has an "asset" dimension which matches the template. Each value
+        in the output is the value in the original technology array that matches the
+        technology & region of each asset.
     """
-    # this assert will trigger if 'year' is changed to 'installed' in
-    # technologies, because then this function should be modified.
-    assert "installed" not in technologies.dims
-    names = [u for u in template.coords if template[u].dims == (dimension,)]
-    # the first selection reduces the size of technologies without affecting the
+    # TODO: this will return `data` unchanged if the template has no "asset"
+    # dimension, but strictly speaking we shouldn't allow this.
+    # assert "asset" in template.dims
+
+    # Name of asset coordinates (e.g. "technology", "region", "installed")
+    names = [u for u in template.coords if template[u].dims == ("asset",)]
+    assert "year" not in names
+
+    # If installed_as_year is True, we need to rename the installed dimension to "year"
+    # TODO: this should be stricter, and enforce that the template has "installed" data,
+    # and that the technologies dataset has a "year" dimension.
+    # if installed_as_year:
+    if installed_as_year and "installed" in names and "year" in data.dims:
+        # assert "installed" in names
+        data = data.rename(year="installed")
+
+    # The first selection reduces the size of the data without affecting the
     # dimensions.
-    first_sel = {
-        n: technologies[n].isin(template[n])
-        for n in names
-        if n in technologies.dims and n != "year"
-    }
-    first_sel.update({k: v for k, v in kwargs.items() if k != "year"})
-    techs = technologies.sel(first_sel)
+    first_sel = {n: data[n].isin(template[n]) for n in names if n in data.dims}
+    techs = data.sel(first_sel)
 
-    if "year" in technologies.dims:
-        year = None
-        if installed_as_year and "installed" in names:
-            year = template["installed"]
-        elif (not installed_as_year) and "year" in template.dims:
-            year = template["year"]
-        if year is not None and len(year) > 0:
-            techs = techs.interp(
-                year=sorted(set(cast(Iterable, year.values))), method=interpolation
-            )
-        if installed_as_year and "installed" in names:
-            techs = techs.rename(year="installed")
-
+    # Reshape the array to match the template
     second_sel = {n: template[n] for n in template.coords if n in techs.dims}
-
     return techs.sel(second_sel)
 
 
@@ -253,74 +294,6 @@ def clean_assets(assets: xr.Dataset, year: int):
     assets = assets.sel(year=slice(year, None))
     assets = assets.where(assets.capacity.any(dim="year"), drop=True)
     return assets
-
-
-def filter_input(
-    dataset: xr.Dataset | xr.DataArray,
-    year: int | Iterable[int] | None = None,
-    interpolation: str = "linear",
-    **kwargs,
-) -> xr.Dataset | xr.DataArray:
-    """Filter inputs, taking care to interpolate years."""
-    if year is None:
-        setyear: set[int] = set()
-    else:
-        try:
-            setyear = {int(year)}  # type: ignore
-        except TypeError:
-            setyear = set(int(u) for u in year)  # type: ignore
-    withyear = (
-        "year" in dataset.dims
-        and year is not None
-        and setyear.issubset(dataset.year.values)
-    )
-    if withyear:
-        kwargs["year"] = year
-        year = None
-    dataset = dataset.sel(**kwargs)
-    if withyear and "year" not in dataset.dims and "year" in dataset.coords:
-        dataset = dataset.drop_vars("year")
-
-    if "year" in dataset.dims and year is not None:
-        dataset = dataset.interp(year=year, method=interpolation)
-        if "year" not in dataset.dims and "year" in dataset.coords:
-            dataset = dataset.drop_vars("year")
-        elif "year" in dataset.dims:
-            dataset = dataset.ffill("year")
-    return dataset
-
-
-def filter_with_template(
-    data: xr.Dataset | xr.DataArray,
-    template: xr.DataArray | xr.Dataset,
-    asset_dimension: str = "asset",
-    **kwargs,
-):
-    """Filters data to match template.
-
-    If the `asset_dimension` is present in `template.dims`, then the call is
-    forwarded to `broadcast_techs`. Otherwise, the set of dimensions and indices
-    in common between `template` and `data` are determined, and the resulting
-    call is forwarded to `filter_input`.
-
-    Arguments:
-        data: Data to transform
-        template: Data from which to figure coordinates and dimensions
-        asset_dimension: Name of the dimension which if present indicates the
-            format is that of an *asset* (see `broadcast_techs`)
-        kwargs: passed on to `broadcast_techs` or `filter_input`
-
-    Returns:
-        `data` transformed to match the form of `template`
-    """
-    if asset_dimension in template.dims:
-        return broadcast_techs(data, template, dimension=asset_dimension, **kwargs)
-
-    match_indices = set(data.dims).intersection(template.dims) - set(kwargs)
-    match = {d: template[d].isin(data[d]).values for d in match_indices if d != "year"}
-    if "year" in match_indices:
-        match["year"] = template.year.values
-    return filter_input(data, **match, **kwargs)  # type: ignore
 
 
 def tupled_dimension(array: np.ndarray, axis: int):
@@ -382,7 +355,6 @@ def lexical_comparison(
 def merge_assets(
     capa_a: xr.DataArray,
     capa_b: xr.DataArray,
-    interpolation: str = "linear",
     dimension: str = "asset",
 ) -> xr.DataArray:
     """Merge two capacity arrays."""
@@ -390,13 +362,13 @@ def merge_assets(
     years = sorted(set(capa_a.year.values).union(capa_b.year.values))
     if len(capa_a.year) == 1:
         capa_a_interp = capa_a
-        capa_b_interp = capa_b.interp(year=years, method=interpolation).fillna(0)
+        capa_b_interp = interpolate_capacity(capa_b, year=years)
     elif len(capa_b.year) == 1:
-        capa_a_interp = capa_a.interp(year=years, method=interpolation).fillna(0)
+        capa_a_interp = interpolate_capacity(capa_a, year=years)
         capa_b_interp = capa_b
     else:
-        capa_a_interp = capa_a.interp(year=years, method=interpolation).fillna(0)
-        capa_b_interp = capa_b.interp(year=years, method=interpolation).fillna(0)
+        capa_a_interp = interpolate_capacity(capa_a, year=years)
+        capa_b_interp = interpolate_capacity(capa_b, year=years)
 
     # Concatenate the two capacity arrays
     result = xr.concat((capa_a_interp, capa_b_interp), dim=dimension)
@@ -421,12 +393,32 @@ def avoid_repetitions(data: xr.DataArray, dim: str = "year") -> xr.DataArray:
     It removes the central year of any three consecutive years where all data is
     the same. This means the original data can be reobtained via a linear
     interpolation or a forward fill.
+    See :py:func:`muse.utilities.interpolate_capacity`.
 
     The first and last year are always preserved.
     """
     roll = data.rolling({dim: 3}, center=True).construct("window")
     years = ~(roll == roll.isel(window=0)).all([u for u in roll.dims if u != dim])
     return data.year[years]
+
+
+def interpolate_capacity(
+    data: xr.DataArray, year: int | Sequence[int] | xr.DataArray
+) -> xr.DataArray:
+    """Interpolates capacity data to the given years.
+
+    Capacity between years is interpolated linearly. Capacity outside the range of the
+    data is set to zero.
+
+    Arguments:
+        data: DataArray containing the capacity data
+        year: Year or years to interpolate to
+    """
+    return data.interp(
+        year=year,
+        method="linear",
+        kwargs={"fill_value": 0.0},
+    )
 
 
 def nametuple_to_dict(nametup: Mapping | NamedTuple) -> Mapping:
