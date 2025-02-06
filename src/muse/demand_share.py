@@ -246,21 +246,27 @@ def new_and_retro(
 
     from muse.commodities import is_enduse
     from muse.quantities import maximum_production
-    from muse.utilities import agent_concatenation, broadcast_over_assets, reduce_assets
+    from muse.utilities import (
+        agent_concatenation,
+        broadcast_over_assets,
+        interpolate_capacity,
+        reduce_assets,
+    )
 
     current_year, investment_year = map(int, market.year.values)
 
     def decommissioning(capacity, technologies):
         return decommissioning_demand(
             technologies=technologies,
-            capacity=capacity.interp(
-                year=[current_year, investment_year], kwargs={"fill_value": 0.0}
+            capacity=interpolate_capacity(
+                capacity, year=[current_year, investment_year]
             ),
             timeslice_level=timeslice_level,
         )
 
-    capacity = reduce_assets([u.assets.capacity for u in agents]).interp(
-        year=[current_year, investment_year], kwargs={"fill_value": 0.0}
+    capacity = interpolate_capacity(
+        reduce_assets([u.assets.capacity for u in agents]),
+        year=[current_year, investment_year],
     )
 
     # Select technodata for assets
@@ -288,7 +294,9 @@ def new_and_retro(
     id_to_share: MutableMapping[Hashable, xr.DataArray] = {}
     for region in demands.region.values:
         retro_capacity: MutableMapping[Hashable, xr.DataArray] = {
-            agent.uuid: agent.assets.capacity
+            agent.uuid: interpolate_capacity(
+                agent.assets.capacity, year=[current_year, investment_year]
+            )
             for agent in agents
             if agent.category == "retrofit" and agent.region == region
         }
@@ -380,15 +388,20 @@ def standard_demand(
 
     from muse.commodities import is_enduse
     from muse.quantities import maximum_production
-    from muse.utilities import agent_concatenation, broadcast_over_assets, reduce_assets
+    from muse.utilities import (
+        agent_concatenation,
+        broadcast_over_assets,
+        interpolate_capacity,
+        reduce_assets,
+    )
 
     current_year, investment_year = map(int, market.year.values)
 
     def decommissioning(capacity, technologies):
         return decommissioning_demand(
             technologies=technologies,
-            capacity=capacity.interp(
-                year=[current_year, investment_year], kwargs={"fill_value": 0.0}
+            capacity=interpolate_capacity(
+                capacity, year=[current_year, investment_year]
             ),
             timeslice_level=timeslice_level,
         )
@@ -399,8 +412,9 @@ def standard_demand(
             raise RetrofitAgentInStandardDemandShare()
 
     # Calculate existing capacity
-    capacity = reduce_assets([agent.assets.capacity for agent in agents]).interp(
-        year=[current_year, investment_year], kwargs={"fill_value": 0.0}
+    capacity = interpolate_capacity(
+        reduce_assets([agent.assets.capacity for agent in agents]),
+        year=[current_year, investment_year],
     )
 
     # Select technodata for assets
@@ -423,7 +437,9 @@ def standard_demand(
     for region in demands.region.values:
         # Calculate current capacity
         current_capacity: MutableMapping[Hashable, xr.DataArray] = {
-            agent.uuid: agent.assets.capacity
+            agent.uuid: interpolate_capacity(
+                agent.assets.capacity, year=[current_year, investment_year]
+            )
             for agent in agents
             if agent.region == region
         }
@@ -477,7 +493,11 @@ def unmet_forecasted_demand(
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
     from muse.commodities import is_enduse
-    from muse.utilities import broadcast_over_assets, reduce_assets
+    from muse.utilities import (
+        broadcast_over_assets,
+        interpolate_capacity,
+        reduce_assets,
+    )
 
     current_year, investment_year = map(int, market.year.values)
 
@@ -485,8 +505,9 @@ def unmet_forecasted_demand(
     smarket: xr.Dataset = market.where(is_enduse(comm_usage), 0)
 
     # Calculate existing capacity
-    capacity = reduce_assets([agent.assets.capacity for agent in agents]).interp(
-        year=[current_year, investment_year], kwargs={"fill_value": 0.0}
+    capacity = interpolate_capacity(
+        reduce_assets([agent.assets.capacity for agent in agents]),
+        year=[current_year, investment_year],
     )
 
     # Select data for future years

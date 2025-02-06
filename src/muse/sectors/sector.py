@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterator, Sequence
 from typing import (
     Any,
     Callable,
@@ -37,9 +37,15 @@ class Sector(AbstractSector):  # type: ignore
             raise RuntimeError(f"Missing 'subsectors' section in sector {name}")
         if len(sector_settings["subsectors"]._asdict()) == 0:
             raise RuntimeError(f"Empty 'subsectors' section in sector {name}")
+        interpolation_mode = sector_settings.pop("interpolation", "linear")
 
         # Read technologies
-        technologies = read_technodata(settings, name, settings.time_framework)
+        technologies = read_technodata(
+            settings,
+            name,
+            settings.time_framework,
+            interpolation_mode=interpolation_mode,
+        )
 
         # Create subsectors
         subsectors = [
@@ -102,7 +108,6 @@ class Sector(AbstractSector):  # type: ignore
         technologies: xr.Dataset,
         subsectors: Sequence[Subsector] = [],
         interactions: Callable[[Sequence[AbstractAgent]], None] | None = None,
-        interpolation: str = "linear",
         outputs: Callable | None = None,
         supply_prod: PRODUCTION_SIGNATURE | None = None,
         timeslice_level: str | None = None,
@@ -130,12 +135,6 @@ class Sector(AbstractSector):  # type: ignore
                     "the specified timeslice level for that sector "
                     f"({self.timeslice_level})"
                 )
-
-        """Interpolation method and arguments when computing years."""
-        self.interpolation: Mapping[str, Any] = {
-            "method": interpolation,
-            "kwargs": {"fill_value": "extrapolate"},
-        }
 
         """Interactions between agents.
 
@@ -218,11 +217,9 @@ class Sector(AbstractSector):  # type: ignore
 
         # Investments
         # uses technology data from the investment year
+        techs = self.technologies.sel(year=investment_year, drop=True)
         for subsector in self.subsectors:
-            subsector.invest(
-                technologies=self.technologies.sel(year=investment_year),
-                market=market,
-            )
+            subsector.invest(technologies=techs, market=market)
 
         # Full output data
         supply, consume, costs = self.market_variables(market, self.technologies)
@@ -293,10 +290,10 @@ class Sector(AbstractSector):  # type: ignore
         from muse.commodities import is_pollutant
         from muse.costs import levelized_cost_of_energy, supply_cost
         from muse.quantities import consumption
-        from muse.utilities import broadcast_over_assets
+        from muse.utilities import broadcast_over_assets, interpolate_capacity
 
         years = market.year.values
-        capacity = self.capacity.interp(year=years, **self.interpolation)
+        capacity = interpolate_capacity(self.capacity, year=years)
 
         # Select technology data for each asset
         # Each asset uses the technology data from the year it was installed
@@ -368,7 +365,7 @@ class Sector(AbstractSector):  # type: ignore
         dimensions: asset (technology, installation date,
         region), year.
         """
-        from muse.utilities import filter_input, reduce_assets
+        from muse.utilities import interpolate_capacity, reduce_assets
 
         traded = [
             u.assets.capacity
@@ -390,12 +387,14 @@ class Sector(AbstractSector):  # type: ignore
             ]
             flat_list = [item for sublist in full_list for item in sublist]
             years = sorted(list(set(flat_list)))
-            nontraded = [
-                filter_input(u.assets.capacity, year=years)
-                for u in self.agents
-                if "dst_region" not in u.assets.capacity.dims
-            ]
-            return reduce_assets(nontraded)
+            capacity = reduce_assets(
+                [
+                    u.assets.capacity
+                    for u in self.agents
+                    if "dst_region" not in u.assets.capacity.dims
+                ]
+            )
+            return interpolate_capacity(capacity, year=years)
 
         # Only traded assets
         elif not nontraded:
@@ -406,24 +405,27 @@ class Sector(AbstractSector):  # type: ignore
             ]
             flat_list = [item for sublist in full_list for item in sublist]
             years = sorted(list(set(flat_list)))
-            traded = [
-                filter_input(u.assets.capacity, year=years)
-                for u in self.agents
-                if "dst_region" in u.assets.capacity.dims
-            ]
-            return reduce_assets(traded)
+            capacity = reduce_assets(
+                [
+                    u.assets.capacity
+                    for u in self.agents
+                    if "dst_region" in u.assets.capacity.dims
+                ]
+            )
+            return interpolate_capacity(capacity, year=years)
 
         # Both traded and nontraded assets
         else:
             traded_results = reduce_assets(traded)
             nontraded_results = reduce_assets(nontraded)
-            return reduce_assets(
+            capacity = reduce_assets(
                 [
                     traded_results,
                     nontraded_results
                     * (nontraded_results.region == traded_results.dst_region),
                 ]
             )
+            return interpolate_capacity(capacity, year=years)
 
     @property
     def agents(self) -> Iterator[AbstractAgent]:

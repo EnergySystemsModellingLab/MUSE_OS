@@ -26,7 +26,7 @@ a whole.
    time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
    regions = ["USA"]
    interest_rate = 0.1
-   interpolation_mode = 'Active'
+   interpolation_mode = 'linear'
    log_level = 'info'
 
    equilibrium_variable = 'demand'
@@ -293,8 +293,9 @@ A sector accepts these attributes:
    Defaults to "last".
 
 *interpolation*
-   Interpolation method user when filling in missing values. Available interpolation
-   methods depend on the underlying `scipy method's kind attribute`_.
+   Interpolation method used to fill missing years in the *technodata* (defaults to "linear").
+   Available interpolation methods depend on the underlying `scipy method's kind attribute`_.
+   Years outside the data range will always be back/forward filled with the closest available data.
 
    .. _scipy method's kind attribute: https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
 
