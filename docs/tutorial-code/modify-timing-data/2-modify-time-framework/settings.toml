@@ -1,7 +1,6 @@
 # Global settings - most REQUIRED
 
 time_framework = [2020, 2022, 2024, 2026, 2028, 2030, 2032, 2034, 2036, 2038, 2040]
-foresight = 2  # Has to be a multiple of the minimum separation between the years in time framework
 regions = ["R1"]
 interest_rate = 0.1
 interpolation_mode = 'Active'

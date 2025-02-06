@@ -76,7 +76,6 @@ class MCA:
         )
 
         extras = {
-            "foresight",
             "regions",
             "interest_rate",
             "log_level",
@@ -92,8 +91,16 @@ class MCA:
             for k, v in settings._asdict().items()
             if not hasattr(v, "_asdict") and k not in extras
         }
-        if "equilibrium" in global_kw:
-            global_kw["equilibrium"] = global_kw.pop("equilibrium")
+
+        # Legacy: warn user about deprecation of "foresight" parameter (#641)
+        if "foresight" in global_kw:
+            msg = (
+                "The `foresight` parameter has been deprecated. "
+                "Please remove from your settings file."
+            )
+            getLogger(__name__).warning(msg)
+            global_kw.pop("foresight")
+
         carbon_kw = {
             k: v._asdict() if hasattr(v, "_asdict") else v
             for k, v in settings.carbon_budget_control._asdict().items()
@@ -273,7 +280,9 @@ class MCA:
 
         for year_idx in range(nyear):
             years = self.time_framework[year_idx : year_idx + 2]
-            getLogger(__name__).info(f"Running simulation year {years[0]}...")
+            getLogger(__name__).info(
+                f"Running simulation years {years[0]} to {years[1]}"
+            )
             new_market = self.market[variables].sel(year=years)
             assert isinstance(new_market, Dataset)
             new_market.supply[:] = 0
@@ -320,7 +329,8 @@ class MCA:
             self.outputs_cache.consolidate_cache(year=self.time_framework[year_idx])
 
             getLogger(__name__).info(
-                f"Finish simulation year {years[0]} ({year_idx + 1}/{nyear})!"
+                f"Finished simulation period {years[0]} to {years[1]} "
+                f"({year_idx + 1}/{nyear})!"
             )
 
 

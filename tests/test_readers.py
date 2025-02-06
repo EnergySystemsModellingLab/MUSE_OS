@@ -97,13 +97,6 @@ def test_check_budget_parameters(settings: dict):
     check_budget_parameters(settings)
 
 
-def test_check_foresight(settings: dict):
-    """Tests the check_budget_parameters function."""
-    from muse.readers.toml import check_foresight
-
-    check_foresight(settings)
-
-
 def test_check_global_data_files(settings: dict, user_data_files):
     """Tests the check_global_data_files function."""
     from muse.readers.toml import check_global_data_files

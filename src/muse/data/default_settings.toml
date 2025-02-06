@@ -1,9 +1,6 @@
 # Global settings
 
 time_framework = 'REQUIRED'
-# foresight must  be a multiple of the minimum separation between the years in time
-# framework
-foresight = 'REQUIRED'
 regions = 'REQUIRED'
 interest_rate = 0.1
 interpolation_mode = 'Active'
