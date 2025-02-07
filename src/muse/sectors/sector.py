@@ -281,9 +281,9 @@ class Sector(AbstractSector):  # type: ignore
         # Convert result to global timeslicing scheme
         return self.convert_to_global_timeslicing(result)
 
-    def save_outputs(self) -> None:
+    def save_outputs(self, year: int) -> None:
         """Calls the outputs function with the current output data."""
-        self.outputs(self.output_data, self.capacity)
+        self.outputs(self.output_data, self.capacity, year=year)
 
     def market_variables(self, market: xr.Dataset, technologies: xr.Dataset) -> Any:
         """Computes resulting market: production, consumption, and costs."""
