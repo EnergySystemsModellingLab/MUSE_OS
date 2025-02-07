@@ -169,15 +169,6 @@ class Sector(AbstractSector):  # type: ignore
         """Full supply, consumption and costs data for the most recent year."""
         self.output_data: xr.Dataset
 
-    @property
-    def forecast(self):
-        """Maximum forecast horizon across agents.
-
-        It cannot be lower than 1 year.
-        """
-        forecasts = [getattr(agent, "forecast") for agent in self.agents]
-        return max(1, max(forecasts))
-
     def next(
         self,
         mca_market: xr.Dataset,
@@ -281,9 +272,9 @@ class Sector(AbstractSector):  # type: ignore
         # Convert result to global timeslicing scheme
         return self.convert_to_global_timeslicing(result)
 
-    def save_outputs(self) -> None:
+    def save_outputs(self, year: int) -> None:
         """Calls the outputs function with the current output data."""
-        self.outputs(self.output_data, self.capacity)
+        self.outputs(self.output_data, self.capacity, year=year)
 
     def market_variables(self, market: xr.Dataset, technologies: xr.Dataset) -> Any:
         """Computes resulting market: production, consumption, and costs."""
