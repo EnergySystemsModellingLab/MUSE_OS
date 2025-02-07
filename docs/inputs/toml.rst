@@ -455,11 +455,11 @@ Sectors contain a number of subsections:
 
         - :py:func:`~muse.demand_share.standard_demand` (default): The input demand is
           split amongst *new* agents. *New* agents get a share of the increase in demand
-          for the forecast years, as well as the demand that occurs from decommissioned
+          over the investment period, as well as the demand that occurs from decommissioned
           assets.
         - :py:func:`~muse.demand_share.new_and_retro`: The input demand is split amongst
           both *new* and *retrofit* agents. *New* agents get a share of the increase in
-          demand for the forecast year, whereas *retrofit* agents are assigned a share
+          demand over the investment period, whereas *retrofit* agents are assigned a share
           of the demand that occurs from decommissioned assets.
 
     *constraints*
@@ -577,7 +577,6 @@ function of macro-economic data, i.e. population and gdp.
     macrodrivers_path = '{path}/technodata/Macrodrivers.csv'
     regression_path = '{path}/technodata/regressionparameters.csv'
     timeslices_levels = {'day': ['all-day']}
-    forecast = [0, 5]
 
 The following attributes are accepted:
 

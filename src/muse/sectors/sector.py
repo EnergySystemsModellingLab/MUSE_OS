@@ -169,15 +169,6 @@ class Sector(AbstractSector):  # type: ignore
         """Full supply, consumption and costs data for the most recent year."""
         self.output_data: xr.Dataset
 
-    @property
-    def forecast(self):
-        """Maximum forecast horizon across agents.
-
-        It cannot be lower than 1 year.
-        """
-        forecasts = [getattr(agent, "forecast") for agent in self.agents]
-        return max(1, max(forecasts))
-
     def next(
         self,
         mca_market: xr.Dataset,

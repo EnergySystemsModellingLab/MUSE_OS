@@ -737,7 +737,7 @@ def read_technodata(
             technologies[name] = data
 
     # make sure technologies includes the requisite years
-    maxyear = getattr(settings, "forecast", 5) + max(time_framework)
+    maxyear = max(time_framework)
     if technologies.year.max() < maxyear:
         msg = "Forward-filling technodata to fit simulation timeframe"
         getLogger(__name__).info(msg)
