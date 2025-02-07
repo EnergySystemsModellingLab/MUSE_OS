@@ -437,11 +437,13 @@ def sector_lcoe(
         for agent in agents:
             agent_market = market.sel(year=agent.year).copy()
             agent_market["consumption"] = agent_market.consumption * agent.quantity
-            included = [
-                i
-                for i in agent_market["commodity"].values
-                if i in technologies.enduse.values
+            enduses = [
+                i.strip()
+                for entry in technologies.enduse.values
+                for i in entry.split(",")
             ]
+            # temporary hack to allow comma separated list in input file
+            included = [i for i in agent_market["commodity"].values if i in enduses]
             excluded = [
                 i for i in agent_market["commodity"].values if i not in included
             ]
@@ -520,11 +522,13 @@ def sector_eac(
         for agent in agents:
             agent_market = market.sel(year=agent.year).copy()
             agent_market["consumption"] = agent_market.consumption * agent.quantity
-            included = [
-                i
-                for i in agent_market["commodity"].values
-                if i in technologies.enduse.values
+            enduses = [
+                i.strip()
+                for entry in technologies.enduse.values
+                for i in entry.split(",")
             ]
+            # temporary hack to allow comma separated list in input file
+            included = [i for i in agent_market["commodity"].values if i in enduses]
             excluded = [
                 i for i in agent_market["commodity"].values if i not in included
             ]
