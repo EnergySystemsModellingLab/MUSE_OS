@@ -263,7 +263,7 @@ def sector_fuel_costs(
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
-    agent_market = market.copy()
+    agent_market = market.copy(deep=True)
     if len(technologies) > 0:
         for a in agents:
             agent_market["consumption"] = (market.consumption * a.quantity).sel(
@@ -366,7 +366,7 @@ def sector_emission_costs(
     technologies = getattr(sector, "technologies", [])
     agents = sorted(getattr(sector, "agents", []), key=attrgetter("name"))
 
-    agent_market = market.copy()
+    agent_market = market.copy(deep=True)
     if len(technologies) > 0:
         for a in agents:
             agent_market["consumption"] = (market.consumption * a.quantity).sel(
@@ -426,6 +426,8 @@ def sector_lcoe(
     from muse.costs import levelized_cost_of_energy as LCOE
     from muse.quantities import capacity_to_service_demand, consumption
 
+    market = market.copy(deep=True)
+
     # Filtering of the inputs
     data_sector: list[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
@@ -435,7 +437,7 @@ def sector_lcoe(
     agents = retro if len(retro) > 0 else new
     if len(technologies) > 0:
         for agent in agents:
-            agent_market = market.sel(year=agent.year).copy()
+            agent_market = market.sel(year=agent.year)
             agent_market["consumption"] = agent_market.consumption * agent.quantity
             enduses = [
                 i.strip()
@@ -511,6 +513,8 @@ def sector_eac(
     from muse.costs import equivalent_annual_cost as EAC
     from muse.quantities import capacity_to_service_demand, consumption
 
+    market = market.copy(deep=True)
+
     # Filtering of the inputs
     data_sector: list[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
@@ -520,7 +524,7 @@ def sector_eac(
     agents = retro if len(retro) > 0 else new
     if len(technologies) > 0:
         for agent in agents:
-            agent_market = market.sel(year=agent.year).copy()
+            agent_market = market.sel(year=agent.year)
             agent_market["consumption"] = agent_market.consumption * agent.quantity
             enduses = [
                 i.strip()
