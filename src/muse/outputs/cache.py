@@ -353,7 +353,7 @@ def extract_agents_internal(
         info[aid]["agent"] = agent.name
         info[aid]["category"] = agent.category
         info[aid]["sector"] = sector_name
-        info[aid]["year"] = agent.forecast_year
+        info[aid]["year"] = agent.year
         info[aid]["installed"] = agent.year
 
     return info
@@ -435,12 +435,14 @@ def consolidate_quantity(
 def capacity(
     cached: list[xr.DataArray],
     agents: MutableMapping[str, MutableMapping[str, str]],
+    **kwargs,
 ) -> pd.DataFrame:
     """Consolidates the cached capacities into a single DataFrame to save.
 
     Args:
         cached (List[xr.DataArray]): The list of cached arrays
         agents (MutableMapping[Text, MutableMapping[Text, Text]]): Agents' metadata.
+        kwargs: unused.
 
     Returns:
         pd.DataFrame: DataFrame with the consolidated data.
@@ -452,12 +454,14 @@ def capacity(
 def production(
     cached: list[xr.DataArray],
     agents: MutableMapping[str, MutableMapping[str, str]],
+    **kwargs,
 ) -> pd.DataFrame:
     """Consolidates the cached production into a single DataFrame to save.
 
     Args:
         cached (List[xr.DataArray]): The list of cached arrays
         agents (MutableMapping[Text, MutableMapping[Text, Text]]): Agents' metadata.
+        kwargs: unused.
 
     Returns:
         pd.DataFrame: DataFrame with the consolidated data.
@@ -469,12 +473,14 @@ def production(
 def lcoe(
     cached: list[xr.DataArray],
     agents: MutableMapping[str, MutableMapping[str, str]],
+    **kwargs,
 ) -> pd.DataFrame:
     """Consolidates the cached LCOE into a single DataFrame to save.
 
     Args:
         cached (List[xr.DataArray]): The list of cached arrays
         agents (MutableMapping[Text, MutableMapping[Text, Text]]): Agents' metadata.
+        kwargs: unused.
 
     Returns:
         pd.DataFrame: DataFrame with the consolidated data.

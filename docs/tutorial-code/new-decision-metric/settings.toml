@@ -1,10 +1,9 @@
 plugins = "{path}/new_decision.py"
 # Global settings - most REQUIRED
 time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
-foresight = 5  # Has to be a multiple of the minimum separation between the years in time framework
 regions = ["R1"]
 interest_rate = 0.1
-interpolation_mode = 'Active'
+interpolation_mode = 'linear'
 log_level = 'info'
 excluded_commodities = ["wind", "solar"]
 # Convergence parameters
@@ -50,7 +49,6 @@ constraints = [
     "search_space"
 ]
 demand_share = "standard_demand"  # Optional, default to standard_demand
-forecast = 5  # Optional, defaults to 5
 
 [sectors.power]
 type = 'default'

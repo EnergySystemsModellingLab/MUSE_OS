@@ -10,18 +10,18 @@ def _demand(demand_share):
 
 @fixture
 def _technologies(technologies, demand_share):
-    from muse.utilities import broadcast_techs
+    from muse.utilities import broadcast_over_assets
 
     techs = technologies.sel(year=YEAR).rename(technology="replacement")
-    return broadcast_techs(techs, demand_share)
+    return broadcast_over_assets(techs, demand_share)
 
 
 @fixture
 def _prices(market, demand_share):
-    from muse.utilities import broadcast_techs
+    from muse.utilities import broadcast_over_assets
 
     prices = market.prices.sel(year=YEAR)
-    return broadcast_techs(prices, demand_share, installed_as_year=False)
+    return broadcast_over_assets(prices, demand_share, installed_as_year=False)
 
 
 def test_fixtures(_technologies, _demand, _prices):

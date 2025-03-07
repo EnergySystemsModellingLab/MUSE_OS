@@ -414,7 +414,7 @@ This deeper level of the process is where most of the input options of MUSE are 
 Investment
 ~~~~~~~~~~
 
-In the investment step is where new capacity is added to the different assets managed by the agents. This investment might be needed to cover an increase in demand (between now and forecast) or to match decommissioned assets, typically to do both.
+In the investment step is where new capacity is added to the different assets managed by the agents. This investment might be needed to cover an increase in demand (between now and the investment year) or to match decommissioned assets, typically to do both.
 
 The following graph summarises the process.
 
@@ -455,8 +455,8 @@ The following graph summarises the process.
 
 First the demand is distributed among the available agents as requested by the ``demand_share`` argument of each ``subsector`` in the ``settings.toml`` file. This distribution can be done based on any attribute or property of the agents, as included in the ``Agents.csv`` file. Demand can also be shared across multiple agents, depending on the "quantity" attribute (defined in ``Agents.csv``). The two built-in options in MUSE are:
 
-- `standard_demand` (default): The demand is split only amongst *new* agents (indeed there will be an error if a *retro* agent is found for this subsector). *New* agents get a share of the increase in demand for the forecast years well as the demand that occurs from decommissioned assets.
-- `new_and_retro`: The input demand is split amongst both *new* and *retro* agents. *New* agents get a share of the increase in demand for the forecast year, whereas *retrofit* agents are assigned a share of the demand that occurs from decommissioned assets.
+- `standard_demand` (default): The demand is split only amongst *new* agents (indeed there will be an error if a *retro* agent is found for this subsector). *New* agents get a share of the increase in demand over the investment period as well as the demand that occurs from decommissioned assets.
+- `new_and_retro`: The input demand is split amongst both *new* and *retro* agents. *New* agents get a share of the increase in demand for the investment period, whereas *retrofit* agents are assigned a share of the demand that occurs from decommissioned assets.
 
 Then, each agent select the technologies it can invest in based on what is needed and the **search rules** defined for it in the ``Agents.csv`` file. The possible search rules are described in :py:mod:`muse.filters`. These determine the search rules for each replacement technology.
 

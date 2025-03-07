@@ -2,6 +2,7 @@ import xarray as xr
 from pytest import approx, fixture, raises
 
 from muse.timeslices import drop_timeslice
+from muse.utilities import interpolate_capacity
 
 CURRENT_YEAR = 2010
 INVESTMENT_YEAR = 2015
@@ -9,7 +10,7 @@ INVESTMENT_YEAR = 2015
 
 @fixture
 def _capacity(stock):
-    return stock.capacity.interp(year=[CURRENT_YEAR, INVESTMENT_YEAR])
+    return interpolate_capacity(stock.capacity, year=[CURRENT_YEAR, INVESTMENT_YEAR])
 
 
 @fixture
@@ -21,9 +22,9 @@ def _technologies(technologies, _capacity):
 @fixture
 def _market(_technologies, _capacity, timeslice):
     """A market which matches stocks exactly."""
-    from muse.utilities import broadcast_techs
+    from muse.utilities import broadcast_over_assets
 
-    _technologies = broadcast_techs(_technologies, _capacity)
+    _technologies = broadcast_over_assets(_technologies, _capacity)
     return _matching_market(_technologies, _capacity).transpose(
         "timeslice", "region", "commodity", "year"
     )
@@ -55,13 +56,18 @@ def test_fixtures(_capacity, _market, _technologies):
 
 def test_new_retro_split_zero_unmet(_capacity, _market, _technologies):
     from muse.demand_share import new_and_retro_demands
+    from muse.utilities import broadcast_over_assets
 
+    _technologies = broadcast_over_assets(_technologies, _capacity)
     share = new_and_retro_demands(_capacity, _market, _technologies)
     assert (share == 0).all()
 
 
 def test_new_retro_split_zero_consumption_increase(_capacity, _market, _technologies):
     from muse.demand_share import new_and_retro_demands
+    from muse.utilities import broadcast_over_assets
+
+    _technologies = broadcast_over_assets(_technologies, _capacity)
 
     _market.consumption.loc[{"year": INVESTMENT_YEAR}] = _market.consumption.sel(
         year=CURRENT_YEAR
@@ -92,6 +98,9 @@ def test_new_retro_split_zero_consumption_increase(_capacity, _market, _technolo
 
 def test_new_retro_split_zero_new_unmet(_capacity, _market, _technologies):
     from muse.demand_share import new_and_retro_demands
+    from muse.utilities import broadcast_over_assets
+
+    _technologies = broadcast_over_assets(_technologies, _capacity)
 
     _market.consumption.loc[{"year": INVESTMENT_YEAR}] = _market.supply.sel(
         year=CURRENT_YEAR, drop=True
@@ -127,6 +136,9 @@ def test_new_retro_split_zero_new_unmet(_capacity, _market, _technologies):
 def test_new_retro_accounting_identity(_capacity, _market, _technologies):
     from muse.demand_share import new_and_retro_demands
     from muse.quantities import maximum_production
+    from muse.utilities import broadcast_over_assets
+
+    _technologies = broadcast_over_assets(_technologies, _capacity)
 
     share = new_and_retro_demands(_capacity, _market, _technologies)
     assert (share >= 0).all()
@@ -155,12 +167,13 @@ def test_new_retro_accounting_identity(_capacity, _market, _technologies):
 def test_demand_split(_capacity, _market, _technologies):
     from muse.commodities import is_enduse
     from muse.demand_share import _inner_split as inner_split
+    from muse.utilities import broadcast_over_assets
 
-    def method(capacity):
+    def method(capacity, technologies):
         from muse.demand_share import decommissioning_demand
 
         return decommissioning_demand(
-            _technologies.sel(region="USA"),
+            technologies,
             capacity,
         )
 
@@ -168,8 +181,10 @@ def test_demand_split(_capacity, _market, _technologies):
         year=INVESTMENT_YEAR, region="USA", drop=True
     ).where(is_enduse(_technologies.comm_usage.sel(commodity=_market.commodity)))
     agents = dict(scully=_capacity, mulder=_capacity)
+    _technologies = broadcast_over_assets(_technologies, _capacity)
+    technodata = dict(scully=_technologies, mulder=_technologies)
     quantity = dict(scully=("scully", "USA", 0.3), mulder=("mulder", "USA", 0.7))
-    share = inner_split(agents, demand, method, quantity)
+    share = inner_split(agents, technodata, demand, method, quantity)
 
     enduse = is_enduse(_technologies.comm_usage)
     assert (share["scully"].sel(commodity=~enduse) == 0).all()
@@ -189,12 +204,13 @@ def test_demand_split_zero_share(_capacity, _market, _technologies):
     """See issue SgiModel/StarMuse#688."""
     from muse.commodities import is_enduse
     from muse.demand_share import _inner_split as inner_split
+    from muse.utilities import broadcast_over_assets
 
-    def method(capacity):
+    def method(capacity, technologies):
         from muse.demand_share import decommissioning_demand
 
         return 0 * decommissioning_demand(
-            _technologies.sel(region="USA"),
+            technologies,
             capacity,
         )
 
@@ -202,8 +218,10 @@ def test_demand_split_zero_share(_capacity, _market, _technologies):
         year=INVESTMENT_YEAR, region="USA", drop=True
     ).where(is_enduse(_technologies.comm_usage.sel(commodity=_market.commodity)))
     agents = dict(scully=0.3 * _capacity, mulder=0.7 * _capacity)
+    _technologies = broadcast_over_assets(_technologies, _capacity)
+    technodata = dict(scully=_technologies, mulder=_technologies)
     quantity = dict(scully=("scully", "USA", 1), mulder=("mulder", "USA", 1))
-    share = inner_split(agents, demand, method, quantity)
+    share = inner_split(agents, technodata, demand, method, quantity)
 
     enduse = is_enduse(_technologies.comm_usage)
     assert (share["scully"].sel(commodity=~enduse) == 0).all()
@@ -227,12 +245,17 @@ def test_new_retro_demand_share(_technologies, market, timeslice, stock):
 
     from muse.commodities import is_enduse
     from muse.demand_share import new_and_retro
+    from muse.utilities import broadcast_over_assets
 
     asia_stock = stock.where(stock.region == "ASEAN", drop=True)
     usa_stock = stock.where(stock.region == "USA", drop=True)
 
-    asia_market = _matching_market(_technologies, asia_stock.capacity)
-    usa_market = _matching_market(_technologies, usa_stock.capacity)
+    asia_market = _matching_market(
+        broadcast_over_assets(_technologies, asia_stock), asia_stock.capacity
+    )
+    usa_market = _matching_market(
+        broadcast_over_assets(_technologies, usa_stock), usa_stock.capacity
+    )
     market = xr.concat((asia_market, usa_market), dim="region")
     market.consumption.loc[{"year": 2030}] *= 2
 
@@ -281,12 +304,17 @@ def test_standard_demand_share(_technologies, timeslice, stock):
     from muse.commodities import is_enduse
     from muse.demand_share import standard_demand
     from muse.errors import RetrofitAgentInStandardDemandShare
+    from muse.utilities import broadcast_over_assets
 
     asia_stock = stock.where(stock.region == "ASEAN", drop=True)
     usa_stock = stock.where(stock.region == "USA", drop=True)
 
-    asia_market = _matching_market(_technologies, asia_stock.capacity)
-    usa_market = _matching_market(_technologies, usa_stock.capacity)
+    asia_market = _matching_market(
+        broadcast_over_assets(_technologies, asia_stock), asia_stock.capacity
+    )
+    usa_market = _matching_market(
+        broadcast_over_assets(_technologies, usa_stock), usa_stock.capacity
+    )
     market = xr.concat((asia_market, usa_market), dim="region")
     market.consumption.loc[{"year": 2030}] *= 2
 
@@ -332,12 +360,17 @@ def test_unmet_forecast_demand(_technologies, timeslice, stock):
 
     from muse.commodities import is_enduse
     from muse.demand_share import unmet_forecasted_demand
+    from muse.utilities import broadcast_over_assets
 
     asia_stock = stock.where(stock.region == "ASEAN", drop=True)
     usa_stock = stock.where(stock.region == "USA", drop=True)
 
-    asia_market = _matching_market(_technologies, asia_stock.capacity)
-    usa_market = _matching_market(_technologies, usa_stock.capacity)
+    asia_market = _matching_market(
+        broadcast_over_assets(_technologies, asia_stock), asia_stock.capacity
+    )
+    usa_market = _matching_market(
+        broadcast_over_assets(_technologies, usa_stock), usa_stock.capacity
+    )
     market = xr.concat((asia_market, usa_market), dim="region")
 
     # spoof some agents
@@ -387,6 +420,9 @@ def test_unmet_forecast_demand(_technologies, timeslice, stock):
 def test_decommissioning_demand(_technologies, _capacity, timeslice):
     from muse.commodities import is_enduse
     from muse.demand_share import decommissioning_demand
+    from muse.utilities import broadcast_over_assets
+
+    _technologies = broadcast_over_assets(_technologies, _capacity)
 
     _capacity.loc[{"year": CURRENT_YEAR}] = current = 1.3
     _capacity.loc[{"year": INVESTMENT_YEAR}] = forecast = 1.0

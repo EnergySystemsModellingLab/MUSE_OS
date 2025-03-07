@@ -23,7 +23,6 @@ class Subsector:
         constraints: Callable | None = None,
         investment: Callable | None = None,
         name: str = "subsector",
-        forecast: int = 5,
         timeslice_level: str | None = None,
     ):
         from muse import constraints as cs
@@ -35,7 +34,6 @@ class Subsector:
         self.demand_share = demand_share or ds.factory()
         self.constraints = constraints or cs.factory()
         self.investment = investment or iv.factory()
-        self.forecast = forecast
         self.name = name
         self.timeslice_level = timeslice_level
 
@@ -109,6 +107,14 @@ class Subsector:
             )
             getLogger(__name__).warning(msg)
 
+        # Raise warning if deprecated forecast parameter is used (PR #645)
+        if hasattr(settings, "forecast"):
+            msg = (
+                "The 'forecast' parameter has been deprecated. "
+                "Please remove from your settings file."
+            )
+            getLogger(__name__).warning(msg)
+
         agents = agents_factory(
             settings.agents,
             settings.existing_capacity,
@@ -118,7 +124,6 @@ class Subsector:
             asset_threshold=getattr(settings, "asset_threshold", 1e-12),
             # only used by self-investing agents
             investment=getattr(settings, "lpsolver", "scipy"),
-            forecast=getattr(settings, "forecast", 5),
             constraints=getattr(settings, "constraints", ()),
             timeslice_level=timeslice_level,
         )
@@ -157,7 +162,6 @@ class Subsector:
         constraints = cs.factory(getattr(settings, "constraints", None))
         # only used by non-self-investing agents
         investment = iv.factory(getattr(settings, "lpsolver", "scipy"))
-        forecast = getattr(settings, "forecast", 5)
 
         return cls(
             agents=agents,
@@ -165,7 +169,6 @@ class Subsector:
             demand_share=demand_share,
             constraints=constraints,
             investment=investment,
-            forecast=forecast,
             name=name,
             timeslice_level=timeslice_level,
         )

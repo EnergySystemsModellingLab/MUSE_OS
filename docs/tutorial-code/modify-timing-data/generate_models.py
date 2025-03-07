@@ -6,7 +6,7 @@ import pandas as pd
 from tomlkit import dumps, parse
 
 from muse import examples
-from muse.wizard import add_timeslice, get_sectors, modify_toml
+from muse.wizard import add_timeslice, modify_toml
 
 parent_path = Path(__file__).parent
 
@@ -80,12 +80,6 @@ def generate_model_2():
     settings_file = model_path / "settings.toml"
     time_framework = [2020, 2022, 2024, 2026, 2028, 2030, 2032, 2034, 2036, 2038, 2040]
     modify_toml(settings_file, lambda x: x.update({"time_framework": time_framework}))
-    modify_toml(settings_file, lambda x: x.update({"foresight": 2}))
-    for sector in get_sectors(model_path):
-        modify_toml(
-            settings_file,
-            lambda x: x["sectors"][sector]["subsectors"]["all"].update({"forecast": 2}),
-        )
 
 
 if __name__ == "__main__":

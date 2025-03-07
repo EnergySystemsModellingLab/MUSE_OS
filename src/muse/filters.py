@@ -27,8 +27,7 @@ follow the same signature:
 
 Arguments:
     agent: the agent relevant to the search space. The filters may need to query
-        the agent for parameters, e.g. the current year, the interpolation
-        method, the tolerance, etc.
+        the agent for parameters, e.g. the current year, the tolerance, etc.
     search_space: the current search space.
     technologies: A data set characterising the technologies from which the
         agent can draw assets.
@@ -60,8 +59,7 @@ Functions creating initial search spaces should have the following signature:
 
 Arguments:
     agent: the agent relevant to the search space. The filters may need to query
-        the agent for parameters, e.g. the current year, the interpolation
-        method, the tolerance, etc.
+        the agent for parameters, e.g. the current year, the tolerance, etc.
     demand: share of the demand per existing reference technology (e.g.
         assets).
     technologies: A data set characterising the technologies from which the

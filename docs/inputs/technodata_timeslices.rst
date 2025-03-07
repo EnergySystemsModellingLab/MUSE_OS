@@ -44,5 +44,3 @@ The input data has to be provided for the base year. Additional years within the
 framework of the overall simulation can be defined. In this case, MUSE would interpolate
 the values between the provided periods and assume a constant value afterwards. The additional
 years at which input data for techno-data timeslices, need to equal those for :ref:`inputs-iocomms` and :ref:`inputs-technodata`.
-
-Interpolation is activated only if the feature *interpolation_mode = 'Active'* is defined in the TOML file.

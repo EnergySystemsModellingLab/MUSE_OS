@@ -57,8 +57,10 @@ class MCA:
                 base_year_import=getattr(
                     settings.global_input_files, "base_year_import", None
                 ),
-            ).sel(region=settings.regions)
-        ).interp(year=settings.time_framework, method=settings.interpolation_mode)
+            )
+            .sel(region=settings.regions)
+            .interp(year=settings.time_framework, method=settings.interpolation_mode)
+        )
 
         market["supply"] = drop_timeslice(zeros_like(market.exports))
         market["consumption"] = drop_timeslice(zeros_like(market.exports))
@@ -76,7 +78,6 @@ class MCA:
         )
 
         extras = {
-            "foresight",
             "regions",
             "interest_rate",
             "log_level",
@@ -92,8 +93,16 @@ class MCA:
             for k, v in settings._asdict().items()
             if not hasattr(v, "_asdict") and k not in extras
         }
-        if "equilibrium" in global_kw:
-            global_kw["equilibrium"] = global_kw.pop("equilibrium")
+
+        # Legacy: warn user about deprecation of "foresight" parameter (#641)
+        if "foresight" in global_kw:
+            msg = (
+                "The `foresight` parameter has been deprecated. "
+                "Please remove from your settings file."
+            )
+            getLogger(__name__).warning(msg)
+            global_kw.pop("foresight")
+
         carbon_kw = {
             k: v._asdict() if hasattr(v, "_asdict") else v
             for k, v in settings.carbon_budget_control._asdict().items()
@@ -160,9 +169,7 @@ class MCA:
 
         # Carbon budget parameters
         if isinstance(carbon_budget, DataArray) and "year" in carbon_budget.dims:
-            self.carbon_budget: DataArray = (
-                carbon_budget.interp(year=time_framework).ffill("year").bfill("year")
-            )
+            self.carbon_budget: DataArray = carbon_budget.sel(year=time_framework)
         elif isinstance(carbon_budget, DataArray):
             self.carbon_budget = carbon_budget
         elif carbon_budget is not None and len(carbon_budget) > 0:
@@ -272,9 +279,13 @@ class MCA:
         variables = ["supply", "consumption", "prices"]
 
         for year_idx in range(nyear):
-            years = self.time_framework[year_idx : year_idx + 2]
-            getLogger(__name__).info(f"Running simulation year {years[0]}...")
-            new_market = self.market[variables].sel(year=years)
+            current_year, investment_year = self.time_framework[year_idx : year_idx + 2]
+            getLogger(__name__).info(
+                f"Running simulation years {current_year} to {investment_year}"
+            )
+            new_market = self.market[variables].sel(
+                year=[current_year, investment_year]
+            )
             assert isinstance(new_market, Dataset)
             new_market.supply[:] = 0
             new_market.consumption[:] = 0
@@ -282,7 +293,7 @@ class MCA:
             # If we need to account for the carbon budget, we do it now.
             if check_carbon_budget:
                 new_price = self.update_carbon_price(new_market)
-                future_price = DataArray(new_price, coords=dict(year=years[1]))
+                future_price = DataArray(new_price, coords=dict(year=investment_year))
                 new_market.prices.loc[dict(commodity=self.carbon_commodities)] = (
                     future_propagation(
                         new_market.prices.sel(commodity=self.carbon_commodities),
@@ -294,10 +305,13 @@ class MCA:
             # Solve the market
             _, new_market, self.sectors = self.find_equilibrium(new_market)
 
-            # Save sector outputs
+            # Save sector outputs for the investment year
+            # In the first iteration we also save outputs for the first year
             for sector in self.sectors:
                 if type(sector) is Sector:
-                    sector.save_outputs()
+                    if year_idx == 0:
+                        sector.save_outputs(current_year)
+                    sector.save_outputs(investment_year)
 
             # If we need to account for the carbon budget, we might need to change
             # the budget for the future, too.
@@ -312,15 +326,21 @@ class MCA:
             self.market.consumption.loc[dims] = new_market.consumption
             dims = {i: new_market[i] for i in new_market.prices.dims if i != "year"}
             self.market.prices.loc[dims] = future_propagation(
-                self.market.prices.sel(dims), new_market.prices.sel(year=years[1])
+                self.market.prices.sel(dims),
+                new_market.prices.sel(year=investment_year),
             )
 
-            # Global outputs
-            self.outputs(self.market, self.sectors, year=self.time_framework[year_idx])  # type: ignore
-            self.outputs_cache.consolidate_cache(year=self.time_framework[year_idx])
+            # Global outputs for the investment year
+            # In the first iteration we also save outputs for the first year
+            if year_idx == 0:
+                self.outputs(self.market, self.sectors, year=current_year)
+            self.outputs(self.market, self.sectors, year=investment_year)
+            self.outputs_cache.consolidate_cache(year=current_year)
+            # TODO: change cache to investment_year (not working properly anyway)
 
             getLogger(__name__).info(
-                f"Finish simulation year {years[0]} ({year_idx + 1}/{nyear})!"
+                f"Finished simulation period {current_year} to {investment_year} "
+                f"({year_idx + 1}/{nyear})!"
             )
 
 

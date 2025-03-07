@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterator, Sequence
 from typing import (
     Any,
     Callable,
@@ -37,9 +37,15 @@ class Sector(AbstractSector):  # type: ignore
             raise RuntimeError(f"Missing 'subsectors' section in sector {name}")
         if len(sector_settings["subsectors"]._asdict()) == 0:
             raise RuntimeError(f"Empty 'subsectors' section in sector {name}")
+        interpolation_mode = sector_settings.pop("interpolation", "linear")
 
         # Read technologies
-        technologies = read_technodata(settings, name, settings.time_framework)
+        technologies = read_technodata(
+            settings,
+            name,
+            settings.time_framework,
+            interpolation_mode=interpolation_mode,
+        )
 
         # Create subsectors
         subsectors = [
@@ -102,7 +108,6 @@ class Sector(AbstractSector):  # type: ignore
         technologies: xr.Dataset,
         subsectors: Sequence[Subsector] = [],
         interactions: Callable[[Sequence[AbstractAgent]], None] | None = None,
-        interpolation: str = "linear",
         outputs: Callable | None = None,
         supply_prod: PRODUCTION_SIGNATURE | None = None,
         timeslice_level: str | None = None,
@@ -130,12 +135,6 @@ class Sector(AbstractSector):  # type: ignore
                     "the specified timeslice level for that sector "
                     f"({self.timeslice_level})"
                 )
-
-        """Interpolation method and arguments when computing years."""
-        self.interpolation: Mapping[str, Any] = {
-            "method": interpolation,
-            "kwargs": {"fill_value": "extrapolate"},
-        }
 
         """Interactions between agents.
 
@@ -170,15 +169,6 @@ class Sector(AbstractSector):  # type: ignore
         """Full supply, consumption and costs data for the most recent year."""
         self.output_data: xr.Dataset
 
-    @property
-    def forecast(self):
-        """Maximum forecast horizon across agents.
-
-        It cannot be lower than 1 year.
-        """
-        forecasts = [getattr(agent, "forecast") for agent in self.agents]
-        return max(1, max(forecasts))
-
     def next(
         self,
         mca_market: xr.Dataset,
@@ -201,7 +191,9 @@ class Sector(AbstractSector):  # type: ignore
         # Time period from the market object
         assert len(mca_market.year) == 2
         current_year, investment_year = map(int, mca_market.year.values)
-        getLogger(__name__).info(f"Running {self.name} for year {current_year}")
+        getLogger(__name__).info(
+            f"Running {self.name} for years {current_year} to {investment_year}"
+        )
 
         # Agent interactions
         self.interactions(list(self.agents))
@@ -216,11 +208,9 @@ class Sector(AbstractSector):  # type: ignore
 
         # Investments
         # uses technology data from the investment year
+        techs = self.technologies.sel(year=investment_year, drop=True)
         for subsector in self.subsectors:
-            subsector.invest(
-                technologies=self.technologies.sel(year=investment_year),
-                market=market,
-            )
+            subsector.invest(technologies=techs, market=market)
 
         # Full output data
         supply, consume, costs = self.market_variables(market, self.technologies)
@@ -254,39 +244,41 @@ class Sector(AbstractSector):  # type: ignore
         # Convert result to global timeslicing scheme
         return self.convert_to_global_timeslicing(result)
 
-    def save_outputs(self) -> None:
+    def save_outputs(self, year: int) -> None:
         """Calls the outputs function with the current output data."""
-        self.outputs(self.output_data, self.capacity)
+        self.outputs(self.output_data, self.capacity, year=year)
 
     def market_variables(self, market: xr.Dataset, technologies: xr.Dataset) -> Any:
         """Computes resulting market: production, consumption, and costs."""
         from muse.commodities import is_pollutant
         from muse.costs import levelized_cost_of_energy, supply_cost
         from muse.quantities import consumption
-        from muse.utilities import broadcast_techs
+        from muse.utilities import broadcast_over_assets, interpolate_capacity
 
         years = market.year.values
-        capacity = self.capacity.interp(year=years, **self.interpolation)
+        capacity = interpolate_capacity(self.capacity, year=years)
+
+        # Select technology data for each asset
+        # Each asset uses the technology data from the year it was installed
+        technodata = broadcast_over_assets(
+            technologies, capacity, installed_as_year=True
+        )
 
         # Calculate supply
         supply = self.supply_prod(
             market=market,
             capacity=capacity,
-            technologies=technologies,
+            technologies=technodata,
             timeslice_level=self.timeslice_level,
         )
 
         # Calculate consumption
         consume = consumption(
-            technologies,
+            technologies=technodata,
             production=supply,
             prices=market.prices,
             timeslice_level=self.timeslice_level,
         )
-
-        # Select technology data for each asset
-        # Each asset uses the technology data from the year it was installed
-        technodata = broadcast_techs(technologies, supply, installed_as_year=True)
 
         # Calculate LCOE
         # We select data for the second year, which corresponds to the investment year
@@ -336,12 +328,12 @@ class Sector(AbstractSector):  # type: ignore
         dimensions: asset (technology, installation date,
         region), year.
         """
-        from muse.utilities import filter_input, reduce_assets
+        from muse.utilities import interpolate_capacity, reduce_assets
 
         capacities = [u.assets.capacity for u in self.agents]
         all_years = sorted({year for capa in capacities for year in capa.year.values})
-        capacities = [filter_input(capa, year=all_years) for capa in capacities]
-        return reduce_assets(capacities)
+        capacity = reduce_assets(capacities)
+        return interpolate_capacity(capacity, year=all_years)
 
     @property
     def agents(self) -> Iterator[AbstractAgent]:

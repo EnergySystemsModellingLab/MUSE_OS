@@ -40,22 +40,22 @@ def test_reduce_assets_with_zero_size(capacity: xr.DataArray):
     assert (actual == x).all()
 
 
-def test_broadcast_techs(technologies, capacity):
-    from muse.utilities import broadcast_techs
+def test_broadcast_over_assets(technologies, capacity):
+    from muse.utilities import broadcast_over_assets
 
     # Test with installed_as_year = True
-    result1 = broadcast_techs(technologies, capacity, installed_as_year=True)
+    result1 = broadcast_over_assets(technologies, capacity, installed_as_year=True)
     assert set(result1.dims) == {"asset", "commodity"}
     assert (result1.asset == capacity.asset).all()
 
     # Test with installed_as_year = False
-    result2 = broadcast_techs(technologies, capacity, installed_as_year=False)
+    result2 = broadcast_over_assets(technologies, capacity, installed_as_year=False)
     assert set(result2.dims) == {"asset", "commodity", "year"}
     assert (result2.asset == capacity.asset).all()
 
     # Template without "asset" dimensions (TODO: need to make the function stricter)
     # with raises(AssertionError):
-    #     broadcast_techs(technologies, technologies)
+    #     broadcast_over_assets(technologies, technologies)
 
 
 def test_tupled_dimension_no_tupling():
@@ -204,7 +204,7 @@ def test_lexical_nobin(order):
 def test_merge_assets():
     from numpy import arange
 
-    from muse.utilities import merge_assets
+    from muse.utilities import interpolate_capacity, merge_assets
 
     def fake(year, order=("installed", "technology")):
         result = xr.Dataset()
@@ -244,17 +244,17 @@ def test_merge_assets():
         ab_side = actual.sel(
             asset=((actual.installed == inst) & (actual.technology == tech))
         ).squeeze("asset")
-        a_side = (
-            capa_a.sel(asset=((capa_a.installed == inst) & (capa_a.technology == tech)))
-            .sum("asset")
-            .interp(year=ab_side.year, method="linear")
-            .fillna(0)
+        a_side = interpolate_capacity(
+            capa_a.sel(
+                asset=((capa_a.installed == inst) & (capa_a.technology == tech))
+            ).sum("asset"),
+            year=ab_side.year,
         )
-        b_side = (
-            capa_b.sel(asset=((capa_b.installed == inst) & (capa_b.technology == tech)))
-            .sum("asset")
-            .interp(year=ab_side.year, method="linear")
-            .fillna(0)
+        b_side = interpolate_capacity(
+            capa_b.sel(
+                asset=((capa_b.installed == inst) & (capa_b.technology == tech))
+            ).sum("asset"),
+            year=ab_side.year,
         )
         assert (ab_side.capacity == approx((a_side + b_side).values)).all()
 
