@@ -132,8 +132,6 @@ def copy_model(
         _copy_multiple_agents(path)
     elif name.lower() == "minimum_service":
         _copy_minimum_service(path)
-    elif name.lower() == "trade":
-        _copy_trade(path)
     return path
 
 
@@ -160,9 +158,14 @@ def search_space(sector: str, model: str = "default") -> xr.DataArray:
 
     Used in constraints or during investment.
     """
-    if model == "trade" and sector != "residential":
-        return _trade_search_space(sector, model)
-    return _nontrade_search_space(sector, model)
+    from numpy import ones
+
+    technology = technodata(sector, model).technology
+    return xr.DataArray(
+        ones((len(technology), len(technology)), dtype=bool),
+        coords=dict(asset=technology.values, replacement=technology.values),
+        dims=("asset", "replacement"),
+    )
 
 
 def sector(sector: str, model: str = "default") -> AbstractSector:
@@ -273,21 +276,15 @@ def matching_market(sector: str, model: str = "default") -> xr.Dataset:
     techs = broadcast_over_assets(loaded_sector.technologies, assets.capacity)
     production = maximum_production(techs, assets.capacity)
     market["supply"] = production.sum("asset")
-    if "dst_region" in market.dims:
-        market = market.rename(dst_region="region")
     if market.region.dims:
         consump = consumption(techs, production)
         market["consumption"] = drop_timeslice(
-            consump.groupby("region").sum(
-                {"asset", "dst_region"}.intersection(consump.dims)
-            )
+            consump.groupby("region").sum({"asset"}.intersection(consump.dims))
             + market.supply
         )
     else:
         market["consumption"] = (
-            consumption(techs, production).sum(
-                {"asset", "dst_region"}.intersection(market.dims)
-            )
+            consumption(techs, production).sum({"asset"}.intersection(market.dims))
             + market.supply
         )
     market["prices"] = market.supply.dims, np.random.random(market.supply.shape)
@@ -393,49 +390,4 @@ def _copy_minimum_service(path: Path):
     copytree(example_data_dir() / "minimum_service" / "technodata", path / "technodata")
     copyfile(
         example_data_dir() / "minimum_service" / "settings.toml", path / "settings.toml"
-    )
-
-
-def _copy_trade(path: Path):
-    from shutil import copyfile, copytree
-
-    copytree(example_data_dir() / "trade" / "input", path / "input")
-    copytree(example_data_dir() / "trade" / "technodata", path / "technodata")
-    copyfile(example_data_dir() / "trade" / "settings.toml", path / "settings.toml")
-
-
-def _trade_search_space(sector: str, model: str = "default") -> xr.DataArray:
-    from muse.agents import Agent
-    from muse.examples import sector as load_sector
-    from muse.sectors import Sector
-    from muse.utilities import agent_concatenation
-
-    loaded_sector = cast(Sector, load_sector(sector, model))
-
-    market = matching_market(sector, model)
-    return cast(
-        xr.DataArray,
-        agent_concatenation(
-            {
-                a.uuid: cast(Agent, a).search_rules(
-                    agent=a,
-                    demand=market.consumption.isel(year=0, drop=True),
-                    technologies=loaded_sector.technologies,
-                    market=market,
-                )
-                for a in loaded_sector.agents
-            },
-            dim="agent",
-        ),
-    )
-
-
-def _nontrade_search_space(sector: str, model: str = "default") -> xr.DataArray:
-    from numpy import ones
-
-    technology = technodata(sector, model).technology
-    return xr.DataArray(
-        ones((len(technology), len(technology)), dtype=bool),
-        coords=dict(asset=technology.values, replacement=technology.values),
-        dims=("asset", "replacement"),
     )

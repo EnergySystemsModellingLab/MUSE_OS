@@ -203,14 +203,11 @@ def sector_capacity(sector: AbstractSector) -> pd.DataFrame:
         capa_agent["sector"] = getattr(sector, "name", "unnamed")
 
         if len(capa_agent) > 0 and len(capa_agent.technology.values) > 0:
-            if "dst_region" not in capa_agent.coords:
-                capa_agent["dst_region"] = agent.region
             a = capa_agent.to_dataframe()
             b = (
                 a.groupby(
                     [
                         "technology",
-                        "dst_region",
                         "region",
                         "agent",
                         "sector",
