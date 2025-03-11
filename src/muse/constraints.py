@@ -310,6 +310,10 @@ def max_capacity_expansion(
         .. math::
 
             \Gamma_t^{r, i} \geq 0
+
+    :math:`L_t^r(y)`, :math:`G_t^r(y)` and :math:`W_t^r(y)` default to np.inf if
+    not provided (i.e. no constraint).
+    If all three parameters are not provided, no constraint is applied (returns None).
     """
     # If all three parameters are missing, don't apply the constraint
     if not any(

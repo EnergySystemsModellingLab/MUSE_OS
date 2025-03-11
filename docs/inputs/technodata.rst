@@ -107,6 +107,8 @@ Growith constraints (optional)
    Growth constraints are applied for each single agent in a multi-agent simulation. When only one agent is present, the growth constraints
    apply individually to the "New" and "Retrofit" agent, when present.
 
+   If any of the three parameters are not provided in the technodata file, that particular constraint is not applied.
+
 
 TechnicalLife
    represents the number of years that a technology operates before it is decommissioned.
