@@ -81,7 +81,7 @@ var_par, var_exp
 
    ProductionRef is the production of a reference capacity (CapRef) for the cost estimate decided by the modeller before filling the input data files.
 
-Growith constraints
+Growith constraints (optional)
    MaxCapacityAddition
       represents the maximum addition of installed capacity per technology, per year in a period, per region.
 
