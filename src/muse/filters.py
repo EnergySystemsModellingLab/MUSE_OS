@@ -244,7 +244,6 @@ def same_enduse(
 
     tech_enduses = agent.filter_input(
         technologies.fixed_outputs,
-        year=agent.year,
         commodity=is_enduse(technologies.comm_usage),
     )
     tech_enduses = (tech_enduses > 0).astype(int).rename(technology="replacement")
@@ -366,7 +365,7 @@ def spend_limit(
 ) -> xr.DataArray:
     """Only allows technologies with a unit capital cost lower than the spend limit."""
     limit = agent.spend_limit
-    unit_capex = agent.filter_input(technologies.cap_par, year=agent.year)
+    unit_capex = agent.filter_input(technologies.cap_par)
     condition = (unit_capex <= limit).rename("spend_limit")
     techs = (
         condition.technology.where(condition, drop=True).drop_vars("technology").values
