@@ -481,6 +481,24 @@ def test_max_capacity_expansion(max_capacity_expansion):
     ).all()
 
 
+def test_max_capacity_expansion_no_limits(
+    market_demand, capacity, search_space, technologies
+):
+    from muse.constraints import max_capacity_expansion
+
+    # Without growth limits, the constraint should return None
+    techs = technologies.drop_vars(
+        ["max_capacity_addition", "max_capacity_growth", "total_capacity_limit"]
+    )
+    result = max_capacity_expansion(
+        market_demand,
+        capacity,
+        search_space,
+        techs,
+    )
+    assert result is None
+
+
 def test_max_production(max_production):
     dims = {"replacement", "asset", "commodity", "timeslice"}
     assert set(max_production.capacity.dims) == dims
