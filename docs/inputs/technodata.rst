@@ -81,7 +81,7 @@ var_par, var_exp
 
    ProductionRef is the production of a reference capacity (CapRef) for the cost estimate decided by the modeller before filling the input data files.
 
-Growith constraints
+Growith constraints (optional)
    MaxCapacityAddition
       represents the maximum addition of installed capacity per technology, per year in a period, per region.
 
@@ -106,6 +106,8 @@ Growith constraints
 
    Growth constraints are applied for each single agent in a multi-agent simulation. When only one agent is present, the growth constraints
    apply individually to the "New" and "Retrofit" agent, when present.
+
+   If any of the three parameters are not provided in the technodata file, that particular constraint is not applied.
 
 
 TechnicalLife
