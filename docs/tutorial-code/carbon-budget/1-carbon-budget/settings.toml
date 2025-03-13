@@ -39,20 +39,20 @@ max_iterations = 5
 tolerance = 0.2
 
 [global_input_files]
-projections = '{path}/input/Projections.csv'
-global_commodities = '{path}/input/GlobalCommodities.csv'
+projections = '{path}/Projections.csv'
+global_commodities = '{path}/GlobalCommodities.csv'
 
 [sectors.residential]
 type = 'default'
 priority = 1
 dispatch_production = 'share'
-technodata = '{path}/technodata/residential/Technodata.csv'
-commodities_in = '{path}/technodata/residential/CommIn.csv'
-commodities_out = '{path}/technodata/residential/CommOut.csv'
+technodata = '{path}/residential/Technodata.csv'
+commodities_in = '{path}/residential/CommIn.csv'
+commodities_out = '{path}/residential/CommOut.csv'
 
 [sectors.residential.subsectors.all]
-agents = '{path}/technodata/Agents.csv'
-existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
+agents = '{path}/Agents.csv'
+existing_capacity = '{path}/residential/ExistingCapacity.csv'
 lpsolver = "scipy"  # Optional, defaults to "scipy"
 constraints = [
     # Optional, defaults to the constraints below
@@ -69,13 +69,13 @@ demand_share = "standard_demand"  # Optional, default to standard_demand
 type = 'default'
 priority = 2
 dispatch_production = 'share'
-technodata = '{path}/technodata/power/Technodata.csv'
-commodities_in = '{path}/technodata/power/CommIn.csv'
-commodities_out = '{path}/technodata/power/CommOut.csv'
+technodata = '{path}/power/Technodata.csv'
+commodities_in = '{path}/power/CommIn.csv'
+commodities_out = '{path}/power/CommOut.csv'
 
 [sectors.power.subsectors.all]
-agents = '{path}/technodata/Agents.csv'
-existing_capacity = '{path}/technodata/power/ExistingCapacity.csv'
+agents = '{path}/Agents.csv'
+existing_capacity = '{path}/power/ExistingCapacity.csv'
 lpsolver = "scipy"
 demand_share = "standard_demand"
 
@@ -83,20 +83,20 @@ demand_share = "standard_demand"
 type = 'default'
 priority = 3
 dispatch_production = 'share'
-technodata = '{path}/technodata/gas/Technodata.csv'
-commodities_in = '{path}/technodata/gas/CommIn.csv'
-commodities_out = '{path}/technodata/gas/CommOut.csv'
+technodata = '{path}/gas/Technodata.csv'
+commodities_in = '{path}/gas/CommIn.csv'
+commodities_out = '{path}/gas/CommOut.csv'
 
 [sectors.gas.subsectors.all]
-agents = '{path}/technodata/Agents.csv'
-existing_capacity = '{path}/technodata/gas/ExistingCapacity.csv'
+agents = '{path}/Agents.csv'
+existing_capacity = '{path}/gas/ExistingCapacity.csv'
 lpsolver = "scipy"
 demand_share = "standard_demand"
 
 [sectors.residential_presets]
 type = 'presets'
 priority = 0
-consumption_path = "{path}/technodata/preset/*Consumption.csv"
+consumption_path = "{path}/residential_presets/*Consumption.csv"
 
 [timeslices]
 level_names = ["month", "day", "hour"]

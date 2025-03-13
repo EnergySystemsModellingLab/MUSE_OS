@@ -29,7 +29,7 @@ def generate_model_1():
     add_region(model_path, region_name="R2", copy_from="R1")
 
     # Reduce capacity limit for heatpump in R2
-    technodata_file = model_path / "technodata/residential/Technodata.csv"
+    technodata_file = model_path / "residential/Technodata.csv"
     df = pd.read_csv(technodata_file)
     mask = (df["RegionName"] == "R2") & (df["ProcessName"] == "heatpump")
     df.loc[mask, "TotalCapacityLimit"] = 20

@@ -26,13 +26,13 @@ filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 budget = []
 
 [global_input_files]
-projections = '{path}/input/Projections.csv'
-global_commodities = '{path}/input/GlobalCommodities.csv'
+projections = '{path}/Projections.csv'
+global_commodities = '{path}/GlobalCommodities.csv'
 
-[sectors.presets]
+[sectors.residential_presets]
 type = 'presets'
 priority = 0
-consumption_path = "{path}/technodata/preset/*Consumption.csv"
+consumption_path = "{path}/residential_presets/*Consumption.csv"
 
 [sectors.residential]
 type = 'default'
@@ -40,13 +40,13 @@ priority = 1
 dispatch_production = 'share'
 
 [sectors.residential.technodata]
-technodata = '{path}/technodata/residential/Technodata.csv'
-commodities_in = '{path}/technodata/residential/CommIn.csv'
-commodities_out = '{path}/technodata/residential/CommOut.csv'
+technodata = '{path}/residential/Technodata.csv'
+commodities_in = '{path}/residential/CommIn.csv'
+commodities_out = '{path}/residential/CommOut.csv'
 
 [sectors.residential.subsectors.retro_and_new]
-agents = '{path}/technodata/residential/Agents.csv'
-existing_capacity = '{path}/technodata/residential/ExistingCapacity.csv'
+agents = '{path}/residential/Agents.csv'
+existing_capacity = '{path}/residential/ExistingCapacity.csv'
 lpsolver = "scipy"
 constraints = [
     # Optional, defaults to the constraints below
@@ -70,14 +70,14 @@ priority = 2
 dispatch_production = 'share'
 
 [sectors.power.technodata]
-technodata = '{path}/technodata/power/Technodata.csv'
-trade = '{path}/technodata/power/TradeTechnodata.csv'
-commodities_in = '{path}/technodata/power/CommIn.csv'
-commodities_out = '{path}/technodata/power/CommOut.csv'
+technodata = '{path}/power/Technodata.csv'
+trade = '{path}/power/TradeTechnodata.csv'
+commodities_in = '{path}/power/CommIn.csv'
+commodities_out = '{path}/power/CommOut.csv'
 
 [sectors.power.subsectors.trade]
-agents = '{path}/technodata/Agents.csv'
-existing_capacity = '{path}/technodata/power/ExistingTrade.csv'
+agents = '{path}/Agents.csv'
+existing_capacity = '{path}/power/ExistingTrade.csv'
 lpsolver = "scipy"
 constraints = [
     # Optional, defaults to the constraints below
@@ -97,14 +97,14 @@ priority = 3
 dispatch_production = 'share'
 
 [sectors.gas.technodata]
-technodata = '{path}/technodata/gas/Technodata.csv'
-trade = '{path}/technodata/gas/TradeTechnodata.csv'
-commodities_in = '{path}/technodata/gas/CommIn.csv'
-commodities_out = '{path}/technodata/gas/CommOut.csv'
+technodata = '{path}/gas/Technodata.csv'
+trade = '{path}/gas/TradeTechnodata.csv'
+commodities_in = '{path}/gas/CommIn.csv'
+commodities_out = '{path}/gas/CommOut.csv'
 
 [sectors.gas.subsectors.trade]
-agents = '{path}/technodata/Agents.csv'
-existing_capacity = '{path}/technodata/gas/ExistingTrade.csv'
+agents = '{path}/Agents.csv'
+existing_capacity = '{path}/gas/ExistingTrade.csv'
 lpsolver = "scipy"
 constraints = [
     # Optional, defaults to the constraints below
