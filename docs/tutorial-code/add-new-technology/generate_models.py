@@ -37,7 +37,7 @@ def generate_model_1() -> None:
     add_new_process(model_path, "solarPV", "power", "windturbine")
 
     # Modify input commodities
-    commin_file = model_path / "technodata/power/CommIn.csv"
+    commin_file = model_path / "power/CommIn.csv"
     df = pd.read_csv(commin_file)
     df.loc[(df["ProcessName"] == "solarPV"), "solar"] = 1
     df.loc[(df["ProcessName"] == "solarPV"), "wind"] = 0
@@ -45,7 +45,7 @@ def generate_model_1() -> None:
     df.to_csv(commin_file, index=False)
 
     # Modify technodata for solarPV
-    technodata_file = model_path / "technodata/power/Technodata.csv"
+    technodata_file = model_path / "power/Technodata.csv"
     df = pd.read_csv(technodata_file)
     df.loc[df["ProcessName"] == "solarPV", "cap_par"] = 30
     df.loc[df["ProcessName"] == "solarPV", "Fuel"] = "solar"
@@ -78,7 +78,7 @@ def generate_model_2() -> None:
     add_price_data_for_new_year(model_path, "2040", "power", "2020")
 
     # Modify cap_par for solarPV
-    technodata_file = model_path / "technodata/power/Technodata.csv"
+    technodata_file = model_path / "power/Technodata.csv"
     df = pd.read_csv(technodata_file)
     df.loc[(df["ProcessName"] == "solarPV") & (df["Time"] == "2020"), "cap_par"] = 40
     df.loc[(df["ProcessName"] == "solarPV") & (df["Time"] == "2040"), "cap_par"] = 30

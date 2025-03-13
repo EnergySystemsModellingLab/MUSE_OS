@@ -16,8 +16,8 @@ tolerance_unmet_demand = -0.1
 budget = []
 
 [global_input_files]
-projections = '{path}/input/Projections.csv'
-global_commodities = '{path}/input/GlobalCommodities.csv'
+projections = '{path}/Projections.csv'
+global_commodities = '{path}/GlobalCommodities.csv'
 
 [[outputs]]
 quantity = "capacity"
@@ -38,13 +38,13 @@ filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 type = 'default'
 priority = 1
 dispatch_production = 'share'
-technodata = '{path}/technodata/industry/Technodata.csv'
-commodities_in = '{path}/technodata/industry/CommIn.csv'
-commodities_out = '{path}/technodata/industry/CommOut.csv'
+technodata = '{path}/industry/Technodata.csv'
+commodities_in = '{path}/industry/CommIn.csv'
+commodities_out = '{path}/industry/CommOut.csv'
 
 [sectors.industry.subsectors.all]
-agents = '{path}/technodata/Agents.csv'
-existing_capacity = '{path}/technodata/industry/Existing.csv'
+agents = '{path}/Agents.csv'
+existing_capacity = '{path}/industry/Existing.csv'
 lpsolver = "scipy"
 constraints = [
     # Optional, defaults to the constraints below
@@ -60,7 +60,7 @@ demand_share = "standard_demand"  # Optional, default to standard_demand
 [sectors.industry_presets]
 type = 'presets'
 priority = 0
-consumption_path = "{path}/technodata/preset/*Consumption.csv"
+consumption_path = "{path}/industry_presets/*Consumption.csv"
 
 [timeslices]
 level_names = ["month", "day", "hour"]

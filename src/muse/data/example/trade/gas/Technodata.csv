@@ -1,0 +1,4 @@
+ProcessName,RegionName,Time,var_par,var_exp,TechnicalLife,UtilizationFactor,ScalingSize,efficiency,InterestRate,Type,Fuel,EndUse,Agent1
+Unit,-,Year,MUS$2010/PJ,-,Years,-,PJ,%,-,-,-,-,New
+gassupply1,R1,2010,3,1,10,0.9,0.00000189,86,0.1,energy,gas,gas,1
+gassupply1,R2,2010,3,1,10,0.9,0.00000189,86,0.1,energy,gas,gas,1
