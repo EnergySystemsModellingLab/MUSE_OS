@@ -385,7 +385,7 @@ def _stock(
 
     from muse.utilities import broadcast_over_assets
 
-    n_assets = 10
+    n_assets = 20
 
     # Create assets
     asset_coords = {
