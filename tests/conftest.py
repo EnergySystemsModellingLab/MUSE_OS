@@ -33,8 +33,8 @@ def patch_broadcast_compat_data():
 @fixture(autouse=True)
 def random():
     """Set random seed for all tests to make them reproducible."""
-    rand.seed(0)
-    np.random.seed(0)
+    rand.seed(123)
+    np.random.seed(123)
 
 
 def compare_df(
