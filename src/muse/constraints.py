@@ -375,6 +375,15 @@ def max_capacity_expansion(
     # Take the most restrictive constraint
     b = np.minimum(np.minimum(add_cap, total_cap), growth_cap)
 
+    # np.inf values are not allowed in the final constraint - raise error
+    # Will happen if user provides "inf" for all three parameters for any technology
+    if np.isinf(b).any():
+        inf_replacements = b.replacement[np.isinf(b)].values
+        raise ValueError(
+            "Capacity growth constraint cannot be infinite. "
+            f"Check growth constraint parameters for technologies: {inf_replacements}"
+        )
+
     if b.region.dims == ():
         capa = 1
     elif "dst_region" in b.dims:
