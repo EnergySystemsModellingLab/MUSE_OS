@@ -528,6 +528,8 @@ def capital_recovery_factor(technologies: xr.Dataset) -> xr.DataArray:
     .. _capital recovery factor:
         https://www.homerenergy.com/products/pro/docs/3.15/capital_recovery_factor.html
 
+    If the interest rate is zero, this simplifies to 1 / nyears
+
     Arguments:
         technologies: All the technologies
 
@@ -535,9 +537,14 @@ def capital_recovery_factor(technologies: xr.Dataset) -> xr.DataArray:
         xr.DataArray with the CRF calculated for the relevant technologies
     """
     nyears = technologies.technical_life.astype(int)
-    crf = technologies.interest_rate / (
-        1 - (1 / (1 + technologies.interest_rate) ** nyears)
+    interest_rate = technologies.interest_rate
+
+    crf = xr.where(
+        interest_rate == 0,
+        1 / nyears,
+        interest_rate / (1 - (1 / (1 + interest_rate) ** nyears)),
     )
+
     assert "year" not in crf.dims
     return crf
 
