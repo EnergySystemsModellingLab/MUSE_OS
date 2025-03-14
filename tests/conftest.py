@@ -1,3 +1,4 @@
+import random as rand
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Callable
@@ -27,6 +28,13 @@ def patch_broadcast_compat_data():
         "xarray.core.variable._broadcast_compat_data", patched_broadcast_compat_data
     ):
         yield
+
+
+@fixture(autouse=True)
+def random():
+    """Set random seed for all tests to make them reproducible."""
+    rand.seed(0)
+    np.random.seed(0)
 
 
 def compare_df(
