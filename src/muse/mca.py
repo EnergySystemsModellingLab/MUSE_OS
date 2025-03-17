@@ -93,7 +93,7 @@ class MCA:
             if not hasattr(v, "_asdict") and k not in extras
         }
 
-        # Legacy: warn user about deprecated parameters (#641)
+        # Legacy: warn user about deprecated parameters (#641, #679)
         deprecated_params = ["foresight", "interest_rate"]
         for param in deprecated_params:
             if param in global_kw:
