@@ -403,21 +403,21 @@ Sectors contain a number of subsections:
     .. code-block:: toml
 
         [sectors.gas.subsectors.all]
-        agents = '{path}/technodata/Agents.csv'
-        existing_capacity = '{path}/technodata/gas/Existing.csv'
+        agents = '{path}/gas/Agents.csv'
+        existing_capacity = '{path}/gas/ExistingCapacity.csv'
 
     A two-subsector could look like:
 
     .. code-block:: toml
 
         [sectors.gas.subsectors.methane_and_ethanol]
-        agents = '{path}/technodata/me_agents.csv'
-        existing_capacity = '{path}/technodata/gas/me_existing.csv'
+        agents = '{path}/gas/me_agents.csv'
+        existing_capacity = '{path}/gas/me_existing.csv'
         commodities = ["methane", "ethanol"]
 
         [sectors.gas.subsectors.natural]
-        agents = '{path}/technodata/nat_agents.csv'
-        existing_capacity = '{path}/technodata/gas/nat_existing.csv'
+        agents = '{path}/gas/nat_agents.csv'
+        existing_capacity = '{path}/gas/nat_existing.csv'
         commodities = ["refined", "crude"]
 
     In the case of multiple subsectors, it is important to specify disjoint sets of
@@ -572,9 +572,9 @@ function of macro-economic data, i.e. population and gdp.
     [sectors.commercial_presets]
     type = 'presets'
     priority = 'presets'
-    timeslice_shares_path = '{path}/technodata/TimesliceShareCommercial.csv'
-    macrodrivers_path = '{path}/technodata/Macrodrivers.csv'
-    regression_path = '{path}/technodata/regressionparameters.csv'
+    timeslice_shares_path = '{path}/commercial_presets/TimesliceShareCommercial.csv'
+    macrodrivers_path = '{path}/commercial_presets/Macrodrivers.csv'
+    regression_path = '{path}/commercial_presets/regressionparameters.csv'
     timeslices_levels = {'day': ['all-day']}
 
 The following attributes are accepted:
