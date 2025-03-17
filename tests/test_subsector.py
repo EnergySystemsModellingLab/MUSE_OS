@@ -68,7 +68,7 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
     from muse.sectors.subsector import Subsector, aggregate_enduses
 
     examples.copy_model(model, tmp_path)
-    path = tmp_path / "model" / "technodata" / "Agents.csv"
+    path = tmp_path / "model" / "Agents.csv"
     params = readers.read_csv_agent_parameters(path)
     capa = readers.read_initial_assets(
         path.with_name("residential") / "ExistingCapacity.csv"

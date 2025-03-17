@@ -348,7 +348,7 @@ def test_read_existing_trade(tmp_path):
     from muse.readers.csv import read_trade
 
     copy_model("trade", tmp_path)
-    path = tmp_path / "model" / "technodata" / "gas" / "ExistingTrade.csv"
+    path = tmp_path / "model" / "gas" / "ExistingTrade.csv"
     data = read_trade(path, skiprows=[1])
 
     assert isinstance(data, xr.DataArray)
@@ -364,7 +364,7 @@ def test_read_trade_technodata(tmp_path):
     from muse.readers.csv import read_trade
 
     copy_model("trade", tmp_path)
-    path = tmp_path / "model" / "technodata" / "gas" / "TradeTechnodata.csv"
+    path = tmp_path / "model" / "gas" / "TradeTechnodata.csv"
     data = read_trade(path, drop="Unit")
 
     assert isinstance(data, xr.Dataset)
@@ -396,7 +396,7 @@ def default_model(tmp_path):
 def test_read_technodictionary(default_model):
     from muse.readers.csv import read_technodictionary
 
-    path = default_model / "technodata" / "residential" / "Technodata.csv"
+    path = default_model / "residential" / "Technodata.csv"
     data = read_technodictionary(path)
     assert isinstance(data, xr.Dataset)
     assert set(data.dims) == {"technology", "region"}
@@ -441,7 +441,7 @@ def test_read_technodata_timeslices(tmp_path):
     settings_path = tmp_path / "model" / "settings.toml"
     settings = toml.load(settings_path)
     setup_module(settings)  # configure global timeslicing scheme
-    data_path = tmp_path / "model" / "technodata" / "power" / "TechnodataTimeslices.csv"
+    data_path = tmp_path / "model" / "power" / "TechnodataTimeslices.csv"
     data = read_technodata_timeslices(data_path)
 
     assert isinstance(data, xr.Dataset)
@@ -475,7 +475,7 @@ def test_read_technodata_timeslices(tmp_path):
 def test_read_io_technodata(default_model):
     from muse.readers.csv import read_io_technodata
 
-    path = default_model / "technodata" / "residential" / "CommOut.csv"
+    path = default_model / "residential" / "CommOut.csv"
     data = read_io_technodata(path)
 
     assert isinstance(data, xr.Dataset)
@@ -502,7 +502,7 @@ def test_read_io_technodata(default_model):
 def test_read_initial_assets(default_model):
     from muse.readers.csv import read_initial_assets
 
-    path = default_model / "technodata" / "residential" / "ExistingCapacity.csv"
+    path = default_model / "residential" / "ExistingCapacity.csv"
     data = read_initial_assets(path)
 
     assert isinstance(data, xr.DataArray)
@@ -544,7 +544,7 @@ def test_global_commodities(default_model):
 def test_read_csv_agent_parameters(default_model):
     from muse.readers.csv import read_csv_agent_parameters
 
-    path = default_model / "technodata" / "Agents.csv"
+    path = default_model / "Agents.csv"
     data = read_csv_agent_parameters(path)
 
     assert data == [
@@ -639,7 +639,7 @@ def test_read_attribute_table(default_model):
 def test_read_presets(default_model):
     from muse.readers.csv import read_presets
 
-    path = default_model / "technodata" / "preset" / "*Consumption.csv"
+    path = default_model / "preset" / "*Consumption.csv"
     data = read_presets(str(path))
 
     assert isinstance(data, xr.DataArray)
