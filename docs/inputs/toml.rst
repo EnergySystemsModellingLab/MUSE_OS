@@ -25,7 +25,6 @@ a whole.
 
    time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
    regions = ["USA"]
-   interest_rate = 0.1
    interpolation_mode = 'linear'
    log_level = 'info'
 

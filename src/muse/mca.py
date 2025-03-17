@@ -79,7 +79,6 @@ class MCA:
 
         extras = {
             "regions",
-            "interest_rate",
             "log_level",
             "interpolation_mode",
             "timeslices",
@@ -94,14 +93,16 @@ class MCA:
             if not hasattr(v, "_asdict") and k not in extras
         }
 
-        # Legacy: warn user about deprecation of "foresight" parameter (#641)
-        if "foresight" in global_kw:
-            msg = (
-                "The `foresight` parameter has been deprecated. "
-                "Please remove from your settings file."
-            )
-            getLogger(__name__).warning(msg)
-            global_kw.pop("foresight")
+        # Legacy: warn user about deprecated parameters (#641)
+        deprecated_params = ["foresight", "interest_rate"]
+        for param in deprecated_params:
+            if param in global_kw:
+                msg = (
+                    f"The `{param}` parameter has been deprecated. "
+                    "Please remove it from your settings file."
+                )
+                getLogger(__name__).warning(msg)
+                global_kw.pop(param)
 
         carbon_kw = {
             k: v._asdict() if hasattr(v, "_asdict") else v
