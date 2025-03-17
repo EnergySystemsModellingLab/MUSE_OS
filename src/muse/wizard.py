@@ -1,6 +1,14 @@
+"""Functions to modify MUSE input files.
+
+For example, addning new commodities or agents to a model.
+
+These functions are designed specifically to work with models following the conventional
+file structure and naming scheme of the example models provided with MUSE, and will
+not necessarily work with models that deviate from this structure.
+"""
+
 from __future__ import annotations
 
-import os
 from itertools import chain
 from pathlib import Path
 from typing import Callable
@@ -64,7 +72,7 @@ def add_new_commodity(
             "Projections.csv",
         )
     )
-    preset_files = (model_path / "residential_presets").glob("*")
+    preset_files = model_path.glob("*preset*/*")
     for file in chain(files_to_update, preset_files):
         df = pd.read_csv(file)
         df[commodity_name] = df[copy_from]
@@ -211,10 +219,7 @@ def add_region(model_path: Path, region_name: str, copy_from: str) -> None:
             "ExistingCapacity.csv",
         )
     )
-    preset_files = (
-        model_path / "residential_presets" / file
-        for file in os.listdir(model_path / "residential_presets")
-    )
+    preset_files = model_path.glob("*preset*/*")
     global_files = (
         model_path / file
         for file in (
@@ -247,9 +252,8 @@ def add_timeslice(model_path: Path, timeslice_name: str, copy_from: str) -> None
     settings_file.write_text(dumps(settings))
 
     # Loop through all preset files
-    preset_dir = model_path / "residential_presets"
-    for file_name in os.listdir(preset_dir):
-        file_path = preset_dir / file_name
+    preset_files = model_path.glob("*preset*/*")
+    for file_path in preset_files:
         df = pd.read_csv(file_path)
         new_rows = df[df["Timeslice"] == copy_from_number].copy()
         new_rows["Timeslice"] = len(timeslices)
