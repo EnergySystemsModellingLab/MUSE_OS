@@ -1,4 +1,4 @@
-from numpy import isclose
+from numpy import isclose, isfinite
 from pytest import fixture, mark, raises
 
 YEAR = 2030
@@ -186,6 +186,11 @@ def test_capital_recovery_factor(_technologies):
     result = capital_recovery_factor(_technologies)
     assert set(result.dims) == set(_technologies.interest_rate.dims)
     # {"region", "technology"}
+
+    # Make sure zero interest rates are supported
+    _technologies["interest_rate"] = 0
+    result = capital_recovery_factor(_technologies)
+    assert isfinite(result).all()
 
 
 def test_annual_to_lifetime(_technologies, _prices, _consumption):
