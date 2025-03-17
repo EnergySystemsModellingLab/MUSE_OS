@@ -369,8 +369,9 @@ def max_capacity_expansion(
     max_growth = techs.get("max_capacity_growth", np.inf)
     growth_cap = initial * (max_growth + 1) ** time_frame - forecasted
 
-    # Relax growth constraint if no existing capacity
-    growth_cap = growth_cap.where(growth_cap > 0, np.inf)
+    # Apply growth seed (currently fixed to 1)
+    seed = 1 * time_frame
+    growth_cap = growth_cap.where(growth_cap > seed, seed)
 
     # Take the most restrictive constraint
     b = np.minimum(np.minimum(add_cap, total_cap), growth_cap)
