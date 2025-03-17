@@ -155,9 +155,8 @@ explained in the :ref:`toml-primer`.
 .. code-block:: TOML
 
    [global_input_files]
-   projections = '{path}/inputs/Projections.csv'
-   regions = '{path}/inputs/Regions.csv'
-   global_commodities = '{path}/inputs/MUSEGlobalCommodities.csv'
+   projections = '{path}/Projections.csv'
+   global_commodities = '{path}/GlobalCommodities.csv'
 
 *projections*
    Path to a csv file giving initial market projection. See :ref:`inputs-projection`.
