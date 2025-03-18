@@ -99,13 +99,14 @@ Growth constraints (optional)
 
    In this example, MaxCapacityAddition, MaxCapacityGrowth and TotalCapacityLimit equal to 10 PJ, 0.2 (corresponding to 20 \%), and 100 PJ.
    Assuming a 5-year time step:
-   - *MaxCapacityAddition* restricts new capacity which can be installed over the investment period to *10 * 5 = 50 PJ*.
-   - *MaxCapacityGrowth* restricts capacity growth to 20 \% per year (:math:`\approx` 149 /% over 5 years).
+
+   * *MaxCapacityAddition* restricts new capacity which can be installed over the investment period to *10 * 5 = 50 PJ*.
+   * *MaxCapacityGrowth* restricts capacity growth to 20 \% per year (:math:`\approx` 149 /% over 5 years).
       The investment limit will depend on the existing capacity and the decommissioning profile. Assuming that 7.7 PJ of resBoilerElectric is available in the current year, and that 4.9 PJ of
       resBoilerElectric is already commissioned for the investment year, then the constraint applies as follows: *7.7 * ((1 + 0.2) ** 5) - 4.9 = 14.3 PJ*.
       Also see the GrowthSeed parameter below.
-   - *TotalCapacityLimit* will restrict new addition to *100 - 4.9 = 95.1 PJ* (so that total capacity in the investment year will not exceed 100 PJ).
-   - Overall, the most restrictive constraint will apply, which in this case is 14.3 PJ.
+   * *TotalCapacityLimit* will restrict new addition to *100 - 4.9 = 95.1 PJ* (so that total capacity in the investment year will not exceed 100 PJ).
+   * Overall, the most restrictive constraint will apply, which in this case is 14.3 PJ.
 
    Growth constraints are applied for each single agent in a multi-agent simulation. When only one agent is present, the growth constraints
    apply individually to the "New" and "Retrofit" agent, when present.
@@ -114,6 +115,7 @@ Growth constraints (optional)
 
 GrowthSeed (optional, default = 1)
     applies a lower-bound on the initial capacity value used in the MaxCapacityGrowth calculation, allowing growth to initiate when capacity is low/zero.
+
     Taking the above example, if the GrowthSeed is set to 10 PJ (higher than the existing capacity of 7.7 PJ), the MaxCapacityGrowth constraint will be applied as follows:
     *10 * ((1 + 0.2) ** 5) - 4.9 = 19.9 PJ*.
 
