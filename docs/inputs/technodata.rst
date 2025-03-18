@@ -101,10 +101,10 @@ Growth constraints (optional)
    Assuming a 5-year time step:
 
    * *MaxCapacityAddition* restricts new capacity which can be installed over the investment period to *10 * 5 = 50 PJ*.
-   * *MaxCapacityGrowth* restricts capacity growth to 20 \% per year (:math:`\approx` 149 /% over 5 years).
-      The investment limit will depend on the existing capacity and the decommissioning profile. Assuming that 7.7 PJ of resBoilerElectric is available in the current year, and that 4.9 PJ of
-      resBoilerElectric is already commissioned for the investment year, then the constraint applies as follows: *7.7 * ((1 + 0.2) ** 5) - 4.9 = 14.3 PJ*.
-      Also see the GrowthSeed parameter below.
+   * *MaxCapacityGrowth* restricts capacity growth to 20 \% per year (:math:`\approx` 149 \% over 5 years).
+     The investment limit will depend on the existing capacity and the decommissioning profile. Assuming that 7.7 PJ of resBoilerElectric is available in the current year, and that 4.9 PJ of
+     resBoilerElectric is already commissioned for the investment year, then the constraint applies as follows: *7.7 * ((1 + 0.2) ** 5) - 4.9 = 14.3 PJ*.
+     Also see the GrowthSeed parameter below.
    * *TotalCapacityLimit* will restrict new addition to *100 - 4.9 = 95.1 PJ* (so that total capacity in the investment year will not exceed 100 PJ).
    * Overall, the most restrictive constraint will apply, which in this case is 14.3 PJ.
 
