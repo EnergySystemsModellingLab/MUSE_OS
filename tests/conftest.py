@@ -493,7 +493,6 @@ def settings(tmpdir) -> dict:
     required = {
         "time_framework": [2010, 2015, 2020],
         "regions": ["MEX"],
-        "interest_rate": 0.1,
         "equilibrium": False,
         "maximum_iterations": 3,
         "tolerance": 0.1,
