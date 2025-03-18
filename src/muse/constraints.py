@@ -356,22 +356,31 @@ def max_capacity_expansion(
     # Existing and forecasted capacity
     initial = capacity.isel(year=0, drop=True)
     forecasted = capacity.isel(year=1, drop=True)
-
-    # Max capacity addition constraint
     time_frame = int(capacity.year[1] - capacity.year[0])
-    add_cap = techs.get("max_capacity_addition", np.inf) * time_frame
 
-    # Total capacity limit constraint
-    limit = techs.get("total_capacity_limit", np.inf)
-    total_cap = (limit - forecasted).clip(min=0)
+    # MaxCapacityAddition constraint
+    if "max_capacity_addition" in techs:
+        add_cap = techs.max_capacity_addition * time_frame
+    else:
+        add_cap = np.inf
 
-    # Max capacity growth constraint
-    max_growth = techs.get("max_capacity_growth", np.inf)
-    growth_cap = initial * (max_growth + 1) ** time_frame - forecasted
+    # TotalCapacityLimit constraint
+    if "total_capacity_limit" in techs:
+        limit = techs.total_capacity_limit
+        total_cap = (limit - forecasted).clip(min=0)
+    else:
+        total_cap = np.inf
 
-    # Apply growth seed (currently fixed to 1)
-    seed = 1 * time_frame
-    growth_cap = growth_cap.where(growth_cap > seed, seed)
+    # MaxCapacityGrowth constraint
+    if "max_capacity_growth" in techs:
+        seed = techs.get("growth_seed", 1)
+        seeded_initial = np.maximum(initial, seed)
+        growth_cap = (
+            (seeded_initial * (techs.max_capacity_growth + 1) ** time_frame)
+            - forecasted
+        ).clip(min=0)
+    else:
+        growth_cap = np.inf
 
     # Take the most restrictive constraint
     b = np.minimum(np.minimum(add_cap, total_cap), growth_cap)
@@ -383,6 +392,14 @@ def max_capacity_expansion(
         raise ValueError(
             "Capacity growth constraint cannot be infinite. "
             f"Check growth constraint parameters for technologies: {inf_replacements}"
+        )
+
+    # np.nan values are also not allowed. This shouldn't happen but just in case
+    if np.isnan(b).any():
+        nan_replacements = b.replacement[np.isnan(b)].values
+        raise ValueError(
+            "Capacity growth constraint cannot be NaN. "
+            f"Check growth constraint parameters for technologies: {nan_replacements}"
         )
 
     if b.region.dims == ():
