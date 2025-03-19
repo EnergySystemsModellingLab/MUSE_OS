@@ -518,7 +518,7 @@ def test_read_initial_assets(default_model):
 def test_global_commodities(default_model):
     from muse.readers.csv import read_global_commodities
 
-    path = default_model / "input" / "GlobalCommodities.csv"
+    path = default_model / "GlobalCommodities.csv"
     data = read_global_commodities(path)
 
     assert isinstance(data, xr.Dataset)
@@ -566,7 +566,7 @@ def test_read_csv_agent_parameters(default_model):
 def test_read_initial_market(default_model):
     from muse.readers.csv import read_initial_market
 
-    path = default_model / "input" / "Projections.csv"
+    path = default_model / "Projections.csv"
     data = read_initial_market(path)
 
     assert isinstance(data, xr.Dataset)
@@ -614,7 +614,7 @@ def test_read_initial_market(default_model):
 def test_read_attribute_table(default_model):
     from muse.readers.csv import read_attribute_table
 
-    path = default_model / "input" / "Projections.csv"
+    path = default_model / "Projections.csv"
     data = read_attribute_table(path)
 
     assert isinstance(data, xr.DataArray)
@@ -639,7 +639,7 @@ def test_read_attribute_table(default_model):
 def test_read_presets(default_model):
     from muse.readers.csv import read_presets
 
-    path = default_model / "preset" / "*Consumption.csv"
+    path = default_model / "residential_presets" / "*Consumption.csv"
     data = read_presets(str(path))
 
     assert isinstance(data, xr.DataArray)
