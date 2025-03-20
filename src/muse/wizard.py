@@ -1,6 +1,6 @@
 """Functions to modify MUSE input files.
 
-For example, addning new commodities or agents to a model.
+For example, adding new commodities or agents to a model.
 
 These functions are designed specifically to work with models following the conventional
 file structure and naming scheme of the example models provided with MUSE, and will
