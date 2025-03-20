@@ -1,37 +1,37 @@
-# Global settings - most REQUIRED
+# MUSE settings file
 
+# Global settings
 time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
 regions = ["R1"]
 interpolation_mode = 'linear'
 log_level = 'info'
-excluded_commodities = ["wind"]
-# Convergence parameters
 equilibrium_variable = 'demand'
 maximum_iterations = 100
 tolerance = 0.1
 tolerance_unmet_demand = -0.1
+excluded_commodities = ["wind"]
 
-[[outputs]]
-quantity = "capacity"
-sink = "aggregate"
-filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+# Timeslices
+[timeslices]
+level_names = ["month", "day", "hour"]
 
-[[outputs]]
-quantity = "prices"
-sink = "aggregate"
-filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+[timeslices.all-year.all-week]
+night = 1460
+morning = 1460
+afternoon = 1460
+early-peak = 1460
+late-peak = 1460
+evening = 1460
 
-[carbon_budget_control]
-budget = []
-
+# Global inputs
 [global_input_files]
 projections = '{path}/Projections.csv'
 global_commodities = '{path}/GlobalCommodities.csv'
 
+# Sectors
 [sectors.residential]
 type = 'default'
 priority = 1
-dispatch_production = 'share'
 technodata = '{path}/residential/Technodata.csv'
 commodities_in = '{path}/residential/CommIn.csv'
 commodities_out = '{path}/residential/CommOut.csv'
@@ -39,17 +39,7 @@ commodities_out = '{path}/residential/CommOut.csv'
 [sectors.residential.subsectors.retro_and_new]
 agents = '{path}/Agents.csv'
 existing_capacity = '{path}/residential/ExistingCapacity.csv'
-lpsolver = "scipy"  # Optional, defaults to "scipy"
-constraints = [
-    # Optional, defaults to the constraints below
-    "max_production",
-    "max_capacity_expansion",
-    "demand",
-    "search_space",
-    "minimum_service",
-    "demand_limiting_capacity"
-]
-demand_share = "new_and_retro"  # Optional, default to standard_demand
+demand_share = "new_and_retro"
 
 [[sectors.residential.interactions]]
 net = 'new_to_retro'
@@ -58,7 +48,6 @@ interaction = 'transfer'
 [sectors.power]
 type = 'default'
 priority = 2
-dispatch_production = 'share'
 technodata = '{path}/power/Technodata.csv'
 commodities_in = '{path}/power/CommIn.csv'
 commodities_out = '{path}/power/CommOut.csv'
@@ -66,7 +55,6 @@ commodities_out = '{path}/power/CommOut.csv'
 [sectors.power.subsectors.retro_and_new]
 agents = '{path}/Agents.csv'
 existing_capacity = '{path}/power/ExistingCapacity.csv'
-lpsolver = "scipy"
 demand_share = "new_and_retro"
 
 [[sectors.power.interactions]]
@@ -76,7 +64,6 @@ interaction = 'transfer'
 [sectors.gas]
 type = 'default'
 priority = 3
-dispatch_production = 'share'
 technodata = '{path}/gas/Technodata.csv'
 commodities_in = '{path}/gas/CommIn.csv'
 commodities_out = '{path}/gas/CommOut.csv'
@@ -84,7 +71,6 @@ commodities_out = '{path}/gas/CommOut.csv'
 [sectors.gas.subsectors.retro_and_new]
 agents = '{path}/Agents.csv'
 existing_capacity = '{path}/gas/ExistingCapacity.csv'
-lpsolver = "scipy"
 demand_share = "new_and_retro"
 
 [[sectors.gas.interactions]]
@@ -96,13 +82,13 @@ type = 'presets'
 priority = 0
 consumption_path = "{path}/residential_presets/*Consumption.csv"
 
-[timeslices]
-level_names = ["month", "day", "hour"]
+# Global outputs
+[[outputs]]
+quantity = "capacity"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
 
-[timeslices.all-year.all-week]
-night = 1460
-morning = 1460
-afternoon = 1460
-early-peak = 1460
-late-peak = 1460
-evening = 1460
+[[outputs]]
+quantity = "prices"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
