@@ -30,7 +30,7 @@ plugins = []  # paths to each additional plugin
 path = '{path}'
 projections = '{path}/Projections.csv'
 regions = 'OPTIONAL'
-global_commodities = '{path}/MUSEGlobalCommodities.csv'
+global_commodities = '{path}/GlobalCommodities.csv'
 base_year_export = "OPTIONAL"
 base_year_import = "OPTIONAL"
 

@@ -1,6 +1,14 @@
+"""Functions to modify MUSE input files.
+
+For example, adding new commodities or agents to a model.
+
+These functions are designed specifically to work with models following the conventional
+file structure and naming scheme of the example models provided with MUSE, and will
+not necessarily work with models that deviate from this structure.
+"""
+
 from __future__ import annotations
 
-import os
 from itertools import chain
 from pathlib import Path
 from typing import Callable
@@ -32,11 +40,7 @@ def get_sectors(model_path: Path) -> list[str]:
     Returns:
         List of sector names
     """
-    return [
-        s.name
-        for s in (model_path / "technodata").iterdir()
-        if (s / "Technodata.csv").is_file()
-    ]
+    return [s.name for s in model_path.iterdir() if (s / "Technodata.csv").is_file()]
 
 
 def add_new_commodity(
@@ -51,7 +55,7 @@ def add_new_commodity(
         copy_from: Name of the commodity to copy from.
     """
     # Add commodity to global commodities file
-    global_commodities_file = model_path / "input/GlobalCommodities.csv"
+    global_commodities_file = model_path / "GlobalCommodities.csv"
     df = pd.read_csv(global_commodities_file)
     new_rows = df[df["Commodity"] == copy_from.capitalize()].assign(
         Commodity=commodity_name.capitalize(), CommodityName=commodity_name
@@ -63,14 +67,12 @@ def add_new_commodity(
     files_to_update = (
         model_path / file
         for file in (
-            f"technodata/{sector}/CommIn.csv",
-            f"technodata/{sector}/CommOut.csv",
-            "input/BaseYearImport.csv",
-            "input/BaseYearExport.csv",
-            "input/Projections.csv",
+            f"{sector}/CommIn.csv",
+            f"{sector}/CommOut.csv",
+            "Projections.csv",
         )
     )
-    preset_files = (model_path / "technodata/preset").glob("*")
+    preset_files = model_path.glob("*preset*/*")
     for file in chain(files_to_update, preset_files):
         df = pd.read_csv(file)
         df[commodity_name] = df[copy_from]
@@ -91,10 +93,10 @@ def add_new_process(
     files_to_update = (
         model_path / file
         for file in (
-            f"technodata/{sector}/CommIn.csv",
-            f"technodata/{sector}/CommOut.csv",
-            f"technodata/{sector}/ExistingCapacity.csv",
-            f"technodata/{sector}/Technodata.csv",
+            f"{sector}/CommIn.csv",
+            f"{sector}/CommOut.csv",
+            f"{sector}/ExistingCapacity.csv",
+            f"{sector}/Technodata.csv",
         )
     )
 
@@ -118,7 +120,7 @@ def add_price_data_for_new_year(
         copy_from: Year to copy the price data from.
     """
     files_to_update = (
-        model_path / f"technodata/{sector}/{file}"
+        model_path / f"{sector}/{file}"
         for file in ["Technodata.csv", "CommIn.csv", "CommOut.csv"]
     )
 
@@ -151,7 +153,7 @@ def add_agent(
         agentshare_retrofit: Name of the 'retrofit' agent share for new agent. If None,
             the new agent will not have a 'retrofit' share.
     """
-    agents_file = model_path / "technodata/Agents.csv"
+    agents_file = model_path / "Agents.csv"
     agents_df = pd.read_csv(agents_file)
 
     # Create mapping between share names
@@ -180,7 +182,7 @@ def add_agent(
 
     # Update technodata files for each sector
     for sector in get_sectors(model_path):
-        technodata_file = model_path / f"technodata/{sector}/Technodata.csv"
+        technodata_file = model_path / f"{sector}/Technodata.csv"
         technodata_df = pd.read_csv(technodata_file)
         for share_type in ["New", "Retrofit"]:
             if (
@@ -208,7 +210,7 @@ def add_region(model_path: Path, region_name: str, copy_from: str) -> None:
 
     # Modify csv files
     sector_files = (
-        model_path / "technodata" / sector / file
+        model_path / sector / file
         for sector in get_sectors(model_path)
         for file in (
             "Technodata.csv",
@@ -217,17 +219,12 @@ def add_region(model_path: Path, region_name: str, copy_from: str) -> None:
             "ExistingCapacity.csv",
         )
     )
-    preset_files = (
-        model_path / "technodata" / "preset" / file
-        for file in os.listdir(model_path / "technodata" / "preset")
-    )
+    preset_files = model_path.glob("*preset*/*")
     global_files = (
         model_path / file
         for file in (
-            "technodata/Agents.csv",
-            "input/BaseYearImport.csv",
-            "input/BaseYearExport.csv",
-            "input/Projections.csv",
+            "Agents.csv",
+            "Projections.csv",
         )
     )
     for file_path in chain(sector_files, preset_files, global_files):
@@ -255,9 +252,8 @@ def add_timeslice(model_path: Path, timeslice_name: str, copy_from: str) -> None
     settings_file.write_text(dumps(settings))
 
     # Loop through all preset files
-    preset_dir = model_path / "technodata" / "preset"
-    for file_name in os.listdir(preset_dir):
-        file_path = preset_dir / file_name
+    preset_files = model_path.glob("*preset*/*")
+    for file_path in preset_files:
         df = pd.read_csv(file_path)
         new_rows = df[df["Timeslice"] == copy_from_number].copy()
         new_rows["Timeslice"] = len(timeslices)

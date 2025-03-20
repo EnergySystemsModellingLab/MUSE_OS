@@ -11,7 +11,7 @@ def modify_minimum_service_factors(
     import pandas as pd
 
     technodata_timeslices = pd.read_csv(
-        model_path / "technodata" / sector / "TechnodataTimeslices.csv"
+        model_path / sector / "TechnodataTimeslices.csv"
     )
 
     for process, minimum in zip(processes, minimum_service_factors):
@@ -51,14 +51,14 @@ def test_minimum_service_factor(check_mock, tmpdir, minimum_service_factors):
     )
 
     technodata_timeslices.to_csv(
-        model_path / "technodata" / sector / "TechnodataTimeslices.csv", index=False
+        model_path / sector / "TechnodataTimeslices.csv", index=False
     )
 
     with tmpdir.as_cwd():
         MCA.factory(model_path / "settings.toml").run()
     check_mock.assert_called()
 
-    techno_out = pd.read_csv(model_path / "technodata" / sector / "CommOut.csv")
+    techno_out = pd.read_csv(model_path / sector / "CommOut.csv")
     capacity = pd.read_csv(tmpdir / "Results/MCACapacity.csv")
     capacity_summed = capacity.groupby(["year", "technology"]).sum().reset_index()
     supply = pd.read_csv(tmpdir / "Results/MCAMetric_Supply.csv")

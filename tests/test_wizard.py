@@ -63,15 +63,15 @@ def test_get_sectors(tmp_path):
     model_path.mkdir()
 
     # Create some sector folders with Technodata.csv files
-    sector1 = model_path / "technodata" / "sector1"
+    sector1 = model_path / "sector1"
     sector1.mkdir(parents=True)
     (sector1 / "Technodata.csv").touch()
 
-    sector2 = model_path / "technodata" / "sector2"
+    sector2 = model_path / "sector2"
     sector2.mkdir(parents=True)
     (sector2 / "Technodata.csv").touch()
 
-    sector3 = model_path / "technodata" / "sector3"
+    sector3 = model_path / "sector3"
     sector3.mkdir(parents=True)
 
     # Call the get_sectors function
@@ -86,7 +86,7 @@ def test_add_new_commodity(model_path):
     add_new_commodity(model_path, "new_commodity", "power", "wind")
 
     # Check if the new commodity is added to the global commodities file
-    global_commodities_file = model_path / "input/GlobalCommodities.csv"
+    global_commodities_file = model_path / "GlobalCommodities.csv"
     df = pd.read_csv(global_commodities_file)
     assert "new_commodity" in df["CommodityName"].values
 
@@ -94,13 +94,11 @@ def test_add_new_commodity(model_path):
     files_to_check = [
         model_path / file
         for file in [
-            "technodata/power/CommIn.csv",
-            "technodata/power/CommOut.csv",
-            "input/BaseYearImport.csv",
-            "input/BaseYearExport.csv",
-            "input/Projections.csv",
+            "power/CommIn.csv",
+            "power/CommOut.csv",
+            "Projections.csv",
         ]
-    ] + list((model_path / "technodata/preset").glob("*"))
+    ] + list((model_path / "residential_presets").glob("*"))
     for file in files_to_check:
         df = pd.read_csv(model_path / file)
         assert "new_commodity" in df.columns
@@ -112,10 +110,10 @@ def test_add_new_process(model_path):
 
     # Check if the new process is added to the files
     files_to_check = [
-        "technodata/power/CommIn.csv",
-        "technodata/power/CommOut.csv",
-        "technodata/power/ExistingCapacity.csv",
-        "technodata/power/Technodata.csv",
+        "power/CommIn.csv",
+        "power/CommOut.csv",
+        "power/ExistingCapacity.csv",
+        "power/Technodata.csv",
     ]
     for file in files_to_check:
         df = pd.read_csv(model_path / file)
@@ -128,9 +126,9 @@ def test_add_price_data_for_new_year(model_path):
 
     # Check if the new price data is added to the files
     files_to_check = [
-        "technodata/power/Technodata.csv",
-        "technodata/power/CommIn.csv",
-        "technodata/power/CommOut.csv",
+        "power/Technodata.csv",
+        "power/CommIn.csv",
+        "power/CommOut.csv",
     ]
     for file in files_to_check:
         df = pd.read_csv(model_path / file)
@@ -142,14 +140,14 @@ def test_add_agent(model_path_retro):
     add_agent(model_path_retro, "A2", "A1", "Agent3", "Agent4")
 
     # Check if the new agent is added to the Agents.csv file
-    df = pd.read_csv(model_path_retro / "technodata/Agents.csv")
+    df = pd.read_csv(model_path_retro / "Agents.csv")
     assert "A2" in df["Name"].values
     assert "Agent3" in df["AgentShare"].values
     assert "Agent4" in df["AgentShare"].values
 
     # Check if the retrofit agent is added to the Technodata.csv files
-    sector1_file = model_path_retro / "technodata/power/Technodata.csv"
-    sector2_file = model_path_retro / "technodata/gas/Technodata.csv"
+    sector1_file = model_path_retro / "power/Technodata.csv"
+    sector2_file = model_path_retro / "gas/Technodata.csv"
     df_sector1 = pd.read_csv(sector1_file)
     df_sector2 = pd.read_csv(sector2_file)
     assert "Agent4" in df_sector1.columns
@@ -167,7 +165,7 @@ def test_add_region(model_path):
 
     # Check if the new region is added to the technodata files
     sector_files = [
-        model_path / "technodata" / sector / file
+        model_path / sector / file
         for sector in get_sectors(model_path)
         for file in [
             "Technodata.csv",
@@ -193,10 +191,10 @@ def test_add_timeslice(model_path):
 
     # Check if the new timeslice is added to the preset files
     df_preset1 = pd.read_csv(
-        model_path / "technodata/preset/Residential2020Consumption.csv"
+        model_path / "residential_presets/Residential2020Consumption.csv"
     )
     df_preset2 = pd.read_csv(
-        model_path / "technodata/preset/Residential2050Consumption.csv"
+        model_path / "residential_presets/Residential2050Consumption.csv"
     )
     assert len(df_preset1["Timeslice"].unique()) == n_timeslices
     assert len(df_preset2["Timeslice"].unique()) == n_timeslices

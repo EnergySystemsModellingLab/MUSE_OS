@@ -155,9 +155,8 @@ explained in the :ref:`toml-primer`.
 .. code-block:: TOML
 
    [global_input_files]
-   projections = '{path}/inputs/Projections.csv'
-   regions = '{path}/inputs/Regions.csv'
-   global_commodities = '{path}/inputs/MUSEGlobalCommodities.csv'
+   projections = '{path}/Projections.csv'
+   global_commodities = '{path}/GlobalCommodities.csv'
 
 *projections*
    Path to a csv file giving initial market projection. See :ref:`inputs-projection`.
@@ -398,21 +397,21 @@ Sectors contain a number of subsections:
     .. code-block:: toml
 
         [sectors.gas.subsectors.all]
-        agents = '{path}/technodata/Agents.csv'
-        existing_capacity = '{path}/technodata/gas/Existing.csv'
+        agents = '{path}/gas/Agents.csv'
+        existing_capacity = '{path}/gas/ExistingCapacity.csv'
 
     A two-subsector could look like:
 
     .. code-block:: toml
 
         [sectors.gas.subsectors.methane_and_ethanol]
-        agents = '{path}/technodata/me_agents.csv'
-        existing_capacity = '{path}/technodata/gas/me_existing.csv'
+        agents = '{path}/gas/me_agents.csv'
+        existing_capacity = '{path}/gas/me_existing.csv'
         commodities = ["methane", "ethanol"]
 
         [sectors.gas.subsectors.natural]
-        agents = '{path}/technodata/nat_agents.csv'
-        existing_capacity = '{path}/technodata/gas/nat_existing.csv'
+        agents = '{path}/gas/nat_agents.csv'
+        existing_capacity = '{path}/gas/nat_existing.csv'
         commodities = ["refined", "crude"]
 
     In the case of multiple subsectors, it is important to specify disjoint sets of
@@ -562,7 +561,7 @@ A common example would be the following, where commodity consumption is defined 
     [sectors.commercial_presets]
     type = 'presets'
     priority = 0
-    consumption_path = "{path}/technodata/preset/*Consumption.csv"
+    consumption_path = "{path}/commercial_presets/*Consumption.csv"
 
 Alternatively, you may define consumption as a function of macro-economic data, i.e. population and GDP:
 
@@ -571,9 +570,9 @@ Alternatively, you may define consumption as a function of macro-economic data, 
     [sectors.commercial_presets]
     type = 'presets'
     priority = 0
-    timeslice_shares_path = '{path}/technodata/TimesliceShareCommercial.csv'
-    macrodrivers_path = '{path}/technodata/Macrodrivers.csv'
-    regression_path = '{path}/technodata/regressionparameters.csv'
+    timeslice_shares_path = '{path}/commercial_presets/TimesliceShareCommercial.csv'
+    macrodrivers_path = '{path}/commercial_presets/Macrodrivers.csv'
+    regression_path = '{path}/commercial_presets/regressionparameters.csv'
 
 The following attributes are accepted:
 

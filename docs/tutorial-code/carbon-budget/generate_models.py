@@ -56,7 +56,7 @@ def generate_model_1() -> None:
     }
     modify_toml(
         settings_file,
-        lambda x: x["carbon_budget_control"].update(carbon_budget_settings),
+        lambda x: x.update({"carbon_budget_control": carbon_budget_settings}),
     )
 
 
