@@ -304,11 +304,8 @@ A sector accepts these attributes:
 
    MUSE provides two methods in :py:mod:`muse.production`:
 
-   * share: assets each supply a proportion of demand based on their share of total
-      capacity
-   * maximum: the production is the maximum production for the existing capacity and
-      the technology's utilization factor.
-      See :py:func:`muse.production.maximum_production`.
+   * share: assets each supply a proportion of demand based on their share of total capacity.
+   * maximum: the production is the maximum production for the existing capacity and the technology's utilization factor. See :py:func:`muse.production.maximum_production`.
 
    Additional methods can be registered with
    :py:func:`muse.production.register_production`
@@ -492,21 +489,22 @@ Sectors contain a number of subsections:
 
    The following attributes are available:
 
-   * *quantity*: Name of the quantity to save. Currently, `capacity` exists,
-      referring to :py:func:`muse.outputs.capacity`. However, users can
-      customize and create further output quantities by registering with MUSE via
-      :py:func:`muse.outputs.register_output_quantity`. See
-      :py:mod:`muse.outputs` for more details.
+   * *quantity*:
+      Name of the quantity to save.
+      The options are capacity, consumption, supply and costs.
+      Users can also customize and create further output quantities by registering with MUSE via
+      :py:func:`muse.outputs.register_output_quantity`. See :py:mod:`muse.outputs` for more details.
 
-   * *sink*: the sink is the place (disk, cloud, database, etc...) and format with which
+   * *sink*:
+      the sink is the place (disk, cloud, database, etc...) and format with which
       the computed quantity is saved. Currently only sinks that save to files are
-      implemented. The filename can specified via `filename`, as given below. The
-      following sinks are available: "csv", "netcfd", "excel". However, more sinks can
-      be added by interested users, and registered with MUSE via
-      :py:func:`muse.outputs.register_output_sink`. See
-      :py:mod:`muse.outputs` for more details.
+      implemented.
+      The following sinks are available: "csv", "netcfd", "excel" and "aggregate".
+      Additional sinks can be added by interested users, and registered with MUSE via
+      :py:func:`muse.outputs.register_output_sink`. See :py:mod:`muse.outputs` for more details.
 
-   * *filename*: defines the format of the file where to save the data. There are several
+   * *filename*:
+      defines the format of the file where to save the data. There are several
       standard values that are automatically substituted:
 
       - cwd: current working directory, where MUSE was started
@@ -520,25 +518,29 @@ Sectors contain a number of subsections:
 
       Defaults to `{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}`.
 
-   * *overwrite*: If `False` MUSE will issue an error and abort, instead of
+   * *overwrite*:
+      If `False` MUSE will issue an error and abort, instead of
       overwriting an existing file. Defaults to `False`. This prevents important output files from being overwritten.
-   There is a special output sink for aggregating over years. It can be invoked as
+
+   For example, the following would save supply data for the commercial sector as a separate file for each year:
+
+   .. code-block:: TOML
+
+      [[sectors.commercial.outputs]]
+      quantity = "supply"
+      sink = "csv"
+      filename = "{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}"
+      overwrite = true
+
+   There is a special output sink for aggregating over years (i.e. a single output file for all years). It can be invoked as
    follows:
 
    .. code-block:: TOML
 
       [[sectors.commercial.outputs]]
-      quantity = "capacity"
-      sink.aggregate = 'csv'
-
-   Or, if specifying additional output, where ... can be any parameter for the final
-   sink:
-
-   .. code-block:: TOML
-
-      [[sectors.commercial.outputs]]
-      quantity = "capacity"
-      sink.aggregate.name = { ... }
+      quantity = "supply"
+      sink = "aggregate"
+      filename = "{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv"
 
    Note that the aggregate sink always overwrites the final file, since it will
    overwrite itself.
