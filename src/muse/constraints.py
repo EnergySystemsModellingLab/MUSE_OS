@@ -275,7 +275,7 @@ def max_capacity_expansion(
     search_space: xr.DataArray,
     technologies: xr.Dataset,
     **kwargs,
-) -> Constraint:
+) -> Constraint | None:
     r"""Max-capacity addition, max-capacity growth, and capacity limits constraints.
 
     Limits by how much the capacity of each technology owned by an agent can grow in
@@ -310,7 +310,22 @@ def max_capacity_expansion(
         .. math::
 
             \Gamma_t^{r, i} \geq 0
+
+    :math:`L_t^r(y)`, :math:`G_t^r(y)` and :math:`W_t^r(y)` default to np.inf if
+    not provided (i.e. no constraint).
+    If all three parameters are not provided, no constraint is applied (returns None).
     """
+    # If all three parameters are missing, don't apply the constraint
+    if not any(
+        param in technologies
+        for param in (
+            "max_capacity_addition",
+            "total_capacity_limit",
+            "max_capacity_growth",
+        )
+    ):
+        return None
+
     # case with technology and region in asset dimension
     if capacity.region.dims != ():
         names = [u for u in capacity.asset.coords if capacity[u].dims == ("asset",)]
@@ -344,14 +359,14 @@ def max_capacity_expansion(
 
     # Max capacity addition constraint
     time_frame = int(capacity.year[1] - capacity.year[0])
-    add_cap = techs.max_capacity_addition * time_frame
+    add_cap = techs.get("max_capacity_addition", np.inf) * time_frame
 
     # Total capacity limit constraint
-    limit = techs.total_capacity_limit
+    limit = techs.get("total_capacity_limit", np.inf)
     total_cap = (limit - forecasted).clip(min=0)
 
     # Max capacity growth constraint
-    max_growth = techs.max_capacity_growth
+    max_growth = techs.get("max_capacity_growth", np.inf)
     growth_cap = initial * (max_growth + 1) ** time_frame - forecasted
 
     # Relax growth constraint if no existing capacity
@@ -359,6 +374,15 @@ def max_capacity_expansion(
 
     # Take the most restrictive constraint
     b = np.minimum(np.minimum(add_cap, total_cap), growth_cap)
+
+    # np.inf values are not allowed in the final constraint - raise error
+    # Will happen if user provides "inf" for all three parameters for any technology
+    if np.isinf(b).any():
+        inf_replacements = b.replacement[np.isinf(b)].values
+        raise ValueError(
+            "Capacity growth constraint cannot be infinite. "
+            f"Check growth constraint parameters for technologies: {inf_replacements}"
+        )
 
     if b.region.dims == ():
         capa = 1
