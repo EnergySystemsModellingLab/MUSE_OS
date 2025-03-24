@@ -241,7 +241,6 @@ def new_and_retro(
     """
     from functools import partial
 
-    from muse.commodities import is_enduse
     from muse.quantities import maximum_production
     from muse.utilities import (
         agent_concatenation,
@@ -274,10 +273,6 @@ def new_and_retro(
         demand,
         technodata,
         timeslice_level=timeslice_level,
-    )
-
-    demands = demands.where(
-        is_enduse(technologies.comm_usage.sel(commodity=demands.commodity)), 0
     )
 
     quantity = {
@@ -380,7 +375,6 @@ def standard_demand(
     """
     from functools import partial
 
-    from muse.commodities import is_enduse
     from muse.quantities import maximum_production
     from muse.utilities import (
         agent_concatenation,
@@ -420,11 +414,6 @@ def standard_demand(
         demand=demand,
         technologies=technodata,
         timeslice_level=timeslice_level,
-    )
-
-    # Only consider end-use commodities
-    demands = demands.where(
-        is_enduse(technologies.comm_usage.sel(commodity=demands.commodity)), 0
     )
 
     id_to_share: MutableMapping[Hashable, xr.DataArray] = {}
