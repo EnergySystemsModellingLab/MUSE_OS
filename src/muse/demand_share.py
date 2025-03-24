@@ -13,7 +13,7 @@ should all have the following signature:
     @register_demand_share
     def demand_share(
         agents: Sequence[AbstractAgent],
-        market: xr.Dataset,
+        demand: xr.Dataarray,
         technologies: xr.Dataset,
         **kwargs
     ) -> xr.DataArray:
@@ -24,7 +24,7 @@ Arguments:
         be queried for parameters specific to the demand share procedure. For instance,
         :py:func`new_and_retro` will query the agents for the assets they own, the
         region they are contained with, their category (new or retrofit), etc...
-    market: Market variables, including prices, consumption and supply.
+    demand: DataArray of commodity demands for the current year and investment year.
     technologies: a dataset containing all constant data characterizing the
         technologies.
     kwargs: Any number of keyword arguments that can parametrize how the demand is
@@ -34,7 +34,7 @@ Returns:
     The unmet consumption. Unless indicated, all agents will compete for a the full
     demand. However, if there exists a coordinate "agent" of dimension "asset" giving
     the :py:attr:`~muse.agents.agent.AbstractAgent.uuid` of the agent, then agents will
-    only service that par of the demand.
+    only service that part of the demand.
 """
 
 from __future__ import annotations
@@ -67,7 +67,7 @@ from muse.registration import registrator
 from muse.utilities import check_dimensions
 
 DEMAND_SHARE_SIGNATURE = Callable[
-    [Sequence[AbstractAgent], xr.Dataset, xr.Dataset, KwArg(Any)], xr.DataArray
+    [Sequence[AbstractAgent], xr.DataArray, xr.Dataset, KwArg(Any)], xr.DataArray
 ]
 """Demand share signature."""
 
@@ -96,7 +96,7 @@ def factory(
 
     def demand_share(
         agents: Sequence[AbstractAgent],
-        market: xr.Dataset,
+        demand: xr.DataArray,
         technologies: xr.Dataset,
         **kwargs,
     ) -> xr.DataArray:
@@ -107,11 +107,11 @@ def factory(
 
         # Check inputs
         check_dimensions(
-            market,
+            demand,
             ["commodity", "year", "timeslice", "region"],
             optional=["dst_region"],
         )
-        assert len(market.year) == 2
+        assert len(demand.year) == 2
         check_dimensions(
             technologies,
             ["technology", "region"],
@@ -119,7 +119,7 @@ def factory(
         )
 
         # Calculate demand share
-        result = function(agents, market, technologies, **keyword_args)
+        result = function(agents, demand, technologies, **keyword_args)
 
         # Check result
         check_dimensions(
@@ -133,7 +133,7 @@ def factory(
 @register_demand_share(name="new_and_retro")
 def new_and_retro(
     agents: Sequence[AbstractAgent],
-    market: xr.Dataset,
+    demand: xr.DataArray,
     technologies: xr.Dataset,
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
@@ -147,10 +147,7 @@ def new_and_retro(
         agents: a list of all agents. This list should mainly be used to determine the
             type of an agent and the assets it owns. The agents will not be modified in
             any way.
-        market: the market for which to satisfy the demand. It should contain at-least
-            ``consumption`` and ``supply``. It may contain ``prices`` if that is of use
-            to the production method. The ``consumption`` reflects the demand for the
-            commodities produced by the current sector.
+        demand: commodity demands for the current year and investment year.
         technologies: quantities describing the technologies.
         timeslice_level: the timeslice level of the sector (e.g. "hour", "day")
 
@@ -253,7 +250,7 @@ def new_and_retro(
         reduce_assets,
     )
 
-    current_year, investment_year = map(int, market.year.values)
+    current_year, investment_year = map(int, demand.year.values)
 
     def decommissioning(capacity, technologies):
         return decommissioning_demand(
@@ -274,7 +271,7 @@ def new_and_retro(
 
     demands = new_and_retro_demands(
         capacity,
-        market,
+        demand,
         technodata,
         timeslice_level=timeslice_level,
     )
@@ -362,7 +359,7 @@ def new_and_retro(
 @register_demand_share(name="default")
 def standard_demand(
     agents: Sequence[AbstractAgent],
-    market: xr.Dataset,
+    demand: xr.DataArray,
     technologies: xr.Dataset,
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
@@ -376,10 +373,7 @@ def standard_demand(
         agents: a list of all agents. This list should mainly be used to determine the
             type of an agent and the assets it owns. The agents will not be modified in
             any way.
-        market: the market for which to satisfy the demand. It should contain at-least
-            ``consumption`` and ``supply``. It may contain ``prices`` if that is of use
-            to the production method. The ``consumption`` reflects the demand for the
-            commodities produced by the current sector.
+        demand: commodity demands for the current year and investment year.
         technologies: quantities describing the technologies.
         timeslice_level: the timeslice level of the sector (e.g. "hour", "day")
 
@@ -395,7 +389,7 @@ def standard_demand(
         reduce_assets,
     )
 
-    current_year, investment_year = map(int, market.year.values)
+    current_year, investment_year = map(int, demand.year.values)
 
     def decommissioning(capacity, technologies):
         return decommissioning_demand(
@@ -423,7 +417,7 @@ def standard_demand(
     # Calculate new and retrofit demands
     demands = new_and_retro_demands(
         capacity=capacity,
-        market=market,
+        demand=demand,
         technologies=technodata,
         timeslice_level=timeslice_level,
     )
@@ -487,22 +481,18 @@ def standard_demand(
 @register_demand_share(name="unmet_demand")
 def unmet_forecasted_demand(
     agents: Sequence[AbstractAgent],
-    market: xr.Dataset,
+    demand: xr.DataArray,
     technologies: xr.Dataset,
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
-    from muse.commodities import is_enduse
     from muse.utilities import (
         broadcast_over_assets,
         interpolate_capacity,
         reduce_assets,
     )
 
-    current_year, investment_year = map(int, market.year.values)
-
-    comm_usage = technologies.comm_usage.sel(commodity=market.commodity)
-    smarket: xr.Dataset = market.where(is_enduse(comm_usage), 0)
+    current_year, investment_year = map(int, demand.year.values)
 
     # Calculate existing capacity
     capacity = interpolate_capacity(
@@ -511,7 +501,7 @@ def unmet_forecasted_demand(
     )
 
     # Select data for future years
-    future_market = smarket.sel(year=investment_year, drop=True)
+    future_demand = demand.sel(year=investment_year, drop=True)
     future_capacity = capacity.sel(year=investment_year)
 
     # Select technology data for assets
@@ -519,7 +509,7 @@ def unmet_forecasted_demand(
 
     # Calculate unmet demand
     result = unmet_demand(
-        market=future_market,
+        demand=future_demand,
         capacity=future_capacity,
         technologies=techs,
         timeslice_level=timeslice_level,
@@ -582,7 +572,7 @@ def _inner_split(
 
 
 def unmet_demand(
-    market: xr.Dataset,
+    demand: xr.DataArray,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
     timeslice_level: str | None = None,
@@ -604,7 +594,7 @@ def unmet_demand(
     # Check inputs
     assert "year" not in technologies.dims
     assert "year" not in capacity.dims
-    assert "year" not in market.dims
+    assert "year" not in demand.dims
 
     # Calculate maximum production by existing assets
     produced = maximum_production(
@@ -622,14 +612,14 @@ def unmet_demand(
         produced = produced.sum("asset")
 
     # Unmet demand is the difference between the consumption and the production
-    _unmet_demand = (market.consumption - produced).clip(min=0)
+    _unmet_demand = (demand - produced).clip(min=0)
     assert "year" not in _unmet_demand.dims
     return _unmet_demand
 
 
 def new_consumption(
     capacity: xr.DataArray,
-    market: xr.Dataset,
+    demand: xr.DataArray,
     technologies: xr.Dataset,
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
@@ -651,21 +641,21 @@ def new_consumption(
     from numpy import minimum
 
     # Check inputs
-    assert len(market.year) == 2
+    assert len(demand.year) == 2
     assert len(capacity.year) == 2
-    assert (market.year.values == capacity.year.values).all()
+    assert (demand.year.values == capacity.year.values).all()
     assert "year" not in technologies.dims
-    current_year, investment_year = map(int, market.year.values)
+    current_year, investment_year = map(int, demand.year.values)
 
     # Select data for current/future years
-    current_market = market.sel(year=current_year, drop=True)
-    future_market = market.sel(year=investment_year, drop=True)
+    current_demand = demand.sel(year=current_year, drop=True)
+    future_demand = demand.sel(year=investment_year, drop=True)
     future_capacity = capacity.sel(year=investment_year)
 
     # Calculate the increase in consumption over the investment period
-    delta = (future_market.consumption - current_market.consumption).clip(min=0)
+    delta = (future_demand - current_demand).clip(min=0)
     missing = unmet_demand(
-        market=future_market,
+        demand=future_demand,
         capacity=future_capacity,
         technologies=technologies,
         timeslice_level=timeslice_level,
@@ -677,13 +667,13 @@ def new_consumption(
 
 def new_and_retro_demands(
     capacity: xr.DataArray,
-    market: xr.Dataset,
+    demand: xr.DataArray,
     technologies: xr.Dataset,
     timeslice_level: str | None = None,
 ) -> xr.Dataset:
     """Splits demand into *new* and *retrofit* demand.
 
-    The demand (.i.e. `market.consumption`) in the investment year is split three ways:
+    The demand in the investment year is split three ways:
 
     #. the demand that can be serviced by the assets that will still be operational that
         year.
@@ -696,11 +686,11 @@ def new_and_retro_demands(
     from muse.quantities import maximum_production
 
     # Check inputs
-    assert len(market.year) == 2
+    assert len(demand.year) == 2
     assert len(capacity.year) == 2
-    assert (market.year.values == capacity.year.values).all()
+    assert (demand.year.values == capacity.year.values).all()
     assert "year" not in technologies.dims
-    investment_year = int(market.year[1])
+    investment_year = int(demand.year[1])
 
     if hasattr(capacity, "region") and capacity.region.dims == ():
         capacity["region"] = (
@@ -711,7 +701,7 @@ def new_and_retro_demands(
     # Calculate demand to allocate to "new" agents
     new_demand = new_consumption(
         capacity=capacity,
-        market=market,
+        demand=demand,
         technologies=technologies,
         timeslice_level=timeslice_level,
     )
@@ -728,11 +718,11 @@ def new_and_retro_demands(
     )
 
     # Existing asset should not execute beyond demand
-    service = minimum(service, market.consumption.sel(year=investment_year, drop=True))
+    service = minimum(service, demand.sel(year=investment_year, drop=True))
 
     # Leftover demand that cannot be serviced by existing assets or "new" agents
     retro_demand = (
-        market.consumption.sel(year=investment_year, drop=True) - new_demand - service
+        demand.sel(year=investment_year, drop=True) - new_demand - service
     ).clip(min=0)
     assert "year" not in retro_demand.dims
 
