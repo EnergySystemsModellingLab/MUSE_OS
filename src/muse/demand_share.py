@@ -486,6 +486,7 @@ def unmet_forecasted_demand(
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Forecast demand that cannot be serviced by non-decommissioned current assets."""
+    from muse.commodities import is_enduse
     from muse.utilities import (
         broadcast_over_assets,
         interpolate_capacity,
@@ -493,6 +494,10 @@ def unmet_forecasted_demand(
     )
 
     current_year, investment_year = map(int, demand.year.values)
+
+    demand = demand.where(
+        is_enduse(technologies.comm_usage.sel(commodity=demand.commodity)), 0
+    )
 
     # Calculate existing capacity
     capacity = interpolate_capacity(
