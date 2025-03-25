@@ -754,4 +754,5 @@ def read_technodata(
 
     year = sorted(set(time_framework).union(technologies.year.data.tolist()))
     technologies = technologies.interp(year=year, method=interpolation_mode)
+    technologies = technologies.set_index(commodity="commodity")  # See PR #638
     return technologies

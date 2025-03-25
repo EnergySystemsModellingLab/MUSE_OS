@@ -3,7 +3,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 import xarray as xr
-from pytest import approx, fixture
+from pytest import approx, fixture, raises
 
 from muse.timeslices import drop_timeslice
 from muse.utilities import interpolate_capacity, reduce_assets
@@ -497,6 +497,19 @@ def test_max_capacity_expansion_no_limits(
         techs,
     )
     assert result is None
+
+
+def test_max_capacity_expansion_infinite_limits(
+    market_demand, capacity, search_space, technologies
+):
+    from muse.constraints import max_capacity_expansion
+
+    # If all limits are infinite, a ValueError should be raised
+    technologies["max_capacity_addition"] = np.inf
+    technologies["max_capacity_growth"] = np.inf
+    technologies["total_capacity_limit"] = np.inf
+    with raises(ValueError):
+        max_capacity_expansion(market_demand, capacity, search_space, technologies)
 
 
 def test_max_production(max_production):
