@@ -90,6 +90,7 @@ __all__ = [
     "with_asset_technology",
 ]
 
+import inspect
 from collections.abc import Mapping, MutableMapping, Sequence
 from typing import (
     Any,
@@ -134,6 +135,14 @@ def register_filter(function: SSF_SIGNATURE) -> Callable:
     def decorated(
         agent: Agent, search_space: xr.DataArray, *args, **kwargs
     ) -> xr.DataArray:
+        # Check inputs
+        sig = inspect.signature(function)
+        params = sig.parameters
+        if "technologies" in params:
+            bound_args = sig.bind(agent, search_space, *args, **kwargs)
+            technologies = bound_args.arguments["technologies"]
+            assert "year" not in technologies.dims
+
         result = function(agent, search_space, *args, **kwargs)  # type: ignore
         if isinstance(result, xr.DataArray):
             result.name = search_space.name

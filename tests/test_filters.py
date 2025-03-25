@@ -18,6 +18,12 @@ def search_space(retro_agent, technologies):
     )
 
 
+@fixture
+def technologies(technologies):
+    # Filters must take technology data for a single year
+    return technologies.sel(year=2010)
+
+
 @mark.usefixtures("save_registries")
 def test_filter_registering():
     from muse.filters import SEARCH_SPACE_FILTERS
@@ -68,9 +74,7 @@ def test_same_enduse(retro_agent, technologies, search_space):
 
     result = same_enduse(retro_agent, search_space, technologies)
     enduses = is_enduse(technologies.comm_usage)
-    finputs = technologies.sel(
-        region=retro_agent.region, year=retro_agent.year, commodity=enduses
-    )
+    finputs = technologies.sel(region=retro_agent.region, commodity=enduses)
     finputs = finputs.fixed_outputs > 0
 
     expected = search_space.copy()
