@@ -455,7 +455,7 @@ def max_production(
     techs = (
         technologies[["fixed_outputs", "utilization_factor"]]
         .sel(**kwargs)
-        .drop_vars("technology")
+        .rename(technology="replacement")
     )
     capa = distribute_timeslice(
         techs.fixed_outputs, level=timeslice_level
