@@ -137,8 +137,7 @@ def register_filter(function: SSF_SIGNATURE) -> Callable:
     ) -> xr.DataArray:
         # Check inputs
         sig = inspect.signature(function)
-        params = sig.parameters
-        if "technologies" in params:
+        if "technologies" in sig.parameters:
             bound_args = sig.bind(agent, search_space, *args, **kwargs)
             technologies = bound_args.arguments["technologies"]
             assert "year" not in technologies.dims
