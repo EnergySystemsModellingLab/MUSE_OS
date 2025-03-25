@@ -87,6 +87,7 @@ __all__ = [
     "with_asset_technology",
 ]
 
+import inspect
 from collections.abc import Mapping, MutableMapping, Sequence
 from typing import (
     Any,
