@@ -286,10 +286,8 @@ def scipy_match_demand(
 
     # Run scipy optimization with highs solver
     adapter = ScipyAdapter.factory(
-        technologies,
         cast(np.ndarray, costs),
         *constraints,
-        timeslice_level=timeslice_level,
     )
     res = linprog(**adapter.kwargs, method="highs")
 

@@ -738,80 +738,29 @@ def minimum_service(
     )
 
 
-def lp_costs(
-    technologies: xr.Dataset, costs: xr.DataArray, timeslice_level: str | None = None
-) -> xr.Dataset:
-    """Creates costs for solving with scipy's LP solver.
+def lp_costs(capacity_costs: xr.DataArray, *constraints: Constraint) -> xr.Dataset:
+    """Creates dataset of costs for solving with scipy's LP solver.
 
-    Example:
-        We can now construct example inputs to the function from the sample model. The
-        costs will be a matrix where each assets has a candidate replacement technology.
-
-        >>> from muse import examples
-        >>> technologies = examples.technodata("residential", model="medium")
-        >>> search_space = examples.search_space("residential", model="medium")
-        >>> costs = (
-        ...     search_space
-        ...     * np.arange(np.prod(search_space.shape)).reshape(search_space.shape)
-        ... )
-
-        The function returns the LP vector split along capacity and production
-        variables.
-
-        >>> from muse.constraints import lp_costs
-        >>> lpcosts = lp_costs(
-        ...     technologies.sel(year=2020, region="R1"), costs
-        ... )
-        >>> assert "capacity" in lpcosts.data_vars
-        >>> assert "production" in lpcosts.data_vars
-
-        The capacity costs correspond exactly to the input costs:
-
-        >>> assert (costs == lpcosts.capacity).all()
-
-        The production is zero in this context. It does not enter the cost function of
-        the LP problem:
-
-        >>> assert (lpcosts.production == 0).all()
-
-        They should correspond to a data-array with dimensions ``(asset, replacement)``
-        (and possibly ``region`` as well).
-
-        >>> lpcosts.capacity.dims
-        ('asset', 'replacement')
-
-        The production costs are zero by default. However, the production expands over
-        not only the dimensions of the capacity, but also the ``timeslice`` during
-        which production occurs and the ``commodity`` produced.
-
-        >>> lpcosts.production.dims
-        ('timeslice', 'asset', 'replacement', 'commodity')
+    The costs applied to the capacity decision variables are provided. No cost is
+    applied to the production decision variables. Thus, the production component of
+    the costs dataset is zero, with dimensions determined by the constraints.
     """
-    from xarray import zeros_like
+    # Get production decision variables
+    # This is the union of all coordinates in the production constraints
+    production_vars = xr.broadcast(*[c.production for c in constraints])[0]
 
-    from muse.commodities import is_enduse
+    # Production costs are zero
+    production_costs = xr.zeros_like(production_vars)
 
-    assert "year" not in technologies.dims
+    # Deal with timeslice multiindex
+    if "timeslice" in production_costs.dims:
+        production_costs = drop_timeslice(production_costs)
+        production_costs["timeslice"] = pd.Index(
+            production_costs.get_index("timeslice"), tupleize_cols=False
+        )
 
-    selection = dict(
-        commodity=is_enduse(technologies.comm_usage),
-        technology=technologies.technology.isin(costs.replacement),
-    )
-
-    if "region" in technologies.fixed_outputs.dims and "region" in costs.coords:
-        selection["region"] = costs.region
-    fouts = technologies.fixed_outputs.sel(selection).rename(technology="replacement")
-
-    production = zeros_like(
-        broadcast_timeslice(costs, level=timeslice_level)
-        * distribute_timeslice(fouts, level=timeslice_level)
-    )
-    for dim in production.dims:
-        if isinstance(production.get_index(dim), pd.MultiIndex):
-            production = drop_timeslice(production)
-            production[dim] = pd.Index(production.get_index(dim), tupleize_cols=False)
-
-    return xr.Dataset(dict(capacity=costs, production=production))
+    # Result is dataset of provided capacity costs and zero production costs
+    return xr.Dataset(dict(capacity=capacity_costs, production=production_costs))
 
 
 def lp_constraint(constraint: Constraint, lpcosts: xr.Dataset) -> Constraint:
@@ -1119,14 +1068,12 @@ class ScipyAdapter:
     @classmethod
     def factory(
         cls,
-        technologies: xr.Dataset,
         costs: xr.DataArray,
         *constraints: Constraint,
-        timeslice_level: str | None = None,
     ) -> ScipyAdapter:
-        lpcosts = lp_costs(technologies, costs, timeslice_level=timeslice_level)
+        lpcosts = lp_costs(costs, *constraints)
 
-        data = cls._unified_dataset(technologies, lpcosts, *constraints)
+        data = cls._unified_dataset(lpcosts, *constraints)
 
         capacities = cls._selected_quantity(data, "capacity")
 
@@ -1153,13 +1100,9 @@ class ScipyAdapter:
         }
 
     @staticmethod
-    def _unified_dataset(
-        technologies: xr.Dataset, lpcosts: xr.Dataset, *constraints: Constraint
-    ) -> xr.Dataset:
+    def _unified_dataset(lpcosts: xr.Dataset, *constraints: Constraint) -> xr.Dataset:
         """Creates single xr.Dataset from costs and constraints."""
         from xarray import merge
-
-        assert "year" not in technologies.dims
 
         data = merge(
             [lpcosts.rename({k: f"d({k})" for k in lpcosts.dims})]
@@ -1176,12 +1119,6 @@ class ScipyAdapter:
                 data[f"b{i}"] = -data[f"b{i}"]
                 data[f"capacity{i}"] = -data[f"capacity{i}"]
                 data[f"production{i}"] = -data[f"production{i}"]
-
-        # A bit of a hack as lpcosts is calculated for too many commodities, so data
-        # will have nans for commodities not in the constraints, which are limited to
-        # commodities demanded in the subsector. This seems safe for now, although
-        # better to limit the commodities in the lpcosts calculation.
-        data = data.dropna(dim="d(commodity)", how="all")
 
         # Enusure consistent ordering of dimensions
         return data.transpose(*data.dims)
