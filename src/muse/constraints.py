@@ -405,10 +405,7 @@ def demand(
     **kwargs,
 ) -> Constraint:
     """Constraints production to meet demand."""
-    from muse.commodities import is_enduse
-
-    enduse = technologies.commodity.sel(commodity=is_enduse(technologies.comm_usage))
-    b = demand.sel(commodity=demand.commodity.isin(enduse))
+    b = demand
     if "region" in b.dims and "dst_region" in technologies.dims:
         b = b.rename(region="dst_region")
     assert "year" not in b.dims
@@ -451,16 +448,8 @@ def max_production(
     """
     from xarray import ones_like, zeros_like
 
-    from muse.commodities import is_enduse
-
-    commodities = technologies.commodity.sel(
-        commodity=is_enduse(technologies.comm_usage)
-    )
-    replacement = search_space.replacement
-    replacement = replacement.drop_vars(
-        [u for u in replacement.coords if u not in replacement.dims]
-    )
-    kwargs = dict(technology=replacement, commodity=commodities)
+    commodities = demand.commodity
+    kwargs = dict(commodity=commodities)
     if "region" in search_space.coords and "region" in technologies.dims:
         kwargs["region"] = search_space.region
     techs = (
@@ -1187,6 +1176,12 @@ class ScipyAdapter:
                 data[f"b{i}"] = -data[f"b{i}"]
                 data[f"capacity{i}"] = -data[f"capacity{i}"]
                 data[f"production{i}"] = -data[f"production{i}"]
+
+        # A bit of a hack as lpcosts is calculated for too many commodities, so data
+        # will have nans for commodities not in the constraints, which are limited to
+        # commodities demanded in the subsector. This seems safe for now, although
+        # better to limit the commodities in the lpcosts calculation.
+        data = data.dropna(dim="d(commodity)", how="all")
 
         # Enusure consistent ordering of dimensions
         return data.transpose(*data.dims)

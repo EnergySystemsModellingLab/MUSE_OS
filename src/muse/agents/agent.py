@@ -320,6 +320,11 @@ class InvestingAgent(Agent):
             .astype(int)
         )
 
+        # Select technologies in the search space
+        technologies = technologies.sel(
+            technology=technologies.technology.isin(search_space.replacement)
+        )
+
         # Skip forward if the search space is empty
         if any(u == 0 for u in search_space.shape):
             getLogger(__name__).critical("Search space is empty")
