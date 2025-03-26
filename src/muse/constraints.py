@@ -187,21 +187,27 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
             **kwargs,
         )
 
-        # Standardize constraint
         if constraint is not None:
-            if "kind" not in constraint.attrs:
-                constraint.attrs["kind"] = ConstraintKind.UPPER_BOUND
+            # Check constraint
+            if "b" not in constraint.data_vars:
+                raise RuntimeError("Constraint must contain a right-hand-side vector")
             if (
                 "capacity" not in constraint.data_vars
                 and "production" not in constraint.data_vars
             ):
-                raise RuntimeError("Invalid constraint format")
+                raise RuntimeError("Constraint must contain a left-hand-side matrix")
+            if "capacity" in constraint.data_vars:
+                assert not constraint.capacity.dims == ()
+            if "production" in constraint.data_vars:
+                assert not constraint.production.dims == ()
+            if "kind" not in constraint.attrs:
+                raise RuntimeError("Constraint must contain a kind attribute")
+
+            # Standardize constraint
             if "capacity" not in constraint.data_vars:
                 constraint["capacity"] = 0
             if "production" not in constraint.data_vars:
                 constraint["production"] = 0
-            if "b" not in constraint.data_vars:
-                constraint["b"] = 0
             if "name" not in constraint.data_vars and "name" not in constraint.attrs:
                 constraint.attrs["name"] = function.__name__
 
@@ -385,7 +391,7 @@ def max_capacity_expansion(
         )
 
     if b.region.dims == ():
-        capa = 1
+        capa = xr.ones_like(b)
     elif "dst_region" in b.dims:
         b = b.rename(region="src_region")
         capa = search_space.agent.region == b.src_region
@@ -413,7 +419,8 @@ def demand(
         b = b.rename(region="dst_region")
     assert "year" not in b.dims
     return xr.Dataset(
-        dict(b=b, production=1), attrs=dict(kind=ConstraintKind.LOWER_BOUND)
+        dict(b=b, production=xr.ones_like(b)),
+        attrs=dict(kind=ConstraintKind.LOWER_BOUND),
     )
 
 
@@ -476,6 +483,7 @@ def max_production(
         capa = capa.expand_dims(asset=search_space.asset)
     production = ones_like(capa)
     b = zeros_like(production)
+
     # Include maxaddition constraint in max production to match region-dst_region
     if "dst_region" in technologies.dims:
         b = b.expand_dims(dst_region=technologies.dst_region)
@@ -488,8 +496,9 @@ def max_production(
         capa = capa * broadcast_timeslice(maxadd, level=timeslice_level)
         production = production * broadcast_timeslice(maxadd, level=timeslice_level)
         b = b.rename(region="src_region")
+
     return xr.Dataset(
-        dict(capacity=-cast(np.ndarray, capa), production=production, b=b),
+        dict(capacity=-capa, production=production, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
     )
 
@@ -746,8 +755,9 @@ def minimum_service(
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
     b = zeros_like(production)
+
     return xr.Dataset(
-        dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
+        dict(capacity=-capacity, production=production, b=b),
         attrs=dict(kind=ConstraintKind.LOWER_BOUND),
     )
 

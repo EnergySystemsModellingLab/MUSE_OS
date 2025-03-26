@@ -468,7 +468,7 @@ def test_minimum_service(
 
 
 def test_max_capacity_expansion(max_capacity_expansion):
-    assert max_capacity_expansion.capacity == 1
+    assert (max_capacity_expansion.capacity == 1).all()
     assert max_capacity_expansion.production == 0
     assert max_capacity_expansion.b.dims == ("replacement",)
     assert max_capacity_expansion.b.shape == (4,)
