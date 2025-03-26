@@ -196,10 +196,6 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
                 and "production" not in constraint.data_vars
             ):
                 raise RuntimeError("Constraint must contain a left-hand-side matrix")
-            if "capacity" in constraint.data_vars:
-                assert not constraint.capacity.dims == ()
-            if "production" in constraint.data_vars:
-                assert not constraint.production.dims == ()
 
             # Standardize constraint
             if "kind" not in constraint.attrs:
@@ -391,7 +387,7 @@ def max_capacity_expansion(
         )
 
     if b.region.dims == ():
-        capa = xr.ones_like(b)
+        capa = 1
     elif "dst_region" in b.dims:
         b = b.rename(region="src_region")
         capa = search_space.agent.region == b.src_region
@@ -416,7 +412,7 @@ def demand(
         b = b.rename(region="dst_region")
     assert "year" not in b.dims
     return xr.Dataset(
-        dict(b=b, production=xr.ones_like(b)),
+        dict(b=b, production=1),
         attrs=dict(kind=ConstraintKind.LOWER_BOUND),
     )
 
