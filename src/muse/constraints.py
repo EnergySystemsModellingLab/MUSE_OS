@@ -257,7 +257,7 @@ def factory(
         capacity: xr.DataArray,
         search_space: xr.DataArray,
         technologies: xr.Dataset,
-        timeslice_level: str | None = None,
+        **kwargs,
     ) -> list[Constraint]:
         constraints = [
             function(
@@ -265,7 +265,7 @@ def factory(
                 capacity=capacity,
                 search_space=search_space,
                 technologies=technologies,
-                timeslice_level=timeslice_level,
+                **kwargs,
             )
             for function in constraint_closures
         ]
@@ -445,6 +445,7 @@ def max_production(
     capacity: xr.DataArray,
     search_space: xr.DataArray,
     technologies: xr.Dataset,
+    *,
     timeslice_level: str | None = None,
     **kwargs,
 ) -> Constraint:
@@ -497,6 +498,7 @@ def demand_limiting_capacity(
     capacity: xr.DataArray,
     search_space: xr.DataArray,
     technologies: xr.Dataset,
+    *,
     timeslice_level: str | None = None,
     **kwargs,
 ) -> Constraint:
@@ -707,6 +709,7 @@ def minimum_service(
     capacity: xr.DataArray,
     search_space: xr.DataArray,
     technologies: xr.Dataset,
+    *,
     timeslice_level: str | None = None,
     **kwargs,
 ) -> Constraint | None:
