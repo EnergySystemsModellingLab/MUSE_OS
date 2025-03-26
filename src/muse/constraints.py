@@ -187,21 +187,27 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
             **kwargs,
         )
 
-        # Standardize constraint
         if constraint is not None:
-            if "kind" not in constraint.attrs:
-                constraint.attrs["kind"] = ConstraintKind.UPPER_BOUND
+            # Check constraint
+            if "b" not in constraint.data_vars:
+                raise RuntimeError("Constraint must contain a right-hand-side vector")
             if (
                 "capacity" not in constraint.data_vars
                 and "production" not in constraint.data_vars
             ):
-                raise RuntimeError("Invalid constraint format")
+                raise RuntimeError("Constraint must contain a left-hand-side matrix")
+            if "capacity" in constraint.data_vars:
+                assert not constraint.capacity.dims == ()
+            if "production" in constraint.data_vars:
+                assert not constraint.production.dims == ()
+
+            # Standardize constraint
+            if "kind" not in constraint.attrs:
+                constraint.attrs["kind"] = ConstraintKind.UPPER_BOUND
             if "capacity" not in constraint.data_vars:
                 constraint["capacity"] = 0
             if "production" not in constraint.data_vars:
                 constraint["production"] = 0
-            if "b" not in constraint.data_vars:
-                constraint["b"] = 0
             if "name" not in constraint.data_vars and "name" not in constraint.attrs:
                 constraint.attrs["name"] = function.__name__
 
@@ -385,7 +391,7 @@ def max_capacity_expansion(
         )
 
     if b.region.dims == ():
-        capa = 1
+        capa = xr.ones_like(b)
     elif "dst_region" in b.dims:
         b = b.rename(region="src_region")
         capa = search_space.agent.region == b.src_region
@@ -410,7 +416,8 @@ def demand(
         b = b.rename(region="dst_region")
     assert "year" not in b.dims
     return xr.Dataset(
-        dict(b=b, production=1), attrs=dict(kind=ConstraintKind.LOWER_BOUND)
+        dict(b=b, production=xr.ones_like(b)),
+        attrs=dict(kind=ConstraintKind.LOWER_BOUND),
     )
 
 
@@ -464,6 +471,7 @@ def max_production(
         capa = capa.expand_dims(asset=search_space.asset)
     production = ones_like(capa)
     b = zeros_like(production)
+
     # Include maxaddition constraint in max production to match region-dst_region
     if "dst_region" in technologies.dims:
         b = b.expand_dims(dst_region=technologies.dst_region)
@@ -476,8 +484,9 @@ def max_production(
         capa = capa * broadcast_timeslice(maxadd, level=timeslice_level)
         production = production * broadcast_timeslice(maxadd, level=timeslice_level)
         b = b.rename(region="src_region")
+
     return xr.Dataset(
-        dict(capacity=-cast(np.ndarray, capa), production=production, b=b),
+        dict(capacity=-capa, production=production, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
     )
 
@@ -704,22 +713,20 @@ def minimum_service(
     """Constructs constraint between capacity and minimum service."""
     from xarray import ones_like, zeros_like
 
-    from muse.commodities import is_enduse
-
     if "minimum_service_factor" not in technologies.data_vars:
         return None
     if np.all(technologies["minimum_service_factor"] == 0):
         return None
-    commodities = technologies.commodity.sel(
-        commodity=is_enduse(technologies.comm_usage)
-    )
-    replacement = search_space.replacement
-    replacement = replacement.drop_vars(
-        [u for u in replacement.coords if u not in replacement.dims]
-    )
-    kwargs = dict(technology=replacement, commodity=commodities)
+
+    commodities = demand.commodity
+    kwargs = dict(commodity=commodities)
     if "region" in search_space.coords and "region" in technologies.dims:
         kwargs["region"] = search_space.region
+    techs = (
+        technologies[["fixed_outputs", "utilization_factor"]]
+        .sel(**kwargs)
+        .rename(technology="replacement")
+    )
     techs = (
         technologies[["fixed_outputs", "minimum_service_factor"]]
         .sel(**kwargs)
@@ -732,8 +739,9 @@ def minimum_service(
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
     b = zeros_like(production)
+
     return xr.Dataset(
-        dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
+        dict(capacity=-capacity, production=production, b=b),
         attrs=dict(kind=ConstraintKind.LOWER_BOUND),
     )
 
@@ -745,19 +753,22 @@ def lp_costs(capacity_costs: xr.DataArray, *constraints: Constraint) -> xr.Datas
     applied to the production decision variables. Thus, the production component of
     the costs dataset is zero, with dimensions determined by the constraints.
     """
-    # Get production decision variables
-    # This is the union of all coordinates in the production constraints
-    production_vars = xr.broadcast(*[c.production for c in constraints])[0]
+    if constraints:
+        # Get production decision variables
+        # This is the union of all coordinates in the production constraints
+        production_vars = xr.broadcast(*[c.production for c in constraints])[0]
 
-    # Production costs are zero
-    production_costs = xr.zeros_like(production_vars)
+        # Production costs are zero
+        production_costs = xr.zeros_like(production_vars)
 
-    # Deal with timeslice multiindex
-    if "timeslice" in production_costs.dims:
-        production_costs = drop_timeslice(production_costs)
-        production_costs["timeslice"] = pd.Index(
-            production_costs.get_index("timeslice"), tupleize_cols=False
-        )
+        # Deal with timeslice multiindex
+        if "timeslice" in production_costs.dims:
+            production_costs = drop_timeslice(production_costs)
+            production_costs["timeslice"] = pd.Index(
+                production_costs.get_index("timeslice"), tupleize_cols=False
+            )
+    else:
+        production_costs = None
 
     # Result is dataset of provided capacity costs and zero production costs
     return xr.Dataset(dict(capacity=capacity_costs, production=production_costs))
