@@ -142,6 +142,49 @@ def constraints(request, market_demand, capacity, search_space, technologies):
     return constraints
 
 
+def test_constraints_dimensions(
+    max_production, demand_constraint, demand_limiting_capacity, max_capacity_expansion
+):
+    # Max production constraint
+    assert set(max_production.capacity.dims) == {
+        "asset",
+        "commodity",
+        "replacement",
+        "timeslice",
+    }
+    assert set(max_production.production.dims) == {
+        "asset",
+        "commodity",
+        "replacement",
+        "timeslice",
+    }
+    assert set(max_production.b.dims) == {
+        "asset",
+        "commodity",
+        "replacement",
+        "timeslice",
+    }
+
+    # Demand constraint
+    assert set(demand_constraint.capacity.dims) == set()
+    assert set(demand_constraint.production.dims) == set()
+    assert set(demand_constraint.b.dims) == {"asset", "commodity", "timeslice"}
+
+    # Demand limiting capacity constraint
+    assert set(demand_limiting_capacity.capacity.dims) == {
+        "asset",
+        "commodity",
+        "replacement",
+    }
+    assert set(demand_limiting_capacity.production.dims) == set()
+    assert set(demand_limiting_capacity.b.dims) == {"asset", "commodity"}
+
+    # Max capacity expansion constraint
+    assert set(max_capacity_expansion.capacity.dims) == set()
+    assert set(max_capacity_expansion.production.dims) == set()
+    assert set(max_capacity_expansion.b.dims) == {"replacement"}
+
+
 def test_lp_constraints_matrix_b_is_scalar(constraint, lpcosts):
     """B is a scalar.
 
@@ -513,10 +556,6 @@ def test_max_capacity_expansion_infinite_limits(
 
 
 def test_max_production(max_production):
-    dims = {"replacement", "asset", "commodity", "timeslice"}
-    assert set(max_production.capacity.dims) == dims
-    assert set(max_production.production.dims) == dims
-    assert set(max_production.b.dims) == dims
     assert (max_production.capacity <= 0).all()
 
 
