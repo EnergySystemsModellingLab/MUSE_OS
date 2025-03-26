@@ -1065,8 +1065,7 @@ class ScipyAdapter:
         It is an upper bound for a straightforward sum over the capacities for a given
         technology. The matrix operator is simply the identity:
 
-        >>> assert constraint.capacity.data == np.array(1)
-        >>> assert len(constraint.capacity.dims) == 0
+        >>> assert (constraint.capacity == 1).all()
 
         And the upperbound is expanded over the replacement technologies,
         but not over the assets. Hence the assets will be summed over in the final
@@ -1077,9 +1076,8 @@ class ScipyAdapter:
 
         As shown above, it does not bind the production decision variables. Hence,
         production is zero. The matrix operator for the capacity is simply the identity.
-        Hence it can be inputted as the dimensionless scalar 1. The upper bound is
-        simply the maximum for replacement technology (and region, if that particular
-        dimension exists in the problem).
+        The upper bound is simply the maximum for replacement technology (and region, if
+        that particular dimension exists in the problem).
 
         The lp problem then becomes:
 
