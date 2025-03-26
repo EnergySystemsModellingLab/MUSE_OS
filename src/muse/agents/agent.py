@@ -315,7 +315,9 @@ class InvestingAgent(Agent):
 
         # Calculate the search space
         search_space = (
-            self.search_rules(self, demand, technologies, market).fillna(0).astype(int)
+            self.search_rules(self, demand, technologies=technologies, market=market)
+            .fillna(0)
+            .astype(int)
         )
 
         # Skip forward if the search space is empty

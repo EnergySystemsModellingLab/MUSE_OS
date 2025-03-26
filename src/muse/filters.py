@@ -20,8 +20,10 @@ follow the same signature:
     def search_space_filter(
         agent: Agent,
         search_space: xr.DataArray,
-        technologies: xr.Dataset,
-        market: xr.Dataset
+        *,
+        additional_argument1,
+        additional_argument2,
+        **kwargs,
     ) -> xr.DataArray:
         pass
 
@@ -29,10 +31,8 @@ Arguments:
     agent: the agent relevant to the search space. The filters may need to query
         the agent for parameters, e.g. the current year, the tolerance, etc.
     search_space: the current search space.
-    technologies: A data set characterising the technologies from which the
-        agent can draw assets.
-    market: Market variables, such as prices or current capacity and retirement
-        profile.
+    any additional arguments must follow the `*` argument, and must be passed as keyword
+        arguments.
 
 Returns:
     A new search space with the same data-type as the input search-space, but
@@ -53,7 +53,6 @@ Functions creating initial search spaces should have the following signature:
         agent: Agent,
         demand: xr.DataArray,
         technologies: xr.Dataset,
-        market: xr.Dataset
     ) -> xr.DataArray:
         pass
 
@@ -64,8 +63,6 @@ Arguments:
         assets).
     technologies: A data set characterising the technologies from which the
         agent can draw assets.
-    market: Market variables, such as prices or current capacity and retirement
-        profile.
 
 Returns:
     An initial search space
@@ -90,7 +87,6 @@ __all__ = [
     "with_asset_technology",
 ]
 
-import inspect
 from collections.abc import Mapping, MutableMapping, Sequence
 from typing import (
     Any,
@@ -104,14 +100,14 @@ import xarray as xr
 from muse.agents import Agent
 from muse.registration import registrator
 
-SSF_SIGNATURE = Callable[[Agent, xr.DataArray, xr.Dataset, xr.Dataset], xr.DataArray]
+SSF_SIGNATURE = Callable[[Agent, xr.DataArray], xr.DataArray]
 """ Search space filter signature """
 
 SEARCH_SPACE_FILTERS: MutableMapping[str, SSF_SIGNATURE] = {}
 """Filters for selecting technology search spaces."""
 
 
-SSI_SIGNATURE = Callable[[Agent, xr.DataArray, xr.Dataset, xr.Dataset], xr.DataArray]
+SSI_SIGNATURE = Callable[[Agent, xr.DataArray], xr.DataArray]
 """ Search space initializer signature """
 
 SEARCH_SPACE_INITIALIZERS: MutableMapping[str, SSI_SIGNATURE] = {}
@@ -132,17 +128,12 @@ def register_filter(function: SSF_SIGNATURE) -> Callable:
     from functools import wraps
 
     @wraps(function)
-    def decorated(
-        agent: Agent, search_space: xr.DataArray, *args, **kwargs
-    ) -> xr.DataArray:
+    def decorated(agent: Agent, search_space: xr.DataArray, **kwargs) -> xr.DataArray:
         # Check inputs
-        sig = inspect.signature(function)
-        if "technologies" in sig.parameters:
-            bound_args = sig.bind(agent, search_space, *args, **kwargs)
-            technologies = bound_args.arguments["technologies"]
-            assert "year" not in technologies.dims
+        if "technologies" in kwargs:
+            assert "year" not in kwargs["technologies"].dims
 
-        result = function(agent, search_space, *args, **kwargs)  # type: ignore
+        result = function(agent, search_space, **kwargs)  # type: ignore
         if isinstance(result, xr.DataArray):
             result.name = search_space.name
         return result
@@ -158,8 +149,12 @@ def register_initializer(function: SSI_SIGNATURE) -> Callable:
     from functools import wraps
 
     @wraps(function)
-    def decorated(agent: Agent, *args, **kwargs) -> xr.DataArray:
-        result = function(agent, *args, **kwargs)  # type: ignore
+    def decorated(agent: Agent, demand: xr.DataArray, **kwargs) -> xr.DataArray:
+        # Check inputs
+        if "technologies" in kwargs:
+            assert "year" not in kwargs["technologies"].dims
+
+        result = function(agent, demand, **kwargs)  # type: ignore
         if isinstance(result, xr.DataArray):
             result.name = "search_space"
         return result
@@ -229,11 +224,11 @@ def factory(
         ),
     ]
 
-    def filters(agent: Agent, demand: xr.DataArray, *args, **kwargs) -> xr.DataArray:
+    def filters(agent: Agent, demand: xr.DataArray, **kwargs) -> xr.DataArray:
         """Applies a series of filter to determine the search space."""
-        result = functions[0](agent, demand, *args, **kwargs)
+        result = functions[0](agent, demand, **kwargs)
         for function in functions[1:]:
-            result = function(agent, result, *args, **kwargs)
+            result = function(agent, result, **kwargs)
         return result
 
     return filters
@@ -243,8 +238,8 @@ def factory(
 def same_enduse(
     agent: Agent,
     search_space: xr.DataArray,
+    *,
     technologies: xr.Dataset,
-    *args,
     **kwargs,
 ) -> xr.DataArray:
     """Only allow for technologies with at least the same end-use."""
@@ -260,14 +255,14 @@ def same_enduse(
 
 
 @register_filter(name="all")
-def identity(agent: Agent, search_space: xr.DataArray, *args, **kwargs) -> xr.DataArray:
+def identity(agent: Agent, search_space: xr.DataArray, **kwargs) -> xr.DataArray:
     """Returns search space as given."""
     return search_space
 
 
 @register_filter(name="similar")
 def similar_technology(
-    agent: Agent, search_space: xr.DataArray, technologies: xr.Dataset, *args, **kwargs
+    agent: Agent, search_space: xr.DataArray, *, technologies: xr.Dataset, **kwargs
 ):
     """Filters technologies with the same type."""
     tech_type = agent.filter_input(technologies.tech_type)
@@ -278,7 +273,7 @@ def similar_technology(
 
 @register_filter(name="fueltype")
 def same_fuels(
-    agent: Agent, search_space: xr.DataArray, technologies: xr.Dataset, *args, **kwargs
+    agent: Agent, search_space: xr.DataArray, *, technologies: xr.Dataset, **kwargs
 ):
     """Filters technologies with the same fuel type."""
     fuel = agent.filter_input(technologies.fuel)
@@ -291,8 +286,9 @@ def same_fuels(
 def currently_existing_tech(
     agent: Agent,
     search_space: xr.DataArray,
-    technologies: xr.Dataset,
+    *,
     market: xr.Dataset,
+    **kwargs,
 ) -> xr.DataArray:
     """Only consider technologies that currently exist in the market.
 
@@ -315,8 +311,9 @@ def currently_existing_tech(
 def currently_referenced_tech(
     agent: Agent,
     search_space: xr.DataArray,
-    technologies: xr.Dataset,
+    *,
     market: xr.Dataset,
+    **kwargs,
 ) -> xr.DataArray:
     """Only consider technologies that are currently referenced in the market.
 
@@ -334,9 +331,8 @@ def currently_referenced_tech(
 def maturity(
     agent: Agent,
     search_space: xr.DataArray,
-    technologies: xr.Dataset,
+    *,
     market: xr.Dataset,
-    enduse_label: str = "service",
     **kwargs,
 ) -> xr.DataArray:
     """Only allows technologies that have achieve a given market share.
@@ -366,9 +362,8 @@ def maturity(
 def spend_limit(
     agent: Agent,
     search_space: xr.DataArray,
+    *,
     technologies: xr.Dataset,
-    market: xr.Dataset,
-    enduse_label: str = "service",
     **kwargs,
 ) -> xr.DataArray:
     """Only allows technologies with a unit capital cost lower than the spend limit."""
@@ -394,8 +389,6 @@ def spend_limit(
 def compress(
     agent: Agent,
     search_space: xr.DataArray,
-    technologies: xr.Dataset,
-    market: xr.Dataset,
     **kwargs,
 ) -> xr.DataArray:
     """Compress search space to include only potential technologies.
@@ -418,8 +411,6 @@ def compress(
 def reduce_asset(
     agent: Agent,
     search_space: xr.DataArray,
-    technologies: xr.Dataset,
-    market: xr.Dataset,
     **kwargs,
 ) -> xr.DataArray:
     """Reduce over assets."""
@@ -430,8 +421,6 @@ def reduce_asset(
 def with_asset_technology(
     agent: Agent,
     search_space: xr.DataArray,
-    technologies: xr.Dataset,
-    market: xr.Dataset,
     **kwargs,
 ) -> xr.DataArray:
     """Search space *also* contains its asset technology for each asset."""
@@ -440,7 +429,7 @@ def with_asset_technology(
 
 @register_initializer(name="from_techs")
 def initialize_from_technologies(
-    agent: Agent, demand: xr.DataArray, technologies: xr.Dataset, *args, **kwargs
+    agent: Agent, demand: xr.DataArray, *, technologies: xr.Dataset, **kwargs
 ):
     """Initialize a search space from existing technologies."""
     coords = (
@@ -459,8 +448,8 @@ def initialize_from_technologies(
 def initialize_from_assets(
     agent: Agent,
     demand: xr.DataArray,
+    *,
     technologies: xr.Dataset,
-    *args,
     coords: Sequence[str] = ("region", "technology"),
     **kwargs,
 ):
