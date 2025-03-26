@@ -79,7 +79,7 @@ class Subsector:
         # Split demand across agents
         demands = self.demand_share(
             agents=self.agents,
-            market=market,
+            demand=market.consumption,
             technologies=technologies,
             timeslice_level=self.timeslice_level,
         )
