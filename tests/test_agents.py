@@ -144,7 +144,11 @@ def test_run_retro_agent(retro_agent, technologies, agent_market, demand_share):
     technologies.max_capacity_growth[:] = retro_agent.assets.capacity.sum() * 100
 
     investment_year = int(agent_market.year[1])
-    retro_agent.next(technologies.sel(year=investment_year), agent_market, demand_share)
+    retro_agent.next(
+        technologies.sel(year=investment_year).isel(region=0),
+        agent_market.isel(region=0),
+        demand_share,
+    )
 
 
 def test_merge_assets(assets):

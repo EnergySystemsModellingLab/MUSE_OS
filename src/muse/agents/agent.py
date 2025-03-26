@@ -72,7 +72,7 @@ class AbstractAgent(ABC):
         """
         if "region" in dataset.dims and "region" not in kwargs:
             kwargs["region"] = self.region
-        return dataset.sel(**kwargs, drop=True)
+        return dataset.sel(**kwargs)
 
     @abstractmethod
     def next(

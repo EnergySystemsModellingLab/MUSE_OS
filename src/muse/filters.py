@@ -445,11 +445,11 @@ def initialize_from_technologies(
 
     # Only consider technologies that produce demanded commodities
     demanded_commodities = (demand > 0).any("timeslice")
-    produces_commodity = (
-        (technologies.fixed_outputs > 0)
-        .any(dim="region")
-        .rename(technology="replacement")
+    produces_commodity = (technologies.fixed_outputs > 0).rename(
+        technology="replacement"
     )
+    if "region" in produces_commodity.dims:
+        produces_commodity = produces_commodity.any("region")
     produces_demanded_commodity = (produces_commodity * demanded_commodities).any(
         "commodity"
     )
