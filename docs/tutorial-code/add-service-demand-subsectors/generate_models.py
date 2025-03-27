@@ -46,10 +46,12 @@ def generate_model_1():
                     "heat": {
                         "agents": "{path}/Agents.csv",
                         "existing_capacity": "{path}/residential/ExistingCapacityHeat.csv",  # noqa: E501
+                        "commodities": ["heat"],
                     },
                     "cook": {
                         "agents": "{path}/Agents.csv",
                         "existing_capacity": "{path}/residential/ExistingCapacityCook.csv",  # noqa: E501
+                        "commodities": ["cook"],
                     },
                 }
             }
