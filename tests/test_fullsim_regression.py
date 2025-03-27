@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pytest import mark
+from pytest import mark, xfail
 
 from muse.examples import available_examples
 
@@ -36,7 +36,7 @@ def test_fullsim_regression(model, tmpdir, compare_dirs):
 
 def available_tutorials():
     base_path = Path(__file__).parent.parent / "docs" / "tutorial-code"
-    return [d.parent for d in base_path.rglob("*/input") if d.is_dir()]
+    return [p.parent for p in base_path.rglob("settings.toml")]
 
 
 @mark.regression
@@ -52,9 +52,7 @@ def test_tutorial_regression(tutorial_path, tmpdir, compare_dirs):
 
     # Mark as xfail for a specific tutorial
     if "modify-time-framework" in str(tutorial_path):
-        mark.xfail(reason="Known issue with this tutorial (#371)")(
-            test_tutorial_regression
-        )
+        xfail(reason="Known issue with this tutorial (#371)")
 
     # fail the test if this warning crops up
     simplefilter("error", DtypeWarning)
