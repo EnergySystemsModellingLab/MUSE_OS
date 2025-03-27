@@ -412,8 +412,7 @@ def demand(
         b = b.rename(region="dst_region")
     assert "year" not in b.dims
     return xr.Dataset(
-        dict(b=b, production=1),
-        attrs=dict(kind=ConstraintKind.LOWER_BOUND),
+        dict(b=b, production=1), attrs=dict(kind=ConstraintKind.LOWER_BOUND)
     )
 
 
@@ -725,11 +724,6 @@ def minimum_service(
         technologies[["fixed_outputs", "utilization_factor"]]
         .sel(**kwargs)
         .rename(technology="replacement")
-    )
-    techs = (
-        technologies[["fixed_outputs", "minimum_service_factor"]]
-        .sel(**kwargs)
-        .drop_vars("technology")
     )
     capacity = distribute_timeslice(
         techs.fixed_outputs, level=timeslice_level
