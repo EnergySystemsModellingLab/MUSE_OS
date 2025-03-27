@@ -36,7 +36,7 @@ def test_fullsim_regression(model, tmpdir, compare_dirs):
 
 def available_tutorials():
     base_path = Path(__file__).parent.parent / "docs" / "tutorial-code"
-    return [d.parent for d in base_path.rglob("*/input") if d.is_dir()]
+    return [p.parent for p in base_path.rglob("settings.toml")]
 
 
 @mark.regression
