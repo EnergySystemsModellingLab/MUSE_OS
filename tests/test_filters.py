@@ -194,11 +194,17 @@ def test_init_from_tech(demand_share, technologies, agent_market):
 
     agent = namedtuple("DummyAgent", ["tolerance"])(tolerance=1e-8)
 
+    # All technologies produce demanded commodities
     space = initialize_from_technologies(agent, demand_share, technologies=technologies)
     assert set(space.dims) == {"asset", "replacement"}
     assert (space.asset.values == demand_share.asset.values).all()
     assert (space.replacement.values == technologies.technology.values).all()
     assert space.all()
+
+    # No technology produces demanded commodities
+    technologies.fixed_outputs[:] = 0
+    space = initialize_from_technologies(agent, demand_share, technologies=technologies)
+    assert not space.any()
 
 
 def test_init_from_asset(technologies, rng):
