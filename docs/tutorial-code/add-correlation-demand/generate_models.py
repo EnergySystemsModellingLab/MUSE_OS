@@ -26,10 +26,10 @@ def generate_model_1() -> None:
     os.rename(parent_path / "model", model_path)
 
     # Delete presets
-    shutil.rmtree(model_path / "technodata/preset")
+    shutil.rmtree(model_path / "residential_presets")
 
     # Copy regression files
-    os.mkdir(model_path / "technodata/preset")
+    os.mkdir(model_path / "residential_presets")
     for file in [
         "Macrodrivers.csv",
         "regressionparameters.csv",
@@ -37,12 +37,12 @@ def generate_model_1() -> None:
     ]:
         shutil.copy(
             parent_path / file,
-            model_path / "technodata/preset" / file,
+            model_path / "residential_presets" / file,
         )
 
     # Modify toml file to point to new presets
     settings_file = model_path / "settings.toml"
-    path_prefix = "{path}/technodata/preset/"
+    path_prefix = "{path}/residential_presets/"
     modify_toml(
         settings_file,
         lambda settings: (

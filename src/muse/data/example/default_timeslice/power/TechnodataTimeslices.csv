@@ -1,0 +1,14 @@
+ProcessName,RegionName,Time,month,day,hour,UtilizationFactor,MinimumServiceFactor
+Unit,-,Year,-,-,-,-,-
+gasCCGT,R1,2020,all-year,all-week,night,1,0
+gasCCGT,R1,2020,all-year,all-week,morning,1,0
+gasCCGT,R1,2020,all-year,all-week,afternoon,1,0
+gasCCGT,R1,2020,all-year,all-week,early-peak,1,0
+gasCCGT,R1,2020,all-year,all-week,late-peak,1,0
+gasCCGT,R1,2020,all-year,all-week,evening,1,0
+windturbine,R1,2020,all-year,all-week,night,1,0
+windturbine,R1,2020,all-year,all-week,morning,1,0
+windturbine,R1,2020,all-year,all-week,afternoon,1,0
+windturbine,R1,2020,all-year,all-week,early-peak,1,0
+windturbine,R1,2020,all-year,all-week,late-peak,1,0
+windturbine,R1,2020,all-year,all-week,evening,1,0

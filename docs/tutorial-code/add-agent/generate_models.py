@@ -34,20 +34,20 @@ def generate_model_1():
     )
 
     # Change objective for agent A2
-    agents_file = model_path / "technodata/Agents.csv"
+    agents_file = model_path / "Agents.csv"
     df = pd.read_csv(agents_file)
     df.loc[df["Name"] == "A2", "Objective1"] = "fuel_consumption_cost"
     df.to_csv(agents_file, index=False)
 
     # Split population between the two agents
-    agents_file = model_path / "technodata/Agents.csv"
+    agents_file = model_path / "Agents.csv"
     df = pd.read_csv(agents_file)
     df.loc[:, "Quantity"] = 0.5
     df.to_csv(agents_file, index=False)
 
     # Split capacity equally between the two agents
     for sector in get_sectors(model_path):
-        technodata_file = model_path / f"technodata/{sector}/Technodata.csv"
+        technodata_file = model_path / f"{sector}/Technodata.csv"
         df = pd.read_csv(technodata_file)
         df.loc[1:, "Agent1"] = 0.5
         df.loc[1:, "Agent2"] = 0.5
@@ -71,7 +71,7 @@ def generate_model_2():
         shutil.rmtree(model_path / "Results")
 
     # Add second objective for agent A2
-    agents_file = model_path / "technodata/Agents.csv"
+    agents_file = model_path / "Agents.csv"
     df = pd.read_csv(agents_file)
     df.loc[df["Name"] == "A2", "Objective2"] = "LCOE"
     df.loc[df["Name"] == "A2", "DecisionMethod"] = "weighted_sum"
