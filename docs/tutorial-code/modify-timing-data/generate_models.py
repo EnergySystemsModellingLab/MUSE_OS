@@ -54,7 +54,7 @@ def generate_model_1():
         1.4,
     ]
     for year, multiplier in zip([2020, 2050], [1, 3]):
-        file = model_path / f"technodata/preset/Residential{year}Consumption.csv"
+        file = model_path / f"residential_presets/Residential{year}Consumption.csv"
         df = pd.read_csv(file)
         df["heat"] = [round(i * multiplier, 1) for i in consumption_values]
         df.to_csv(file, index=False)

@@ -1,0 +1,3 @@
+AgentShare,Name,RegionName,Objective,ObjData,Objsort,SearchRule,DecisionMethod,MaturityThreshold,SpendLimit,Type
+Agent1,A1,R1,ALCOE,1,TRUE,from_assets->compress->reduce_assets,singleObj,-1,inf,default
+Agent1,A1,R2,ALCOE,1,TRUE,from_assets->compress->reduce_assets,singleObj,-1,inf,default
