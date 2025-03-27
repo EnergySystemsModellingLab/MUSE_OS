@@ -5,7 +5,7 @@ def modify_technodata_timeslices(model_path, sector, process_name, utilization_f
     import pandas as pd
 
     technodata_timeslices = pd.read_csv(
-        model_path / "technodata" / sector / "TechnodataTimeslices.csv"
+        model_path / sector / "TechnodataTimeslices.csv"
     )
 
     technodata_timeslices.loc[
@@ -43,7 +43,7 @@ def test_fullsim_timeslices(tmpdir, utilization_factors, process_name):
     )
 
     technodata_timeslices.to_csv(
-        model_path / "technodata" / sector / "TechnodataTimeslices.csv", index=False
+        model_path / sector / "TechnodataTimeslices.csv", index=False
     )
 
     with tmpdir.as_cwd():
@@ -103,7 +103,7 @@ def test_zero_utilization_factor_supply_timeslice(
     )
 
     technodata_timeslices.to_csv(
-        model_path / "technodata" / sector / "TechnodataTimeslices.csv", index=False
+        model_path / sector / "TechnodataTimeslices.csv", index=False
     )
 
     with tmpdir.as_cwd():
@@ -149,7 +149,7 @@ def test_all_zero_fatal_error(tmpdir, utilization_factors, process_name):
     )
 
     technodata_timeslices.to_csv(
-        model_path / "technodata" / sector / "TechnodataTimeslices.csv", index=False
+        model_path / sector / "TechnodataTimeslices.csv", index=False
     )
 
     with tmpdir.as_cwd(), raises(ValueError):

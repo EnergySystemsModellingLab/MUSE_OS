@@ -436,12 +436,24 @@ def initialize_from_technologies(
         ("asset", demand.asset.values),
         ("replacement", technologies.technology.values),
     )
-    return xr.DataArray(
+    search_space = xr.DataArray(
         np.ones(tuple(len(u[1]) for u in coords), dtype=bool),
         coords=coords,
         dims=[u[0] for u in coords],
         name="search_space",
     )
+
+    # Only consider technologies that produce demanded commodities
+    demanded_commodities = (demand > 0).any("timeslice")
+    produces_commodity = (technologies.fixed_outputs > 0).rename(
+        technology="replacement"
+    )
+    if "region" in produces_commodity.dims:
+        produces_commodity = produces_commodity.any("region")
+    produces_demanded_commodity = (produces_commodity * demanded_commodities).any(
+        "commodity"
+    )
+    return search_space & produces_demanded_commodity
 
 
 @register_initializer(name="from_assets")
