@@ -37,12 +37,12 @@ commodities_in = '{path}/residential/CommIn.csv'
 commodities_out = '{path}/residential/CommOut.csv'
 
 [sectors.residential.subsectors.heat]
-agents = '{path}/residential/AgentsHeat.csv'
-existing_capacity = '{path}/residential/ExistingCapacityHeat.csv'
+agents = "{path}/residential/AgentsHeat.csv"
+existing_capacity = "{path}/residential/ExistingCapacityHeat.csv"
 
 [sectors.residential.subsectors.cook]
-agents = '{path}/residential/AgentsCook.csv'
-existing_capacity = '{path}/residential/ExistingCapacityCook.csv'
+agents = "{path}/residential/AgentsCook.csv"
+existing_capacity = "{path}/residential/ExistingCapacityCook.csv"
 
 [sectors.power]
 type = 'default'
