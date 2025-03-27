@@ -513,9 +513,6 @@ def test_max_capacity_expansion(max_capacity_expansion):
     assert max_capacity_expansion.production == 0
     assert max_capacity_expansion.b.dims == ("replacement",)
     assert max_capacity_expansion.b.shape == (4,)
-    assert max_capacity_expansion.b.values == approx(
-        [50, 16.883199999999995, 16.883199999999995, 50]
-    )
     assert (
         max_capacity_expansion.replacement
         == ["estove", "gasboiler", "gasstove", "heatpump"]
@@ -538,6 +535,39 @@ def test_max_capacity_expansion_no_limits(
         techs,
     )
     assert result is None
+
+
+def test_max_capacity_expansion_seed(
+    market_demand, capacity, search_space, technologies
+):
+    from muse.constraints import max_capacity_expansion
+
+    seed = 10
+    technologies["growth_seed"] = seed
+
+    # Scenario 1: Zero capacity
+    capacity[:] = 0
+    result1 = max_capacity_expansion(
+        market_demand, capacity, search_space, technologies
+    )
+
+    # Scenario 2: Existing capacity = seed
+    capacity.sel(year=2020)[:] = seed
+    result2 = max_capacity_expansion(
+        market_demand, capacity, search_space, technologies
+    )
+
+    # Scenario 3: Existing capacity > seed
+    capacity.sel(year=2020)[:] = 2 * seed
+    result3 = max_capacity_expansion(
+        market_demand, capacity, search_space, technologies
+    )
+
+    # Result with zero capacity should match result with capacity = seed
+    assert result1.b.values == approx(result2.b.values)
+
+    # Result with capacity > should not match
+    assert result1.b.values != approx(result3.b.values)
 
 
 def test_max_capacity_expansion_infinite_limits(

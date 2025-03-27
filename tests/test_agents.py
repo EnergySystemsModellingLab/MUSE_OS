@@ -207,9 +207,7 @@ def test_initial_assets(tmp_path):
     copy_model("trade", tmp_path / "trade")
 
     def path(x, y):
-        return (
-            tmp_path / x / "model" / "technodata" / "gas" / f"Existing{y.title()}.csv"
-        )
+        return tmp_path / x / "model" / "gas" / f"Existing{y.title()}.csv"
 
     assets = read_initial_assets(path("default", "capacity"))
     assert set(assets.dims) == {"year", "region", "asset"}

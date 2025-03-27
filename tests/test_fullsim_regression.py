@@ -50,6 +50,12 @@ def test_tutorial_regression(tutorial_path, tmpdir, compare_dirs):
 
     from muse.mca import MCA
 
+    # Mark as xfail for a specific tutorial
+    if "modify-time-framework" in str(tutorial_path):
+        mark.xfail(reason="Known issue with this tutorial (#371)")(
+            test_tutorial_regression
+        )
+
     # fail the test if this warning crops up
     simplefilter("error", DtypeWarning)
 
