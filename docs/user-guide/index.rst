@@ -55,5 +55,5 @@ We have also provided links to the input and results files for each of the tutor
       - :ref:`/user-guide/carbon-budget.ipynb`
       - `[8] <https://github.com/EnergySystemsModellingLab/MUSE_OS/tree/main/docs/tutorial-code/carbon-budget>`_
    *  - 9
-      - :ref:`/user-guide/subsectors-budget.ipynb`
+      - :ref:`/user-guide/subsectors.ipynb`
       - `[9] <https://github.com/EnergySystemsModellingLab/MUSE_OS/tree/main/docs/tutorial-code/subsectors>`_
