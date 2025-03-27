@@ -187,21 +187,23 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
             **kwargs,
         )
 
-        # Standardize constraint
         if constraint is not None:
-            if "kind" not in constraint.attrs:
-                constraint.attrs["kind"] = ConstraintKind.UPPER_BOUND
+            # Check constraint
+            if "b" not in constraint.data_vars:
+                raise RuntimeError("Constraint must contain a right-hand-side vector")
             if (
                 "capacity" not in constraint.data_vars
                 and "production" not in constraint.data_vars
             ):
-                raise RuntimeError("Invalid constraint format")
+                raise RuntimeError("Constraint must contain a left-hand-side matrix")
+            if "kind" not in constraint.attrs:
+                raise RuntimeError("Constraint must contain a kind attribute")
+
+            # Standardize constraint
             if "capacity" not in constraint.data_vars:
                 constraint["capacity"] = 0
             if "production" not in constraint.data_vars:
                 constraint["production"] = 0
-            if "b" not in constraint.data_vars:
-                constraint["b"] = 0
             if "name" not in constraint.data_vars and "name" not in constraint.attrs:
                 constraint.attrs["name"] = function.__name__
 
@@ -251,7 +253,7 @@ def factory(
         capacity: xr.DataArray,
         search_space: xr.DataArray,
         technologies: xr.Dataset,
-        timeslice_level: str | None = None,
+        **kwargs,
     ) -> list[Constraint]:
         constraints = [
             function(
@@ -259,7 +261,7 @@ def factory(
                 capacity=capacity,
                 search_space=search_space,
                 technologies=technologies,
-                timeslice_level=timeslice_level,
+                **kwargs,
             )
             for function in constraint_closures
         ]
@@ -459,6 +461,7 @@ def max_production(
     capacity: xr.DataArray,
     search_space: xr.DataArray,
     technologies: xr.Dataset,
+    *,
     timeslice_level: str | None = None,
     **kwargs,
 ) -> Constraint:
@@ -493,6 +496,7 @@ def max_production(
         capa = capa.expand_dims(asset=search_space.asset)
     production = ones_like(capa)
     b = zeros_like(production)
+
     # Include maxaddition constraint in max production to match region-dst_region
     if "dst_region" in technologies.dims:
         b = b.expand_dims(dst_region=technologies.dst_region)
@@ -505,8 +509,9 @@ def max_production(
         capa = capa * broadcast_timeslice(maxadd, level=timeslice_level)
         production = production * broadcast_timeslice(maxadd, level=timeslice_level)
         b = b.rename(region="src_region")
+
     return xr.Dataset(
-        dict(capacity=-cast(np.ndarray, capa), production=production, b=b),
+        dict(capacity=-capa, production=production, b=b),
         attrs=dict(kind=ConstraintKind.UPPER_BOUND),
     )
 
@@ -517,6 +522,7 @@ def demand_limiting_capacity(
     capacity: xr.DataArray,
     search_space: xr.DataArray,
     technologies: xr.Dataset,
+    *,
     timeslice_level: str | None = None,
     **kwargs,
 ) -> Constraint:
@@ -727,6 +733,7 @@ def minimum_service(
     capacity: xr.DataArray,
     search_space: xr.DataArray,
     technologies: xr.Dataset,
+    *,
     timeslice_level: str | None = None,
     **kwargs,
 ) -> Constraint | None:
@@ -761,8 +768,9 @@ def minimum_service(
         capacity = capacity.expand_dims(asset=search_space.asset)
     production = ones_like(capacity)
     b = zeros_like(production)
+
     return xr.Dataset(
-        dict(capacity=-cast(np.ndarray, capacity), production=production, b=b),
+        dict(capacity=-capacity, production=production, b=b),
         attrs=dict(kind=ConstraintKind.LOWER_BOUND),
     )
 
@@ -1082,9 +1090,8 @@ class ScipyAdapter:
 
         As shown above, it does not bind the production decision variables. Hence,
         production is zero. The matrix operator for the capacity is simply the identity.
-        Hence it can be inputted as the dimensionless scalar 1. The upper bound is
-        simply the maximum for replacement technology (and region, if that particular
-        dimension exists in the problem).
+        The upper bound is simply the maximum for replacement technology (and region, if
+        that particular dimension exists in the problem).
 
         The lp problem then becomes:
 
