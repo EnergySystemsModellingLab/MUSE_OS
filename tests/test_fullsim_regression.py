@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pytest import mark
+from pytest import mark, xfail
 
 from muse.examples import available_examples
 
@@ -52,9 +52,7 @@ def test_tutorial_regression(tutorial_path, tmpdir, compare_dirs):
 
     # Mark as xfail for a specific tutorial
     if "modify-time-framework" in str(tutorial_path):
-        mark.xfail(reason="Known issue with this tutorial (#371)")(
-            test_tutorial_regression
-        )
+        xfail(reason="Known issue with this tutorial (#371)")
 
     # fail the test if this warning crops up
     simplefilter("error", DtypeWarning)
