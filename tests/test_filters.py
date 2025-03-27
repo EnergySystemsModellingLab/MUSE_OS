@@ -18,6 +18,12 @@ def search_space(retro_agent, technologies):
     )
 
 
+@fixture
+def technologies(technologies):
+    # Filters must take technology data for a single year
+    return technologies.sel(year=2010)
+
+
 @mark.usefixtures("save_registries")
 def test_filter_registering():
     from muse.filters import SEARCH_SPACE_FILTERS
@@ -40,7 +46,7 @@ def test_filter_registering():
 @mark.usefixtures("save_registries")
 def test_filtering():
     @register_initializer
-    def start(*args, **kwargs):
+    def start(retro_agent, demand, **kwargs):
         return list(range(5))
 
     @register_filter
@@ -53,24 +59,24 @@ def test_filtering():
     def second(retro_agent, search_space, switch=True, data=None):
         return [u for u in search_space if u in data]
 
-    sp = start(None, None, None)
+    sp = start(None, None)
     assert factory(["start", "first"])(None, sp) == sp[2:]
-    assert factory(["start", "first"])(None, sp, False) == sp[:2]
+    assert factory(["start", "first"])(None, sp, switch=False) == sp[:2]
 
     assert factory(["start", "second"])(None, sp, data=(1, 3, 5)) == [1, 3]
     assert factory(["start", "first", "second"])(None, sp, data=(1, 3, 5)) == [3]
-    assert factory(["start", "first", "second"])(None, sp, False, (1, 3, 5)) == [1]
+    assert factory(["start", "first", "second"])(
+        None, sp, switch=False, data=(1, 3, 5)
+    ) == [1]
 
 
 def test_same_enduse(retro_agent, technologies, search_space):
     from muse.commodities import is_enduse
     from muse.filters import same_enduse
 
-    result = same_enduse(retro_agent, search_space, technologies)
+    result = same_enduse(retro_agent, search_space, technologies=technologies)
     enduses = is_enduse(technologies.comm_usage)
-    finputs = technologies.sel(
-        region=retro_agent.region, year=retro_agent.year, commodity=enduses
-    )
+    finputs = technologies.sel(region=retro_agent.region, commodity=enduses)
     finputs = finputs.fixed_outputs > 0
 
     expected = search_space.copy()
@@ -91,7 +97,7 @@ def test_same_enduse(retro_agent, technologies, search_space):
 def test_similar_tech(retro_agent, search_space, technologies):
     from muse.filters import similar_technology
 
-    actual = similar_technology(retro_agent, search_space, technologies)
+    actual = similar_technology(retro_agent, search_space, technologies=technologies)
     assert sorted(actual.dims) == sorted(search_space.dims)
 
     tech_type = technologies.tech_type
@@ -104,7 +110,7 @@ def test_similar_tech(retro_agent, search_space, technologies):
 def test_similar_fuels(retro_agent, search_space, technologies):
     from muse.filters import same_fuels
 
-    actual = same_fuels(retro_agent, search_space, technologies)
+    actual = same_fuels(retro_agent, search_space, technologies=technologies)
     assert sorted(actual.dims) == sorted(search_space.dims)
 
     fuel_type = technologies.fuel
@@ -119,14 +125,14 @@ def test_currently_existing(retro_agent, search_space, technologies, agent_marke
 
     agent_market.capacity[:] = 0
     actual = currently_existing_tech(
-        retro_agent, search_space, technologies, agent_market
+        retro_agent, search_space, technologies=technologies, market=agent_market
     )
     assert sorted(actual.dims) == sorted(search_space.dims)
     assert not actual.any()
 
     agent_market.capacity[:] = 1
     actual = currently_existing_tech(
-        retro_agent, search_space, technologies, agent_market
+        retro_agent, search_space, technologies=technologies, market=agent_market
     )
     assert sorted(actual.dims) == sorted(search_space.dims)
     in_market = search_space.replacement.isin(agent_market.technology)
@@ -141,7 +147,7 @@ def test_currently_existing(retro_agent, search_space, technologies, agent_marke
     agent_market.capacity[:] = 0
     agent_market.capacity.loc[{"technology": agent_market.technology.isin(techs)}] = 1
     actual = currently_existing_tech(
-        retro_agent, search_space, technologies, agent_market
+        retro_agent, search_space, technologies=technologies, market=agent_market
     )
     assert sorted(actual.dims) == sorted(search_space.dims)
     assert not actual.sel(replacement=~in_market).any()
@@ -188,7 +194,7 @@ def test_init_from_tech(demand_share, technologies, agent_market):
 
     agent = namedtuple("DummyAgent", ["tolerance"])(tolerance=1e-8)
 
-    space = initialize_from_technologies(agent, demand_share, technologies)
+    space = initialize_from_technologies(agent, demand_share, technologies=technologies)
     assert set(space.dims) == {"asset", "replacement"}
     assert (space.asset.values == demand_share.asset.values).all()
     assert (space.replacement.values == technologies.technology.values).all()

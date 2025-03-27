@@ -59,7 +59,7 @@ def test_new_retro_split_zero_unmet(_capacity, _market, _technologies):
     from muse.utilities import broadcast_over_assets
 
     _technologies = broadcast_over_assets(_technologies, _capacity)
-    share = new_and_retro_demands(_capacity, _market, _technologies)
+    share = new_and_retro_demands(_capacity, _market.consumption, _technologies)
     assert (share == 0).all()
 
 
@@ -72,14 +72,14 @@ def test_new_retro_split_zero_consumption_increase(_capacity, _market, _technolo
     _market.consumption.loc[{"year": INVESTMENT_YEAR}] = _market.consumption.sel(
         year=CURRENT_YEAR
     )
-    share = new_and_retro_demands(_capacity, _market, _technologies)
+    share = new_and_retro_demands(_capacity, _market.consumption, _technologies)
     assert (share == 0).all()
 
     future_unmet = _capacity.copy()
     future_unmet.loc[{"year": INVESTMENT_YEAR}] = 0.5 * future_unmet.sel(
         year=CURRENT_YEAR
     )
-    share = new_and_retro_demands(future_unmet, _market, _technologies)
+    share = new_and_retro_demands(future_unmet, _market.consumption, _technologies)
     assert (share.new == 0).all()
     assert (share.retrofit != 0).any()
 
@@ -87,11 +87,11 @@ def test_new_retro_split_zero_consumption_increase(_capacity, _market, _technolo
     current_unmet.loc[{"year": CURRENT_YEAR}] = 0.5 * future_unmet.sel(
         year=CURRENT_YEAR
     )
-    share = new_and_retro_demands(current_unmet, _market, _technologies)
+    share = new_and_retro_demands(current_unmet, _market.consumption, _technologies)
     assert (share.new == 0).all()
     assert (share.retrofit != 0).any()
 
-    share = new_and_retro_demands(0.5 * _capacity, _market, _technologies)
+    share = new_and_retro_demands(0.5 * _capacity, _market.consumption, _technologies)
     assert (share.new == 0).all()
     assert (share.retrofit != 0).any()
 
@@ -105,14 +105,14 @@ def test_new_retro_split_zero_new_unmet(_capacity, _market, _technologies):
     _market.consumption.loc[{"year": INVESTMENT_YEAR}] = _market.supply.sel(
         year=CURRENT_YEAR, drop=True
     ).transpose(*_market.consumption.loc[{"year": INVESTMENT_YEAR}].dims)
-    share = new_and_retro_demands(_capacity, _market, _technologies)
+    share = new_and_retro_demands(_capacity, _market.consumption, _technologies)
     assert (share == 0).all()
 
     future_unmet = _capacity.copy()
     future_unmet.loc[{"year": INVESTMENT_YEAR}] = 0.5 * future_unmet.sel(
         year=CURRENT_YEAR
     )
-    share = new_and_retro_demands(future_unmet, _market, _technologies)
+    share = new_and_retro_demands(future_unmet, _market.consumption, _technologies)
     assert (share.new == 0).all()
     assert (share.retrofit != 0).any()
 
@@ -120,13 +120,13 @@ def test_new_retro_split_zero_new_unmet(_capacity, _market, _technologies):
     current_unmet.loc[{"year": CURRENT_YEAR}] = 0.5 * future_unmet.sel(
         year=CURRENT_YEAR
     )
-    share = new_and_retro_demands(current_unmet, _market, _technologies)
+    share = new_and_retro_demands(current_unmet, _market.consumption, _technologies)
     assert (share.new == 0).all()
     assert (share.retrofit != 0).any()
 
     share = new_and_retro_demands(
         0.5 * _capacity,
-        _market,
+        _market.consumption,
         _technologies,
     )
     assert (share.new == 0).all()
@@ -140,7 +140,7 @@ def test_new_retro_accounting_identity(_capacity, _market, _technologies):
 
     _technologies = broadcast_over_assets(_technologies, _capacity)
 
-    share = new_and_retro_demands(_capacity, _market, _technologies)
+    share = new_and_retro_demands(_capacity, _market.consumption, _technologies)
     assert (share >= 0).all()
 
     serviced = (
@@ -278,7 +278,7 @@ def test_new_retro_demand_share(_technologies, market, timeslice, stock):
         Agent(0 * asia_stock, "new", uuid4(), "a", "ASEAN", 0.0),
     ]
 
-    results = new_and_retro(agents, market, _technologies)
+    results = new_and_retro(agents, market.consumption, _technologies)
 
     for _, share in results.groupby("agent"):
         assert share.sel(
@@ -338,11 +338,11 @@ def test_standard_demand_share(_technologies, timeslice, stock):
     ]
 
     with raises(RetrofitAgentInStandardDemandShare):
-        standard_demand(agents, market, _technologies)
+        standard_demand(agents, market.consumption, _technologies)
 
     agents = [a for a in agents if a.category != "retrofit"]
 
-    results = standard_demand(agents, market, _technologies)
+    results = standard_demand(agents, market.consumption, _technologies)
 
     uuid_to_category = {agent.uuid: agent.category for agent in agents}
     uuid_to_name = {agent.uuid: agent.name for agent in agents}
@@ -384,7 +384,7 @@ def test_unmet_forecast_demand(_technologies, timeslice, stock):
         Agent(0.7 * usa_stock),
         Agent(asia_stock),
     ]
-    result = unmet_forecasted_demand(agents, market, _technologies)
+    result = unmet_forecasted_demand(agents, market.consumption, _technologies)
     assert set(result.dims) == set(market.consumption.dims) - {"year"}
     assert result.values == approx(0)
 
@@ -396,7 +396,7 @@ def test_unmet_forecast_demand(_technologies, timeslice, stock):
     ]
     result = unmet_forecasted_demand(
         agents,
-        market,
+        market.consumption,
         _technologies,
     )
     assert set(result.dims) == set(market.consumption.dims) - {"year"}
@@ -407,7 +407,7 @@ def test_unmet_forecast_demand(_technologies, timeslice, stock):
         Agent(0.5 * usa_stock),
         Agent(0.5 * asia_stock),
     ]
-    result = unmet_forecasted_demand(agents, market, _technologies)
+    result = unmet_forecasted_demand(agents, market.consumption, _technologies)
     comm_usage = _technologies.comm_usage.sel(commodity=market.commodity)
     enduse = is_enduse(comm_usage)
     assert (result.commodity == comm_usage.commodity).all()

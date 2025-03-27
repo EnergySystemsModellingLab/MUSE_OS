@@ -378,7 +378,7 @@ def _trade_search_space(sector: str, model: str = "default") -> xr.DataArray:
                 a.uuid: cast(Agent, a).search_rules(
                     agent=a,
                     demand=market.consumption.isel(year=0, drop=True),
-                    technologies=loaded_sector.technologies,
+                    technologies=loaded_sector.technologies.isel(year=0, drop=True),
                     market=market,
                 )
                 for a in loaded_sector.agents
