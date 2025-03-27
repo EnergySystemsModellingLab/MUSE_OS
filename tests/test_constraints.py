@@ -167,7 +167,7 @@ def test_constraints_dimensions(
 
     # Demand constraint
     assert set(demand_constraint.capacity.dims) == set()
-    assert set(demand_constraint.production.dims) == {"asset", "commodity", "timeslice"}
+    assert set(demand_constraint.production.dims) == set()
     assert set(demand_constraint.b.dims) == {"asset", "commodity", "timeslice"}
 
     # Demand limiting capacity constraint
@@ -180,7 +180,7 @@ def test_constraints_dimensions(
     assert set(demand_limiting_capacity.b.dims) == {"asset", "commodity"}
 
     # Max capacity expansion constraint
-    assert set(max_capacity_expansion.capacity.dims) == {"replacement"}
+    assert set(max_capacity_expansion.capacity.dims) == set()
     assert set(max_capacity_expansion.production.dims) == set()
     assert set(max_capacity_expansion.b.dims) == {"replacement"}
 
@@ -511,7 +511,7 @@ def test_minimum_service(
 
 
 def test_max_capacity_expansion(max_capacity_expansion):
-    assert (max_capacity_expansion.capacity == 1).all()
+    assert max_capacity_expansion.capacity == 1
     assert max_capacity_expansion.production == 0
     assert max_capacity_expansion.b.dims == ("replacement",)
     assert max_capacity_expansion.b.shape == (4,)
