@@ -196,10 +196,10 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
                 and "production" not in constraint.data_vars
             ):
                 raise RuntimeError("Constraint must contain a left-hand-side matrix")
+            if "kind" not in constraint.attrs:
+                raise RuntimeError("Constraint must contain a kind attribute")
 
             # Standardize constraint
-            if "kind" not in constraint.attrs:
-                constraint.attrs["kind"] = ConstraintKind.UPPER_BOUND
             if "capacity" not in constraint.data_vars:
                 constraint["capacity"] = 0
             if "production" not in constraint.data_vars:
@@ -1030,9 +1030,8 @@ class ScipyAdapter:
 
         As shown above, it does not bind the production decision variables. Hence,
         production is zero. The matrix operator for the capacity is simply the identity.
-        Hence it can be inputted as the dimensionless scalar 1. The upper bound is
-        simply the maximum for replacement technology (and region, if that particular
-        dimension exists in the problem).
+        The upper bound is simply the maximum for replacement technology (and region, if
+        that particular dimension exists in the problem).
 
         The lp problem then becomes:
 
