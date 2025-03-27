@@ -191,6 +191,7 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
             # Check constraint
             if "b" not in constraint.data_vars:
                 raise RuntimeError("Constraint must contain a right-hand-side vector")
+            assert not constraint.b.dims == ()
             if (
                 "capacity" not in constraint.data_vars
                 and "production" not in constraint.data_vars
@@ -430,7 +431,8 @@ def demand(
         b = b.rename(region="dst_region")
     assert "year" not in b.dims
     return xr.Dataset(
-        dict(b=b, production=1), attrs=dict(kind=ConstraintKind.LOWER_BOUND)
+        dict(b=b, production=xr.ones_like(b)),
+        attrs=dict(kind=ConstraintKind.LOWER_BOUND),
     )
 
 
