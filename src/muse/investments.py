@@ -228,6 +228,7 @@ def adhoc_match_demand(
     constraints: list[Constraint],
     *,
     timeslice_level: str | None = None,
+    **kwargs,
 ) -> xr.DataArray:
     from muse.demand_matching import demand_matching
     from muse.quantities import capacity_in_use, maximum_production
@@ -281,6 +282,7 @@ def scipy_match_demand(
     *,
     commodities: list[str],
     timeslice_level: str | None = None,
+    **kwargs,
 ) -> xr.DataArray:
     from logging import getLogger
 

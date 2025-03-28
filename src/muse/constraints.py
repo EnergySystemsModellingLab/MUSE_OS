@@ -1247,7 +1247,11 @@ class ScipyAdapter:
         """
 
         def reshape(matrix: xr.DataArray) -> np.ndarray:
-            """Convert constraints matrix to a 2D np array."""
+            """Convert constraints matrix to a 2D np array.
+
+            The rows of the constraaints matrix will represent the constraints, and the
+            columns will represent the decision variables.
+            """
             # Before building LP we need to sort dimensions for consistency
             if list(matrix.dims) != sorted(matrix.dims):
                 matrix = matrix.transpose(*sorted(matrix.dims))
@@ -1258,7 +1262,7 @@ class ScipyAdapter:
                 [matrix[u].shape[0] for u in matrix.dims if str(u).startswith("c")]
             )
 
-            # Reshape into a 2D array: N constrians x N decision variables
+            # Reshape into a 2D array: N constraints x N decision variables
             return matrix.values.reshape((size, -1))
 
         def extract_bA(constraints, *kinds: ConstraintKind):

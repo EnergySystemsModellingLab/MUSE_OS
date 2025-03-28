@@ -61,12 +61,17 @@ def market_demand(assets, technologies):
     from muse.quantities import maximum_production
     from muse.utilities import broadcast_over_assets
 
-    return 0.8 * maximum_production(
+    # Set demand just below the maximum production of existing assets
+    res = 0.8 * maximum_production(
         broadcast_over_assets(technologies, assets),
         assets.capacity,
     ).sel(year=INVESTMENT_YEAR).groupby("technology").sum("asset").rename(
         technology="asset"
     )
+
+    # Remove un-demanded commodities
+    res = res.sel(commodity=(res > 0).any(dim=["timeslice", "asset"]))
+    return res
 
 
 @fixture
@@ -98,11 +103,6 @@ def max_production(market_demand, capacity, search_space, technologies):
 
 
 @fixture
-def constraint(max_production):
-    return max_production
-
-
-@fixture
 def demand_constraint(market_demand, capacity, search_space, technologies):
     from muse.constraints import demand
 
@@ -128,19 +128,24 @@ def demand_limiting_capacity(market_demand, capacity, search_space, technologies
     return demand_limiting_capacity(market_demand, capacity, search_space, technologies)
 
 
-@fixture(params=["timeslice_as_list", "timeslice_as_multindex"])
-def constraints(request, market_demand, capacity, search_space, technologies):
-    from muse import constraints as cs
+@fixture
+def constraint(max_production):
+    return max_production
 
+
+@fixture(params=["timeslice_as_list", "timeslice_as_multindex"])
+def constraints(
+    request,
+    max_production,
+    demand_constraint,
+    demand_limiting_capacity,
+    max_capacity_expansion,
+):
     constraints = [
-        cs.max_production(market_demand, capacity, search_space, technologies),
-        cs.demand(market_demand, capacity, search_space, technologies),
-        cs.max_capacity_expansion(
-            market_demand,
-            capacity,
-            search_space,
-            technologies,
-        ),
+        max_production,
+        demand_limiting_capacity,
+        demand_constraint,
+        max_capacity_expansion,
     ]
     if request.param == "timeslice_as_multindex":
         constraints = [_as_list(cs) for cs in constraints]
@@ -172,7 +177,7 @@ def test_constraints_dimensions(
 
     # Demand constraint
     assert set(demand_constraint.capacity.dims) == set()
-    assert set(demand_constraint.production.dims) == {"asset", "commodity", "timeslice"}
+    assert set(demand_constraint.production.dims) == set()
     assert set(demand_constraint.b.dims) == {"asset", "commodity", "timeslice"}
 
     # Demand limiting capacity constraint
@@ -251,18 +256,29 @@ def test_to_scipy_adapter_maxprod(costs, max_production, commodities, lpcosts):
     )
     assert set(adapter.kwargs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
     assert adapter.bounds == (0, np.inf)
+    assert adapter.A_ub is not None
+    assert adapter.b_ub is not None
     assert adapter.A_eq is None
     assert adapter.b_eq is None
     assert adapter.c.ndim == 1
     assert adapter.b_ub.ndim == 1
     assert adapter.A_ub.ndim == 2
-    assert adapter.b_ub.size == adapter.A_ub.shape[0]
-    assert adapter.c.size == adapter.A_ub.shape[1]
 
-    capsize = lpcosts.capacity.size
-    prodsize = lpcosts.production.size
+    capsize = lpcosts.capacity.size  # number of capacity decision variables
+    prodsize = lpcosts.production.size  # number of production decision variables
+    bsize = adapter.b_ub.size  # number of constraints
+
     assert adapter.c.size == capsize + prodsize
-    assert adapter.b_ub.size == prodsize
+    assert adapter.A_ub.shape[0] == bsize
+    assert adapter.A_ub.shape[1] == capsize + prodsize
+
+    assert (
+        bsize
+        == lpcosts.commodity.size
+        * lpcosts.timeslice.size
+        * lpcosts.asset.size
+        * lpcosts.replacement.size
+    )
     assert adapter.b_ub == approx(0)
     assert adapter.A_ub[:, capsize:] == approx(np.eye(prodsize))
 
@@ -282,18 +298,17 @@ def test_to_scipy_adapter_demand(costs, demand_constraint, commodities, lpcosts)
     assert adapter.c.ndim == 1
     assert adapter.b_ub.ndim == 1
     assert adapter.A_ub.ndim == 2
-    assert adapter.b_ub.size == adapter.A_ub.shape[0]
-    assert adapter.c.size == adapter.A_ub.shape[1]
 
-    capsize = lpcosts.capacity.size
-    prodsize = lpcosts.production.size
+    capsize = lpcosts.capacity.size  # number of capacity decision variables
+    prodsize = lpcosts.production.size  # number of production decision variables
+    bsize = adapter.b_ub.size  # number of constraints
+
     assert adapter.c.size == capsize + prodsize
-    assert (
-        adapter.b_ub.size
-        == lpcosts.commodity.size * lpcosts.timeslice.size * lpcosts.asset.size
-    )
+    assert adapter.A_ub.shape[0] == bsize
+    assert adapter.A_ub.shape[1] == capsize + prodsize
+
+    assert bsize == lpcosts.commodity.size * lpcosts.timeslice.size * lpcosts.asset.size
     assert adapter.A_ub[:, :capsize] == approx(0)
-    assert adapter.A_ub[:, capsize:].shape[0] == lpcosts.production.size
     assert set(adapter.A_ub[:, capsize:].flatten()) == {0.0, -1.0}
 
 
@@ -314,16 +329,17 @@ def test_to_scipy_adapter_max_capacity_expansion(
     assert adapter.c.ndim == 1
     assert adapter.b_ub.ndim == 1
     assert adapter.A_ub.ndim == 2
-    assert adapter.b_ub.size == adapter.A_ub.shape[0]
-    assert adapter.c.size == adapter.A_ub.shape[1]
-    assert adapter.c.ndim == 1
 
-    capsize = lpcosts.capacity.size
-    prodsize = lpcosts.production.size
+    capsize = lpcosts.capacity.size  # number of capacity decision variables
+    prodsize = lpcosts.production.size  # number of production decision variables
+    bsize = adapter.b_ub.size  # number of constraints
+
     assert adapter.c.size == capsize + prodsize
-    assert adapter.b_ub.size == lpcosts.replacement.size
+    assert adapter.A_ub.shape[0] == bsize
+    assert adapter.A_ub.shape[1] == capsize + prodsize
+
+    assert bsize == lpcosts.replacement.size
     assert adapter.A_ub[:, capsize:] == approx(0)
-    assert adapter.A_ub[:, :capsize].sum(axis=1) == approx(lpcosts.asset.size)
     assert set(adapter.A_ub[:, :capsize].flatten()) == {0.0, 1.0}
 
 
@@ -339,8 +355,8 @@ def test_to_scipy_adapter_no_constraint(costs, commodities, lpcosts):
     assert adapter.b_eq is None
     assert adapter.c.ndim == 1
 
-    capsize = lpcosts.capacity.size
-    prodsize = lpcosts.production.size
+    capsize = lpcosts.capacity.size  # number of capacity decision variables
+    prodsize = lpcosts.production.size  # number of production decision variables
     assert adapter.c.size == capsize + prodsize
 
 
@@ -440,11 +456,16 @@ def test_scipy_adapter_standard_constraints(costs, constraints, commodities):
     maxprod = next(cs for cs in constraints if cs.name == "max_production")
     maxcapa = next(cs for cs in constraints if cs.name == "max capacity expansion")
     demand = next(cs for cs in constraints if cs.name == "demand")
-    assert adapter.c.size == costs.size + maxprod.production.size
+    dlc = next(cs for cs in constraints if cs.name == "demand_limiting_capacity")
+
+    n_constraints = adapter.b_ub.size
+    n_decision_vars = adapter.c.size
+
+    assert n_decision_vars == costs.size + maxprod.production.size
     assert adapter.b_eq is None
     assert adapter.A_eq is None
-    assert adapter.A_ub.shape == (adapter.b_ub.size, adapter.c.size)
-    assert adapter.b_ub.size == demand.b.size + maxprod.b.size + maxcapa.b.size
+    assert adapter.A_ub.shape == (n_constraints, n_decision_vars)
+    assert n_constraints == demand.b.size + maxprod.b.size + maxcapa.b.size + dlc.b.size
 
 
 def test_scipy_solver(technologies, costs, constraints, commodities):
