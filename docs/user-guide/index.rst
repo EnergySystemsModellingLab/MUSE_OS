@@ -20,6 +20,7 @@ We have also provided links to the input and results files for each of the tutor
    modify-timing-data
    min-max-timeslice-constraints
    carbon-budget
+   subsectors
 
 
 .. list-table::
@@ -53,3 +54,6 @@ We have also provided links to the input and results files for each of the tutor
    *  - 8
       - :ref:`/user-guide/carbon-budget.ipynb`
       - `[8] <https://github.com/EnergySystemsModellingLab/MUSE_OS/tree/main/docs/tutorial-code/carbon-budget>`_
+   *  - 9
+      - :ref:`/user-guide/subsectors.ipynb`
+      - `[9] <https://github.com/EnergySystemsModellingLab/MUSE_OS/tree/main/docs/tutorial-code/subsectors>`_

@@ -1,0 +1,85 @@
+# MUSE settings file
+
+# Global settings
+time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
+regions = ["R1"]
+interpolation_mode = 'linear'
+log_level = 'info'
+equilibrium_variable = 'demand'
+maximum_iterations = 100
+tolerance = 0.1
+tolerance_unmet_demand = -0.1
+excluded_commodities = ["wind"]
+
+# Timeslices
+[timeslices]
+level_names = ["month", "day", "hour"]
+
+[timeslices.all-year.all-week]
+night = 1460
+morning = 1460
+afternoon = 1460
+early-peak = 1460
+late-peak = 1460
+evening = 1460
+
+# Global inputs
+[global_input_files]
+projections = '{path}/Projections.csv'
+global_commodities = '{path}/GlobalCommodities.csv'
+
+# Sectors
+[sectors.residential]
+type = 'default'
+priority = 1
+technodata = '{path}/residential/Technodata.csv'
+commodities_in = '{path}/residential/CommIn.csv'
+commodities_out = '{path}/residential/CommOut.csv'
+
+[sectors.residential.subsectors.heat]
+agents = "{path}/residential/AgentsHeat.csv"
+existing_capacity = "{path}/residential/ExistingCapacityHeat.csv"
+commodities = ["heat"]
+
+[sectors.residential.subsectors.cook]
+agents = "{path}/residential/AgentsCook.csv"
+existing_capacity = "{path}/residential/ExistingCapacityCook.csv"
+commodities = ["cook"]
+
+[sectors.power]
+type = 'default'
+priority = 2
+technodata = '{path}/power/Technodata.csv'
+commodities_in = '{path}/power/CommIn.csv'
+commodities_out = '{path}/power/CommOut.csv'
+
+[sectors.power.subsectors.all]
+agents = '{path}/Agents.csv'
+existing_capacity = '{path}/power/ExistingCapacity.csv'
+
+[sectors.gas]
+type = 'default'
+priority = 3
+technodata = '{path}/gas/Technodata.csv'
+commodities_in = '{path}/gas/CommIn.csv'
+commodities_out = '{path}/gas/CommOut.csv'
+
+[sectors.gas.subsectors.all]
+agents = '{path}/Agents.csv'
+existing_capacity = '{path}/gas/ExistingCapacity.csv'
+
+[sectors.residential_presets]
+type = 'presets'
+priority = 0
+consumption_path = "{path}/residential_presets/*Consumption.csv"
+
+# Global outputs
+[[outputs]]
+quantity = "capacity"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
+
+[[outputs]]
+quantity = "prices"
+sink = "aggregate"
+filename = "{cwd}/{default_output_dir}/MCA{Quantity}.csv"
