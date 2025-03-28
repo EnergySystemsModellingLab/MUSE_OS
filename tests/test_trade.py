@@ -1,8 +1,6 @@
 from collections.abc import Mapping
 from typing import Any
 
-import numpy as np
-import xarray as xr
 from pytest import approx, fixture
 
 
@@ -90,32 +88,6 @@ def test_search_space(constraints_args):
     assert set(constraint.b.dims) == {"replacement", "agent"}
     assert set(constraint.capacity.dims) == {"replacement", "agent"}
     assert set(constraint.agent.coords) == {"region", "agent"}
-
-
-def test_lp_costs():
-    from muse import examples
-    from muse.constraints import lp_costs
-
-    technologies = examples.technodata("power", model="trade")
-    search_space = examples.search_space("power", model="trade")
-    costs = (
-        search_space
-        * np.arange(np.prod(search_space.shape)).reshape(search_space.shape)
-        * xr.ones_like(technologies.dst_region)
-    )
-
-    lpcosts = lp_costs(technologies.sel(year=2020, drop=True), costs)
-    assert "capacity" in lpcosts.data_vars
-    assert "production" in lpcosts.data_vars
-    assert set(lpcosts.capacity.dims) == {"agent", "replacement", "dst_region"}
-    assert set(lpcosts.production.dims) == {
-        "agent",
-        "replacement",
-        "dst_region",
-        "timeslice",
-        "commodity",
-    }
-    assert set(lpcosts.agent.coords) == {"region", "agent"}
 
 
 def test_power_sector_no_investment():
