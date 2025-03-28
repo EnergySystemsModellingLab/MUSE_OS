@@ -191,7 +191,6 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
             # Check constraint
             if "b" not in constraint.data_vars:
                 raise RuntimeError("Constraint must contain a right-hand-side vector")
-            assert not constraint.b.dims == ()
             if (
                 "capacity" not in constraint.data_vars
                 and "production" not in constraint.data_vars
@@ -885,78 +884,80 @@ def lp_constraint_matrix(
      conditions above.
 
     Example:
-         Lets first setup a constraint and a cost matrix:
+        Lets first setup a constraint and a cost matrix:
 
-         >>> from muse import examples
-         >>> from muse import constraints as cs
-         >>> from muse.utilities import reduce_assets
-         >>> res = examples.sector("residential", model="medium")
-         >>> market = examples.residential_market("medium")
-         >>> technologies = res.technologies.sel(year=2025)
-         >>> search = examples.search_space("residential", model="medium")
-         >>> assets = next(a.assets for a in res.agents)
-         >>> capacity = reduce_assets(assets.capacity, coords=("region", "technology"))
-         >>> demand = None # not used in max production
-         >>> constraint = cs.max_production(demand, capacity.sel(year=[2020, 2025]),
-         ...                                search, technologies) # noqa: E501
-         >>> lpcosts = cs.lp_costs(
-         ...     (
-         ...         technologies
-         ...         .sel(region=assets.region)
-         ...     ),
-         ...     costs=search * np.arange(np.prod(search.shape)).reshape(search.shape),
-         ... )
+        >>> from muse import examples
+        >>> from muse import constraints as cs
+        >>> from muse.utilities import reduce_assets
+        >>> from muse.quantities import maximum_production
+        >>> res = examples.sector("residential", model="medium")
+        >>> market = examples.residential_market("medium")
+        >>> technologies = res.technologies.sel(year=2025)
+        >>> search = examples.search_space("residential", model="medium")
+        >>> assets = next(a.assets for a in res.agents)
+        >>> capacity = reduce_assets(assets.capacity, coords=("region", "technology"))
+        >>> market_demand = 0.8 * maximum_production(
+        ...     technologies,
+        ...     assets.capacity,
+        ... ).sel(year=2025)
+        >>> constraint = cs.max_production(market_demand,
+        ...                                capacity.sel(year=[2020, 2025]),
+        ...                                search, technologies) # noqa: E501
+        >>> lpcosts = cs.lp_costs(
+        ...     search * np.arange(np.prod(search.shape)).reshape(search.shape),
+        ...     commodities=["heat", "cook"],
+        ... )
 
-         For a simple example, we can first check the case where b is scalar. The result
-         ought to be a single row of a matrix, or a vector with only decision variables:
+        For a simple example, we can first check the case where b is scalar. The result
+        ought to be a single row of a matrix, or a vector with only decision variables:
 
-         >>> from pytest import approx
-         >>> result = cs.lp_constraint_matrix(
-         ...     xr.DataArray(1), constraint.capacity, lpcosts.capacity
-         ... )
-         >>> assert result.values == approx(-1)
-         >>> assert set(result.dims) == {f"d({x})" for x in lpcosts.capacity.dims}
-         >>> result = cs.lp_constraint_matrix(
-         ...     xr.DataArray(1), constraint.production, lpcosts.production
-         ... )
-         >>> assert set(result.dims) == {f"d({x})" for x in lpcosts.production.dims}
-         >>> assert result.values == approx(1)
+        >>> from pytest import approx
+        >>> result = cs.lp_constraint_matrix(
+        ...     xr.DataArray(1), constraint.capacity, lpcosts.capacity
+        ... )
+        >>> assert result.values == approx(-1)
+        >>> assert set(result.dims) == {f"d({x})" for x in lpcosts.capacity.dims}
+        >>> result = cs.lp_constraint_matrix(
+        ...     xr.DataArray(1), constraint.production, lpcosts.production
+        ... )
+        >>> assert set(result.dims) == {f"d({x})" for x in lpcosts.production.dims}
+        >>> assert result.values == approx(1)
 
-         As expected, the capacity vector is 1, whereas the production vector is -1.
-         These are the values the :py:func:`~muse.constraints.max_production` is set up
-         to create.
+        As expected, the capacity vector is 1, whereas the production vector is -1.
+        These are the values the :py:func:`~muse.constraints.max_production` is set up
+        to create.
 
-         Now, let's check the case where ``b`` is the one from the
-         :py:func:`~muse.constraints.max_production` constraint. In that case, all the
-         dimensions should end up as constraint dimensions: the production for each
-         timeslice, region, asset, and replacement technology should not outstrip the
-         capacity assigned for the asset and replacement technology.
+        Now, let's check the case where ``b`` is the one from the
+        :py:func:`~muse.constraints.max_production` constraint. In that case, all the
+        dimensions should end up as constraint dimensions: the production for each
+        timeslice, region, asset, and replacement technology should not outstrip the
+        capacity assigned for the asset and replacement technology.
 
-         >>> result = cs.lp_constraint_matrix(
-         ...     constraint.b, constraint.capacity, lpcosts.capacity
-         ... )
-         >>> decision_dims = {f"d({x})" for x in lpcosts.capacity.dims}
-         >>> constraint_dims = {
-         ...     f"c({x})"
-         ...     for x in set(lpcosts.production.dims).union(constraint.b.dims)
-         ... }
-         >>> assert set(result.dims) == decision_dims.union(constraint_dims)
+        >>> result = cs.lp_constraint_matrix(
+        ...     constraint.b, constraint.capacity, lpcosts.capacity
+        ... )
+        >>> decision_dims = {f"d({x})" for x in lpcosts.capacity.dims}
+        >>> constraint_dims = {
+        ...     f"c({x})"
+        ...     for x in set(lpcosts.production.dims).union(constraint.b.dims)
+        ... }
+        >>> assert set(result.dims) == decision_dims.union(constraint_dims)
 
-         The :py:func:`~muse.constraints.max_production` constraint on the production
-         side is the identy matrix with a factor :math:`-1`. We can easily check this
-         by stacking the decision and constraint dimensions in the result:
+        The :py:func:`~muse.constraints.max_production` constraint on the production
+        side is the identy matrix with a factor :math:`-1`. We can easily check this
+        by stacking the decision and constraint dimensions in the result:
 
-         >>> result = cs.lp_constraint_matrix(
-         ...     constraint.b, constraint.production, lpcosts.production
-         ... )
-         >>> decision_dims = {f"d({x})" for x in lpcosts.production.dims}
-         >>> assert set(result.dims) == decision_dims.union(constraint_dims)
-         >>> result = result.reset_index("d(timeslice)", drop=True).assign_coords(
-         ...        {"d(timeslice)": result["d(timeslice)"].values}
-         ... )
-         >>> stacked = result.stack(d=sorted(decision_dims), c=sorted(constraint_dims))
-         >>> assert stacked.shape[0] == stacked.shape[1]
-         >>> assert stacked.values == approx(np.eye(stacked.shape[0]))
+        >>> result = cs.lp_constraint_matrix(
+        ...     constraint.b, constraint.production, lpcosts.production
+        ... )
+        >>> decision_dims = {f"d({x})" for x in lpcosts.production.dims}
+        >>> assert set(result.dims) == decision_dims.union(constraint_dims)
+        >>> result = result.reset_index("d(timeslice)", drop=True).assign_coords(
+        ...        {"d(timeslice)": result["d(timeslice)"].values}
+        ... )
+        >>> stacked = result.stack(d=sorted(decision_dims), c=sorted(constraint_dims))
+        >>> assert stacked.shape[0] == stacked.shape[1]
+        >>> assert stacked.values == approx(np.eye(stacked.shape[0]))
     """
     from functools import reduce
 

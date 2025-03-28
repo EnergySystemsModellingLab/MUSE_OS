@@ -195,6 +195,27 @@ def test_constraints_dimensions(
     assert set(max_capacity_expansion.b.dims) == {"replacement"}
 
 
+def test_lp_constraints_matrix_b_is_scalar(constraint, lpcosts):
+    """B is a scalar.
+
+    When ``b`` is a scalar, the output should be equivalent to a single row matrix, or a
+    single vector with only decision variables.
+    """
+    from muse.constraints import lp_constraint_matrix
+
+    lpconstraint = lp_constraint_matrix(
+        xr.DataArray(1), constraint.capacity, lpcosts.capacity
+    )
+    assert lpconstraint.values == approx(-1)
+    assert set(lpconstraint.dims) == {f"d({x})" for x in lpcosts.capacity.dims}
+
+    lpconstraint = lp_constraint_matrix(
+        xr.DataArray(1), constraint.production, lpcosts.production
+    )
+    assert lpconstraint.values == approx(1)
+    assert set(lpconstraint.dims) == {f"d({x})" for x in lpcosts.production.dims}
+
+
 def test_max_production_constraint_diagonal(constraint, lpcosts):
     """Production side of max capacity production is diagonal.
 
