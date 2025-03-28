@@ -809,21 +809,33 @@ def lp_constraint(constraint: Constraint, lpcosts: xr.Dataset) -> Constraint:
     of the transformations applied here.
     """
     constraint = constraint.copy(deep=False)
-    for dim in constraint.dims:
-        if isinstance(constraint.get_index(dim), pd.MultiIndex):
-            constraint = drop_timeslice(constraint)
-            constraint[dim] = pd.Index(constraint.get_index(dim), tupleize_cols=False)
+
+    # Deal with timeslice multiindex
+    if "timeslice" in constraint.dims:
+        constraint = drop_timeslice(constraint)
+        constraint["timeslice"] = pd.Index(
+            constraint.get_index("timeslice"), tupleize_cols=False
+        )
+
+    # Rename dimensions in b
     b = constraint.b.drop_vars(set(constraint.b.coords) - set(constraint.b.dims))
     b = b.rename({k: f"c({k})" for k in b.dims})
+
+    # Create capacity constraint matrix
     capacity = lp_constraint_matrix(constraint.b, constraint.capacity, lpcosts.capacity)
     capacity = capacity.drop_vars(set(capacity.coords) - set(capacity.dims))
+
+    # Create production constraint matrix
     production = lp_constraint_matrix(
         constraint.b, constraint.production, lpcosts.production
     )
     production = production.drop_vars(set(production.coords) - set(production.dims))
-    return xr.Dataset(
+
+    # Combine data
+    result = xr.Dataset(
         {"b": b, "capacity": capacity, "production": production}, attrs=constraint.attrs
     )
+    return result
 
 
 def lp_constraint_matrix(
@@ -928,30 +940,33 @@ def lp_constraint_matrix(
 
     from numpy import eye
 
+    # Sum over all dimensions that are not in the constraint or the decision variables
     result = constraint.sum(set(constraint.dims) - set(lpcosts.dims) - set(b.dims))
 
+    # Rename dimensions for decision variables
     result = result.rename(
         {k: f"d({k})" for k in set(result.dims).intersection(lpcosts.dims)}
     )
+
+    # Rename dimensions for constraints
     result = result.rename(
         {k: f"c({k})" for k in set(result.dims).intersection(b.dims)}
     )
+
+    # Expand dimensions that are in the decision variables but not in the constraint
     expand = set(lpcosts.dims) - set(constraint.dims) - set(b.dims)
-
-    if expand == {"timeslice", "asset", "commodity"}:
-        expand = ["asset", "timeslice", "commodity"]
-
     result = result.expand_dims(
         {f"d({k})": lpcosts[k].rename({k: f"d({k})"}).set_index() for k in expand}
     )
-    expand = set(b.dims) - set(constraint.dims) - set(lpcosts.dims)
 
+    # Expand dimensions that are in the constraint but not in the decision variables
+    expand = set(b.dims) - set(constraint.dims) - set(lpcosts.dims)
     result = result.expand_dims(
         {f"c({k})": b[k].rename({k: f"c({k})"}).set_index() for k in expand}
     )
 
+    # Dimensions that are in both the decision variables and the constraint
     diag_dims = set(b.dims).intersection(lpcosts.dims)
-
     diag_dims = sorted(diag_dims)
 
     if diag_dims:
@@ -1094,20 +1109,30 @@ class ScipyAdapter:
         costs: xr.DataArray,
         *constraints: Constraint,
     ) -> ScipyAdapter:
+        # Calculate costs for the linear problem
         lpcosts = lp_costs(costs, *constraints)
 
+        # Create dataset from costs and constraints
         data = cls._unified_dataset(lpcosts, *constraints)
 
+        # Get capacity constraint matrix / costs
         capacities = cls._selected_quantity(data, "capacity")
 
+        # Get production constraint matrix / costs
         productions = cls._selected_quantity(data, "production")
 
+        # Get constraint vector
         bs = cls._selected_quantity(data, "b")
 
+        # Prepare scipy adapter from constraints
         kwargs = cls._to_scipy_adapter(capacities, productions, bs, *constraints)
 
         def to_muse(x: np.ndarray) -> xr.Dataset:
-            return ScipyAdapter._back_to_muse(x, capacities.costs, productions.costs)
+            return ScipyAdapter._back_to_muse(
+                x,
+                capacity_template=capacities.costs,
+                production_template=productions.costs,
+            )
 
         return ScipyAdapter(to_muse=to_muse, **kwargs)
 
@@ -1127,16 +1152,26 @@ class ScipyAdapter:
         """Creates single xr.Dataset from costs and constraints."""
         from xarray import merge
 
-        data = merge(
-            [lpcosts.rename({k: f"d({k})" for k in lpcosts.dims})]
-            + [
-                lp_constraint(constraint, lpcosts).rename(
-                    b=f"b{i}", capacity=f"capacity{i}", production=f"production{i}"
-                )
-                for i, constraint in enumerate(constraints)
-            ]
-        )
+        # Reformat constraints to lp format
+        lp_constraints = [
+            lp_constraint(constraint, lpcosts) for constraint in constraints
+        ]
 
+        # Rename variables in lp constraints
+        lp_constraints = [
+            constraint.rename(
+                b=f"b{i}", capacity=f"capacity{i}", production=f"production{i}"
+            )
+            for i, constraint in enumerate(lp_constraints)
+        ]
+
+        # Rename dimensions in lpcosts
+        lpcosts = lpcosts.rename({k: f"d({k})" for k in lpcosts.dims})
+
+        # Merge data
+        data = merge([lpcosts, *lp_constraints])
+
+        # An adjustment is required for lower bound constraints
         for i, constraint in enumerate(constraints):
             if constraint.kind == ConstraintKind.LOWER_BOUND:
                 data[f"b{i}"] = -data[f"b{i}"]
@@ -1148,10 +1183,12 @@ class ScipyAdapter:
 
     @staticmethod
     def _selected_quantity(data: xr.Dataset, name: str) -> xr.Dataset:
+        # Select data for the specified quantity ("capacity", "production", or "b")
         result = cast(
             xr.Dataset, data[[u for u in data.data_vars if str(u).startswith(name)]]
         )
 
+        # Rename variables ("costs" for the costs variable, 0/1/2 etc. for constraints)
         return result.rename(
             {
                 k: ("costs" if k == name else int(str(k).replace(name, "")))
@@ -1163,52 +1200,87 @@ class ScipyAdapter:
     def _to_scipy_adapter(
         capacities: xr.Dataset, productions: xr.Dataset, bs: xr.Dataset, *constraints
     ):
+        """Converts constraints to scipy format.
+
+        The constraints are converted to a format that can be used by scipy's linear
+        programming solver. The constraints are converted to a 2D matrix of constraints
+        vs decision variables. The constraints are then converted to a dictionary that
+        can be used by scipy's linear programming solver.
+
+        Args:
+            capacities: Dataset with decision variables for capacity constraints.
+            productions: Dataset with decision variables for production constraints.
+            bs: Dataset with constraints.
+            *constraints: List of constraints.
+
+        Returns:
+            Dictionary with constraints in a format that can be used by scipy's linear
+            programming solver.
+        """
+
         def reshape(matrix: xr.DataArray) -> np.ndarray:
+            """Convert constraints matrix to a 2D np array."""
+            # Before building LP we need to sort dimensions for consistency
             if list(matrix.dims) != sorted(matrix.dims):
-                new_dims = sorted(matrix.dims)
-                matrix = matrix.transpose(*new_dims)
+                matrix = matrix.transpose(*sorted(matrix.dims))
 
-            # before building LP we need to sort dimensions for consistency
-
+            # Size of the first dimension
+            # This dimension represents the number of constraints
             size = np.prod(
                 [matrix[u].shape[0] for u in matrix.dims if str(u).startswith("c")]
             )
 
+            # Reshape into a 2D array: N constrians x N decision variables
             return matrix.values.reshape((size, -1))
 
-        def extract_bA(constraints, *kinds):
+        def extract_bA(constraints, *kinds: ConstraintKind):
+            """Extracts A and b for constraints of specified kinds."""
+            # Get indices of constraints of the specified kind
             indices = [i for i in range(len(bs)) if constraints[i].kind in kinds]
+
+            # Convert constraints matrices to 2d np arrays
             capa_constraints = [reshape(capacities[i]) for i in indices]
             prod_constraints = [reshape(productions[i]) for i in indices]
+
+            # Convert constraints vectors to 1d
+            constraints_vectors = [
+                bs[i].stack(constraint=sorted(bs[i].dims)) for i in indices
+            ]
+
+            # Concatenate constraints
             if capa_constraints:
-                A: np.ndarray | None = np.concatenate(
+                A = np.concatenate(
                     (
                         np.concatenate(capa_constraints, axis=0),
                         np.concatenate(prod_constraints, axis=0),
                     ),
                     axis=1,
                 )
-                b: np.ndarray | None = np.concatenate(
-                    [bs[i].stack(constraint=sorted(bs[i].dims)) for i in indices],
-                    axis=0,
-                )
+                b = np.concatenate(constraints_vectors, axis=0)
             else:
+                # If there are no constraints of the given kind, return None
                 A = None
                 b = None
             return A, b
 
+        # Create costs vector by concatenating capacity and production costs
         c = np.concatenate(
             (
-                cast(np.ndarray, capacities["costs"].values).flatten(),
-                cast(np.ndarray, productions["costs"].values).flatten(),
+                capacities["costs"].values.flatten(),
+                productions["costs"].values.flatten(),
             ),
             axis=0,
         )
+
+        # Extract A and b for inequality constraints
         A_ub, b_ub = extract_bA(
             constraints, ConstraintKind.UPPER_BOUND, ConstraintKind.LOWER_BOUND
         )
+
+        # Extract A and b for equality constraints
         A_eq, b_eq = extract_bA(constraints, ConstraintKind.EQUALITY)
 
+        # Prepare scipy adapter
         return {
             "c": c,
             "A_ub": A_ub,
@@ -1222,15 +1294,42 @@ class ScipyAdapter:
     def _back_to_muse_quantity(
         x: np.ndarray, template: xr.DataArray | xr.Dataset
     ) -> xr.DataArray:
+        """Convert a vector of decision variables to a DataArray.
+
+        Args:
+            x: 1D vector of decision variables, outputted from the scipy solver.
+            template: Template for the decision variables. This may be for either
+                capacity or production variables.
+        """
+        # First create a multidimensional dataarray based on the template
         result = xr.DataArray(
             x.reshape(template.shape), coords=template.coords, dims=template.dims
         )
+
+        # Then rename the dimensions (e.g. "d(asset)" -> "asset")
         return result.rename({k: str(k)[2:-1] for k in result.dims})
 
     @staticmethod
     def _back_to_muse(
-        x: np.ndarray, capacity: xr.DataArray, production: xr.DataArray
+        x: np.ndarray,
+        capacity_template: xr.DataArray,
+        production_template: xr.DataArray,
     ) -> xr.Dataset:
-        capa = ScipyAdapter._back_to_muse_quantity(x[: capacity.size], capacity)
-        prod = ScipyAdapter._back_to_muse_quantity(x[capacity.size :], production)
+        """Convert the full set of decision variables to a Dataset.
+
+        This must have capacity variables first, followed by production variables.
+
+        Args:
+            x: 1D vector of decision variables, outputted from the scipy solver.
+            capacity_template: Template for the capacity decision variables.
+            production_template: Template for the production decision variables.
+        """
+        n_capa = capacity_template.size  # number of capacity decision variables
+
+        capa = ScipyAdapter._back_to_muse_quantity(
+            x[:n_capa], template=capacity_template
+        )
+        prod = ScipyAdapter._back_to_muse_quantity(
+            x[n_capa:], template=production_template
+        )
         return xr.Dataset({"capacity": capa, "production": prod})
