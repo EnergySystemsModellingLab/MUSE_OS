@@ -95,7 +95,13 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
         constraints: list[Constraint],
         **kwargs,
     ) -> xr.DataArray:
-        result = function(costs, search_space, technologies, constraints, **kwargs)
+        result = function(
+            costs=costs,
+            search_space=search_space,
+            technologies=technologies,
+            constraints=constraints,
+            **kwargs,
+        )
 
         if isinstance(result, xr.Dataset):
             investment = result["capacity"].rename("investment")
@@ -146,10 +152,10 @@ def factory(settings: str | Mapping | None = None) -> Callable:
 
         # Otherwise, compute the investment
         return investment(
-            search.decision,
-            search.search_space,
-            technologies,
-            constraints,
+            costs=search.decision,
+            search_space=search.search_space,
+            technologies=technologies,
+            constraints=constraints,
             **params,
             **kwargs,
         ).rename("investment")
@@ -220,6 +226,7 @@ def adhoc_match_demand(
     search_space: xr.DataArray,
     technologies: xr.Dataset,
     constraints: list[Constraint],
+    *,
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
     from muse.demand_matching import demand_matching
@@ -271,6 +278,8 @@ def scipy_match_demand(
     search_space: xr.DataArray,
     technologies: xr.Dataset,
     constraints: list[Constraint],
+    *,
+    commodities: list[str],
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
     from logging import getLogger
@@ -286,8 +295,10 @@ def scipy_match_demand(
 
     # Run scipy optimization with highs solver
     adapter = ScipyAdapter.factory(
-        cast(np.ndarray, costs),
-        *constraints,
+        costs=costs,
+        constraints=constraints,
+        commodities=commodities,
+        timeslice_level=timeslice_level,
     )
     res = linprog(**adapter.kwargs, method="highs")
 

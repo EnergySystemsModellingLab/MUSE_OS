@@ -366,6 +366,7 @@ class InvestingAgent(Agent):
             search=search[["search_space", "decision"]],
             technologies=technologies,
             constraints=constraints,
+            commodities=list(demand.commodity.values),
             timeslice_level=self.timeslice_level,
         )
 

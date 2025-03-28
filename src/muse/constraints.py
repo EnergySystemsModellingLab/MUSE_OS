@@ -431,8 +431,7 @@ def demand(
         b = b.rename(region="dst_region")
     assert "year" not in b.dims
     return xr.Dataset(
-        dict(b=b, production=xr.ones_like(b)),
-        attrs=dict(kind=ConstraintKind.LOWER_BOUND),
+        dict(b=b, production=1), attrs=dict(kind=ConstraintKind.LOWER_BOUND)
     )
 
 
@@ -759,29 +758,52 @@ def minimum_service(
     )
 
 
-def lp_costs(capacity_costs: xr.DataArray, *constraints: Constraint) -> xr.Dataset:
+def lp_costs(
+    capacity_costs: xr.DataArray,
+    commodities: list[str],
+    timeslice_level: str | None = None,
+) -> xr.Dataset:
     """Creates dataset of costs for solving with scipy's LP solver.
 
-    The costs applied to the capacity decision variables are provided. No cost is
-    applied to the production decision variables. Thus, the production component of
-    the costs dataset is zero, with dimensions determined by the constraints.
+    Importantly, this also defines the decision variables in the linear program.
+
+    The costs applied to the capacity decision variables are provided. This should
+    have dimensions "asset" and "replacement". In other words, capacity addition
+    is solved for each replacement technology for each existing asset.
+
+    No cost is applied to the production decision variables. Thus, the production
+    component of the resulting dataset is zero, with dimensions determining the
+    production decision variables. This will have dimensions "asset", "replacement",
+    "commodity", and "timeslice". In other words, production is solved for each
+    replacement technology for each existing asset, for each commodity, and for each
+    timeslice.
+
+    Args:
+        capacity_costs: DataArray with dimensions "asset" and "replacement" defining the
+            costs of adding capacity to the system.
+        commodities: List of commodities to create production decision variables for.
+        timeslice_level: The timeslice level of the linear problem.
     """
-    if constraints:
-        # Get production decision variables
-        # This is the union of all coordinates in the production constraints
-        production_vars = xr.broadcast(*[c.production for c in constraints])[0]
+    assert set(capacity_costs.dims) == {"asset", "replacement"}
 
-        # Production costs are zero
-        production_costs = xr.zeros_like(production_vars)
+    # Start with capacity costs as template (defines "asset" and "replacement" dims)
+    production_costs = xr.zeros_like(capacity_costs)
 
-        # Deal with timeslice multiindex
-        if "timeslice" in production_costs.dims:
-            production_costs = drop_timeslice(production_costs)
-            production_costs["timeslice"] = pd.Index(
-                production_costs.get_index("timeslice"), tupleize_cols=False
-            )
-    else:
-        production_costs = None
+    # Add a "timeslice" dimension, convert multiindex to single index
+    production_costs = broadcast_timeslice(production_costs, level=timeslice_level)
+    production_costs = drop_timeslice(production_costs)
+    production_costs["timeslice"] = pd.Index(
+        production_costs.get_index("timeslice"), tupleize_cols=False
+    )
+
+    # Add a "commodity" dimension
+    production_costs = production_costs.expand_dims(commodity=commodities)
+    assert set(production_costs.dims) == {
+        "asset",
+        "replacement",
+        "commodity",
+        "timeslice",
+    }
 
     # Result is dataset of provided capacity costs and zero production costs
     return xr.Dataset(dict(capacity=capacity_costs, production=production_costs))
@@ -1107,10 +1129,16 @@ class ScipyAdapter:
     def factory(
         cls,
         costs: xr.DataArray,
-        *constraints: Constraint,
+        constraints: list[Constraint],
+        commodities: list[str],
+        timeslice_level: str | None = None,
     ) -> ScipyAdapter:
         # Calculate costs for the linear problem
-        lpcosts = lp_costs(costs, *constraints)
+        lpcosts = lp_costs(
+            capacity_costs=costs,
+            commodities=commodities,
+            timeslice_level=timeslice_level,
+        )
 
         # Create dataset from costs and constraints
         data = cls._unified_dataset(lpcosts, *constraints)
