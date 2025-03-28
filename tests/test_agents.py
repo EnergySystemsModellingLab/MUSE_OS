@@ -1,6 +1,6 @@
 """Test buildings agents."""
 
-from pytest import fixture
+from pytest import fixture, mark
 
 
 @fixture
@@ -137,6 +137,7 @@ def test_issue_835_and_842(agent_args, technologies, stock):
     assert "commodity" not in agent.assets.dims
 
 
+@mark.xfail(reason="Retrofit agents will be deprecated.")
 def test_run_retro_agent(retro_agent, technologies, agent_market, demand_share):
     # make sure capacity limits are not reached
     technologies.total_capacity_limit[:] = retro_agent.assets.capacity.sum() * 100

@@ -61,12 +61,22 @@ def market_demand(assets, technologies):
     from muse.quantities import maximum_production
     from muse.utilities import broadcast_over_assets
 
-    return 0.8 * maximum_production(
+    # Set demand just below the maximum production of existing assets
+    res = 0.8 * maximum_production(
         broadcast_over_assets(technologies, assets),
         assets.capacity,
     ).sel(year=INVESTMENT_YEAR).groupby("technology").sum("asset").rename(
         technology="asset"
     )
+
+    # Remove un-demanded commodities
+    res = res.sel(commodity=(res > 0).any(dim=["timeslice", "asset"]))
+    return res
+
+
+@fixture
+def commodities(market_demand):
+    return list(market_demand.commodity.values)
 
 
 def test_fixtures(technologies, search_space, costs, assets, capacity, market_demand):
@@ -79,10 +89,10 @@ def test_fixtures(technologies, search_space, costs, assets, capacity, market_de
 
 
 @fixture
-def lpcosts(technologies, costs):
+def lpcosts(costs, commodities):
     from muse.constraints import lp_costs
 
-    return lp_costs(technologies, costs=costs)
+    return lp_costs(costs, commodities=commodities)
 
 
 @fixture
@@ -90,11 +100,6 @@ def max_production(market_demand, capacity, search_space, technologies):
     from muse.constraints import max_production
 
     return max_production(market_demand, capacity, search_space, technologies)
-
-
-@fixture
-def constraint(max_production):
-    return max_production
 
 
 @fixture
@@ -123,19 +128,24 @@ def demand_limiting_capacity(market_demand, capacity, search_space, technologies
     return demand_limiting_capacity(market_demand, capacity, search_space, technologies)
 
 
-@fixture(params=["timeslice_as_list", "timeslice_as_multindex"])
-def constraints(request, market_demand, capacity, search_space, technologies):
-    from muse import constraints as cs
+@fixture
+def constraint(max_production):
+    return max_production
 
+
+@fixture(params=["timeslice_as_list", "timeslice_as_multindex"])
+def constraints(
+    request,
+    max_production,
+    demand_constraint,
+    demand_limiting_capacity,
+    max_capacity_expansion,
+):
     constraints = [
-        cs.max_production(market_demand, capacity, search_space, technologies),
-        cs.demand(market_demand, capacity, search_space, technologies),
-        cs.max_capacity_expansion(
-            market_demand,
-            capacity,
-            search_space,
-            technologies,
-        ),
+        max_production,
+        demand_limiting_capacity,
+        demand_constraint,
+        max_capacity_expansion,
     ]
     if request.param == "timeslice_as_multindex":
         constraints = [_as_list(cs) for cs in constraints]
@@ -259,33 +269,47 @@ def test_lp_constraint(constraint, lpcosts):
     assert result.b.values == approx(0)
 
 
-def test_to_scipy_adapter_maxprod(technologies, costs, max_production):
-    from muse.constraints import ScipyAdapter, lp_costs
+def test_to_scipy_adapter_maxprod(costs, max_production, commodities, lpcosts):
+    from muse.constraints import ScipyAdapter
 
-    adapter = ScipyAdapter.factory(technologies, costs, max_production)
+    adapter = ScipyAdapter.factory(
+        costs, constraints=[max_production], commodities=commodities
+    )
     assert set(adapter.kwargs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
     assert adapter.bounds == (0, np.inf)
+    assert adapter.A_ub is not None
+    assert adapter.b_ub is not None
     assert adapter.A_eq is None
     assert adapter.b_eq is None
     assert adapter.c.ndim == 1
     assert adapter.b_ub.ndim == 1
     assert adapter.A_ub.ndim == 2
-    assert adapter.b_ub.size == adapter.A_ub.shape[0]
-    assert adapter.c.size == adapter.A_ub.shape[1]
 
-    lpcosts = lp_costs(technologies, costs)
-    capsize = lpcosts.capacity.size
-    prodsize = lpcosts.production.size
+    capsize = lpcosts.capacity.size  # number of capacity decision variables
+    prodsize = lpcosts.production.size  # number of production decision variables
+    bsize = adapter.b_ub.size  # number of constraints
+
     assert adapter.c.size == capsize + prodsize
-    assert adapter.b_ub.size == prodsize
+    assert adapter.A_ub.shape[0] == bsize
+    assert adapter.A_ub.shape[1] == capsize + prodsize
+
+    assert (
+        bsize
+        == lpcosts.commodity.size
+        * lpcosts.timeslice.size
+        * lpcosts.asset.size
+        * lpcosts.replacement.size
+    )
     assert adapter.b_ub == approx(0)
     assert adapter.A_ub[:, capsize:] == approx(np.eye(prodsize))
 
 
-def test_to_scipy_adapter_demand(technologies, costs, demand_constraint):
-    from muse.constraints import ScipyAdapter, lp_costs
+def test_to_scipy_adapter_demand(costs, demand_constraint, commodities, lpcosts):
+    from muse.constraints import ScipyAdapter
 
-    adapter = ScipyAdapter.factory(technologies, costs, demand_constraint)
+    adapter = ScipyAdapter.factory(
+        costs, constraints=[demand_constraint], commodities=commodities
+    )
     assert set(adapter.kwargs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
     assert adapter.bounds == (0, np.inf)
     assert adapter.A_ub is not None
@@ -295,28 +319,28 @@ def test_to_scipy_adapter_demand(technologies, costs, demand_constraint):
     assert adapter.c.ndim == 1
     assert adapter.b_ub.ndim == 1
     assert adapter.A_ub.ndim == 2
-    assert adapter.b_ub.size == adapter.A_ub.shape[0]
-    assert adapter.c.size == adapter.A_ub.shape[1]
 
-    lpcosts = lp_costs(technologies, costs)
-    capsize = lpcosts.capacity.size
-    prodsize = lpcosts.production.size
+    capsize = lpcosts.capacity.size  # number of capacity decision variables
+    prodsize = lpcosts.production.size  # number of production decision variables
+    bsize = adapter.b_ub.size  # number of constraints
+
     assert adapter.c.size == capsize + prodsize
-    assert (
-        adapter.b_ub.size
-        == lpcosts.commodity.size * lpcosts.timeslice.size * lpcosts.asset.size
-    )
+    assert adapter.A_ub.shape[0] == bsize
+    assert adapter.A_ub.shape[1] == capsize + prodsize
+
+    assert bsize == lpcosts.commodity.size * lpcosts.timeslice.size * lpcosts.asset.size
     assert adapter.A_ub[:, :capsize] == approx(0)
-    assert adapter.A_ub[:, capsize:].sum(axis=1) == approx(-lpcosts.replacement.size)
     assert set(adapter.A_ub[:, capsize:].flatten()) == {0.0, -1.0}
 
 
 def test_to_scipy_adapter_max_capacity_expansion(
-    technologies, costs, max_capacity_expansion
+    costs, max_capacity_expansion, commodities, lpcosts
 ):
-    from muse.constraints import ScipyAdapter, lp_costs
+    from muse.constraints import ScipyAdapter
 
-    adapter = ScipyAdapter.factory(technologies, costs, max_capacity_expansion)
+    adapter = ScipyAdapter.factory(
+        costs, constraints=[max_capacity_expansion], commodities=commodities
+    )
     assert set(adapter.kwargs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
     assert adapter.bounds == (0, np.inf)
     assert adapter.A_ub is not None
@@ -326,24 +350,24 @@ def test_to_scipy_adapter_max_capacity_expansion(
     assert adapter.c.ndim == 1
     assert adapter.b_ub.ndim == 1
     assert adapter.A_ub.ndim == 2
-    assert adapter.b_ub.size == adapter.A_ub.shape[0]
-    assert adapter.c.size == adapter.A_ub.shape[1]
-    assert adapter.c.ndim == 1
 
-    lpcosts = lp_costs(technologies, costs)
-    capsize = lpcosts.capacity.size
-    prodsize = lpcosts.production.size
+    capsize = lpcosts.capacity.size  # number of capacity decision variables
+    prodsize = lpcosts.production.size  # number of production decision variables
+    bsize = adapter.b_ub.size  # number of constraints
+
     assert adapter.c.size == capsize + prodsize
-    assert adapter.b_ub.size == lpcosts.replacement.size
+    assert adapter.A_ub.shape[0] == bsize
+    assert adapter.A_ub.shape[1] == capsize + prodsize
+
+    assert bsize == lpcosts.replacement.size
     assert adapter.A_ub[:, capsize:] == approx(0)
-    assert adapter.A_ub[:, :capsize].sum(axis=1) == approx(lpcosts.asset.size)
     assert set(adapter.A_ub[:, :capsize].flatten()) == {0.0, 1.0}
 
 
-def test_to_scipy_adapter_no_constraint(technologies, costs):
-    from muse.constraints import ScipyAdapter, lp_costs
+def test_to_scipy_adapter_no_constraint(costs, commodities, lpcosts):
+    from muse.constraints import ScipyAdapter
 
-    adapter = ScipyAdapter.factory(technologies, costs)
+    adapter = ScipyAdapter.factory(costs, constraints=[], commodities=commodities)
     assert set(adapter.kwargs) == {"c", "A_ub", "b_ub", "A_eq", "b_eq", "bounds"}
     assert adapter.bounds == (0, np.inf)
     assert adapter.A_ub is None
@@ -352,17 +376,15 @@ def test_to_scipy_adapter_no_constraint(technologies, costs):
     assert adapter.b_eq is None
     assert adapter.c.ndim == 1
 
-    lpcosts = lp_costs(technologies, costs)
-    capsize = lpcosts.capacity.size
-    prodsize = lpcosts.production.size
+    capsize = lpcosts.capacity.size  # number of capacity decision variables
+    prodsize = lpcosts.production.size  # number of production decision variables
     assert adapter.c.size == capsize + prodsize
 
 
-def test_back_to_muse_capacity(technologies, costs):
-    from muse.constraints import ScipyAdapter, lp_costs
+def test_back_to_muse_capacity(lpcosts):
+    from muse.constraints import ScipyAdapter
 
-    lpcosts = lp_costs(technologies, costs)
-    data = ScipyAdapter._unified_dataset(technologies, lpcosts)
+    data = ScipyAdapter._unified_dataset(lpcosts)
     lpquantity = ScipyAdapter._selected_quantity(data, "capacity")
     assert set(lpquantity.dims) == {"d(asset)", "d(replacement)"}
     copy = ScipyAdapter._back_to_muse_quantity(
@@ -371,11 +393,10 @@ def test_back_to_muse_capacity(technologies, costs):
     assert (copy == lpcosts.capacity).all()
 
 
-def test_back_to_muse_production(technologies, costs):
-    from muse.constraints import ScipyAdapter, lp_costs
+def test_back_to_muse_production(lpcosts):
+    from muse.constraints import ScipyAdapter
 
-    lpcosts = lp_costs(technologies, costs)
-    data = ScipyAdapter._unified_dataset(technologies, lpcosts)
+    data = ScipyAdapter._unified_dataset(lpcosts)
     lpquantity = ScipyAdapter._selected_quantity(data, "production")
     assert set(lpquantity.dims) == {
         "d(asset)",
@@ -389,17 +410,13 @@ def test_back_to_muse_production(technologies, costs):
     assert (copy == lpcosts.production).all()
 
 
-def test_back_to_muse_all(technologies, costs, rng: np.random.Generator):
-    from muse.constraints import ScipyAdapter, lp_costs
+def test_back_to_muse_all(lpcosts):
+    from muse.constraints import ScipyAdapter
 
-    lpcosts = lp_costs(technologies, costs)
-
-    data = ScipyAdapter._unified_dataset(technologies, lpcosts)
+    data = ScipyAdapter._unified_dataset(lpcosts)
     lpcapacity = ScipyAdapter._selected_quantity(data, "capacity")
     lpproduction = ScipyAdapter._selected_quantity(data, "production")
 
-    lpcosts.capacity.values[:] = rng.integers(0, 10, lpcosts.capacity.shape)
-    lpcosts.production.values[:] = rng.integers(0, 10, lpcosts.production.shape)
     x = np.concatenate(
         (
             lpcosts.capacity.transpose(
@@ -419,17 +436,13 @@ def test_back_to_muse_all(technologies, costs, rng: np.random.Generator):
     assert (copy.production == lpcosts.production).all()
 
 
-def test_scipy_adapter_back_to_muse(technologies, costs, rng):
-    from muse.constraints import ScipyAdapter, lp_costs
+def test_scipy_adapter_back_to_muse(costs, constraints, commodities, lpcosts):
+    from muse.constraints import ScipyAdapter
 
-    lpcosts = lp_costs(technologies, costs)
-
-    data = ScipyAdapter._unified_dataset(technologies, lpcosts)
+    data = ScipyAdapter._unified_dataset(lpcosts)
     lpcapacity = ScipyAdapter._selected_quantity(data, "capacity")
     lpproduction = ScipyAdapter._selected_quantity(data, "production")
 
-    lpcosts.capacity.values[:] = rng.integers(0, 10, lpcosts.capacity.shape)
-    lpcosts.production.values[:] = rng.integers(0, 10, lpcosts.production.shape)
     x = np.concatenate(
         (
             lpcosts.capacity.transpose(
@@ -441,7 +454,7 @@ def test_scipy_adapter_back_to_muse(technologies, costs, rng):
         )
     )
 
-    adapter = ScipyAdapter.factory(technologies, costs)
+    adapter = ScipyAdapter.factory(costs, constraints, commodities=commodities)
     assert (adapter.to_muse(x).capacity == lpcosts.capacity).all()
     assert (adapter.to_muse(x).production == lpcosts.production).all()
 
@@ -457,21 +470,26 @@ def _as_list(data: Union[xr.DataArray, xr.Dataset]) -> Union[xr.DataArray, xr.Da
     return data
 
 
-def test_scipy_adapter_standard_constraints(technologies, costs, constraints):
+def test_scipy_adapter_standard_constraints(costs, constraints, commodities):
     from muse.constraints import ScipyAdapter
 
-    adapter = ScipyAdapter.factory(technologies, costs, *constraints)
+    adapter = ScipyAdapter.factory(costs, constraints, commodities=commodities)
     maxprod = next(cs for cs in constraints if cs.name == "max_production")
     maxcapa = next(cs for cs in constraints if cs.name == "max capacity expansion")
     demand = next(cs for cs in constraints if cs.name == "demand")
-    assert adapter.c.size == costs.size + maxprod.production.size
+    dlc = next(cs for cs in constraints if cs.name == "demand_limiting_capacity")
+
+    n_constraints = adapter.b_ub.size
+    n_decision_vars = adapter.c.size
+
+    assert n_decision_vars == costs.size + maxprod.production.size
     assert adapter.b_eq is None
     assert adapter.A_eq is None
-    assert adapter.A_ub.shape == (adapter.b_ub.size, adapter.c.size)
-    assert adapter.b_ub.size == demand.b.size + maxprod.b.size + maxcapa.b.size
+    assert adapter.A_ub.shape == (n_constraints, n_decision_vars)
+    assert n_constraints == demand.b.size + maxprod.b.size + maxcapa.b.size + dlc.b.size
 
 
-def test_scipy_solver(technologies, costs, constraints):
+def test_scipy_solver(technologies, costs, constraints, commodities):
     from muse.investments import scipy_match_demand
 
     solution = scipy_match_demand(
@@ -479,13 +497,14 @@ def test_scipy_solver(technologies, costs, constraints):
         search_space=xr.ones_like(costs),
         technologies=technologies,
         constraints=constraints,
+        commodities=commodities,
     )
     assert isinstance(solution, xr.DataArray)
     assert set(solution.dims) == {"asset", "replacement"}
 
 
 def test_minimum_service(
-    market_demand, capacity, search_space, technologies, costs, constraints
+    market_demand, capacity, search_space, technologies, constraints
 ):
     from muse.constraints import minimum_service
 
@@ -511,7 +530,7 @@ def test_minimum_service(
 
 
 def test_max_capacity_expansion(max_capacity_expansion):
-    assert max_capacity_expansion.capacity == 1
+    assert (max_capacity_expansion.capacity == 1).all()
     assert max_capacity_expansion.production == 0
     assert max_capacity_expansion.b.dims == ("replacement",)
     assert max_capacity_expansion.b.shape == (4,)

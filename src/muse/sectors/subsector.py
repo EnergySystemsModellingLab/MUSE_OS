@@ -76,10 +76,13 @@ class Subsector:
         assert "year" not in technologies.dims
         assert len(market.year) == 2
 
+        # Select commodity demands for the subsector
+        demands = market.consumption.sel(commodity=self.commodities)
+
         # Split demand across agents
         demands = self.demand_share(
             agents=self.agents,
-            demand=market.consumption,
+            demand=demands,
             technologies=technologies,
             timeslice_level=self.timeslice_level,
         )
