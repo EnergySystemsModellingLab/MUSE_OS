@@ -42,6 +42,7 @@ Type
    technologies. If only "New" agents are included, they will also invest to make up for
    decommissioned assets, but the end mix might be different than using a specialised
    "Retrofit" agent for that.
+   *Note: Retrofit agents will be deprecated in a future release.*
 
 AgentShare
    Name used to assign a fraction of existing capacity to the agent in the :ref:`inputs-technodata` file.
