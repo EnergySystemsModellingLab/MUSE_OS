@@ -176,6 +176,7 @@ def register_constraints(function: CONSTRAINT_SIGNATURE) -> CONSTRAINT_SIGNATURE
         """Computes and standardizes a constraint."""
         # Check inputs
         assert "year" not in technologies.dims
+        assert "year" not in demand.dims
         assert len(capacity.year) == 2  # current year and investment year
 
         # Calculate constraint
@@ -425,12 +426,10 @@ def demand(
     **kwargs,
 ) -> Constraint:
     """Constraints production to meet demand."""
-    b = demand
-    if "region" in b.dims and "dst_region" in technologies.dims:
-        b = b.rename(region="dst_region")
-    assert "year" not in b.dims
+    if "region" in demand.dims and "dst_region" in technologies.dims:
+        demand = demand.rename(region="dst_region")
     return xr.Dataset(
-        dict(b=b, production=1), attrs=dict(kind=ConstraintKind.LOWER_BOUND)
+        dict(b=demand, production=1), attrs=dict(kind=ConstraintKind.LOWER_BOUND)
     )
 
 
@@ -469,8 +468,7 @@ def max_production(
     """
     from xarray import ones_like, zeros_like
 
-    commodities = demand.commodity
-    kwargs = dict(commodity=commodities)
+    kwargs = dict(commodity=demand.commodity)
     if "region" in search_space.coords and "region" in technologies.dims:
         kwargs["region"] = search_space.region
     techs = (
@@ -734,8 +732,7 @@ def minimum_service(
     if np.all(technologies["minimum_service_factor"] == 0):
         return None
 
-    commodities = demand.commodity
-    kwargs = dict(commodity=commodities)
+    kwargs = dict(commodity=demand.commodity)
     if "region" in search_space.coords and "region" in technologies.dims:
         kwargs["region"] = search_space.region
     techs = (
@@ -944,7 +941,40 @@ def lp_constraint_matrix(
 
 @dataclass
 class ScipyAdapter:
-    """Creates the input for the scipy solvers."""
+    """Creates the input for the scipy solvers.
+
+    This adapter is required to convert data (costs and constraints) from a series of
+    dataarrays to a format that can be used by scipy's linear programming solver.
+
+    The scipy solver requires the following inputs as a set of 1D or 2D numpy arrays:
+        c: Coefficients of the linear objective function to be minimized. This is a 1D
+            vector, each element representing the cost of a decision variable.
+        A_ub: The inequality constraint matrix. This is a 2D matrix containing
+            coefficients of the linear inequality constraints, with constraints as rows
+            and decision variables as columns.
+        b_ub: The inequality constraint vector. This is a 1D vector, each element
+            representing an upper bound on the corresponding constraint in A_ub.
+        A_eq: The equality constraint matrix. In practice, since all of the constraints
+            currently implemented are inequality constraints, this will always be zeros.
+            However, this may be changed in the future.
+        b_eq: The equality constraint vector. As above, this will currently always be
+            zeros.
+
+    See the documentation for `scipy.optimize.linprog` for more details:
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html
+
+    This class takes in costs and constraints as xarray dataarrays, and performs the
+    necessary conversions to create the above inputs. These are saved together in the
+    `kwargs` property, which is passed to the scipy solver. This has an additional
+    attribute `bounds`, which is a tuple of the lower and upper bounds for the
+    decision variables. In practice, we will always use (0, np.inf) as the bounds.
+
+    The output of the scipy solver is a 1D array of decision variables, which must then
+    be converted back into a format that MUSE can understand. To aid this, we
+    save templates for the capacity and production decision variables, which are used
+    to convert the output back into a labelled xarray dataset using the helper function
+    `to_muse`.
+    """
 
     c: np.ndarray
     to_muse: Callable[[np.ndarray], xr.Dataset]
@@ -1095,7 +1125,11 @@ class ScipyAdapter:
             return matrix.values.reshape((size, -1))
 
         def extract_bA(constraints, *kinds: ConstraintKind):
-            """Extracts A and b for constraints of specified kinds."""
+            """Extracts A and b for constraints of specified kinds.
+
+            These will end up as A_ub and b_ub for inequality constraints, and
+            A_eq and b_eq for equality constraints (see ScipyAdapter).
+            """
             # Get indices of constraints of the specified kind
             indices = [i for i in range(len(bs)) if constraints[i].kind in kinds]
 
