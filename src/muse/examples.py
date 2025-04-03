@@ -29,6 +29,7 @@ from __future__ import annotations
 
 from logging import getLogger
 from pathlib import Path
+from shutil import copyfile, copytree
 from typing import cast
 
 import numpy as np
@@ -295,31 +296,17 @@ def matching_market(sector: str, model: str = "default") -> xr.Dataset:
 
 
 def _copy_default(path: Path):
-    from shutil import copyfile, copytree
-
-    copytree(example_data_dir() / "default" / "input", path / "input")
-    copytree(example_data_dir() / "default" / "technodata", path / "technodata")
-    copyfile(example_data_dir() / "default" / "settings.toml", path / "settings.toml")
+    copytree(example_data_dir() / "default", path)
 
 
 def _copy_default_retro(path: Path):
-    from shutil import copyfile, copytree
-
-    copytree(example_data_dir() / "default_retro" / "input", path / "input")
-    copytree(example_data_dir() / "default_retro" / "technodata", path / "technodata")
-    copyfile(
-        example_data_dir() / "default_retro" / "settings.toml", path / "settings.toml"
-    )
+    copytree(example_data_dir() / "default_retro", path)
 
 
 def _copy_default_adhoc(path: Path):
-    from shutil import copyfile, copytree
-
     from muse.wizard import modify_toml
 
-    copytree(example_data_dir() / "default" / "input", path / "input")
-    copytree(example_data_dir() / "default" / "technodata", path / "technodata")
-    copyfile(example_data_dir() / "default" / "settings.toml", path / "settings.toml")
+    copytree(example_data_dir() / "default", path)
 
     def update_lpsolver(data):
         for sector in data.get("sectors", {}):
@@ -331,77 +318,48 @@ def _copy_default_adhoc(path: Path):
 
 
 def _copy_default_timeslice(path: Path):
-    from shutil import copyfile, copytree
-
-    copytree(example_data_dir() / "default_timeslice" / "input", path / "input")
-    copytree(
-        example_data_dir() / "default_timeslice" / "technodata", path / "technodata"
-    )
-    copyfile(
-        example_data_dir() / "default_timeslice" / "settings.toml",
-        path / "settings.toml",
-    )
+    copytree(example_data_dir() / "default_timeslice", path)
 
 
 def _copy_multiple_agents(path: Path):
-    from shutil import copyfile, copytree
-
     from toml import dump, load
 
-    copytree(example_data_dir() / "default" / "input", path / "input")
-    copytree(example_data_dir() / "default" / "technodata", path / "technodata")
-    toml = load(example_data_dir() / "default" / "settings.toml")
-    toml["sectors"]["residential"]["subsectors"]["all"]["agents"] = (
-        "{path}/technodata/residential/Agents.csv"
-    )
-    with (path / "settings.toml").open("w") as fileobj:
-        dump(toml, fileobj)
+    # Start with default model
+    copytree(example_data_dir() / "default", path)
+
+    # Copy new agents file and modified technodata file
     copyfile(
         example_data_dir() / "multiple_agents" / "Agents.csv",
-        path / "technodata" / "residential" / "Agents.csv",
+        path / "residential" / "Agents.csv",
     )
     copyfile(
         example_data_dir() / "multiple_agents" / "residential" / "Technodata.csv",
-        path / "technodata" / "residential" / "Technodata.csv",
+        path / "residential" / "Technodata.csv",
     )
+
+    # Link to new agents file in settings.toml
+    toml = load(path / "settings.toml")
+    toml["sectors"]["residential"]["subsectors"]["all"]["agents"] = (
+        "{path}/residential/Agents.csv"
+    )
+    with (path / "settings.toml").open("w") as fileobj:
+        dump(toml, fileobj)
 
 
 def _copy_medium(path: Path):
-    from shutil import copyfile, copytree
-
-    copytree(example_data_dir() / "medium" / "input", path / "input")
-    copytree(example_data_dir() / "medium" / "technodata", path / "technodata")
-    copytree(
-        example_data_dir() / "default" / "technodata" / "power",
-        path / "technodata" / "power",
-    )
-    copytree(
-        example_data_dir() / "default" / "technodata" / "gas",
-        path / "technodata" / "gas",
-    )
-    copyfile(
-        example_data_dir() / "default" / "technodata" / "Agents.csv",
-        path / "technodata" / "Agents.csv",
-    )
+    copytree(example_data_dir() / "medium", path)
+    copytree(example_data_dir() / "default" / "power", path / "power")
+    copytree(example_data_dir() / "default" / "gas", path / "gas")
+    copyfile(example_data_dir() / "default" / "Agents.csv", path / "Agents.csv")
     copyfile(example_data_dir() / "default" / "settings.toml", path / "settings.toml")
 
 
 def _copy_minimum_service(path: Path):
-    from shutil import copyfile, copytree
-
-    copytree(example_data_dir() / "minimum_service" / "input", path / "input")
-    copytree(example_data_dir() / "minimum_service" / "technodata", path / "technodata")
-    copyfile(
-        example_data_dir() / "minimum_service" / "settings.toml", path / "settings.toml"
-    )
+    copytree(example_data_dir() / "minimum_service", path)
 
 
 def _copy_trade(path: Path):
-    from shutil import copyfile, copytree
-
-    copytree(example_data_dir() / "trade" / "input", path / "input")
-    copytree(example_data_dir() / "trade" / "technodata", path / "technodata")
-    copyfile(example_data_dir() / "trade" / "settings.toml", path / "settings.toml")
+    copytree(example_data_dir() / "trade", path)
 
 
 def _trade_search_space(sector: str, model: str = "default") -> xr.DataArray:
@@ -420,7 +378,7 @@ def _trade_search_space(sector: str, model: str = "default") -> xr.DataArray:
                 a.uuid: cast(Agent, a).search_rules(
                     agent=a,
                     demand=market.consumption.isel(year=0, drop=True),
-                    technologies=loaded_sector.technologies,
+                    technologies=loaded_sector.technologies.isel(year=0, drop=True),
                     market=market,
                 )
                 for a in loaded_sector.agents

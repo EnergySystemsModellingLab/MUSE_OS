@@ -29,7 +29,7 @@ def generate_model_1():
     add_new_commodity(model_path, "cook", "residential", "heat")
 
     # Modify cook projections
-    projections_file = model_path / "input/Projections.csv"
+    projections_file = model_path / "Projections.csv"
     df = pd.read_csv(projections_file)
     df.loc[1:, "cook"] = 100
     df.to_csv(projections_file, index=False)
@@ -39,7 +39,7 @@ def generate_model_1():
     add_new_process(model_path, "gas_stove", "residential", "gasboiler")
 
     # Modify output commodities
-    commout_file = model_path / "technodata/residential/CommOut.csv"
+    commout_file = model_path / "residential/CommOut.csv"
     df = pd.read_csv(commout_file)
     df.loc[1:, "cook"] = 0
     df.loc[df["ProcessName"] == "gas_stove", df.columns[-6:]] = [0, 0, 0, 50, 0, 1]
@@ -47,13 +47,13 @@ def generate_model_1():
     df.to_csv(commout_file, index=False)
 
     # Modify input commodities
-    commin_file = model_path / "technodata/residential/CommIn.csv"
+    commin_file = model_path / "residential/CommIn.csv"
     df = pd.read_csv(commin_file)
     df.loc[1:, "cook"] = 0
     df.to_csv(commin_file, index=False)
 
     # Change cap_par, Fuel and EndUse
-    technodata_file = model_path / "technodata/residential/Technodata.csv"
+    technodata_file = model_path / "residential/Technodata.csv"
     df = pd.read_csv(technodata_file)
     df.loc[df["ProcessName"] == "gas_stove", "Fuel"] = "gas"
     df.loc[df["ProcessName"] == "electric_stove", "Fuel"] = "electricity"
