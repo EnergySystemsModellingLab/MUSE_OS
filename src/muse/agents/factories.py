@@ -169,7 +169,7 @@ def create_agent(agent_type: str, **kwargs) -> Agent:
 
 def agents_factory(
     params_or_path: str | Path | list,
-    capacity: xr.DataArray | str | Path,
+    capacity: xr.DataArray,
     technologies: xr.Dataset,
     regions: Sequence[str] | None = None,
     year: int | None = None,
@@ -179,14 +179,12 @@ def agents_factory(
     from copy import deepcopy
     from logging import getLogger
 
-    from muse.readers import read_csv_agent_parameters, read_initial_assets
+    from muse.readers import read_csv_agent_parameters
 
     if isinstance(params_or_path, (str, Path)):
         params = read_csv_agent_parameters(params_or_path)
     else:
         params = params_or_path
-    if isinstance(capacity, (str, Path)):
-        capacity = read_initial_assets(capacity)
     assert isinstance(capacity, xr.DataArray)
     if year is None:
         year = int(capacity.year.min())

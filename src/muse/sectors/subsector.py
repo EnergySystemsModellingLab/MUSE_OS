@@ -120,6 +120,7 @@ class Subsector:
         from muse import investments as iv
         from muse.agents import InvestingAgent, agents_factory
         from muse.commodities import is_enduse
+        from muse.readers import read_initial_assets
         from muse.readers.toml import undo_damage
 
         # Raise error for renamed asset_threshhold parameter (PR #447)
@@ -142,9 +143,13 @@ class Subsector:
             )
             getLogger(__name__).warning(msg)
 
+        # Read existing capacity file
+        existing_capacity = read_initial_assets(settings.existing_capacity)
+
+        # Create agents
         agents = agents_factory(
             settings.agents,
-            settings.existing_capacity,
+            capacity=existing_capacity,
             technologies=technologies,
             regions=regions,
             year=current_year or int(technologies.year.min()),
@@ -172,12 +177,13 @@ class Subsector:
             if np.sum(outputs) == 0.0:
                 raise RuntimeError(msg)
 
+        # Get list of commodities for the subsector
         if hasattr(settings, "commodities"):
             commodities = settings.commodities
         else:
-            commodities = aggregate_enduses(
-                [agent.assets for agent in agents], technologies
-            )
+            # If commodities aren't explicitly specified, we infer the commodities from
+            # the existing capacity file
+            commodities = aggregate_enduses(existing_capacity, technologies)
 
         # len(commodities) == 0 may happen only if
         # we run only one region or all regions have no outputs
