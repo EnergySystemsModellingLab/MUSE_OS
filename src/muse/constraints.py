@@ -548,9 +548,8 @@ def demand_limiting_capacity(
     # meet the demand which would be a combination of a high demand and a low
     # utilization factor.
     if "timeslice" in b.dims or "timeslice" in capacity.dims:
-        ratio = b / capacity.max("replacement")
-        ratio = ratio.where(b != 0, 0.0)
-        ts_index = ratio.argmax("timeslice")
+        ratio = b / capacity
+        ts_index = ratio.min("replacement").argmax("timeslice")
         b = b.isel(timeslice=ts_index)
         capacity = capacity.isel(timeslice=ts_index)
 
