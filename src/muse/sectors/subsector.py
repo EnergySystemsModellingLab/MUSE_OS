@@ -187,7 +187,9 @@ class Subsector:
         else:
             # If commodities aren't explicitly specified, we infer the commodities from
             # the existing capacity file
-            commodities = aggregate_enduses(existing_capacity, technologies)
+            commodities = aggregate_enduses(
+                technologies.sel(technology=existing_capacity.technology.values)
+            )
 
         # len(commodities) == 0 may happen only if
         # we run only one region or all regions have no outputs
@@ -218,21 +220,8 @@ class Subsector:
         )
 
 
-def aggregate_enduses(
-    assets: Sequence[xr.Dataset | xr.DataArray], technologies: xr.Dataset
-) -> Sequence[str]:
-    """Aggregate enduse commodities for input assets.
-
-    This function is meant as a helper to figure out the commodities attached to a group
-    of agents.
-    """
+def aggregate_enduses(technologies: xr.Dataset) -> list[str]:
+    """Aggregate enduse commodities for a set of technologies."""
     from muse.commodities import is_enduse
 
-    techs = set.union(*(set(data.technology.values) for data in assets))
-    outputs = technologies.fixed_outputs.sel(
-        commodity=is_enduse(technologies.comm_usage), technology=list(techs)
-    )
-
-    return outputs.commodity.sel(
-        commodity=outputs.any([u for u in outputs.dims if u != "commodity"])
-    ).values.tolist()
+    return technologies.commodity.values[is_enduse(technologies.comm_usage)].tolist()

@@ -36,9 +36,7 @@ def test_subsector_investing_aggregation():
             agents = list(examples.sector(sname, model).agents)
             sector = next(sector for sector in mca.sectors if sector.name == sname)
             technologies = sector.technologies
-            commodities = aggregate_enduses(
-                (agent.assets for agent in agents), technologies
-            )
+            commodities = aggregate_enduses(technologies)
             market = mca.market.sel(
                 commodity=technologies.commodity, region=technologies.region
             ).interp(year=[2020, 2025])
@@ -89,7 +87,7 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
         param["decision"]["parameters"] = ("ALCOE", False, 1)
         param.pop("quantity")
     agents = [create_agent(technologies=technologies, **param) for param in params]
-    commodities = aggregate_enduses((agent.assets for agent in agents), technologies)
+    commodities = aggregate_enduses(technologies)
 
     subsector = Subsector(
         agents,
