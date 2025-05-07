@@ -79,10 +79,9 @@ class Subsector:
         # Select commodity demands for the subsector
         demands = market.consumption.sel(commodity=self.commodities)
 
-        # Remove commodities that have no demand
-        demands = demands.sel(
-            commodity=demands.sum([u for u in demands.dims if u != "commodity"]) > 0.0
-        )
+        # Remove commodities that have no demand in the investment year
+        mask = (demands.isel(year=1, drop=True) > 0).any(dim=["timeslice", "region"])
+        demands = demands.sel(commodity=mask)
 
         # Split demand across agents
         demands = self.demand_share(
