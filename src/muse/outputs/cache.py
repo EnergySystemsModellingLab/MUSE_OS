@@ -354,9 +354,6 @@ def extract_agents_internal(
         info[aid]["category"] = agent.category
         info[aid]["sector"] = sector_name
         info[aid]["dst_region"] = agent.region
-        info[aid]["year"] = agent.year
-        info[aid]["installed"] = agent.year
-
     return info
 
 

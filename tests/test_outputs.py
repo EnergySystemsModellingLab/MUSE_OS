@@ -480,8 +480,6 @@ def test_extract_agents_internal(newcapa_agent, retro_agent):
             "category",
             "sector",
             "dst_region",
-            "year",
-            "installed",
         )
         assert actual[agent.uuid]["agent"] == agent.name
         assert actual[agent.uuid]["category"] == agent.category
@@ -552,12 +550,8 @@ def test_consolidate_quantity(newcapa_agent, retro_agent):
 
     actual = consolidate_quantity(quantity, [a, b], agents)
 
-    cols = set(
-        (*agents[retro_agent.uuid].keys(), "installed", "year", "technology", quantity)
-    )
+    cols = set((*agents[retro_agent.uuid].keys(), "technology", quantity))
     assert set(actual.columns) == cols
-    assert all(actual.year == newcapa_agent.year)
-    assert all(actual.installed == newcapa_agent.year)
     assert all(
         name in (newcapa_agent.name, retro_agent.name) for name in actual.agent.unique()
     )
