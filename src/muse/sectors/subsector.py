@@ -221,7 +221,13 @@ class Subsector:
 
 
 def aggregate_enduses(technologies: xr.Dataset) -> list[str]:
-    """Aggregate enduse commodities for a set of technologies."""
+    """Aggregate enduse commodities for a set of technologies.
+
+    Returns a list of all enduse commodities associated with the technologies in the
+    input dataset. Enduse commodities are determined using based on the `comm_usage`
+    attribute of the technologies, using the `is_enduse` function from the
+    `muse.commodities` module.
+    """
     from muse.commodities import is_enduse
 
     return technologies.commodity.values[is_enduse(technologies.comm_usage)].tolist()
