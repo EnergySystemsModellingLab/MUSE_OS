@@ -230,4 +230,10 @@ def aggregate_enduses(technologies: xr.Dataset) -> list[str]:
     """
     from muse.commodities import is_enduse
 
-    return technologies.commodity.values[is_enduse(technologies.comm_usage)].tolist()
+    # We select enduse commodities with positive fixed outputs
+    outputs = technologies.fixed_outputs
+    enduse_output = outputs.any(
+        [u for u in outputs.dims if u != "commodity"]
+    ) * is_enduse(technologies.comm_usage)
+
+    return technologies.commodity.values[enduse_output].tolist()
