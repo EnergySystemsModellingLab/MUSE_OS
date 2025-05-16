@@ -8,6 +8,7 @@ To update to the latest version, run `pip install --upgrade muse-os`
 .. toctree::
    :maxdepth: 1
 
+   v1.4.2
    v1.4.1
    v1.4.0
    v1.3.3
