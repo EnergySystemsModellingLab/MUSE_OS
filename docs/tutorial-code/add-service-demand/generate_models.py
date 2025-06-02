@@ -52,13 +52,9 @@ def generate_model_1():
     df.loc[1:, "cook"] = 0
     df.to_csv(commin_file, index=False)
 
-    # Change cap_par, Fuel and EndUse
+    # Change cap_par
     technodata_file = model_path / "residential/Technodata.csv"
     df = pd.read_csv(technodata_file)
-    df.loc[df["ProcessName"] == "gas_stove", "Fuel"] = "gas"
-    df.loc[df["ProcessName"] == "electric_stove", "Fuel"] = "electricity"
-    df.loc[df["ProcessName"] == "gas_stove", "EndUse"] = "cook"
-    df.loc[df["ProcessName"] == "electric_stove", "EndUse"] = "cook"
     df.to_csv(technodata_file, index=False)
 
 

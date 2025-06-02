@@ -423,6 +423,7 @@ def sector_lcoe(
     sector: AbstractSector, market: xr.Dataset, year: int, **kwargs
 ) -> pd.DataFrame:
     """Levelized cost of energy () of technologies over their lifetime."""
+    from muse.commodities import is_enduse
     from muse.costs import levelized_cost_of_energy as LCOE
     from muse.quantities import capacity_to_service_demand, consumption
 
@@ -439,16 +440,12 @@ def sector_lcoe(
         for agent in agents:
             agent_market = market.sel(year=agent.year)
             agent_market["consumption"] = agent_market.consumption * agent.quantity
-            enduses = [
-                i.strip()
-                for entry in technologies.enduse.values
-                for i in entry.split(",")
-            ]
-            # temporary hack to allow comma separated list in input file
-            included = [i for i in agent_market["commodity"].values if i in enduses]
-            excluded = [
-                i for i in agent_market["commodity"].values if i not in included
-            ]
+
+            # Use is_enduse to determine end-use commodities
+            enduses = is_enduse(technologies.comm_usage)
+            included = agent_market.commodity.values[enduses]
+            excluded = agent_market.commodity.values[~enduses]
+
             agent_market.loc[dict(commodity=excluded)] = 0
             agent_market["prices"] = agent.filter_input(
                 market["prices"], year=agent.year
@@ -510,6 +507,7 @@ def sector_eac(
     sector: AbstractSector, market: xr.Dataset, year: int, **kwargs
 ) -> pd.DataFrame:
     """Net Present Value of technologies over their lifetime."""
+    from muse.commodities import is_enduse
     from muse.costs import equivalent_annual_cost as EAC
     from muse.quantities import capacity_to_service_demand, consumption
 
@@ -526,16 +524,12 @@ def sector_eac(
         for agent in agents:
             agent_market = market.sel(year=agent.year)
             agent_market["consumption"] = agent_market.consumption * agent.quantity
-            enduses = [
-                i.strip()
-                for entry in technologies.enduse.values
-                for i in entry.split(",")
-            ]
-            # temporary hack to allow comma separated list in input file
-            included = [i for i in agent_market["commodity"].values if i in enduses]
-            excluded = [
-                i for i in agent_market["commodity"].values if i not in included
-            ]
+
+            # Use is_enduse to determine end-use commodities
+            enduses = is_enduse(technologies.comm_usage)
+            included = agent_market.commodity.values[enduses]
+            excluded = agent_market.commodity.values[~enduses]
+
             agent_market.loc[dict(commodity=excluded)] = 0
             agent_market["prices"] = agent.filter_input(
                 market["prices"], year=agent.year
