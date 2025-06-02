@@ -79,9 +79,7 @@ def read_technodictionary(filename: str | Path) -> xr.Dataset:
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
     csv.drop(csv.filter(regex="Unname"), axis=1, inplace=True)
-    csv = csv.rename(columns=camel_to_snake).rename(
-        columns={"end_use": "enduse", "availabiliy year": "availability"}
-    )
+    csv = csv.rename(columns=camel_to_snake)
     data = csv[csv.process_name != "Unit"]
 
     ts = pd.MultiIndex.from_arrays(
@@ -95,18 +93,10 @@ def read_technodictionary(filename: str | Path) -> xr.Dataset:
     data = data.apply(to_numeric, axis=0)
 
     result = xr.Dataset.from_dataframe(data.sort_index())
-    if "fuel" in result.variables:
-        result["fuel"] = result.fuel.isel(region=0, year=0)
-        result["fuel"].values = [camel_to_snake(name) for name in result["fuel"].values]
     if "type" in result.variables:
         result["tech_type"] = result.type.isel(region=0, year=0)
         result["tech_type"].values = [
             camel_to_snake(name) for name in result["tech_type"].values
-        ]
-    if "enduse" in result.variables:
-        result["enduse"] = result.enduse.isel(region=0, year=0)
-        result["enduse"].values = [
-            camel_to_snake(name) for name in result["enduse"].values
         ]
 
     units = csv[csv.process_name == "Unit"].drop(

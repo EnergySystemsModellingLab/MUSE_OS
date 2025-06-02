@@ -409,8 +409,6 @@ def test_read_technodictionary(default_model):
         var_par=np.dtype("int64"),
         interest_rate=np.dtype("float64"),
         type=np.dtype("O"),
-        fuel=np.dtype("<U11"),
-        enduse=np.dtype("<U4"),
         agent1=np.dtype("int64"),
         tech_type=np.dtype("<U6"),
         efficiency=np.dtype("int64"),
@@ -426,7 +424,7 @@ def test_read_technodictionary(default_model):
     assert list(data.coords["region"].values) == ["R1"]
 
     for var in data.data_vars:
-        if var in ("fuel", "enduse", "tech_type"):
+        if var == "tech_type":
             assert list(data.data_vars[var].coords) == ["technology"]
         else:
             assert data.data_vars[var].coords.equals(data.coords)
