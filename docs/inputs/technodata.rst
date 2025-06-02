@@ -137,12 +137,6 @@ efficiency (optional)
 Type (optional)
    defines the type of a technology. Required when using the "similar_technology" search space, which allows agents to filter for technologies of a similar type (see :ref:`inputs-agents`).
 
-Fuel (optional)
-   defines the fuel used by a technology. Required when using the "fueltype" search space, which allows agents to filter for technologies using the same fuel (see :ref:`inputs-agents`).
-
-EndUse (optional)
-   defines the end use of a technology, defined to restrict the new investments of each agent to selected technologies using selected end uses (see :ref:`inputs-agents`).
-
 InterestRate
    is the technology interest rate (called hurdle rates in other models).
    This is used for the interest used in the discount rate and corresponds to the interest built when borrowing money.

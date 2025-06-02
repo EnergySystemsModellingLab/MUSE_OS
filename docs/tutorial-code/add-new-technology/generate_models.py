@@ -48,7 +48,6 @@ def generate_model_1() -> None:
     technodata_file = model_path / "power/Technodata.csv"
     df = pd.read_csv(technodata_file)
     df.loc[df["ProcessName"] == "solarPV", "cap_par"] = 30
-    df.loc[df["ProcessName"] == "solarPV", "Fuel"] = "solar"
     df.to_csv(technodata_file, index=False)
 
     # Add solar to excluded commodities
