@@ -281,10 +281,19 @@ class Sector(AbstractSector):  # type: ignore
         from muse.commodities import is_pollutant
         from muse.costs import levelized_cost_of_energy, supply_cost
         from muse.quantities import consumption
-        from muse.utilities import broadcast_over_assets, interpolate_capacity
+        from muse.utilities import (
+            agent_concatenation,
+            broadcast_over_assets,
+            interpolate_capacity,
+        )
 
         years = market.year.values
-        capacity = interpolate_capacity(self.capacity, year=years)
+
+        # Create a concatenated view of all agents' assets with agent mapping
+        agent_assets = agent_concatenation(
+            {agent.uuid: agent.assets for agent in self.agents}
+        )
+        capacity = interpolate_capacity(agent_assets.capacity, year=years)
 
         # Select technology data for each asset
         # Each asset uses the technology data from the year it was installed
@@ -325,6 +334,12 @@ class Sector(AbstractSector):  # type: ignore
             lcoe,
             asset_dim="asset",
         )
+
+        # Distribute supply and consumption back to agents using the agent coordinate
+        for agent in self.agents:
+            agent_mask = agent_assets.agent == agent.uuid
+            agent.assets["supply"] = supply.sel(asset=agent_mask)
+            agent.assets["consumption"] = consume.sel(asset=agent_mask)
 
         return supply, consume, costs
 
