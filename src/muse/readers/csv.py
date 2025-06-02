@@ -75,10 +75,31 @@ def read_technodictionary(filename: str | Path) -> xr.Dataset:
 
     There are three axes: technologies, regions, and year.
     """
+    from logging import getLogger
+
     from muse.readers import camel_to_snake
 
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
     csv.drop(csv.filter(regex="Unname"), axis=1, inplace=True)
+
+    # Check for deprecated Fuel and EndUse columns (#715)
+    columns_lower = [col.lower() for col in csv.columns]
+    if "fuel" in columns_lower:
+        msg = (
+            f"The 'Fuel' column in {filename} has been deprecated. "
+            "This information is now determined from CommIn files. "
+            "Please remove this column from your Technodata files."
+        )
+        getLogger(__name__).warning(msg)
+
+    if "enduse" in columns_lower:
+        msg = (
+            f"The 'EndUse' column in {filename} has been deprecated. "
+            "This information is now determined from CommOut files. "
+            "Please remove this column from your Technodata files."
+        )
+        getLogger(__name__).warning(msg)
+
     csv = csv.rename(columns=camel_to_snake)
     data = csv[csv.process_name != "Unit"]
 
