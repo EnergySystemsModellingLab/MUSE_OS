@@ -108,16 +108,29 @@ def test_similar_tech(retro_agent, search_space, technologies):
 
 
 def test_similar_fuels(retro_agent, search_space, technologies):
+    from muse.commodities import is_fuel
     from muse.filters import same_fuels
 
     actual = same_fuels(retro_agent, search_space, technologies=technologies)
     assert sorted(actual.dims) == sorted(search_space.dims)
 
-    fuel_type = technologies.fuel
-    for tech in actual.replacement:
-        for asset in actual.asset:
-            expected = fuel_type.loc[tech] == fuel_type.loc[asset]
-            assert expected == actual.sel(replacement=tech, asset=asset)
+    # Get the fixed inputs that are fuels
+    fuels = is_fuel(technologies.comm_usage)
+    finputs = technologies.sel(region=retro_agent.region, commodity=fuels)
+    finputs = finputs.fixed_inputs > 0
+
+    expected = search_space.copy()
+    for asset in actual.asset:
+        asset_fuels = finputs.sel(technology=asset)
+        asset_fuels = set(asset_fuels.commodity.loc[asset_fuels].values)
+        for tech in actual.replacement:
+            tech_fuels = finputs.sel(technology=tech)
+            tech_fuels = set(tech_fuels.commodity.loc[tech_fuels].values)
+            expected.loc[{"replacement": tech, "asset": asset}] = (
+                asset_fuels == tech_fuels
+            )
+
+    assert (actual == expected).all()
 
 
 def test_currently_existing(retro_agent, search_space, technologies, agent_market, rng):
