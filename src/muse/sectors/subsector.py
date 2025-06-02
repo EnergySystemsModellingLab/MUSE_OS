@@ -76,10 +76,17 @@ class Subsector:
         assert "year" not in technologies.dims
         assert len(market.year) == 2
 
+        # Select commodity demands for the subsector
+        demands = market.consumption.sel(commodity=self.commodities)
+
+        # Remove commodities that have no demand in the investment year
+        mask = (demands.isel(year=1, drop=True) > 0).any(dim=["timeslice", "region"])
+        demands = demands.sel(commodity=mask)
+
         # Split demand across agents
         demands = self.demand_share(
             agents=self.agents,
-            market=market,
+            demand=demands,
             technologies=technologies,
             timeslice_level=self.timeslice_level,
         )
@@ -117,6 +124,7 @@ class Subsector:
         from muse import investments as iv
         from muse.agents import InvestingAgent, agents_factory
         from muse.commodities import is_enduse
+        from muse.readers import read_initial_assets
         from muse.readers.toml import undo_damage
 
         # Raise error for renamed asset_threshhold parameter (PR #447)
@@ -139,9 +147,13 @@ class Subsector:
             )
             getLogger(__name__).warning(msg)
 
+        # Read existing capacity file
+        existing_capacity = read_initial_assets(settings.existing_capacity)
+
+        # Create agents
         agents = agents_factory(
             settings.agents,
-            settings.existing_capacity,
+            capacity=existing_capacity,
             technologies=technologies,
             regions=regions,
             year=current_year or int(technologies.year.min()),
@@ -169,11 +181,14 @@ class Subsector:
             if np.sum(outputs) == 0.0:
                 raise RuntimeError(msg)
 
+        # Get list of commodities for the subsector
         if hasattr(settings, "commodities"):
             commodities = settings.commodities
         else:
+            # If commodities aren't explicitly specified, we infer the commodities from
+            # the existing capacity file
             commodities = aggregate_enduses(
-                [agent.assets for agent in agents], technologies
+                technologies.sel(technology=existing_capacity.technology.values)
             )
 
         # len(commodities) == 0 may happen only if
@@ -205,21 +220,20 @@ class Subsector:
         )
 
 
-def aggregate_enduses(
-    assets: Sequence[xr.Dataset | xr.DataArray], technologies: xr.Dataset
-) -> Sequence[str]:
-    """Aggregate enduse commodities for input assets.
+def aggregate_enduses(technologies: xr.Dataset) -> list[str]:
+    """Aggregate enduse commodities for a set of technologies.
 
-    This function is meant as a helper to figure out the commodities attached to a group
-    of agents.
+    Returns a list of all enduse commodities associated with the technologies in the
+    input dataset. Enduse commodities are determined using based on the `comm_usage`
+    attribute of the technologies, using the `is_enduse` function from the
+    `muse.commodities` module.
     """
     from muse.commodities import is_enduse
 
-    techs = set.union(*(set(data.technology.values) for data in assets))
-    outputs = technologies.fixed_outputs.sel(
-        commodity=is_enduse(technologies.comm_usage), technology=list(techs)
-    )
+    # We select enduse commodities with positive fixed outputs
+    outputs = technologies.fixed_outputs
+    enduse_output = outputs.any(
+        [u for u in outputs.dims if u != "commodity"]
+    ) * is_enduse(technologies.comm_usage)
 
-    return outputs.commodity.sel(
-        commodity=outputs.any([u for u in outputs.dims if u != "commodity"])
-    ).values.tolist()
+    return technologies.commodity.values[enduse_output].tolist()

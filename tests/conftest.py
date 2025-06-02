@@ -1,3 +1,4 @@
+import random as rand
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Callable
@@ -27,6 +28,13 @@ def patch_broadcast_compat_data():
         "xarray.core.variable._broadcast_compat_data", patched_broadcast_compat_data
     ):
         yield
+
+
+@fixture(autouse=True)
+def random():
+    """Set random seed for all tests to make them reproducible."""
+    rand.seed(123)
+    np.random.seed(123)
 
 
 def compare_df(
@@ -485,7 +493,6 @@ def settings(tmpdir) -> dict:
     required = {
         "time_framework": [2010, 2015, 2020],
         "regions": ["MEX"],
-        "interest_rate": 0.1,
         "equilibrium": False,
         "maximum_iterations": 3,
         "tolerance": 0.1,

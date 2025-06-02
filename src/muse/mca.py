@@ -79,7 +79,6 @@ class MCA:
 
         extras = {
             "regions",
-            "interest_rate",
             "log_level",
             "interpolation_mode",
             "timeslices",
@@ -94,14 +93,16 @@ class MCA:
             if not hasattr(v, "_asdict") and k not in extras
         }
 
-        # Legacy: warn user about deprecation of "foresight" parameter (#641)
-        if "foresight" in global_kw:
-            msg = (
-                "The `foresight` parameter has been deprecated. "
-                "Please remove from your settings file."
-            )
-            getLogger(__name__).warning(msg)
-            global_kw.pop("foresight")
+        # Legacy: warn user about deprecated parameters (#641, #679)
+        deprecated_params = ["foresight", "interest_rate"]
+        for param in deprecated_params:
+            if param in global_kw:
+                msg = (
+                    f"The `{param}` parameter has been deprecated. "
+                    "Please remove it from your settings file."
+                )
+                getLogger(__name__).warning(msg)
+                global_kw.pop(param)
 
         carbon_kw = {
             k: v._asdict() if hasattr(v, "_asdict") else v
@@ -335,8 +336,7 @@ class MCA:
             if year_idx == 0:
                 self.outputs(self.market, self.sectors, year=current_year)
             self.outputs(self.market, self.sectors, year=investment_year)
-            self.outputs_cache.consolidate_cache(year=current_year)
-            # TODO: change cache to investment_year (not working properly anyway)
+            self.outputs_cache.consolidate_cache(year=investment_year)
 
             getLogger(__name__).info(
                 f"Finished simulation period {current_year} to {investment_year} "

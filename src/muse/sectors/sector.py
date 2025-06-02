@@ -27,7 +27,6 @@ class Sector(AbstractSector):  # type: ignore
         from muse.outputs.sector import factory as ofactory
         from muse.production import factory as pfactory
         from muse.readers.toml import read_technodata
-        from muse.utilities import nametuple_to_dict
 
         # Read sector settings
         sector_settings = getattr(settings.sectors, name)._asdict()
@@ -72,14 +71,9 @@ class Sector(AbstractSector):  # type: ignore
         # Create outputs
         outputs = ofactory(*sector_settings.pop("outputs", []), sector_name=name)
 
-        supply_args = sector_settings.pop(
-            "supply", sector_settings.pop("dispatch_production", {})
-        )
-        if isinstance(supply_args, str):
-            supply_args = {"name": supply_args}
-        else:
-            supply_args = nametuple_to_dict(supply_args)
-        supply = pfactory(**supply_args)
+        # Create production method
+        dispatch_production = sector_settings.pop("dispatch_production", "share")
+        production = pfactory(dispatch_production)
 
         # Create interactions
         interactions = interaction_factory(sector_settings.pop("interactions", None))
@@ -95,8 +89,8 @@ class Sector(AbstractSector):  # type: ignore
         return cls(
             name,
             technologies,
+            supply_prod=production,
             subsectors=subsectors,
-            supply_prod=supply,
             outputs=outputs,
             interactions=interactions,
             **sector_settings,
@@ -106,15 +100,14 @@ class Sector(AbstractSector):  # type: ignore
         self,
         name: str,
         technologies: xr.Dataset,
+        supply_prod: PRODUCTION_SIGNATURE,
         subsectors: Sequence[Subsector] = [],
         interactions: Callable[[Sequence[AbstractAgent]], None] | None = None,
         outputs: Callable | None = None,
-        supply_prod: PRODUCTION_SIGNATURE | None = None,
         timeslice_level: str | None = None,
     ):
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory
-        from muse.production import maximum_production
         from muse.timeslices import TIMESLICE
 
         """Name of the sector."""
@@ -164,7 +157,7 @@ class Sector(AbstractSector):  # type: ignore
         It can be anything registered with
         :py:func:`@register_production<muse.production.register_production>`.
         """
-        self.supply_prod = supply_prod or maximum_production
+        self.supply_prod = supply_prod
 
         """Full supply, consumption and costs data for the most recent year."""
         self.output_data: xr.Dataset

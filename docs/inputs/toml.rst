@@ -25,7 +25,6 @@ a whole.
 
    time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
    regions = ["USA"]
-   interest_rate = 0.1
    interpolation_mode = 'linear'
    log_level = 'info'
 
@@ -156,9 +155,8 @@ explained in the :ref:`toml-primer`.
 .. code-block:: TOML
 
    [global_input_files]
-   projections = '{path}/inputs/Projections.csv'
-   regions = '{path}/inputs/Regions.csv'
-   global_commodities = '{path}/inputs/MUSEGlobalCommodities.csv'
+   projections = '{path}/Projections.csv'
+   global_commodities = '{path}/GlobalCommodities.csv'
 
 *projections*
    Path to a csv file giving initial market projection. See :ref:`inputs-projection`.
@@ -271,9 +269,10 @@ A sector accepts these attributes:
 .. _sector-type:
 
 *type*
-   Defines the kind of sector this is. *Standard* sectors are those with type
-   "default". This value corresponds to the name with which a sector class is registered
-   with MUSE, via :py:meth:`~muse.sectors.register_sector`. [INSERT OTHER OPTIONS HERE]
+   Defines the kind of sector this is. There are two options:
+
+   * "default": defines a standard sector
+   * "presets": defines a preset sector (see below)
 
 .. _sector-priority:
 
@@ -292,25 +291,20 @@ A sector accepts these attributes:
 
    Defaults to "last".
 
-*interpolation*
-   Interpolation method used to fill missing years in the *technodata* (defaults to "linear").
+*interpolation* (optional, default = "linear")
+   Interpolation method used to fill missing years in the *technodata*.
    Available interpolation methods depend on the underlying `scipy method's kind attribute`_.
    Years outside the data range will always be back/forward filled with the closest available data.
 
    .. _scipy method's kind attribute: https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
 
-*dispatch_production*
+*dispatch_production* (optional, default = "share")
    The method used to calculate supply of commodities after investments have been made.
 
    MUSE provides two methods in :py:mod:`muse.production`:
 
-   - share: assets each supply a proportion of demand based on their share of total
-      capacity
-   - maximum: the production is the maximum production for the existing capacity and
-      the technology's utilization factor.
-      See :py:func:`muse.production.maximum_production`.
-
-   Defaults to "share".
+   * share: assets each supply a proportion of demand based on their share of total capacity.
+   * maximum: the production is the maximum production for the existing capacity and the technology's utilization factor. See :py:func:`muse.production.maximum_production`.
 
    Additional methods can be registered with
    :py:func:`muse.production.register_production`
@@ -319,8 +313,8 @@ A sector accepts these attributes:
    Path to a csv file containing the characterization of the technologies involved in
    the sector, e.g. lifetime, capital costs, etc... See :ref:`inputs-technodata`.
 
-*technodata_timeslices*
-    Optional. Path to a csv file describing the utilization factor and minimum service
+*technodata_timeslices* (optional)
+    Path to a csv file describing the utilization factor and minimum service
     factor of each technology in each timeslice.
     See :ref:`user_guide/inputs/technodata_timeslices`.
 
@@ -332,8 +326,8 @@ A sector accepts these attributes:
    Path to a csv file describing the outputs of each technology involved in the sector.
    See :ref:`inputs-iocomms`.
 
-*timeslice_level*
-   Optional. This represents the level of timeslice granularity over which commodity
+*timeslice_level* (optional)
+   This represents the level of timeslice granularity over which commodity
    flows out of the sector are balanced (e.g. if "day", the sector will aim to meet
    commodity demands on a daily basis, rather than an hourly basis).
    If not given, defaults to the finest level defined in the global `timeslices` section.
@@ -342,7 +336,8 @@ A sector accepts these attributes:
    the timeslice level, then *technodata_timeslices* must have columns "month" and "day", but not "hour")
 
 Sectors contain a number of subsections:
-*interactions*
+
+*interactions* (optional)
    Defines interactions between agents. These interactions take place right before new
    investments are computed. The interactions can be anything. They are expected to
    modify the agents and their assets. MUSE provides a default set of interactions that
@@ -394,31 +389,29 @@ Sectors contain a number of subsections:
    "new_to_retro" type of network has been defined but no retro agents are included in
    the sector.
 
-
 *subsectors*
-
     Subsectors group together agents into separate groups servicing the demand for
-    different commodities. There should be at least one subsector. And there can be as
+    different commodities. There must be at least one subsector, and there can be as
     many as required. For instance, a one-subsector setup would look like:
 
     .. code-block:: toml
 
         [sectors.gas.subsectors.all]
-        agents = '{path}/technodata/Agents.csv'
-        existing_capacity = '{path}/technodata/gas/Existing.csv'
+        agents = '{path}/gas/Agents.csv'
+        existing_capacity = '{path}/gas/ExistingCapacity.csv'
 
     A two-subsector could look like:
 
     .. code-block:: toml
 
         [sectors.gas.subsectors.methane_and_ethanol]
-        agents = '{path}/technodata/me_agents.csv'
-        existing_capacity = '{path}/technodata/gas/me_existing.csv'
+        agents = '{path}/gas/me_agents.csv'
+        existing_capacity = '{path}/gas/me_existing.csv'
         commodities = ["methane", "ethanol"]
 
         [sectors.gas.subsectors.natural]
-        agents = '{path}/technodata/nat_agents.csv'
-        existing_capacity = '{path}/technodata/gas/nat_existing.csv'
+        agents = '{path}/gas/nat_agents.csv'
+        existing_capacity = '{path}/gas/nat_existing.csv'
         commodities = ["refined", "crude"]
 
     In the case of multiple subsectors, it is important to specify disjoint sets of
@@ -433,7 +426,7 @@ Sectors contain a number of subsections:
        Path to a csv file describing the initial capacity of the sector.
        See :ref:`user_guide/inputs/existing_capacity:existing sectoral capacity`.
 
-    *lpsolver*
+    *lpsolver* (optional, default = "scipy")
         The solver for linear problems to use when figuring out investments. The solvers
         are registered via :py:func:`~muse.investments.register_investment`. At time of
         writing, three are available:
@@ -444,11 +437,7 @@ Sectors contain a number of subsections:
         - an "adhoc" solver: Simple in-house solver that ranks the technologies
           according to cost and service the demand incrementally.
 
-        - "cvxopt" solver: Formulates investment as a true LP problem and solves it
-          using the python package `cvxopt`_. `cvxopt`_ is *not* installed by default.
-          Users can install it with ``pip install cvxopt`` or ``conda install cvxopt``.
-
-    *demand_share*
+    *demand_share* (optional, default = "standard_demand")
         A method used to split the MCA demand into separate parts to be serviced by
         specific agents. The appropriate choice depends on the type of agents being used
         in the simulation. There are currently two options:
@@ -462,7 +451,7 @@ Sectors contain a number of subsections:
           demand over the investment period, whereas *retrofit* agents are assigned a share
           of the demand that occurs from decommissioned assets.
 
-    *constraints*
+    *constraints* (optional, defaults to full list)
         The list of constraints to apply to the LP problem solved by the sector. By
         default all of the following are included:
 
@@ -499,21 +488,22 @@ Sectors contain a number of subsections:
 
    The following attributes are available:
 
-   - *quantity*: Name of the quantity to save. Currently, `capacity` exists,
-      referring to :py:func:`muse.outputs.capacity`. However, users can
-      customize and create further output quantities by registering with MUSE via
-      :py:func:`muse.outputs.register_output_quantity`. See
-      :py:mod:`muse.outputs` for more details.
+   * *quantity*:
+      Name of the quantity to save.
+      The options are capacity, consumption, supply and costs.
+      Users can also customize and create further output quantities by registering with MUSE via
+      :py:func:`muse.outputs.register_output_quantity`. See :py:mod:`muse.outputs` for more details.
 
-   - *sink*: the sink is the place (disk, cloud, database, etc...) and format with which
+   * *sink*:
+      the sink is the place (disk, cloud, database, etc...) and format with which
       the computed quantity is saved. Currently only sinks that save to files are
-      implemented. The filename can specified via `filename`, as given below. The
-      following sinks are available: "csv", "netcfd", "excel". However, more sinks can
-      be added by interested users, and registered with MUSE via
-      :py:func:`muse.outputs.register_output_sink`. See
-      :py:mod:`muse.outputs` for more details.
+      implemented.
+      The following sinks are available: "csv", "netcfd", "excel" and "aggregate".
+      Additional sinks can be added by interested users, and registered with MUSE via
+      :py:func:`muse.outputs.register_output_sink`. See :py:mod:`muse.outputs` for more details.
 
-   - *filename*: defines the format of the file where to save the data. There are several
+   * *filename*:
+      defines the format of the file where to save the data. There are several
       standard values that are automatically substituted:
 
       - cwd: current working directory, where MUSE was started
@@ -527,25 +517,29 @@ Sectors contain a number of subsections:
 
       Defaults to `{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}`.
 
-   - *overwrite*: If `False` MUSE will issue an error and abort, instead of
+   * *overwrite*:
+      If `False` MUSE will issue an error and abort, instead of
       overwriting an existing file. Defaults to `False`. This prevents important output files from being overwritten.
-   There is a special output sink for aggregating over years. It can be invoked as
+
+   For example, the following would save supply data for the commercial sector as a separate file for each year:
+
+   .. code-block:: TOML
+
+      [[sectors.commercial.outputs]]
+      quantity = "supply"
+      sink = "csv"
+      filename = "{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}"
+      overwrite = true
+
+   There is a special output sink for aggregating over years (i.e. a single output file for all years). It can be invoked as
    follows:
 
    .. code-block:: TOML
 
       [[sectors.commercial.outputs]]
-      quantity = "capacity"
-      sink.aggregate = 'csv'
-
-   Or, if specifying additional output, where ... can be any parameter for the final
-   sink:
-
-   .. code-block:: TOML
-
-      [[sectors.commercial.outputs]]
-      quantity = "capacity"
-      sink.aggregate.name = { ... }
+      quantity = "supply"
+      sink = "aggregate"
+      filename = "{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv"
 
    Note that the aggregate sink always overwrites the final file, since it will
    overwrite itself.
@@ -560,40 +554,39 @@ simulation.
 
 Preset sectors are defined in :py:class:`~muse.sectors.PresetSector`.
 
-The three components, production, consumption, and prices, can be set independently and
-not all three need to be set. Production and consumption default to zero, and prices
-default to leaving things unchanged.
-
-The following defines a standard preset sector where consumption is defined as a
-function of macro-economic data, i.e. population and gdp.
-
+A common example would be the following, where commodity consumption is defined exogeneously:
 
 .. code-block:: TOML
 
     [sectors.commercial_presets]
     type = 'presets'
-    priority = 'presets'
-    timeslice_shares_path = '{path}/technodata/TimesliceShareCommercial.csv'
-    macrodrivers_path = '{path}/technodata/Macrodrivers.csv'
-    regression_path = '{path}/technodata/regressionparameters.csv'
-    timeslices_levels = {'day': ['all-day']}
+    priority = 0
+    consumption_path = "{path}/commercial_presets/*Consumption.csv"
+
+Alternatively, you may define consumption as a function of macro-economic data, i.e. population and GDP:
+
+.. code-block:: TOML
+
+    [sectors.commercial_presets]
+    type = 'presets'
+    priority = 0
+    timeslice_shares_path = '{path}/commercial_presets/TimesliceShareCommercial.csv'
+    macrodrivers_path = '{path}/commercial_presets/Macrodrivers.csv'
+    regression_path = '{path}/commercial_presets/regressionparameters.csv'
 
 The following attributes are accepted:
 
-*type*
+*type* (required)
    See the attribute in the standard mode, :ref:`type<sector-type>`. *Preset* sectors
    are those with type "presets".
 
-*priority*
+*priority* (required)
    See the attribute in the standard mode, :ref:`priority<sector-priority>`.
-
-*timeslices_levels*
-   See the attribute in the standard mode, `Timeslices`_.
 
 .. _preset-consumption:
 
 *consumption_path*
-   CSV output files, one per year. This attribute can include wild cards, i.e. '*',
+   CSV files, one per year. This attribute can include wild cards, i.e. '*',
    which can match anything. For instance: `consumption_path = "{cwd}/Consumption*.csv"` will match any csv file starting with "Consumption" in the
    current working directory. The file names must include the year for which it defines
    the consumption, e.g. `Consumption2015.csv`.

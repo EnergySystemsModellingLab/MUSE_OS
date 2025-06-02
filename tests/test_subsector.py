@@ -1,7 +1,5 @@
-from unittest.mock import MagicMock, patch
-
 import xarray as xr
-from pytest import fixture, raises
+from pytest import fixture
 
 
 @fixture
@@ -38,9 +36,7 @@ def test_subsector_investing_aggregation():
             agents = list(examples.sector(sname, model).agents)
             sector = next(sector for sector in mca.sectors if sector.name == sname)
             technologies = sector.technologies
-            commodities = aggregate_enduses(
-                (agent.assets for agent in agents), technologies
-            )
+            commodities = aggregate_enduses(technologies)
             market = mca.market.sel(
                 commodity=technologies.commodity, region=technologies.region
             ).interp(year=[2020, 2025])
@@ -68,7 +64,7 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
     from muse.sectors.subsector import Subsector, aggregate_enduses
 
     examples.copy_model(model, tmp_path)
-    path = tmp_path / "model" / "technodata" / "Agents.csv"
+    path = tmp_path / "model" / "Agents.csv"
     params = readers.read_csv_agent_parameters(path)
     capa = readers.read_initial_assets(
         path.with_name("residential") / "ExistingCapacity.csv"
@@ -91,7 +87,7 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
         param["decision"]["parameters"] = ("ALCOE", False, 1)
         param.pop("quantity")
     agents = [create_agent(technologies=technologies, **param) for param in params]
-    commodities = aggregate_enduses((agent.assets for agent in agents), technologies)
+    commodities = aggregate_enduses(technologies)
 
     subsector = Subsector(
         agents,
@@ -121,41 +117,3 @@ def test_factory_smoke_test(model, technologies, tmp_path):
 
     assert isinstance(subsector, Subsector)
     assert len(subsector.agents) == 1
-
-
-def test_factory_constraints_passed_to_agents(model, technologies, tmp_path):
-    from muse import examples
-    from muse.readers.toml import read_settings
-    from muse.sectors.subsector import Subsector
-
-    examples.copy_model(model, tmp_path)
-    settings = read_settings(tmp_path / "model" / "settings.toml")
-
-    # The constraints in the settings are not none
-    assert len(settings.sectors.residential.subsectors.all.constraints) > 0
-
-    class BreakException(Exception):
-        pass
-
-    _withness = MagicMock()
-
-    def agent_factory(*args, **kwargs):
-        _withness(*args, **kwargs)
-        raise BreakException()
-
-    # We asses they are indeed passed to the agents factory
-    with patch("muse.agents.agents_factory", new=agent_factory):
-        with raises(BreakException):
-            Subsector.factory(settings.sectors.residential.subsectors.all, technologies)
-        assert (
-            _withness.call_args[1]["constraints"]
-            == settings.sectors.residential.subsectors.all.constraints
-        )
-
-    # But if there are no constraints, we pass an empty tuple
-    settings.sectors.residential.subsectors.all.constraints.clear()
-    _withness.reset_mock()
-    with patch("muse.agents.agents_factory", new=agent_factory):
-        with raises(BreakException):
-            Subsector.factory(settings.sectors.residential.subsectors.all, technologies)
-        assert tuple(_withness.call_args[1]["constraints"]) == ()
