@@ -103,16 +103,22 @@ def register_investment(function: INVESTMENT_SIGNATURE) -> INVESTMENT_SIGNATURE:
             **kwargs,
         )
 
-        if isinstance(result, xr.Dataset):
-            investment = result["capacity"].rename("investment")
-            if "production" in result:
-                cache_quantity(production=result["production"])
-        else:
-            investment = result.rename("investment")
+        # Check the output
+        assert set(result.data_vars) == {"capacity", "production"}
+        assert set(result.capacity.dims) == {"asset", "replacement"}
+        assert set(result.production.dims) == {
+            "asset",
+            "replacement",
+            "commodity",
+            "timeslice",
+        }
 
-        cache_quantity(capacity=investment)
+        # Add to cache
+        cache_quantity(production=result["production"])
+        cache_quantity(capacity=result["capacity"])
 
-        return investment
+        # Return the result
+        return result
 
     return decorated
 
@@ -158,7 +164,7 @@ def factory(settings: str | Mapping | None = None) -> Callable:
             constraints=constraints,
             **params,
             **kwargs,
-        ).rename("investment")
+        )
 
     return compute_investment
 
