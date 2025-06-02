@@ -188,10 +188,10 @@ def capacity(
     market: xr.Dataset, sectors: list[AbstractSector], year: int, **kwargs
 ) -> pd.DataFrame:
     """Current capacity across all sectors."""
-    return _aggregate_sectors(sectors, op=sector_capacity)
+    return _aggregate_sectors(sectors, year, op=sector_capacity)
 
 
-def sector_capacity(sector: AbstractSector) -> pd.DataFrame:
+def sector_capacity(sector: AbstractSector, year: int) -> pd.DataFrame:
     """Sector capacity with agent annotations."""
     if isinstance(sector, PresetSector):
         return pd.DataFrame()
@@ -200,17 +200,13 @@ def sector_capacity(sector: AbstractSector) -> pd.DataFrame:
     data_sector: list[xr.DataArray] = []
     agents = sorted(getattr(sector, "agents"), key=attrgetter("name"))
 
-    # Select data for the current year
-    current_year = agents[0].year
-
     # Get capacity data for each agent
     for agent in agents:
-        assets = agent.assets.sel(year=current_year)
-        data_agent = assets.capacity
+        data_agent = agent.assets.capacity.sel(year=year)
         data_agent["agent"] = agent.name
         data_agent["category"] = agent.category
         data_agent["sector"] = getattr(sector, "name", "unnamed")
-        data_agent["year"] = current_year
+        data_agent["year"] = year
         data_agent = data_agent.to_dataframe("capacity")
         data_sector.append(data_agent)
 
@@ -242,6 +238,7 @@ def sector_fuel_costs(
 ) -> pd.DataFrame:
     """Sector fuel costs with agent annotations."""
     from muse.costs import fuel_costs
+    from muse.utilities import broadcast_over_assets
 
     if isinstance(sector, PresetSector):
         return pd.DataFrame()
@@ -251,23 +248,20 @@ def sector_fuel_costs(
     technologies = getattr(sector, "technologies")
     agents = sorted(getattr(sector, "agents"), key=attrgetter("name"))
 
-    # Select data for the current year
-    current_year = agents[0].year
-    _technologies = technologies.sel(year=current_year)
-    _market = market.sel(year=current_year, commodity=_technologies.commodity)
-
     # Calculate fuel costs
+    _market = market.sel(year=year, commodity=technologies.commodity)
     for agent in agents:
-        assets = agent.assets.sel(year=current_year)
         data_agent = fuel_costs(
-            technologies=_technologies,
-            prices=_market.prices,
-            consumption=assets.consumption,
+            technologies=broadcast_over_assets(technologies, agent.assets),
+            prices=broadcast_over_assets(
+                _market.prices, agent.assets, installed_as_year=False
+            ),
+            consumption=agent.consumption.sel(year=year),
         )
         data_agent["agent"] = agent.name
         data_agent["category"] = agent.category
         data_agent["sector"] = getattr(sector, "name", "unnamed")
-        data_agent["year"] = current_year
+        data_agent["year"] = year
         data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
             "fuel_consumption_costs"
         )
@@ -290,6 +284,7 @@ def sector_capital_costs(
 ) -> pd.DataFrame:
     """Sector capital costs with agent annotations."""
     from muse.costs import capital_costs
+    from muse.utilities import broadcast_over_assets
 
     if isinstance(sector, PresetSector):
         return pd.DataFrame()
@@ -299,20 +294,17 @@ def sector_capital_costs(
     technologies = getattr(sector, "technologies")
     agents = sorted(getattr(sector, "agents"), key=attrgetter("name"))
 
-    # Select data for the current year
-    current_year = agents[0].year
-    _technologies = technologies.sel(year=current_year)
-
     # Calculate capital costs
     for agent in agents:
-        assets = agent.assets.sel(year=current_year)
         data_agent = capital_costs(
-            technologies=_technologies, capacity=assets.capacity, method="annual"
+            technologies=broadcast_over_assets(technologies, agent.assets),
+            capacity=agent.assets.capacity.sel(year=year),
+            method="annual",
         )
         data_agent["agent"] = agent.name
         data_agent["category"] = agent.category
         data_agent["sector"] = getattr(sector, "name", "unnamed")
-        data_agent["year"] = current_year
+        data_agent["year"] = year
         data_agent = data_agent.to_dataframe("capital_costs")
         data_sector.append(data_agent)
 
@@ -333,6 +325,7 @@ def sector_emission_costs(
 ) -> pd.DataFrame:
     """Sector emission costs with agent annotations."""
     from muse.costs import environmental_costs
+    from muse.utilities import broadcast_over_assets
 
     if isinstance(sector, PresetSector):
         return pd.DataFrame()
@@ -342,21 +335,20 @@ def sector_emission_costs(
     technologies = getattr(sector, "technologies")
     agents = sorted(getattr(sector, "agents"), key=attrgetter("name"))
 
-    # Select data for the current year
-    current_year = agents[0].year
-    _technologies = technologies.sel(year=current_year)
-    _market = market.sel(year=current_year, commodity=technologies.commodity)
-
     # Calculate emission costs
+    _market = market.sel(year=year, commodity=technologies.commodity)
     for agent in agents:
-        assets = agent.assets.sel(year=current_year)
         data_agent = environmental_costs(
-            technologies=_technologies, prices=_market.prices, production=assets.supply
+            technologies=broadcast_over_assets(technologies, agent.assets),
+            prices=broadcast_over_assets(
+                _market.prices, agent.assets, installed_as_year=False
+            ),
+            production=agent.supply.sel(year=year),
         )
         data_agent["agent"] = agent.name
         data_agent["category"] = agent.category
         data_agent["sector"] = getattr(sector, "name", "unnamed")
-        data_agent["year"] = current_year
+        data_agent["year"] = year
         data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe(
             "emission_costs"
         )
@@ -379,6 +371,7 @@ def sector_lcoe(
 ) -> pd.DataFrame:
     """Levelized cost of energy () of technologies over their lifetime."""
     from muse.costs import levelized_cost_of_energy
+    from muse.utilities import broadcast_over_assets
 
     if isinstance(sector, PresetSector):
         return pd.DataFrame()
@@ -388,26 +381,23 @@ def sector_lcoe(
     technologies = getattr(sector, "technologies")
     agents = sorted(getattr(sector, "agents"), key=attrgetter("name"))
 
-    # Select data for the current year
-    current_year = agents[0].year
-    _technologies = technologies.sel(year=current_year)
-    _market = market.sel(year=current_year, commodity=technologies.commodity)
-
     # Calculate LCOE
+    _market = market.sel(year=year, commodity=technologies.commodity)
     for agent in agents:
-        assets = agent.assets.sel(year=current_year)
         data_agent = levelized_cost_of_energy(
-            technologies=_technologies,
-            prices=_market.prices,
-            capacity=assets.capacity,
-            production=assets.supply,
-            consumption=assets.consumption,
+            technologies=broadcast_over_assets(technologies, agent.assets),
+            prices=broadcast_over_assets(
+                _market.prices, agent.assets, installed_as_year=False
+            ),
+            capacity=agent.assets.capacity.sel(year=year),
+            production=agent.supply.sel(year=year),
+            consumption=agent.consumption.sel(year=year),
             method="annual",
         )
         data_agent["agent"] = agent.name
         data_agent["category"] = agent.category
         data_agent["sector"] = getattr(sector, "name", "unnamed")
-        data_agent["year"] = current_year
+        data_agent["year"] = year
         data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe("lcoe")
         data_sector.append(data_agent)
 
@@ -423,9 +413,12 @@ def metric_eac(
     return _aggregate_sectors(sectors, market, year, op=sector_eac)
 
 
-def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataFrame:
+def sector_eac(
+    sector: AbstractSector, market: xr.Dataset, year: int, **kwargs
+) -> pd.DataFrame:
     """Equivalent Annual Cost of technologies over their lifetime."""
     from muse.costs import equivalent_annual_cost
+    from muse.utilities import broadcast_over_assets
 
     if isinstance(sector, PresetSector):
         return pd.DataFrame()
@@ -435,26 +428,22 @@ def sector_eac(sector: AbstractSector, market: xr.Dataset, **kwargs) -> pd.DataF
     technologies = getattr(sector, "technologies")
     agents = sorted(getattr(sector, "agents"), key=attrgetter("name"))
 
-    # Select data for the current year
-    current_year = agents[0].year
-    _technologies = technologies.sel(year=current_year)
-    _market = market.sel(year=current_year, commodity=technologies.commodity)
-
     # Calculate EAC
+    _market = market.sel(year=year, commodity=technologies.commodity)
     for agent in agents:
-        assets = agent.assets.sel(year=current_year)
         data_agent = equivalent_annual_cost(
-            technologies=_technologies,
-            prices=_market.prices,
-            capacity=assets.capacity,
-            production=assets.supply,
-            consumption=assets.consumption,
-            method="annual",
+            technologies=broadcast_over_assets(technologies, agent.assets),
+            prices=broadcast_over_assets(
+                _market.prices, agent.assets, installed_as_year=False
+            ),
+            capacity=agent.assets.capacity.sel(year=year),
+            production=agent.supply.sel(year=year),
+            consumption=agent.consumption.sel(year=year),
         )
         data_agent["agent"] = agent.name
         data_agent["category"] = agent.category
         data_agent["sector"] = getattr(sector, "name", "unnamed")
-        data_agent["year"] = current_year
+        data_agent["year"] = year
         data_agent = multiindex_to_coords(data_agent, "timeslice").to_dataframe("lcoe")
         data_sector.append(data_agent)
 

@@ -489,4 +489,10 @@ class InvestingAgent(Agent):
         # Apply the retirement profile to the investments
         new_assets = (investments * profile).rename(replacement="asset")
         new_assets["installed"] = "asset", [investment_year] * len(new_assets.asset)
+
+        # The new assets have picked up quite a few coordinates along the way.
+        # we try and keep only those that were there originally.
+        if set(new_assets.dims) != set(self.assets.dims):
+            new, old = new_assets.dims, self.assets.dims
+            raise RuntimeError(f"Asset dimensions do not match: {new} vs {old}")
         return new_assets

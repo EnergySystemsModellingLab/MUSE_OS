@@ -331,8 +331,8 @@ class Sector(AbstractSector):  # type: ignore
         # Distribute supply and consumption back to agents using the agent coordinate
         for agent in self.agents:
             agent_mask = agent_assets.agent == agent.uuid
-            agent.assets["supply"] = supply.sel(asset=agent_mask)
-            agent.assets["consumption"] = consume.sel(asset=agent_mask)
+            agent.supply = supply.sel(asset=agent_mask)
+            agent.consumption = consume.sel(asset=agent_mask)
 
         return supply, consume, costs
 
