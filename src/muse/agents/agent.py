@@ -315,7 +315,14 @@ class InvestingAgent(Agent):
 
         # Calculate the search space
         search_space = (
-            self.search_rules(self, demand, technologies, market).fillna(0).astype(int)
+            self.search_rules(self, demand, technologies=technologies, market=market)
+            .fillna(0)
+            .astype(int)
+        )
+
+        # Select technologies in the search space
+        technologies = technologies.sel(
+            technology=technologies.technology.isin(search_space.replacement)
         )
 
         # Skip forward if the search space is empty
@@ -359,6 +366,7 @@ class InvestingAgent(Agent):
             search=search[["search_space", "decision"]],
             technologies=technologies,
             constraints=constraints,
+            commodities=list(demand.commodity.values),
             timeslice_level=self.timeslice_level,
         )
 

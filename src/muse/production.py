@@ -40,22 +40,24 @@ __all__ = [
     "supply",
 ]
 
-from collections.abc import Mapping, MutableMapping
-from typing import Any, Callable, cast
+from collections.abc import MutableMapping
+from typing import Callable
 
 import xarray as xr
 
 from muse.registration import registrator
 
-PRODUCTION_SIGNATURE = Callable[[xr.DataArray, xr.DataArray, xr.Dataset], xr.DataArray]
 """Production signature."""
+PRODUCTION_SIGNATURE = Callable[
+    [xr.Dataset, xr.DataArray, xr.Dataset, str], xr.DataArray
+]
 
-PRODUCTION_METHODS: MutableMapping[str, PRODUCTION_SIGNATURE] = {}
 """Dictionary of production methods. """
+PRODUCTION_METHODS: MutableMapping[str, PRODUCTION_SIGNATURE] = {}
 
 
 @registrator(registry=PRODUCTION_METHODS, loglevel="info")
-def register_production(function: PRODUCTION_SIGNATURE = None):
+def register_production(function: PRODUCTION_SIGNATURE):
     """Decorator to register a function as a production method.
 
     .. seealso::
@@ -65,38 +67,10 @@ def register_production(function: PRODUCTION_SIGNATURE = None):
     return function
 
 
-def factory(
-    settings: str | Mapping = "maximum_production", **kwargs
-) -> PRODUCTION_SIGNATURE:
-    """Creates a production functor.
-
-    This function's raison d'être is to convert the input from a TOML file into an
-    actual functor usable within the model, i.e. it converts data into logic.
-
-    Arguments:
-        settings: Registered production method to create. The name is resolved when the
-            function returned by the factory is called. Hence, it could refer to a
-            function yet to be registered when this factory method is called.
-        **kwargs: any keyword argument the production method accepts.
-    """
-    from functools import partial
-
+def factory(name) -> PRODUCTION_SIGNATURE:
     from muse.production import PRODUCTION_METHODS
 
-    if isinstance(settings, str):
-        name = settings
-        keywords: MutableMapping[str, Any] = dict()
-    else:
-        keywords = dict(**settings)
-        name = keywords.pop("name")
-
-    keywords.update(**kwargs)
-    name = keywords.pop("name", name)
-
-    method = PRODUCTION_METHODS[name]
-    return cast(
-        PRODUCTION_SIGNATURE, method if not keywords else partial(method, **keywords)
-    )
+    return PRODUCTION_METHODS[name]
 
 
 @register_production(name=("max", "maximum"))

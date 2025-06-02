@@ -81,12 +81,13 @@ var_par, var_exp
 
    ProductionRef is the production of a reference capacity (CapRef) for the cost estimate decided by the modeller before filling the input data files.
 
-Growith constraints
+Growth constraints (optional)
    MaxCapacityAddition
       represents the maximum addition of installed capacity per technology, per year in a period, per region.
 
    MaxCapacityGrowth
       represents the fraction growth per year based on the available stock in a year, per region and technology.
+      To allow growth to be initiated, a seed value must be specified (see GrowthSeed below).
 
    TotalCapacityLimit
       represents the total capacity limit per technology, region and year.
@@ -96,17 +97,27 @@ Growith constraints
 
       resBoilerElectric, region1, 10,	0.2,	100
 
-   In this example, MaxCapacityAddition,	MaxCapacityGrowth, and TotalCapacityLimit equal to 10 PJ, 0.2 (corresponding to 20 \%), and 100 PJ.
-   Assuming a 5-year time step, the *MaxCapacityAddition* introduces a constraint on the maximum capacity which can be added in the investment year:
-   it constrains the new capacity which can be installed in a modelled period as being equal to *10 * 5 = 50 PJ*.
-   The *MaxCapacityGrowth* applies a constraint on the capacity which can be installed in a modelled period, which depends on the
-   decommissioning profile. Assuming that 7.7 PJ of resBoilerElectric is available in the year when the decision is made (investment year), and that 4.9 PJ of
-   resBoilerElectric is available in the year at which capacities invested in, will be online, then the constraint applies as follows *7.7 * ((1 + 0.2) ** 5) - 4.9 = 14.3 PJ*.
-   The *TotalCapacityLimit* applies a constraint on the maximum capacity of a technology in the investment year; it depends on the decommissioning profile and equals *100 - 4.9 = 95.1 PJ*.
+   In this example, MaxCapacityAddition, MaxCapacityGrowth and TotalCapacityLimit equal to 10 PJ, 0.2 (corresponding to 20 \%), and 100 PJ.
+   Assuming a 5-year time step:
+
+   * *MaxCapacityAddition* restricts new capacity which can be installed over the investment period to 10 * 5 = 50 PJ.
+   * *MaxCapacityGrowth* restricts capacity growth to 20 \% per year (:math:`\approx` 149 \% over 5 years).
+     The investment limit will depend on the existing capacity and the decommissioning profile. Assuming that 7.7 PJ of resBoilerElectric is available in the current year, and that 4.9 PJ of
+     resBoilerElectric is already commissioned for the investment year, then the constraint applies as follows: 7.7 * (1 + 0.2)\ :sup:`5` - 4.9 = 14.3 PJ.
+     Also see the GrowthSeed parameter below.
+   * *TotalCapacityLimit* will restrict new addition to 100 - 4.9 = 95.1 PJ (so that total capacity in the investment year will not exceed 100 PJ).
+   * Overall, the most restrictive constraint will apply, which in this case is 14.3 PJ.
 
    Growth constraints are applied for each single agent in a multi-agent simulation. When only one agent is present, the growth constraints
    apply individually to the "New" and "Retrofit" agent, when present.
 
+   If any of the three parameters are not provided in the technodata file, that particular constraint is not applied.
+
+GrowthSeed (optional, default = 1)
+    applies a lower-bound on the initial capacity value used in the MaxCapacityGrowth calculation, allowing growth to initiate when capacity is low/zero.
+
+    Taking the above example, if the GrowthSeed is set to 10 PJ (higher than the existing capacity of 7.7 PJ), the MaxCapacityGrowth constraint will be applied as follows:
+    10 x (1 + 0.2)\ :sup:`5` - 4.9 = 19.9 PJ.
 
 TechnicalLife
    represents the number of years that a technology operates before it is decommissioned.

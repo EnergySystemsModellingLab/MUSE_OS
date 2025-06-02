@@ -482,6 +482,8 @@ def read_csv_agent_parameters(filename) -> list:
     Returns a list of dictionaries, where each dictionary can be used to instantiate an
     agent in :py:func:`muse.agents.factories.factory`.
     """
+    from logging import getLogger
+
     from muse.readers import camel_to_snake
 
     if (
@@ -534,6 +536,15 @@ def read_csv_agent_parameters(filename) -> list:
             "agent": "agent",
             "default": "agent",
         }[getattr(row, "Type", "agent").lower()]
+
+        # Add warning about retrofit agents
+        if agent_type == "retrofit":
+            msg = (
+                "Retrofit agents will be deprecated in a future release. "
+                "Please modify your model to use only agents of the 'New' type."
+            )
+            getLogger(__name__).warning(msg)
+
         data = {
             "name": row.Name,
             "region": row.RegionName,

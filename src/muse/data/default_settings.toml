@@ -2,7 +2,6 @@
 
 time_framework = 'REQUIRED'
 regions = 'REQUIRED'
-interest_rate = 0.1
 interpolation_mode = 'linear'
 log_level = 'info'
 # Convergence parameters
@@ -31,7 +30,7 @@ plugins = []  # paths to each additional plugin
 path = '{path}'
 projections = '{path}/Projections.csv'
 regions = 'OPTIONAL'
-global_commodities = '{path}/MUSEGlobalCommodities.csv'
+global_commodities = '{path}/GlobalCommodities.csv'
 base_year_export = "OPTIONAL"
 base_year_import = "OPTIONAL"
 

@@ -22,11 +22,11 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          path: dist/MUSE*
+          path: dist/muse*
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: dist/MUSE*
+          files: dist/muse*
 
   # If building of the wheel is successful, then we try to publish it
   # First, in TestPyPI
