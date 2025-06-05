@@ -285,38 +285,26 @@ def new_and_retro(
     # Split demand over agents
     agent_demands: MutableMapping[Hashable, xr.DataArray] = {}
     for region in demands.region.values:
-        # Calculate capacity for retrofit agents
-        retro_capacity = {
-            agent.uuid: interpolate_capacity(
-                agent.assets.capacity, year=[current_year, investment_year]
-            )
-            for agent in agents
-            if agent.category == "retrofit" and agent.region == region
-        }
-        name_to_retro_id = {
-            agent.name: agent.uuid
-            for agent in agents
-            if agent.category == "retrofit" and agent.region == region
-        }
-
         for agent in agents:
             if agent.region != region:
                 continue
 
-            _capacity: xr.DataArray = retro_capacity[name_to_retro_id[agent.name]]
-            agent_technodata: xr.Dataset = technodata.sel(asset=agent.assets.asset)
+            current_capacity: xr.DataArray = interpolate_capacity(
+                agent.assets.capacity, year=[current_year, investment_year]
+            )
+            current_technodata: xr.Dataset = technodata.sel(asset=agent.assets.asset)
 
             if agent.category == "retrofit":
                 _demands: xr.DataArray = _inner_split(
-                    _capacity,
-                    agent_technodata,
+                    current_capacity,
+                    current_technodata,
                     demands.retrofit.sel(region=region) * agent.quantity,
                     decommissioning,
                 )
-            elif agent.category == "new":
+            elif agent.category == "newcapa":
                 _demands: xr.DataArray = _inner_split(
-                    _capacity,
-                    agent_technodata,
+                    current_capacity,
+                    current_technodata,
                     demands.new.sel(region=region) * agent.quantity,
                     partial(
                         maximum_production,
@@ -324,6 +312,8 @@ def new_and_retro(
                         timeslice_level=timeslice_level,
                     ),
                 )
+            else:
+                raise ValueError(f"Unknown agent category: {agent.category}")
             agent_demands[agent.uuid] = _demands
     result = agent_concatenation(agent_demands)
     assert "year" not in result.dims
