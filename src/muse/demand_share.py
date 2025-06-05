@@ -123,7 +123,7 @@ def factory(
         # Validate output
         check_dimensions(
             result, ["timeslice", "commodity"], optional=["asset", "region"]
-        )
+        )  # TODO: asset should be required, but trade model is failing
         return result
 
     return cast(DEMAND_SHARE_SIGNATURE, demand_share)
@@ -393,20 +393,10 @@ def unmet_forecasted_demand(
     technologies: xr.Dataset,
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
-    """Calculate forecast demand that cannot be serviced by current assets.
-
-    Args:
-        agents: List of agents to calculate unmet demand for.
-        demand: Commodity demands for current and investment years.
-        technologies: Technology parameters.
-        timeslice_level: Timeslice level (e.g. "hour", "day").
-
-    Returns:
-        DataArray with unmet demand for end-use commodities.
-    """
+    """Forecast demand that cannot be serviced by non-decommissioned current assets."""
     current_year, investment_year = map(int, demand.year.values)
 
-    # Calculate capacity
+    # Calculate existing capacity
     capacity = interpolate_capacity(
         reduce_assets([agent.assets.capacity for agent in agents]),
         year=[current_year, investment_year],
@@ -470,6 +460,12 @@ def unmet_demand(
     .. math::
         U[\mathcal{M}, \mathcal{A}] =
           \max(\mathcal{C} - P[\mathcal{M}, \mathcal{A}], 0)
+
+    :math:`\max` operates element-wise, and indices have been dropped for simplicity.
+    The resulting expression has the same indices as the consumption
+    :math:`\mathcal{C}_{c, s}^r`.
+
+    :math:`P` is the maximum production, given by <muse.quantities.maximum_production>.
     """
     from muse.quantities import maximum_production
 
@@ -477,6 +473,8 @@ def unmet_demand(
     assert "year" not in technologies.dims
     assert "year" not in capacity.dims
     assert "year" not in demand.dims
+    assert "region" not in capacity.dims
+    assert "dst_region" not in capacity.dims
 
     # Calculate maximum production by existing assets
     produced = maximum_production(
