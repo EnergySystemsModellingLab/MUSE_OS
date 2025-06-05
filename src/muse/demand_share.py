@@ -60,7 +60,6 @@ from mypy_extensions import KwArg
 
 from muse.agents import AbstractAgent
 from muse.errors import (
-    AgentWithNoAssetsInDemandShare,
     RetrofitAgentInStandardDemandShare,
 )
 from muse.registration import registrator
@@ -261,98 +260,63 @@ def new_and_retro(
             timeslice_level=timeslice_level,
         )
 
+    # Calculate existing capacity
     capacity = interpolate_capacity(
-        reduce_assets([u.assets.capacity for u in agents]),
+        reduce_assets([agent.assets.capacity for agent in agents]),
         year=[current_year, investment_year],
     )
 
     # Select technodata for assets
     technodata = broadcast_over_assets(technologies, capacity, installed_as_year=True)
 
+    # Calculate new and retrofit demands
     demands = new_and_retro_demands(
-        capacity,
-        demand,
-        technodata,
+        capacity=capacity,
+        demand=demand,
+        technologies=technodata,
         timeslice_level=timeslice_level,
     )
 
+    # Only consider end-use commodities
     demands = demands.where(
         is_enduse(technologies.comm_usage.sel(commodity=demands.commodity)), 0
     )
 
-    quantity = {
-        agent.name: agent.quantity for agent in agents if agent.category != "retrofit"
-    }
-
-    for agent in agents:
-        if agent.category == "retrofit":
-            setattr(agent, "quantity", quantity[agent.name])
-
-    id_to_share: MutableMapping[Hashable, xr.DataArray] = {}
+    # Split demand over agents
     for region in demands.region.values:
-        retro_capacity: MutableMapping[Hashable, xr.DataArray] = {
-            agent.uuid: interpolate_capacity(
+        agent_demands: MutableMapping[Hashable, xr.DataArray] = {}
+        for agent in agents:
+            if agent.region != region:
+                continue
+
+            current_capacity: xr.DataArray = interpolate_capacity(
                 agent.assets.capacity, year=[current_year, investment_year]
             )
-            for agent in agents
-            if agent.category == "retrofit" and agent.region == region
-        }
-        retro_technodata: MutableMapping[Hashable, xr.Dataset] = {
-            agent_uuid: technodata.sel(asset=retro_capacity[agent_uuid].asset)
-            for agent_uuid in retro_capacity.keys()
-        }
-        name_to_id = {
-            (agent.name, agent.region): agent.uuid
-            for agent in agents
-            if agent.category == "retrofit" and agent.region == region
-        }
-        id_to_rquantity = {
-            agent.uuid: (agent.name, agent.region, agent.quantity)
-            for agent in agents
-            if agent.category == "retrofit" and agent.region == region
-        }
+            current_technodata: xr.Dataset = technodata.sel(
+                asset=current_capacity.asset
+            )
 
-        retro_demands: MutableMapping[Hashable, xr.DataArray] = _inner_split(
-            retro_capacity,
-            retro_technodata,
-            demands.retrofit.sel(region=region),
-            decommissioning,
-            id_to_rquantity,
-        )
-        assert len(name_to_id) == len(retro_capacity)
-
-        id_to_share.update(retro_demands)
-
-        new_capacity: Mapping[Hashable, xr.DataArray] = {
-            agent.uuid: retro_capacity[name_to_id[(agent.name, agent.region)]]
-            #            * agent.quantity
-            for agent in agents
-            if agent.category != "retrofit" and agent.region == region
-        }
-        new_technodata: MutableMapping[Hashable, xr.Dataset] = {
-            agent_uuid: technodata.sel(asset=new_capacity[agent_uuid].asset)
-            for agent_uuid in new_capacity.keys()
-        }
-        id_to_nquantity = {
-            agent.uuid: (agent.name, agent.region, agent.quantity)
-            for agent in agents
-            if agent.category != "retrofit" and agent.region == region
-        }
-        new_demands = _inner_split(
-            new_capacity,
-            new_technodata,
-            demands.new.sel(region=region),
-            partial(
-                maximum_production,
-                year=current_year,
-                timeslice_level=timeslice_level,
-            ),
-            id_to_nquantity,
-        )
-
-        id_to_share.update(new_demands)
-
-    result = cast(xr.DataArray, agent_concatenation(id_to_share))
+            if agent.category == "retrofit":
+                retro_demands: xr.DataArray = _inner_split(
+                    current_capacity,
+                    current_technodata,
+                    demands.retrofit.sel(region=region) * agent.quantity,
+                    decommissioning,
+                )
+                agent_demands[agent.uuid] = retro_demands
+            elif agent.category == "new":
+                new_demands: xr.DataArray = _inner_split(
+                    current_capacity,
+                    current_technodata,
+                    demands.new.sel(region=region) * agent.quantity,
+                    partial(
+                        maximum_production,
+                        year=current_year,
+                        timeslice_level=timeslice_level,
+                    ),
+                )
+                agent_demands[agent.uuid] = new_demands
+    result = cast(xr.DataArray, agent_concatenation(agent_demands))
     return result
 
 
@@ -427,14 +391,13 @@ def standard_demand(
         is_enduse(technologies.comm_usage.sel(commodity=demands.commodity)), 0
     )
 
-    id_to_share: MutableMapping[Hashable, xr.DataArray] = {}
+    # Split demand over agents
     for region in demands.region.values:
-        total_demands: MutableMapping[Hashable, xr.DataArray] = {}
+        agent_demands: MutableMapping[Hashable, xr.DataArray] = {}
         for agent in agents:
             if agent.region != region:
                 continue
 
-            # Calculate current capacity
             current_capacity: xr.DataArray = interpolate_capacity(
                 agent.assets.capacity, year=[current_year, investment_year]
             )
@@ -442,13 +405,13 @@ def standard_demand(
                 asset=current_capacity.asset
             )
 
-            retro_demands: MutableMapping[Hashable, xr.DataArray] = _inner_split2(
+            retro_demands: xr.DataArray = _inner_split(
                 current_capacity,
                 current_technodata,
                 demands.retrofit.sel(region=region) * agent.quantity,
                 decommissioning,
             )
-            new_demands = _inner_split2(
+            new_demands: xr.DataArray = _inner_split(
                 current_capacity,
                 current_technodata,
                 demands.new.sel(region=region) * agent.quantity,
@@ -458,10 +421,9 @@ def standard_demand(
                     timeslice_level=timeslice_level,
                 ),
             )
-            total_demands[agent.uuid] = new_demands + retro_demands
-        id_to_share.update(total_demands)
+            agent_demands[agent.uuid] = new_demands + retro_demands
 
-    result = cast(xr.DataArray, agent_concatenation(id_to_share))
+    result = agent_concatenation(agent_demands)
     assert "year" not in result.dims
     return result
 
@@ -512,59 +474,6 @@ def unmet_forecasted_demand(
 
 
 def _inner_split(
-    assets: Mapping[Hashable, xr.DataArray],
-    technologies: Mapping[Hashable, xr.DataSet],
-    demand: xr.DataArray,
-    method: Callable,
-    quantity: Mapping,
-) -> MutableMapping[Hashable, xr.DataArray]:
-    r"""Compute share of the demand for a set of agents.
-
-    The input ``demand`` is split between agents according to their share of the
-    demand computed by ``method``.
-    """
-    from numpy import logical_and
-
-    # Find decrease in capacity production by each asset over time
-    shares: Mapping[Hashable, xr.DataArray] = {
-        key: method(capacity=capacity, technologies=technologies[key])
-        .groupby("technology")
-        .sum("asset")
-        .rename(technology="asset")
-        for key, capacity in assets.items()
-    }
-
-    # Total decrease in production across assets
-    try:
-        summed_shares: xr.DataArray = xr.concat(shares.values(), dim="concat_dim").sum(
-            "concat_dim"
-        )
-        total: xr.DataArray = summed_shares.sum("asset")
-    except AttributeError:
-        raise AgentWithNoAssetsInDemandShare()
-
-    # Calculates the demand divided by the number of assets times the number of agents
-    # if the demand is bigger than zero and the total demand assigned with the "method"
-    # function is zero.
-    n_agents = len(quantity)
-    n_assets = summed_shares.sizes["asset"]
-    unassigned = (demand / (n_agents * n_assets)).where(
-        logical_and(demand > 1e-12, total <= 1e-12), 0
-    )
-
-    totals = {
-        key: (share / share.sum("asset")).fillna(0) for key, share in shares.items()
-    }
-
-    newshares = {
-        key: (total * quantity[key][2] * demand).fillna(0)
-        + unassigned * quantity[key][2]
-        for key, total in totals.items()
-    }
-    return newshares
-
-
-def _inner_split2(
     capacity: xr.DataArray,
     technologies: xr.DataSet,
     demand: xr.DataArray,
@@ -583,18 +492,12 @@ def _inner_split2(
         .rename(technology="asset")
     )
 
-    # Total decrease in production across assets
-    total: xr.DataArray = shares.sum("asset")
-
     # Split demand over shares
-    split_demand = demand * shares / total
-
-    # Calculate unassigned demand
-    unassigned = (demand - split_demand.sum("asset")).clip(min=0)
+    split_demand = demand * (shares / shares.sum("asset")).fillna(0)
 
     # Split unassigned demand equally over assets
-    n_assets = shares.sizes["asset"]
-    unassigned_per_asset = unassigned / n_assets
+    unassigned = (demand - split_demand.sum("asset")).clip(min=0)
+    unassigned_per_asset = unassigned / shares.sizes["asset"]
     split_demand += unassigned_per_asset
     return split_demand
 
