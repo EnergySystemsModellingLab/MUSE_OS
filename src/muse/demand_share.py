@@ -283,31 +283,40 @@ def new_and_retro(
     )
 
     # Split demand over agents
+    agent_demands: MutableMapping[Hashable, xr.DataArray] = {}
     for region in demands.region.values:
-        agent_demands: MutableMapping[Hashable, xr.DataArray] = {}
+        # Calculate capacity for retrofit agents
+        retro_capacity = {
+            agent.uuid: interpolate_capacity(
+                agent.assets.capacity, year=[current_year, investment_year]
+            )
+            for agent in agents
+            if agent.category == "retrofit" and agent.region == region
+        }
+        name_to_retro_id = {
+            agent.name: agent.uuid
+            for agent in agents
+            if agent.category == "retrofit" and agent.region == region
+        }
+
         for agent in agents:
             if agent.region != region:
                 continue
 
-            current_capacity: xr.DataArray = interpolate_capacity(
-                agent.assets.capacity, year=[current_year, investment_year]
-            )
-            current_technodata: xr.Dataset = technodata.sel(
-                asset=current_capacity.asset
-            )
+            _capacity: xr.DataArray = retro_capacity[name_to_retro_id[agent.name]]
+            agent_technodata: xr.Dataset = technodata.sel(asset=agent.assets.asset)
 
             if agent.category == "retrofit":
-                retro_demands: xr.DataArray = _inner_split(
-                    current_capacity,
-                    current_technodata,
+                _demands: xr.DataArray = _inner_split(
+                    _capacity,
+                    agent_technodata,
                     demands.retrofit.sel(region=region) * agent.quantity,
                     decommissioning,
                 )
-                agent_demands[agent.uuid] = retro_demands
             elif agent.category == "new":
-                new_demands: xr.DataArray = _inner_split(
-                    current_capacity,
-                    current_technodata,
+                _demands: xr.DataArray = _inner_split(
+                    _capacity,
+                    agent_technodata,
                     demands.new.sel(region=region) * agent.quantity,
                     partial(
                         maximum_production,
@@ -315,8 +324,9 @@ def new_and_retro(
                         timeslice_level=timeslice_level,
                     ),
                 )
-                agent_demands[agent.uuid] = new_demands
-    result = cast(xr.DataArray, agent_concatenation(agent_demands))
+            agent_demands[agent.uuid] = _demands
+    result = agent_concatenation(agent_demands)
+    assert "year" not in result.dims
     return result
 
 
@@ -392,8 +402,8 @@ def standard_demand(
     )
 
     # Split demand over agents
+    agent_demands: MutableMapping[Hashable, xr.DataArray] = {}
     for region in demands.region.values:
-        agent_demands: MutableMapping[Hashable, xr.DataArray] = {}
         for agent in agents:
             if agent.region != region:
                 continue
@@ -401,9 +411,7 @@ def standard_demand(
             current_capacity: xr.DataArray = interpolate_capacity(
                 agent.assets.capacity, year=[current_year, investment_year]
             )
-            current_technodata: xr.Dataset = technodata.sel(
-                asset=current_capacity.asset
-            )
+            current_technodata: xr.Dataset = technodata.sel(asset=agent.assets.asset)
 
             retro_demands: xr.DataArray = _inner_split(
                 current_capacity,
@@ -535,12 +543,7 @@ def unmet_demand(
     )
 
     # Total commodity production by summing over assets
-    if "dst_region" in produced.dims:
-        produced = produced.sum("asset").rename(dst_region="region")
-    elif "region" in produced.coords and produced.region.dims:
-        produced = produced.groupby("region").sum("asset")
-    else:
-        produced = produced.sum("asset")
+    produced = produced.sum("asset")
 
     # Unmet demand is the difference between the consumption and the production
     _unmet_demand = (demand - produced).clip(min=0)
