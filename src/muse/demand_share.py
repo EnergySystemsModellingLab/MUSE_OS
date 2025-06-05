@@ -240,7 +240,6 @@ def new_and_retro(
     """
     from functools import partial
 
-    from muse.commodities import is_enduse
     from muse.quantities import maximum_production
     from muse.utilities import (
         agent_concatenation,
@@ -275,11 +274,6 @@ def new_and_retro(
         demand=demand,
         technologies=technodata,
         timeslice_level=timeslice_level,
-    )
-
-    # Only consider end-use commodities
-    demands = demands.where(
-        is_enduse(technologies.comm_usage.sel(commodity=demands.commodity)), 0
     )
 
     # Split demand over agents
@@ -344,7 +338,6 @@ def standard_demand(
     """
     from functools import partial
 
-    from muse.commodities import is_enduse
     from muse.quantities import maximum_production
     from muse.utilities import (
         agent_concatenation,
@@ -384,11 +377,6 @@ def standard_demand(
         demand=demand,
         technologies=technodata,
         timeslice_level=timeslice_level,
-    )
-
-    # Only consider end-use commodities
-    demands = demands.where(
-        is_enduse(technologies.comm_usage.sel(commodity=demands.commodity)), 0
     )
 
     # Split demand over agents
@@ -477,12 +465,13 @@ def _inner_split(
     demand: xr.DataArray,
     method: Callable,
 ) -> MutableMapping[Hashable, xr.DataArray]:
-    r"""Compute share of the demand for a set of agents.
+    r"""Compute share of the demand for a set of assets.
 
-    The input ``demand`` is split between agents according to their share of the
+    The input ``demand`` is split between assets according to their share of the
     demand computed by ``method``.
     """
-    # Find decrease in capacity production by each asset over time
+    # Relative share to apply to each asset
+    # Assets of the same technology type are grouped together at this point
     shares: xr.DataArray = (
         method(capacity=capacity, technologies=technologies)
         .groupby("technology")
