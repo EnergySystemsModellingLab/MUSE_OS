@@ -473,8 +473,6 @@ def unmet_demand(
     assert "year" not in technologies.dims
     assert "year" not in capacity.dims
     assert "year" not in demand.dims
-    assert "region" not in capacity.dims
-    assert "dst_region" not in capacity.dims
 
     # Calculate maximum production by existing assets
     produced = maximum_production(
@@ -484,7 +482,12 @@ def unmet_demand(
     )
 
     # Total commodity production by summing over assets
-    produced = produced.sum("asset")
+    if "dst_region" in produced.dims:
+        produced = produced.sum("asset").rename(dst_region="region")
+    elif "region" in produced.coords and produced.region.dims:
+        produced = produced.groupby("region").sum("asset")
+    else:
+        produced = produced.sum("asset")
 
     # Return unmet demand
     return (demand - produced).clip(min=0)
