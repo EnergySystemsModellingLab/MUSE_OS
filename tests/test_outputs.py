@@ -134,6 +134,8 @@ def test_save_with_fullpath_to_excel(tmpdir):
 
     path = Path(tmpdir) / "results" / "stuff" / "this.xlsx"
     config = {"filename": path, "quantity": "streetcred", "sink": "xlsx"}
+    market = xr.DataArray([1], coords={"year": [2010]}, dims="year")
+    # can use None because we **know** none of the arguments are used here
     result = factory(config, sector_name="Yoyo")(market, None, None)
     assert result[0] == path
     assert result[0].is_file()
