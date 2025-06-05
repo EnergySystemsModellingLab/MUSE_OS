@@ -124,8 +124,7 @@ def test_save_with_path_to_nc(tmpdir, market, base_config, config_type, suffix):
 
 
 @mark.usefixtures("streetcred")
-def test_save_with_fullpath_to_excel(tmpdir, market):
-    """Test saving output to Excel file."""
+def test_save_with_fullpath_to_excel(tmpdir):
     from warnings import simplefilter
 
     from pandas import read_excel
@@ -137,7 +136,7 @@ def test_save_with_fullpath_to_excel(tmpdir, market):
     config = {"filename": path, "quantity": "streetcred", "sink": "xlsx"}
     result = factory(config, sector_name="Yoyo")(market, None, None)
     assert result[0] == path
-    assert_file_exists_and_readable(result[0])
+    assert result[0].is_file()
     read_excel(result[0])
 
 
