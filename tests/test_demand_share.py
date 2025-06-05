@@ -447,3 +447,88 @@ def test_decommissioning_demand(_technologies, _capacity, timeslice):
     assert decom.sel(commodity=is_enduse(_technologies.comm_usage)).sum(
         "timeslice"
     ).values == approx(expected_decom)
+
+
+def test_inner_split_basic(_capacity, _market, _technologies):
+    """Test basic functionality of _inner_split.
+
+    Tests that demand is split proportionally according to the method function
+    using a mock function that returns predetermined shares.
+    """
+    from muse.demand_share import _inner_split
+    from muse.utilities import broadcast_over_assets
+
+    # Select a region to test
+    REGION = "ASEAN"
+    _capacity = _capacity.where(_capacity.asset.region == REGION)
+    _technologies = _technologies.sel(region=REGION)
+    _market = _market.sel(region=REGION)
+
+    # Broadcast technologies over assets
+    tech_data = broadcast_over_assets(_technologies, _capacity)
+
+    # Demand to split over assets
+    demand = _market.consumption.sel(year=INVESTMENT_YEAR, drop=True)
+
+    # Test with maximum production method
+    def method(capacity, technologies):
+        return maximum_production(capacity=capacity, technologies=technologies)
+
+    result = _inner_split(
+        capacity=_capacity.sel(year=CURRENT_YEAR, drop=True),
+        technologies=tech_data,
+        demand=demand,
+        method=method,
+    )
+
+    # Check dimensions
+    assert set(result.dims) == {"asset", "commodity", "timeslice"}
+
+    # Check total demand is preserved
+    assert result.sum("asset").values == approx(demand.values)
+
+    # Check all values are non-negative
+    assert (result >= 0).all()
+
+
+def test_inner_split_zero_shares(_capacity, _market, _technologies):
+    """Test _inner_split when method returns zero shares.
+
+    Tests that unassigned demand is split equally when method returns zero shares.
+    """
+    from muse.demand_share import _inner_split
+    from muse.quantities import maximum_production
+    from muse.utilities import broadcast_over_assets
+
+    # Select a region to test
+    REGION = "ASEAN"
+    _capacity = _capacity.where(_capacity.asset.region == REGION)
+    _technologies = _technologies.sel(region=REGION)
+    _market = _market.sel(region=REGION)
+
+    # Broadcast technologies over assets
+    tech_data = broadcast_over_assets(_technologies, _capacity)
+
+    # Demand in the investment year to split over assets
+    demand = _market.consumption.sel(year=INVESTMENT_YEAR, drop=True)
+
+    # Test with zero production method
+    def zero_method(capacity, technologies):
+        return 0 * maximum_production(capacity=capacity, technologies=technologies)
+
+    result = _inner_split(
+        capacity=_capacity.sel(year=CURRENT_YEAR, drop=True),
+        technologies=tech_data,
+        demand=demand,
+        method=zero_method,
+    )
+
+    # Check dimensions
+    assert set(result.dims) == {"asset", "commodity", "timeslice"}
+
+    # Check total demand is preserved
+    assert result.sum("asset").values == approx(demand.values)
+
+    # Check demand is split equally among assets
+    expected_per_asset = demand / len(result.asset)
+    assert (result == expected_per_asset).all()
