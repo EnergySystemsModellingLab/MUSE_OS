@@ -429,48 +429,36 @@ def standard_demand(
 
     id_to_share: MutableMapping[Hashable, xr.DataArray] = {}
     for region in demands.region.values:
-        # Calculate current capacity
-        current_capacity: MutableMapping[Hashable, xr.DataArray] = {
-            agent.uuid: interpolate_capacity(
+        total_demands: MutableMapping[Hashable, xr.DataArray] = {}
+        for agent in agents:
+            if agent.region != region:
+                continue
+
+            # Calculate current capacity
+            current_capacity: xr.DataArray = interpolate_capacity(
                 agent.assets.capacity, year=[current_year, investment_year]
             )
-            for agent in agents
-            if agent.region == region
-        }
-        current_technodata: MutableMapping[Hashable, xr.Dataset] = {
-            agent_uuid: technodata.sel(asset=current_capacity[agent_uuid].asset)
-            for agent_uuid in current_capacity.keys()
-        }
+            current_technodata: xr.Dataset = technodata.sel(
+                asset=current_capacity.asset
+            )
 
-        # Split demands between agents
-        id_to_quantity = {
-            agent.uuid: (agent.name, agent.region, agent.quantity)
-            for agent in agents
-            if agent.region == region
-        }
-        retro_demands: MutableMapping[Hashable, xr.DataArray] = _inner_split(
-            current_capacity,
-            current_technodata,
-            demands.retrofit.sel(region=region),
-            decommissioning,
-            id_to_quantity,
-        )
-        new_demands = _inner_split(
-            current_capacity,
-            current_technodata,
-            demands.new.sel(region=region),
-            partial(
-                maximum_production,
-                year=current_year,
-                timeslice_level=timeslice_level,
-            ),
-            id_to_quantity,
-        )
-
-        # Sum new and retrofit demands
-        total_demands = {
-            k: new_demands[k] + retro_demands[k] for k in new_demands.keys()
-        }
+            retro_demands: MutableMapping[Hashable, xr.DataArray] = _inner_split2(
+                current_capacity,
+                current_technodata,
+                demands.retrofit.sel(region=region) * agent.quantity,
+                decommissioning,
+            )
+            new_demands = _inner_split2(
+                current_capacity,
+                current_technodata,
+                demands.new.sel(region=region) * agent.quantity,
+                partial(
+                    maximum_production,
+                    year=current_year,
+                    timeslice_level=timeslice_level,
+                ),
+            )
+            total_demands[agent.uuid] = new_demands + retro_demands
         id_to_share.update(total_demands)
 
     result = cast(xr.DataArray, agent_concatenation(id_to_share))
@@ -576,6 +564,41 @@ def _inner_split(
     return newshares
 
 
+def _inner_split2(
+    capacity: xr.DataArray,
+    technologies: xr.DataSet,
+    demand: xr.DataArray,
+    method: Callable,
+) -> MutableMapping[Hashable, xr.DataArray]:
+    r"""Compute share of the demand for a set of agents.
+
+    The input ``demand`` is split between agents according to their share of the
+    demand computed by ``method``.
+    """
+    # Find decrease in capacity production by each asset over time
+    shares: xr.DataArray = (
+        method(capacity=capacity, technologies=technologies)
+        .groupby("technology")
+        .sum("asset")
+        .rename(technology="asset")
+    )
+
+    # Total decrease in production across assets
+    total: xr.DataArray = shares.sum("asset")
+
+    # Split demand over shares
+    split_demand = demand * shares / total
+
+    # Calculate unassigned demand
+    unassigned = (demand - split_demand.sum("asset")).clip(min=0)
+
+    # Split unassigned demand equally over assets
+    n_assets = shares.sizes["asset"]
+    unassigned_per_asset = unassigned / n_assets
+    split_demand += unassigned_per_asset
+    return split_demand
+
+
 def unmet_demand(
     demand: xr.DataArray,
     capacity: xr.DataArray,
@@ -658,14 +681,18 @@ def new_consumption(
     future_capacity = capacity.sel(year=investment_year)
 
     # Calculate the increase in consumption over the investment period
-    delta = (future_demand - current_demand).clip(min=0)
+    # This is the new demand
+    new_demand = (future_demand - current_demand).clip(min=0)
+
+    # If future capacity is higher than existing capacity, it's possible that
+    # this might already be able to make up some of the increase in demand
     missing = unmet_demand(
         demand=future_demand,
         capacity=future_capacity,
         technologies=technologies,
         timeslice_level=timeslice_level,
     )
-    consumption = minimum(delta, missing)
+    consumption = minimum(new_demand, missing)
     assert "year" not in consumption.dims
     return consumption
 
@@ -686,10 +713,6 @@ def new_and_retro_demands(
         by existing assets in the current year, as computed in :py:func:`new_demand`.
     #. the retrofit demand is everything else.
     """
-    from numpy import minimum
-
-    from muse.quantities import maximum_production
-
     # Check inputs
     assert len(demand.year) == 2
     assert len(capacity.year) == 2
@@ -711,27 +734,18 @@ def new_and_retro_demands(
         timeslice_level=timeslice_level,
     )
 
-    # Maximum production in the investment year by existing assets
-    service = (
-        maximum_production(
-            technologies=technologies,
+    # Retrofit demand is the difference between unmet demand and new demand
+    retrofit_demand = (
+        unmet_demand(
+            demand=demand.sel(year=investment_year, drop=True),
             capacity=capacity.sel(year=investment_year),
+            technologies=technologies,
             timeslice_level=timeslice_level,
         )
-        .groupby("region")
-        .sum("asset")
-    )
+        - new_demand
+    ).clip(0)
 
-    # Existing asset should not execute beyond demand
-    service = minimum(service, demand.sel(year=investment_year, drop=True))
-
-    # Leftover demand that cannot be serviced by existing assets or "new" agents
-    retro_demand = (
-        demand.sel(year=investment_year, drop=True) - new_demand - service
-    ).clip(min=0)
-    assert "year" not in retro_demand.dims
-
-    return xr.Dataset({"new": new_demand, "retrofit": retro_demand})
+    return xr.Dataset({"new": new_demand, "retrofit": retrofit_demand})
 
 
 def decommissioning_demand(
