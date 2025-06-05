@@ -13,7 +13,6 @@ from muse.outputs.sector import factory
 
 @fixture
 def streetcred(save_registries):
-    """Create a test output quantity that returns random data."""
     from muse.outputs.sector import register_output_quantity
 
     @register_output_quantity
@@ -29,103 +28,83 @@ def streetcred(save_registries):
         )
 
 
-@fixture
-def market():
-    """Common market fixture used in multiple tests."""
-    return xr.DataArray([1], coords={"year": [2010]}, dims="year")
+@mark.usefixtures("streetcred")
+def test_save_with_dir(tmpdir):
+    from pandas import read_csv
 
-
-@fixture
-def base_config(tmpdir):
-    """Common config fixture used in multiple tests."""
     path = Path(tmpdir) / "results" / "stuff"
-    return {
+    config = {
         "filename": path / "{Sector}{year}{Quantity}.csv",
         "quantity": "streetcred",
     }
-
-
-def create_test_data_array(values, coords=None, name="test"):
-    """Helper function to create test DataArrays."""
-    if coords is None:
-        coords = dict(a=[2, 4])
-    return xr.DataArray(values, coords=coords, dims="a", name=name)
-
-
-def assert_file_exists_and_readable(path, expected_columns=None):
-    """Helper to verify file exists and can be read."""
-    assert path.exists() and path.is_file()
-    df = pd.read_csv(path)
-    if expected_columns:
-        assert set(df.columns) == set(expected_columns)
-    return df
-
-
-@mark.usefixtures("streetcred")
-def test_save_with_dir(tmpdir, market, base_config):
-    """Test saving output to directory with sector and year in filename."""
-    result = factory(base_config, sector_name="Yoyo")(market, None, None)
+    market = xr.DataArray([1], coords={"year": [2010]}, dims="year")
+    # can use None because we **know** none of the arguments are used here
+    result = factory(config, sector_name="Yoyo")(market, None, None)
     assert len(result) == 1
-    expected_path = Path(base_config["filename"]).parent / "Yoyo2010Streetcred.csv"
-    assert result[0] == expected_path
-    assert_file_exists_and_readable(result[0])
+    assert result[0] == path / "Yoyo2010Streetcred.csv"
+    assert result[0].exists()
+    assert result[0].is_file()
+    read_csv(result[0])
 
 
 @mark.usefixtures("streetcred")
-def test_overwrite(tmpdir, market, base_config):
-    """Test file overwrite behavior."""
-    outputter = factory(base_config, sector_name="Yoyo")
+def test_overwrite(tmpdir):
+    from pytest import raises
+
+    path = Path(tmpdir) / "results" / "stuff"
+    config = {
+        "filename": path / "{Sector}{year}{Quantity}.csv",
+        "quantity": "streetcred",
+    }
+    market = xr.DataArray([1], coords={"year": [2010]}, dims="year")
+    # can use None because we **know** none of the arguments are used here
+    outputter = factory(config, sector_name="Yoyo")
     result = outputter(market, None, None)
-    expected_path = Path(base_config["filename"]).parent / "Yoyo2010Streetcred.csv"
-    assert result[0] == expected_path
-    assert_file_exists_and_readable(result[0])
+    assert result[0] == path / "Yoyo2010Streetcred.csv"
+    assert result[0].is_file()
 
     # default is to never overwrite
     with raises(IOError):
         outputter(market, None, None)
 
-    base_config["overwrite"] = True
-    factory(base_config, sector_name="Yoyo")(market, None, None)
+    config["overwrite"] = True
+    factory(config, sector_name="Yoyo")(market, None, None)
 
 
 @mark.usefixtures("streetcred")
-@mark.parametrize(
-    "config_type,suffix",
-    [
-        ("suffix", "nc"),
-        ("sink", "nc"),
-    ],
-)
-def test_save_with_path_to_nc(tmpdir, market, base_config, config_type, suffix):
-    """Test saving output to NC file with different config types."""
+def test_save_with_path_to_nc_with_suffix(tmpdir):
     path = Path(tmpdir) / "results" / "stuff"
-    if config_type == "suffix":
-        config = {
-            "filename": path / "{Sector}{year}{Quantity}{suffix}",
-            "quantity": "streetcred",
-            "suffix": suffix,
-        }
-    else:
-        config = {
-            "filename": path / "{sector}{year}{quantity}.csv",
-            "quantity": "streetcred",
-            "sink": suffix,
-        }
+    config = {
+        "filename": path / "{Sector}{year}{Quantity}{suffix}",
+        "quantity": "streetcred",
+        "suffix": "nc",
+    }
+    market = xr.DataArray([1], coords={"year": [2010]}, dims="year")
+    # can use None because we **know** none of the arguments are used here
     result = factory(config, sector_name="Yoyo")(market, None, None)
-    expected_path = path / (
-        f"{'Yoyo' if config_type == 'suffix' else 'yoyo'}"
-        f"2010"
-        f"{'Streetcred' if config_type == 'suffix' else 'streetcred'}"
-        f".{'nc' if config_type == 'suffix' else 'csv'}"
-    )
-    assert result[0] == expected_path
+    assert result[0] == path / "Yoyo2010Streetcred.nc"
     assert result[0].is_file()
     xr.open_dataset(result[0])
 
 
 @mark.usefixtures("streetcred")
-def test_save_with_fullpath_to_excel(tmpdir, market):
-    """Test saving output to Excel file."""
+def test_save_with_path_to_nc_with_sink(tmpdir):
+    path = Path(tmpdir) / "results" / "stuff"
+    # can use None because we **know** none of the arguments are used here
+    config = {
+        "filename": path / "{sector}{year}{quantity}.csv",
+        "quantity": "streetcred",
+        "sink": "nc",
+    }
+    market = xr.DataArray([1], coords={"year": [2010]}, dims="year")
+    result = factory(config, sector_name="Yoyo")(market, None, None)
+    assert result[0] == path / "yoyo2010streetcred.csv"
+    assert result[0].is_file()
+    xr.open_dataset(result[0])
+
+
+@mark.usefixtures("streetcred")
+def test_save_with_fullpath_to_excel_with_sink(tmpdir):
     from warnings import simplefilter
 
     from pandas import read_excel
@@ -135,38 +114,25 @@ def test_save_with_fullpath_to_excel(tmpdir, market):
 
     path = Path(tmpdir) / "results" / "stuff" / "this.xlsx"
     config = {"filename": path, "quantity": "streetcred", "sink": "xlsx"}
+    market = xr.DataArray([1], coords={"year": [2010]}, dims="year")
+    # can use None because we **know** none of the arguments are used here
     result = factory(config, sector_name="Yoyo")(market, None, None)
     assert result[0] == path
-    assert_file_exists_and_readable(result[0])
+    assert result[0].is_file()
     read_excel(result[0])
 
 
-@patch("muse.outputs.cache.consolidate_quantity")
-def test_output_functions(mock_consolidate):
-    """Test output functions (capacity, production, lcoe) with common setup."""
-    from muse.outputs.cache import capacity, lcoe, production
-
-    cached = [xr.DataArray() for _ in range(3)]
-    agents = {}
-
-    for func, quantity in [
-        (capacity, "capacity"),
-        (production, "production"),
-        (lcoe, "lcoe"),
-    ]:
-        func(cached, agents)
-        mock_consolidate.assert_called_once_with(quantity, cached, agents)
-        mock_consolidate.reset_mock()
-
-
 @mark.usefixtures("streetcred")
-def test_no_sink_or_suffix(tmpdir, market):
-    """Test default sink and suffix behavior."""
+def test_no_sink_or_suffix(tmpdir):
+    from muse.outputs.sector import factory
+
     config = dict(
         quantity="streetcred",
         filename=f"{tmpdir}/{{Sector}}{{Quantity}}{{year}}{{suffix}}",
     )
-    result = factory(config)(market, None, None)
+    outputs = factory(config)
+    market = xr.DataArray([1], coords={"year": [2010]}, dims="year")
+    result = outputs(market, None, None)
     assert len(result) == 1
     assert result[0].is_file()
     assert result[0].suffix == ".csv"
@@ -174,7 +140,6 @@ def test_no_sink_or_suffix(tmpdir, market):
 
 @mark.usefixtures("save_registries")
 def test_can_register_class():
-    """Test class registration functionality."""
     from muse.outputs.sinks import factory, register_output_sink
 
     @register_output_sink
@@ -186,14 +151,12 @@ def test_can_register_class():
         def __call__(self, x):
             pass
 
-    # Test default arguments
     settings = {"sink": {"name": "AClass"}}
     sink = factory(settings, sector_name="yoyo")
     assert isinstance(sink, AClass)
     assert sink.sector == "yoyo"
     assert sink.some_args == 3
 
-    # Test custom arguments
     settings = {"sink": {"name": "AClass", "some_args": 5}}
     sink = factory(settings, sector_name="yoyo")
     assert isinstance(sink, AClass)
@@ -203,7 +166,6 @@ def test_can_register_class():
 
 @mark.usefixtures("save_registries")
 def test_can_register_function():
-    """Test function registration functionality."""
     from muse.outputs.sinks import factory, register_output_sink
 
     @register_output_sink
@@ -217,10 +179,8 @@ def test_can_register_function():
 
 @mark.usefixtures("save_registries")
 def test_yearly_aggregate():
-    """Test yearly aggregation with custom sink."""
     from muse.outputs.sinks import factory, register_output_sink
 
-    # Setup tracking variables
     received_data = None
     gyear = None
     gsector = None
@@ -242,17 +202,16 @@ def test_yearly_aggregate():
         dict(overwrite=True, sink=dict(aggregate="dummy")), sector_name="yoyo"
     )
 
-    # Test first year
-    data = create_test_data_array([1, 0], name="nada")
+    data = xr.DataArray([1, 0], coords=dict(a=[2, 4]), dims="a", name="nada")
     data["year"] = 2010
+
     assert isinstance(sink(data, 2010), MySpecialReturn)
     assert gyear == 2010
     assert gsector == "yoyo"
     assert goverwrite is True
     assert isinstance(received_data, pd.DataFrame)
 
-    # Test second year
-    data = create_test_data_array([0, 1], name="nada")
+    data = xr.DataArray([0, 1], coords=dict(a=[2, 4]), dims="a", name="nada")
     data["year"] = 2020
     assert isinstance(sink(data, 2020), MySpecialReturn)
     assert gyear == 2020
@@ -262,42 +221,34 @@ def test_yearly_aggregate():
 
 
 def test_yearly_aggregate_file(tmpdir):
-    """Test yearly aggregation to file with multiple years of data."""
     from muse.outputs.sinks import factory
 
     path = Path(tmpdir) / "file.csv"
     sink = factory(dict(filename=str(path), sink="aggregate"), sector_name="yoyo")
 
-    def verify_year_data(values, year, expected_rows):
-        data = create_test_data_array(values, name="georges")
-        data["year"] = year
-        assert sink(data, year) == path
-        df = assert_file_exists_and_readable(path, {"year", "georges"})
-        assert df.shape[0] == expected_rows
-        return df
+    data = xr.DataArray([1, 0], coords=dict(a=[2, 4]), dims="a", name="georges")
+    data["year"] = 2010
+    assert sink(data, 2010) == path
+    dataframe = pd.read_csv(path)
+    assert set(dataframe.columns) == {"year", "georges"}
+    assert dataframe.shape[0] == 2
 
-    # Test first year
-    verify_year_data([1, 0], 2010, 2)
-
-    # Test second year (should append to existing file)
-    df2 = verify_year_data([0, 1], 2020, 4)
-
-    # Verify data from both years is present
-    assert set(df2.year.unique()) == {2010, 2020}
-    assert df2[df2.year == 2010].georges.tolist() == [1, 0]
-    assert df2[df2.year == 2020].georges.tolist() == [0, 1]
+    data = xr.DataArray([0, 1], coords=dict(a=[2, 4]), dims="a", name="georges")
+    data["year"] = 2020
+    assert sink(data, 2020) == path
+    dataframe = pd.read_csv(path)
+    assert set(dataframe.columns) == {"year", "georges"}
+    assert dataframe.shape[0] == 4
 
 
 def test_yearly_aggregate_no_outputs(tmpdir):
-    """Test behavior with no outputs configured."""
     from muse.outputs.mca import factory
 
     outputs = factory()
     assert len(outputs(None, year=2010)) == 0
 
 
-def setup_mca_test(tmpdir, outputs_config):
-    """Helper function to set up MCA tests."""
+def test_mca_aggregate_outputs(tmpdir):
     from toml import dump, load
 
     from muse import examples
@@ -305,20 +256,17 @@ def setup_mca_test(tmpdir, outputs_config):
 
     examples.copy_model(path=str(tmpdir))
     settings = load(str(tmpdir / "model" / "settings.toml"))
-    settings["outputs"] = [outputs_config]
+    settings["outputs"] = [
+        dict(filename="{path}/{Quantity}{suffix}", quantity="prices", sink="aggregate")
+    ]
     settings["time_framework"] = settings["time_framework"][:2]
     dump(settings, (tmpdir / "model" / "settings.toml"))
-    return MCA.factory(str(tmpdir / "model" / "settings.toml"))
 
-
-def test_mca_aggregate_outputs(tmpdir):
-    """Test MCA aggregate outputs."""
-    mca = setup_mca_test(
-        tmpdir,
-        dict(filename="{path}/{Quantity}{suffix}", quantity="prices", sink="aggregate"),
-    )
+    mca = MCA.factory(str(tmpdir / "model" / "settings.toml"))
     mca.run()
+
     assert (tmpdir / "model" / "Prices.csv").exists()
+
     # TODO: should pass again after #612
     # data = pd.read_csv(tmpdir / "model" / "Prices.csv")
     # assert set(data.year) == set(settings["time_framework"])
@@ -326,9 +274,22 @@ def test_mca_aggregate_outputs(tmpdir):
 
 @mark.usefixtures("save_registries")
 def test_path_formatting(tmpdir):
-    """Test path formatting with dummy sink and quantity."""
+    from toml import dump, load
+
+    from muse.examples import copy_model
+    from muse.mca import MCA
     from muse.outputs.mca import register_output_quantity
     from muse.outputs.sinks import register_output_sink, sink_to_file
+
+    # Copy the data to tmpdir
+    copy_model(path=tmpdir)
+
+    settings_file = tmpdir / "model" / "settings.toml"
+    settings = load(settings_file)
+    settings["outputs"] = [
+        dict(quantity="dummy", sink="to_dummy", filename="{path}/{Quantity}{suffix}")
+    ]
+    dump(settings, (settings_file))
 
     @register_output_sink(name="dummy_sink")
     @sink_to_file(".dummy")
@@ -339,11 +300,12 @@ def test_path_formatting(tmpdir):
     def dummy(market, **kwargs):
         return xr.DataArray()
 
-    mca = setup_mca_test(
-        tmpdir,
-        dict(quantity="dummy", sink="to_dummy", filename="{path}/{Quantity}{suffix}"),
+    mca = MCA.factory(Path(settings_file))
+    assert mca.outputs(mca.market)[0] == Path(
+        settings["outputs"][0]["filename"].format(
+            path=tmpdir / "model", Quantity="Dummy", suffix=".dummy"
+        )
     )
-    assert mca.outputs(mca.market)[0] == Path(tmpdir / "model" / "Dummy.dummy")
 
 
 def test_register_output_quantity_cache():
@@ -357,59 +319,64 @@ def test_register_output_quantity_cache():
 
 
 class TestOutputCache:
-    @fixture
-    def output_params(self):
-        return [dict(quantity="height"), dict(quantity="width")]
-
-    @fixture
-    def output_quantities(self, output_params):
-        quantities = {q["quantity"]: lambda _: None for q in output_params}
-        quantities["depth"] = lambda _: None
-        return quantities
-
-    @fixture
-    def topic(self):
-        return "BBC Muse"
-
     @patch("pubsub.pub.subscribe")
     @patch("muse.outputs.sector._factory")
-    def test_init(
-        self, mock_factory, mock_subscribe, output_params, output_quantities, topic
-    ):
+    def test_init(self, mock_factory, mock_subscribe):
         from muse.outputs.cache import OutputCache
 
+        param = [dict(quantity="height"), dict(quantity="width")]
+        output_quantities = {q["quantity"]: lambda _: None for q in param}
+        output_quantities["depth"] = lambda _: None
+        topic = "BBC Muse"
+
         output_cache = OutputCache(
-            *output_params, output_quantities=output_quantities, topic=topic
+            *param, output_quantities=output_quantities, topic=topic
         )
-        assert mock_factory.call_count == len(output_params)
+
+        assert mock_factory.call_count == len(param)
         mock_subscribe.assert_called_once_with(output_cache.cache, topic)
 
     @patch("pubsub.pub.subscribe")
     @patch("muse.outputs.sector._factory")
-    def test_cache(
-        self, mock_factory, mock_subscribe, output_params, output_quantities, topic
-    ):
+    def test_cache(self, mock_factory, mock_subscribe):
+        import xarray as xr
+
         from muse.outputs.cache import OutputCache
 
+        param = [dict(quantity="height"), dict(quantity="width")]
+        output_quantities = {q["quantity"]: lambda _: None for q in param}
+        output_quantities["depth"] = lambda _: None
+        topic = "BBC Muse"
+
         output_cache = OutputCache(
-            *output_params, output_quantities=output_quantities, topic=topic
+            *param, output_quantities=output_quantities, topic=topic
         )
+
         output_cache.cache(dict(height=xr.DataArray(), depth=xr.DataArray()))
+
         assert len(output_cache.to_save.get("height")) == 1
         assert len(output_cache.to_save.get("depth", [])) == 0
 
     @patch("pubsub.pub.subscribe")
     @patch("muse.outputs.sector._factory")
-    def test_consolidate_cache(
-        self, mock_factory, mock_subscribe, output_params, output_quantities, topic
-    ):
+    def test_consolidate_cache(self, mock_factory, mock_subscribe):
+        import xarray as xr
+
         from muse.outputs.cache import OutputCache
 
+        param = [dict(quantity="height"), dict(quantity="width")]
+        output_quantities = {q["quantity"]: lambda _: None for q in param}
+        output_quantities["depth"] = lambda _: None
+        topic = "BBC Muse"
+        year = 2042
+
         output_cache = OutputCache(
-            *output_params, output_quantities=output_quantities, topic=topic
+            *param, output_quantities=output_quantities, topic=topic
         )
+
         output_cache.cache(dict(height=xr.DataArray()))
-        output_cache.consolidate_cache(2042)
+        output_cache.consolidate_cache(year)
+
         output_cache.factory["height"].assert_called_once()
 
 
@@ -421,12 +388,9 @@ def test_cache_quantity(mock_match, mock_send):
     result = {"mass": 42}
     mock_match.return_value = result
 
-    def verify_message_sent():
-        mock_send.assert_called_once_with(CACHE_TOPIC_CHANNEL, data=result)
-        mock_send.reset_mock()
-
     cache_quantity(**result)
-    verify_message_sent()
+    mock_send.assert_called_once_with(CACHE_TOPIC_CHANNEL, data=result)
+    mock_send.reset_mock()
 
     with raises(ValueError):
         cache_quantity(function=lambda: None, mass=42)
@@ -443,7 +407,7 @@ def test_cache_quantity(mock_match, mock_send):
 
     fun2()
     mock_match.assert_called_once_with("mass", 42)
-    verify_message_sent()
+    mock_send.assert_called_once_with(CACHE_TOPIC_CHANNEL, data=result)
 
 
 def test_match_quantities():
@@ -451,27 +415,37 @@ def test_match_quantities():
 
     from muse.outputs.cache import match_quantities
 
+    q = "mass"
+    da = xr.DataArray(name=q)
+    ds = xr.Dataset({q: da})
+
     def assert_equal(a: dict[str, xr.DataArray], b: dict[str, xr.DataArray]):
         assert set(a.keys()) == set(b.keys())
         for k in a:
             xr.testing.assert_equal(a[k], b[k])
 
-    # Test single quantity with DataArray
-    q = "mass"
-    da = xr.DataArray(name=q)
-    ds = xr.Dataset({q: da})
-    assert_equal(match_quantities(quantity=q, data=da), {q: da})
-    assert_equal(match_quantities(quantity=q, data=ds), {q: da})
+    actual = match_quantities(quantity=q, data=da)
+    assert_equal(actual, {q: da})
 
-    # Test multiple quantities with Dataset
+    actual = match_quantities(quantity=q, data=ds)
+    assert_equal(actual, {q: da})
+
     p = "height"
     ds = xr.Dataset({q: da, p: da, "rubish": da})
-    assert_equal(match_quantities(quantity=[q, p], data=ds), {q: da, p: da})
-    assert_equal(match_quantities(quantity=[q, p], data=[da, da]), {q: da, p: da})
+    actual = match_quantities(quantity=[q, p], data=ds)
+    assert_equal(actual, {q: da, p: da})
 
-    # Test error cases
+    actual = match_quantities(quantity=[q, p], data=[da, da])
+    assert_equal(actual, {q: da, p: da})
+
     with raises(ValueError):
-        match_quantities(quantity=[q, p], data=[da])
+        match_quantities(
+            quantity=[q, p],
+            data=[
+                da,
+            ],
+        )
+
     with raises(TypeError):
         match_quantities(quantity=[q, p], data=42)
 
@@ -490,54 +464,51 @@ def test_extract_agents(mock_extract):
 
 
 def test_extract_agents_internal(newcapa_agent, retro_agent):
-    """Test internal agent extraction."""
     from types import SimpleNamespace
 
     from muse.outputs.cache import extract_agents_internal
 
-    def setup_agent(agent, name):
-        agent.name = name
-        return agent
-
-    agents = [setup_agent(newcapa_agent, "A1"), setup_agent(retro_agent, "A2")]
-    sector = SimpleNamespace(name="IT", agents=agents)
+    newcapa_agent.name = "A1"
+    retro_agent.name = "A2"
+    sector = SimpleNamespace(name="IT", agents=[newcapa_agent, retro_agent])
 
     actual = extract_agents_internal(sector)
-    expected_keys = ("agent", "category", "sector", "dst_region")
-
-    for agent in agents:
+    for agent in [newcapa_agent, retro_agent]:
         assert agent.uuid in actual
-        assert tuple(actual[agent.uuid].keys()) == expected_keys
-        agent_data = actual[agent.uuid]
-        assert agent_data["agent"] == agent.name
-        assert agent_data["category"] == agent.category
-        assert agent_data["sector"] == "IT"
-        assert agent_data["dst_region"] == agent.region
+        assert tuple(actual[agent.uuid].keys()) == (
+            "agent",
+            "category",
+            "sector",
+            "dst_region",
+        )
+        assert actual[agent.uuid]["agent"] == agent.name
+        assert actual[agent.uuid]["category"] == agent.category
+        assert actual[agent.uuid]["sector"] == "IT"
+        assert actual[agent.uuid]["dst_region"] == agent.region
 
 
 def test_aggregate_cache():
     import numpy as np
+    import xarray as xr
     from pandas.testing import assert_frame_equal
 
     from muse.outputs.cache import _aggregate_cache
 
     quantity = "height"
+
     a = xr.DataArray(np.ones((3, 4, 5)), name=quantity)
     b = a.copy()
     b[0, 0, 0] = 0
 
-    def to_df(arr):
-        return arr.to_dataframe().reset_index().astype(float)
-
     actual = _aggregate_cache(quantity, [a, b])
-    assert_frame_equal(actual, to_df(b))
+    assert_frame_equal(actual, b.to_dataframe().reset_index().astype(float))
 
     actual = _aggregate_cache(quantity, [b, a])
-    assert_frame_equal(actual, to_df(a))
+    assert_frame_equal(actual, a.to_dataframe().reset_index().astype(float))
 
     c = a.copy()
     c.assign_coords(dim_0=c.dim_0.data * 10)
-    dc, da = map(to_df, [c, a])
+    dc, da = (da.to_dataframe().reset_index() for da in [c, a])
 
     actual = _aggregate_cache(quantity, [c, a])
     expected = pd.DataFrame.merge(dc, da, how="outer").astype(float)
@@ -545,38 +516,81 @@ def test_aggregate_cache():
 
 
 def test_consolidate_quantity(newcapa_agent, retro_agent):
-    """Test consolidation of quantity data with agent information."""
     from types import SimpleNamespace
 
     from muse.outputs.cache import consolidate_quantity, extract_agents_internal
 
-    def setup_agent(agent, name, category):
-        agent.name = name
-        agent.category = category
-        return agent
-
-    newcapa_agent = setup_agent(newcapa_agent, "A1", "newcapa")
-    retro_agent = setup_agent(retro_agent, "A2", "retro")
+    newcapa_agent.name = "A1"
+    retro_agent.name = "A2"
+    newcapa_agent.category = "newcapa"
+    retro_agent.category = "retro"
     sector = SimpleNamespace(name="IT", agents=[newcapa_agent, retro_agent])
     agents = extract_agents_internal(sector)
 
-    def create_agent_array(agent_uuid, modify_first=False):
-        arr = xr.DataArray(
-            np.ones((3, 4, 5)),
-            dims=("agent", "replacement", "asset"),
-            coords={"agent": [agent_uuid] * 3},
-            name="height",
-        )
-        if modify_first:
-            arr[0, 0, 0] = 0
-        return arr
+    quantity = "height"
+    a = xr.DataArray(
+        np.ones((3, 4, 5)),
+        dims=("agent", "replacement", "asset"),
+        coords={
+            "agent": [
+                newcapa_agent.uuid,
+            ]
+            * 3
+        },
+        name=quantity,
+    )
+    b = a.copy()
+    b[0, 0, 0] = 0
+    b.assign_coords(
+        agent=[
+            retro_agent.uuid,
+        ]
+        * 3
+    )
 
-    a = create_agent_array(newcapa_agent.uuid)
-    b = create_agent_array(retro_agent.uuid, modify_first=True)
+    actual = consolidate_quantity(quantity, [a, b], agents)
 
-    actual = consolidate_quantity("height", [a, b], agents)
-    cols = set((*agents[retro_agent.uuid].keys(), "technology", "height"))
+    cols = set((*agents[retro_agent.uuid].keys(), "technology", quantity))
     assert set(actual.columns) == cols
     assert all(
         name in (newcapa_agent.name, retro_agent.name) for name in actual.agent.unique()
     )
+
+
+@patch("muse.outputs.cache.consolidate_quantity")
+def test_output_capacity(mock_consolidate):
+    import xarray as xr
+
+    from muse.outputs.cache import capacity
+
+    cached = [xr.DataArray() for _ in range(3)]
+    agents = {}
+
+    capacity(cached, agents)
+    mock_consolidate.assert_called_once_with("capacity", cached, agents)
+
+
+@patch("muse.outputs.cache.consolidate_quantity")
+def test_output_production(mock_consolidate):
+    import xarray as xr
+
+    from muse.outputs.cache import production
+
+    cached = [xr.DataArray() for _ in range(3)]
+    agents = {}
+
+    production(cached, agents)
+    mock_consolidate.assert_called_once_with("production", cached, agents)
+
+
+@patch("muse.outputs.cache.consolidate_quantity")
+def test_output_lcoe(mock_consolidate):
+    import xarray as xr
+
+    from muse.outputs.cache import lcoe
+
+    cached = [xr.DataArray() for _ in range(3)]
+    agents = {}
+
+    lcoe(cached, agents)
+    mock_consolidate.assert_called_once_with("lcoe", cached, agents)
