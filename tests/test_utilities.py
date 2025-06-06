@@ -4,10 +4,24 @@ from pytest import approx, mark, raises
 
 
 def make_array(array):
+    """Create a random DataArray with the same dimensions and coordinates as input."""
     data = np.random.randint(1, 5, len(array)) * (
         np.random.randint(0, 10, len(array)) > 8
     )
     return xr.DataArray(data, dims=array.dims, coords=array.coords)
+
+
+def assert_shape_and_dims(actual, expected_shape, expected_dims=None):
+    """Helper to verify array shape and dimensions.
+
+    Works with both numpy arrays and xarray objects.
+    For numpy arrays, only shape is checked.
+    For xarray objects, both shape and dimensions are checked.
+    """
+    assert actual.ndim == len(expected_shape)
+    assert actual.shape == expected_shape
+    if expected_dims is not None and hasattr(actual, "dims"):
+        assert set(actual.dims) == set(expected_dims)
 
 
 @mark.parametrize(
@@ -15,14 +29,14 @@ def make_array(array):
     [("technology", "installed", "region"), ("technology", "installed"), ("region",)],
 )
 def test_reduce_assets(coordinates: tuple, capacity: xr.DataArray):
+    """Test reducing assets along specified coordinates."""
     from muse.utilities import reduce_assets
 
     actual = reduce_assets(capacity, coords=coordinates)
 
     uniques = set(zip(*(getattr(capacity, d).values for d in coordinates)))
     assert len(uniques) == len(actual.asset)
-    actual_uniques = set(zip(*(getattr(actual, d).values for d in coordinates)))
-    assert uniques == actual_uniques
+    assert uniques == set(zip(*(getattr(actual, d).values for d in coordinates)))
 
     for index in actual.asset:
         condition = True
@@ -33,6 +47,7 @@ def test_reduce_assets(coordinates: tuple, capacity: xr.DataArray):
 
 
 def test_reduce_assets_with_zero_size(capacity: xr.DataArray):
+    """Test reducing assets with empty selection."""
     from muse.utilities import reduce_assets
 
     x = capacity.sel(asset=[])
@@ -41,14 +56,13 @@ def test_reduce_assets_with_zero_size(capacity: xr.DataArray):
 
 
 def test_broadcast_over_assets(technologies, capacity):
+    """Test broadcasting over assets with different year settings."""
     from muse.utilities import broadcast_over_assets
 
-    # Test with installed_as_year = True
     result1 = broadcast_over_assets(technologies, capacity, installed_as_year=True)
     assert set(result1.dims) == {"asset", "commodity"}
     assert (result1.asset == capacity.asset).all()
 
-    # Test with installed_as_year = False
     result2 = broadcast_over_assets(technologies, capacity, installed_as_year=False)
     assert set(result2.dims) == {"asset", "commodity", "year"}
     assert (result2.asset == capacity.asset).all()
@@ -58,150 +72,138 @@ def test_broadcast_over_assets(technologies, capacity):
     #     broadcast_over_assets(technologies, technologies)
 
 
+def create_test_array(shape, scale=20, offset=-10):
+    """Create a random integer array for testing."""
+    return (np.random.rand(*shape) * scale + offset).astype(int)
+
+
 def test_tupled_dimension_no_tupling():
+    """Test tupled dimension conversion without actual tupling."""
     from muse.utilities import tupled_dimension
 
-    array = (np.random.rand(10, 1) * 20 - 10).astype(int)
+    array = create_test_array((10, 1))
     actual = tupled_dimension(array, 1)
-    assert actual.ndim == 1
-    assert actual.shape == array.shape[:-1]
+    assert_shape_and_dims(actual, array.shape[:-1])
     assert actual == approx(array.reshape(array.shape[0]))
 
-    array = (np.random.rand(10, 1, 5) * 20 - 10).astype(int)
+    array = create_test_array((10, 1, 5))
     actual = tupled_dimension(array, 1)
-    assert actual.ndim == 2
-    assert actual.shape == (array.shape[0], array.shape[2])
+    assert_shape_and_dims(actual, (array.shape[0], array.shape[2]))
     assert actual == approx(array.reshape(array.shape[0], array.shape[2]))
 
 
+def verify_tupled_output(actual, array, axis, indices):
+    """Helper to verify tupled dimension output."""
+    for idx in indices:
+        if len(idx) == 1:
+            i = idx[0]
+            assert len(actual[i]) == array.shape[axis]
+            assert isinstance(actual[i], tuple)
+            assert tuple(array[i, :] if axis == 1 else array[:, i]) == actual[i]
+        else:
+            i, j = idx
+            assert len(actual[i, j]) == array.shape[axis]
+            assert isinstance(actual[i, j], tuple)
+            if axis == 0:
+                assert tuple(array[:, i, j]) == actual[i, j]
+            elif axis == 1:
+                assert tuple(array[i, :, j]) == actual[i, j]
+            else:
+                assert tuple(array[i, j, :]) == actual[i, j]
+
+
 def test_tupled_dimension_2d():
+    """Test tupled dimension conversion for 2D arrays."""
     from muse.utilities import tupled_dimension
 
-    array = (np.random.rand(10, 3) * 20 - 10).astype(int)
+    array = create_test_array((10, 3))
 
-    actual = tupled_dimension(array, 1)
-    assert actual.ndim == 1
-    assert actual.shape == (array.shape[0],)
-    for i in range(array.shape[0]):
-        assert len(actual[i]) == array.shape[1]
-        assert isinstance(actual[i], tuple)
-        assert tuple(array[i, :]) == actual[i]
-
-    actual = tupled_dimension(array, 0)
-    assert actual.ndim == 1
-    assert actual.shape == (array.shape[1],)
-    for i in range(array.shape[1]):
-        assert len(actual[i]) == array.shape[0]
-        assert isinstance(actual[i], tuple)
-        assert tuple(array[:, i]) == actual[i]
+    for axis in (0, 1):
+        actual = tupled_dimension(array, axis)
+        expected_shape = (array.shape[1],) if axis == 0 else (array.shape[0],)
+        assert_shape_and_dims(actual, expected_shape)
+        verify_tupled_output(
+            actual, array, axis, [(i,) for i in range(expected_shape[0])]
+        )
 
 
 def test_tupled_dimension_3d():
+    """Test tupled dimension conversion for 3D arrays."""
     from muse.utilities import tupled_dimension
 
-    array = (np.random.rand(10, 3, 5) * 20 - 10).astype(int)
+    array = create_test_array((10, 3, 5))
 
-    actual = tupled_dimension(array, 1)
-    assert actual.ndim == 2
-    assert actual.shape == (array.shape[0], array.shape[2])
-    for i in range(array.shape[0]):
-        for j in range(array.shape[2]):
-            assert len(actual[i, j]) == array.shape[1]
-            assert isinstance(actual[i, j], tuple)
-            assert tuple(array[i, :, j]) == actual[i, j]
-
-    actual = tupled_dimension(array, 0)
-    assert actual.ndim == 2
-    assert actual.shape == (array.shape[1], array.shape[2])
-    for i in range(array.shape[1]):
-        for j in range(array.shape[2]):
-            assert len(actual[i, j]) == array.shape[0]
-            assert isinstance(actual[i, j], tuple)
-            assert tuple(array[:, i, j]) == actual[i, j]
-
-    actual = tupled_dimension(array, 2)
-    assert actual.ndim == 2
-    assert actual.shape == (array.shape[0], array.shape[1])
-    for i in range(array.shape[0]):
-        for j in range(array.shape[1]):
-            assert len(actual[i, j]) == array.shape[2]
-            assert isinstance(actual[i, j], tuple)
-            assert tuple(array[i, j, :]) == actual[i, j]
+    for axis in (0, 1, 2):
+        actual = tupled_dimension(array, axis)
+        if axis == 0:
+            expected_shape = (array.shape[1], array.shape[2])
+        elif axis == 1:
+            expected_shape = (array.shape[0], array.shape[2])
+        else:
+            expected_shape = (array.shape[0], array.shape[1])
+        assert_shape_and_dims(actual, expected_shape)
+        indices = [
+            (i, j) for i in range(expected_shape[0]) for j in range(expected_shape[1])
+        ]
+        verify_tupled_output(actual, array, axis, indices)
 
 
-@mark.parametrize("order", [["a", "b", "c"], ["b", "c", "a"], ["c", "a", "b"]])
-def test_lexical_with_bin(order):
-    """Test lexical comparison against hand-constructed tuples."""
-    from muse.utilities import lexical_comparison
-
+def create_test_objectives(shape=(5, 10)):
+    """Create test objectives dataset."""
     objectives = xr.Dataset()
-    objectives["a"] = ("asset", "replacement"), np.random.rand(5, 10) * 10 - 5
-    objectives["b"] = ("asset", "replacement"), np.random.rand(5, 10) * 10 - 5
-    objectives["c"] = ("asset", "replacement"), np.random.rand(5, 10) * 10 - 5
+    for var in ["a", "b", "c"]:
+        objectives[var] = ("asset", "replacement"), np.random.rand(*shape) * 10 - 5
     objectives["asset"] = np.random.choice(
         objectives.replacement, len(objectives.asset), replace=False
     )
+    return objectives
 
-    binsizes = xr.Dataset(
+
+def create_test_binsizes():
+    """Create test binsizes dataset."""
+    return xr.Dataset(
         {
             "a": np.random.rand() * 0.1,
             "b": -np.random.rand() * 0.1,
             "c": np.random.rand(),
         }
     )
-    expected = np.zeros(shape=objectives.a.shape, dtype=object)
-    for i in range(expected.shape[0]):
-        for j in range(expected.shape[1]):
-            expected[i, j] = (
-                int(np.floor(objectives[order[0]][i, j] / binsizes[order[0]])),
-                int(np.floor(objectives[order[1]][i, j] / binsizes[order[1]])),
-                int(np.floor(objectives[order[2]][i, j] / binsizes[order[2]])),
-            )
 
+
+@mark.parametrize("order", [["a", "b", "c"], ["b", "c", "a"], ["c", "a", "b"]])
+def test_lexical_comparison(order):
+    """Test lexical comparison with and without binning."""
+    from muse.utilities import lexical_comparison
+
+    objectives = create_test_objectives()
+    binsizes = create_test_binsizes()
+
+    def create_expected(bin_last=True):
+        expected = np.zeros(shape=objectives.a.shape, dtype=object)
+        for i in range(expected.shape[0]):
+            for j in range(expected.shape[1]):
+                values = []
+                for k in range(3):
+                    val = objectives[order[k]][i, j] / binsizes[order[k]]
+                    values.append(int(np.floor(val)) if bin_last or k < 2 else val)
+                expected[i, j] = tuple(values)
+        return expected
+
+    # Test with binning
     actual = lexical_comparison(objectives, binsizes[order])
+    expected = create_expected(bin_last=True)
     assert actual.shape == expected.shape
-    for i in range(expected.shape[0]):
-        for j in range(expected.shape[1]):
-            assert actual.values[i, j] == expected[i, j]
+    assert (actual.values == expected).all()
 
-
-@mark.parametrize("order", [["a", "b", "c"], ["b", "c", "a"], ["c", "a", "b"]])
-def test_lexical_nobin(order):
-    """Test lexical comparison against hand-constructed tuples."""
-    from muse.utilities import lexical_comparison
-
-    objectives = xr.Dataset()
-    objectives["a"] = ("asset", "replacement"), np.random.rand(5, 10) * 10 - 5
-    objectives["b"] = ("asset", "replacement"), np.random.rand(5, 10) * 10 - 5
-    objectives["c"] = ("asset", "replacement"), np.random.rand(5, 10) * 10 - 5
-    objectives["asset"] = np.random.choice(
-        objectives.replacement, len(objectives.asset), replace=False
-    )
-
-    binsizes = xr.Dataset(
-        {
-            "a": np.random.rand() * 0.1,
-            "b": -np.random.rand() * 0.1,
-            "c": np.random.rand(),
-        }
-    )
-    expected = np.zeros(shape=objectives.a.shape, dtype=object)
-    for i in range(expected.shape[0]):
-        for j in range(expected.shape[1]):
-            expected[i, j] = (
-                int(np.floor(objectives[order[0]][i, j] / binsizes[order[0]])),
-                int(np.floor(objectives[order[1]][i, j] / binsizes[order[1]])),
-                objectives[order[2]][i, j] / binsizes[order[2]],
-            )
-
+    # Test without binning last value
     actual = lexical_comparison(objectives, binsizes[order], bin_last=False)
+    expected = create_expected(bin_last=False)
     assert actual.shape == expected.shape
-    for i in range(expected.shape[0]):
-        for j in range(expected.shape[1]):
-            assert actual.values[i, j] == expected[i, j]
+    assert (actual.values == expected).all()
 
 
 def test_merge_assets():
+    """Test merging assets with different coordinate orders."""
     from numpy import arange
 
     from muse.utilities import interpolate_capacity, merge_assets
@@ -215,31 +217,31 @@ def test_merge_assets():
             ("year", "asset"),
             np.random.rand(len(result.year), len(result.asset)),
         )
-        result = result[["capacity", *order]].set_coords(order)
-        return result.capacity
+        return result[["capacity", *order]].set_coords(order).capacity
 
-    # checks order of coords does not interfere with merging
     order = ["installed", "technology"]
     capa_a = fake(np.arange(2010, 2020, 3, dtype="int64"), order)
     np.random.shuffle(order)
     capa_b = fake(arange(2014, 2024, 2, dtype="int64"), order)
     actual = merge_assets(capa_a, capa_b)
 
-    assert actual.installed.dtype == capa_a.installed.dtype
-    assert capa_a.installed.isin(actual.installed).all()
-    assert capa_b.installed.isin(actual.installed).all()
-    assert capa_a.technology.isin(actual.technology).all()
-    assert capa_b.technology.isin(actual.technology).all()
-    assert capa_a.year.isin(actual.year).all()
-    assert capa_b.year.isin(actual.year).all()
+    # Verify coordinate preservation
+    for coord in ["installed", "technology", "year"]:
+        assert getattr(capa_a, coord).isin(getattr(actual, coord)).all()
+        assert getattr(capa_b, coord).isin(getattr(actual, coord)).all()
 
+    # Verify asset uniqueness
     assets = [(i, t) for i, t in zip(actual.installed.values, actual.technology.values)]
     assert len(actual.asset) == len(set(assets))
-    assets = [
+    all_assets = [
         (i, t) for i, t in zip(capa_a.installed.values, capa_a.technology.values)
-    ] + [(i, t) for i, t in zip(capa_b.installed.values, capa_b.technology.values)]
-    assert len(actual.asset) == len(set(assets))
+    ]
+    all_assets.extend(
+        (i, t) for i, t in zip(capa_b.installed.values, capa_b.technology.values)
+    )
+    assert len(actual.asset) == len(set(all_assets))
 
+    # Verify capacity values
     for inst, tech in zip(actual.installed.values, actual.technology.values):
         ab_side = actual.sel(
             asset=((actual.installed == inst) & (actual.technology == tech))
@@ -260,6 +262,7 @@ def test_merge_assets():
 
 
 def test_avoid_repetitions():
+    """Test avoiding repetitions in time series data."""
     from muse.utilities import avoid_repetitions
 
     start, end = 2010, 2010 + 3 * 5
@@ -272,12 +275,11 @@ def test_avoid_repetitions():
         np.random.randint(0, 10, (len(assets.year), len(assets.asset))),
     )
 
-    assets.capacity.loc[{"year": list(range(start + 1, end, 3))}] = assets.capacity.sel(
-        year=list(range(start, end, 3))
-    ).values
-    assets.capacity.loc[{"year": list(range(start + 2, end, 3))}] = assets.capacity.sel(
-        year=list(range(start, end, 3))
-    ).values
+    # Create repetitions in the data
+    for offset in (1, 2):
+        assets.capacity.loc[{"year": list(range(start + offset, end, 3))}] = (
+            assets.capacity.sel(year=list(range(start, end, 3))).values
+        )
 
     result = assets.sel(year=avoid_repetitions(assets.capacity))
     assert 3 * len(result.year) == 2 * len(assets.year)
@@ -286,6 +288,7 @@ def test_avoid_repetitions():
 
 
 def test_check_dimensions():
+    """Test dimension checking functionality."""
     from muse.utilities import check_dimensions
 
     data = xr.DataArray(
@@ -294,13 +297,13 @@ def test_check_dimensions():
         coords={"dim1": range(4), "dim2": range(5)},
     )
 
-    # Valid
+    # Test valid case
     check_dimensions(data, required=["dim1"], optional=["dim2"])
 
-    # Missing required
+    # Test missing required dimension
     with raises(ValueError, match="Missing required dimensions"):
         check_dimensions(data, required=["dim1", "dim3"], optional=["dim2"])
 
-    # Extra dimension
+    # Test extra dimension
     with raises(ValueError, match="Extra dimensions"):
         check_dimensions(data, required=["dim1"])

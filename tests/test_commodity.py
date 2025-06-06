@@ -1,27 +1,39 @@
 def test_from_technologies(technologies, coords):
+    """Test CommodityUsage.from_technologies method.
+
+    Verifies that commodity usage flags are correctly set based on technology
+    inputs/outputs and commodity types.
+    """
     from muse.commodities import CommodityUsage
 
     technologies = technologies.drop_vars("comm_usage")
     technologies["comm_type"] = "commodity", coords["comm_type"]
     technologies = technologies.set_coords("comm_type")
+
     comm_usage = CommodityUsage.from_technologies(technologies)
 
-    redux = (
+    # Check which commodities are used in any region/year/technology
+    usage_mask = (
         technologies[["fixed_inputs", "fixed_outputs", "flexible_inputs"]] > 0
     ).any(("region", "year", "technology"))
 
-    for actual, is_cons, is_prod in zip(
-        comm_usage, redux.fixed_inputs | redux.flexible_inputs, redux.fixed_outputs
+    # Test individual commodity usage flags
+    for actual, is_consumable, is_product in zip(
+        comm_usage,
+        usage_mask.fixed_inputs | usage_mask.flexible_inputs,
+        usage_mask.fixed_outputs,
     ):
-        assert bool(actual & CommodityUsage.PRODUCT) == is_prod
-        assert bool(actual & CommodityUsage.CONSUMABLE) == is_cons
+        assert bool(actual & CommodityUsage.PRODUCT) == is_product
+        assert bool(actual & CommodityUsage.CONSUMABLE) == is_consumable
 
-    assert ((comm_usage & CommodityUsage.PRODUCT != 0) == redux.fixed_outputs).all()
-    assert (
-        (comm_usage & CommodityUsage.ENVIRONMENTAL != 0)
-        == (redux.comm_type == "environmental")
-    ).all()
-
-    assert (
-        (comm_usage & CommodityUsage.ENERGY != 0) == (redux.comm_type == "energy")
-    ).all()
+    # Test commodity type flags across all items
+    for i in range(len(comm_usage)):
+        assert (
+            bool(comm_usage[i] & CommodityUsage.PRODUCT) == usage_mask.fixed_outputs[i]
+        )
+        assert bool(comm_usage[i] & CommodityUsage.ENVIRONMENTAL) == (
+            usage_mask.comm_type[i] == "environmental"
+        )
+        assert bool(comm_usage[i] & CommodityUsage.ENERGY) == (
+            usage_mask.comm_type[i] == "energy"
+        )

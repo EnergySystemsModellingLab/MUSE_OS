@@ -1,5 +1,25 @@
 from numpy import isclose, isfinite
 from pytest import fixture, mark, raises
+from xarray.testing import assert_allclose
+
+from muse.costs import (
+    annual_to_lifetime,
+    capital_costs,
+    capital_recovery_factor,
+    environmental_costs,
+    equivalent_annual_cost,
+    fixed_costs,
+    fuel_costs,
+    levelized_cost_of_energy,
+    material_costs,
+    net_present_cost,
+    net_present_value,
+    running_costs,
+    supply_cost,
+    variable_costs,
+)
+from muse.quantities import production_amplitude
+from muse.timeslices import broadcast_timeslice
 
 YEAR = 2030
 
@@ -9,10 +29,7 @@ def _capacity(_technologies, demand_share):
     """Capacity for each asset."""
     from muse.quantities import capacity_to_service_demand
 
-    capacity = capacity_to_service_demand(
-        technologies=_technologies, demand=demand_share
-    )
-    return capacity
+    return capacity_to_service_demand(technologies=_technologies, demand=demand_share)
 
 
 @fixture
@@ -37,12 +54,11 @@ def _production(_technologies, _capacity):
     """Production data for each asset."""
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    production = (
+    return (
         broadcast_timeslice(_capacity)
         * distribute_timeslice(_technologies.fixed_outputs)
         * broadcast_timeslice(_technologies.utilization_factor)
     )
-    return production
 
 
 @fixture
@@ -50,75 +66,53 @@ def _consumption(_technologies, _capacity):
     """Consumption data for each asset."""
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    consumption = (
+    return (
         broadcast_timeslice(_capacity)
         * distribute_timeslice(_technologies.fixed_inputs)
         * broadcast_timeslice(_technologies.utilization_factor)
     )
-    return consumption
 
 
 def test_fixtures(_technologies, _prices, _capacity, _production, _consumption):
-    """Validating that the fixtures have appropriate dimensions."""
+    """Validate fixture dimensions."""
     assert set(_technologies.dims) == {"asset", "commodity"}
     assert set(_prices.dims) == {"asset", "commodity", "timeslice"}
     assert set(_capacity.dims) == {"asset"}
-    assert (
-        set(_production.dims)
-        == set(_consumption.dims)
-        == {
-            "asset",
-            "commodity",
-            "timeslice",
-        }
-    )
+    assert set(_production.dims) == {"asset", "commodity", "timeslice"}
+    assert set(_consumption.dims) == {"asset", "commodity", "timeslice"}
 
 
 def test_capital_costs(_technologies, _capacity):
-    from muse.costs import capital_costs
-
     result = capital_costs(_technologies, _capacity)
     assert set(result.dims) == {"asset"}
 
 
 def test_environmental_costs(_technologies, _prices, _production):
-    from muse.costs import environmental_costs
-
     result = environmental_costs(_technologies, _prices, _production)
     assert set(result.dims) == {"asset", "timeslice"}
 
 
 def test_fuel_costs(_technologies, _prices, _consumption):
-    from muse.costs import fuel_costs
-
     result = fuel_costs(_technologies, _prices, _consumption)
     assert set(result.dims) == {"asset", "timeslice"}
 
 
 def test_material_costs(_technologies, _prices, _consumption):
-    from muse.costs import material_costs
-
     result = material_costs(_technologies, _prices, _consumption)
     assert set(result.dims) == {"asset", "timeslice"}
 
 
 def test_fixed_costs(_technologies, _capacity):
-    from muse.costs import fixed_costs
-
     result = fixed_costs(_technologies, _capacity)
     assert set(result.dims) == {"asset"}
 
 
 def test_variable_costs(_technologies, _production):
-    from muse.costs import variable_costs
-
     result = variable_costs(_technologies, _production)
     assert set(result.dims) == {"asset"}
 
 
 def test_running_costs(_technologies, _prices, _capacity, _production, _consumption):
-    from muse.costs import running_costs
-
     result = running_costs(_technologies, _prices, _capacity, _production, _consumption)
     assert set(result.dims) == {"asset", "timeslice"}
 
@@ -126,8 +120,6 @@ def test_running_costs(_technologies, _prices, _capacity, _production, _consumpt
 def test_net_present_value(
     _technologies, _prices, _capacity, _production, _consumption
 ):
-    from muse.costs import net_present_value
-
     result = net_present_value(
         _technologies, _prices, _capacity, _production, _consumption
     )
@@ -135,8 +127,6 @@ def test_net_present_value(
 
 
 def test_net_present_cost(_technologies, _prices, _capacity, _production, _consumption):
-    from muse.costs import net_present_cost
-
     result = net_present_cost(
         _technologies, _prices, _capacity, _production, _consumption
     )
@@ -146,8 +136,6 @@ def test_net_present_cost(_technologies, _prices, _capacity, _production, _consu
 def test_equivalent_annual_cost(
     _technologies, _prices, _capacity, _production, _consumption
 ):
-    from muse.costs import equivalent_annual_cost
-
     result = equivalent_annual_cost(
         _technologies, _prices, _capacity, _production, _consumption
     )
@@ -158,8 +146,6 @@ def test_equivalent_annual_cost(
 def test_levelized_cost_of_energy(
     _technologies, _prices, _capacity, _production, _consumption, method
 ):
-    from muse.costs import levelized_cost_of_energy
-
     result = levelized_cost_of_energy(
         _technologies, _prices, _capacity, _production, _consumption, method=method
     )
@@ -167,35 +153,24 @@ def test_levelized_cost_of_energy(
 
 
 def test_supply_cost(_technologies, _prices, _capacity, _production, _consumption):
-    from muse.costs import levelized_cost_of_energy, supply_cost
-
     lcoe = levelized_cost_of_energy(
         _technologies, _prices, _capacity, _production, _consumption, method="annual"
     )
     result = supply_cost(_production, lcoe)
-    assert set(result.dims) == {
-        "commodity",
-        "region",
-        "timeslice",
-    }
+    assert set(result.dims) == {"commodity", "region", "timeslice"}
 
 
 def test_capital_recovery_factor(_technologies):
-    from muse.costs import capital_recovery_factor
-
     result = capital_recovery_factor(_technologies)
     assert set(result.dims) == set(_technologies.interest_rate.dims)
-    # {"region", "technology"}
 
-    # Make sure zero interest rates are supported
+    # Test zero interest rates
     _technologies["interest_rate"] = 0
     result = capital_recovery_factor(_technologies)
     assert isfinite(result).all()
 
 
 def test_annual_to_lifetime(_technologies, _prices, _consumption):
-    from muse.costs import annual_to_lifetime, fuel_costs
-
     _fuel_costs = fuel_costs(_technologies, _prices, _consumption)
     _fuel_costs_lifetime = annual_to_lifetime(_fuel_costs, _technologies)
     assert set(_fuel_costs.dims) == set(_fuel_costs_lifetime.dims)
@@ -206,31 +181,21 @@ def test_annual_to_lifetime(_technologies, _prices, _consumption):
 def test_lcoe_flow_scaling(
     _technologies, _prices, _capacity, _production, _consumption, method
 ):
-    """Testing that LCOE is independent of input/output flow scaling.
-
-    In other words, if we change technology flows by a constant factor, the LCOE (which
-    is a cost per unit of production) should remain unchanged.
-
-    This is a bit more complicated if the variable costs are nonlinear, so we'll set
-    the exponent to 1 for simplicity.
-    """
-    from muse.costs import levelized_cost_of_energy
-
+    """Test LCOE independence of input/output flow scaling."""
     _technologies["var_exp"] = 1
 
-    # LCOE with original inputs
+    # Original LCOE
     lcoe1 = levelized_cost_of_energy(
         _technologies, _prices, _capacity, _production, _consumption, method=method
     )
 
-    # Scale inputs and outputs by a constant factor -> LCOE should be unchanged
-    # var_par also needs to be scaled as this relates to units of technology
-    # activity, not units of commodity consumption/production
+    # Scale inputs/outputs and var_par by 2
     _technologies_scaled = _technologies.copy()
-    _technologies_scaled["fixed_inputs"] = _technologies["fixed_inputs"] * 2
-    _technologies_scaled["flexible_inpits"] = _technologies["flexible_inputs"] * 2
-    _technologies_scaled["fixed_outputs"] = _technologies["fixed_outputs"] * 2
-    _technologies_scaled["var_par"] = _technologies["var_par"] * 2
+    _technologies_scaled["fixed_inputs"] *= 2
+    _technologies_scaled["flexible_inputs"] *= 2
+    _technologies_scaled["fixed_outputs"] *= 2
+    _technologies_scaled["var_par"] *= 2
+
     lcoe2 = levelized_cost_of_energy(
         _technologies_scaled,
         _prices,
@@ -246,24 +211,14 @@ def test_lcoe_flow_scaling(
 def test_lcoe_prod_scaling(
     _technologies, _prices, _capacity, _production, _consumption, method
 ):
-    """Testing that LCOE is independent of production scaling.
-
-    If all costs are linear (exponents = 1), then the LCOE should be independent of
-    production as long as production, consumption, and capacity are scaled together.
-    """
-    from muse.costs import levelized_cost_of_energy
-
+    """Test LCOE independence of production scaling with linear costs."""
     _technologies["var_exp"] = 1
     _technologies["cap_exp"] = 1
     _technologies["fix_exp"] = 1
 
-    # LCOE with original inputs
     lcoe1 = levelized_cost_of_energy(
         _technologies, _prices, _capacity, _production, _consumption, method=method
     )
-
-    # Scale consumption, production, and capacity by a constant factor -> LCOE
-    # should be unchanged
     lcoe2 = levelized_cost_of_energy(
         _technologies,
         _prices,
@@ -279,20 +234,14 @@ def test_lcoe_prod_scaling(
 def test_lcoe_equal_prices(
     _technologies, _prices, _capacity, _production, _consumption, method
 ):
-    """If commodity prices are equal in every timeslice, LCOE should always be equal."""
-    from xarray.testing import assert_allclose
-
-    from muse.costs import levelized_cost_of_energy
-    from muse.timeslices import broadcast_timeslice
-
-    # LCOE with original inputs -> should vary between timeslices
+    """Test LCOE behavior with uniform prices across timeslices."""
     lcoe1 = levelized_cost_of_energy(
         _technologies, _prices, _capacity, _production, _consumption, method=method
     )
     with raises(AssertionError):
         assert_allclose(lcoe1, broadcast_timeslice(lcoe1.isel(timeslice=0)))
 
-    # LCOE with uniform prices -> should be the same for all timeslices
+    # Test with uniform prices
     _prices = broadcast_timeslice(_prices.mean("timeslice"))
     lcoe2 = levelized_cost_of_energy(
         _technologies, _prices, _capacity, _production, _consumption, method=method
@@ -301,27 +250,17 @@ def test_lcoe_equal_prices(
 
 
 def test_npv_equal_prices(_technologies, _prices, _capacity, _production, _consumption):
-    """Test NPV with equal commodity prices in every timeslice.
-
-    If commodity prices are equal in every timeslice, NPV should be proportional to
-    production.
-    """
-    from xarray.testing import assert_allclose
-
-    from muse.costs import net_present_value
-    from muse.quantities import production_amplitude
-    from muse.timeslices import broadcast_timeslice
-
-    # NPV with original inputs -> should not be linear with production
+    """Test NPV linearity with production under uniform prices."""
     npv1 = net_present_value(
         _technologies, _prices, _capacity, _production, _consumption
     )
     tech_activity = production_amplitude(_production, _technologies)
     npv1_scaled = npv1 / tech_activity
+
     with raises(AssertionError):
         assert_allclose(npv1_scaled, broadcast_timeslice(npv1_scaled.isel(timeslice=0)))
 
-    # NPV with uniform prices -> should be linear with production
+    # Test with uniform prices
     _prices = broadcast_timeslice(_prices.mean("timeslice"))
     npv2 = net_present_value(
         _technologies, _prices, _capacity, _production, _consumption
@@ -334,19 +273,13 @@ def test_npv_equal_prices(_technologies, _prices, _capacity, _production, _consu
 def test_lcoe_zero_production(
     _technologies, _prices, _capacity, _production, _consumption, method
 ):
-    """If production and consumption are zero, LCOE should always be zero.
-
-    Note: if production/consumption are zero in every timeslice, LCOE is undefined (nan)
-    """
-    from muse.costs import levelized_cost_of_energy
-
-    # LCOE with original inputs
+    """Test LCOE behavior with zero production."""
     lcoe1 = levelized_cost_of_energy(
         _technologies, _prices, _capacity, _production, _consumption, method=method
     )
     assert not (lcoe1.isel(timeslice=0) == 0).all()
 
-    # LCOE with zero production/consumption in first timeslice -> LCOE should be zero
+    # Test with zero production in first timeslice
     _production.isel(timeslice=0)[:] = 0
     _consumption.isel(timeslice=0)[:] = 0
     lcoe2 = levelized_cost_of_energy(
@@ -359,8 +292,7 @@ def test_lcoe_zero_production(
 def test_lcoe_aggregate(
     _technologies, _prices, _capacity, _production, _consumption, method
 ):
-    from muse.costs import levelized_cost_of_energy
-
+    """Test LCOE aggregation over timeslices."""
     result = levelized_cost_of_energy(
         _technologies,
         _prices,
@@ -370,12 +302,11 @@ def test_lcoe_aggregate(
         method=method,
         aggregate_timeslices=True,
     )
-    assert set(result.dims) == {"asset"}  # no timeslice dim
+    assert set(result.dims) == {"asset"}
 
 
 def test_npv_aggregate(_technologies, _prices, _capacity, _production, _consumption):
-    from muse.costs import net_present_value
-
+    """Test NPV aggregation over timeslices."""
     result = net_present_value(
         _technologies,
         _prices,
@@ -384,4 +315,4 @@ def test_npv_aggregate(_technologies, _prices, _capacity, _production, _consumpt
         _consumption,
         aggregate_timeslices=True,
     )
-    assert set(result.dims) == {"asset"}  # no timeslice dim
+    assert set(result.dims) == {"asset"}

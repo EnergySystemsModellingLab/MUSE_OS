@@ -15,134 +15,98 @@ def assets():
     result = Dataset()
     result["year"] = "year", range(2010, 2031)
     assets = set((randint(2010, 2020), choice(list("technology"))) for i in range(30))
-    assets = list(assets)
     result["installed"] = "asset", [u[0] for u in assets]
     result["technology"] = "asset", [u[1] for u in assets]
     shape = len(result.year), len(result.asset)
     result["capacity"] = ("year", "asset"), ones(shape, dtype="int")
-    result["maxyears"] = "asset", randint(2010, 2030, len(result.asset))
-    result["capa"] = "asset", randint(1, 100, len(result.asset))
-    result["capacity"] = result.capacity.where(result.year <= result.maxyears, 0)
-    result["capacity"] *= result.capa
-    result = result.drop_vars(("maxyears", "capa"))
+    result["capacity"] *= randint(1, 100, len(result.asset))
+
+    # Generate max years with correct shape for broadcasting
+    max_years = randint(2010, 2030, len(result.asset))
+    result["capacity"] = result.capacity.where(
+        result.year.values[:, None] <= max_years, 0
+    )
     result = result.set_coords(("installed", "technology"))
     return result.sel(year=avoid_repetitions(result.capacity))
 
 
-def test_create_retrofit(agent_args, technologies, stock):
+@fixture
+def create_test_agent():
+    """Helper fixture to create and test agents with common assertions."""
     from muse.agents.agent import Agent
     from muse.agents.factories import create_agent
 
-    agent_args["share"] = "agent_share_zero"
-    agent = create_agent(
-        agent_type="Retrofit",
-        technologies=technologies,
-        capacity=stock.capacity,
-        year=2010,
-        **agent_args,
-    )
-    assert isinstance(agent, Agent)
-    assert (agent.assets.capacity == 0).all()
-    assert "asset" in agent.assets.dims and len(agent.assets.asset) != 0
-    assert "year" in agent.assets.dims or len(agent.assets.year) > 1
-    assert "region" not in agent.assets.dims
-    assert "commodity" not in agent.assets.dims
+    def _create_and_test(
+        agent_type, technologies, stock, agent_args, year=2010, **kwargs
+    ):
+        agent = create_agent(
+            agent_type=agent_type,
+            technologies=technologies,
+            capacity=stock.capacity,
+            year=year,
+            **{**agent_args, **kwargs},
+        )
+        assert isinstance(agent, Agent)
+        assert "asset" in agent.assets.dims
+        assert "year" in agent.assets.dims
+        assert "region" not in agent.assets.dims
+        assert "commodity" not in agent.assets.dims
+        return agent
 
+    return _create_and_test
+
+
+def test_create_retrofit(agent_args, technologies, stock, create_test_agent):
+    # Test with zero share
+    agent_args["share"] = "agent_share_zero"
+    agent = create_test_agent("Retrofit", technologies, stock, agent_args)
+    assert (agent.assets.capacity == 0).all()
+    assert len(agent.assets.asset) != 0
+
+    # Test with non-zero share
     agent_args["share"] = "agent_share"
-    agent = create_agent(
-        agent_type="Retrofit",
-        technologies=technologies,
-        capacity=stock.capacity,
-        year=2010,
-        **agent_args,
-    )
-    assert isinstance(agent, Agent)
-    assert "asset" in agent.assets.dims
-    assert len(agent.assets.capacity) != 0
+    agent = create_test_agent("Retrofit", technologies, stock, agent_args)
     assert (agent.assets.capacity != 0).any()
 
 
-def test_create_newcapa(agent_args, technologies, stock):
-    from muse.agents.agent import Agent
-    from muse.agents.factories import create_agent
-
-    # If there is no retrofit, new capa should behave identical to retrofit.
-    agent_args["share"] = "agent_share_zero"
-    agent_args["retrofit_present"] = False
-    agent = create_agent(
-        agent_type="Newcapa",
-        technologies=technologies,
-        capacity=stock.capacity,
-        year=2010,
-        **agent_args,
-    )
-    assert isinstance(agent, Agent)
+def test_create_newcapa(agent_args, technologies, stock, create_test_agent):
+    # Test without retrofit
+    agent_args.update({"share": "agent_share_zero", "retrofit_present": False})
+    agent = create_test_agent("Newcapa", technologies, stock, agent_args)
     assert (agent.assets.capacity == 0).all()
-    assert "asset" in agent.assets.dims and len(agent.assets.asset) != 0
-    assert "year" in agent.assets.dims or len(agent.assets.year) > 1
-    assert "region" not in agent.assets.dims
-    assert "commodity" not in agent.assets.dims
     assert agent.merge_transform.__name__ == "merge"
 
+    # Test with non-zero share
     agent_args["share"] = "agent_share"
-    agent = create_agent(
-        agent_type="Newcapa",
-        technologies=technologies,
-        capacity=stock.capacity,
-        year=2010,
-        **agent_args,
-    )
-    assert isinstance(agent, Agent)
-    assert "asset" in agent.assets.dims
-    assert len(agent.assets.capacity) != 0
+    agent = create_test_agent("Newcapa", technologies, stock, agent_args)
     assert (agent.assets.capacity != 0).any()
     assert agent.merge_transform.__name__ == "merge"
 
-    # If there are retrofit agents, these are really newcapa agents with no capacity
-    agent_args["share"] = "agent_share"
-    agent_args["retrofit_present"] = True
-    agent = create_agent(
-        agent_type="Newcapa",
-        technologies=technologies,
-        capacity=stock.capacity,
-        year=2010,
-        **agent_args,
-    )
-
-    assert isinstance(agent, Agent)
-    assert "asset" in agent.assets.dims
-    assert len(agent.assets.capacity) != 0
+    # Test with retrofit present
+    agent_args.update({"share": "agent_share", "retrofit_present": True})
+    agent = create_test_agent("Newcapa", technologies, stock, agent_args)
     assert (agent.assets.capacity == 0).all()
     assert agent.merge_transform.__name__ == "new"
 
 
-def test_issue_835_and_842(agent_args, technologies, stock):
-    from muse.agents.agent import Agent
-    from muse.agents.factories import create_agent
-
+def test_issue_835_and_842(agent_args, technologies, stock, create_test_agent):
     agent_args["share"] = "agent_share_zero"
-    agent = create_agent(
-        agent_type="Retrofit",
-        technologies=technologies,
-        capacity=stock.capacity,
-        search_rules="from_techs->compress",
-        year=2010,
-        **agent_args,
+    agent = create_test_agent(
+        "Retrofit", technologies, stock, agent_args, search_rules="from_techs->compress"
     )
-    assert isinstance(agent, Agent)
     assert (agent.assets.capacity == 0).all()
-    assert "asset" in agent.assets.dims and len(agent.assets.asset) != 0
-    assert "year" in agent.assets.dims or len(agent.assets.year) > 1
-    assert "region" not in agent.assets.dims
-    assert "commodity" not in agent.assets.dims
+    assert len(agent.assets.asset) != 0
 
 
 @mark.xfail(reason="Retrofit agents will be deprecated.")
 def test_run_retro_agent(retro_agent, technologies, agent_market, demand_share):
-    # make sure capacity limits are not reached
-    technologies.total_capacity_limit[:] = retro_agent.assets.capacity.sum() * 100
-    technologies.max_capacity_addition[:] = retro_agent.assets.capacity.sum() * 100
-    technologies.max_capacity_growth[:] = retro_agent.assets.capacity.sum() * 100
+    capacity_multiplier = retro_agent.assets.capacity.sum() * 100
+    for attr in [
+        "total_capacity_limit",
+        "max_capacity_addition",
+        "max_capacity_growth",
+    ]:
+        setattr(technologies, attr, capacity_multiplier)
 
     investment_year = int(agent_market.year[1])
     retro_agent.next(
@@ -162,15 +126,11 @@ def test_merge_assets(assets):
     n = len(assets.asset)
     current = assets.sel(asset=range(n - 2))
     current = current.sel(year=avoid_repetitions(current.capacity))
-
     new = assets.sel(asset=range(n - 2, n))
     new = new.sel(year=avoid_repetitions(new.capacity))
 
     actual = merge_assets(current, new)
-
-    multi_assets = coords_to_multiindex(assets)
-    multi_actual = coords_to_multiindex(actual)
-    assert (multi_actual == multi_assets).all()
+    assert (coords_to_multiindex(actual) == coords_to_multiindex(assets)).all()
 
 
 def test_clean_assets(assets):
@@ -186,14 +146,12 @@ def test_clean_assets(assets):
     cleaned = clean_assets(assets, current_year)
     assert (cleaned.year >= current_year).all()
 
-    # fmt: disable
     empties = set(
         zip(
             assets.sel(asset=iempties).technology.values,
             assets.sel(asset=iempties).installed.values,
         )
     )
-    # fmt: enable
     cleanies = set(zip(cleaned.technology.values, cleaned.installed.values))
     originals = set(zip(assets.technology.values, assets.installed.values))
     assert empties.isdisjoint(cleanies)
