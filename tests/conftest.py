@@ -1,22 +1,72 @@
-import random as rand
+"""Common test fixtures for MUSE tests."""
+
 from collections.abc import Mapping
+from contextlib import contextmanager
+from copy import deepcopy
+from importlib import import_module
+from logging import CRITICAL, getLogger
+from os import walk
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional, Union
 from unittest.mock import patch
+from warnings import filterwarnings, simplefilter
 
 import numpy as np
-from pandas import DataFrame
+import pandas as pd
+from numpy.random import choice, rand, randint
 from pytest import fixture
 from xarray import DataArray, Dataset
 
 from muse.__main__ import patched_broadcast_compat_data
 from muse.agents import Agent
+from muse.commodities import CommodityUsage
+from muse.timeslices import TIMESLICE, setup_module
+
+# Constants
+RANDOM_SEED = 123
+DEFAULT_FACTOR = 100.0
+DEFAULT_TECH_TYPES = ["solid", "liquid", "solid", "liquid"]
+DEFAULT_FUELS = ["person", "person", "oil", "person"]
+
+DEFAULT_TIMESLICES = """
+[timeslices]
+winter.weekday.night = 396
+winter.weekday.morning = 396
+winter.weekday.afternoon = 264
+winter.weekday.early-peak = 66
+winter.weekday.late-peak = 66
+winter.weekday.evening = 396
+winter.weekend.night = 156
+winter.weekend.morning = 156
+winter.weekend.afternoon = 156
+winter.weekend.evening = 156
+spring-autumn.weekday.night = 792
+spring-autumn.weekday.morning = 792
+spring-autumn.weekday.afternoon = 528
+spring-autumn.weekday.early-peak = 132
+spring-autumn.weekday.late-peak = 132
+spring-autumn.weekday.evening = 792
+spring-autumn.weekend.night = 300
+spring-autumn.weekend.morning = 300
+spring-autumn.weekend.afternoon = 300
+spring-autumn.weekend.evening = 300
+summer.weekday.night = 396
+summer.weekday.morning  = 396
+summer.weekday.afternoon = 264
+summer.weekday.early-peak = 66
+summer.weekday.late-peak = 66
+summer.weekday.evening = 396
+summer.weekend.night = 150
+summer.weekend.morning = 150
+summer.weekend.afternoon = 150
+summer.weekend.evening = 150
+level_names = ["month", "day", "hour"]
+"""
 
 
 @fixture(autouse=True)
 def logger():
-    from logging import CRITICAL, getLogger
-
+    """Configure logger for tests."""
     logger = getLogger("muse")
     logger.setLevel(CRITICAL)
     return logger
@@ -24,6 +74,7 @@ def logger():
 
 @fixture(autouse=True)
 def patch_broadcast_compat_data():
+    """Patch broadcast compatibility data."""
     with patch(
         "xarray.core.variable._broadcast_compat_data", patched_broadcast_compat_data
     ):
@@ -33,31 +84,44 @@ def patch_broadcast_compat_data():
 @fixture(autouse=True)
 def random():
     """Set random seed for all tests to make them reproducible."""
-    rand.seed(123)
-    np.random.seed(123)
+    rand.seed(RANDOM_SEED)
+    np.random.seed(RANDOM_SEED)
 
 
 def compare_df(
-    expected: DataFrame,
-    actual: DataFrame,
+    expected: pd.DataFrame,
+    actual: pd.DataFrame,
     rtol: float = 1e-5,
     atol: float = 1e-8,
-    equal_nan=False,
-    msg=None,
-):
-    """Compares two dataframes approximately.
+    equal_nan: bool = False,
+    msg: Optional[str] = None,
+) -> None:
+    """Compare two dataframes approximately.
 
-    Uses `numpy.allclose` for columns which are floating points.
+    Args:
+        expected: Expected dataframe
+        actual: Actual dataframe to compare
+        rtol: Relative tolerance
+        atol: Absolute tolerance
+        equal_nan: Whether to consider NaN values equal
+        msg: Optional message to display on failure
+
+    Raises:
+        AssertionError: If dataframes don't match within tolerances
     """
     from pytest import approx
 
-    assert set(expected.columns) == set(actual.columns)
-    assert expected.shape == actual.shape
-    assert set(expected.index) == set(actual.index)
+    assert set(expected.columns) == set(actual.columns), "Columns don't match"
+    assert expected.shape == actual.shape, "Shapes don't match"
+    assert set(expected.index) == set(actual.index), "Indices don't match"
 
     floats = [u for (u, d) in zip(actual.columns, actual.dtypes) if d == "float"]
     nonfloats = [u for (u, d) in zip(actual.columns, actual.dtypes) if d != "float"]
-    assert all(expected[nonfloats] == actual.loc[expected.index, nonfloats])
+
+    assert all(expected[nonfloats] == actual.loc[expected.index, nonfloats]), (
+        "Non-float columns don't match"
+    )
+
     for col in floats:
         actual_col = actual.loc[expected.index, col].values
         expected_col = expected[col].values
@@ -80,23 +144,32 @@ def compare_df(
 
 @fixture
 def compare_dirs() -> Callable:
-    def compare_dirs(actual_dir, expected_dir, **kwargs):
-        """Compares all the csv files in a directory."""
-        from os import walk
+    """Factory for directory comparison function."""
 
-        from pandas import read_csv
+    def compare_dirs(
+        actual_dir: Union[str, Path], expected_dir: Union[str, Path], **kwargs
+    ) -> None:
+        """Compare all CSV files in two directories.
 
+        Args:
+            actual_dir: Path to directory with actual files
+            expected_dir: Path to directory with expected files
+            **kwargs: Additional arguments passed to compare_df
+
+        Raises:
+            AssertionError: If directories don't match or test is not set up correctly
+        """
         compared_something = False
         for dirpath, _, filenames in walk(expected_dir):
             subdir = Path(actual_dir) / Path(dirpath).relative_to(expected_dir)
             for filename in filenames:
                 compared_something = True
                 expected_filename = Path(dirpath) / filename
-                expected = read_csv(expected_filename)
+                expected = pd.read_csv(expected_filename)
                 actual_filename = Path(subdir) / filename
-                assert actual_filename.exists()
-                assert actual_filename.is_file()
-                actual = read_csv(actual_filename)
+                assert actual_filename.exists(), f"Missing file: {actual_filename}"
+                assert actual_filename.is_file(), f"Not a file: {actual_filename}"
+                actual = pd.read_csv(actual_filename)
                 try:
                     compare_df(expected, actual, msg=filename, **kwargs)
                 except Exception:
@@ -116,56 +189,23 @@ def compare_dirs() -> Callable:
 
 @fixture
 def default_timeslice_globals():
-    from muse.timeslices import setup_module
-
-    default_timeslices = """
-    [timeslices]
-    winter.weekday.night = 396
-    winter.weekday.morning = 396
-    winter.weekday.afternoon = 264
-    winter.weekday.early-peak = 66
-    winter.weekday.late-peak = 66
-    winter.weekday.evening = 396
-    winter.weekend.night = 156
-    winter.weekend.morning = 156
-    winter.weekend.afternoon = 156
-    winter.weekend.evening = 156
-    spring-autumn.weekday.night = 792
-    spring-autumn.weekday.morning = 792
-    spring-autumn.weekday.afternoon = 528
-    spring-autumn.weekday.early-peak = 132
-    spring-autumn.weekday.late-peak = 132
-    spring-autumn.weekday.evening = 792
-    spring-autumn.weekend.night = 300
-    spring-autumn.weekend.morning = 300
-    spring-autumn.weekend.afternoon = 300
-    spring-autumn.weekend.evening = 300
-    summer.weekday.night = 396
-    summer.weekday.morning  = 396
-    summer.weekday.afternoon = 264
-    summer.weekday.early-peak = 66
-    summer.weekday.late-peak = 66
-    summer.weekday.evening = 396
-    summer.weekend.night = 150
-    summer.weekend.morning = 150
-    summer.weekend.afternoon = 150
-    summer.weekend.evening = 150
-    level_names = ["month", "day", "hour"]
-    """
-
-    setup_module(default_timeslices)
+    """Set up default timeslice configuration."""
+    setup_module(DEFAULT_TIMESLICES)
 
 
 @fixture
 def timeslice(default_timeslice_globals) -> Dataset:
-    from muse.timeslices import TIMESLICE
-
+    """Get the default timeslice dataset."""
     return TIMESLICE
 
 
 @fixture
 def coords() -> Mapping:
-    """Technoeconomics coordinates."""
+    """Return standard coordinates for test cases.
+
+    Returns:
+        Mapping with technology, region, year, commodity and comm_type coordinates
+    """
     return {
         "technology": ["burger_flipper", "soda_shaker", "deep_frier", "salad_arranger"],
         "region": ["ASEAN", "USA"],
@@ -194,10 +234,15 @@ def coords() -> Mapping:
 
 
 @fixture
-def agent_args(coords) -> Mapping:
-    """Some standard arguments defining an agent."""
-    from numpy.random import choice, rand, randint
+def agent_args(coords: Mapping) -> Mapping:
+    """Generate standard arguments for creating an agent.
 
+    Args:
+        coords: Standard coordinate mapping
+
+    Returns:
+        Mapping with region, share, enduses and maturity_threshold
+    """
     return {
         "region": choice(coords["region"]),
         "share": "agent_share",
@@ -209,14 +254,33 @@ def agent_args(coords) -> Mapping:
     }
 
 
+def var_generator(
+    result: Dataset, dims: list[str], factor: float = DEFAULT_FACTOR
+) -> tuple:
+    """Generate random variables for a dataset.
+
+    Args:
+        result: Dataset to generate variables for
+        dims: Dimensions to generate variables over
+        factor: Scaling factor for random values
+
+    Returns:
+        Tuple of (dims, random_values)
+    """
+    shape = tuple(len(result[u]) for u in dims)
+    return dims, (rand(*shape) * factor).astype(type(factor))
+
+
 @fixture
-def technologies(coords) -> Dataset:
-    """Randomly generated technology characteristics."""
-    from numpy import nonzero, sum
-    from numpy.random import choice, rand, randint
+def technologies(coords: Mapping) -> Dataset:
+    """Generate random technology characteristics.
 
-    from muse.commodities import CommodityUsage
+    Args:
+        coords: Standard coordinate mapping
 
+    Returns:
+        Dataset with technology characteristics
+    """
     result = Dataset(coords=coords)
 
     result["comm_type"] = ("commodity", coords["comm_type"])
@@ -224,25 +288,22 @@ def technologies(coords) -> Dataset:
 
     result = result.set_coords(("comm_type", "tech_type"))
 
-    def var(*dims, factor=100.0):
-        shape = tuple(len(result[u]) for u in dims)
-        return dims, (rand(*shape) * factor).astype(type(factor))
-
-    result["agent_share"] = var("technology", "region", "year")
-    result["agent_share"] /= sum(result.agent_share)
+    # Generate random variables
+    result["agent_share"] = var_generator(result, ["technology", "region", "year"])
+    result["agent_share"] /= np.sum(result.agent_share)
     result["agent_share_zero"] = result["agent_share"] * 0
 
     # first create a mask so each tech will have consistent inputs/outputs across years
     # and regions
     fuels = result.comm_type == "energy"
-    result["fixed_inputs"] = var("technology", "commodity")
+    result["fixed_inputs"] = var_generator(result, ["technology", "commodity"])
     result.fixed_inputs[:] = randint(0, 3, result.fixed_inputs.shape) == 0
     result.fixed_inputs.loc[{"commodity": ~fuels}] = 0
     result["flexible_inputs"] = result.fixed_inputs * (
         randint(0, 2, result.fixed_inputs.shape) == 0
     )
 
-    result["fixed_outputs"] = var("technology", "commodity")
+    result["fixed_outputs"] = var_generator(result, ["technology", "commodity"])
     result.fixed_outputs[:] = randint(0, 3, result.fixed_outputs.shape) == 0
     enduses = result.comm_type == "service"
     environmentals = result.comm_type == "environmental"
@@ -252,15 +313,15 @@ def technologies(coords) -> Dataset:
     for tech in result.technology:
         fin = result.fixed_inputs
         if (fin.sel(technology=tech, commodity=fuels) < 1e-12).all():
-            i = result.commodity[choice(nonzero(fuels.values)[0])]
+            i = result.commodity[choice(np.nonzero(fuels.values)[0])]
             fin.loc[{"technology": tech, "commodity": i}] = 1
 
         fout = result.fixed_outputs
         if (fout.sel(technology=tech, commodity=enduses) < 1e-12).all():
-            i = result.commodity[choice(nonzero(enduses.values)[0])]
+            i = result.commodity[choice(np.nonzero(enduses.values)[0])]
             fout.loc[{"technology": tech, "commodity": i}] = 1
 
-    # expand along year and region, and fill with random numbers
+    # Expand along year and region dimensions
     ones = (result.year == result.year) * (result.region == result.region)
     result["fixed_inputs"] = result.fixed_inputs * ones
     result.fixed_inputs[:] *= rand(*result.fixed_inputs.shape)
@@ -269,27 +330,55 @@ def technologies(coords) -> Dataset:
     result["fixed_outputs"] = result.fixed_outputs * ones
     result.fixed_outputs[:] *= rand(*result.fixed_outputs.shape)
 
-    result["total_capacity_limit"] = var("technology", "region", "year")
+    # Generate capacity and utilization parameters
+    result["total_capacity_limit"] = var_generator(
+        result, ["technology", "region", "year"]
+    )
     result.total_capacity_limit.loc[{"year": 2030}] += result.total_capacity_limit.sel(
         year=2030
     )
-    result["max_capacity_addition"] = var("technology", "region", "year")
-    result["max_capacity_growth"] = var("technology", "region", "year")
+    result["max_capacity_addition"] = var_generator(
+        result, ["technology", "region", "year"]
+    )
+    result["max_capacity_growth"] = var_generator(
+        result, ["technology", "region", "year"]
+    )
 
-    result["utilization_factor"] = var("technology", "region", "year", factor=0.05)
+    result["utilization_factor"] = var_generator(
+        result, ["technology", "region", "year"], factor=0.05
+    )
     result.utilization_factor.values += 0.95
-    result["fix_par"] = var("technology", "region", "year", factor=2.0)
-    result["cap_par"] = var("technology", "region", "year", factor=30.0)
-    result["var_par"] = var("technology", "region", "year", factor=1.0)
-    result["fix_exp"] = var("technology", "region", "year", factor=1.0)
-    result["cap_exp"] = var("technology", "region", "year", factor=1.0)
-    result["var_exp"] = var("technology", "region", "year", factor=1.0)
 
-    result["technical_life"] = var("technology", "region", "year", factor=10)
+    # Generate cost parameters
+    result["fix_par"] = var_generator(
+        result, ["technology", "region", "year"], factor=2.0
+    )
+    result["cap_par"] = var_generator(
+        result, ["technology", "region", "year"], factor=30.0
+    )
+    result["var_par"] = var_generator(
+        result, ["technology", "region", "year"], factor=1.0
+    )
+    result["fix_exp"] = var_generator(
+        result, ["technology", "region", "year"], factor=1.0
+    )
+    result["cap_exp"] = var_generator(
+        result, ["technology", "region", "year"], factor=1.0
+    )
+    result["var_exp"] = var_generator(
+        result, ["technology", "region", "year"], factor=1.0
+    )
+
+    # Generate technical parameters
+    result["technical_life"] = var_generator(
+        result, ["technology", "region", "year"], factor=10
+    )
     result["technical_life"] = result.technical_life.astype(int).clip(min=1)
+    result["interest_rate"] = var_generator(
+        result, ["technology", "region", "year"], factor=0.1
+    )
 
-    result["interest_rate"] = var("technology", "region", "year", factor=0.1)
-
+    # Set commodity usage
     result["comm_usage"] = "commodity", CommodityUsage.from_technologies(result).values
     result = result.set_coords("comm_usage").drop_vars("comm_type")
 
@@ -297,54 +386,88 @@ def technologies(coords) -> Dataset:
 
 
 @fixture
-def agent_market(coords, timeslice) -> Dataset:
-    from numpy.random import rand
+def agent_market(coords: Mapping, timeslice: Dataset) -> Dataset:
+    """Generate market data for agent testing.
 
+    Args:
+        coords: Standard coordinate mapping
+        timeslice: Timeslice dataset
+
+    Returns:
+        Dataset with market data for agents
+    """
     result = Dataset(coords=timeslice.coords)
     result["commodity"] = "commodity", coords["commodity"]
     result["region"] = "region", coords["region"]
     result["technology"] = "technology", coords["technology"]
     result["year"] = "year", coords["year"]
 
-    def var(*dims, factor=100.0):
-        shape = tuple(len(result[u]) for u in dims)
-        return dims, (rand(*shape) * factor).astype(type(factor))
-
-    result["capacity"] = var("technology", "region", "year")
-    result["supply"] = var("commodity", "region", "timeslice", "year")
-    result["consumption"] = var("commodity", "region", "timeslice", "year")
-    result["prices"] = var("commodity", "region", "year", "timeslice")
+    # Generate market variables
+    result["capacity"] = var_generator(result, ["technology", "region", "year"])
+    result["supply"] = var_generator(
+        result, ["commodity", "region", "timeslice", "year"]
+    )
+    result["consumption"] = var_generator(
+        result, ["commodity", "region", "timeslice", "year"]
+    )
+    result["prices"] = var_generator(
+        result, ["commodity", "region", "year", "timeslice"]
+    )
 
     return result
 
 
 @fixture
-def market(coords, timeslice) -> Dataset:
-    from numpy.random import rand
+def market(coords: Mapping, timeslice: Dataset) -> Dataset:
+    """Generate market data for testing.
 
+    Args:
+        coords: Standard coordinate mapping
+        timeslice: Timeslice dataset
+
+    Returns:
+        Dataset with market data
+    """
     result = Dataset(coords=timeslice.coords)
     result["commodity"] = "commodity", coords["commodity"]
     result["region"] = "region", coords["region"]
     result["year"] = "year", coords["year"]
 
-    def var(*dims, factor=100.0):
-        shape = tuple(len(result[u]) for u in dims)
-        return dims, (rand(*shape) * factor).astype(type(factor))
-
-    result["consumption"] = var("commodity", "region", "year", "timeslice")
-    result["supply"] = var("commodity", "region", "year", "timeslice")
-    result["prices"] = var("commodity", "region", "year", "timeslice")
+    # Generate market variables
+    result["consumption"] = var_generator(
+        result, ["commodity", "region", "year", "timeslice"]
+    )
+    result["supply"] = var_generator(
+        result, ["commodity", "region", "year", "timeslice"]
+    )
+    result["prices"] = var_generator(
+        result, ["commodity", "region", "year", "timeslice"]
+    )
 
     return result
 
 
-def create_agent(agent_args, technologies, stock, agent_type="retrofit") -> Agent:
-    from numpy.random import choice
+def create_agent(
+    agent_args: Mapping,
+    technologies: Dataset,
+    stock: Dataset,
+    agent_type: str = "retrofit",
+) -> Agent:
+    """Create an agent for testing.
 
-    from muse.agents.factories import create_agent
+    Args:
+        agent_args: Arguments for agent creation
+        technologies: Technology characteristics
+        stock: Stock data
+        agent_type: Type of agent to create ("retrofit" or "newcapa")
+
+    Returns:
+        Created agent instance
+    """
+    from muse.agents.factories import create_agent as factory_create_agent
 
     region = agent_args["region"]
-    agent = create_agent(
+    agent = factory_create_agent(
         agent_type=agent_type,
         technologies=technologies.sel(region=region),
         capacity=stock.where(stock.region == region, drop=True).assign_coords(
@@ -364,37 +487,71 @@ def create_agent(agent_args, technologies, stock, agent_type="retrofit") -> Agen
             list(technology_names), len(technology_names) // 2, replace=False
         )
         agent.assets = agent.assets.where(agent.assets.technology.isin(techs))
+
     return agent
 
 
 @fixture
-def newcapa_agent(agent_args, technologies, stock) -> Agent:
+def newcapa_agent(agent_args: Mapping, technologies: Dataset, stock: Dataset) -> Agent:
+    """Create a new capacity agent for testing.
+
+    Args:
+        agent_args: Arguments for agent creation
+        technologies: Technology characteristics
+        stock: Stock data
+
+    Returns:
+        New capacity agent instance
+    """
     return create_agent(agent_args, technologies, stock.capacity, "newcapa")
 
 
 @fixture
-def retro_agent(agent_args, technologies, stock) -> Agent:
+def retro_agent(agent_args: Mapping, technologies: Dataset, stock: Dataset) -> Agent:
+    """Create a retrofit agent for testing.
+
+    Args:
+        agent_args: Arguments for agent creation
+        technologies: Technology characteristics
+        stock: Stock data
+
+    Returns:
+        Retrofit agent instance
+    """
     return create_agent(agent_args, technologies, stock.capacity, "retrofit")
 
 
 @fixture
-def stock(coords, technologies) -> Dataset:
+def stock(coords: Mapping, technologies: Dataset) -> Dataset:
+    """Generate stock data for testing.
+
+    Args:
+        coords: Standard coordinate mapping
+        technologies: Technology characteristics
+
+    Returns:
+        Dataset with stock data
+    """
     return _stock(coords, technologies)
 
 
-def _stock(
-    coords,
-    technologies,
-) -> Dataset:
+def _stock(coords: Mapping, technologies: Dataset) -> Dataset:
+    """Internal function to generate stock data.
+
+    Args:
+        coords: Standard coordinate mapping
+        technologies: Technology characteristics
+
+    Returns:
+        Dataset with stock data
+    """
     from numpy import cumprod, stack
-    from numpy.random import choice, rand
-    from xarray import Dataset
 
     from muse.utilities import broadcast_over_assets
 
     n_assets = 10
 
-    # Create assets
+    # Create asset coordinates
     asset_coords = {
         "technology": ("asset", choice(coords["technology"], n_assets, replace=True)),
         "region": ("asset", choice(coords["region"], n_assets, replace=True)),
@@ -402,7 +559,7 @@ def _stock(
     }
     assets = Dataset(coords=asset_coords)
 
-    # Create random capacity data
+    # Generate random capacity data
     capacity_limits = broadcast_over_assets(technologies.total_capacity_limit, assets)
     factors = cumprod(rand(n_assets, len(coords["year"])) / 4 + 0.75, axis=1).clip(
         max=1
@@ -412,7 +569,7 @@ def _stock(
         axis=1,
     )
 
-    # Create capacity dataset
+    # Create final dataset
     result = assets.copy()
     result["year"] = "year", coords["year"]
     result["capacity"] = ("asset", "year"), capacity
@@ -420,10 +577,16 @@ def _stock(
 
 
 @fixture
-def demand_share(coords, timeslice):
-    """Example demand share, as would be computed by an agent."""
-    from numpy.random import choice, rand
+def demand_share(coords: Mapping, timeslice: Dataset) -> DataArray:
+    """Generate demand share data for testing.
 
+    Args:
+        coords: Standard coordinate mapping
+        timeslice: Timeslice dataset
+
+    Returns:
+        DataArray with demand share data
+    """
     n_assets = 5
     axes = {
         "commodity": coords["commodity"],
@@ -431,24 +594,26 @@ def demand_share(coords, timeslice):
         "technology": (["asset"], choice(coords["technology"], n_assets, replace=True)),
         "region": (["asset"], choice(coords["region"], n_assets, replace=True)),
     }
-    shape = (
-        len(axes["commodity"]),
-        len(axes["timeslice"]),
-        n_assets,
-    )
-    result = DataArray(
+    shape = (len(axes["commodity"]), len(axes["timeslice"]), n_assets)
+
+    return DataArray(
         rand(*shape),
         dims=["commodity", "timeslice", "asset"],
         coords=axes,
         name="demand_share",
     )
-    return result
 
 
 def create_fake_capacity(n: int, technologies: Dataset) -> DataArray:
-    from numpy.random import choice, rand
-    from xarray import Dataset
+    """Create fake capacity data for testing.
 
+    Args:
+        n: Number of assets to create
+        technologies: Technology characteristics
+
+    Returns:
+        DataArray with fake capacity data
+    """
     years = technologies.year
     techs = choice(technologies.technology.values, 5)
     regions = choice(technologies.region.values, 5)
@@ -465,21 +630,35 @@ def create_fake_capacity(n: int, technologies: Dataset) -> DataArray:
 
 @fixture
 def capacity(technologies: Dataset) -> DataArray:
+    """Generate capacity data for testing.
+
+    Args:
+        technologies: Technology characteristics
+
+    Returns:
+        DataArray with capacity data
+    """
     return create_fake_capacity(20, technologies)
 
 
 @fixture
 def settings(tmpdir) -> dict:
-    """Creates a dummy settings dictionary out of the default settings."""
+    """Generate settings for testing.
+
+    Args:
+        tmpdir: Temporary directory path
+
+    Returns:
+        Dictionary with test settings
+    """
     import toml
 
     from muse.readers import DEFAULT_SETTINGS_PATH
     from muse.readers.toml import format_paths
 
-    def drop_optionals(settings):
-        from copy import copy
-
-        for k, v in copy(settings).items():
+    def drop_optionals(settings: dict) -> None:
+        """Remove optional settings from dictionary."""
+        for k, v in list(settings.items()):
             if v == "OPTIONAL":
                 settings.pop(k)
             elif isinstance(v, Mapping):
@@ -489,6 +668,7 @@ def settings(tmpdir) -> dict:
     drop_optionals(settings)
     out = format_paths(settings, cwd=tmpdir, path=tmpdir, muse_sectors=tmpdir)
 
+    # Add required settings
     required = {
         "time_framework": [2010, 2015, 2020],
         "regions": ["MEX"],
@@ -499,11 +679,11 @@ def settings(tmpdir) -> dict:
     }
     out.update(required)
 
+    # Add required carbon budget settings
     carbon_budget_required = {
         "budget": [420000, 413000, 403000],
         "commodities": ["CO2f", "CO2r", "CH4", "N2O"],
     }
-
     out["carbon_budget_control"].update(carbon_budget_required)
 
     return out
@@ -511,16 +691,19 @@ def settings(tmpdir) -> dict:
 
 @fixture(autouse=True)
 def warnings_as_errors(request):
-    from warnings import filterwarnings, simplefilter
+    """Configure warnings to be treated as errors during testing.
 
-    # disable fixture for some tests
+    Args:
+        request: Pytest request object
+    """
+    # Disable fixture for specific tests
     if (
         request.module.__name__ == "test_outputs"
         and request.node.name == "test_save_with_fullpath_to_excel_with_sink"
     ):
         return
 
-    # Fail test if the following warnings are raised
+    # Configure warning filters
     simplefilter("error", FutureWarning)
     simplefilter("error", DeprecationWarning)
     simplefilter("error", PendingDeprecationWarning)
@@ -538,19 +721,23 @@ def warnings_as_errors(request):
 
 @fixture
 def save_registries():
-    from contextlib import contextmanager
+    """Save and restore registry state during tests."""
 
     @contextmanager
     def saveme(module_name: str, registry_name: str):
-        from copy import deepcopy
-        from importlib import import_module
+        """Save and restore a specific registry.
 
+        Args:
+            module_name: Name of module containing registry
+            registry_name: Name of registry to save/restore
+        """
         module = import_module(module_name)
         old = getattr(module, registry_name)
         setattr(module, registry_name, deepcopy(old))
         yield
         setattr(module, registry_name, deepcopy(old))
 
+    # List of registries to save/restore
     iterators = [
         saveme("muse.sectors", "SECTORS_REGISTERED"),
         saveme("muse.objectives", "OBJECTIVES"),
@@ -582,6 +769,14 @@ def save_registries():
 
 @fixture
 def rng(request):
+    """Create a random number generator for testing.
+
+    Args:
+        request: Pytest request object
+
+    Returns:
+        Random number generator instance
+    """
     from numpy.random import default_rng
 
     return default_rng(getattr(request.config.option, "randomly_seed", None))
