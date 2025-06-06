@@ -13,7 +13,7 @@ from warnings import filterwarnings, simplefilter
 
 import numpy as np
 import pandas as pd
-from numpy.random import choice, rand, randint
+from numpy.random import choice, default_rng, rand, randint
 from pytest import fixture
 from xarray import DataArray, Dataset
 
@@ -84,8 +84,9 @@ def patch_broadcast_compat_data():
 @fixture(autouse=True)
 def random():
     """Set random seed for all tests to make them reproducible."""
-    rand.seed(RANDOM_SEED)
+    rng = default_rng(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
+    return rng
 
 
 def compare_df(
