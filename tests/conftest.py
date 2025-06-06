@@ -20,7 +20,7 @@ from xarray import DataArray, Dataset
 from muse.__main__ import patched_broadcast_compat_data
 from muse.agents import Agent
 from muse.commodities import CommodityUsage
-from muse.timeslices import TIMESLICE, setup_module
+from muse.timeslices import TIMESLICE, read_timeslices, setup_module
 
 # Constants
 RANDOM_SEED = 123
@@ -192,11 +192,15 @@ def compare_dirs() -> Callable:
 def default_timeslice_globals():
     """Set up default timeslice configuration."""
     setup_module(DEFAULT_TIMESLICES)
+    return DEFAULT_TIMESLICES
 
 
 @fixture
-def timeslice(default_timeslice_globals) -> Dataset:
+def timeslice(default_timeslice_globals) -> DataArray:
     """Get the default timeslice dataset."""
+    if TIMESLICE is None:
+        # If TIMESLICE is not set, create it from the default timeslices
+        return read_timeslices(default_timeslice_globals)
     return TIMESLICE
 
 
@@ -387,7 +391,7 @@ def technologies(coords: Mapping) -> Dataset:
 
 
 @fixture
-def agent_market(coords: Mapping, timeslice: Dataset) -> Dataset:
+def agent_market(coords: Mapping, timeslice: DataArray) -> Dataset:
     """Generate market data for agent testing.
 
     Args:
@@ -419,7 +423,7 @@ def agent_market(coords: Mapping, timeslice: Dataset) -> Dataset:
 
 
 @fixture
-def market(coords: Mapping, timeslice: Dataset) -> Dataset:
+def market(coords: Mapping, timeslice: DataArray) -> Dataset:
     """Generate market data for testing.
 
     Args:
@@ -578,7 +582,7 @@ def _stock(coords: Mapping, technologies: Dataset) -> Dataset:
 
 
 @fixture
-def demand_share(coords: Mapping, timeslice: Dataset) -> DataArray:
+def demand_share(coords: Mapping, timeslice: DataArray) -> DataArray:
     """Generate demand share data for testing.
 
     Args:
