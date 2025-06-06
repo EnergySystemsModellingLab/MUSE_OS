@@ -20,13 +20,10 @@ from xarray import DataArray, Dataset
 from muse.__main__ import patched_broadcast_compat_data
 from muse.agents import Agent
 from muse.commodities import CommodityUsage
-from muse.timeslices import TIMESLICE, read_timeslices, setup_module
+from muse.timeslices import setup_module
 
 # Constants
 RANDOM_SEED = 123
-DEFAULT_FACTOR = 100.0
-DEFAULT_TECH_TYPES = ["solid", "liquid", "solid", "liquid"]
-DEFAULT_FUELS = ["person", "person", "oil", "person"]
 
 DEFAULT_TIMESLICES = """
 [timeslices]
@@ -74,7 +71,6 @@ def logger():
 
 @fixture(autouse=True)
 def patch_broadcast_compat_data():
-    """Patch broadcast compatibility data."""
     with patch(
         "xarray.core.variable._broadcast_compat_data", patched_broadcast_compat_data
     ):
@@ -192,15 +188,13 @@ def compare_dirs() -> Callable:
 def default_timeslice_globals():
     """Set up default timeslice configuration."""
     setup_module(DEFAULT_TIMESLICES)
-    return DEFAULT_TIMESLICES
 
 
 @fixture
 def timeslice(default_timeslice_globals) -> DataArray:
     """Get the default timeslice dataset."""
-    if TIMESLICE is None:
-        # If TIMESLICE is not set, create it from the default timeslices
-        return read_timeslices(default_timeslice_globals)
+    from muse.timeslices import TIMESLICE
+
     return TIMESLICE
 
 
@@ -259,9 +253,7 @@ def agent_args(coords: Mapping) -> Mapping:
     }
 
 
-def var_generator(
-    result: Dataset, dims: list[str], factor: float = DEFAULT_FACTOR
-) -> tuple:
+def var_generator(result: Dataset, dims: list[str], factor: float = 100.0) -> tuple:
     """Generate random variables for a dataset.
 
     Args:
@@ -782,6 +774,4 @@ def rng(request):
     Returns:
         Random number generator instance
     """
-    from numpy.random import default_rng
-
     return default_rng(getattr(request.config.option, "randomly_seed", None))
