@@ -22,7 +22,6 @@ from muse.agents import Agent
 from muse.commodities import CommodityUsage
 from muse.timeslices import setup_module
 
-# Constants
 RANDOM_SEED = 123
 
 DEFAULT_TIMESLICES = """
@@ -207,6 +206,8 @@ def coords() -> Mapping:
     """
     return {
         "technology": ["burger_flipper", "soda_shaker", "deep_frier", "salad_arranger"],
+        "tech_type": ["solid", "liquid", "solid", "liquid"],
+        "fuel": ["person", "person", "oil", "person"],
         "region": ["ASEAN", "USA"],
         "year": [2010, 2030],
         "commodity": [
@@ -279,16 +280,14 @@ def technologies(coords: Mapping) -> Dataset:
         Dataset with technology characteristics
     """
     result = Dataset(coords=coords)
-
-    result["comm_type"] = ("commodity", coords["comm_type"])
-    result["tech_type"] = "technology", ["solid", "liquid", "solid", "liquid"]
-
+    result["comm_type"] = "commodity", coords["comm_type"]
+    result["tech_type"] = "technology", coords["tech_type"]
+    result["fuel"] = "technology", coords["fuel"]
     result = result.set_coords(("comm_type", "tech_type"))
 
-    # Generate random variables
+    # We have a single agent with a share of 1 for all technologies
     result["agent_share"] = var_generator(result, ["technology", "region", "year"])
     result["agent_share"] /= np.sum(result.agent_share)
-    result["agent_share_zero"] = result["agent_share"] * 0
 
     # first create a mask so each tech will have consistent inputs/outputs across years
     # and regions
@@ -638,54 +637,6 @@ def capacity(technologies: Dataset) -> DataArray:
     return create_fake_capacity(20, technologies)
 
 
-@fixture
-def settings(tmpdir) -> dict:
-    """Generate settings for testing.
-
-    Args:
-        tmpdir: Temporary directory path
-
-    Returns:
-        Dictionary with test settings
-    """
-    import toml
-
-    from muse.readers import DEFAULT_SETTINGS_PATH
-    from muse.readers.toml import format_paths
-
-    def drop_optionals(settings: dict) -> None:
-        """Remove optional settings from dictionary."""
-        for k, v in list(settings.items()):
-            if v == "OPTIONAL":
-                settings.pop(k)
-            elif isinstance(v, Mapping):
-                drop_optionals(v)
-
-    settings = toml.load(DEFAULT_SETTINGS_PATH)
-    drop_optionals(settings)
-    out = format_paths(settings, cwd=tmpdir, path=tmpdir, muse_sectors=tmpdir)
-
-    # Add required settings
-    required = {
-        "time_framework": [2010, 2015, 2020],
-        "regions": ["MEX"],
-        "equilibrium": False,
-        "maximum_iterations": 3,
-        "tolerance": 0.1,
-        "interpolation_mode": "linear",
-    }
-    out.update(required)
-
-    # Add required carbon budget settings
-    carbon_budget_required = {
-        "budget": [420000, 413000, 403000],
-        "commodities": ["CO2f", "CO2r", "CH4", "N2O"],
-    }
-    out["carbon_budget_control"].update(carbon_budget_required)
-
-    return out
-
-
 @fixture(autouse=True)
 def warnings_as_errors(request):
     """Configure warnings to be treated as errors during testing.
@@ -762,16 +713,3 @@ def save_registries():
     map(next, iterators)
     yield
     map(next, iterators)
-
-
-@fixture
-def rng(request):
-    """Create a random number generator for testing.
-
-    Args:
-        request: Pytest request object
-
-    Returns:
-        Random number generator instance
-    """
-    return default_rng(getattr(request.config.option, "randomly_seed", None))

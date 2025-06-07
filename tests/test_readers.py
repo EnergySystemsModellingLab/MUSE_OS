@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from itertools import chain, permutations
 from pathlib import Path
 from unittest.mock import patch
@@ -14,6 +15,35 @@ TIMESLICES = [
     ("all-year", "all-week", hour)
     for hour in ["night", "morning", "afternoon", "early-peak", "late-peak", "evening"]
 ]
+
+
+@fixture
+def settings(tmpdir) -> dict:
+    """Generate settings for testing.
+
+    Args:
+        tmpdir: Temporary directory path
+
+    Returns:
+        Dictionary with test settings
+    """
+    import toml
+
+    from muse.readers import DEFAULT_SETTINGS_PATH
+    from muse.readers.toml import format_paths
+
+    def drop_optionals(settings: dict) -> None:
+        """Remove optional settings from dictionary."""
+        for k, v in list(settings.items()):
+            if v == "OPTIONAL":
+                settings.pop(k)
+            elif isinstance(v, Mapping):
+                drop_optionals(v)
+
+    settings = toml.load(DEFAULT_SETTINGS_PATH)
+    drop_optionals(settings)
+    settings = format_paths(settings, cwd=tmpdir, path=tmpdir, muse_sectors=tmpdir)
+    return settings
 
 
 @fixture

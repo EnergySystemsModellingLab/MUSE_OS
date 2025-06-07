@@ -146,7 +146,7 @@ def test_similar_fuels(retro_agent, search_space, technologies):
     assert (actual == expected).all()
 
 
-def test_currently_existing(retro_agent, search_space, technologies, agent_market, rng):
+def test_currently_existing(retro_agent, search_space, technologies, agent_market):
     # Test with zero capacity
     agent_market.capacity[:] = 0
     actual = currently_existing_tech(
@@ -165,9 +165,9 @@ def test_currently_existing(retro_agent, search_space, technologies, agent_marke
     assert actual.sel(replacement=in_market).all()
 
     # Test with partial capacity
-    techs = rng.choice(
+    techs = np.random.choice(
         list(set(agent_market.technology.values)),
-        1 + rng.choice(range(len(set(agent_market.technology.values)))),
+        1 + np.random.choice(range(len(set(agent_market.technology.values)))),
         replace=False,
     )
     agent_market.capacity[:] = 0
@@ -228,13 +228,13 @@ def test_init_from_tech(demand_share, technologies, agent_market):
     assert not space.any()
 
 
-def test_init_from_asset(technologies, rng):
+def test_init_from_asset(technologies):
     # Create test data
-    technology = rng.choice(technologies.technology, 5)
-    installed = rng.choice((2020, 2025), len(technology))
+    technology = np.random.choice(technologies.technology, 5)
+    installed = np.random.choice((2020, 2025), len(technology))
     year = np.arange(2020, 2040, 5)
     capacity = xr.DataArray(
-        rng.choice([0, 0, 1, 10], (len(technology), len(year))),
+        np.random.choice([0, 0, 1, 10], (len(technology), len(year))),
         coords={
             "technology": ("asset", technology),
             "installed": ("asset", installed),
@@ -253,7 +253,7 @@ def test_init_from_asset(technologies, rng):
     assert set(space.asset.asset.values) == set(capacity.technology.values)
 
 
-def test_init_from_asset_no_assets(technologies, rng):
+def test_init_from_asset_no_assets(technologies):
     agent = namedtuple("DummyAgent", ["assets"])(
         xr.Dataset(dict(capacity=xr.DataArray(0)))
     )
