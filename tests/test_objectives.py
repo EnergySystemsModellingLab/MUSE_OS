@@ -5,7 +5,7 @@ YEAR = 2030
 
 
 @fixture
-def objective_data(technologies, market, demand_share):
+def objective_inputs(technologies, market, demand_share):
     """Creates the complete dataset needed for objective calculations.
 
     The transformation follows these steps:

@@ -26,7 +26,7 @@ YEAR = 2030
 
 
 @fixture
-def cost_data(technologies, market, demand_share):
+def cost_inputs(technologies, market, demand_share):
     """Creates the complete dataset needed for cost calculations.
 
     The transformation follows these steps:
