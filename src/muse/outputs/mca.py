@@ -423,6 +423,7 @@ def sector_lcoe(
     sector: AbstractSector, market: xr.Dataset, year: int, **kwargs
 ) -> pd.DataFrame:
     """Levelized cost of energy () of technologies over their lifetime."""
+    from muse.commodities import is_enduse
     from muse.costs import levelized_cost_of_energy as LCOE
     from muse.quantities import capacity_to_service_demand, consumption
 
@@ -439,17 +440,18 @@ def sector_lcoe(
         for agent in agents:
             agent_market = market.sel(year=agent.year)
             agent_market["consumption"] = agent_market.consumption * agent.quantity
-            enduses = [
-                i.strip()
-                for entry in technologies.enduse.values
-                for i in entry.split(",")
+
+            # Filter commodities based on end-use status
+            enduse_mask = is_enduse(technologies.comm_usage)
+            commodities = agent_market.commodity.values
+            included_commodities = commodities[
+                np.isin(commodities, enduse_mask.commodity[enduse_mask])
             ]
-            # temporary hack to allow comma separated list in input file
-            included = [i for i in agent_market["commodity"].values if i in enduses]
-            excluded = [
-                i for i in agent_market["commodity"].values if i not in included
+            excluded_commodities = commodities[
+                ~np.isin(commodities, enduse_mask.commodity[enduse_mask])
             ]
-            agent_market.loc[dict(commodity=excluded)] = 0
+
+            agent_market.loc[dict(commodity=excluded_commodities)] = 0
             agent_market["prices"] = agent.filter_input(
                 market["prices"], year=agent.year
             )
@@ -459,7 +461,7 @@ def sector_lcoe(
                 year=agent.year,
             )
             prices = agent_market["prices"].sel(commodity=techs.commodity)
-            demand = agent_market.consumption.sel(commodity=included)
+            demand = agent_market.consumption.sel(commodity=included_commodities)
             capacity = agent.filter_input(capacity_to_service_demand(demand, techs))
             production = (
                 broadcast_timeslice(capacity)
@@ -510,6 +512,7 @@ def sector_eac(
     sector: AbstractSector, market: xr.Dataset, year: int, **kwargs
 ) -> pd.DataFrame:
     """Net Present Value of technologies over their lifetime."""
+    from muse.commodities import is_enduse
     from muse.costs import equivalent_annual_cost as EAC
     from muse.quantities import capacity_to_service_demand, consumption
 
@@ -526,17 +529,18 @@ def sector_eac(
         for agent in agents:
             agent_market = market.sel(year=agent.year)
             agent_market["consumption"] = agent_market.consumption * agent.quantity
-            enduses = [
-                i.strip()
-                for entry in technologies.enduse.values
-                for i in entry.split(",")
+
+            # Filter commodities based on end-use status
+            enduse_mask = is_enduse(technologies.comm_usage)
+            commodities = agent_market.commodity.values
+            included_commodities = commodities[
+                np.isin(commodities, enduse_mask.commodity[enduse_mask])
             ]
-            # temporary hack to allow comma separated list in input file
-            included = [i for i in agent_market["commodity"].values if i in enduses]
-            excluded = [
-                i for i in agent_market["commodity"].values if i not in included
+            excluded_commodities = commodities[
+                ~np.isin(commodities, enduse_mask.commodity[enduse_mask])
             ]
-            agent_market.loc[dict(commodity=excluded)] = 0
+
+            agent_market.loc[dict(commodity=excluded_commodities)] = 0
             agent_market["prices"] = agent.filter_input(
                 market["prices"], year=agent.year
             )
@@ -546,7 +550,7 @@ def sector_eac(
                 year=agent.year,
             )
             prices = agent_market["prices"].sel(commodity=techs.commodity)
-            demand = agent_market.consumption.sel(commodity=included)
+            demand = agent_market.consumption.sel(commodity=included_commodities)
             capacity = agent.filter_input(capacity_to_service_demand(demand, techs))
             production = (
                 broadcast_timeslice(capacity)
