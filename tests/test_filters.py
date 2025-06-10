@@ -1,8 +1,33 @@
+from collections import namedtuple
+
 import numpy as np
 import xarray as xr
 from pytest import fixture, mark
 
-from muse.filters import factory, register_filter, register_initializer
+from muse.commodities import is_enduse, is_fuel
+from muse.filters import (
+    currently_existing_tech,
+    factory,
+    initialize_from_assets,
+    initialize_from_technologies,
+    maturity,
+    register_filter,
+    register_initializer,
+    same_enduse,
+    same_fuels,
+    similar_technology,
+)
+
+
+# Common test utilities
+def assert_tech_comparison(actual, search_space, tech_attr, technologies):
+    """Helper for technology comparison tests."""
+    assert sorted(actual.dims) == sorted(search_space.dims)
+    attr_values = getattr(technologies, tech_attr)
+    for tech in actual.replacement:
+        for asset in actual.asset:
+            expected = attr_values.loc[tech] == attr_values.loc[asset]
+            assert expected == actual.sel(replacement=tech, asset=asset)
 
 
 @fixture
@@ -20,7 +45,6 @@ def search_space(retro_agent, technologies):
 
 @fixture
 def technologies(technologies):
-    # Filters must take technology data for a single year
     return technologies.sel(year=2010)
 
 
@@ -51,9 +75,7 @@ def test_filtering():
 
     @register_filter
     def first(retro_agent, search_space, switch=True, data=None):
-        if switch:
-            return search_space[2:]
-        return search_space[:2]
+        return search_space[2:] if switch else search_space[:2]
 
     @register_filter
     def second(retro_agent, search_space, switch=True, data=None):
@@ -62,7 +84,6 @@ def test_filtering():
     sp = start(None, None)
     assert factory(["start", "first"])(None, sp) == sp[2:]
     assert factory(["start", "first"])(None, sp, switch=False) == sp[:2]
-
     assert factory(["start", "second"])(None, sp, data=(1, 3, 5)) == [1, 3]
     assert factory(["start", "first", "second"])(None, sp, data=(1, 3, 5)) == [3]
     assert factory(["start", "first", "second"])(
@@ -71,9 +92,6 @@ def test_filtering():
 
 
 def test_same_enduse(retro_agent, technologies, search_space):
-    from muse.commodities import is_enduse
-    from muse.filters import same_enduse
-
     result = same_enduse(retro_agent, search_space, technologies=technologies)
     enduses = is_enduse(technologies.comm_usage)
     finputs = technologies.sel(region=retro_agent.region, commodity=enduses)
@@ -81,11 +99,17 @@ def test_same_enduse(retro_agent, technologies, search_space):
 
     expected = search_space.copy()
     for asset in result.asset:
-        asset_enduses = finputs.sel(technology=asset)
-        asset_enduses = set(asset_enduses.commodity.loc[asset_enduses].values)
+        asset_enduses = set(
+            finputs.sel(technology=asset)
+            .commodity.loc[finputs.sel(technology=asset)]
+            .values
+        )
         for tech in result.replacement:
-            tech_enduses = finputs.sel(technology=tech)
-            tech_enduses = set(tech_enduses.commodity.loc[tech_enduses].values)
+            tech_enduses = set(
+                finputs.sel(technology=tech)
+                .commodity.loc[finputs.sel(technology=tech)]
+                .values
+            )
             expected.loc[{"replacement": tech, "asset": asset}] = (
                 asset_enduses.issubset(tech_enduses)
             )
@@ -95,34 +119,35 @@ def test_same_enduse(retro_agent, technologies, search_space):
 
 
 def test_similar_tech(retro_agent, search_space, technologies):
-    from muse.filters import similar_technology
-
     actual = similar_technology(retro_agent, search_space, technologies=technologies)
-    assert sorted(actual.dims) == sorted(search_space.dims)
-
-    tech_type = technologies.tech_type
-    for tech in actual.replacement:
-        for asset in actual.asset:
-            expected = tech_type.loc[tech] == tech_type.loc[asset]
-            assert expected == actual.sel(replacement=tech, asset=asset)
+    assert_tech_comparison(actual, search_space, "tech_type", technologies)
 
 
 def test_similar_fuels(retro_agent, search_space, technologies):
-    from muse.filters import same_fuels
-
     actual = same_fuels(retro_agent, search_space, technologies=technologies)
     assert sorted(actual.dims) == sorted(search_space.dims)
 
-    fuel_type = technologies.fuel
-    for tech in actual.replacement:
-        for asset in actual.asset:
-            expected = fuel_type.loc[tech] == fuel_type.loc[asset]
-            assert expected == actual.sel(replacement=tech, asset=asset)
+    # Get the fixed inputs that are fuels
+    fuels = is_fuel(technologies.comm_usage)
+    finputs = technologies.sel(region=retro_agent.region, commodity=fuels)
+    finputs = finputs.fixed_inputs > 0
+
+    expected = search_space.copy()
+    for asset in actual.asset:
+        asset_fuels = finputs.sel(technology=asset)
+        asset_fuels = set(asset_fuels.commodity.loc[asset_fuels].values)
+        for tech in actual.replacement:
+            tech_fuels = finputs.sel(technology=tech)
+            tech_fuels = set(tech_fuels.commodity.loc[tech_fuels].values)
+            expected.loc[{"replacement": tech, "asset": asset}] = (
+                asset_fuels == tech_fuels
+            )
+
+    assert (actual == expected).all()
 
 
 def test_currently_existing(retro_agent, search_space, technologies, agent_market, rng):
-    from muse.filters import currently_existing_tech
-
+    # Test with zero capacity
     agent_market.capacity[:] = 0
     actual = currently_existing_tech(
         retro_agent, search_space, technologies=technologies, market=agent_market
@@ -130,15 +155,16 @@ def test_currently_existing(retro_agent, search_space, technologies, agent_marke
     assert sorted(actual.dims) == sorted(search_space.dims)
     assert not actual.any()
 
+    # Test with full capacity
     agent_market.capacity[:] = 1
     actual = currently_existing_tech(
         retro_agent, search_space, technologies=technologies, market=agent_market
     )
-    assert sorted(actual.dims) == sorted(search_space.dims)
     in_market = search_space.replacement.isin(agent_market.technology)
     assert not actual.sel(replacement=~in_market).any()
     assert actual.sel(replacement=in_market).all()
 
+    # Test with partial capacity
     techs = rng.choice(
         list(set(agent_market.technology.values)),
         1 + rng.choice(range(len(set(agent_market.technology.values)))),
@@ -149,7 +175,7 @@ def test_currently_existing(retro_agent, search_space, technologies, agent_marke
     actual = currently_existing_tech(
         retro_agent, search_space, technologies=technologies, market=agent_market
     )
-    assert sorted(actual.dims) == sorted(search_space.dims)
+
     assert not actual.sel(replacement=~in_market).any()
     current_cap = agent_market.capacity.sel(
         year=retro_agent.year, region=retro_agent.region
@@ -160,58 +186,50 @@ def test_currently_existing(retro_agent, search_space, technologies, agent_marke
 
 @mark.xfail
 def test_maturity(retro_agent, search_space, technologies, agent_market):
-    from muse.commodities import is_enduse
-    from muse.filters import maturity
-
     enduses = is_enduse(technologies.comm_usage)
     outputs = technologies.fixed_outputs.sel(commodity=enduses, region="USA", year=2010)
     capacity = agent_market.capacity.sel(year=2010, region="USA")
     production = (outputs * capacity).sum("technology")
 
-    # nothing should be true
-    retro_agent.maturity_threshold = 1.1 * (capacity / production).max()
-    actual = maturity(retro_agent, search_space, technologies, agent_market)
-    assert sorted(actual.dims) == sorted(search_space.dims)
-    assert (not actual).all()
+    def check_maturity(threshold_factor, expected_result=None):
+        retro_agent.maturity_threshold = (
+            threshold_factor * (capacity / production).max()
+        )
+        actual = maturity(retro_agent, search_space, technologies, agent_market)
+        assert sorted(actual.dims) == sorted(search_space.dims)
+        if expected_result is not None:
+            assert (actual == expected_result).all()
+        return actual
 
-    # some should be true - do it with a fully on search space for  simplicity
-    retro_agent.maturity_threshold = 0.8 * (capacity / production).max()
-    actual = maturity(
-        search_space == retro_agent, search_space, technologies, agent_market
-    )
-    assert sorted(actual.dims) == sorted(search_space.dims)
-    assert actual.any()
-    # all should be true
-    retro_agent.maturity_threshold = 0.8 * (capacity / production).min()
-    actual = maturity(retro_agent, search_space, technologies, agent_market)
-    assert (actual == search_space).any()
+    # Test different threshold scenarios
+    assert not check_maturity(1.1).any()  # Nothing should be true
+    assert check_maturity(0.8).any()  # Some should be true
+    assert (
+        check_maturity(
+            0.8 * (capacity / production).min() / (capacity / production).max()
+        )
+        == search_space
+    ).any()
 
 
 def test_init_from_tech(demand_share, technologies, agent_market):
-    from collections import namedtuple
-
-    from muse.filters import initialize_from_technologies
-
     agent = namedtuple("DummyAgent", ["tolerance"])(tolerance=1e-8)
 
-    # All technologies produce demanded commodities
+    # Test with producing technologies
     space = initialize_from_technologies(agent, demand_share, technologies=technologies)
     assert set(space.dims) == {"asset", "replacement"}
     assert (space.asset.values == demand_share.asset.values).all()
     assert (space.replacement.values == technologies.technology.values).all()
     assert space.all()
 
-    # No technology produces demanded commodities
+    # Test with non-producing technologies
     technologies.fixed_outputs[:] = 0
     space = initialize_from_technologies(agent, demand_share, technologies=technologies)
     assert not space.any()
 
 
 def test_init_from_asset(technologies, rng):
-    from collections import namedtuple
-
-    from muse.filters import initialize_from_assets
-
+    # Create test data
     technology = rng.choice(technologies.technology, 5)
     installed = rng.choice((2020, 2025), len(technology))
     year = np.arange(2020, 2040, 5)
@@ -227,6 +245,7 @@ def test_init_from_asset(technologies, rng):
     )
     agent = namedtuple("DummyAgent", ["assets"])(xr.Dataset(dict(capacity=capacity)))
 
+    # Test with assets
     space = initialize_from_assets(agent, demand=None, technologies=technologies)
     assert set(space.dims) == {"asset", "replacement"}
     assert space.replacement.isin(technologies.technology).all()
@@ -235,14 +254,9 @@ def test_init_from_asset(technologies, rng):
 
 
 def test_init_from_asset_no_assets(technologies, rng):
-    from collections import namedtuple
-
-    from muse.filters import initialize_from_assets
-
     agent = namedtuple("DummyAgent", ["assets"])(
         xr.Dataset(dict(capacity=xr.DataArray(0)))
     )
-
     space = initialize_from_assets(agent, demand=None, technologies=technologies)
     assert set(space.dims) == {"replacement"}
     assert space.replacement.isin(technologies.technology).all()
