@@ -288,7 +288,7 @@ def scipy_match_demand(
 
     from scipy.optimize import linprog
 
-    from muse.constraints import ScipyAdapter
+    from muse.lp_adapter import ScipyAdapter
 
     assert "year" not in technologies.dims
 
@@ -296,8 +296,8 @@ def scipy_match_demand(
         costs = timeslice_max(costs)
 
     # Run scipy optimization with highs solver
-    adapter = ScipyAdapter.factory(
-        costs=costs,
+    adapter = ScipyAdapter.from_muse_data(
+        capacity_costs=costs,
         constraints=constraints,
         commodities=commodities,
         timeslice_level=timeslice_level,
