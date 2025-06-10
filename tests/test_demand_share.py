@@ -437,64 +437,35 @@ def test_unmet_forecast_demand(_technologies, timeslice, stock):
     """Test unmet forecast demand calculations.
 
     Tests three scenarios:
-    1. Fully met demand
-    2. Excess capacity
-    3. Insufficient capacity
+    1. Fully met demand - agents have exact capacity to meet demand
+    2. Excess capacity - agents have more capacity than needed
+    3. Insufficient capacity - agents have less capacity than needed
     """
-    from dataclasses import dataclass
-
     from muse.commodities import is_enduse
     from muse.demand_share import unmet_forecasted_demand
-    from muse.utilities import broadcast_over_assets
 
-    asia_stock = stock.where(stock.region == "ASEAN", drop=True)
-    usa_stock = stock.where(stock.region == "USA", drop=True)
+    # Setup market data
+    market, asia_stock, usa_stock = create_regional_market(_technologies, stock)
 
-    asia_market = _matching_market(
-        broadcast_over_assets(_technologies, asia_stock), asia_stock.capacity
-    )
-    usa_market = _matching_market(
-        broadcast_over_assets(_technologies, usa_stock), usa_stock.capacity
-    )
-    market = xr.concat((asia_market, usa_market), dim="region")
-
-    @dataclass
-    class Agent:
-        assets: xr.Dataset
-
-    # Test fully met demand
-    agents = [
-        Agent(0.3 * usa_stock),
-        Agent(0.7 * usa_stock),
-        Agent(asia_stock),
-    ]
+    # Test scenario 1: Fully met demand
+    agents = create_test_agents(usa_stock, asia_stock)
     result = unmet_forecasted_demand(agents, market.consumption, _technologies)
     assert set(result.dims) == set(market.consumption.dims) - {"year"}
     assert result.values == approx(0)
 
-    # Test excess capacity
-    agents = [
-        Agent(0.4 * usa_stock),
-        Agent(0.8 * usa_stock),
-        Agent(1.1 * asia_stock),
-    ]
-    result = unmet_forecasted_demand(
-        agents,
-        market.consumption,
-        _technologies,
-    )
+    # Test scenario 2: Excess capacity (120% capacity)
+    agents = create_test_agents(1.2 * usa_stock, 1.2 * asia_stock)
+    result = unmet_forecasted_demand(agents, market.consumption, _technologies)
     assert set(result.dims) == set(market.consumption.dims) - {"year"}
     assert result.values == approx(0)
 
-    # Test insufficient capacity
-    agents = [
-        Agent(0.5 * usa_stock),
-        Agent(0.5 * asia_stock),
-    ]
+    # Test scenario 3: Insufficient capacity (50% capacity)
+    agents = create_test_agents(0.5 * usa_stock, 0.5 * asia_stock)
     result = unmet_forecasted_demand(agents, market.consumption, _technologies)
-    comm_usage = _technologies.comm_usage.sel(commodity=market.commodity)
-    enduse = is_enduse(comm_usage)
-    assert (result.commodity == comm_usage.commodity).all()
+
+    # Verify results for insufficient capacity
+    enduse = is_enduse(_technologies.comm_usage.sel(commodity=market.commodity))
+    assert (result.commodity == market.commodity).all()
     assert result.sel(commodity=~enduse).values == approx(0)
     assert result.sel(commodity=enduse).values == approx(
         0.5 * market.consumption.sel(commodity=enduse, year=2030).values
