@@ -47,7 +47,12 @@ def model_data():
     technologies = residential.technologies.squeeze("region").sel(year=INVESTMENT_YEAR)
     assets = next(a.assets for a in residential.agents)
 
-    # Calculate capacity and market demand
+    # Add minimum service factor data to allow calculation of the constraint
+    technologies["minimum_service_factor"] = 0.1 * xr.ones_like(
+        technologies.technology, dtype=float
+    )
+
+    # Calculate capacity
     capacity = interpolate_capacity(
         reduce_assets(assets.capacity, coords=("technology", "region")),
         year=[CURRENT_YEAR, INVESTMENT_YEAR],
@@ -60,6 +65,7 @@ def model_data():
     ).sel(year=INVESTMENT_YEAR).groupby("technology").sum("asset").rename(
         technology="asset"
     )
+
     # Remove un-demanded commodities
     market_demand = market_demand.sel(
         commodity=(market_demand > 0).any(dim=["timeslice", "asset"])
@@ -80,12 +86,13 @@ def model_data():
 
 @fixture(params=["timeslice_as_list", "timeslice_as_multindex"])
 def constraints(request, model_data):
-    """Set of default constraints for testing."""
+    """Default set of constraints for testing."""
     constraints = {
         "max_production": max_production(**model_data),
         "demand": demand(**model_data),
         "max_capacity_expansion": max_capacity_expansion(**model_data),
         "demand_limiting_capacity": demand_limiting_capacity(**model_data),
+        "minimum_service": minimum_service(**model_data),
     }
 
     # Testing two different ways of handling timeslices
@@ -107,7 +114,7 @@ def _as_list(data: Union[xr.DataArray, xr.Dataset]) -> Union[xr.DataArray, xr.Da
 
 
 def test_model_data(model_data):
-    """Validating that the fixture data has appropriate dimensions."""
+    """Validating that the model data has appropriate dimensions."""
     assert set(model_data["technologies"].dims) == {"technology", "commodity"}
     assert set(model_data["search_space"].dims) == {"asset", "replacement"}
     assert set(model_data["capacity"].dims) == {"asset", "year"}
@@ -145,8 +152,14 @@ def test_constraints_dimensions(constraints):
     assert set(constraints["max_capacity_expansion"].production.dims) == set()
     assert set(constraints["max_capacity_expansion"].b.dims) == {"replacement"}
 
+    # Minimum service constraint
+    assert set(constraints["minimum_service"].capacity.dims) == max_prod_dims
+    assert set(constraints["minimum_service"].production.dims) == max_prod_dims
+    assert set(constraints["minimum_service"].b.dims) == max_prod_dims
+
 
 def test_max_capacity_expansion(constraints):
+    """Checking basic properties of the max capacity expansion constraint."""
     max_capacity_expansion = constraints["max_capacity_expansion"]
     assert (max_capacity_expansion.capacity == 1).all()
     assert max_capacity_expansion.production == 0
@@ -159,10 +172,12 @@ def test_max_capacity_expansion(constraints):
 
 
 def test_max_production(constraints):
+    """Checking basic properties of the max production constraint."""
     assert (constraints["max_production"].capacity <= 0).all()
 
 
 def test_demand_limiting_capacity(constraints):
+    """Checking basic properties of the demand limiting capacity constraint."""
     demand_limiting_capacity = constraints["demand_limiting_capacity"]
     max_production = constraints["max_production"]
     demand_constraint = constraints["demand"]
@@ -185,20 +200,8 @@ def test_demand_limiting_capacity(constraints):
     assert demand_limiting_capacity.b.values == approx(expected_b)
 
 
-def test_minimum_service(model_data):
-    # Test with no minimum service factor (default)
-    assert minimum_service(**model_data) is None
-
-    # Test with minimum service factor
-    technologies = model_data["technologies"].copy()
-    technologies["minimum_service_factor"] = 0.4 * xr.ones_like(
-        technologies.technology, dtype=float
-    )
-    min_service = minimum_service(**{**model_data, "technologies": technologies})
-    assert isinstance(min_service, xr.Dataset)
-
-
 def test_max_capacity_expansion_no_limits(model_data):
+    """Checking that the constraint is None when no limits are set."""
     technologies = model_data["technologies"].drop_vars(
         ["max_capacity_addition", "max_capacity_growth", "total_capacity_limit"]
     )
@@ -208,6 +211,7 @@ def test_max_capacity_expansion_no_limits(model_data):
 
 
 def test_max_capacity_expansion_infinite_limits(model_data):
+    """Checking that error is raised when infinite limits are set."""
     technologies = model_data["technologies"].copy()
     for limit in [
         "max_capacity_addition",
@@ -220,6 +224,7 @@ def test_max_capacity_expansion_infinite_limits(model_data):
 
 
 def test_max_capacity_expansion_seed(model_data):
+    """Sanity checks for the seed parameter of the max capacity expansion constraint."""
     seed = 10
     technologies = model_data["technologies"].copy()
     technologies["growth_seed"] = seed
@@ -244,6 +249,12 @@ def test_max_capacity_expansion_seed(model_data):
     assert results[0].b.values == approx(results[1].b.values)
     # Higher capacity should differ
     assert results[0].b.values != approx(results[2].b.values)
+
+
+def test_no_minimum_service(model_data):
+    """Checking that the constraint is None when no minimum service factor is set."""
+    technologies = model_data["technologies"].drop_vars("minimum_service_factor")
+    assert minimum_service(**{**model_data, "technologies": technologies}) is None
 
 
 @fixture
