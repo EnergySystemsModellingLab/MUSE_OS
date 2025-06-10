@@ -156,18 +156,14 @@ class ScipyAdapter:
     @classmethod
     def from_muse_data(
         cls,
-        costs: xr.DataArray,
+        capacity_costs: xr.DataArray,
         constraints: list,
         commodities: list[str],
         timeslice_level: str | None = None,
     ) -> ScipyAdapter:
         """Creates a ScipyAdapter from MUSE data structures."""
         # Calculate costs for the linear problem
-        lpcosts = lp_costs(
-            capacity_costs=costs,
-            commodities=commodities,
-            timeslice_level=timeslice_level,
-        )
+        lpcosts = lp_costs(capacity_costs, commodities, timeslice_level)
 
         # Create dataset from costs and constraints
         data = unified_dataset(lpcosts, *constraints)

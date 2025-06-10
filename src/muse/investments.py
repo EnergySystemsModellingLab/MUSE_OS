@@ -297,7 +297,7 @@ def scipy_match_demand(
 
     # Run scipy optimization with highs solver
     adapter = ScipyAdapter.from_muse_data(
-        costs=costs,
+        capacity_costs=costs,
         constraints=constraints,
         commodities=commodities,
         timeslice_level=timeslice_level,
