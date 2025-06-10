@@ -372,8 +372,6 @@ def test_read_technodictionary(default_model):
         "var_par": np.int64,
         "interest_rate": np.float64,
         "type": np.dtype("O"),
-        "fuel": np.dtype("<U11"),
-        "enduse": np.dtype("<U4"),
         "agent1": np.int64,
         "tech_type": np.dtype("<U6"),
         "efficiency": np.int64,
