@@ -1,82 +1,90 @@
 """Test agent interactions."""
 
+from collections import namedtuple
+from itertools import chain
+
 import pytest
+from numpy.random import choice
 from pytest import fixture, mark
+
+from muse.errors import NoInteractionsFound
+from muse.interactions import (
+    agents_groupby,
+    factory,
+    new_to_retro_net,
+    register_agent_interaction,
+)
 
 
 @fixture
 def agents():
-    from collections import namedtuple
-
-    from numpy.random import choice
-
     Agent = namedtuple("Agent", ["region", "name", "category", "assets"])
-    regions = ["Area52", "Bermuda Triangle", "City of London"]
-    names = ["John", "Joe", "Jill"]
-    categories = ["yup", "nope"]
-    results = {
-        (region, name, cat)
-        for region, name, cat in zip(
-            *(choice(data, 40) for data in [regions, names, categories])
-        )
+    sample_data = {
+        "regions": ["Area52", "Bermuda Triangle", "City of London"],
+        "names": ["John", "Joe", "Jill"],
+        "categories": ["yup", "nope"],
     }
-    return [Agent(*u, [None]) for u in results]
+
+    # Generate unique combinations of region, name, and category
+    combinations = {
+        tuple(items)
+        for items in zip(*(choice(data, 40) for data in sample_data.values()))
+    }
+
+    return [Agent(*combo, [None]) for combo in combinations]
 
 
 def test_groupby(agents):
-    from itertools import chain
-
-    from muse.interactions import agents_groupby
-
     grouped = agents_groupby(agents, ("category", "name"))
-    assert sum(len(u) for u in grouped.values()) == len(agents)
-    assert set(id(u) for u in chain(*grouped.values())) == set(id(u) for u in agents)
-    assert set(grouped.keys()) == set((u.category, u.name) for u in agents)
-    for (category, name), group_agents in grouped.items():
-        assert all(agent.category == category for agent in group_agents)
-        assert all(agent.name == name for agent in group_agents)
+
+    # Verify group sizes and agent preservation
+    assert sum(len(group) for group in grouped.values()) == len(agents)
+    assert set(map(id, chain(*grouped.values()))) == set(map(id, agents))
+
+    # Verify correct grouping keys and contents
+    assert set(grouped.keys()) == {(a.category, a.name) for a in agents}
+    for (cat, name), group in grouped.items():
+        assert all(a.category == cat and a.name == name for a in group)
 
 
 def test_new_to_retro_net(agents):
-    from itertools import chain
-
-    from muse.interactions import new_to_retro_net
-
     net = new_to_retro_net(agents, "nope")
-    assert sum(len(u) for u in net) <= len(agents)
-    assert set(id(u) for u in chain(*net)).issubset(id(u) for u in agents)
-    assert all(len(list(u)) == 2 for u in net)
-    for agents in net:
-        assert len(set(u.region for u in agents)) == 1
-        assert len(set(u.name for u in agents)) == 1
-        categories = [u.category for u in agents]
-        i = categories.index("yup") if "yup" in categories else 0
-        assert "nope" not in categories[i:]
-        assert "yup" not in categories[:i]
+
+    # Verify network properties
+    assert sum(len(group) for group in net) <= len(agents)
+    assert set(map(id, chain(*net))).issubset(map(id, agents))
+    assert all(len(list(group)) == 2 for group in net)
+
+    # Verify group constraints
+    for group in net:
+        assert len({a.region for a in group}) == 1
+        assert len({a.name for a in group}) == 1
+        categories = [a.category for a in group]
+        yup_index = categories.index("yup") if "yup" in categories else 0
+        assert "nope" not in categories[yup_index:]
+        assert "yup" not in categories[:yup_index]
 
 
 @mark.usefixtures("save_registries")
 def test_compute_interactions(agents):
-    from muse.errors import NoInteractionsFound
-    from muse.interactions import factory, new_to_retro_net, register_agent_interaction
-
     @register_agent_interaction
     def dummy_interaction(a, b):
-        assert a.assets[0] is None
-        assert b.assets[0] is None
-        a.assets[0] = b
-        b.assets[0] = a
+        assert all(agent.assets[0] is None for agent in (a, b))
+        a.assets[0], b.assets[0] = b, a
 
     interactions = factory([("new_to_retro", "dummy_interaction")])
     interactions(agents)
 
-    are_none = [agent for agent in agents if agent.assets[0] is None]
-    assert len({(u.region, u.name) for u in are_none}) == len(are_none)
-    not_none = [agent for agent in agents if agent.assets[0] is not None]
-    assert len(new_to_retro_net(agents)) == 0 or len(not_none) != 0
-    for agent in not_none:
-        assert agent.assets[0].assets[0] is agent
+    # Check unmatched agents
+    unmatched = [agent for agent in agents if agent.assets[0] is None]
+    assert len({(a.region, a.name) for a in unmatched}) == len(unmatched)
 
-    agents2 = [a for a in agents if a.category == "nope"]
+    # Check matched agents
+    matched = [agent for agent in agents if agent.assets[0] is not None]
+    assert len(new_to_retro_net(agents)) == 0 or matched
+    assert all(agent.assets[0].assets[0] is agent for agent in matched)
+
+    # Test that NoInteractionsFound is raised when all agents are 'nope' category
+    nope_agents = [a for a in agents if a.category == "nope"]
     with pytest.raises(NoInteractionsFound):
-        interactions(agents2)
+        interactions(nope_agents)
