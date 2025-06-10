@@ -441,12 +441,17 @@ def sector_lcoe(
             agent_market = market.sel(year=agent.year)
             agent_market["consumption"] = agent_market.consumption * agent.quantity
 
-            # Use is_enduse to determine end-use commodities
-            enduses = is_enduse(technologies.comm_usage)
-            included = agent_market.commodity.values[enduses]
-            excluded = agent_market.commodity.values[~enduses]
+            # Filter commodities based on end-use status
+            enduse_mask = is_enduse(technologies.comm_usage)
+            commodities = agent_market.commodity.values
+            included_commodities = commodities[
+                np.isin(commodities, enduse_mask.commodity[enduse_mask])
+            ]
+            excluded_commodities = commodities[
+                ~np.isin(commodities, enduse_mask.commodity[enduse_mask])
+            ]
 
-            agent_market.loc[dict(commodity=excluded)] = 0
+            agent_market.loc[dict(commodity=excluded_commodities)] = 0
             agent_market["prices"] = agent.filter_input(
                 market["prices"], year=agent.year
             )
@@ -456,7 +461,7 @@ def sector_lcoe(
                 year=agent.year,
             )
             prices = agent_market["prices"].sel(commodity=techs.commodity)
-            demand = agent_market.consumption.sel(commodity=included)
+            demand = agent_market.consumption.sel(commodity=included_commodities)
             capacity = agent.filter_input(capacity_to_service_demand(demand, techs))
             production = (
                 broadcast_timeslice(capacity)
@@ -525,12 +530,17 @@ def sector_eac(
             agent_market = market.sel(year=agent.year)
             agent_market["consumption"] = agent_market.consumption * agent.quantity
 
-            # Use is_enduse to determine end-use commodities
-            enduses = is_enduse(technologies.comm_usage)
-            included = agent_market.commodity.values[enduses]
-            excluded = agent_market.commodity.values[~enduses]
+            # Filter commodities based on end-use status
+            enduse_mask = is_enduse(technologies.comm_usage)
+            commodities = agent_market.commodity.values
+            included_commodities = commodities[
+                np.isin(commodities, enduse_mask.commodity[enduse_mask])
+            ]
+            excluded_commodities = commodities[
+                ~np.isin(commodities, enduse_mask.commodity[enduse_mask])
+            ]
 
-            agent_market.loc[dict(commodity=excluded)] = 0
+            agent_market.loc[dict(commodity=excluded_commodities)] = 0
             agent_market["prices"] = agent.filter_input(
                 market["prices"], year=agent.year
             )
@@ -540,7 +550,7 @@ def sector_eac(
                 year=agent.year,
             )
             prices = agent_market["prices"].sel(commodity=techs.commodity)
-            demand = agent_market.consumption.sel(commodity=included)
+            demand = agent_market.consumption.sel(commodity=included_commodities)
             capacity = agent.filter_input(capacity_to_service_demand(demand, techs))
             production = (
                 broadcast_timeslice(capacity)
