@@ -221,9 +221,8 @@ def technologies(coords) -> Dataset:
 
     result["comm_type"] = ("commodity", coords["comm_type"])
     result["tech_type"] = "technology", ["solid", "liquid", "solid", "liquid"]
-    result["fuel"] = "technology", ["person", "person", "oil", "person"]
 
-    result = result.set_coords(("comm_type", "fuel", "tech_type"))
+    result = result.set_coords(("comm_type", "tech_type"))
 
     def var(*dims, factor=100.0):
         shape = tuple(len(result[u]) for u in dims)
@@ -233,8 +232,8 @@ def technologies(coords) -> Dataset:
     result["agent_share"] /= sum(result.agent_share)
     result["agent_share_zero"] = result["agent_share"] * 0
 
-    # first create a mask so each teach will have the same enduse, fuel, or
-    # environmentals across years and regions
+    # first create a mask so each tech will have consistent inputs/outputs across years
+    # and regions
     fuels = result.comm_type == "energy"
     result["fixed_inputs"] = var("technology", "commodity")
     result.fixed_inputs[:] = randint(0, 3, result.fixed_inputs.shape) == 0
@@ -249,7 +248,7 @@ def technologies(coords) -> Dataset:
     environmentals = result.comm_type == "environmental"
     result.fixed_outputs.loc[{"commodity": ~(enduses | environmentals)}] = 0
 
-    # make sure at least one fuel or enduse is set
+    # make sure at least one energy input and service output is set
     for tech in result.technology:
         fin = result.fixed_inputs
         if (fin.sel(technology=tech, commodity=fuels) < 1e-12).all():

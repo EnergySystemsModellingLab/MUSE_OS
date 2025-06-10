@@ -4,7 +4,7 @@ import numpy as np
 import xarray as xr
 from pytest import fixture, mark
 
-from muse.commodities import is_enduse
+from muse.commodities import is_enduse, is_fuel
 from muse.filters import (
     currently_existing_tech,
     factory,
@@ -125,7 +125,25 @@ def test_similar_tech(retro_agent, search_space, technologies):
 
 def test_similar_fuels(retro_agent, search_space, technologies):
     actual = same_fuels(retro_agent, search_space, technologies=technologies)
-    assert_tech_comparison(actual, search_space, "fuel", technologies)
+    assert sorted(actual.dims) == sorted(search_space.dims)
+
+    # Get the fixed inputs that are fuels
+    fuels = is_fuel(technologies.comm_usage)
+    finputs = technologies.sel(region=retro_agent.region, commodity=fuels)
+    finputs = finputs.fixed_inputs > 0
+
+    expected = search_space.copy()
+    for asset in actual.asset:
+        asset_fuels = finputs.sel(technology=asset)
+        asset_fuels = set(asset_fuels.commodity.loc[asset_fuels].values)
+        for tech in actual.replacement:
+            tech_fuels = finputs.sel(technology=tech)
+            tech_fuels = set(tech_fuels.commodity.loc[tech_fuels].values)
+            expected.loc[{"replacement": tech, "asset": asset}] = (
+                asset_fuels == tech_fuels
+            )
+
+    assert (actual == expected).all()
 
 
 def test_currently_existing(retro_agent, search_space, technologies, agent_market, rng):

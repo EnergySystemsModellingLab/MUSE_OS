@@ -275,11 +275,23 @@ def similar_technology(
 def same_fuels(
     agent: Agent, search_space: xr.DataArray, *, technologies: xr.Dataset, **kwargs
 ):
-    """Filters technologies with the same fuel type."""
-    fuel = agent.filter_input(technologies.fuel)
-    asset_fuel = fuel.sel(technology=search_space.asset)
-    tech_fuel = fuel.sel(technology=search_space.replacement)
-    return search_space & (asset_fuel == tech_fuel)
+    """Filters technologies with the same fuel type.
+
+    Determines fuel type based on the energy commodities used as inputs by the
+    technology.
+    """
+    from muse.commodities import is_fuel
+
+    # Get the fixed inputs that are fuels (energy commodities)
+    tech_fuels = agent.filter_input(
+        technologies.fixed_inputs,
+        commodity=is_fuel(technologies.comm_usage),
+    )
+    tech_fuels = (tech_fuels > 0).astype(int).rename(technology="replacement")
+    asset_fuels = tech_fuels.sel(replacement=search_space.asset)
+
+    # Technologies must use exactly the same fuels
+    return search_space & (tech_fuels == asset_fuels).all("commodity")
 
 
 @register_filter(name="existing")
