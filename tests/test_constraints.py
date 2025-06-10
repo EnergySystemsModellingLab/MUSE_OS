@@ -3,7 +3,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 import xarray as xr
-from pytest import approx, fixture, mark, raises
+from pytest import approx, fixture, raises
 
 from muse import examples
 from muse.constraints import (
