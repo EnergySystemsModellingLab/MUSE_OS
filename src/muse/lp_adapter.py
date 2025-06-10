@@ -87,7 +87,11 @@ def extract_constraint_matrices(
     constraints,
     *kinds: ConstraintKind,
 ):
-    """Extracts A and b matrices for constraints of specified kinds."""
+    """Extracts A and b matrices for constraints of specified kinds.
+
+    These will end up as A_ub and b_ub for inequality constraints, and A_eq and b_eq for
+    equality constraints (see ScipyAdapter).
+    """
     # Get indices of constraints of the specified kind
     indices = [i for i in range(len(bs)) if constraints[i].kind in kinds]
 
@@ -116,7 +120,13 @@ def extract_constraint_matrices(
 
 
 def back_to_muse_quantity(x: np.ndarray, template: xr.DataArray) -> xr.DataArray:
-    """Convert a vector of decision variables to a DataArray."""
+    """Convert a vector of decision variables to a DataArray.
+
+    Args:
+        x: 1D vector of decision variables, outputted from the scipy solver.
+        template: Template for the decision variables. This may be for either
+            capacity or production variables.
+    """
     # First create a multidimensional dataarray based on the template
     result = xr.DataArray(
         x.reshape(template.shape), coords=template.coords, dims=template.dims
@@ -230,7 +240,27 @@ def lp_costs(
     commodities: list[str],
     timeslice_level: str | None = None,
 ) -> xr.Dataset:
-    """Creates dataset of costs for solving with scipy's LP solver."""
+    """Creates dataset of costs for solving with scipy's LP solver.
+
+    Importantly, this also defines the decision variables in the linear program.
+
+    The costs applied to the capacity decision variables are provided. This should
+    have dimensions "asset" and "replacement". In other words, capacity addition
+    is solved for each replacement technology for each existing asset.
+
+    No cost is applied to the production decision variables. Thus, the production
+    component of the resulting dataset is zero, with dimensions determining the
+    production decision variables. This will have dimensions "asset", "replacement",
+    "commodity", and "timeslice". In other words, production is solved for each
+    replacement technology for each existing asset, for each commodity, and for each
+    timeslice.
+
+    Args:
+        capacity_costs: DataArray with dimensions "asset" and "replacement" defining the
+            costs of adding capacity to the system.
+        commodities: List of commodities to create production decision variables for.
+        timeslice_level: The timeslice level of the linear problem.
+    """
     assert set(capacity_costs.dims) == {"asset", "replacement"}
 
     # Start with capacity costs as template (defines "asset" and "replacement" dims)
@@ -261,6 +291,22 @@ def lp_constraint(constraint, lpcosts: xr.Dataset) -> xr.Dataset:
 
     The goal is to create from ``lpcosts.capacity``, ``constraint.capacity``, and
     ``constraint.b`` a 2d-matrix ``constraint`` vs ``decision variables``.
+
+    #. The dimensions of ``constraint.b`` are the constraint dimensions. They are
+        renamed ``"c(xxx)"``.
+    #. The dimensions of ``lpcosts`` are the decision-variable dimensions. They are
+        renamed ``"d(xxx)"``.
+    #. ``set(b.dims).intersection(lpcosts.xxx.dims)`` are diagonal
+        in constraint dimensions and decision variables dimension, with ``xxx`` the
+        capacity or the production
+    #. ``set(constraint.xxx.dims) - set(lpcosts.xxx.dims) - set(b.dims)`` are reduced by
+        summation, with ``xxx`` the capacity or the production
+    #. ``set(lpcosts.xxx.dims) - set(constraint.xxx.dims) - set(b.dims)`` are added for
+        expansion, with ``xxx`` the capacity or the production
+
+    See :py:func:`muse.lp_adapter.lp_constraint_matrix` for a more detailed explanation
+    of the transformations applied here.
+
     """
     constraint = constraint.copy(deep=False)
 
@@ -295,7 +341,27 @@ def lp_constraint(constraint, lpcosts: xr.Dataset) -> xr.Dataset:
 def lp_constraint_matrix(
     b: xr.DataArray, constraint: xr.DataArray, lpcosts: xr.DataArray
 ):
-    """Transforms one constraint block into an lp matrix."""
+    """Transforms one constraint block into an lp matrix.
+
+    The goal is to create from ``lpcosts``, ``constraint``, and ``b`` a 2d-matrix of
+    constraints vs decision variables.
+
+     #. The dimensions of ``b`` are the constraint dimensions. They are renamed
+         ``"c(xxx)"``.
+     #. The dimensions of ``lpcosts`` are the decision-variable dimensions. They are
+         renamed ``"d(xxx)"``.
+     #. ``set(b.dims).intersection(lpcosts.dims)`` are diagonal
+         in constraint dimensions and decision variables dimension
+     #. ``set(constraint.dims) - set(lpcosts.dims) - set(b.dims)`` are reduced by
+         summation
+     #. ``set(lpcosts.dims) - set(constraint.dims) - set(b.dims)`` are added for
+         expansion
+     #. ``set(b.dims) - set(constraint.dims) - set(lpcosts.dims)`` are added for
+         expansion. Such dimensions only make sense if they consist of one point.
+
+    The result is the constraint matrix, expanded, reduced and diagonalized for the
+    conditions above.
+    """
     from functools import reduce
 
     from numpy import eye
