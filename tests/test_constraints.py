@@ -3,7 +3,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 import xarray as xr
-from pytest import approx, fixture, mark, raises
+from pytest import approx, fixture, raises
 
 from muse import examples
 from muse.constraints import (
@@ -65,6 +65,7 @@ def model_data():
     ).sel(year=INVESTMENT_YEAR).groupby("technology").sum("asset").rename(
         technology="asset"
     )
+
     # Remove un-demanded commodities
     market_demand = market_demand.sel(
         commodity=(market_demand > 0).any(dim=["timeslice", "asset"])
@@ -284,9 +285,6 @@ def test_lp_constraints_matrix_b_is_scalar(lpcosts, constraints):
     """B is a scalar - output should be equivalent to a single row matrix."""
     constraint = constraints["max_production"]
 
-    constraint = constraint_data["constraints"]["max_production"]
-    lpcosts = constraint_data["lp_costs"]
-
     for attr in ["capacity", "production"]:
         lpconstraint = lp_constraint_matrix(
             xr.DataArray(1), getattr(constraint, attr), getattr(lpcosts, attr)
@@ -301,9 +299,6 @@ def test_lp_constraints_matrix_b_is_scalar(lpcosts, constraints):
 def test_max_production_constraint_diagonal(lpcosts, constraints):
     """Test production side of max capacity production is diagonal."""
     constraint = constraints["max_production"]
-
-    constraint = constraint_data["constraints"]["max_production"]
-    lpcosts = constraint_data["lp_costs"]
 
     # Test capacity constraints
     result = lp_constraint_matrix(constraint.b, constraint.capacity, lpcosts.capacity)
@@ -333,9 +328,6 @@ def test_lp_constraint(lpcosts, constraints):
     from muse.lp_adapter import lp_constraint
 
     constraint = constraints["max_production"]
-
-    constraint = constraint_data["constraints"]["max_production"]
-    lpcosts = constraint_data["lp_costs"]
 
     result = lp_constraint(constraint, lpcosts)
     constraint_dims = {
@@ -540,13 +532,6 @@ def test_scipy_adapter_standard_constraints(lp_inputs, constraints):
 def test_scipy_solver(model_data, lp_inputs, constraints):
     """Test the scipy solver for demand matching."""
     from muse.investments import scipy_match_demand
-
-    constraints = [
-        constraint_data["constraints"]["max_production"],
-        constraint_data["constraints"]["max_capacity_expansion"],
-        constraint_data["constraints"]["demand"],
-        constraint_data["constraints"]["demand_limiting_capacity"],
-    ]
 
     solution = scipy_match_demand(
         costs=lp_inputs["capacity_costs"],
