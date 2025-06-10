@@ -1,5 +1,15 @@
+from copy import deepcopy
+
 import xarray as xr
 from pytest import fixture
+
+from muse import constraints as cs
+from muse import demand_share as ds
+from muse import examples
+from muse.agents.factories import create_agent
+from muse.readers import read_csv_agent_parameters, read_initial_assets
+from muse.readers.toml import read_settings
+from muse.sectors.subsector import Subsector, aggregate_enduses
 
 
 @fixture
@@ -9,24 +19,51 @@ def model() -> str:
 
 @fixture
 def technologies(model) -> xr.Dataset:
-    from muse import examples
-
     return examples.sector("residential", model=model).technologies
 
 
 @fixture
 def market(model) -> xr.Dataset:
-    from muse import examples
-
     return examples.residential_market(model)
 
 
+@fixture
+def base_market(technologies, market):
+    """Common market setup used across tests."""
+    return market.sel(
+        commodity=technologies.commodity, region=technologies.region
+    ).interp(year=[2020, 2025])
+
+
+@fixture
+def agent_params(model, tmp_path, technologies):
+    """Common agent parameters setup."""
+    examples.copy_model(model, tmp_path)
+    path = tmp_path / "model" / "Agents.csv"
+    params = read_csv_agent_parameters(path)
+    capa = read_initial_assets(path.with_name("residential") / "ExistingCapacity.csv")
+
+    for param in params:
+        param.update(
+            {
+                "capacity": deepcopy(capa.sel(region=param["region"]))
+                if param["agent_type"] == "retrofit"
+                else xr.zeros_like(capa.sel(region=param["region"])),
+                "agent_type": "default",
+                "category": "trade",
+                "year": 2020,
+                "search_rules": "from_assets -> compress -> reduce_assets",
+                "objectives": "ALCOE",
+                "decision": {"name": "mean", "parameters": ("ALCOE", False, 1)},
+            }
+        )
+        param.pop("quantity", None)
+        param.pop("share", None)
+
+    return params
+
+
 def test_subsector_investing_aggregation():
-    from copy import deepcopy
-
-    from muse import examples
-    from muse.sectors.subsector import Subsector, aggregate_enduses
-
     model_list = ["default", "medium"]
     sector_list = ["residential", "power", "gas"]
 
@@ -40,53 +77,23 @@ def test_subsector_investing_aggregation():
             market = mca.market.sel(
                 commodity=technologies.commodity, region=technologies.region
             ).interp(year=[2020, 2025])
-            subsector = Subsector(agents, commodities)
+
             initial_agents = deepcopy(agents)
+            subsector = Subsector(agents, commodities)
+
             assert {agent.year for agent in agents} == {int(market.year.min())}
             subsector.aggregate_lp(technologies.sel(year=2020), market)
             assert {agent.year for agent in agents} == {int(market.year.min() + 5)}
+
             for initial, final in zip(initial_agents, agents):
                 assert initial.assets.sum() != final.assets.sum()
 
 
-def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_path):
-    """Create some default agents and run subsector.
-
-    Mostly a smoke test to check the returns look about right, with the right type and
-    containing "agent" dimensions.
-    """
-    from copy import deepcopy
-
-    from muse import constraints as cs
-    from muse import demand_share as ds
-    from muse import examples, readers
-    from muse.agents.factories import create_agent
-    from muse.sectors.subsector import Subsector, aggregate_enduses
-
-    examples.copy_model(model, tmp_path)
-    path = tmp_path / "model" / "Agents.csv"
-    params = readers.read_csv_agent_parameters(path)
-    capa = readers.read_initial_assets(
-        path.with_name("residential") / "ExistingCapacity.csv"
-    )
-
-    for param in params:
-        if param["agent_type"] == "retrofit":
-            param["capacity"] = deepcopy(capa.sel(region=param["region"]))
-        else:
-            param["capacity"] = xr.zeros_like(capa.sel(region=param["region"]))
-
-        if "share" in param:
-            del param["share"]
-
-        param["agent_type"] = "default"
-        param["category"] = "trade"
-        param["year"] = 2020
-        param["search_rules"] = "from_assets -> compress -> reduce_assets"
-        param["objectives"] = "ALCOE"
-        param["decision"]["parameters"] = ("ALCOE", False, 1)
-        param.pop("quantity")
-    agents = [create_agent(technologies=technologies, **param) for param in params]
+def test_subsector_noninvesting_aggregation(base_market, agent_params, technologies):
+    """Test non-investing aggregation with default agents."""
+    agents = [
+        create_agent(technologies=technologies, **param) for param in agent_params
+    ]
     commodities = aggregate_enduses(technologies)
 
     subsector = Subsector(
@@ -96,18 +103,11 @@ def test_subsector_noninvesting_aggregation(market, model, technologies, tmp_pat
         constraints=cs.factory("demand"),
     )
 
-    market = market.sel(
-        commodity=technologies.commodity, region=technologies.region
-    ).interp(year=[2020, 2025])
     assert all(agent.year == 2020 for agent in agents)
-    subsector.aggregate_lp(technologies.sel(year=2020), market)
+    subsector.aggregate_lp(technologies.sel(year=2020), base_market)
 
 
 def test_factory_smoke_test(model, technologies, tmp_path):
-    from muse import examples
-    from muse.readers.toml import read_settings
-    from muse.sectors.subsector import Subsector
-
     examples.copy_model(model, tmp_path)
     settings = read_settings(tmp_path / "model" / "settings.toml")
 
