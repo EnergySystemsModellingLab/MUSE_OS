@@ -1,8 +1,10 @@
 """Tests for MCA output quantities."""
 
 import pandas as pd
+import xarray as xr
 from pytest import fixture
 
+from muse import examples
 from muse.outputs.mca import (
     capacity,
     consumption,
@@ -14,22 +16,58 @@ from muse.outputs.mca import (
     prices,
     supply,
 )
+from muse.utilities import broadcast_over_assets
+
+YEAR = 2020
 
 
 @fixture
-def mock_sectors(model) -> list:
+def market() -> xr.Dataset:
+    """Create a test market."""
+    return examples.residential_market(model="default")
+
+
+@fixture
+def sectors(market) -> list:
     """Create test sectors using MUSE's examples module."""
-    from muse import examples
+    residential_sector = examples.sector("residential", model="default")
+    agent = next(residential_sector.agents)
+    technologies = residential_sector.technologies
+    tech_data = broadcast_over_assets(technologies, agent.assets)
 
-    return [examples.sector("residential", model=model)]
+    # Make up supply data
+    supply_data = xr.DataArray(
+        data=1.0,
+        dims=["timeslice", "commodity", "year", "asset"],
+        coords={
+            "timeslice": market.timeslice,
+            "commodity": tech_data.commodity,
+            "year": market.year,
+            "asset": agent.assets.asset,
+        },
+    )
+    agent.supply = supply_data
+
+    # Make up consumption data
+    consumption_data = xr.DataArray(
+        data=1.0,
+        dims=["timeslice", "commodity", "year", "asset"],
+        coords={
+            "timeslice": market.timeslice,
+            "commodity": tech_data.commodity,
+            "year": market.year,
+            "asset": agent.assets.asset,
+        },
+    )
+    agent.consumption = consumption_data
+
+    return [residential_sector]
 
 
-def test_consumption(market, mock_sectors):
+def test_consumption(market, sectors):
     """Test consumption output quantity."""
-    result = consumption(market, mock_sectors, 2010)
+    result = consumption(market, sectors, YEAR)
     assert isinstance(result, pd.DataFrame)
-    assert not result.empty
-    # Market quantities include timeslice-related dimensions
     expected_cols = {
         "region",
         "commodity",
@@ -43,12 +81,10 @@ def test_consumption(market, mock_sectors):
     assert set(result.columns) == expected_cols
 
 
-def test_supply(market, mock_sectors):
+def test_supply(market, sectors):
     """Test supply output quantity."""
-    result = supply(market, mock_sectors, 2010)
+    result = supply(market, sectors, YEAR)
     assert isinstance(result, pd.DataFrame)
-    assert not result.empty
-    # Market quantities include timeslice-related dimensions
     expected_cols = {
         "region",
         "commodity",
@@ -62,12 +98,10 @@ def test_supply(market, mock_sectors):
     assert set(result.columns) == expected_cols
 
 
-def test_prices(market, mock_sectors):
+def test_prices(market, sectors):
     """Test prices output quantity."""
-    result = prices(market, mock_sectors, 2010)
+    result = prices(market, sectors, YEAR)
     assert isinstance(result, pd.DataFrame)
-    assert not result.empty
-    # Market quantities include timeslice-related dimensions
     expected_cols = {
         "region",
         "commodity",
@@ -81,11 +115,10 @@ def test_prices(market, mock_sectors):
     assert set(result.columns) == expected_cols
 
 
-def test_capacity(market, mock_sectors):
+def test_capacity(market, sectors):
     """Test capacity output quantity."""
-    result = capacity(market, mock_sectors, 2010)
+    result = capacity(market, sectors, YEAR)
     assert isinstance(result, pd.DataFrame)
-    assert not result.empty
     expected_cols = {
         "technology",
         "agent",
@@ -93,16 +126,17 @@ def test_capacity(market, mock_sectors):
         "sector",
         "year",
         "capacity",
+        "region",
+        "asset",
+        "installed",
     }
     assert set(result.columns) == expected_cols
 
 
-def test_fuel_costs(market, mock_sectors):
+def test_fuel_costs(market, sectors):
     """Test fuel costs output quantity."""
-    result = metric_fuel_costs(market, mock_sectors, 2010)
+    result = metric_fuel_costs(market, sectors, YEAR)
     assert isinstance(result, pd.DataFrame)
-    assert not result.empty
-    # Cost quantities include timeslice-related dimensions and region
     expected_cols = {
         "technology",
         "agent",
@@ -114,37 +148,34 @@ def test_fuel_costs(market, mock_sectors):
         "day",
         "hour",
         "timeslice",
+        "asset",
         "fuel_consumption_costs",
     }
     assert set(result.columns) == expected_cols
 
 
-def test_capital_costs(market, mock_sectors):
+def test_capital_costs(market, sectors):
     """Test capital costs output quantity."""
-    result = metric_capital_costs(market, mock_sectors, 2010)
+    result = metric_capital_costs(market, sectors, YEAR)
     assert isinstance(result, pd.DataFrame)
-    assert not result.empty
-    # Capital costs include technology attributes
     expected_cols = {
         "technology",
         "agent",
         "category",
         "sector",
         "year",
-        "tech_type",
-        "fuel",
         "capital_costs",
         "region",
+        "asset",
+        "installed",
     }
     assert set(result.columns) == expected_cols
 
 
-def test_emission_costs(market, mock_sectors):
+def test_emission_costs(market, sectors):
     """Test emission costs output quantity."""
-    result = metric_emission_costs(market, mock_sectors, 2010)
+    result = metric_emission_costs(market, sectors, YEAR)
     assert isinstance(result, pd.DataFrame)
-    assert not result.empty
-    # Cost quantities include timeslice-related dimensions and region
     expected_cols = {
         "technology",
         "agent",
@@ -157,16 +188,15 @@ def test_emission_costs(market, mock_sectors):
         "hour",
         "timeslice",
         "emission_costs",
+        "asset",
     }
     assert set(result.columns) == expected_cols
 
 
-def test_lcoe(market, mock_sectors):
+def test_lcoe(market, sectors):
     """Test LCOE output quantity."""
-    result = metric_lcoe(market, mock_sectors, 2010)
+    result = metric_lcoe(market, sectors, YEAR)
     assert isinstance(result, pd.DataFrame)
-    assert not result.empty
-    # Cost quantities include timeslice-related dimensions and technology attributes
     expected_cols = {
         "technology",
         "agent",
@@ -185,12 +215,10 @@ def test_lcoe(market, mock_sectors):
     assert set(result.columns) == expected_cols
 
 
-def test_eac(market, mock_sectors):
+def test_eac(market, sectors):
     """Test EAC output quantity."""
-    result = metric_eac(market, mock_sectors, 2010)
+    result = metric_eac(market, sectors, YEAR)
     assert isinstance(result, pd.DataFrame)
-    assert not result.empty
-    # Cost quantities include timeslice-related dimensions and technology attributes
     expected_cols = {
         "technology",
         "agent",
