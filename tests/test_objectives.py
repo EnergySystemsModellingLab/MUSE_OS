@@ -1,34 +1,64 @@
+from numpy.random import rand
 from pytest import fixture, mark
 
 YEAR = 2030
 
 
 @fixture
-def _demand(demand_share):
-    return demand_share
+def objective_inputs(technologies, market, demand_share):
+    """Creates the complete dataset needed for objective calculations.
 
+    The transformation follows these steps:
+    1. Extract year-specific data from technologies and market
+    2. Transform technology data to asset level with replacement dimension
+    3. Transform price data to asset level
+    4. Add any additional variables needed for specific objectives
 
-@fixture
-def _technologies(technologies, demand_share):
+    Returns:
+        dict: Contains all necessary data for objective calculations:
+            - technologies: Technology parameters with replacement dimension
+            - prices: Prices relevant to each asset
+            - demand: Demand share data
+    """
     from muse.utilities import broadcast_over_assets
 
-    techs = technologies.sel(year=YEAR).rename(technology="replacement")
-    return broadcast_over_assets(techs, demand_share)
+    # Step 1: Extract year-specific data
+    tech_year = technologies.sel(year=YEAR).rename(technology="replacement")
+    prices_year = market.prices.sel(year=YEAR)
+
+    # Step 2 & 3: Transform to asset level
+    tech_assets = broadcast_over_assets(tech_year, demand_share)
+    prices_assets = broadcast_over_assets(
+        prices_year, demand_share, installed_as_year=False
+    )
+
+    # Step 4: Add computed variables needed by some objectives
+    tech_assets["comfort"] = _add_var(tech_assets, "replacement")
+    tech_assets["efficiency"] = _add_var(tech_assets, "replacement")
+    tech_assets["scaling_size"] = _add_var(tech_assets, "replacement")
+
+    return {
+        "technologies": tech_assets,
+        "prices": prices_assets,
+        "demand": demand_share,
+    }
 
 
-@fixture
-def _prices(market, demand_share):
-    from muse.utilities import broadcast_over_assets
-
-    prices = market.prices.sel(year=YEAR)
-    return broadcast_over_assets(prices, demand_share, installed_as_year=False)
+def _add_var(coordinates, *dims, factor=100.0):
+    """Helper function to add random variables with specified dimensions."""
+    shape = tuple(len(coordinates[u]) for u in dims)
+    return dims, (rand(*shape) * factor).astype(type(factor))
 
 
-def test_fixtures(_technologies, _demand, _prices):
-    """Validating that the fixtures have appropriate dimensions."""
-    assert set(_technologies.dims) == {"asset", "commodity", "replacement"}
-    assert set(_demand.dims) == {"asset", "commodity", "timeslice"}
-    assert set(_prices.dims) == {"asset", "commodity", "timeslice"}
+def test_fixtures(objective_inputs):
+    """Validating that the fixture data has appropriate dimensions."""
+    assert set(objective_inputs["technologies"].dims) == {
+        "asset",
+        "commodity",
+        "replacement",
+    }
+    assert set(objective_inputs["demand"].dims) == {"asset", "commodity", "timeslice"}
+    assert set(objective_inputs["prices"].dims) == {"asset", "commodity", "timeslice"}
 
 
 @mark.usefixtures("save_registries")
@@ -51,7 +81,7 @@ def test_objective_registration():
 
 
 @mark.usefixtures("save_registries")
-def test_computing_objectives(_technologies, _demand, _prices):
+def test_computing_objectives(objective_inputs):
     from muse.objectives import factory, register_objective
 
     @register_objective
@@ -78,20 +108,27 @@ def test_computing_objectives(_technologies, _demand, _prices):
 
     # Test first objective with/without switch
     objectives = factory("first")(
-        technologies=_technologies, demand=_demand, prices=_prices, switch=True
+        technologies=objective_inputs["technologies"],
+        demand=objective_inputs["demand"],
+        prices=objective_inputs["prices"],
+        switch=True,
     )
     assert set(objectives.data_vars) == {"first"}
     assert (objectives.first == 1).all()
+
     objectives = factory("first")(
-        technologies=_technologies, demand=_demand, prices=_prices, switch=False
+        technologies=objective_inputs["technologies"],
+        demand=objective_inputs["demand"],
+        prices=objective_inputs["prices"],
+        switch=False,
     )
     assert (objectives.first == 2).all()
 
     # Test multiple objectives
     objectives = factory(["first", "second"])(
-        technologies=_technologies,
-        demand=_demand,
-        prices=_prices,
+        technologies=objective_inputs["technologies"],
+        demand=objective_inputs["demand"],
+        prices=objective_inputs["prices"],
         switch=False,
         assets=0,
     )
@@ -103,109 +140,135 @@ def test_computing_objectives(_technologies, _demand, _prices):
         assert (objectives.second.isel(asset=1) == 5).all()
 
 
-def test_comfort(_technologies, _demand):
+def test_comfort(objective_inputs):
     from muse.objectives import comfort
 
-    _technologies["comfort"] = add_var(_technologies, "replacement")
-    result = comfort(_technologies, _demand)
+    result = comfort(objective_inputs["technologies"], objective_inputs["demand"])
     assert set(result.dims) == {"replacement", "asset"}
 
 
-def test_efficiency(_technologies, _demand):
+def test_efficiency(objective_inputs):
     from muse.objectives import efficiency
 
-    _technologies["efficiency"] = add_var(_technologies, "replacement")
-    result = efficiency(_technologies, _demand)
+    result = efficiency(objective_inputs["technologies"], objective_inputs["demand"])
     assert set(result.dims) == {"replacement", "asset"}
 
 
-def test_capacity_to_service_demand(_technologies, _demand):
+def test_capacity_to_service_demand(objective_inputs):
     from muse.objectives import capacity_to_service_demand
 
-    result = capacity_to_service_demand(_technologies, _demand)
+    result = capacity_to_service_demand(
+        objective_inputs["technologies"], objective_inputs["demand"]
+    )
     assert set(result.dims) == {"replacement", "asset"}
 
 
-def test_capacity_in_use(_technologies, _demand):
+def test_capacity_in_use(objective_inputs):
     from muse.objectives import capacity_in_use
 
-    result = capacity_in_use(_technologies, _demand)
+    result = capacity_in_use(
+        objective_inputs["technologies"], objective_inputs["demand"]
+    )
     assert set(result.dims) == {"replacement", "asset"}
 
 
-def test_consumption(_technologies, _demand, _prices):
+def test_consumption(objective_inputs):
     from muse.objectives import consumption
 
-    result = consumption(_technologies, _demand, _prices)
+    result = consumption(
+        objective_inputs["technologies"],
+        objective_inputs["demand"],
+        objective_inputs["prices"],
+    )
     assert set(result.dims) == {"replacement", "asset", "timeslice"}
 
 
-def test_fixed_costs(_technologies, _demand):
+def test_fixed_costs(objective_inputs):
     from muse.objectives import fixed_costs
 
-    result = fixed_costs(_technologies, _demand)
+    result = fixed_costs(objective_inputs["technologies"], objective_inputs["demand"])
     assert set(result.dims) == {"replacement", "asset"}
 
 
-def test_capital_costs(_technologies, _demand):
+def test_capital_costs(objective_inputs):
     from muse.objectives import capital_costs
 
-    _technologies["scaling_size"] = add_var(_technologies, "replacement")
-    result = capital_costs(_technologies, _demand)
+    result = capital_costs(objective_inputs["technologies"], objective_inputs["demand"])
     assert set(result.dims) == {"replacement", "asset"}
 
 
-def test_emission_cost(_technologies, _demand, _prices):
+def test_emission_cost(objective_inputs):
     from muse.objectives import emission_cost
 
-    result = emission_cost(_technologies, _demand, _prices)
+    result = emission_cost(
+        objective_inputs["technologies"],
+        objective_inputs["demand"],
+        objective_inputs["prices"],
+    )
     assert set(result.dims) == {"replacement", "asset", "timeslice"}
 
 
-def test_fuel_consumption_cost(_technologies, _demand, _prices):
+def test_fuel_consumption_cost(objective_inputs):
     from muse.objectives import fuel_consumption_cost
 
-    result = fuel_consumption_cost(_technologies, _demand, _prices)
+    result = fuel_consumption_cost(
+        objective_inputs["technologies"],
+        objective_inputs["demand"],
+        objective_inputs["prices"],
+    )
     assert set(result.dims) == {"replacement", "asset", "timeslice"}
 
 
-def test_annual_levelized_cost_of_energy(_technologies, _demand, _prices):
+def test_annual_levelized_cost_of_energy(objective_inputs):
     from muse.objectives import annual_levelized_cost_of_energy
 
-    result = annual_levelized_cost_of_energy(_technologies, _demand, _prices)
+    result = annual_levelized_cost_of_energy(
+        objective_inputs["technologies"],
+        objective_inputs["demand"],
+        objective_inputs["prices"],
+    )
     assert set(result.dims) == {"replacement", "asset"}
 
 
-def test_lifetime_levelized_cost_of_energy(_technologies, _demand, _prices):
+def test_lifetime_levelized_cost_of_energy(objective_inputs):
     from muse.objectives import lifetime_levelized_cost_of_energy
 
-    result = lifetime_levelized_cost_of_energy(_technologies, _demand, _prices)
+    result = lifetime_levelized_cost_of_energy(
+        objective_inputs["technologies"],
+        objective_inputs["demand"],
+        objective_inputs["prices"],
+    )
     assert set(result.dims) == {"replacement", "asset"}
 
 
-def test_net_present_value(_technologies, _demand, _prices):
+def test_net_present_value(objective_inputs):
     from muse.objectives import net_present_value
 
-    result = net_present_value(_technologies, _demand, _prices)
+    result = net_present_value(
+        objective_inputs["technologies"],
+        objective_inputs["demand"],
+        objective_inputs["prices"],
+    )
     assert set(result.dims) == {"replacement", "asset"}
 
 
-def test_net_present_cost(_technologies, _demand, _prices):
+def test_net_present_cost(objective_inputs):
     from muse.objectives import net_present_cost
 
-    result = net_present_cost(_technologies, _demand, _prices)
+    result = net_present_cost(
+        objective_inputs["technologies"],
+        objective_inputs["demand"],
+        objective_inputs["prices"],
+    )
     assert set(result.dims) == {"replacement", "asset"}
 
 
-def test_equivalent_annual_cost(_technologies, _demand, _prices):
+def test_equivalent_annual_cost(objective_inputs):
     from muse.objectives import equivalent_annual_cost
 
-    result = equivalent_annual_cost(_technologies, _demand, _prices)
+    result = equivalent_annual_cost(
+        objective_inputs["technologies"],
+        objective_inputs["demand"],
+        objective_inputs["prices"],
+    )
     assert set(result.dims) == {"replacement", "asset"}
-
-
-def add_var(coordinates, *dims, factor=100.0):
-    from numpy.random import rand
-
-    shape = tuple(len(coordinates[u]) for u in dims)
-    return dims, (rand(*shape) * factor).astype(type(factor))
