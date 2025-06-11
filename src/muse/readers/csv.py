@@ -53,8 +53,39 @@ COLUMN_RENAMES = {
     "enduse": "end_use",
 }
 
-# Columns that should be converted from camelCase to snake_case
+# Columns who's values should be converted from camelCase to snake_case
 CAMEL_TO_SNAKE_COLUMNS = ["tech_type", "commodity", "comm_type", "share", "attribute"]
+
+# Global mapping of column names to their expected types
+COLUMN_TYPES = {
+    "year": int,
+    "region": str,
+    "technology": str,
+    "process": str,
+    "commodity": str,
+    "sector": str,
+    "attribute": str,
+    "variable": str,
+    "timeslice": str,
+    "name": str,
+    "comm_type": str,
+    "tech_type": str,
+    "type": str,
+    "function_type": str,
+    "level": str,
+    "search_rule": str,
+    "decision_method": str,
+    "quantity": float,
+    "share": float,
+    "coeff": float,
+    "value": float,
+    "utilization_factor": float,
+    "minimum_service_factor": float,
+    "maturity_threshold": float,
+    "spend_limit": float,
+    "prices": float,
+    "emmission_factor": float,
+}
 
 
 def validate_dataframe(
@@ -70,11 +101,28 @@ def validate_dataframe(
         required_columns: List of column names that must be present
 
     Raises:
-        ValueError: If required columns are missing
+        ValueError: If required columns are missing or have incorrect types
     """
+    # Check for missing columns
     missing_columns = [col for col in required_columns if col not in data.columns]
     if missing_columns:
         raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+
+    # Type validation functions
+    type_checks = {
+        int: pd.api.types.is_integer_dtype,
+        float: pd.api.types.is_float_dtype,
+        str: pd.api.types.is_string_dtype,
+    }
+
+    # Check column types
+    for col in required_columns:
+        expected_type = COLUMN_TYPES[col]
+        if not type_checks[expected_type](data[col].dtype):
+            raise ValueError(
+                f"Column '{col}' in {source} must be of type {expected_type.__name__}, "
+                f"but is {data[col].dtype}"
+            )
 
 
 def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -216,34 +264,30 @@ def to_numeric(x):
         return x
 
 
-def validate_technodictionary(data: pd.DataFrame, source: Path) -> None:
-    """Validates technodictionary DataFrame.
+def convert_column_types(data: pd.DataFrame) -> pd.DataFrame:
+    """Converts DataFrame columns to their expected types.
 
     Args:
-        data: DataFrame to validate
-        source: Source path for error messages
+        data: DataFrame to convert
 
-    Raises:
-        ValueError: If validation fails
+    Returns:
+        DataFrame with converted column types
     """
-    # Validate required columns
-    validate_dataframe(data, source, required_columns=["process", "region", "year"])
-
-    # Check for deprecated columns
-    if "fuel" in data.columns:
-        msg = (
-            f"The 'Fuel' column in {source} has been deprecated. "
-            "This information is now determined from CommIn files. "
-            "Please remove this column from your Technodata files."
-        )
-        getLogger(__name__).warning(msg)
-    if "end_use" in data.columns:
-        msg = (
-            f"The 'EndUse' column in {source} has been deprecated. "
-            "This information is now determined from CommOut files. "
-            "Please remove this column from your Technodata files."
-        )
-        getLogger(__name__).warning(msg)
+    result = data.copy()
+    for col, expected_type in COLUMN_TYPES.items():
+        if col in result.columns:
+            try:
+                if expected_type is int:
+                    result[col] = pd.to_numeric(result[col], downcast="integer")
+                elif expected_type is float:
+                    result[col] = pd.to_numeric(result[col])
+                elif expected_type is str:
+                    result[col] = result[col].astype(str)
+            except (ValueError, TypeError) as e:
+                raise ValueError(
+                    f"Could not convert column '{col}' to {expected_type.__name__}: {e}"
+                )
+    return result
 
     if "scaling_size" in data.columns:
         msg = (
@@ -281,7 +325,40 @@ def read_csv(filename: Path, float_precision: str = "high") -> pd.DataFrame:
         if col in data.columns:
             data = data.rename(columns={col: camel_to_snake(col)})
 
+    # Convert data types
+    data = convert_column_types(data)
+
     return data
+
+
+def validate_technodictionary(data: pd.DataFrame, source: Path) -> None:
+    """Validates technodictionary DataFrame.
+
+    Args:
+        data: DataFrame to validate
+        source: Source path for error messages
+
+    Raises:
+        ValueError: If validation fails
+    """
+    # Validate required columns
+    validate_dataframe(data, source, required_columns=["process", "region", "year"])
+
+    # Check for deprecated columns
+    if "fuel" in data.columns:
+        msg = (
+            f"The 'Fuel' column in {source} has been deprecated. "
+            "This information is now determined from CommIn files. "
+            "Please remove this column from your Technodata files."
+        )
+        getLogger(__name__).warning(msg)
+    if "end_use" in data.columns:
+        msg = (
+            f"The 'EndUse' column in {source} has been deprecated. "
+            "This information is now determined from CommOut files. "
+            "Please remove this column from your Technodata files."
+        )
+        getLogger(__name__).warning(msg)
 
 
 def read_technodictionary_csv(filename: Path) -> pd.DataFrame:
