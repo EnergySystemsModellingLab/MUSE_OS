@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 __all__ = [
+    "process_agent_parameters",
     "process_attribute_table",
-    "process_csv_agent_parameters",
     "process_global_commodities",
     "process_initial_assets",
     "process_initial_market",
@@ -15,8 +15,8 @@ __all__ = [
     "process_technodictionary",
     "process_technologies",
     "process_timeslice_shares",
+    "read_agent_parameters_csv",
     "read_attribute_table_csv",
-    "read_csv_agent_parameters_csv",
     "read_global_commodities_csv",
     "read_initial_assets_csv",
     "read_initial_market_csv",
@@ -54,7 +54,14 @@ COLUMN_RENAMES = {
 }
 
 # Columns who's values should be converted from camelCase to snake_case
-CAMEL_TO_SNAKE_COLUMNS = ["tech_type", "commodity", "comm_type", "share", "attribute"]
+CAMEL_TO_SNAKE_COLUMNS = [
+    "tech_type",
+    "commodity",
+    "comm_type",
+    "share",
+    "attribute",
+    "sector",
+]
 
 # Global mapping of column names to their expected types
 COLUMN_TYPES = {
@@ -279,6 +286,10 @@ def read_csv(
     Returns:
         DataFrame containing the standardized data
     """
+    # Check if file exists
+    if not filename.is_file():
+        raise OSError(f"{filename} does not exist.")
+
     # Log message
     if msg:
         getLogger(__name__).info(msg)
@@ -550,7 +561,7 @@ def process_initial_assets(data: pd.DataFrame) -> xr.DataArray:
         xarray DataArray containing the processed initial assets
     """
     if "year" in data.columns:  # TODO: need a different way to identify trade file
-        result = process_trade(data, columns_are_source=True)
+        result = process_trade(data)
     else:
         result = process_initial_capacity(data)
 
@@ -591,7 +602,7 @@ def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
 
 
 def read_technologies_csv(
-    technodata_path_or_sector: Path,
+    technodata_path: Path,
     comm_out_path: Path,
     comm_in_path: Path,
     technodata_timeslices_path: Path | None = None,
@@ -599,30 +610,18 @@ def read_technologies_csv(
     """Reads data characterising technologies from files into DataFrames.
 
     Args:
-        technodata_path_or_sector: If `comm_out_path` and `comm_in_path` are not given,
-            then this argument refers to the name of the sector. The three paths are
-            then determined using standard locations and name. Specifically, technodata
-            looks for a "technodataSECTORNAME.csv" file in the standard location for
-            that sector. However, if  `comm_out_path` and `comm_in_path` are given, then
-            this should be the path to the the technodata file.
+        technodata_path: Path to the the technodata file.
         technodata_timeslices_path: This argument refers to the TechnodataTimeslices
             file which specifies the utilization factor per timeslice for the specified
             technology.
-        comm_out_path: If given, then refers to the path of the file specifying output
-            commmodities. If not given, then defaults to
-            "commOUTtechnodataSECTORNAME.csv" in the relevant sector directory.
-        comm_in_path: If given, then refers to the path of the file specifying input
-            commmodities. If not given, then defaults to
-            "commINtechnodataSECTORNAME.csv" in the relevant sector directory.
+        comm_out_path: Refers to the path of the file specifying output commmodities.
+        comm_in_path: Refers to the path of the file specifying input commmodities.
 
     Returns:
         Tuple of (technodata_df, comm_out_df, comm_in_df, technodata_timeslices_df)
         where technodata_timeslices_df may be None if not provided
     """
-    assert isinstance(technodata_path_or_sector, Path)
-    assert comm_out_path is not None
-    assert comm_in_path is not None
-    tpath = technodata_path_or_sector
+    tpath = technodata_path
     opath = comm_out_path
     ipath = comm_in_path
 
@@ -713,9 +712,9 @@ def process_technologies(
         CommodityUsage.from_technologies(result).values,
     )
     result = result.set_coords("comm_usage")
-    if "comm_type" in result.data_vars or "comm_type" in result.coords:
-        result = result.drop_vars("comm_type")
 
+    # Check UF and MSF
+    # TODO: perform checks directly of CSVs instead
     check_utilization_and_minimum_service_factors(
         result.to_dataframe(), [technodata_df, technodata_timeslices_df]
     )
@@ -750,15 +749,9 @@ def process_global_commodities(data: pd.DataFrame) -> xr.Dataset:
     Returns:
         xarray Dataset containing the processed global commodities
     """
-    # Set index
     data.index = [u for u in data.commodity]
-
-    # Drop and rename columns
     data = data.drop("commodity", axis=1)
-
-    # Set index name
     data.index.name = "commodity"
-
     return create_xarray_dataset(data)
 
 
@@ -807,7 +800,7 @@ def process_timeslice_shares(data: pd.DataFrame) -> xr.DataArray:
     return result.shares
 
 
-def read_csv_agent_parameters_csv(filename: Path) -> pd.DataFrame:
+def read_agent_parameters_csv(filename: Path) -> pd.DataFrame:
     """Reads standard MUSE agent-declaration csv-files into a DataFrame.
 
     Args:
@@ -842,10 +835,20 @@ def read_csv_agent_parameters_csv(filename: Path) -> pd.DataFrame:
     if "agent_number" in data.columns:
         data = data.drop(["agent_number"], axis=1)
 
+    # Check consistency of objectives data columns
+    objectives = [col for col in data.columns if col.startswith("objective")]
+    floats = [col for col in data.columns if col.startswith("obj_data")]
+    sorting = [col for col in data.columns if col.startswith("obj_sort")]
+
+    if len(objectives) != len(floats) or len(objectives) != len(sorting):
+        raise ValueError(
+            f"Agent Objective, ObjData, and Objsort columns are inconsistent in {filename}"  # noqa: E501
+        )
+
     return data
 
 
-def process_csv_agent_parameters(data: pd.DataFrame, filename: Path) -> list[dict]:
+def process_agent_parameters(data: pd.DataFrame, filename: Path) -> list[dict]:
     """Processes agent parameters DataFrame into a list of agent dictionaries.
 
     Args:
@@ -858,37 +861,15 @@ def process_csv_agent_parameters(data: pd.DataFrame, filename: Path) -> list[dic
     """
     result = []
     for _, row in data.iterrows():
-        # Gather objectives data
-        objectives = row[[i.startswith("objective") for i in row.index]]
-        floats = row[[i.startswith("obj_data") for i in row.index]]
-        sorting = row[[i.startswith("obj_sort") for i in row.index]]
+        # Get objectives data
+        objectives = (
+            row[[i.startswith("objective") for i in row.index]].dropna().to_list()
+        )
+        sorting = row[[i.startswith("obj_sort") for i in row.index]].dropna().to_list()
+        floats = row[[i.startswith("obj_data") for i in row.index]].dropna().to_list()
 
-        # Check consistency of objectives data
-        if len(objectives) != len(floats) or len(objectives) != len(sorting):
-            raise ValueError(
-                f"Agent Objective, ObjData, and Objsort columns are inconsistent in {filename}"  # noqa: E501
-            )
-        objectives = objectives.dropna().to_list()
-        for u in objectives:
-            if not issubclass(type(u), str):
-                raise ValueError(
-                    f"Agent Objective requires a string entry in {filename}"
-                )
-        sort = sorting.dropna().to_list()
-        for u in sort:
-            if not issubclass(type(u), bool):
-                raise ValueError(
-                    f"Agent Objsort requires a boolean entry in {filename}"
-                )
-        floats = floats.dropna().to_list()
-        for u in floats:
-            if not issubclass(type(u), (int, float)):
-                raise ValueError(f"Agent ObjData requires a float entry in {filename}")
-
-        # Gather decision parameters
-        decision_params = [
-            u for u in zip(objectives, sorting, floats) if isinstance(u[0], str)
-        ]
+        # Create decision parameters
+        decision_params = list(zip(objectives, sorting, floats))
 
         agent_type = {
             "new": "newcapa",
@@ -903,7 +884,7 @@ def process_csv_agent_parameters(data: pd.DataFrame, filename: Path) -> list[dic
         data = {
             "name": row.name,
             "region": row.region,
-            "objectives": [u[0] for u in decision_params],
+            "objectives": objectives,
             "search_rules": row.search_rule,
             "decision": {"name": row.decision_method, "parameters": decision_params},
             "agent_type": agent_type,
@@ -1010,9 +991,6 @@ def read_initial_market_csv(
             base_year_export,
             msg=f"Reading base year export from {base_year_export}.",
         )
-    else:
-        getLogger(__name__).info("Base year export not provided. Set to zero.")
-        export_df = None
 
     # Base year import is optional
     if base_year_import:
@@ -1020,9 +998,6 @@ def read_initial_market_csv(
             base_year_import,
             msg=f"Reading base year import from {base_year_import}.",
         )
-    else:
-        getLogger(__name__).info("Base year import not provided. Set to zero.")
-        import_df = None
 
     return projections_df, import_df, export_df
 
@@ -1093,9 +1068,6 @@ def read_attribute_table_csv(path: Path) -> pd.DataFrame:
     Returns:
         DataFrame containing the attribute table data
     """
-    if not path.is_file():
-        raise OSError(f"{path} does not exist.")
-
     table = read_csv(
         path,
         required_columns=["region", "attribute", "year"],
@@ -1136,7 +1108,7 @@ def process_attribute_table(table: pd.DataFrame) -> xr.DataArray:
     # Create DataArray
     result = create_xarray_dataarray(table, name=attribute)
 
-    # Convert to float and fill missing values
+    # Fill missing values
     result = result.unstack("dim_0").fillna(0)
 
     return result
@@ -1144,29 +1116,25 @@ def process_attribute_table(table: pd.DataFrame) -> xr.DataArray:
 
 def read_regression_parameters_csv(
     path: Path,
-) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
+) -> pd.DataFrame:
     """Reads the regression parameters from a standard MUSE csv file into a DataFrame.
 
     Args:
         path: Path to the regression parameters CSV file
 
     Returns:
-        Tuple of (DataFrame containing the regression parameters data,
-                 Series of sector names,
-                 Series of function types)
+        DataFrame containing the regression parameters data
     """
-    if not path.is_file():
-        raise OSError(f"{path} does not exist or is not a file.")
     table = read_csv(
         path,
         required_columns=["sector", "region", "function_type", "coeff"],
         msg=f"Reading regression parameters from {path}.",
     )
-    return table, table.sector, table.function_type
+    return table
 
 
 def process_regression_parameters(
-    table: pd.DataFrame, sector: pd.Series, function_type: pd.Series
+    table: pd.DataFrame,
 ) -> xr.Dataset:
     """Processes regression parameters DataFrame into an xarray Dataset.
 
@@ -1182,7 +1150,7 @@ def process_regression_parameters(
     table.columns.name = "commodity"
 
     # Create multiindex for sector and region
-    sector = table.sector.apply(lambda x: x.lower())
+    sector = table.sector
     function_type = table.function_type
 
     table = create_multiindex(
@@ -1214,9 +1182,7 @@ def process_regression_parameters(
     return coeffs
 
 
-def read_presets_csv(
-    paths: Path,
-) -> dict[int, pd.DataFrame]:
+def read_presets_csv(paths: Path) -> dict[int, pd.DataFrame]:
     """Read consumption or supply files for preset sectors into DataFrames.
 
     Args:
@@ -1303,31 +1269,17 @@ def process_presets(
     return result
 
 
-def process_trade(
-    data: pd.DataFrame,
-    columns_are_source: bool = True,
-    parameters: str | None = None,
-    name: str | None = None,
-) -> xr.DataArray | xr.Dataset:
+def process_trade(data: pd.DataFrame) -> xr.DataArray | xr.Dataset:
     """Processes trade DataFrame into an xarray DataArray or Dataset.
 
     Args:
         data: DataFrame containing the trade data
-        columns_are_source: Whether columns represent source regions
-        parameters: Optional column name for parameters
-        drop: Optional columns to drop
-        name: Optional name for the resulting DataArray
 
     Returns:
         xarray DataArray or Dataset containing the processed trade data
     """
-    # Set region column names based on source/destination
-    if columns_are_source:
-        col_region = "src_region"
-        row_region = "dst_region"
-    else:
-        row_region = "src_region"
-        col_region = "dst_region"
+    col_region = "src_region"
+    row_region = "dst_region"
 
     # Standardize column names
     data = data.rename({"region": row_region})
@@ -1340,22 +1292,12 @@ def process_trade(
     )
 
     # Melt data
-    data = data.melt(
-        id_vars={parameters}.union(indices).intersection(data.columns),
-        var_name=col_region,
-    )
+    data = data.melt(id_vars=indices, var_name=col_region)
 
     # Create result based on parameters
-    if parameters is None:
-        result: xr.DataArray | xr.Dataset = create_xarray_dataarray(
-            data.set_index([*indices, col_region])["value"], name=name
-        )
-    else:
-        result = create_xarray_dataset(
-            data.pivot_table(
-                values="value", columns=parameters, index=[*indices, col_region]
-            )
-        )
+    result: xr.DataArray | xr.Dataset = create_xarray_dataarray(
+        data.set_index([*indices, col_region])["value"]
+    )
 
     return result.rename(src_region="region")
 
