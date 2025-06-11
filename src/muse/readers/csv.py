@@ -29,7 +29,6 @@ __all__ = [
     "read_timeslice_shares_csv",
 ]
 
-from collections.abc import Sequence
 from logging import getLogger
 from pathlib import Path
 from typing import Any
@@ -53,6 +52,9 @@ COLUMN_RENAMES = {
     "units_commodity_price": "units_prices",
     "enduse": "end_use",
 }
+
+# Columns that should be converted from camelCase to snake_case
+CAMEL_TO_SNAKE_COLUMNS = ["tech_type", "commodity", "comm_type", "share", "attribute"]
 
 
 def validate_dataframe(
@@ -271,7 +273,15 @@ def read_csv(filename: Path, float_precision: str = "high") -> pd.DataFrame:
             filename, float_precision=float_precision, low_memory=False, skiprows=[1]
         )
 
-    return standardize_columns(data)
+    # Standardize column names
+    data = standardize_columns(data)
+
+    # Convert specified columns from camelCase to snake_case
+    for col in CAMEL_TO_SNAKE_COLUMNS:
+        if col in data.columns:
+            data = data.rename(columns={col: camel_to_snake(col)})
+
+    return data
 
 
 def read_technodictionary_csv(filename: Path) -> pd.DataFrame:
@@ -325,9 +335,6 @@ def process_technodictionary(data: pd.DataFrame) -> xr.Dataset:
     # Handle tech_type if present
     if "type" in result.variables:
         result["tech_type"] = result.type.isel(region=0, year=0)
-        result["tech_type"].values = [
-            camel_to_snake(name) for name in result["tech_type"].values
-        ]
 
     # Sanity checks for year dimension
     if "year" in result.dims:
@@ -507,7 +514,7 @@ def validate_initial_assets(data: pd.DataFrame, source: Path) -> None:
     Raises:
         ValueError: If validation fails
     """
-    validate_dataframe(data, source, required_columns=["ProcessName", "RegionName"])
+    validate_dataframe(data, source, required_columns=["technology", "region"])
 
 
 def read_initial_assets_csv(filename: Path) -> pd.DataFrame:
@@ -533,8 +540,8 @@ def process_initial_assets(data: pd.DataFrame) -> xr.DataArray:
     Returns:
         xarray DataArray containing the processed initial assets
     """
-    if "Time" in data.columns:
-        result = process_trade(data, skiprows=[1], columns_are_source=True)
+    if "year" in data.columns:  # TODO: need a different way to identify trade file
+        result = process_trade(data, columns_are_source=True)
     else:
         result = process_initial_capacity(data)
 
@@ -545,8 +552,6 @@ def process_initial_assets(data: pd.DataFrame) -> xr.DataArray:
 
     # Add installed year
     result["installed"] = ("asset", [int(result.year.min())] * len(result.technology))
-    result["year"] = result.year.astype(int)
-
     return result
 
 
@@ -571,10 +576,8 @@ def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
     data = data.melt(var_name="year", value_name="value")
     data = data.set_index(["region", "technology", "year"])
 
-    # Create DataArray and convert year to int
+    # Create DataArray
     result = create_xarray_dataarray(data["value"])
-    result["year"] = result.year.astype(int)
-
     return result
 
 
@@ -749,9 +752,8 @@ def process_global_commodities(data: pd.DataFrame) -> xr.Dataset:
     Returns:
         xarray Dataset containing the processed global commodities
     """
-    # Set index and convert to snake_case
-    data.index = [camel_to_snake(u) for u in data.commodity]
-    data.comm_type = [camel_to_snake(u) for u in data.comm_type]
+    # Set index
+    data.index = [u for u in data.commodity]
 
     # Drop and rename columns
     data = data.drop("commodity", axis=1)
@@ -935,7 +937,7 @@ def process_csv_agent_parameters(data: pd.DataFrame, filename: Path) -> list[dic
             "decision": {"name": row.decision_method, "parameters": decision_params},
             "agent_type": agent_type,
             "quantity": row.quantity,
-            "share": camel_to_snake(row.share),
+            "share": row.share,
         }
 
         # Add optional parameters
@@ -1173,14 +1175,13 @@ def process_attribute_table(table: pd.DataFrame) -> xr.DataArray:
     )
 
     # Get attribute name and drop column
-    attribute = camel_to_snake(table.attribute.unique()[0])
+    attribute = table.attribute.unique()[0]
     table = table.drop(["attribute"], axis=1)
 
     # Create DataArray
     result = create_xarray_dataarray(table, name=attribute)
 
     # Convert to float and fill missing values
-    result = result.astype(float)
     result = result.unstack("dim_0").fillna(0)
 
     return result
@@ -1273,7 +1274,7 @@ def process_regression_parameters(
     return coeffs
 
 
-def validate_presets(data: pd.DataFrame, indices: Sequence[str], source: Path) -> None:
+def validate_presets(data: pd.DataFrame, source: Path) -> None:
     """Validates presets DataFrame.
 
     Args:
@@ -1285,29 +1286,16 @@ def validate_presets(data: pd.DataFrame, indices: Sequence[str], source: Path) -
         ValueError: If validation fails
     """
     # Validate required columns
-    validate_dataframe(data, source, required_columns=list(indices))
-
-    # Check for deprecated ProcessName column
-    if "process" in data.columns:
-        msg = (
-            f"The ProcessName column (in file {source}) is deprecated. "
-            "Data has been summed across processes, and this column has been "
-            "dropped."
-        )
-        getLogger(__name__).warning(msg)
+    validate_dataframe(data, source, required_columns=["region", "timeslice"])
 
 
 def read_presets_csv(
     paths: Path,
-    columns: str = "commodity",
-    indices: Sequence[str] = ("RegionName", "Timeslice"),
 ) -> dict[int, pd.DataFrame]:
     """Read consumption or supply files for preset sectors into DataFrames.
 
     Args:
         paths: Path pattern to match preset files
-        columns: Name for the columns dimension
-        indices: Column names to use as indices
 
     Returns:
         Dictionary mapping years to DataFrames containing preset data
@@ -1331,7 +1319,21 @@ def read_presets_csv(
             raise OSError(f"Year f{year} was found twice")
         data.year = year
 
-        validate_presets(data, indices, path)
+        # Legacy: drop ProcessName column and sum data (PR #448)
+        if "process" in data.columns:
+            getLogger(__name__).warning(
+                f"The ProcessName column (in file {path}) is deprecated. "
+                "Data has been summed across processes, and this column has been "
+                "dropped."
+            )
+            data = (
+                data.drop(columns=["process"])
+                .groupby(["region", "timeslice"])
+                .sum()
+                .reset_index()
+            )
+
+        validate_presets(data, path)
         datas[year] = data
 
     return datas
@@ -1339,37 +1341,27 @@ def read_presets_csv(
 
 def process_presets(
     datas: dict[int, pd.DataFrame],
-    columns: str = "commodity",
-    indices: Sequence[str] = ("region", "timeslice"),
 ) -> xr.Dataset:
     """Processes preset DataFrames into an xarray Dataset.
 
     Args:
         datas: Dictionary mapping years to DataFrames containing preset data
-        columns: Name for the columns dimension
-        indices: Column names to use as indices
 
     Returns:
         xarray Dataset containing the processed preset data
     """
     processed_datas = {}
     for year, data in datas.items():
-        # Legacy: drop ProcessName column and sum data (PR #448)
-        if "process" in data.columns:
-            data = (
-                data.drop(columns=["process"])
-                .groupby(list(indices))
-                .sum()
-                .reset_index()
-            )
-
         # Create multiindex
         data = create_multiindex(
-            data, index_columns=list(indices), index_names=["asset"], drop_columns=True
+            data,
+            index_columns=["region", "timeslice"],
+            index_names=["asset"],
+            drop_columns=True,
         )
 
         # Set column names
-        data.columns.name = columns
+        data.columns.name = "commodity"
 
         # Create DataArray
         processed_datas[year] = create_xarray_dataarray(data)
@@ -1381,14 +1373,7 @@ def process_presets(
         .sortby("year")
         .fillna(0)
         .unstack("asset")
-        .rename({k: k.replace("Name", "").lower() for k in indices})
     )
-
-    # Convert commodity names to snake_case
-    if "commodity" in result.coords:
-        result.coords["commodity"] = [
-            camel_to_snake(u) for u in result.commodity.values
-        ]
 
     return result
 
