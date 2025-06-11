@@ -128,18 +128,6 @@ def create_multiindex(
     return result
 
 
-def convert_to_numeric(data: pd.DataFrame) -> pd.DataFrame:
-    """Converts DataFrame columns to numeric where possible.
-
-    Args:
-        data: DataFrame to convert
-
-    Returns:
-        DataFrame with numeric columns where possible
-    """
-    return data.apply(to_numeric, axis=0)
-
-
 def create_xarray_dataset(
     data: pd.DataFrame,
     name: str | None = None,
@@ -265,6 +253,27 @@ def validate_technodictionary(data: pd.DataFrame, source: Path) -> None:
     data = data.rename(columns=camel_to_snake)
     data = data[data.process_name != "Unit"]
 
+def read_csv(filename: Path, float_precision: str = "high") -> pd.DataFrame:
+    """Reads and standardizes a CSV file into a DataFrame.
+
+    Args:
+        filename: Path to the CSV file
+        float_precision: Precision to use when reading floats
+
+    Returns:
+        DataFrame containing the standardized data
+    """
+    data = pd.read_csv(filename, float_precision=float_precision, low_memory=False)
+
+    # If the first row contains "Unit", reload the file without the first row
+    if data.iloc[0, 0] == "Unit":
+        data = pd.read_csv(
+            filename, float_precision=float_precision, low_memory=False, skiprows=[1]
+        )
+
+    return standardize_columns(data)
+
+
 def read_technodictionary_csv(filename: Path) -> pd.DataFrame:
     """Reads and formats technodata into a DataFrame.
 
@@ -274,9 +283,7 @@ def read_technodictionary_csv(filename: Path) -> pd.DataFrame:
     Returns:
         DataFrame containing the technodictionary data
     """
-    csv = pd.read_csv(filename, float_precision="high", low_memory=False)
-    csv = standardize_columns(csv)
-    csv = csv[csv["technology"] != "Unit"]
+    csv = read_csv(filename)
     validate_technodictionary(csv, filename)
     return csv
 
@@ -290,9 +297,6 @@ def process_technodictionary(data: pd.DataFrame) -> xr.Dataset:
     Returns:
         xarray Dataset containing the processed technodictionary
     """
-    # Standardize column names and convert to numeric
-    data = convert_to_numeric(data)
-
     # Create multiindex for technology, region, and year
     data = create_multiindex(
         data,
@@ -357,9 +361,7 @@ def read_technodata_timeslices_csv(filename: Path) -> pd.DataFrame:
     Returns:
         DataFrame containing the technodata timeslices data
     """
-    csv = pd.read_csv(filename, float_precision="high", low_memory=False)
-    csv = standardize_columns(csv)
-    csv = csv[csv["technology"] != "Unit"]
+    csv = read_csv(filename)
     validate_technodata_timeslices(csv, filename)
     return csv
 
@@ -374,9 +376,6 @@ def process_technodata_timeslices(data: pd.DataFrame) -> xr.Dataset:
         xarray Dataset containing the processed technodata timeslices
     """
     from muse.timeslices import sort_timeslices
-
-    # Convert to numeric
-    data = convert_to_numeric(data)
 
     # Create multiindex excluding factor columns
     factor_columns = ["utilization_factor", "minimum_service_factor", "obj_sort"]
@@ -428,9 +427,7 @@ def read_io_technodata_csv(filename: Path) -> pd.DataFrame:
     Returns:
         DataFrame containing the IO technodata
     """
-    csv = pd.read_csv(filename, float_precision="high", low_memory=False)
-    csv = standardize_columns(csv)
-    csv = csv[csv["technology"] != "Unit"]
+    csv = read_csv(filename)
 
     # Unspecified Level values default to "fixed"
     if "level" in csv.columns:
@@ -453,9 +450,6 @@ def process_io_technodata(data: pd.DataFrame) -> xr.Dataset:
     Returns:
         xarray Dataset containing the processed IO technodata
     """
-    # Convert to numeric
-    data = convert_to_numeric(data)
-
     # Create multiindex for technology, region, and year
     data = create_multiindex(
         data,
@@ -525,8 +519,7 @@ def read_initial_assets_csv(filename: Path) -> pd.DataFrame:
     Returns:
         DataFrame containing the initial assets data
     """
-    data = pd.read_csv(filename, float_precision="high", low_memory=False)
-    data = standardize_columns(data)
+    data = read_csv(filename)
     validate_initial_assets(data, filename)
     return data
 
@@ -742,9 +735,7 @@ def read_global_commodities_csv(path: Path) -> pd.DataFrame:
         DataFrame containing the global commodities data
     """
     getLogger(__name__).info(f"Reading global commodities from {path}.")
-
-    data = pd.read_csv(path, float_precision="high", low_memory=False)
-    data = standardize_columns(data)
+    data = read_csv(path)
     validate_global_commodities(data, path)
     return data
 
@@ -794,8 +785,7 @@ def read_timeslice_shares_csv(path: Path) -> pd.DataFrame:
         DataFrame containing the timeslice shares data
     """
     getLogger(__name__).info(f"Reading timeslice shares from {path}")
-    data = pd.read_csv(path, float_precision="high", low_memory=False)
-    data = standardize_columns(data)
+    data = read_csv(path)
     validate_timeslice_shares(data, path)
     return data
 
@@ -872,8 +862,7 @@ def read_csv_agent_parameters_csv(filename: Path) -> pd.DataFrame:
     Returns:
         DataFrame with validated agent parameters
     """
-    data = pd.read_csv(filename, float_precision="high", low_memory=False)
-    data = standardize_columns(data)
+    data = read_csv(filename)
 
     # Legacy: drop AgentNumber column
     if "agent_number" in data.columns:
@@ -993,9 +982,7 @@ def read_macro_drivers_csv(path: Path) -> pd.DataFrame:
         DataFrame containing the macro drivers data
     """
     getLogger(__name__).info(f"Reading macro drivers from {path}")
-
-    table = pd.read_csv(path, float_precision="high", low_memory=False)
-    table = standardize_columns(table)
+    table = read_csv(path)
     validate_macro_drivers(table, path)
     return table
 
@@ -1051,16 +1038,12 @@ def read_initial_market_csv(
     """
     # Projections must always be present
     getLogger(__name__).info(f"Reading projections from {projections}")
-    projections_df = pd.read_csv(projections, float_precision="high", low_memory=False)
-    projections_df = standardize_columns(projections_df)
+    projections_df = read_csv(projections)
 
     # Base year export is optional
     if base_year_export:
         getLogger(__name__).info(f"Reading base year export from {base_year_export}")
-        export_df = pd.read_csv(
-            base_year_export, float_precision="high", low_memory=False
-        )
-        export_df = standardize_columns(export_df)
+        export_df = read_csv(base_year_export)
     else:
         getLogger(__name__).info("Base year export not provided. Set to zero.")
         export_df = None
@@ -1068,10 +1051,7 @@ def read_initial_market_csv(
     # Base year import is optional
     if base_year_import:
         getLogger(__name__).info(f"Reading base year import from {base_year_import}")
-        import_df = pd.read_csv(
-            base_year_import, float_precision="high", low_memory=False
-        )
-        import_df = standardize_columns(import_df)
+        import_df = read_csv(base_year_import)
     else:
         getLogger(__name__).info("Base year import not provided. Set to zero.")
         import_df = None
@@ -1162,9 +1142,7 @@ def read_attribute_table_csv(path: Path) -> pd.DataFrame:
         raise OSError(f"{path} does not exist.")
 
     getLogger(__name__).info(f"Reading prices from {path}")
-
-    table = pd.read_csv(path, float_precision="high", low_memory=False)
-    table = standardize_columns(table)
+    table = read_csv(path)
     validate_attribute_table(table, path)
     return table
 
@@ -1178,12 +1156,8 @@ def process_attribute_table(table: pd.DataFrame) -> xr.DataArray:
     Returns:
         xarray DataArray containing the processed attribute table
     """
-    # Drop units row
-    table = table.drop(0)
-
     # Set column names and standardize
     table.columns.name = "commodity"
-    table = table.rename(columns=camel_to_snake)
 
     # Create multiindex for region and year
     table = create_multiindex(
@@ -1245,8 +1219,7 @@ def read_regression_parameters_csv(
     if not path.is_file():
         raise OSError(f"{path} does not exist or is not a file.")
     getLogger(__name__).info(f"Reading regression parameters from {path}.")
-    table = pd.read_csv(path, float_precision="high", low_memory=False)
-    table = standardize_columns(table)
+    table = read_csv(path)
     validate_regression_parameters(table, path)
     return table, table.sector, table.function_type
 
@@ -1348,8 +1321,7 @@ def read_presets_csv(
 
     datas = {}
     for path in allfiles:
-        data = pd.read_csv(path, low_memory=False)
-        data = standardize_columns(data)
+        data = read_csv(path)
 
         reyear = match(r"\S*.(\d{4})\S*\.csv", path.name)
         if reyear is None:
@@ -1425,7 +1397,6 @@ def process_trade(
     data: pd.DataFrame,
     columns_are_source: bool = True,
     parameters: str | None = None,
-    drop: str | Sequence[str] | None = None,
     name: str | None = None,
 ) -> xr.DataArray | xr.Dataset:
     """Processes trade DataFrame into an xarray DataArray or Dataset.
@@ -1448,17 +1419,7 @@ def process_trade(
         row_region = "src_region"
         col_region = "dst_region"
 
-    # Convert to numeric and handle drop columns
-    data = convert_to_numeric(data)
-    if isinstance(drop, str):
-        drop = [drop]
-    if drop:
-        drop = list(set(drop).intersection(data.columns))
-    if drop:
-        data = data.drop(columns=drop)
-
     # Standardize column names
-    data = standardize_columns(data)
     data = data.rename({"region": row_region})
 
     # Get indices for melting
