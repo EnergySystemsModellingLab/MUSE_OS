@@ -309,13 +309,19 @@ def read_csv(filename: Path, float_precision: str = "high") -> pd.DataFrame:
     Returns:
         DataFrame containing the standardized data
     """
-    data = pd.read_csv(filename, float_precision=float_precision, low_memory=False)
+    # Check if there's a units row (in which case we need to skip it)
+    with open(filename) as f:
+        next(f)  # Skip header row
+        first_data_row = f.readline().strip()
+    skiprows = [1] if first_data_row.startswith("Unit") else None
 
-    # If the first row contains "Unit", reload the file without the first row
-    if data.iloc[0, 0] == "Unit":
-        data = pd.read_csv(
-            filename, float_precision=float_precision, low_memory=False, skiprows=[1]
-        )
+    # Read the file
+    data = pd.read_csv(
+        filename,
+        float_precision=float_precision,
+        low_memory=False,
+        skiprows=skiprows,
+    )
 
     # Standardize column names
     data = standardize_columns(data)
