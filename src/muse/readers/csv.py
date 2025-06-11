@@ -88,43 +88,6 @@ COLUMN_TYPES = {
 }
 
 
-def validate_dataframe(
-    data: pd.DataFrame,
-    source: Path,
-    required_columns: list[str],
-) -> None:
-    """Validates required columns in a DataFrame.
-
-    Args:
-        data: DataFrame to validate
-        source: Source path for error messages
-        required_columns: List of column names that must be present
-
-    Raises:
-        ValueError: If required columns are missing or have incorrect types
-    """
-    # Check for missing columns
-    missing_columns = [col for col in required_columns if col not in data.columns]
-    if missing_columns:
-        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
-
-    # Type validation functions
-    type_checks = {
-        int: pd.api.types.is_integer_dtype,
-        float: pd.api.types.is_float_dtype,
-        str: pd.api.types.is_string_dtype,
-    }
-
-    # Check column types
-    for col in required_columns:
-        expected_type = COLUMN_TYPES[col]
-        if not type_checks[expected_type](data[col].dtype):
-            raise ValueError(
-                f"Column '{col}' in {source} must be of type {expected_type.__name__}, "
-                f"but is {data[col].dtype}"
-            )
-
-
 def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Standardizes column names in a DataFrame.
 
@@ -299,12 +262,17 @@ def convert_column_types(data: pd.DataFrame) -> pd.DataFrame:
     data = data.rename(columns=camel_to_snake)
     data = data[data.process_name != "Unit"]
 
-def read_csv(filename: Path, float_precision: str = "high") -> pd.DataFrame:
+def read_csv(
+    filename: Path,
+    float_precision: str = "high",
+    required_columns: list[str] | None = None,
+) -> pd.DataFrame:
     """Reads and standardizes a CSV file into a DataFrame.
 
     Args:
         filename: Path to the CSV file
         float_precision: Precision to use when reading floats
+        required_columns: List of column names that must be present (optional)
 
     Returns:
         DataFrame containing the standardized data
@@ -331,40 +299,18 @@ def read_csv(filename: Path, float_precision: str = "high") -> pd.DataFrame:
         if col in data.columns:
             data = data.rename(columns={col: camel_to_snake(col)})
 
-    # Convert data types
+    # Check/convert data types
     data = convert_column_types(data)
 
+    # Validate required columns if provided
+    if required_columns is not None:
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            raise ValueError(
+                f"Missing required columns in {filename}: {missing_columns}"
+            )
+
     return data
-
-
-def validate_technodictionary(data: pd.DataFrame, source: Path) -> None:
-    """Validates technodictionary DataFrame.
-
-    Args:
-        data: DataFrame to validate
-        source: Source path for error messages
-
-    Raises:
-        ValueError: If validation fails
-    """
-    # Validate required columns
-    validate_dataframe(data, source, required_columns=["process", "region", "year"])
-
-    # Check for deprecated columns
-    if "fuel" in data.columns:
-        msg = (
-            f"The 'Fuel' column in {source} has been deprecated. "
-            "This information is now determined from CommIn files. "
-            "Please remove this column from your Technodata files."
-        )
-        getLogger(__name__).warning(msg)
-    if "end_use" in data.columns:
-        msg = (
-            f"The 'EndUse' column in {source} has been deprecated. "
-            "This information is now determined from CommOut files. "
-            "Please remove this column from your Technodata files."
-        )
-        getLogger(__name__).warning(msg)
 
 
 def read_technodictionary_csv(filename: Path) -> pd.DataFrame:
@@ -376,8 +322,24 @@ def read_technodictionary_csv(filename: Path) -> pd.DataFrame:
     Returns:
         DataFrame containing the technodictionary data
     """
-    csv = read_csv(filename)
-    validate_technodictionary(csv, filename)
+    csv = read_csv(filename, required_columns=["process", "region", "year"])
+
+    # Check for deprecated columns
+    if "fuel" in csv.columns:
+        msg = (
+            f"The 'Fuel' column in {filename} has been deprecated. "
+            "This information is now determined from CommIn files. "
+            "Please remove this column from your Technodata files."
+        )
+        getLogger(__name__).warning(msg)
+    if "end_use" in csv.columns:
+        msg = (
+            f"The 'EndUse' column in {filename} has been deprecated. "
+            "This information is now determined from CommOut files. "
+            "Please remove this column from your Technodata files."
+        )
+        getLogger(__name__).warning(msg)
+
     return csv
 
 
@@ -429,19 +391,6 @@ def process_technodictionary(data: pd.DataFrame) -> xr.Dataset:
     return result
 
 
-def validate_technodata_timeslices(data: pd.DataFrame, source: Path) -> None:
-    """Validates technodata timeslices DataFrame.
-
-    Args:
-        data: DataFrame to validate
-        source: Source path for error messages
-
-    Raises:
-        ValueError: If validation fails
-    """
-    validate_dataframe(data, source, required_columns=["technology", "region", "year"])
-
-
 def read_technodata_timeslices_csv(filename: Path) -> pd.DataFrame:
     """Reads and formats technodata timeslices into a DataFrame.
 
@@ -451,8 +400,7 @@ def read_technodata_timeslices_csv(filename: Path) -> pd.DataFrame:
     Returns:
         DataFrame containing the technodata timeslices data
     """
-    csv = read_csv(filename)
-    validate_technodata_timeslices(csv, filename)
+    csv = read_csv(filename, required_columns=["technology", "region", "year"])
     return csv
 
 
@@ -495,19 +443,6 @@ def process_technodata_timeslices(data: pd.DataFrame) -> xr.Dataset:
     return sort_timeslices(result)
 
 
-def validate_io_technodata(data: pd.DataFrame, source: Path) -> None:
-    """Validates IO technodata DataFrame.
-
-    Args:
-        data: DataFrame to validate
-        source: Source path for error messages
-
-    Raises:
-        ValueError: If validation fails
-    """
-    validate_dataframe(data, source, required_columns=["technology", "region", "year"])
-
-
 def read_io_technodata_csv(filename: Path) -> pd.DataFrame:
     """Reads process inputs or outputs into a DataFrame.
 
@@ -517,7 +452,7 @@ def read_io_technodata_csv(filename: Path) -> pd.DataFrame:
     Returns:
         DataFrame containing the IO technodata
     """
-    csv = read_csv(filename)
+    csv = read_csv(filename, required_columns=["technology", "region", "year"])
 
     # Unspecified Level values default to "fixed"
     if "level" in csv.columns:
@@ -527,7 +462,6 @@ def read_io_technodata_csv(filename: Path) -> pd.DataFrame:
         # default, as only "fixed" outputs are allowed.
         csv["level"] = "fixed"
 
-    validate_io_technodata(csv, filename)
     return csv
 
 
@@ -587,19 +521,6 @@ def process_io_technodata(data: pd.DataFrame) -> xr.Dataset:
     return result
 
 
-def validate_initial_assets(data: pd.DataFrame, source: Path) -> None:
-    """Validates initial assets DataFrame.
-
-    Args:
-        data: DataFrame to validate
-        source: Source path for error messages
-
-    Raises:
-        ValueError: If validation fails
-    """
-    validate_dataframe(data, source, required_columns=["technology", "region"])
-
-
 def read_initial_assets_csv(filename: Path) -> pd.DataFrame:
     """Reads and formats data about initial capacity into a DataFrame.
 
@@ -609,8 +530,7 @@ def read_initial_assets_csv(filename: Path) -> pd.DataFrame:
     Returns:
         DataFrame containing the initial assets data
     """
-    data = read_csv(filename)
-    validate_initial_assets(data, filename)
+    data = read_csv(filename, required_columns=["technology", "region"])
     return data
 
 
@@ -712,8 +632,7 @@ def read_technologies_csv(
     else:
         ttpath = None
 
-    logger = getLogger(__name__)
-    logger.info(msg)
+    getLogger(__name__).info(msg)
 
     # Read all data
     technodata_df = read_technodictionary_csv(tpath)
@@ -798,19 +717,6 @@ def process_technologies(
     return result
 
 
-def validate_global_commodities(data: pd.DataFrame, source: Path) -> None:
-    """Validates global commodities DataFrame.
-
-    Args:
-        data: DataFrame to validate
-        source: Source path for error messages
-
-    Raises:
-        ValueError: If validation fails
-    """
-    validate_dataframe(data, source, required_columns=["commodity", "comm_type"])
-
-
 def read_global_commodities_csv(path: Path) -> pd.DataFrame:
     """Reads commodities information from input into a DataFrame.
 
@@ -819,10 +725,10 @@ def read_global_commodities_csv(path: Path) -> pd.DataFrame:
 
     Returns:
         DataFrame containing the global commodities data
+
     """
     getLogger(__name__).info(f"Reading global commodities from {path}.")
-    data = read_csv(path)
-    validate_global_commodities(data, path)
+    data = read_csv(path, required_columns=["commodity", "comm_type"])
     return data
 
 
@@ -847,19 +753,6 @@ def process_global_commodities(data: pd.DataFrame) -> xr.Dataset:
     return create_xarray_dataset(data)
 
 
-def validate_timeslice_shares(data: pd.DataFrame, source: Path) -> None:
-    """Validates timeslice shares DataFrame.
-
-    Args:
-        data: DataFrame to validate
-        source: Source path for error messages
-
-    Raises:
-        ValueError: If validation fails
-    """
-    validate_dataframe(data, source, required_columns=["region", "timeslice"])
-
-
 def read_timeslice_shares_csv(path: Path) -> pd.DataFrame:
     """Reads sliceshare information into a DataFrame.
 
@@ -870,8 +763,7 @@ def read_timeslice_shares_csv(path: Path) -> pd.DataFrame:
         DataFrame containing the timeslice shares data
     """
     getLogger(__name__).info(f"Reading timeslice shares from {path}")
-    data = read_csv(path)
-    validate_timeslice_shares(data, path)
+    data = read_csv(path, required_columns=["region", "timeslice"])
     return data
 
 
@@ -903,20 +795,17 @@ def process_timeslice_shares(data: pd.DataFrame) -> xr.DataArray:
     return result.shares
 
 
-def validate_csv_agent_parameters(data: pd.DataFrame, source: Path) -> None:
-    """Validates agent parameters DataFrame.
+def read_csv_agent_parameters_csv(filename: Path) -> pd.DataFrame:
+    """Reads standard MUSE agent-declaration csv-files into a DataFrame.
 
     Args:
-        data: DataFrame to validate
-        source: Source path for error messages
+        filename: Path to the agent parameters CSV file
 
-    Raises:
-        ValueError: If validation fails
+    Returns:
+        DataFrame with validated agent parameters
     """
-    # Validate required columns
-    validate_dataframe(
-        data,
-        source,
+    data = read_csv(
+        filename,
         required_columns=[
             "name",
             "region",
@@ -937,23 +826,10 @@ def validate_csv_agent_parameters(data: pd.DataFrame, source: Path) -> None:
             )
             getLogger(__name__).warning(msg)
 
-
-def read_csv_agent_parameters_csv(filename: Path) -> pd.DataFrame:
-    """Reads standard MUSE agent-declaration csv-files into a DataFrame.
-
-    Args:
-        filename: Path to the agent parameters CSV file
-
-    Returns:
-        DataFrame with validated agent parameters
-    """
-    data = read_csv(filename)
-
     # Legacy: drop AgentNumber column
     if "agent_number" in data.columns:
         data = data.drop(["agent_number"], axis=1)
 
-    validate_csv_agent_parameters(data, filename)
     return data
 
 
@@ -1035,28 +911,6 @@ def process_csv_agent_parameters(data: pd.DataFrame, filename: Path) -> list[dic
     return result
 
 
-def validate_macro_drivers(data: pd.DataFrame, source: Path) -> None:
-    """Validates macro drivers DataFrame.
-
-    Args:
-        data: DataFrame to validate
-        source: Source path for error messages
-
-    Raises:
-        ValueError: If validation fails
-    """
-    # Validate required columns
-    validate_dataframe(data, source, required_columns=["region", "variable"])
-
-    # Validate required variables
-    required_variables = ["Population", "GDP|PPP"]
-    missing_variables = [
-        var for var in required_variables if var not in data.variable.unique()
-    ]
-    if missing_variables:
-        raise ValueError(f"Missing required variables in {source}: {missing_variables}")
-
-
 def read_macro_drivers_csv(path: Path) -> pd.DataFrame:
     """Reads a standard MUSE csv file for macro drivers into a DataFrame.
 
@@ -1067,8 +921,16 @@ def read_macro_drivers_csv(path: Path) -> pd.DataFrame:
         DataFrame containing the macro drivers data
     """
     getLogger(__name__).info(f"Reading macro drivers from {path}")
-    table = read_csv(path)
-    validate_macro_drivers(table, path)
+    table = read_csv(path, required_columns=["region", "variable"])
+
+    # Validate required variables
+    required_variables = ["Population", "GDP|PPP"]
+    missing_variables = [
+        var for var in required_variables if var not in table.variable.unique()
+    ]
+    if missing_variables:
+        raise ValueError(f"Missing required variables in {path}: {missing_variables}")
+
     return table
 
 
@@ -1201,19 +1063,6 @@ def process_initial_market(
     return result
 
 
-def validate_attribute_table(data: pd.DataFrame, source: Path) -> None:
-    """Validates attribute table DataFrame.
-
-    Args:
-        data: DataFrame to validate
-        source: Source path for error messages
-
-    Raises:
-        ValueError: If validation fails
-    """
-    validate_dataframe(data, source, required_columns=["region", "attribute", "year"])
-
-
 def read_attribute_table_csv(path: Path) -> pd.DataFrame:
     """Read a standard MUSE csv file for price projections into a DataFrame.
 
@@ -1227,8 +1076,7 @@ def read_attribute_table_csv(path: Path) -> pd.DataFrame:
         raise OSError(f"{path} does not exist.")
 
     getLogger(__name__).info(f"Reading prices from {path}")
-    table = read_csv(path)
-    validate_attribute_table(table, path)
+    table = read_csv(path, required_columns=["region", "attribute", "year"])
     return table
 
 
@@ -1270,23 +1118,6 @@ def process_attribute_table(table: pd.DataFrame) -> xr.DataArray:
     return result
 
 
-def validate_regression_parameters(data: pd.DataFrame, source: Path) -> None:
-    """Validates regression parameters DataFrame.
-
-    Args:
-        data: DataFrame to validate
-        source: Source path for error messages
-
-    Raises:
-        ValueError: If validation fails
-    """
-    validate_dataframe(
-        data,
-        source,
-        required_columns=["region", "sector", "function_type", "coeff"],
-    )
-
-
 def read_regression_parameters_csv(
     path: Path,
 ) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
@@ -1303,8 +1134,9 @@ def read_regression_parameters_csv(
     if not path.is_file():
         raise OSError(f"{path} does not exist or is not a file.")
     getLogger(__name__).info(f"Reading regression parameters from {path}.")
-    table = read_csv(path)
-    validate_regression_parameters(table, path)
+    table = read_csv(
+        path, required_columns=["sector", "region", "function_type", "coeff"]
+    )
     return table, table.sector, table.function_type
 
 
@@ -1357,21 +1189,6 @@ def process_regression_parameters(
     return coeffs
 
 
-def validate_presets(data: pd.DataFrame, source: Path) -> None:
-    """Validates presets DataFrame.
-
-    Args:
-        data: DataFrame to validate
-        indices: Column names to use as indices
-        source: Source path for error messages
-
-    Raises:
-        ValueError: If validation fails
-    """
-    # Validate required columns
-    validate_dataframe(data, source, required_columns=["region", "timeslice"])
-
-
 def read_presets_csv(
     paths: Path,
 ) -> dict[int, pd.DataFrame]:
@@ -1382,6 +1199,7 @@ def read_presets_csv(
 
     Returns:
         Dictionary mapping years to DataFrames containing preset data
+
     """
     from glob import glob
     from re import match
@@ -1392,7 +1210,7 @@ def read_presets_csv(
 
     datas = {}
     for path in allfiles:
-        data = read_csv(path)
+        data = read_csv(path, required_columns=["region", "timeslice"])
 
         reyear = match(r"\S*.(\d{4})\S*\.csv", path.name)
         if reyear is None:
@@ -1416,7 +1234,6 @@ def read_presets_csv(
                 .reset_index()
             )
 
-        validate_presets(data, path)
         datas[year] = data
 
     return datas
