@@ -96,7 +96,7 @@ __all__ = [
     "investments",
     "objectives",
     "outputs",
-    "read_csv_agent_parameters",
+    "read_agent_parameters",
     "read_global_commodities",
     "read_initial_capacity",
     "read_io_technodata",
