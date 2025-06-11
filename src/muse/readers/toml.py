@@ -532,9 +532,8 @@ def check_subsector_settings(settings: dict) -> None:
 
 def read_technodata(
     settings: Any,
-    sector_name: str | None = None,
+    sector_name: str,
     time_framework: Sequence[int] | None = None,
-    commodities: str | Path | None = None,
     regions: Sequence[str] | None = None,
     interpolation_mode: str = "linear",
 ) -> xr.Dataset:
@@ -544,14 +543,10 @@ def read_technodata(
     if time_framework is None:
         time_framework = getattr(settings, "time_framework", [2010, 2050])
 
-    if commodities is None:
-        commodities = settings.global_input_files.global_commodities
-
     if regions is None:
         regions = settings.regions
 
-    if sector_name is not None:
-        settings = getattr(settings.sectors, sector_name)
+    settings = getattr(settings.sectors, sector_name)
 
     technodata_timeslices = getattr(settings, "technodata_timeslices", None)
     # normalizes case where technodata is not in own subsection
@@ -586,11 +581,10 @@ def read_technodata(
             raise IncorrectSettings(f"File {filename} is not a file.")
 
     technologies = read_technologies(
-        technodata_path_or_sector=technosettings.pop("technodata"),
+        technodata_path_or_sector=Path(technosettings.pop("technodata")),
         technodata_timeslices_path=technosettings.pop("technodata_timeslices", None),
-        comm_out_path=technosettings.pop("commodities_out"),
-        comm_in_path=technosettings.pop("commodities_in"),
-        commodities=commodities,
+        comm_out_path=Path(technosettings.pop("commodities_out")),
+        comm_in_path=Path(technosettings.pop("commodities_in")),
     ).sel(region=regions)
 
     ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))

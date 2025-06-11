@@ -92,7 +92,7 @@ def model(name: str = "default", test: bool = False) -> MCA:
 
 def copy_model(
     name: str = "default",
-    path: str | Path | None = None,
+    path: Path | None = None,
     overwrite: bool = False,
 ) -> Path:
     """Copy model files to given path.
