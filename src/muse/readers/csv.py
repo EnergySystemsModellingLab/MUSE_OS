@@ -3,29 +3,179 @@
 from __future__ import annotations
 
 __all__ = [
-    "read_attribute_table",
-    "read_csv_agent_parameters",
-    "read_global_commodities",
-    "read_initial_assets",
-    "read_initial_market",
-    "read_io_technodata",
-    "read_macro_drivers",
-    "read_presets",
-    "read_regression_parameters",
-    "read_technodictionary",
-    "read_technologies",
-    "read_timeslice_shares",
+    "process_attribute_table",
+    "process_csv_agent_parameters",
+    "process_global_commodities",
+    "process_initial_assets",
+    "process_initial_market",
+    "process_io_technodata",
+    "process_macro_drivers",
+    "process_presets",
+    "process_regression_parameters",
+    "process_technodictionary",
+    "process_technologies",
+    "process_timeslice_shares",
+    "read_attribute_table_csv",
+    "read_csv_agent_parameters_csv",
+    "read_global_commodities_csv",
+    "read_initial_assets_csv",
+    "read_initial_market_csv",
+    "read_io_technodata_csv",
+    "read_macro_drivers_csv",
+    "read_presets_csv",
+    "read_regression_parameters_csv",
+    "read_technodictionary_csv",
+    "read_technologies_csv",
+    "read_timeslice_shares_csv",
 ]
 
 from collections.abc import Sequence
 from logging import getLogger
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 
 from muse.errors import UnitsConflictInCommodities
+
+# Global mapping of column names to their standardized versions
+COLUMN_RENAMES = {
+    "process_name": "technology",
+    "sector_name": "sector",
+    "region_name": "region",
+    "time": "year",
+    "commodity_name": "commodity",
+    "commodity_type": "comm_type",
+    "commodity_emission_factor_co2": "emmission_factor",
+    "commodity_price": "prices",
+    "units_commodity_price": "units_prices",
+    "enduse": "end_use",
+}
+
+
+def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Standardizes column names in a DataFrame.
+
+    This function:
+    1. Converts column names to snake_case
+    2. Applies the global COLUMN_RENAMES mapping
+    3. Preserves any columns not in the mapping
+
+    Args:
+        df: DataFrame to standardize
+
+    Returns:
+        DataFrame with standardized column names
+    """
+    # First convert to snake_case
+    df = df.rename(columns=camel_to_snake)
+
+    # Drop any columns that start with "Unname"
+    df.drop(df.filter(regex="Unname"), axis=1, inplace=True)
+
+    # Then apply global mapping
+    df = df.rename(columns=COLUMN_RENAMES)
+
+    return df
+
+
+def create_multiindex(
+    data: pd.DataFrame,
+    index_columns: list[str],
+    index_names: list[str],
+    drop_columns: bool = True,
+) -> pd.DataFrame:
+    """Creates a MultiIndex from specified columns.
+
+    Args:
+        data: DataFrame to create index from
+        index_columns: List of column names to use for index
+        index_names: List of names for the index levels
+        drop_columns: Whether to drop the original columns
+
+    Returns:
+        DataFrame with new MultiIndex
+    """
+    index = pd.MultiIndex.from_arrays(
+        [data[col] for col in index_columns], names=index_names
+    )
+    result = data.copy()
+    result.index = index
+    if drop_columns:
+        result = result.drop(columns=index_columns)
+    return result
+
+
+def convert_to_numeric(data: pd.DataFrame) -> pd.DataFrame:
+    """Converts DataFrame columns to numeric where possible.
+
+    Args:
+        data: DataFrame to convert
+
+    Returns:
+        DataFrame with numeric columns where possible
+    """
+    return data.apply(to_numeric, axis=0)
+
+
+def create_xarray_dataset(
+    data: pd.DataFrame,
+    name: str | None = None,
+    coords: dict[str, Any] | None = None,
+    attrs: dict[str, Any] | None = None,
+) -> xr.Dataset:
+    """Creates an xarray Dataset from a DataFrame with standardized options.
+
+    Args:
+        data: DataFrame to convert
+        name: Optional name for the Dataset
+        coords: Optional coordinates to add
+        attrs: Optional attributes to add
+
+    Returns:
+        xarray Dataset
+    """
+    result = xr.Dataset.from_dataframe(data)
+    if name:
+        result.name = name
+    if coords:
+        for key, value in coords.items():
+            result.coords[key] = value
+    if attrs:
+        for key, value in attrs.items():
+            result.attrs[key] = value
+    return result
+
+
+def create_xarray_dataarray(
+    data: pd.DataFrame,
+    name: str | None = None,
+    coords: dict[str, Any] | None = None,
+    attrs: dict[str, Any] | None = None,
+) -> xr.DataArray:
+    """Creates an xarray DataArray from a DataFrame with standardized options.
+
+    Args:
+        data: DataFrame to convert
+        name: Optional name for the DataArray
+        coords: Optional coordinates to add
+        attrs: Optional attributes to add
+
+    Returns:
+        xarray DataArray
+    """
+    result = xr.DataArray(data)
+    if name:
+        result.name = name
+    if coords:
+        for key, value in coords.items():
+            result.coords[key] = value
+    if attrs:
+        for key, value in attrs.items():
+            result.attrs[key] = value
+    return result
 
 
 def camel_to_snake(name: str) -> str:
@@ -56,106 +206,181 @@ def to_numeric(x):
         return x
 
 
-def read_technodictionary(filename: Path) -> xr.Dataset:
-    """Reads and formats technodata into a dataset.
+def validate_technodictionary(data: pd.DataFrame, source: str) -> None:
+    """Validates technodictionary DataFrame.
 
-    There are three axes: technologies, regions, and year.
+    Args:
+        data: DataFrame to validate
+        source: Source name for error messages
+
+    Raises:
+        ValueError: If validation fails
     """
-    csv = pd.read_csv(filename, float_precision="high", low_memory=False)
-    csv.drop(csv.filter(regex="Unname"), axis=1, inplace=True)
+    # Validate required columns
+    required_columns = ["process", "region", "year"]
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
 
-    # Check for deprecated Fuel and EndUse columns (#715)
-    columns_lower = [col.lower() for col in csv.columns]
-    if "fuel" in columns_lower:
+    # Check for deprecated columns
+    if "fuel" in data.columns:
         msg = (
-            f"The 'Fuel' column in {filename} has been deprecated. "
+            f"The 'Fuel' column in {source} has been deprecated. "
             "This information is now determined from CommIn files. "
             "Please remove this column from your Technodata files."
         )
         getLogger(__name__).warning(msg)
-    if "enduse" in columns_lower:
+    if "end_use" in data.columns:
         msg = (
-            f"The 'EndUse' column in {filename} has been deprecated. "
+            f"The 'EndUse' column in {source} has been deprecated. "
             "This information is now determined from CommOut files. "
             "Please remove this column from your Technodata files."
         )
         getLogger(__name__).warning(msg)
 
-    if "scaling_size" in columns_lower:
+    if "scaling_size" in data.columns:
         msg = (
-            f"The 'ScalingSize' column in {filename} has been deprecated. "
+            f"The 'ScalingSize' column in {source} has been deprecated. "
             "Please remove this column from your Technodata files."
         )
         getLogger(__name__).warning(msg)
 
-    csv = csv.rename(columns=camel_to_snake)
-    data = csv[csv.process_name != "Unit"]
+    data = data.rename(columns=camel_to_snake)
+    data = data[data.process_name != "Unit"]
 
-    ts = pd.MultiIndex.from_arrays(
-        [data.process_name, data.region_name, [int(u) for u in data.time]],
-        names=("technology", "region", "year"),
+def read_technodictionary_csv(filename: Path) -> pd.DataFrame:
+    """Reads and formats technodata into a DataFrame.
+
+    Args:
+        filename: Path to the technodictionary CSV file
+
+    Returns:
+        DataFrame containing the technodictionary data
+    """
+    csv = pd.read_csv(filename, float_precision="high", low_memory=False)
+    csv = standardize_columns(csv)
+    csv = csv[csv["technology"] != "Unit"]
+    validate_technodictionary(csv, filename)
+    return csv
+
+
+def process_technodictionary(data: pd.DataFrame) -> xr.Dataset:
+    """Processes technodictionary DataFrame into an xarray Dataset.
+
+    Args:
+        data: DataFrame containing the technodictionary data
+
+    Returns:
+        xarray Dataset containing the processed technodictionary
+    """
+    # Standardize column names and convert to numeric
+    data = convert_to_numeric(data)
+
+    # Create multiindex for technology, region, and year
+    data = create_multiindex(
+        data,
+        index_columns=["technology", "region", "year"],
+        index_names=["technology", "region", "year"],
+        drop_columns=True,
     )
-    data.index = ts
+
+    # Convert time to integers
+    data.index = data.index.set_levels(
+        [
+            data.index.levels[0],
+            data.index.levels[1],
+            [int(u) for u in data.index.levels[2]],
+        ],
+        level=[0, 1, 2],
+    )
+
+    # Set column and index names
     data.columns.name = "technodata"
     data.index.name = "technology"
-    data = data.drop(["process_name", "region_name", "time"], axis=1)
-    data = data.apply(to_numeric, axis=0)
 
-    result = xr.Dataset.from_dataframe(data.sort_index())
+    # Create dataset
+    result = create_xarray_dataset(data.sort_index())
+
+    # Handle tech_type if present
     if "type" in result.variables:
         result["tech_type"] = result.type.isel(region=0, year=0)
         result["tech_type"].values = [
             camel_to_snake(name) for name in result["tech_type"].values
         ]
 
-    units = csv[csv.process_name == "Unit"].drop(
-        ["process_name", "region_name", "time"], axis=1
-    )
-    for variable, value in units.items():
-        if all(u not in {"-", "Retro", "New"} for u in value.values):
-            result[variable].attrs["units"] = value.values[0]
-
-    # Sanity checks
+    # Sanity checks for year dimension
     if "year" in result.dims:
         assert len(set(result.year.data)) == result.year.data.size
         result = result.sortby("year")
-
-    if "year" in result.dims and len(result.year) == 1:
-        result = result.isel(year=0, drop=True)
+        if len(result.year) == 1:
+            result = result.isel(year=0, drop=True)
 
     return result
 
 
-def read_technodata_timeslices(filename: Path) -> xr.Dataset:
-    """Reads and formats technodata timeslices into a dataset."""
+def validate_technodata_timeslices(data: pd.DataFrame, source: str) -> None:
+    """Validates technodata timeslices DataFrame.
+
+    Args:
+        data: DataFrame to validate
+        source: Source name for error messages
+
+    Raises:
+        ValueError: If validation fails
+    """
+    # Validate required columns
+    required_columns = ["technology", "region", "year"]
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+
+
+def read_technodata_timeslices_csv(filename: Path) -> pd.DataFrame:
+    """Reads and formats technodata timeslices into a DataFrame.
+
+    Args:
+        filename: Path to the technodata timeslices CSV file
+
+    Returns:
+        DataFrame containing the technodata timeslices data
+    """
+    csv = pd.read_csv(filename, float_precision="high", low_memory=False)
+    csv = standardize_columns(csv)
+    csv = csv[csv["technology"] != "Unit"]
+    validate_technodata_timeslices(csv, filename)
+    return csv
+
+
+def process_technodata_timeslices(data: pd.DataFrame) -> xr.Dataset:
+    """Processes technodata timeslices DataFrame into an xarray Dataset.
+
+    Args:
+        data: DataFrame containing the technodata timeslices data
+
+    Returns:
+        xarray Dataset containing the processed technodata timeslices
+    """
     from muse.timeslices import sort_timeslices
 
-    csv = pd.read_csv(filename, float_precision="high", low_memory=False)
-    csv = csv.rename(columns=camel_to_snake)
+    # Convert to numeric
+    data = convert_to_numeric(data)
 
-    # Rename columns to ensure consistency
-    csv = csv.rename(
-        columns={"process_name": "technology", "region_name": "region", "time": "year"}
+    # Create multiindex excluding factor columns
+    factor_columns = ["utilization_factor", "minimum_service_factor", "obj_sort"]
+    index_columns = [col for col in data.columns if col not in factor_columns]
+    data = create_multiindex(
+        data, index_columns=index_columns, index_names=["technology"], drop_columns=True
     )
 
-    # Drop Unit rows
-    data = csv[csv.technology != "Unit"]
-
-    data = data.apply(to_numeric)
-    ts = pd.MultiIndex.from_frame(
-        data.drop(
-            columns=["utilization_factor", "minimum_service_factor", "obj_sort"],
-            errors="ignore",
-        )
-    )
-
-    data.index = ts
+    # Set column names
     data.columns.name = "technodata_timeslice"
     data.index.name = "technology"
 
-    data = data.filter(["utilization_factor", "minimum_service_factor"])
+    # Filter to only factor columns
+    data = data.filter(factor_columns)
 
-    result = xr.Dataset.from_dataframe(data)
+    # Create dataset
+    result = create_xarray_dataset(data)
 
     # Stack timeslice levels
     timeslice_levels = [
@@ -164,104 +389,206 @@ def read_technodata_timeslices(filename: Path) -> xr.Dataset:
         if item not in ["technology", "region", "year"]
     ]
     result = result.stack(timeslice=timeslice_levels)
+
     return sort_timeslices(result)
 
 
-def read_io_technodata(filename: Path) -> xr.Dataset:
-    """Reads process inputs or outputs.
+def validate_io_technodata(data: pd.DataFrame, source: str) -> None:
+    """Validates IO technodata DataFrame.
 
-    There are four axes: (technology, region, year, commodity)
+    Args:
+        data: DataFrame to validate
+        source: Source name for error messages
+
+    Raises:
+        ValueError: If validation fails
+    """
+    # Validate required columns
+    required_columns = ["technology", "region", "year"]
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+
+
+def read_io_technodata_csv(filename: Path) -> pd.DataFrame:
+    """Reads process inputs or outputs into a DataFrame.
+
+    Args:
+        filename: Path to the IO technodata CSV file
+
+    Returns:
+        DataFrame containing the IO technodata
     """
     csv = pd.read_csv(filename, float_precision="high", low_memory=False)
+    csv = standardize_columns(csv)
+    csv = csv[csv["technology"] != "Unit"]
 
     # Unspecified Level values default to "fixed"
-    if "Level" in csv.columns:
-        csv["Level"] = csv["Level"].fillna("fixed")
+    if "level" in csv.columns:
+        csv["level"] = csv["level"].fillna("fixed")
     else:
         # Particularly relevant to outputs files where the Level column is omitted by
         # default, as only "fixed" outputs are allowed.
-        csv["Level"] = "fixed"
+        csv["level"] = "fixed"
 
-    data = csv[csv.ProcessName != "Unit"]
-    region = np.array(data.RegionName, dtype=str)
-    process = data.ProcessName
-    year = [int(u) for u in data.Time]
+    validate_io_technodata(csv, filename)
+    return csv
 
-    data = data.drop(["ProcessName", "RegionName", "Time"], axis=1)
 
-    ts = pd.MultiIndex.from_arrays(
-        [process, region, year], names=("technology", "region", "year")
+def process_io_technodata(data: pd.DataFrame) -> xr.Dataset:
+    """Processes IO technodata DataFrame into an xarray Dataset.
+
+    Args:
+        data: DataFrame containing the IO technodata
+
+    Returns:
+        xarray Dataset containing the processed IO technodata
+    """
+    # Convert to numeric
+    data = convert_to_numeric(data)
+
+    # Create multiindex for technology, region, and year
+    data = create_multiindex(
+        data,
+        index_columns=["technology", "region", "year"],
+        index_names=["technology", "region", "year"],
+        drop_columns=True,
     )
-    data.index = ts
+
+    # Convert time to integers
+    data.index = data.index.set_levels(
+        [
+            data.index.levels[0],
+            data.index.levels[1],
+            [int(u) for u in data.index.levels[2]],
+        ],
+        level=[0, 1, 2],
+    )
+
+    # Set column names
     data.columns.name = "commodity"
     data.index.name = "technology"
-    data = data.rename(columns=camel_to_snake)
-    data = data.apply(to_numeric, axis=0)
 
-    fixed_set = xr.Dataset.from_dataframe(data[data.level == "fixed"]).drop_vars(
-        "level"
-    )
-    flexible_set = xr.Dataset.from_dataframe(data[data.level == "flexible"]).drop_vars(
-        "level"
-    )
+    # Split into fixed and flexible sets
+    fixed_set = create_xarray_dataset(
+        data[data.level == "fixed"], name="fixed"
+    ).drop_vars("level")
+
+    flexible_set = create_xarray_dataset(
+        data[data.level == "flexible"], name="flexible"
+    ).drop_vars("level")
+
+    # Create commodity dimension
     commodity = xr.DataArray(
         list(fixed_set.data_vars.keys()), dims="commodity", name="commodity"
     )
+
+    # Concatenate fixed and flexible sets
     fixed = xr.concat(fixed_set.data_vars.values(), dim=commodity)
     flexible = xr.concat(flexible_set.data_vars.values(), dim=commodity)
 
-    result = xr.Dataset(data_vars={"fixed": fixed, "flexible": flexible})
+    # Create result dataset
+    result = create_xarray_dataset(data_vars={"fixed": fixed, "flexible": flexible})
     result["flexible"] = result.flexible.fillna(0)
 
-    # Add units for flexible and fixed
-    units = csv[csv.ProcessName == "Unit"].drop(
-        ["ProcessName", "RegionName", "Time", "Level"], axis=1
-    )
-    units.index.name = "units"
-    units.columns.name = "commodity"
-    units = xr.DataArray(units).isel(units=0, drop=True)
-    result["commodity_units"] = units
     return result
 
 
-def read_initial_assets(filename: Path) -> xr.DataArray:
-    """Reads and formats data about initial capacity into a dataframe."""
+def validate_initial_assets(data: pd.DataFrame, source: str) -> None:
+    """Validates initial assets DataFrame.
+
+    Args:
+        data: DataFrame to validate
+        source: Source name for error messages
+
+    Raises:
+        ValueError: If validation fails
+    """
+    # Validate required columns
+    required_columns = ["ProcessName", "RegionName"]
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+
+
+def read_initial_assets_csv(filename: Path) -> pd.DataFrame:
+    """Reads and formats data about initial capacity into a DataFrame.
+
+    Args:
+        filename: Path to the initial assets CSV file
+
+    Returns:
+        DataFrame containing the initial assets data
+    """
     data = pd.read_csv(filename, float_precision="high", low_memory=False)
+    data = standardize_columns(data)
+    validate_initial_assets(data, filename)
+    return data
+
+
+def process_initial_assets(data: pd.DataFrame) -> xr.DataArray:
+    """Processes initial assets DataFrame into an xarray DataArray.
+
+    Args:
+        data: DataFrame containing the initial assets data
+
+    Returns:
+        xarray DataArray containing the processed initial assets
+    """
     if "Time" in data.columns:
-        result = read_trade(filename, skiprows=[1], columns_are_source=True)
+        result = process_trade(data, skiprows=[1], columns_are_source=True)
     else:
         result = process_initial_capacity(data)
+
+    # Rename technology to asset
     technology = result.technology
     result = result.drop_vars("technology").rename(technology="asset")
     result["technology"] = "asset", technology.values
+
+    # Add installed year
     result["installed"] = ("asset", [int(result.year.min())] * len(result.technology))
     result["year"] = result.year.astype(int)
+
     return result
 
 
 def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
-    if "Unit" in data.columns:
-        data = data.drop(columns="Unit")
-    data = (
-        data.rename(columns=dict(ProcessName="technology", RegionName="region"))
-        .melt(id_vars=["technology", "region"], var_name="year")
-        .set_index(["region", "technology", "year"])
+    """Processes initial capacity DataFrame into an xarray DataArray.
+
+    Args:
+        data: DataFrame containing the initial capacity data
+
+    Returns:
+        xarray DataArray containing the processed initial capacity
+    """
+    # Create multiindex for region, technology, and year
+    data = create_multiindex(
+        data,
+        index_columns=["technology", "region"],
+        index_names=["technology", "region"],
+        drop_columns=True,
     )
-    result = xr.DataArray.from_series(data["value"])
-    result = result.sel(year=result.year != "2100.1")
+
+    # Melt year columns into rows
+    data = data.melt(var_name="year", value_name="value")
+    data = data.set_index(["region", "technology", "year"])
+
+    # Create DataArray and convert year to int
+    result = create_xarray_dataarray(data["value"])
     result["year"] = result.year.astype(int)
+
     return result
 
 
-def read_technologies(
+def read_technologies_csv(
     technodata_path_or_sector: Path,
     comm_out_path: Path,
     comm_in_path: Path,
     technodata_timeslices_path: Path | None = None,
-) -> xr.Dataset:
-    """Reads data characterising technologies from files.
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame | None]:
+    """Reads data characterising technologies from files into DataFrames.
 
-    Arguments:
+    Args:
         technodata_path_or_sector: If `comm_out_path` and `comm_in_path` are not given,
             then this argument refers to the name of the sector. The three paths are
             then determined using standard locations and name. Specifically, technodata
@@ -279,10 +606,9 @@ def read_technologies(
             "commINtechnodataSECTORNAME.csv" in the relevant sector directory.
 
     Returns:
-        A dataset with all the characteristics of the technologies.
+        Tuple of (technodata_df, comm_out_df, comm_in_df, technodata_timeslices_df)
+        where technodata_timeslices_df may be None if not provided
     """
-    from muse.commodities import CommodityUsage
-
     assert isinstance(technodata_path_or_sector, Path)
     assert comm_out_path is not None
     assert comm_in_path is not None
@@ -305,22 +631,57 @@ def read_technologies(
     logger = getLogger(__name__)
     logger.info(msg)
 
-    result = read_technodictionary(tpath)
-    if any(result[u].isnull().any() for u in result.data_vars):
-        raise ValueError(f"Inconsistent data in {tpath} (e.g. inconsistent years)")
+    # Read all data
+    technodata_df = read_technodictionary_csv(tpath)
+    comm_out_df = read_io_technodata_csv(opath)
+    comm_in_df = read_io_technodata_csv(ipath)
+    technodata_timeslices_df = (
+        read_technodata_timeslices_csv(ttpath) if ttpath else None
+    )
 
-    outs = read_io_technodata(opath).rename(
+    return technodata_df, comm_out_df, comm_in_df, technodata_timeslices_df
+
+
+def process_technologies(
+    technodata_df: pd.DataFrame,
+    comm_out_df: pd.DataFrame,
+    comm_in_df: pd.DataFrame,
+    technodata_timeslices_df: pd.DataFrame | None = None,
+) -> xr.Dataset:
+    """Processes technology data DataFrames into an xarray Dataset.
+
+    Args:
+        technodata_df: DataFrame containing technodata
+        comm_out_df: DataFrame containing output commodities
+        comm_in_df: DataFrame containing input commodities
+        technodata_timeslices_df: Optional DataFrame containing technodata timeslices
+
+    Returns:
+        xarray Dataset containing the processed technology data
+    """
+    from muse.commodities import CommodityUsage
+
+    # Process technodata
+    result = process_technodictionary(technodata_df)
+    if any(result[u].isnull().any() for u in result.data_vars):
+        raise ValueError("Inconsistent data in technodata (e.g. inconsistent years)")
+
+    # Process outputs
+    outs = process_io_technodata(comm_out_df).rename(
         flexible="flexible_outputs", fixed="fixed_outputs"
     )
     if not (outs["flexible_outputs"] == 0).all():
         raise ValueError(
-            f"'flexible' outputs are not permitted in {opath}. "
-            "All outputs must be 'fixed'"
+            "'flexible' outputs are not permitted. All outputs must be 'fixed'"
         )
     outs = outs.drop_vars("flexible_outputs")
-    ins = read_io_technodata(ipath).rename(
+
+    # Process inputs
+    ins = process_io_technodata(comm_in_df).rename(
         flexible="flexible_inputs", fixed="fixed_inputs"
     )
+
+    # Interpolate if needed
     if "year" in result.dims and len(result.year) > 1:
         if all(len(outs[d]) > 1 for d in outs.dims if outs[d].dtype.kind in "uifc"):
             outs = outs.interp(year=result.year)
@@ -332,12 +693,11 @@ def read_technologies(
     except xr.core.merge.MergeError:
         raise UnitsConflictInCommodities
 
-    if ttpath:
-        technodata_timeslice = read_technodata_timeslices(ttpath)
+    # Process timeslices if provided
+    if technodata_timeslices_df is not None:
+        technodata_timeslice = process_technodata_timeslices(technodata_timeslices_df)
         result = result.drop_vars("utilization_factor")
         result = result.merge(technodata_timeslice)
-    else:
-        technodata_timeslice = None
 
     result["comm_usage"] = (
         "commodity",
@@ -348,70 +708,200 @@ def read_technologies(
         result = result.drop_vars("comm_type")
 
     check_utilization_and_minimum_service_factors(
-        result.to_dataframe(), [tpath, ttpath]
+        result.to_dataframe(), [technodata_df, technodata_timeslices_df]
     )
 
     return result
 
 
-def read_global_commodities(path: Path) -> xr.Dataset:
-    """Reads commodities information from input."""
-    if not path.is_file():
-        raise OSError(f"File {path} does not exist.")
+def validate_global_commodities(data: pd.DataFrame, source: str) -> None:
+    """Validates global commodities DataFrame.
 
+    Args:
+        data: DataFrame to validate
+        source: Source name for error messages
+
+    Raises:
+        ValueError: If validation fails
+    """
+    # Validate required columns
+    required_columns = ["commodity", "comm_type"]
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+
+
+def read_global_commodities_csv(path: Path) -> pd.DataFrame:
+    """Reads commodities information from input into a DataFrame.
+
+    Args:
+        path: Path to the global commodities CSV file
+
+    Returns:
+        DataFrame containing the global commodities data
+    """
     getLogger(__name__).info(f"Reading global commodities from {path}.")
 
     data = pd.read_csv(path, float_precision="high", low_memory=False)
-    data.index = [camel_to_snake(u) for u in data.CommodityName]
-    data.CommodityType = [camel_to_snake(u) for u in data.CommodityType]
-    data = data.drop("CommodityName", axis=1)
-    data = data.rename(
-        columns={
-            "CommodityType": "comm_type",
-            "Commodity": "comm_name",
-            "CommodityEmissionFactor_CO2": "emmission_factor",
-            "HeatRate": "heat_rate",
-            "Unit": "unit",
-        }
-    )
+    data = standardize_columns(data)
+    validate_global_commodities(data, path)
+    return data
+
+
+def process_global_commodities(data: pd.DataFrame) -> xr.Dataset:
+    """Processes global commodities DataFrame into an xarray Dataset.
+
+    Args:
+        data: DataFrame containing the global commodities data
+
+    Returns:
+        xarray Dataset containing the processed global commodities
+    """
+    # Set index and convert to snake_case
+    data.index = [camel_to_snake(u) for u in data.commodity]
+    data.comm_type = [camel_to_snake(u) for u in data.comm_type]
+
+    # Drop and rename columns
+    data = data.drop("commodity", axis=1)
+
+    # Set index name
     data.index.name = "commodity"
-    return xr.Dataset(data)
+
+    return create_xarray_dataset(data)
 
 
-def read_timeslice_shares(path: Path) -> xr.DataArray:
-    """Reads sliceshare information into a xr.Dataset."""
+def validate_timeslice_shares(data: pd.DataFrame, source: str) -> None:
+    """Validates timeslice shares DataFrame.
+
+    Args:
+        data: DataFrame to validate
+        source: Source name for error messages
+
+    Raises:
+        ValueError: If validation fails
+    """
+    # Validate required columns
+    required_columns = ["RegionName", "SN"]
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+
+
+def read_timeslice_shares_csv(path: Path) -> pd.DataFrame:
+    """Reads sliceshare information into a DataFrame.
+
+    Args:
+        path: Path to the timeslice shares CSV file
+
+    Returns:
+        DataFrame containing the timeslice shares data
+    """
     getLogger(__name__).info(f"Reading timeslice shares from {path}")
     data = pd.read_csv(path, float_precision="high", low_memory=False)
-    data.index = pd.MultiIndex.from_arrays(
-        (data.RegionName, data.SN), names=("region", "timeslice")
+    data = standardize_columns(data)
+    validate_timeslice_shares(data, path)
+    return data
+
+
+def process_timeslice_shares(data: pd.DataFrame) -> xr.DataArray:
+    """Processes timeslice shares DataFrame into an xarray DataArray.
+
+    Args:
+        data: DataFrame containing the timeslice shares data
+
+    Returns:
+        xarray DataArray containing the processed timeslice shares
+    """
+    # Create multiindex for region and timeslice
+    data = create_multiindex(
+        data,
+        index_columns=["region", "timeslice"],
+        index_names=["region", "timeslice"],
+        drop_columns=True,
     )
+
+    # Set index and column names
     data.index.name = "rt"
-    data = data.drop(["RegionName", "SN"], axis=1)
     data.columns.name = "commodity"
 
-    result = xr.DataArray(data).unstack("rt").to_dataset(name="shares")
+    # Create DataArray and unstack
+    result = create_xarray_dataarray(data)
+    result = result.unstack("rt").to_dataset(name="shares")
+
     return result.shares
 
 
-def read_csv_agent_parameters(filename: Path) -> list[dict]:
-    """Reads standard MUSE agent-declaration csv-files.
+def validate_csv_agent_parameters(data: pd.DataFrame, source: str) -> None:
+    """Validates agent parameters DataFrame.
 
-    Returns a list of dictionaries, where each dictionary can be used to instantiate an
-    agent in :py:func:`muse.agents.factories.factory`.
+    Args:
+        data: DataFrame to validate
+        source: Source name for error messages
+
+    Raises:
+        ValueError: If validation fails
+    """
+    # Validate required columns
+    required_columns = [
+        "name",
+        "region",
+        "search_rule",
+        "decision_method",
+        "quantity",
+        "share",
+    ]
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+
+    # Check for deprecated retrofit agents
+    if "type" in data.columns:
+        retrofit_agents = data[data.type.str.lower().isin(["retrofit", "retro"])]
+        if not retrofit_agents.empty:
+            msg = (
+                "Retrofit agents will be deprecated in a future release. "
+                "Please modify your model to use only agents of the 'New' type."
+            )
+            getLogger(__name__).warning(msg)
+
+
+def read_csv_agent_parameters_csv(filename: Path) -> pd.DataFrame:
+    """Reads standard MUSE agent-declaration csv-files into a DataFrame.
+
+    Args:
+        filename: Path to the agent parameters CSV file
+
+    Returns:
+        DataFrame with validated agent parameters
     """
     data = pd.read_csv(filename, float_precision="high", low_memory=False)
+    data = standardize_columns(data)
 
     # Legacy: drop AgentNumber column
-    if "AgentNumber" in data.columns:
-        data = data.drop(["AgentNumber"], axis=1)
+    if "agent_number" in data.columns:
+        data = data.drop(["agent_number"], axis=1)
 
-    # Read agent data row by row
+    validate_csv_agent_parameters(data, filename)
+    return data
+
+
+def process_csv_agent_parameters(data: pd.DataFrame, filename: Path) -> list[dict]:
+    """Processes agent parameters DataFrame into a list of agent dictionaries.
+
+    Args:
+        data: DataFrame containing validated agent parameters
+        filename: Path to the original CSV file (used for error messages)
+
+    Returns:
+        List of dictionaries, where each dictionary can be used to instantiate an
+        agent in :py:func:`muse.agents.factories.factory`.
+    """
     result = []
     for _, row in data.iterrows():
         # Gather objectives data
-        objectives = row[[i.startswith("Objective") for i in row.index]]
-        floats = row[[i.startswith("ObjData") for i in row.index]]
-        sorting = row[[i.startswith("Objsort") for i in row.index]]
+        objectives = row[[i.startswith("objective") for i in row.index]]
+        floats = row[[i.startswith("obj_data") for i in row.index]]
+        sorting = row[[i.startswith("obj_sort") for i in row.index]]
 
         # Check consistency of objectives data
         if len(objectives) != len(floats) or len(objectives) != len(sorting):
@@ -447,87 +937,182 @@ def read_csv_agent_parameters(filename: Path) -> list[dict]:
             "retro": "retrofit",
             "agent": "agent",
             "default": "agent",
-        }[getattr(row, "Type", "agent").lower()]
-
-        # Add warning about retrofit agents
-        if agent_type == "retrofit":
-            msg = (
-                "Retrofit agents will be deprecated in a future release. "
-                "Please modify your model to use only agents of the 'New' type."
-            )
-            getLogger(__name__).warning(msg)
+        }[getattr(row, "type", "agent").lower()]
 
         # Create agent data dictionary
         data = {
-            "name": row.Name,
-            "region": row.RegionName,
+            "name": row.name,
+            "region": row.region,
             "objectives": [u[0] for u in decision_params],
-            "search_rules": row.SearchRule,
-            "decision": {"name": row.DecisionMethod, "parameters": decision_params},
+            "search_rules": row.search_rule,
+            "decision": {"name": row.decision_method, "parameters": decision_params},
             "agent_type": agent_type,
-            "quantity": row.Quantity,
-            "share": camel_to_snake(row.AgentShare),
+            "quantity": row.quantity,
+            "share": camel_to_snake(row.share),
         }
 
         # Add optional parameters
-        if hasattr(row, "MaturityThreshold"):
-            data["maturity_threshold"] = row.MaturityThreshold
-        if hasattr(row, "SpendLimit"):
-            data["spend_limit"] = row.SpendLimit
+        if hasattr(row, "maturity_threshold"):
+            data["maturity_threshold"] = row.maturity_threshold
+        if hasattr(row, "spend_limit"):
+            data["spend_limit"] = row.spend_limit
 
         # Add agent data to result
         result.append(data)
 
-    # Return result
     return result
 
 
-def read_macro_drivers(path: Path) -> xr.Dataset:
-    """Reads a standard MUSE csv file for macro drivers."""
+def validate_macro_drivers(data: pd.DataFrame, source: str) -> None:
+    """Validates macro drivers DataFrame.
+
+    Args:
+        data: DataFrame to validate
+        source: Source name for error messages
+
+    Raises:
+        ValueError: If validation fails
+    """
+    # Validate required columns
+    required_columns = ["region", "variable"]
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+
+    # Validate required variables
+    required_variables = ["Population", "GDP|PPP"]
+    missing_variables = [
+        var for var in required_variables if var not in data.variable.unique()
+    ]
+    if missing_variables:
+        raise ValueError(f"Missing required variables in {source}: {missing_variables}")
+
+
+def read_macro_drivers_csv(path: Path) -> pd.DataFrame:
+    """Reads a standard MUSE csv file for macro drivers into a DataFrame.
+
+    Args:
+        path: Path to the macro drivers CSV file
+
+    Returns:
+        DataFrame containing the macro drivers data
+    """
     getLogger(__name__).info(f"Reading macro drivers from {path}")
 
     table = pd.read_csv(path, float_precision="high", low_memory=False)
-    table.index = table.RegionName
+    table = standardize_columns(table)
+    validate_macro_drivers(table, path)
+    return table
+
+
+def process_macro_drivers(table: pd.DataFrame) -> xr.Dataset:
+    """Processes macro drivers DataFrame into an xarray Dataset.
+
+    Args:
+        table: DataFrame containing the macro drivers data
+
+    Returns:
+        xarray Dataset containing the processed macro drivers
+    """
+    # Set index and column names
+    table.index = table.region
     table.index.name = "region"
     table.columns.name = "year"
-    table = table.drop(["Unit", "RegionName"], axis=1)
 
-    population = table[table.Variable == "Population"]
-    population = population.drop("Variable", axis=1)
-    gdp = table[table.Variable == "GDP|PPP"].drop("Variable", axis=1)
+    # Drop unit and region columns
+    table = table.drop(["unit", "region"], axis=1)
 
-    result = xr.Dataset({"gdp": gdp, "population": population})
-    result["year"] = "year", result.year.values.astype(int)
-    result["region"] = "region", result.region.values.astype(str)
+    # Split into population and GDP data
+    population = table[table.variable == "Population"].drop("variable", axis=1)
+    gdp = table[table.variable == "GDP|PPP"].drop("variable", axis=1)
+
+    # Create dataset with standardized types
+    result = create_xarray_dataset(
+        data_vars={"gdp": gdp, "population": population},
+        coords={
+            "year": ("year", table.columns.values.astype(int)),
+            "region": ("region", table.index.values.astype(str)),
+        },
+    )
+
     return result
 
 
-def read_initial_market(
+def read_initial_market_csv(
     projections: Path,
     base_year_import: Path | None = None,
     base_year_export: Path | None = None,
-) -> xr.Dataset:
-    """Read projections, import and export csv files."""
-    from muse.timeslices import TIMESLICE, distribute_timeslice
+) -> tuple[pd.DataFrame, pd.DataFrame | None, pd.DataFrame | None]:
+    """Read projections, import and export csv files into DataFrames.
 
+    Args:
+        projections: Path to projections CSV file
+        base_year_import: Optional path to base year import CSV file
+        base_year_export: Optional path to base year export CSV file
+
+    Returns:
+        Tuple of (projections_df, import_df, export_df) where import_df and export_df
+        may be None if their respective files were not provided
+    """
     # Projections must always be present
     getLogger(__name__).info(f"Reading projections from {projections}")
-    projections = read_attribute_table(projections)
+    projections_df = pd.read_csv(projections, float_precision="high", low_memory=False)
+    projections_df = standardize_columns(projections_df)
 
-    # Base year export is optional. If it is not there, it's set to zero
+    # Base year export is optional
     if base_year_export:
         getLogger(__name__).info(f"Reading base year export from {base_year_export}")
-        base_year_export = read_attribute_table(base_year_export)
+        export_df = pd.read_csv(
+            base_year_export, float_precision="high", low_memory=False
+        )
+        export_df = standardize_columns(export_df)
     else:
         getLogger(__name__).info("Base year export not provided. Set to zero.")
-        base_year_export = xr.zeros_like(projections)
+        export_df = None
 
-    # Base year import is optional. If it is not there, it's set to zero
+    # Base year import is optional
     if base_year_import:
         getLogger(__name__).info(f"Reading base year import from {base_year_import}")
-        base_year_import = read_attribute_table(base_year_import)
+        import_df = pd.read_csv(
+            base_year_import, float_precision="high", low_memory=False
+        )
+        import_df = standardize_columns(import_df)
     else:
         getLogger(__name__).info("Base year import not provided. Set to zero.")
+        import_df = None
+
+    return projections_df, import_df, export_df
+
+
+def process_initial_market(
+    projections_df: pd.DataFrame,
+    import_df: pd.DataFrame | None,
+    export_df: pd.DataFrame | None,
+) -> xr.Dataset:
+    """Process market data DataFrames into an xarray Dataset.
+
+    Args:
+        projections_df: DataFrame containing projections data
+        import_df: Optional DataFrame containing import data
+        export_df: Optional DataFrame containing export data
+
+    Returns:
+        xarray Dataset containing processed market data
+    """
+    from muse.timeslices import TIMESLICE, distribute_timeslice
+
+    # Process projections
+    projections = process_attribute_table(projections_df)
+
+    # Process optional trade data
+    if export_df is not None:
+        base_year_export = process_attribute_table(export_df)
+    else:
+        base_year_export = xr.zeros_like(projections)
+
+    if import_df is not None:
+        base_year_import = process_attribute_table(import_df)
+    else:
         base_year_import = xr.zeros_like(projections)
 
     base_year_export = distribute_timeslice(base_year_export, level=None)
@@ -548,11 +1133,6 @@ def read_initial_market(
         }
     )
 
-    # Legacy: rename commodity_price to prices
-    result = result.rename(
-        commodity_price="prices", units_commodity_price="units_prices"
-    )
-
     # Expand prices over timeslices
     result["prices"] = (
         result["prices"].expand_dims({"timeslice": TIMESLICE}).drop_vars("timeslice")
@@ -561,97 +1141,214 @@ def read_initial_market(
     return result
 
 
-def read_attribute_table(path: Path) -> xr.DataArray:
-    """Read a standard MUSE csv file for price projections."""
+def validate_attribute_table(data: pd.DataFrame, source: str) -> None:
+    """Validates attribute table DataFrame.
+
+    Args:
+        data: DataFrame to validate
+        source: Source name for error messages
+
+    Raises:
+        ValueError: If validation fails
+    """
+    # Validate required columns
+    required_columns = ["region", "attribute", "year"]
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+
+
+def read_attribute_table_csv(path: Path) -> pd.DataFrame:
+    """Read a standard MUSE csv file for price projections into a DataFrame.
+
+    Args:
+        path: Path to the attribute table CSV file
+
+    Returns:
+        DataFrame containing the attribute table data
+    """
     if not path.is_file():
         raise OSError(f"{path} does not exist.")
 
     getLogger(__name__).info(f"Reading prices from {path}")
 
     table = pd.read_csv(path, float_precision="high", low_memory=False)
-    units = table.loc[0].drop(["RegionName", "Attribute", "Time"])
+    table = standardize_columns(table)
+    validate_attribute_table(table, path)
+    return table
+
+
+def process_attribute_table(table: pd.DataFrame) -> xr.DataArray:
+    """Process attribute table DataFrame into an xarray DataArray.
+
+    Args:
+        table: DataFrame containing the attribute table data
+
+    Returns:
+        xarray DataArray containing the processed attribute table
+    """
+    # Drop units row
     table = table.drop(0)
 
+    # Set column names and standardize
     table.columns.name = "commodity"
-    table = table.rename(
-        columns={"RegionName": "region", "Attribute": "attribute", "Time": "year"}
+    table = table.rename(columns=camel_to_snake)
+
+    # Create multiindex for region and year
+    table = create_multiindex(
+        table,
+        index_columns=["region", "year"],
+        index_names=["region", "year"],
+        drop_columns=True,
     )
 
-    region, year = table.region, table.year.astype(int)
-    table = table.drop(["region", "year"], axis=1)
-    table.index = pd.MultiIndex.from_arrays([region, year], names=["region", "year"])
+    # Convert year to int
+    table.index = table.index.set_levels(
+        [table.index.levels[0], table.index.levels[1].astype(int)], level=[0, 1]
+    )
 
+    # Get attribute name and drop column
     attribute = camel_to_snake(table.attribute.unique()[0])
     table = table.drop(["attribute"], axis=1)
-    table = table.rename(columns={c: camel_to_snake(c) for c in table.columns})
 
-    result = xr.DataArray(table, name=attribute).astype(float)
+    # Create DataArray
+    result = create_xarray_dataarray(table, name=attribute)
+
+    # Convert to float and fill missing values
+    result = result.astype(float)
     result = result.unstack("dim_0").fillna(0)
-
-    result.coords["units_" + attribute] = ("commodity", units)
 
     return result
 
 
-def read_regression_parameters(path: Path) -> xr.Dataset:
-    """Reads the regression parameters from a standard MUSE csv file."""
+def validate_regression_parameters(data: pd.DataFrame, source: str) -> None:
+    """Validates regression parameters DataFrame.
+
+    Args:
+        data: DataFrame to validate
+        source: Source name for error messages
+
+    Raises:
+        ValueError: If validation fails
+    """
+    # Validate required columns
+    required_columns = ["region", "sector", "function_type", "coeff"]
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+
+
+def read_regression_parameters_csv(
+    path: Path,
+) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
+    """Reads the regression parameters from a standard MUSE csv file into a DataFrame.
+
+    Args:
+        path: Path to the regression parameters CSV file
+
+    Returns:
+        Tuple of (DataFrame containing the regression parameters data,
+                 Series of sector names,
+                 Series of function types)
+    """
     if not path.is_file():
         raise OSError(f"{path} does not exist or is not a file.")
     getLogger(__name__).info(f"Reading regression parameters from {path}.")
     table = pd.read_csv(path, float_precision="high", low_memory=False)
+    table = standardize_columns(table)
+    validate_regression_parameters(table, path)
+    return table, table.sector, table.function_type
 
-    # Normalize column names
+
+def process_regression_parameters(
+    table: pd.DataFrame, sector: pd.Series, function_type: pd.Series
+) -> xr.Dataset:
+    """Processes regression parameters DataFrame into an xarray Dataset.
+
+    Args:
+        table: DataFrame containing the regression parameters data
+        sector: Series of sector names
+        function_type: Series of function types
+
+    Returns:
+        xarray Dataset containing the processed regression parameters
+    """
+    # Set column names
     table.columns.name = "commodity"
-    table = table.rename(
-        columns={
-            "RegionName": "region",
-            "SectorName": "sector",
-            "FunctionType": "function_type",
-        }
+
+    # Create multiindex for sector and region
+    sector = table.sector.apply(lambda x: x.lower())
+    function_type = table.function_type
+
+    table = create_multiindex(
+        table.drop(["sector", "region", "function_type"], axis=1),
+        index_columns=["sector", "region"],
+        index_names=["sector", "region"],
+        drop_columns=True,
     )
 
-    # Create a multiindex based on three of the columns
-    sector, region, function_type = (
-        table.sector.apply(lambda x: x.lower()),
-        table.region,
-        table.function_type,
-    )
-    table = table.drop(["sector", "region", "function_type"], axis=1)
-    table.index = pd.MultiIndex.from_arrays(
-        [sector, region], names=["sector", "region"]
-    )
-    table = table.rename(columns={c: camel_to_snake(c) for c in table.columns})
-
-    # Create a dataset, separating each type of coeeficient as a separate xr.DataArray
-    coeffs = xr.Dataset(
+    # Create dataset with coefficients
+    coeffs = create_xarray_dataset(
         {
             k: xr.DataArray(table[table.coeff == k].drop("coeff", axis=1))
             for k in table.coeff.unique()
         }
     )
 
-    # Unstack the multi-index into separate dimensions
+    # Unstack multiindex and fill missing values
     coeffs = coeffs.unstack("dim_0").fillna(0)
 
-    # We pair each sector with its function type
+    # Add function type coordinate
     function_type = list(zip(*set(zip(sector, function_type))))
-    function_type = xr.DataArray(
+    coeffs["function_type"] = xr.DataArray(
         list(function_type[1]),
         dims=["sector"],
         coords={"sector": list(function_type[0])},
     )
-    coeffs["function_type"] = function_type
 
     return coeffs
 
 
-def read_presets(
+def validate_presets(data: pd.DataFrame, indices: Sequence[str], source: str) -> None:
+    """Validates presets DataFrame.
+
+    Args:
+        data: DataFrame to validate
+        indices: Column names to use as indices
+        source: Source name for error messages
+
+    Raises:
+        ValueError: If validation fails
+    """
+    # Validate required columns
+    if not all(u in data.columns for u in indices):
+        raise ValueError(f"Missing required columns in {source}: {indices}")
+
+    # Check for deprecated ProcessName column
+    if "process" in data.columns:
+        msg = (
+            f"The ProcessName column (in file {source}) is deprecated. "
+            "Data has been summed across processes, and this column has been "
+            "dropped."
+        )
+        getLogger(__name__).warning(msg)
+
+
+def read_presets_csv(
     paths: Path,
     columns: str = "commodity",
     indices: Sequence[str] = ("RegionName", "Timeslice"),
-    drop: Sequence[str] = ("Unnamed: 0",),
-) -> xr.Dataset:
-    """Read consumption or supply files for preset sectors."""
+) -> dict[int, pd.DataFrame]:
+    """Read consumption or supply files for preset sectors into DataFrames.
+
+    Args:
+        paths: Path pattern to match preset files
+        columns: Name for the columns dimension
+        indices: Column names to use as indices
+
+    Returns:
+        Dictionary mapping years to DataFrames containing preset data
+    """
     from glob import glob
     from re import match
 
@@ -662,28 +1359,7 @@ def read_presets(
     datas = {}
     for path in allfiles:
         data = pd.read_csv(path, low_memory=False)
-        assert all(u in data.columns for u in indices)
-
-        # Legacy: drop ProcessName column and sum data (PR #448)
-        if "ProcessName" in data.columns:
-            data = (
-                data.drop(columns=["ProcessName"])
-                .groupby(list(indices))
-                .sum()
-                .reset_index()
-            )
-            msg = (
-                f"The ProcessName column (in file {path}) is deprecated. "
-                "Data has been summed across processes, and this column has been "
-                "dropped."
-            )
-            getLogger(__name__).warning(msg)
-
-        data = data.drop(columns=[k for k in drop if k in data.columns])
-        data.index = pd.MultiIndex.from_arrays([data[u] for u in indices])
-        data.index.name = "asset"
-        data.columns.name = columns
-        data = data.drop(columns=list(indices))
+        data = standardize_columns(data)
 
         reyear = match(r"\S*.(\d{4})\S*\.csv", path.name)
         if reyear is None:
@@ -692,10 +1368,53 @@ def read_presets(
         if year in datas:
             raise OSError(f"Year f{year} was found twice")
         data.year = year
-        datas[year] = xr.DataArray(data)
 
+        validate_presets(data, indices, path)
+        datas[year] = data
+
+    return datas
+
+
+def process_presets(
+    datas: dict[int, pd.DataFrame],
+    columns: str = "commodity",
+    indices: Sequence[str] = ("region", "timeslice"),
+) -> xr.Dataset:
+    """Processes preset DataFrames into an xarray Dataset.
+
+    Args:
+        datas: Dictionary mapping years to DataFrames containing preset data
+        columns: Name for the columns dimension
+        indices: Column names to use as indices
+
+    Returns:
+        xarray Dataset containing the processed preset data
+    """
+    processed_datas = {}
+    for year, data in datas.items():
+        # Legacy: drop ProcessName column and sum data (PR #448)
+        if "process" in data.columns:
+            data = (
+                data.drop(columns=["process"])
+                .groupby(list(indices))
+                .sum()
+                .reset_index()
+            )
+
+        # Create multiindex
+        data = create_multiindex(
+            data, index_columns=list(indices), index_names=["asset"], drop_columns=True
+        )
+
+        # Set column names
+        data.columns.name = columns
+
+        # Create DataArray
+        processed_datas[year] = create_xarray_dataarray(data)
+
+    # Combine into dataset
     result = (
-        xr.Dataset(datas)
+        xr.Dataset(processed_datas)
         .to_array(dim="year")
         .sortby("year")
         .fillna(0)
@@ -703,65 +1422,78 @@ def read_presets(
         .rename({k: k.replace("Name", "").lower() for k in indices})
     )
 
+    # Convert commodity names to snake_case
     if "commodity" in result.coords:
         result.coords["commodity"] = [
             camel_to_snake(u) for u in result.commodity.values
         ]
+
     return result
 
 
-def read_trade(
-    data: Path,
+def process_trade(
+    data: pd.DataFrame,
     columns_are_source: bool = True,
     parameters: str | None = None,
-    skiprows: Sequence[int] | None = None,
-    name: str | None = None,
     drop: str | Sequence[str] | None = None,
+    name: str | None = None,
 ) -> xr.DataArray | xr.Dataset:
-    """Read CSV table with source and destination regions."""
-    data = pd.read_csv(data, skiprows=skiprows)
+    """Processes trade DataFrame into an xarray DataArray or Dataset.
 
-    if parameters is None and "Parameter" in data.columns:
-        parameters = "Parameter"
+    Args:
+        data: DataFrame containing the trade data
+        columns_are_source: Whether columns represent source regions
+        parameters: Optional column name for parameters
+        drop: Optional columns to drop
+        name: Optional name for the resulting DataArray
+
+    Returns:
+        xarray DataArray or Dataset containing the processed trade data
+    """
+    # Set region column names based on source/destination
     if columns_are_source:
         col_region = "src_region"
         row_region = "dst_region"
     else:
         row_region = "src_region"
         col_region = "dst_region"
-    data = data.apply(to_numeric, axis=0)
+
+    # Convert to numeric and handle drop columns
+    data = convert_to_numeric(data)
     if isinstance(drop, str):
         drop = [drop]
     if drop:
         drop = list(set(drop).intersection(data.columns))
     if drop:
         data = data.drop(columns=drop)
-    data = data.rename(
-        columns=dict(
-            Time="year",
-            ProcessName="technology",
-            RegionName=row_region,
-            Commodity="commodity",
-        )
-    )
+
+    # Standardize column names
+    data = standardize_columns(data)
+    data = data.rename({"region": row_region})
+
+    # Get indices for melting
     indices = list(
         {"commodity", "year", "src_region", "dst_region", "technology"}.intersection(
             data.columns
         )
     )
+
+    # Melt data
     data = data.melt(
         id_vars={parameters}.union(indices).intersection(data.columns),
         var_name=col_region,
     )
+
+    # Create result based on parameters
     if parameters is None:
-        result: xr.DataArray | xr.Dataset = xr.DataArray.from_series(
-            data.set_index([*indices, col_region])["value"]
-        ).rename(name)
+        result: xr.DataArray | xr.Dataset = create_xarray_dataarray(
+            data.set_index([*indices, col_region])["value"], name=name
+        )
     else:
-        result = xr.Dataset.from_dataframe(
+        result = create_xarray_dataset(
             data.pivot_table(
                 values="value", columns=parameters, index=[*indices, col_region]
-            ).rename(columns=camel_to_snake)
+            )
         )
 
     return result.rename(src_region="region")
