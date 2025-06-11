@@ -3,30 +3,16 @@
 from __future__ import annotations
 
 __all__ = [
-    "process_agent_parameters",
-    "process_attribute_table",
-    "process_global_commodities",
-    "process_initial_assets",
-    "process_initial_market",
-    "process_io_technodata",
-    "process_macro_drivers",
-    "process_presets",
-    "process_regression_parameters",
-    "process_technodictionary",
-    "process_technologies",
-    "process_timeslice_shares",
-    "read_agent_parameters_csv",
-    "read_attribute_table_csv",
-    "read_global_commodities_csv",
-    "read_initial_assets_csv",
-    "read_initial_market_csv",
-    "read_io_technodata_csv",
-    "read_macro_drivers_csv",
-    "read_presets_csv",
-    "read_regression_parameters_csv",
-    "read_technodictionary_csv",
-    "read_technologies_csv",
-    "read_timeslice_shares_csv",
+    "read_agent_parameters",
+    "read_global_commodities",
+    "read_initial_assets",
+    "read_initial_market",
+    "read_macro_drivers",
+    "read_presets",
+    "read_regression_parameters",
+    "read_technodictionary",
+    "read_technologies",
+    "read_timeslice_shares",
 ]
 
 from logging import getLogger
@@ -58,7 +44,7 @@ CAMEL_TO_SNAKE_COLUMNS = [
     "tech_type",
     "commodity",
     "comm_type",
-    "share",
+    "agent_share",
     "attribute",
     "sector",
 ]
@@ -68,7 +54,6 @@ COLUMN_TYPES = {
     "year": int,
     "region": str,
     "technology": str,
-    "process": str,
     "commodity": str,
     "sector": str,
     "attribute": str,
@@ -330,6 +315,11 @@ def read_csv(
     return data
 
 
+def read_technodictionary(path: Path) -> xr.Dataset:
+    df = read_technodictionary_csv(path)
+    return process_technodictionary(df)
+
+
 def read_technodictionary_csv(filename: Path) -> pd.DataFrame:
     """Reads and formats technodata into a DataFrame.
 
@@ -339,7 +329,7 @@ def read_technodictionary_csv(filename: Path) -> pd.DataFrame:
     Returns:
         DataFrame containing the technodictionary data
     """
-    csv = read_csv(filename, required_columns=["process", "region", "year"])
+    csv = read_csv(filename, required_columns=["technology", "region", "year"])
 
     # Check for deprecated columns
     if "fuel" in csv.columns:
@@ -538,6 +528,11 @@ def process_io_technodata(data: pd.DataFrame) -> xr.Dataset:
     return result
 
 
+def read_initial_assets(path: Path) -> xr.DataArray:
+    df = read_initial_assets_csv(path)
+    return process_initial_assets(df)
+
+
 def read_initial_assets_csv(filename: Path) -> pd.DataFrame:
     """Reads and formats data about initial capacity into a DataFrame.
 
@@ -599,6 +594,18 @@ def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
     # Create DataArray
     result = create_xarray_dataarray(data["value"])
     return result
+
+
+def read_technologies(
+    technodata_path: Path,
+    comm_out_path: Path,
+    comm_in_path: Path,
+    technodata_timeslices_path: Path | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame | None]:
+    df = read_technologies_csv(
+        technodata_path, comm_out_path, comm_in_path, technodata_timeslices_path
+    )
+    return process_technologies(df)
 
 
 def read_technologies_csv(
@@ -722,6 +729,11 @@ def process_technologies(
     return result
 
 
+def read_global_commodities(path: Path) -> pd.DataFrame:
+    df = read_global_commodities_csv(path)
+    return process_global_commodities(df)
+
+
 def read_global_commodities_csv(path: Path) -> pd.DataFrame:
     """Reads commodities information from input into a DataFrame.
 
@@ -753,6 +765,11 @@ def process_global_commodities(data: pd.DataFrame) -> xr.Dataset:
     data = data.drop("commodity", axis=1)
     data.index.name = "commodity"
     return create_xarray_dataset(data)
+
+
+def read_timeslice_shares(path: Path) -> pd.DataFrame:
+    df = read_timeslice_shares_csv(path)
+    return process_timeslice_shares(df)
 
 
 def read_timeslice_shares_csv(path: Path) -> pd.DataFrame:
@@ -800,6 +817,11 @@ def process_timeslice_shares(data: pd.DataFrame) -> xr.DataArray:
     return result.shares
 
 
+def read_agent_parameters(path: Path) -> pd.DataFrame:
+    df = read_agent_parameters_csv(path)
+    return process_agent_parameters(df, path)
+
+
 def read_agent_parameters_csv(filename: Path) -> pd.DataFrame:
     """Reads standard MUSE agent-declaration csv-files into a DataFrame.
 
@@ -816,8 +838,8 @@ def read_agent_parameters_csv(filename: Path) -> pd.DataFrame:
             "region",
             "search_rule",
             "decision_method",
+            "agent_share",
             "quantity",
-            "share",
         ],
     )
 
@@ -838,7 +860,7 @@ def read_agent_parameters_csv(filename: Path) -> pd.DataFrame:
     # Check consistency of objectives data columns
     objectives = [col for col in data.columns if col.startswith("objective")]
     floats = [col for col in data.columns if col.startswith("obj_data")]
-    sorting = [col for col in data.columns if col.startswith("obj_sort")]
+    sorting = [col for col in data.columns if col.startswith("objsort")]
 
     if len(objectives) != len(floats) or len(objectives) != len(sorting):
         raise ValueError(
@@ -889,7 +911,7 @@ def process_agent_parameters(data: pd.DataFrame, filename: Path) -> list[dict]:
             "decision": {"name": row.decision_method, "parameters": decision_params},
             "agent_type": agent_type,
             "quantity": row.quantity,
-            "share": row.share,
+            "share": row.agent_share,
         }
 
         # Add optional parameters
@@ -902,6 +924,11 @@ def process_agent_parameters(data: pd.DataFrame, filename: Path) -> list[dict]:
         result.append(data)
 
     return result
+
+
+def read_macro_drivers(path: Path) -> pd.DataFrame:
+    df = read_macro_drivers_csv(path)
+    return process_macro_drivers(df)
 
 
 def read_macro_drivers_csv(path: Path) -> pd.DataFrame:
@@ -963,6 +990,15 @@ def process_macro_drivers(table: pd.DataFrame) -> xr.Dataset:
     return result
 
 
+def read_initial_market(
+    projections: Path,
+    base_year_import: Path | None = None,
+    base_year_export: Path | None = None,
+) -> xr.Dataset:
+    df = read_initial_market_csv(projections, base_year_import, base_year_export)
+    return process_initial_market(df)
+
+
 def read_initial_market_csv(
     projections: Path,
     base_year_import: Path | None = None,
@@ -991,6 +1027,8 @@ def read_initial_market_csv(
             base_year_export,
             msg=f"Reading base year export from {base_year_export}.",
         )
+    else:
+        export_df = None
 
     # Base year import is optional
     if base_year_import:
@@ -998,6 +1036,8 @@ def read_initial_market_csv(
             base_year_import,
             msg=f"Reading base year import from {base_year_import}.",
         )
+    else:
+        import_df = None
 
     return projections_df, import_df, export_df
 
@@ -1114,6 +1154,13 @@ def process_attribute_table(table: pd.DataFrame) -> xr.DataArray:
     return result
 
 
+def read_regression_parameters(
+    path: Path,
+) -> xr.Dataset:
+    df = read_regression_parameters_csv(path)
+    return process_regression_parameters(df)
+
+
 def read_regression_parameters_csv(
     path: Path,
 ) -> pd.DataFrame:
@@ -1180,6 +1227,11 @@ def process_regression_parameters(
     )
 
     return coeffs
+
+
+def read_presets(paths: Path) -> dict[int, pd.DataFrame]:
+    df = read_presets_csv(paths)
+    return process_presets(df)
 
 
 def read_presets_csv(paths: Path) -> dict[int, pd.DataFrame]:
@@ -1295,9 +1347,7 @@ def process_trade(data: pd.DataFrame) -> xr.DataArray | xr.Dataset:
     data = data.melt(id_vars=indices, var_name=col_region)
 
     # Create result based on parameters
-    result: xr.DataArray | xr.Dataset = create_xarray_dataarray(
-        data.set_index([*indices, col_region])["value"]
-    )
+    result = create_xarray_dataarray(data.set_index([*indices, col_region])["value"])
 
     return result.rename(src_region="region")
 
