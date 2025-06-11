@@ -68,11 +68,11 @@ def test_read_technodata_timeslices_csv(timeslice_model_path):
         "technology",
         "minimum_service_factor",
         "region",
+        "year",
     }
     extra_columns = {
         "month",
         "hour",
-        "year",
         "day",
     }
     assert set(timeslices_df.columns) == mandatory_columns | extra_columns
