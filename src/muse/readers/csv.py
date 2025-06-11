@@ -320,7 +320,22 @@ def read_technodictionary_csv(filename: Path) -> pd.DataFrame:
     Returns:
         DataFrame containing the technodictionary data
     """
-    csv = read_csv(filename, required_columns=["technology", "region", "year"])
+    required_columns = {
+        "cap_exp",
+        "region",
+        "var_par",
+        "fix_exp",
+        "interest_rate",
+        "utilization_factor",
+        "scaling_size",
+        "year",
+        "cap_par",
+        "var_exp",
+        "technology",
+        "technical_life",
+        "fix_par",
+    }
+    csv = read_csv(filename, required_columns=required_columns)
 
     # Check for deprecated columns
     if "fuel" in csv.columns:
@@ -398,7 +413,14 @@ def read_technodata_timeslices_csv(filename: Path) -> pd.DataFrame:
     Returns:
         DataFrame containing the technodata timeslices data
     """
-    csv = read_csv(filename, required_columns=["technology", "region", "year"])
+    required_columns = {
+        "utilization_factor",
+        "technology",
+        "minimum_service_factor",
+        "region",
+        "year",
+    }
+    csv = read_csv(filename, required_columns=required_columns)
     return csv
 
 
@@ -533,7 +555,11 @@ def read_initial_assets_csv(filename: Path) -> pd.DataFrame:
     Returns:
         DataFrame containing the initial assets data
     """
-    data = read_csv(filename, required_columns=["technology", "region"])
+    required_columns = {
+        "region",
+        "technology",
+    }
+    data = read_csv(filename, required_columns=required_columns)
     return data
 
 
@@ -735,9 +761,13 @@ def read_global_commodities_csv(path: Path) -> pd.DataFrame:
         DataFrame containing the global commodities data
 
     """
+    required_columns = {
+        "commodity",
+        "comm_type",
+    }
     data = read_csv(
         path,
-        required_columns=["commodity", "comm_type"],
+        required_columns=required_columns,
         msg=f"Reading global commodities from {path}.",
     )
     return data
@@ -822,17 +852,16 @@ def read_agent_parameters_csv(filename: Path) -> pd.DataFrame:
     Returns:
         DataFrame with validated agent parameters
     """
-    data = read_csv(
-        filename,
-        required_columns=[
-            "name",
-            "region",
-            "search_rule",
-            "decision_method",
-            "agent_share",
-            "quantity",
-        ],
-    )
+    required_columns = {
+        "search_rule",
+        "quantity",
+        "region",
+        "type",
+        "name",
+        "agent_share",
+        "decision_method",
+    }
+    data = read_csv(filename, required_columns=required_columns)
 
     # Check for deprecated retrofit agents
     if "type" in data.columns:
@@ -1007,8 +1036,14 @@ def read_initial_market_csv(
         may be None if their respective files were not provided
     """
     # Projections must always be present
+    required_columns = {
+        "region",
+        "attribute",
+        "year",
+    }
     projections_df = read_csv(
         projections,
+        required_columns=required_columns,
         msg=f"Reading projections from {projections}.",
     )
 
