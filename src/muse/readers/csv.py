@@ -266,6 +266,7 @@ def read_csv(
     filename: Path,
     float_precision: str = "high",
     required_columns: list[str] | None = None,
+    msg: str | None = None,
 ) -> pd.DataFrame:
     """Reads and standardizes a CSV file into a DataFrame.
 
@@ -273,10 +274,15 @@ def read_csv(
         filename: Path to the CSV file
         float_precision: Precision to use when reading floats
         required_columns: List of column names that must be present (optional)
+        msg: Message to log (optional)
 
     Returns:
         DataFrame containing the standardized data
     """
+    # Log message
+    if msg:
+        getLogger(__name__).info(msg)
+
     # Check if there's a units row (in which case we need to skip it)
     with open(filename) as f:
         next(f)  # Skip header row
@@ -727,8 +733,11 @@ def read_global_commodities_csv(path: Path) -> pd.DataFrame:
         DataFrame containing the global commodities data
 
     """
-    getLogger(__name__).info(f"Reading global commodities from {path}.")
-    data = read_csv(path, required_columns=["commodity", "comm_type"])
+    data = read_csv(
+        path,
+        required_columns=["commodity", "comm_type"],
+        msg=f"Reading global commodities from {path}.",
+    )
     return data
 
 
@@ -762,8 +771,11 @@ def read_timeslice_shares_csv(path: Path) -> pd.DataFrame:
     Returns:
         DataFrame containing the timeslice shares data
     """
-    getLogger(__name__).info(f"Reading timeslice shares from {path}")
-    data = read_csv(path, required_columns=["region", "timeslice"])
+    data = read_csv(
+        path,
+        required_columns=["region", "timeslice"],
+        msg=f"Reading timeslice shares from {path}.",
+    )
     return data
 
 
@@ -920,8 +932,11 @@ def read_macro_drivers_csv(path: Path) -> pd.DataFrame:
     Returns:
         DataFrame containing the macro drivers data
     """
-    getLogger(__name__).info(f"Reading macro drivers from {path}")
-    table = read_csv(path, required_columns=["region", "variable"])
+    table = read_csv(
+        path,
+        required_columns=["region", "variable"],
+        msg=f"Reading macro drivers from {path}.",
+    )
 
     # Validate required variables
     required_variables = ["Population", "GDP|PPP"]
@@ -984,21 +999,27 @@ def read_initial_market_csv(
         may be None if their respective files were not provided
     """
     # Projections must always be present
-    getLogger(__name__).info(f"Reading projections from {projections}")
-    projections_df = read_csv(projections)
+    projections_df = read_csv(
+        projections,
+        msg=f"Reading projections from {projections}.",
+    )
 
     # Base year export is optional
     if base_year_export:
-        getLogger(__name__).info(f"Reading base year export from {base_year_export}")
-        export_df = read_csv(base_year_export)
+        export_df = read_csv(
+            base_year_export,
+            msg=f"Reading base year export from {base_year_export}.",
+        )
     else:
         getLogger(__name__).info("Base year export not provided. Set to zero.")
         export_df = None
 
     # Base year import is optional
     if base_year_import:
-        getLogger(__name__).info(f"Reading base year import from {base_year_import}")
-        import_df = read_csv(base_year_import)
+        import_df = read_csv(
+            base_year_import,
+            msg=f"Reading base year import from {base_year_import}.",
+        )
     else:
         getLogger(__name__).info("Base year import not provided. Set to zero.")
         import_df = None
@@ -1075,8 +1096,11 @@ def read_attribute_table_csv(path: Path) -> pd.DataFrame:
     if not path.is_file():
         raise OSError(f"{path} does not exist.")
 
-    getLogger(__name__).info(f"Reading prices from {path}")
-    table = read_csv(path, required_columns=["region", "attribute", "year"])
+    table = read_csv(
+        path,
+        required_columns=["region", "attribute", "year"],
+        msg=f"Reading prices from {path}.",
+    )
     return table
 
 
@@ -1133,9 +1157,10 @@ def read_regression_parameters_csv(
     """
     if not path.is_file():
         raise OSError(f"{path} does not exist or is not a file.")
-    getLogger(__name__).info(f"Reading regression parameters from {path}.")
     table = read_csv(
-        path, required_columns=["sector", "region", "function_type", "coeff"]
+        path,
+        required_columns=["sector", "region", "function_type", "coeff"],
+        msg=f"Reading regression parameters from {path}.",
     )
     return table, table.sector, table.function_type
 
