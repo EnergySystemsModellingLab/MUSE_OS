@@ -55,6 +55,26 @@ COLUMN_RENAMES = {
 }
 
 
+def validate_dataframe(
+    data: pd.DataFrame,
+    source: Path,
+    required_columns: list[str],
+) -> None:
+    """Validates required columns in a DataFrame.
+
+    Args:
+        data: DataFrame to validate
+        source: Source path for error messages
+        required_columns: List of column names that must be present
+
+    Raises:
+        ValueError: If required columns are missing
+    """
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+
+
 def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Standardizes column names in a DataFrame.
 
@@ -206,21 +226,18 @@ def to_numeric(x):
         return x
 
 
-def validate_technodictionary(data: pd.DataFrame, source: str) -> None:
+def validate_technodictionary(data: pd.DataFrame, source: Path) -> None:
     """Validates technodictionary DataFrame.
 
     Args:
         data: DataFrame to validate
-        source: Source name for error messages
+        source: Source path for error messages
 
     Raises:
         ValueError: If validation fails
     """
     # Validate required columns
-    required_columns = ["process", "region", "year"]
-    missing_columns = [col for col in required_columns if col not in data.columns]
-    if missing_columns:
-        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+    validate_dataframe(data, source, required_columns=["process", "region", "year"])
 
     # Check for deprecated columns
     if "fuel" in data.columns:
@@ -318,21 +335,17 @@ def process_technodictionary(data: pd.DataFrame) -> xr.Dataset:
     return result
 
 
-def validate_technodata_timeslices(data: pd.DataFrame, source: str) -> None:
+def validate_technodata_timeslices(data: pd.DataFrame, source: Path) -> None:
     """Validates technodata timeslices DataFrame.
 
     Args:
         data: DataFrame to validate
-        source: Source name for error messages
+        source: Source path for error messages
 
     Raises:
         ValueError: If validation fails
     """
-    # Validate required columns
-    required_columns = ["technology", "region", "year"]
-    missing_columns = [col for col in required_columns if col not in data.columns]
-    if missing_columns:
-        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+    validate_dataframe(data, source, required_columns=["technology", "region", "year"])
 
 
 def read_technodata_timeslices_csv(filename: Path) -> pd.DataFrame:
@@ -393,21 +406,17 @@ def process_technodata_timeslices(data: pd.DataFrame) -> xr.Dataset:
     return sort_timeslices(result)
 
 
-def validate_io_technodata(data: pd.DataFrame, source: str) -> None:
+def validate_io_technodata(data: pd.DataFrame, source: Path) -> None:
     """Validates IO technodata DataFrame.
 
     Args:
         data: DataFrame to validate
-        source: Source name for error messages
+        source: Source path for error messages
 
     Raises:
         ValueError: If validation fails
     """
-    # Validate required columns
-    required_columns = ["technology", "region", "year"]
-    missing_columns = [col for col in required_columns if col not in data.columns]
-    if missing_columns:
-        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+    validate_dataframe(data, source, required_columns=["technology", "region", "year"])
 
 
 def read_io_technodata_csv(filename: Path) -> pd.DataFrame:
@@ -494,21 +503,17 @@ def process_io_technodata(data: pd.DataFrame) -> xr.Dataset:
     return result
 
 
-def validate_initial_assets(data: pd.DataFrame, source: str) -> None:
+def validate_initial_assets(data: pd.DataFrame, source: Path) -> None:
     """Validates initial assets DataFrame.
 
     Args:
         data: DataFrame to validate
-        source: Source name for error messages
+        source: Source path for error messages
 
     Raises:
         ValueError: If validation fails
     """
-    # Validate required columns
-    required_columns = ["ProcessName", "RegionName"]
-    missing_columns = [col for col in required_columns if col not in data.columns]
-    if missing_columns:
-        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+    validate_dataframe(data, source, required_columns=["ProcessName", "RegionName"])
 
 
 def read_initial_assets_csv(filename: Path) -> pd.DataFrame:
@@ -714,21 +719,17 @@ def process_technologies(
     return result
 
 
-def validate_global_commodities(data: pd.DataFrame, source: str) -> None:
+def validate_global_commodities(data: pd.DataFrame, source: Path) -> None:
     """Validates global commodities DataFrame.
 
     Args:
         data: DataFrame to validate
-        source: Source name for error messages
+        source: Source path for error messages
 
     Raises:
         ValueError: If validation fails
     """
-    # Validate required columns
-    required_columns = ["commodity", "comm_type"]
-    missing_columns = [col for col in required_columns if col not in data.columns]
-    if missing_columns:
-        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+    validate_dataframe(data, source, required_columns=["commodity", "comm_type"])
 
 
 def read_global_commodities_csv(path: Path) -> pd.DataFrame:
@@ -770,21 +771,17 @@ def process_global_commodities(data: pd.DataFrame) -> xr.Dataset:
     return create_xarray_dataset(data)
 
 
-def validate_timeslice_shares(data: pd.DataFrame, source: str) -> None:
+def validate_timeslice_shares(data: pd.DataFrame, source: Path) -> None:
     """Validates timeslice shares DataFrame.
 
     Args:
         data: DataFrame to validate
-        source: Source name for error messages
+        source: Source path for error messages
 
     Raises:
         ValueError: If validation fails
     """
-    # Validate required columns
-    required_columns = ["RegionName", "SN"]
-    missing_columns = [col for col in required_columns if col not in data.columns]
-    if missing_columns:
-        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+    validate_dataframe(data, source, required_columns=["region", "timeslice"])
 
 
 def read_timeslice_shares_csv(path: Path) -> pd.DataFrame:
@@ -831,28 +828,29 @@ def process_timeslice_shares(data: pd.DataFrame) -> xr.DataArray:
     return result.shares
 
 
-def validate_csv_agent_parameters(data: pd.DataFrame, source: str) -> None:
+def validate_csv_agent_parameters(data: pd.DataFrame, source: Path) -> None:
     """Validates agent parameters DataFrame.
 
     Args:
         data: DataFrame to validate
-        source: Source name for error messages
+        source: Source path for error messages
 
     Raises:
         ValueError: If validation fails
     """
     # Validate required columns
-    required_columns = [
-        "name",
-        "region",
-        "search_rule",
-        "decision_method",
-        "quantity",
-        "share",
-    ]
-    missing_columns = [col for col in required_columns if col not in data.columns]
-    if missing_columns:
-        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+    validate_dataframe(
+        data,
+        source,
+        required_columns=[
+            "name",
+            "region",
+            "search_rule",
+            "decision_method",
+            "quantity",
+            "share",
+        ],
+    )
 
     # Check for deprecated retrofit agents
     if "type" in data.columns:
@@ -963,21 +961,18 @@ def process_csv_agent_parameters(data: pd.DataFrame, filename: Path) -> list[dic
     return result
 
 
-def validate_macro_drivers(data: pd.DataFrame, source: str) -> None:
+def validate_macro_drivers(data: pd.DataFrame, source: Path) -> None:
     """Validates macro drivers DataFrame.
 
     Args:
         data: DataFrame to validate
-        source: Source name for error messages
+        source: Source path for error messages
 
     Raises:
         ValueError: If validation fails
     """
     # Validate required columns
-    required_columns = ["region", "variable"]
-    missing_columns = [col for col in required_columns if col not in data.columns]
-    if missing_columns:
-        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+    validate_dataframe(data, source, required_columns=["region", "variable"])
 
     # Validate required variables
     required_variables = ["Population", "GDP|PPP"]
@@ -1141,21 +1136,17 @@ def process_initial_market(
     return result
 
 
-def validate_attribute_table(data: pd.DataFrame, source: str) -> None:
+def validate_attribute_table(data: pd.DataFrame, source: Path) -> None:
     """Validates attribute table DataFrame.
 
     Args:
         data: DataFrame to validate
-        source: Source name for error messages
+        source: Source path for error messages
 
     Raises:
         ValueError: If validation fails
     """
-    # Validate required columns
-    required_columns = ["region", "attribute", "year"]
-    missing_columns = [col for col in required_columns if col not in data.columns]
-    if missing_columns:
-        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+    validate_dataframe(data, source, required_columns=["region", "attribute", "year"])
 
 
 def read_attribute_table_csv(path: Path) -> pd.DataFrame:
@@ -1221,21 +1212,21 @@ def process_attribute_table(table: pd.DataFrame) -> xr.DataArray:
     return result
 
 
-def validate_regression_parameters(data: pd.DataFrame, source: str) -> None:
+def validate_regression_parameters(data: pd.DataFrame, source: Path) -> None:
     """Validates regression parameters DataFrame.
 
     Args:
         data: DataFrame to validate
-        source: Source name for error messages
+        source: Source path for error messages
 
     Raises:
         ValueError: If validation fails
     """
-    # Validate required columns
-    required_columns = ["region", "sector", "function_type", "coeff"]
-    missing_columns = [col for col in required_columns if col not in data.columns]
-    if missing_columns:
-        raise ValueError(f"Missing required columns in {source}: {missing_columns}")
+    validate_dataframe(
+        data,
+        source,
+        required_columns=["region", "sector", "function_type", "coeff"],
+    )
 
 
 def read_regression_parameters_csv(
@@ -1309,20 +1300,19 @@ def process_regression_parameters(
     return coeffs
 
 
-def validate_presets(data: pd.DataFrame, indices: Sequence[str], source: str) -> None:
+def validate_presets(data: pd.DataFrame, indices: Sequence[str], source: Path) -> None:
     """Validates presets DataFrame.
 
     Args:
         data: DataFrame to validate
         indices: Column names to use as indices
-        source: Source name for error messages
+        source: Source path for error messages
 
     Raises:
         ValueError: If validation fails
     """
     # Validate required columns
-    if not all(u in data.columns for u in indices):
-        raise ValueError(f"Missing required columns in {source}: {indices}")
+    validate_dataframe(data, source, required_columns=list(indices))
 
     # Check for deprecated ProcessName column
     if "process" in data.columns:
