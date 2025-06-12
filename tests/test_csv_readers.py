@@ -4,6 +4,59 @@ from pytest import fixture
 
 from muse import examples
 
+# Common test data
+EXPECTED_TIMESLICES = [
+    ("all-year", "all-week", "night"),
+    ("all-year", "all-week", "morning"),
+    ("all-year", "all-week", "afternoon"),
+    ("all-year", "all-week", "early-peak"),
+    ("all-year", "all-week", "late-peak"),
+    ("all-year", "all-week", "evening"),
+]
+
+
+# Helper functions for common assertions
+def assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars):
+    """Assert basic dataset structure including dimensions, coordinates and data variables."""  # noqa: E501
+    assert isinstance(data, xr.Dataset)
+    assert set(data.dims) == set(expected_dims)
+    assert set(data.data_vars) == set(expected_data_vars)
+
+    for coord, dims in expected_coords.items():
+        assert coord in data.coords
+        assert data.coords[coord].dims == dims
+
+
+def assert_data_types(data, expected_types):
+    """Assert data types of variables match expected types."""
+    for var, expected_type in expected_types.items():
+        actual_type = str(data.data_vars[var].dtype)
+        assert actual_type == expected_type, (
+            f"Expected {var} to be {expected_type}, got {actual_type}"
+        )
+
+
+def assert_coordinate_values(data, coordinate, expected_values):
+    """Assert coordinate values match expected values."""
+    actual_values = data.coords[coordinate].values.tolist()
+    assert actual_values == expected_values, (
+        f"Expected {coordinate} values to be {expected_values}, got {actual_values}"
+    )
+
+
+def assert_single_coordinate(data, selection, expected):
+    """Assert values for a single coordinate selection match expected values."""
+    actual = data.sel(**selection).data_vars
+    for k, v in expected.items():
+        if isinstance(v, float):
+            assert np.isclose(actual[k].item(), v), (
+                f"Expected {k} to be {v}, got {actual[k].item()}"
+            )
+        else:
+            assert actual[k].item() == v, (
+                f"Expected {k} to be {v}, got {actual[k].item()}"
+            )
+
 
 @fixture
 def timeslice():
@@ -43,31 +96,41 @@ def test_read_global_commodities(model_path):
     path = model_path / "GlobalCommodities.csv"
     data = read_global_commodities(path)
 
-    assert isinstance(data, xr.Dataset)
-    expected_coords = {"commodity"}
-    expected_data_vars = {
-        "comm_name": "object",
-        "comm_type": "object",
-        "emmission_factor": "float64",
-        "heat_rate": "int64",
-        "unit": "object",
-    }
-    assert set(data.coords) == set(expected_coords)
-    assert set(data.data_vars) == set(expected_data_vars)
-    for var, expected_type in expected_data_vars.items():
-        actual_type = str(data.data_vars[var].dtype)
-        assert actual_type == expected_type
+    assert_dataset_structure(
+        data,
+        {"commodity"},
+        {"commodity": ("commodity",)},
+        {
+            "comm_name": "object",
+            "comm_type": "object",
+            "emmission_factor": "float64",
+            "heat_rate": "int64",
+            "unit": "object",
+        },
+    )
+    assert_data_types(
+        data,
+        {
+            "comm_name": "object",
+            "comm_type": "object",
+            "emmission_factor": "float64",
+            "heat_rate": "int64",
+            "unit": "object",
+        },
+    )
 
     # Check a single coordinate
-    actual = data.sel(commodity="electricity").data_vars
-    expected = {
-        "comm_name": "Electricity",
-        "comm_type": "energy",
-        "emmission_factor": 0.0,
-        "heat_rate": 1,
-        "unit": "PJ",
-    }
-    assert actual == expected
+    assert_single_coordinate(
+        data,
+        {"commodity": "electricity"},
+        {
+            "comm_name": "Electricity",
+            "comm_type": "energy",
+            "emmission_factor": 0.0,
+            "heat_rate": 1,
+            "unit": "PJ",
+        },
+    )
 
 
 def test_read_presets(model_path):
@@ -92,7 +155,6 @@ def test_read_initial_market(model_path):
     from muse.readers.csv import read_initial_market
 
     data = read_initial_market(model_path / "Projections.csv")
-    assert isinstance(data, xr.Dataset)
 
     # Check properties of the dataset
     expected_dims = {"region", "year", "commodity", "timeslice"}
@@ -112,41 +174,37 @@ def test_read_initial_market(model_path):
         "imports": "float64",
         "static_trade": "float64",
     }
-    assert set(data.dims) == set(expected_dims)
-    assert set(data.data_vars) == set(expected_data_vars)
-    for coord, dims in expected_coords.items():
-        assert coord in data.coords
-        assert data.coords[coord].dims == dims
+
+    assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
+    assert_data_types(data, expected_data_vars)
     assert hasattr(data.coords["timeslice"].to_index(), "levels")
 
     # Check a single coordinate
-    actual = data.sel(
-        year=2010,
-        region="R1",
-        commodity="electricity",
-        timeslice=("all-year", "all-week", "night"),
-    ).data_vars
-    expected = {
-        "prices": 14.81481472,
-        "exports": 0.0,
-        "imports": 0.0,
-        "static_trade": 0.0,
-    }
-    for k, v in expected.items():
-        assert np.isclose(actual[k].item(), v), (
-            f"Expected {k} to be {v}, got {actual[k].item()}"
-        )
+    assert_single_coordinate(
+        data,
+        {
+            "year": 2010,
+            "region": "R1",
+            "commodity": "electricity",
+            "timeslice": ("all-year", "all-week", "night"),
+        },
+        {
+            "prices": 14.81481472,
+            "exports": 0.0,
+            "imports": 0.0,
+            "static_trade": 0.0,
+        },
+    )
 
 
 def test_read_technodictionary(model_path):
     from muse.readers.csv import read_technodictionary
 
     data = read_technodictionary(model_path / "power" / "Technodata.csv")
-    assert isinstance(data, xr.Dataset)
 
     # Check properties of the dataset
     expected_dims = {"technology", "region"}
-    expected_coords = {"technology", "region"}
+    expected_coords = {"technology": ("technology",), "region": ("region",)}
     expected_data_vars = {
         "cap_par": "float64",
         "cap_exp": "int64",
@@ -167,41 +225,32 @@ def test_read_technodictionary(model_path):
         "tech_type": "<U6",
     }
 
-    assert set(data.dims) == set(expected_dims)
-    assert set(data.coords) == set(expected_coords)
-    assert set(data.data_vars) == set(expected_data_vars)
-    for var, expected_type in expected_data_vars.items():
-        actual_type = str(data.data_vars[var].dtype)
-        assert actual_type == expected_type, (
-            f"Expected {var} to be {expected_type}, got {actual_type}"
-        )
+    assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
+    assert_data_types(data, expected_data_vars)
 
     # Check single coordinate
-    actual_gas = data.sel(technology="gasCCGT", region="R1").data_vars
-    expected_gas = {
-        "cap_par": 23.78234399,
-        "cap_exp": 1,
-        "fix_par": 0,
-        "fix_exp": 1,
-        "var_par": 0,
-        "var_exp": 1,
-        "max_capacity_addition": 10,
-        "max_capacity_growth": 0.5,
-        "total_capacity_limit": 100,
-        "technical_life": 35,
-        "utilization_factor": 0.9,
-        "scaling_size": 1.89e-06,
-        "efficiency": 86,
-        "interest_rate": 0.1,
-        "type": "energy",
-        "agent1": 1,
-    }
-    for k, v in expected_gas.items():
-        assert (
-            np.isclose(actual_gas[k].item(), v)
-            if isinstance(v, float)
-            else actual_gas[k].item() == v
-        ), f"Expected {k} to be {v}, got {actual_gas[k].item()}"
+    assert_single_coordinate(
+        data,
+        {"technology": "gasCCGT", "region": "R1"},
+        {
+            "cap_par": 23.78234399,
+            "cap_exp": 1,
+            "fix_par": 0,
+            "fix_exp": 1,
+            "var_par": 0,
+            "var_exp": 1,
+            "max_capacity_addition": 10,
+            "max_capacity_growth": 0.5,
+            "total_capacity_limit": 100,
+            "technical_life": 35,
+            "utilization_factor": 0.9,
+            "scaling_size": 1.89e-06,
+            "efficiency": 86,
+            "interest_rate": 0.1,
+            "type": "energy",
+            "agent1": 1,
+        },
+    )
 
 
 def test_read_technodata_timeslices(timeslice_model_path):
@@ -210,7 +259,6 @@ def test_read_technodata_timeslices(timeslice_model_path):
     data = read_technodata_timeslices(
         timeslice_model_path / "power" / "TechnodataTimeslices.csv"
     )
-    assert isinstance(data, xr.Dataset)
 
     # Check properties of the dataset
     expected_dims = {"technology", "region", "year", "timeslice"}
@@ -228,46 +276,29 @@ def test_read_technodata_timeslices(timeslice_model_path):
         "minimum_service_factor": "int64",
     }
 
-    assert set(data.dims) == set(expected_dims)
-    for coord, dims in expected_coords.items():
-        assert coord in data.coords
-        assert data.coords[coord].dims == dims
-    assert set(data.data_vars) == set(expected_data_vars)
-    for var, expected_type in expected_data_vars.items():
-        actual_type = str(data.data_vars[var].dtype)
-        assert actual_type == expected_type, (
-            f"Expected {var} to be {expected_type}, got {actual_type}"
-        )
+    assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
+    assert_data_types(data, expected_data_vars)
 
     # Check timeslice structure
-    expected_timeslices = [
-        ("all-year", "all-week", "night"),
-        ("all-year", "all-week", "morning"),
-        ("all-year", "all-week", "afternoon"),
-        ("all-year", "all-week", "early-peak"),
-        ("all-year", "all-week", "late-peak"),
-        ("all-year", "all-week", "evening"),
-    ]
-    actual_timeslices = list(zip(data.month.values, data.day.values, data.hour.values))
-    assert actual_timeslices == expected_timeslices
+    assert_coordinate_values(data, "timeslice", EXPECTED_TIMESLICES)
 
     # Check single coordinate
-    actual = data.sel(
-        technology="gasCCGT",
-        region="R1",
-        year=2020,
-        timeslice=("all-year", "all-week", "night"),
-    ).data_vars
-    expected = {"utilization_factor": 1, "minimum_service_factor": 0}
-    for k, v in expected.items():
-        assert actual[k].item() == v, f"Expected {k} to be {v}, got {actual[k].item()}"
+    assert_single_coordinate(
+        data,
+        {
+            "technology": "gasCCGT",
+            "region": "R1",
+            "year": 2020,
+            "timeslice": ("all-year", "all-week", "night"),
+        },
+        {"utilization_factor": 1, "minimum_service_factor": 0},
+    )
 
 
 def test_read_io_technodata(model_path):
     from muse.readers.csv import read_io_technodata
 
     data = read_io_technodata(model_path / "power" / "CommIn.csv")
-    assert isinstance(data, xr.Dataset)
 
     # Check properties of the dataset
     expected_dims = {"technology", "region", "year", "commodity"}
@@ -283,24 +314,15 @@ def test_read_io_technodata(model_path):
         "commodity_units": "object",
     }
 
-    assert set(data.dims) == set(expected_dims)
-    for coord, dims in expected_coords.items():
-        assert coord in data.coords
-        assert data.coords[coord].dims == dims
-    assert set(data.data_vars) == set(expected_data_vars)
-    for var, expected_type in expected_data_vars.items():
-        actual_type = str(data.data_vars[var].dtype)
-        assert actual_type == expected_type, (
-            f"Expected {var} to be {expected_type}, got {actual_type}"
-        )
+    assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
+    assert_data_types(data, expected_data_vars)
 
     # Check single coordinate
-    actual = data.sel(
-        technology="gasCCGT", region="R1", year=2020, commodity="gas"
-    ).data_vars
-    expected = {"fixed": 1.67, "flexible": 0.0, "commodity_units": "PJ/PJ"}
-    for k, v in expected.items():
-        assert actual[k].item() == v, f"Expected {k} to be {v}, got {actual[k].item()}"
+    assert_single_coordinate(
+        data,
+        {"technology": "gasCCGT", "region": "R1", "year": 2020, "commodity": "gas"},
+        {"fixed": 1.67, "flexible": 0.0, "commodity_units": "PJ/PJ"},
+    )
 
 
 def test_read_initial_assets(model_path):
@@ -326,8 +348,7 @@ def test_read_initial_assets(model_path):
     # Check single coordinate
     assert data.installed.sel(asset=0).item() == 2020
     assert data.technology.sel(asset=0).item() == "gasCCGT"
-    capacity = data.sel(region="R1", asset=0, year=2020).item()
-    assert capacity == 1
+    assert data.sel(region="R1", asset=0, year=2020).item() == 1
 
 
 def test_read_csv_agent_parameters(model_path):
