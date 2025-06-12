@@ -17,8 +17,8 @@ COMMODITIES = ["electricity", "gas", "heat", "wind", "CO2f"]
 
 
 # Helper functions for common assertions
-def assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars):
-    """Assert basic dataset structure including dimensions, coordinates and data variables."""  # noqa: E501
+def assert_dataset_schema(data, expected_dims, expected_coords, expected_data_vars):
+    """Assert basic dataset structure including dimensions, coordinates, data variables and their types."""  # noqa: E501
     assert isinstance(data, xr.Dataset)
     assert set(data.dims) == set(expected_dims)
     assert set(data.data_vars) == set(expected_data_vars)
@@ -27,14 +27,30 @@ def assert_dataset_structure(data, expected_dims, expected_coords, expected_data
         assert coord in data.coords
         assert data.coords[coord].dims == dims
 
-
-def assert_data_types(data, expected_types):
-    """Assert data types of variables match expected types."""
-    for var, expected_type in expected_types.items():
+    # Check data types of variables
+    for var, expected_type in expected_data_vars.items():
         actual_type = str(data.data_vars[var].dtype)
         assert actual_type == expected_type, (
             f"Expected {var} to be {expected_type}, got {actual_type}"
         )
+
+
+def assert_dataarray_schema(data, expected_dims, expected_coords, expected_dtype):
+    """Assert basic DataArray structure including dimensions, coordinates and data type.
+
+    Args:
+        data: xarray DataArray to check
+        expected_dims: set of expected dimension names
+        expected_coords: dict mapping coordinate names to their expected dimensions
+        expected_dtype: expected data type of the DataArray
+    """
+    assert isinstance(data, xr.DataArray)
+    assert set(data.dims) == set(expected_dims)
+    assert data.dtype == expected_dtype, f"Expected {data.dtype}, got {expected_dtype}"
+
+    for coord, dims in expected_coords.items():
+        assert coord in data.coords
+        assert data.coords[coord].dims == dims
 
 
 def assert_coordinate_values(data, coordinates: dict[str, list], check_order=False):
@@ -123,20 +139,11 @@ def test_read_global_commodities(model_path):
     path = model_path / "GlobalCommodities.csv"
     data = read_global_commodities(path)
 
-    assert_dataset_structure(
+    # Check properties of the dataset
+    assert_dataset_schema(
         data,
         {"commodity"},
         {"commodity": ("commodity",)},
-        {
-            "comm_name": "object",
-            "comm_type": "object",
-            "emmission_factor": "float64",
-            "heat_rate": "int64",
-            "unit": "object",
-        },
-    )
-    assert_data_types(
-        data,
         {
             "comm_name": "object",
             "comm_type": "object",
@@ -166,15 +173,17 @@ def test_read_presets(model_path):
     from muse.readers.csv import read_presets
 
     data = read_presets(str(model_path / "residential_presets" / "*.csv"))
-    assert isinstance(data, xr.DataArray)
 
     # Check properties of the data array
     expected_dims = {"year", "commodity", "region", "timeslice"}
-    expected_coords = {"year", "commodity", "region", "timeslice"}
+    expected_coords = {
+        "year": ("year",),
+        "commodity": ("commodity",),
+        "region": ("region",),
+        "timeslice": ("timeslice",),
+    }
     expected_dtype = "float64"
-    assert set(data.dims) == set(expected_dims)
-    assert set(data.coords) == set(expected_coords)
-    assert data.dtype == expected_dtype
+    assert_dataarray_schema(data, expected_dims, expected_coords, expected_dtype)
 
     # Check coordinates
     expected_coord_values = {
@@ -212,9 +221,7 @@ def test_read_initial_market(model_path):
         "imports": "float64",
         "static_trade": "float64",
     }
-
-    assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
-    assert_data_types(data, expected_data_vars)
+    assert_dataset_schema(data, expected_dims, expected_coords, expected_data_vars)
     assert hasattr(data.coords["timeslice"].to_index(), "levels")
 
     # Check coordinates
@@ -269,9 +276,7 @@ def test_read_technodictionary(model_path):
         "agent1": "int64",
         "tech_type": "<U6",
     }
-
-    assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
-    assert_data_types(data, expected_data_vars)
+    assert_dataset_schema(data, expected_dims, expected_coords, expected_data_vars)
 
     # Check coordinates
     expected_coord_values = {
@@ -332,9 +337,8 @@ def test_read_technodata_timeslices(timeslice_model_path):
         "utilization_factor": "int64",
         "minimum_service_factor": "int64",
     }
-
-    assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
-    assert_data_types(data, expected_data_vars)
+    assert_dataset_schema(data, expected_dims, expected_coords, expected_data_vars)
+    assert hasattr(data.coords["timeslice"].to_index(), "levels")
 
     # Check coordinates
     expected_coord_values = {
@@ -374,9 +378,7 @@ def test_read_io_technodata(model_path):
         "flexible": "float64",
         "commodity_units": "object",
     }
-
-    assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
-    assert_data_types(data, expected_data_vars)
+    assert_dataset_schema(data, expected_dims, expected_coords, expected_data_vars)
 
     # Check coordinates
     expected_coord_values = {
@@ -397,7 +399,6 @@ def test_read_initial_assets(model_path):
     from muse.readers.csv import read_initial_assets
 
     data = read_initial_assets(model_path / "power" / "ExistingCapacity.csv")
-    assert isinstance(data, xr.DataArray)
 
     # Check properties of the DataArray
     expected_dims = {"region", "asset", "year"}
@@ -407,11 +408,8 @@ def test_read_initial_assets(model_path):
         "installed": ("asset",),
         "year": ("year",),
     }
-
-    assert set(data.dims) == set(expected_dims)
-    for coord, dims in expected_coords.items():
-        assert coord in data.coords
-        assert data.coords[coord].dims == dims
+    expected_dtype = "int64"
+    assert_dataarray_schema(data, expected_dims, expected_coords, expected_dtype)
 
     # Check coordinates
     expected_coord_values = {
@@ -437,6 +435,7 @@ def test_read_csv_agent_parameters(model_path):
 
     # Check properties of the agent
     agent = data[0]
+    assert isinstance(agent, dict)
     expected = {
         "name": "A1",
         "region": "R1",
@@ -461,8 +460,6 @@ def test_read_existing_trade(trade_model_path):
 
     data = read_trade(trade_model_path / "gas" / "ExistingTrade.csv", skiprows=[1])
 
-    assert isinstance(data, xr.DataArray)
-
     # Check properties of the DataArray
     expected_dims = {"year", "technology", "dst_region", "region"}
     expected_coords = {
@@ -471,10 +468,8 @@ def test_read_existing_trade(trade_model_path):
         "dst_region": ("dst_region",),
         "region": ("region",),
     }
-    assert set(data.dims) == set(expected_dims)
-    for coord, dims in expected_coords.items():
-        assert coord in data.coords
-        assert data.coords[coord].dims == dims
+    expected_dtype = "int64"
+    assert_dataarray_schema(data, expected_dims, expected_coords, expected_dtype)
 
     # Check coordinates
     expected_coord_values = {
@@ -496,8 +491,6 @@ def test_read_trade_technodata(trade_model_path):
 
     data = read_trade(trade_model_path / "gas" / "TradeTechnodata.csv", drop="Unit")
 
-    assert isinstance(data, xr.Dataset)
-
     # Check properties of the dataset
     expected_dims = {"technology", "dst_region", "region"}
     expected_coords = {
@@ -514,9 +507,7 @@ def test_read_trade_technodata(trade_model_path):
         "max_capacity_growth": "float64",
         "total_capacity_limit": "float64",
     }
-
-    assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
-    assert_data_types(data, expected_data_vars)
+    assert_dataset_schema(data, expected_dims, expected_coords, expected_data_vars)
 
     # Check coordinates
     expected_coord_values = {
@@ -547,8 +538,6 @@ def test_read_timeslice_shares(correlation_model_path):
         correlation_model_path / "residential_presets" / "TimesliceSharepreset.csv"
     )
 
-    assert isinstance(data, xr.DataArray)
-
     # Check properties of the DataArray
     expected_dims = {"region", "timeslice", "commodity"}
     expected_coords = {
@@ -556,10 +545,8 @@ def test_read_timeslice_shares(correlation_model_path):
         "timeslice": ("timeslice",),
         "commodity": ("commodity",),
     }
-    assert set(data.dims) == set(expected_dims)
-    for coord, dims in expected_coords.items():
-        assert coord in data.coords
-        assert data.coords[coord].dims == dims
+    expected_dtype = "float64"
+    assert_dataarray_schema(data, expected_dims, expected_coords, expected_dtype)
 
     # Check coordinates
     expected_coord_values = {
@@ -591,9 +578,7 @@ def test_read_macro_drivers(correlation_model_path):
         "gdp": "int64",
         "population": "int64",
     }
-
-    assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
-    assert_data_types(data, expected_data_vars)
+    assert_dataset_schema(data, expected_dims, expected_coords, expected_data_vars)
 
     # Check coordinates
     expected_coord_values = {
@@ -632,9 +617,7 @@ def test_read_regression_parameters(correlation_model_path):
         "GDPscaleGreater": "float64",
         "function_type": "<U16",
     }
-
-    assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
-    assert_data_types(data, expected_data_vars)
+    assert_dataset_schema(data, expected_dims, expected_coords, expected_data_vars)
 
     # Check coordinates
     expected_coord_values = {
