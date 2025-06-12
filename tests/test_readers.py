@@ -1,6 +1,5 @@
 from itertools import chain, permutations
 from pathlib import Path
-from unittest.mock import patch
 
 import pandas as pd
 import toml
@@ -273,48 +272,29 @@ def test_check_utilization_and_minimum_service():
         check_utilization_and_minimum_service_factors(df, "file.csv")
 
 
-@mark.parametrize(
-    "values", chain.from_iterable(permutations((0, bad)) for bad in (-1, 2))
-)
-def test_check_minimum_service_factors_in_range(values):
-    """Test validation of minimum service factors within valid range."""
-    from muse.readers.csv import _check_minimum_service_factors_in_range
-
-    df = pd.DataFrame({"minimum_service_factor": values})
-    with raises(ValueError):
-        _check_minimum_service_factors_in_range(df, "file.csv")
-
-
-@patch("muse.readers.csv._check_utilization_in_range")
-@patch("muse.readers.csv._check_utilization_not_all_zero")
-@patch("muse.readers.csv._check_utilization_not_below_minimum")
-@patch("muse.readers.csv._check_minimum_service_factors_in_range")
-def test_check_utilization_and_minimum_service_factors_mocked(*mocks):
-    """Test all validation checks are called with correct parameters."""
+def test_check_utilization_not_all_zero_fail():
+    """Test validation fails when all utilization factors are zero."""
     from muse.readers.csv import check_utilization_and_minimum_service_factors
 
     df = pd.DataFrame(
-        {"utilization_factor": [0, 0, 1], "minimum_service_factor": [0, 0, 0]}
+        {
+            "utilization_factor": [0, 0, 1],
+            "technology": ["gas", "gas", "solar"],
+            "region": ["GB", "GB", "FR"],
+            "year": [2010, 2010, 2011],
+        }
     )
-    check_utilization_and_minimum_service_factors(df, "file.csv")
-    for mock in mocks:
-        mock.assert_called_once_with(df, ["file.csv"])
+    with raises(ValueError):
+        check_utilization_and_minimum_service_factors(df, "file.csv")
 
 
-@patch("muse.readers.csv._check_utilization_in_range")
-@patch("muse.readers.csv._check_utilization_not_all_zero")
-@patch("muse.readers.csv._check_utilization_not_below_minimum")
-@patch("muse.readers.csv._check_minimum_service_factors_in_range")
-def test_check_utilization_no_min_service(
-    min_service_factor_mock, utilization_below_min_mock, *mocks
-):
-    """Test validation when minimum service factors are not present."""
+@mark.parametrize(
+    "values", chain.from_iterable(permutations((0, bad)) for bad in (-1, 2))
+)
+def test_check_utilization_in_range_fail(values):
+    """Test validation fails for utilization factors outside valid range."""
     from muse.readers.csv import check_utilization_and_minimum_service_factors
 
-    df = pd.DataFrame({"utilization_factor": [0, 0, 1]})
-    check_utilization_and_minimum_service_factors(df, "file.csv")
-
-    for mock in mocks:
-        mock.assert_called_once_with(df, ["file.csv"])
-    min_service_factor_mock.assert_not_called()
-    utilization_below_min_mock.assert_not_called()
+    df = pd.DataFrame({"utilization_factor": values})
+    with raises(ValueError):
+        check_utilization_and_minimum_service_factors(df, "file.csv")

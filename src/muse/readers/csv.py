@@ -4,12 +4,15 @@ from __future__ import annotations
 
 __all__ = [
     "read_agent_parameters",
+    "read_attribute_table",
     "read_global_commodities",
     "read_initial_assets",
     "read_initial_market",
+    "read_io_technodata",
     "read_macro_drivers",
     "read_presets",
     "read_regression_parameters",
+    "read_technodata_timeslices",
     "read_technodictionary",
     "read_technologies",
     "read_timeslice_shares",
@@ -102,6 +105,10 @@ def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
 
     # Then apply global mapping
     df = df.rename(columns=COLUMN_RENAMES)
+
+    # Make sure there are no duplicate columns
+    if len(df.columns) != len(set(df.columns)):
+        raise ValueError(f"Duplicate columns in {df.columns}")
 
     return df
 
@@ -255,7 +262,7 @@ def convert_column_types(data: pd.DataFrame) -> pd.DataFrame:
     data = data[data.process_name != "Unit"]
 
 def read_csv(
-    filename: Path,
+    filename: Path | pd.DataFrame,
     float_precision: str = "high",
     required_columns: list[str] | None = None,
     msg: str | None = None,
@@ -271,35 +278,41 @@ def read_csv(
     Returns:
         DataFrame containing the standardized data
     """
-    # Check if file exists
-    if not filename.is_file():
-        raise OSError(f"{filename} does not exist.")
-
     # Log message
     if msg:
         getLogger(__name__).info(msg)
 
-    # Check if there's a units row (in which case we need to skip it)
-    with open(filename) as f:
-        next(f)  # Skip header row
-        first_data_row = f.readline().strip()
-    skiprows = [1] if first_data_row.startswith("Unit") else None
+    # If a Path is passed, read the file
+    if isinstance(filename, Path):
+        # Check if file exists
+        if not filename.is_file():
+            raise OSError(f"{filename} does not exist.")
 
-    # Read the file
-    data = pd.read_csv(
-        filename,
-        float_precision=float_precision,
-        low_memory=False,
-        skiprows=skiprows,
-    )
+        # Check if there's a units row (in which case we need to skip it)
+        with open(filename) as f:
+            next(f)  # Skip header row
+            first_data_row = f.readline().strip()
+        skiprows = [1] if first_data_row.startswith("Unit") else None
+
+        # Read the file
+        data = pd.read_csv(
+            filename,
+            float_precision=float_precision,
+            low_memory=False,
+            skiprows=skiprows,
+        )
+    else:  # Must be DataFrame
+        data = filename
+
+    assert isinstance(data, pd.DataFrame)
 
     # Standardize column names
     data = standardize_columns(data)
 
-    # Convert specified columns from camelCase to snake_case
+    # Convert specified column values from camelCase to snake_case
     for col in CAMEL_TO_SNAKE_COLUMNS:
         if col in data.columns:
-            data = data.rename(columns={col: camel_to_snake(col)})
+            data[col] = data[col].apply(camel_to_snake)
 
     # Check/convert data types
     data = convert_column_types(data)
@@ -413,6 +426,11 @@ def process_technodictionary(data: pd.DataFrame) -> xr.Dataset:
     return result
 
 
+def read_technodata_timeslices(path: Path) -> xr.Dataset:
+    df = read_technodata_timeslices_csv(path)
+    return process_technodata_timeslices(df)
+
+
 def read_technodata_timeslices_csv(filename: Path) -> pd.DataFrame:
     """Reads and formats technodata timeslices into a DataFrame.
 
@@ -470,6 +488,11 @@ def process_technodata_timeslices(data: pd.DataFrame) -> xr.Dataset:
     result = result.stack(timeslice=timeslice_levels)
 
     return sort_timeslices(result)
+
+
+def read_io_technodata(path: Path) -> xr.Dataset:
+    df = read_io_technodata_csv(path)
+    return process_io_technodata(df)
 
 
 def read_io_technodata_csv(filename: Path) -> pd.DataFrame:
@@ -770,12 +793,20 @@ def read_global_commodities_csv(path: Path) -> pd.DataFrame:
         DataFrame containing the global commodities data
 
     """
+    # Due to legacy reasons, users can supply both Commodity and CommodityName columns
+    # In this case, we need to remove the Commodity column to avoid conflicts
+    # This is fine because Commodity just contains a long description that isn't needed
+    df = pd.read_csv(path)
+    df = df.rename(columns=camel_to_snake)
+    if "commodity" in df.columns and "commodity_name" in df.columns:
+        df = df.drop(columns=["commodity"])
+
     required_columns = {
         "commodity",
         "comm_type",
     }
     data = read_csv(
-        path,
+        df,
         required_columns=required_columns,
         msg=f"Reading global commodities from {path}.",
     )
@@ -916,7 +947,7 @@ def process_agent_parameters(data: pd.DataFrame, filename: Path) -> list[dict]:
         objectives = (
             row[[i.startswith("objective") for i in row.index]].dropna().to_list()
         )
-        sorting = row[[i.startswith("obj_sort") for i in row.index]].dropna().to_list()
+        sorting = row[[i.startswith("objsort") for i in row.index]].dropna().to_list()
         floats = row[[i.startswith("obj_data") for i in row.index]].dropna().to_list()
 
         # Create decision parameters
@@ -933,7 +964,7 @@ def process_agent_parameters(data: pd.DataFrame, filename: Path) -> list[dict]:
 
         # Create agent data dictionary
         data = {
-            "name": row.name,
+            "name": row["name"],
             "region": row.region,
             "objectives": objectives,
             "search_rules": row.search_rule,
@@ -1132,6 +1163,11 @@ def process_initial_market(
     )
 
     return result
+
+
+def read_attribute_table(path: Path) -> xr.DataArray:
+    df = read_attribute_table_csv(path)
+    return process_attribute_table(df)
 
 
 def read_attribute_table_csv(path: Path) -> pd.DataFrame:
