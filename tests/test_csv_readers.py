@@ -36,17 +36,24 @@ def assert_data_types(data, expected_types):
         )
 
 
-def assert_coordinate_values(data, coordinate, expected_values, order_matters=False):
-    """Assert coordinate values match expected values."""
-    actual_values = data.coords[coordinate].values.tolist()
-    if order_matters:
-        assert actual_values == expected_values, (
-            f"Expected {coordinate} values to be {expected_values}, got {actual_values}"
-        )
-    else:
-        assert set(actual_values) == set(expected_values), (
-            f"Expected {coordinate} values to be {expected_values}, got {actual_values}"
-        )
+def assert_coordinate_values(data, coordinates, order_matters=False):
+    """Assert coordinate values match expected values.
+
+    Args:
+        data: xarray Dataset or DataArray
+        coordinates: dict mapping coordinate names to expected values
+        order_matters: whether the order of values matters
+    """
+    for coord, expected_values in coordinates.items():
+        actual_values = data.coords[coord].values.tolist()
+        if order_matters:
+            assert actual_values == expected_values, (
+                f"Expected {coord} values to be {expected_values}, got {actual_values}"
+            )
+        else:
+            assert set(actual_values) == set(expected_values), (
+                f"Expected {coord} values to be {expected_values}, got {actual_values}"
+            )
 
 
 def assert_single_coordinate(data, selection, expected):
@@ -125,22 +132,21 @@ def test_read_global_commodities(model_path):
     )
 
     # Check coordinates
-    assert_coordinate_values(
-        data, "commodity", ["electricity", "gas", "heat", "wind", "CO2f"]
-    )
+    expected_coord_values = {
+        "commodity": ["electricity", "gas", "heat", "wind", "CO2f"]
+    }
+    assert_coordinate_values(data, expected_coord_values)
 
     # Check values at a single coordinate
-    assert_single_coordinate(
-        data,
-        {"commodity": "electricity"},
-        {
-            "comm_name": "Electricity",
-            "comm_type": "energy",
-            "emmission_factor": 0.0,
-            "heat_rate": 1,
-            "unit": "PJ",
-        },
-    )
+    coord = {"commodity": "electricity"}
+    expected = {
+        "comm_name": "Electricity",
+        "comm_type": "energy",
+        "emmission_factor": 0.0,
+        "heat_rate": 1,
+        "unit": "PJ",
+    }
+    assert_single_coordinate(data, coord, expected)
 
 
 def test_read_presets(model_path):
@@ -158,12 +164,13 @@ def test_read_presets(model_path):
     assert data.dtype == expected_dtype
 
     # Check coordinates
-    assert_coordinate_values(data, "year", [2020, 2050])
-    assert_coordinate_values(
-        data, "commodity", ["electricity", "gas", "heat", "wind", "CO2f"]
-    )
-    assert_coordinate_values(data, "region", ["R1"])
-    assert_coordinate_values(data, "timeslice", list(range(1, 7)))
+    expected_coord_values = {
+        "year": [2020, 2050],
+        "commodity": ["electricity", "gas", "heat", "wind", "CO2f"],
+        "region": ["R1"],
+        "timeslice": list(range(1, 7)),
+    }
+    assert_coordinate_values(data, expected_coord_values)
 
     # Check values at a single coordinate
     assert data.sel(year=2020, commodity="heat", region="R1", timeslice=1) == 1.0
@@ -198,29 +205,28 @@ def test_read_initial_market(model_path):
     assert hasattr(data.coords["timeslice"].to_index(), "levels")
 
     # Check coordinates
-    assert_coordinate_values(data, "region", ["R1"])
-    assert_coordinate_values(data, "year", list(range(2010, 2105, 5)))
-    assert_coordinate_values(
-        data, "commodity", ["electricity", "gas", "heat", "wind", "CO2f"]
-    )
-    assert_coordinate_values(data, "timeslice", EXPECTED_TIMESLICES)
+    expected_coord_values = {
+        "region": ["R1"],
+        "year": list(range(2010, 2105, 5)),
+        "commodity": ["electricity", "gas", "heat", "wind", "CO2f"],
+        "timeslice": EXPECTED_TIMESLICES,
+    }
+    assert_coordinate_values(data, expected_coord_values)
 
     # Check values at a single coordinate
-    assert_single_coordinate(
-        data,
-        {
-            "year": 2010,
-            "region": "R1",
-            "commodity": "electricity",
-            "timeslice": ("all-year", "all-week", "night"),
-        },
-        {
-            "prices": 14.81481472,
-            "exports": 0.0,
-            "imports": 0.0,
-            "static_trade": 0.0,
-        },
-    )
+    coord = {
+        "year": 2010,
+        "region": "R1",
+        "commodity": "electricity",
+        "timeslice": ("all-year", "all-week", "night"),
+    }
+    expected = {
+        "prices": 14.81481472,
+        "exports": 0.0,
+        "imports": 0.0,
+        "static_trade": 0.0,
+    }
+    assert_single_coordinate(data, coord, expected)
 
 
 def test_read_technodictionary(model_path):
@@ -255,8 +261,11 @@ def test_read_technodictionary(model_path):
     assert_data_types(data, expected_data_vars)
 
     # Check coordinates
-    assert_coordinate_values(data, "technology", ["gasCCGT", "windturbine"])
-    assert_coordinate_values(data, "region", ["R1"])
+    expected_coord_values = {
+        "technology": ["gasCCGT", "windturbine"],
+        "region": ["R1"],
+    }
+    assert_coordinate_values(data, expected_coord_values)
 
     # Check coordinate consistency
     for var in data.data_vars:
@@ -266,28 +275,26 @@ def test_read_technodictionary(model_path):
             assert data.data_vars[var].coords.equals(data.coords)
 
     # Check values at a single coordinate
-    assert_single_coordinate(
-        data,
-        {"technology": "gasCCGT", "region": "R1"},
-        {
-            "cap_par": 23.78234399,
-            "cap_exp": 1,
-            "fix_par": 0,
-            "fix_exp": 1,
-            "var_par": 0,
-            "var_exp": 1,
-            "max_capacity_addition": 10,
-            "max_capacity_growth": 0.5,
-            "total_capacity_limit": 100,
-            "technical_life": 35,
-            "utilization_factor": 0.9,
-            "scaling_size": 1.89e-06,
-            "efficiency": 86,
-            "interest_rate": 0.1,
-            "type": "energy",
-            "agent1": 1,
-        },
-    )
+    coord = {"technology": "gasCCGT", "region": "R1"}
+    expected = {
+        "cap_par": 23.78234399,
+        "cap_exp": 1,
+        "fix_par": 0,
+        "fix_exp": 1,
+        "var_par": 0,
+        "var_exp": 1,
+        "max_capacity_addition": 10,
+        "max_capacity_growth": 0.5,
+        "total_capacity_limit": 100,
+        "technical_life": 35,
+        "utilization_factor": 0.9,
+        "scaling_size": 1.89e-06,
+        "efficiency": 86,
+        "interest_rate": 0.1,
+        "type": "energy",
+        "agent1": 1,
+    }
+    assert_single_coordinate(data, coord, expected)
 
 
 def test_read_technodata_timeslices(timeslice_model_path):
@@ -316,20 +323,24 @@ def test_read_technodata_timeslices(timeslice_model_path):
     assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
     assert_data_types(data, expected_data_vars)
 
-    # Check timeslice structure
-    assert_coordinate_values(data, "timeslice", EXPECTED_TIMESLICES)
+    # Check coordinates
+    expected_coord_values = {
+        "technology": ["gasCCGT", "windturbine"],
+        "region": ["R1"],
+        "year": [2020],
+        "timeslice": EXPECTED_TIMESLICES,
+    }
+    assert_coordinate_values(data, expected_coord_values)
 
     # Check values at a single coordinate
-    assert_single_coordinate(
-        data,
-        {
-            "technology": "gasCCGT",
-            "region": "R1",
-            "year": 2020,
-            "timeslice": ("all-year", "all-week", "night"),
-        },
-        {"utilization_factor": 1, "minimum_service_factor": 0},
-    )
+    coord = {
+        "technology": "gasCCGT",
+        "region": "R1",
+        "year": 2020,
+        "timeslice": ("all-year", "all-week", "night"),
+    }
+    expected = {"utilization_factor": 1, "minimum_service_factor": 0}
+    assert_single_coordinate(data, coord, expected)
 
 
 def test_read_io_technodata(model_path):
@@ -355,19 +366,18 @@ def test_read_io_technodata(model_path):
     assert_data_types(data, expected_data_vars)
 
     # Check coordinates
-    assert_coordinate_values(data, "technology", ["gasCCGT", "windturbine"])
-    assert_coordinate_values(data, "region", ["R1"])
-    assert_coordinate_values(data, "year", [2020])
-    assert_coordinate_values(
-        data, "commodity", ["electricity", "gas", "heat", "wind", "CO2f"]
-    )
+    expected_coord_values = {
+        "technology": ["gasCCGT", "windturbine"],
+        "region": ["R1"],
+        "year": [2020],
+        "commodity": ["electricity", "gas", "heat", "wind", "CO2f"],
+    }
+    assert_coordinate_values(data, expected_coord_values)
 
     # Check values at a single coordinate
-    assert_single_coordinate(
-        data,
-        {"technology": "gasCCGT", "region": "R1", "year": 2020, "commodity": "gas"},
-        {"fixed": 1.67, "flexible": 0.0, "commodity_units": "PJ/PJ"},
-    )
+    coord = {"technology": "gasCCGT", "region": "R1", "year": 2020, "commodity": "gas"}
+    expected = {"fixed": 1.67, "flexible": 0.0, "commodity_units": "PJ/PJ"}
+    assert_single_coordinate(data, coord, expected)
 
 
 def test_read_initial_assets(model_path):
@@ -391,10 +401,13 @@ def test_read_initial_assets(model_path):
         assert data.coords[coord].dims == dims
 
     # Check coordinates
-    assert_coordinate_values(data, "region", ["R1"])
-    assert_coordinate_values(data, "technology", ["gasCCGT", "windturbine"])
-    assert_coordinate_values(data, "installed", [2020, 2020])
-    assert_coordinate_values(data, "year", list(range(2020, 2055, 5)))
+    expected_coord_values = {
+        "region": ["R1"],
+        "technology": ["gasCCGT", "windturbine"],
+        "installed": [2020, 2020],
+        "year": list(range(2020, 2055, 5)),
+    }
+    assert_coordinate_values(data, expected_coord_values)
 
     # Check values at a single coordinate
     assert data.installed.sel(asset=0).item() == 2020
