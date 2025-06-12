@@ -763,6 +763,8 @@ def test_read_regression_parameters(correlation_model_path):
 def generate_dataarray_schema(data: xr.DataArray) -> DataArraySchema:
     """Generate a DataArraySchema from an existing DataArray.
 
+    Can be used to help develop the tests.
+
     Args:
         data: The DataArray to generate a schema from
 
@@ -781,6 +783,8 @@ def generate_dataarray_schema(data: xr.DataArray) -> DataArraySchema:
 
 def generate_dataset_schema(data: xr.Dataset) -> DatasetSchema:
     """Generate a DatasetSchema from an existing Dataset.
+
+    Can be used to help develop the tests.
 
     Args:
         data: The Dataset to generate a schema from
