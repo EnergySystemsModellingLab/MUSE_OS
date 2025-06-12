@@ -13,6 +13,7 @@ EXPECTED_TIMESLICES = [
     ("all-year", "all-week", "late-peak"),
     ("all-year", "all-week", "evening"),
 ]
+COMMODITIES = ["electricity", "gas", "heat", "wind", "CO2f"]
 
 
 # Helper functions for common assertions
@@ -132,9 +133,7 @@ def test_read_global_commodities(model_path):
     )
 
     # Check coordinates
-    expected_coord_values = {
-        "commodity": ["electricity", "gas", "heat", "wind", "CO2f"]
-    }
+    expected_coord_values = {"commodity": COMMODITIES}
     assert_coordinate_values(data, expected_coord_values)
 
     # Check values at a single coordinate
@@ -166,7 +165,7 @@ def test_read_presets(model_path):
     # Check coordinates
     expected_coord_values = {
         "year": [2020, 2050],
-        "commodity": ["electricity", "gas", "heat", "wind", "CO2f"],
+        "commodity": COMMODITIES,
         "region": ["R1"],
         "timeslice": list(range(1, 7)),
     }
@@ -208,7 +207,7 @@ def test_read_initial_market(model_path):
     expected_coord_values = {
         "region": ["R1"],
         "year": list(range(2010, 2105, 5)),
-        "commodity": ["electricity", "gas", "heat", "wind", "CO2f"],
+        "commodity": COMMODITIES,
         "timeslice": EXPECTED_TIMESLICES,
     }
     assert_coordinate_values(data, expected_coord_values)
@@ -370,7 +369,7 @@ def test_read_io_technodata(model_path):
         "technology": ["gasCCGT", "windturbine"],
         "region": ["R1"],
         "year": [2020],
-        "commodity": ["electricity", "gas", "heat", "wind", "CO2f"],
+        "commodity": COMMODITIES,
     }
     assert_coordinate_values(data, expected_coord_values)
 

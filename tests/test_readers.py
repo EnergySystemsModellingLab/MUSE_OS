@@ -8,13 +8,6 @@ import toml
 import xarray as xr
 from pytest import fixture, mark, raises
 
-YEARS = list(range(2010, 2105, 5))
-COMMODITIES = ["electricity", "gas", "heat", "wind", "CO2f"]
-TIMESLICES = [
-    ("all-year", "all-week", hour)
-    for hour in ["night", "morning", "afternoon", "early-peak", "late-peak", "evening"]
-]
-
 
 @fixture
 def user_data_files(settings: dict) -> None:
