@@ -2,10 +2,8 @@ from itertools import chain, permutations
 from pathlib import Path
 from unittest.mock import patch
 
-import numpy as np
 import pandas as pd
 import toml
-import xarray as xr
 from pytest import fixture, mark, raises
 
 
@@ -294,52 +292,6 @@ def test_suffix_path_formatting(suffix, tmpdir):
     assert result["plugins"][0] == str(
         (Path() / "other" / f"thisfile{suffix}").absolute()
     )
-
-
-def test_read_existing_trade(tmp_path):
-    """Test reading existing trade data from CSV."""
-    from muse.examples import copy_model
-    from muse.readers.csv import read_trade
-
-    copy_model("trade", tmp_path)
-    path = tmp_path / "model" / "gas" / "ExistingTrade.csv"
-    data = read_trade(path, skiprows=[1])
-
-    assert isinstance(data, xr.DataArray)
-    assert set(data.dims) == {"year", "technology", "dst_region", "region"}
-    assert data.coords["year"].values.tolist() == [2010, 2020, 2030, 2040, 2050]
-    assert data.coords["technology"].values.tolist() == ["gassupply1"]
-    assert data.coords["dst_region"].values.tolist() == ["R1", "R2"]
-    assert data.coords["region"].values.tolist() == ["R1", "R2"]
-
-
-def test_read_trade_technodata(tmp_path):
-    """Test reading trade technodata from CSV."""
-    from muse.examples import copy_model
-    from muse.readers.csv import read_trade
-
-    copy_model("trade", tmp_path)
-    path = tmp_path / "model" / "gas" / "TradeTechnodata.csv"
-    data = read_trade(path, drop="Unit")
-
-    expected_vars = {
-        "cap_par",
-        "cap_exp",
-        "fix_par",
-        "fix_exp",
-        "max_capacity_addition",
-        "max_capacity_growth",
-        "total_capacity_limit",
-    }
-
-    assert isinstance(data, xr.Dataset)
-    assert set(data.dims) == {"technology", "dst_region", "region"}
-    assert set(data.data_vars) == expected_vars
-    assert all(var.dtype == np.float64 for var in data.data_vars.values())
-    assert data.coords["dst_region"].values.tolist() == ["R1", "R2"]
-    assert data.coords["technology"].values.tolist() == ["gassupply1"]
-    assert data.coords["region"].values.tolist() == ["R1", "R2", "R3"]
-    assert all(var.coords.equals(data.coords) for var in data.data_vars.values())
 
 
 def test_check_utilization_not_all_zero_success():

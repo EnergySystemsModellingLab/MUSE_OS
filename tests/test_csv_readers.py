@@ -37,17 +37,17 @@ def assert_data_types(data, expected_types):
         )
 
 
-def assert_coordinate_values(data, coordinates, order_matters=False):
+def assert_coordinate_values(data, coordinates: dict[str, list], check_order=False):
     """Assert coordinate values match expected values.
 
     Args:
         data: xarray Dataset or DataArray
         coordinates: dict mapping coordinate names to expected values
-        order_matters: whether the order of values matters
+        check_order: whether to check the order of values
     """
     for coord, expected_values in coordinates.items():
         actual_values = data.coords[coord].values.tolist()
-        if order_matters:
+        if check_order:
             assert actual_values == expected_values, (
                 f"Expected {coord} values to be {expected_values}, got {actual_values}"
             )
@@ -100,6 +100,13 @@ def model_path(tmp_path, timeslice):
 def timeslice_model_path(tmp_path, timeslice):
     """Creates temporary folder containing the default model."""
     examples.copy_model(name="default_timeslice", path=tmp_path)
+    return tmp_path / "model"
+
+
+@fixture
+def trade_model_path(tmp_path):
+    """Creates temporary folder containing the trade model."""
+    examples.copy_model(name="trade", path=tmp_path)
     return tmp_path / "model"
 
 
@@ -440,3 +447,87 @@ def test_read_csv_agent_parameters(model_path):
             assert np.isinf(agent[k]), f"Expected {k} to be inf, got {agent[k]}"
         else:
             assert agent[k] == v, f"Expected {k} to be {v}, got {agent[k]}"
+
+
+def test_read_existing_trade(trade_model_path):
+    from muse.readers.csv import read_trade
+
+    data = read_trade(trade_model_path / "gas" / "ExistingTrade.csv", skiprows=[1])
+
+    assert isinstance(data, xr.DataArray)
+
+    # Check properties of the DataArray
+    expected_dims = {"year", "technology", "dst_region", "region"}
+    expected_coords = {
+        "year": ("year",),
+        "technology": ("technology",),
+        "dst_region": ("dst_region",),
+        "region": ("region",),
+    }
+    assert set(data.dims) == set(expected_dims)
+    for coord, dims in expected_coords.items():
+        assert coord in data.coords
+        assert data.coords[coord].dims == dims
+
+    # Check coordinates
+    expected_coord_values = {
+        "year": [2010, 2020, 2030, 2040, 2050],
+        "technology": ["gassupply1"],
+        "dst_region": ["R1", "R2"],
+        "region": ["R1", "R2"],
+    }
+    assert_coordinate_values(data, expected_coord_values)
+
+    # Check values at a single coordinate
+    assert (
+        data.sel(year=2010, technology="gassupply1", dst_region="R1", region="R2") == 0
+    )
+
+
+def test_read_trade_technodata(trade_model_path):
+    from muse.readers.csv import read_trade
+
+    data = read_trade(trade_model_path / "gas" / "TradeTechnodata.csv", drop="Unit")
+
+    assert isinstance(data, xr.Dataset)
+
+    # Check properties of the dataset
+    expected_dims = {"technology", "dst_region", "region"}
+    expected_coords = {
+        "technology": ("technology",),
+        "dst_region": ("dst_region",),
+        "region": ("region",),
+    }
+    expected_data_vars = {
+        "cap_par": "float64",
+        "cap_exp": "float64",
+        "fix_par": "float64",
+        "fix_exp": "float64",
+        "max_capacity_addition": "float64",
+        "max_capacity_growth": "float64",
+        "total_capacity_limit": "float64",
+    }
+
+    assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
+    assert_data_types(data, expected_data_vars)
+
+    # Check coordinates
+    expected_coord_values = {
+        "technology": ["gassupply1"],
+        "dst_region": ["R1", "R2"],
+        "region": ["R1", "R2", "R3"],
+    }
+    assert_coordinate_values(data, expected_coord_values)
+
+    # Check values at a single coordinate
+    coord = {"technology": "gassupply1", "dst_region": "R1", "region": "R1"}
+    expected = {
+        "cap_par": 3,
+        "cap_exp": 1,
+        "fix_par": 0.3,
+        "fix_exp": 1,
+        "max_capacity_addition": 200,
+        "max_capacity_growth": 1,
+        "total_capacity_limit": 3937.219,
+    }
+    assert_single_coordinate(data, coord, expected)
