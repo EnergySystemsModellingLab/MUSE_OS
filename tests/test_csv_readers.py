@@ -41,11 +41,13 @@ class DataArraySchema:
         dims: Set of dimension names
         coords: Dictionary mapping coordinate names to their schemas
         dtype: Expected data type of the DataArray values
+        name: Expected name of the DataArray (e.g. "value")
     """
 
     dims: set[str]
     coords: dict[str, CoordinateSchema]
     dtype: str
+    name: str
 
 
 @dataclass
@@ -85,6 +87,10 @@ def assert_schema(
         assert str(data.dtype) == schema.dtype, (
             f"Expected dtype {schema.dtype}, got {data.dtype!s}"
         )
+        if schema.name is not None:
+            assert data.name == schema.name, (
+                f"Expected DataArray name to be {schema.name}, got {data.name}"
+            )
 
     # Validate coordinates
     for coord_name, coord_schema in schema.coords.items():
@@ -234,6 +240,7 @@ def test_read_presets(model_path):
                 "timeslice": CoordinateSchema(("timeslice",), dtype="int64"),
             },
             dtype="float64",
+            name=None,
         ),
     )
 
@@ -495,6 +502,7 @@ def test_read_initial_assets(model_path):
                 "year": CoordinateSchema(("year",), dtype="int64"),
             },
             dtype="int64",
+            name="value",
         ),
     )
 
@@ -561,6 +569,7 @@ def test_read_existing_trade(trade_model_path):
                 "region": CoordinateSchema(("region",), dtype="object"),
             },
             dtype="int64",
+            name=None,
         ),
     )
 
@@ -650,6 +659,7 @@ def test_read_timeslice_shares(correlation_model_path):
                 "commodity": CoordinateSchema(("commodity",), dtype="object"),
             },
             dtype="float64",
+            name=None,
         ),
     )
 
@@ -778,6 +788,7 @@ def generate_dataarray_schema(data: xr.DataArray) -> DataArraySchema:
             for name, coord in data.coords.items()
         },
         dtype=str(data.dtype),
+        name=data.name,
     )
 
 
@@ -816,6 +827,7 @@ def test_generate_dataarray_schema(model_path):
             "year": CoordinateSchema(("year",), dtype="int64"),
         },
         dtype="int64",
+        name="value",
     )
     assert_schema(data, expected_schema)
 
