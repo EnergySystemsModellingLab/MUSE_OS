@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import numpy as np
 import xarray as xr
 from pytest import fixture
@@ -16,60 +18,103 @@ EXPECTED_TIMESLICES = [
 COMMODITIES = ["electricity", "gas", "heat", "wind", "CO2f"]
 
 
-# Helper functions for common assertions
-def assert_dataset_schema(data, expected_dims, expected_coords, expected_data_vars):
-    """Assert basic dataset structure including dimensions, coordinates, data variables and their types."""  # noqa: E501
-    assert isinstance(data, xr.Dataset)
-    assert set(data.dims) == set(expected_dims)
-    assert set(data.data_vars) == set(expected_data_vars)
+@dataclass
+class CoordinateSchema:
+    """Schema for validating xarray coordinates.
 
-    for coord, dims in expected_coords.items():
-        assert coord in data.coords
-        assert data.coords[coord].dims == dims
+    Attributes:
+        dims: Tuple of dimension names for this coordinate
+        dtype: Expected data type of the coordinate values
+    """
 
-    # Check data types of variables
-    for var, expected_type in expected_data_vars.items():
-        actual_type = str(data.data_vars[var].dtype)
-        assert actual_type == expected_type, (
-            f"Expected {var} to be {expected_type}, got {actual_type}"
+    dims: tuple[str, ...]
+    dtype: str = None  # Optional expected dtype
+
+
+@dataclass
+class DataArraySchema:
+    """Schema for validating xarray DataArrays.
+
+    Attributes:
+        dims: Set of dimension names
+        coords: Dictionary mapping coordinate names to their schemas
+        dtype: Expected data type of the DataArray values
+    """
+
+    dims: set[str]
+    coords: dict[str, CoordinateSchema]
+    dtype: str
+
+
+@dataclass
+class DatasetSchema:
+    """Schema for validating xarray Datasets.
+
+    Attributes:
+        dims: Set of dimension names
+        coords: Dictionary mapping coordinate names to their schemas
+        data_vars: Dictionary mapping variable names to their expected dtypes
+    """
+
+    dims: set[str]
+    coords: dict[str, CoordinateSchema]
+    data_vars: dict[str, str]  # var_name -> dtype
+
+
+def assert_schema(
+    data: xr.Dataset | xr.DataArray, schema: DatasetSchema | DataArraySchema
+):
+    """Assert that data matches the given schema."""
+    if isinstance(schema, DatasetSchema):
+        assert isinstance(data, xr.Dataset)
+        # Validate dataset structure
+        assert set(data.dims) == schema.dims
+        assert set(data.data_vars) == set(schema.data_vars)
+
+        # Validate data variable types
+        for var, expected_type in schema.data_vars.items():
+            assert str(data.data_vars[var].dtype) == expected_type, (
+                f"Expected {var} to be {expected_type}, got {data.data_vars[var].dtype!s}"  # noqa: E501
+            )
+    else:
+        assert isinstance(data, xr.DataArray)
+        # Validate DataArray structure
+        assert set(data.dims) == schema.dims
+        assert str(data.dtype) == schema.dtype, (
+            f"Expected dtype {schema.dtype}, got {data.dtype!s}"
         )
 
-
-def assert_dataarray_schema(data, expected_dims, expected_coords, expected_dtype):
-    """Assert basic DataArray structure including dimensions, coordinates and data type.
-
-    Args:
-        data: xarray DataArray to check
-        expected_dims: set of expected dimension names
-        expected_coords: dict mapping coordinate names to their expected dimensions
-        expected_dtype: expected data type of the DataArray
-    """
-    assert isinstance(data, xr.DataArray)
-    assert set(data.dims) == set(expected_dims)
-    assert data.dtype == expected_dtype, f"Expected {data.dtype}, got {expected_dtype}"
-
-    for coord, dims in expected_coords.items():
-        assert coord in data.coords
-        assert data.coords[coord].dims == dims
+    # Validate coordinates
+    for coord_name, coord_schema in schema.coords.items():
+        assert coord_name in data.coords, f"Missing coordinate {coord_name}"
+        assert data.coords[coord_name].dims == coord_schema.dims, (
+            f"Expected {coord_name} to have dims {coord_schema.dims}, got {data.coords[coord_name].dims}"  # noqa: E501
+        )
+        if coord_schema.dtype:
+            assert str(data.coords[coord_name].dtype) == coord_schema.dtype, (
+                f"Expected {coord_name} to have dtype {coord_schema.dtype}, got {data.coords[coord_name].dtype!s}"  # noqa: E501
+            )
 
 
-def assert_coordinate_values(data, coordinates: dict[str, list], check_order=False):
-    """Assert coordinate values match expected values.
+def assert_coordinate_values(data, coordinates, check_order=False):
+    """Assert that coordinate values match expected values.
 
     Args:
         data: xarray Dataset or DataArray
         coordinates: dict mapping coordinate names to expected values
-        check_order: whether to check the order of values
+        check_order: if True, also check that values are in the same order
     """
-    for coord, expected_values in coordinates.items():
-        actual_values = data.coords[coord].values.tolist()
+    for coord_name, expected_values in coordinates.items():
+        assert coord_name in data.coords, f"Missing coordinate {coord_name}"
         if check_order:
-            assert actual_values == expected_values, (
-                f"Expected {coord} values to be {expected_values}, got {actual_values}"
+            assert list(data.coords[coord_name].values) == list(expected_values), (
+                f"Expected {coord_name} to have values {expected_values} in order, "
+                f"got {list(data.coords[coord_name].values)}"
             )
         else:
-            assert set(actual_values) == set(expected_values), (
-                f"Expected {coord} values to be {expected_values}, got {actual_values}"
+            assert set(data.coords[coord_name].values) == set(expected_values), (
+                f"Expected {coord_name} to have values {expected_values}, "
+                f"got {list(data.coords[coord_name].values)}"
             )
 
 
@@ -140,22 +185,23 @@ def test_read_global_commodities(model_path):
     data = read_global_commodities(path)
 
     # Check properties of the dataset
-    assert_dataset_schema(
+    assert_schema(
         data,
-        {"commodity"},
-        {"commodity": ("commodity",)},
-        {
-            "comm_name": "object",
-            "comm_type": "object",
-            "emmission_factor": "float64",
-            "heat_rate": "int64",
-            "unit": "object",
-        },
+        DatasetSchema(
+            dims={"commodity"},
+            coords={"commodity": CoordinateSchema(dims=("commodity",), dtype="object")},
+            data_vars={
+                "comm_name": "object",
+                "comm_type": "object",
+                "emmission_factor": "float64",
+                "heat_rate": "int64",
+                "unit": "object",
+            },
+        ),
     )
 
-    # Check coordinates
-    expected_coord_values = {"commodity": COMMODITIES}
-    assert_coordinate_values(data, expected_coord_values)
+    # Check coordinate values
+    assert_coordinate_values(data, {"commodity": COMMODITIES})
 
     # Check values at a single coordinate
     coord = {"commodity": "electricity"}
@@ -175,24 +221,30 @@ def test_read_presets(model_path):
     data = read_presets(str(model_path / "residential_presets" / "*.csv"))
 
     # Check properties of the data array
-    expected_dims = {"year", "commodity", "region", "timeslice"}
-    expected_coords = {
-        "year": ("year",),
-        "commodity": ("commodity",),
-        "region": ("region",),
-        "timeslice": ("timeslice",),
-    }
-    expected_dtype = "float64"
-    assert_dataarray_schema(data, expected_dims, expected_coords, expected_dtype)
+    assert_schema(
+        data,
+        DataArraySchema(
+            dims={"year", "commodity", "region", "timeslice"},
+            coords={
+                "year": CoordinateSchema(("year",), dtype="int64"),
+                "commodity": CoordinateSchema(("commodity",), dtype="<U11"),
+                "region": CoordinateSchema(("region",), dtype="object"),
+                "timeslice": CoordinateSchema(("timeslice",), dtype="int64"),
+            },
+            dtype="float64",
+        ),
+    )
 
-    # Check coordinates
-    expected_coord_values = {
-        "year": [2020, 2050],
-        "commodity": COMMODITIES,
-        "region": ["R1"],
-        "timeslice": list(range(1, 7)),
-    }
-    assert_coordinate_values(data, expected_coord_values)
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "year": [2020, 2050],
+            "commodity": COMMODITIES,
+            "region": ["R1"],
+            "timeslice": list(range(1, 7)),
+        },
+    )
 
     # Check values at a single coordinate
     assert data.sel(year=2020, commodity="heat", region="R1", timeslice=1) == 1.0
@@ -204,34 +256,41 @@ def test_read_initial_market(model_path):
     data = read_initial_market(model_path / "Projections.csv")
 
     # Check properties of the dataset
-    expected_dims = {"region", "year", "commodity", "timeslice"}
-    expected_coords = {
-        "region": ("region",),
-        "year": ("year",),
-        "commodity": ("commodity",),
-        "units_prices": ("commodity",),
-        "timeslice": ("timeslice",),
-        "month": ("timeslice",),
-        "day": ("timeslice",),
-        "hour": ("timeslice",),
-    }
-    expected_data_vars = {
-        "prices": "float64",
-        "exports": "float64",
-        "imports": "float64",
-        "static_trade": "float64",
-    }
-    assert_dataset_schema(data, expected_dims, expected_coords, expected_data_vars)
-    assert hasattr(data.coords["timeslice"].to_index(), "levels")
+    assert_schema(
+        data,
+        DatasetSchema(
+            dims={"region", "year", "commodity", "timeslice"},
+            coords={
+                "region": CoordinateSchema(("region",), dtype="object"),
+                "year": CoordinateSchema(("year",), dtype="int64"),
+                "commodity": CoordinateSchema(("commodity",), dtype="object"),
+                "units_prices": CoordinateSchema(("commodity",), dtype="object"),
+                "timeslice": CoordinateSchema(("timeslice",), dtype="object"),
+                "month": CoordinateSchema(("timeslice",), dtype="object"),
+                "day": CoordinateSchema(("timeslice",), dtype="object"),
+                "hour": CoordinateSchema(("timeslice",), dtype="object"),
+            },
+            data_vars={
+                "prices": "float64",
+                "exports": "float64",
+                "imports": "float64",
+                "static_trade": "float64",
+            },
+        ),
+    )
 
-    # Check coordinates
-    expected_coord_values = {
-        "region": ["R1"],
-        "year": list(range(2010, 2105, 5)),
-        "commodity": COMMODITIES,
-        "timeslice": EXPECTED_TIMESLICES,
-    }
-    assert_coordinate_values(data, expected_coord_values)
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "region": ["R1"],
+            "year": list(range(2010, 2105, 5)),
+            "commodity": COMMODITIES,
+            "timeslice": EXPECTED_TIMESLICES,
+        },
+    )
+
+    assert hasattr(data.coords["timeslice"].to_index(), "levels")
 
     # Check values at a single coordinate
     coord = {
@@ -255,35 +314,44 @@ def test_read_technodictionary(model_path):
     data = read_technodictionary(model_path / "power" / "Technodata.csv")
 
     # Check properties of the dataset
-    expected_dims = {"technology", "region"}
-    expected_coords = {"technology": ("technology",), "region": ("region",)}
-    expected_data_vars = {
-        "cap_par": "float64",
-        "cap_exp": "int64",
-        "fix_par": "int64",
-        "fix_exp": "int64",
-        "var_par": "int64",
-        "var_exp": "int64",
-        "max_capacity_addition": "int64",
-        "max_capacity_growth": "float64",
-        "total_capacity_limit": "int64",
-        "technical_life": "int64",
-        "utilization_factor": "float64",
-        "scaling_size": "float64",
-        "efficiency": "int64",
-        "interest_rate": "float64",
-        "type": "object",
-        "agent1": "int64",
-        "tech_type": "<U6",
-    }
-    assert_dataset_schema(data, expected_dims, expected_coords, expected_data_vars)
+    assert_schema(
+        data,
+        DatasetSchema(
+            dims={"technology", "region"},
+            coords={
+                "technology": CoordinateSchema(("technology",), dtype="object"),
+                "region": CoordinateSchema(("region",), dtype="object"),
+            },
+            data_vars={
+                "cap_par": "float64",
+                "cap_exp": "int64",
+                "fix_par": "int64",
+                "fix_exp": "int64",
+                "var_par": "int64",
+                "var_exp": "int64",
+                "max_capacity_addition": "int64",
+                "max_capacity_growth": "float64",
+                "total_capacity_limit": "int64",
+                "technical_life": "int64",
+                "utilization_factor": "float64",
+                "scaling_size": "float64",
+                "efficiency": "int64",
+                "interest_rate": "float64",
+                "type": "object",
+                "agent1": "int64",
+                "tech_type": "<U6",
+            },
+        ),
+    )
 
-    # Check coordinates
-    expected_coord_values = {
-        "technology": ["gasCCGT", "windturbine"],
-        "region": ["R1"],
-    }
-    assert_coordinate_values(data, expected_coord_values)
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "technology": ["gasCCGT", "windturbine"],
+            "region": ["R1"],
+        },
+    )
 
     # Check coordinate consistency
     for var in data.data_vars:
@@ -323,31 +391,38 @@ def test_read_technodata_timeslices(timeslice_model_path):
     )
 
     # Check properties of the dataset
-    expected_dims = {"technology", "region", "year", "timeslice"}
-    expected_coords = {
-        "technology": ("technology",),
-        "region": ("region",),
-        "year": ("year",),
-        "timeslice": ("timeslice",),
-        "month": ("timeslice",),
-        "day": ("timeslice",),
-        "hour": ("timeslice",),
-    }
-    expected_data_vars = {
-        "utilization_factor": "int64",
-        "minimum_service_factor": "int64",
-    }
-    assert_dataset_schema(data, expected_dims, expected_coords, expected_data_vars)
-    assert hasattr(data.coords["timeslice"].to_index(), "levels")
+    assert_schema(
+        data,
+        DatasetSchema(
+            dims={"technology", "region", "year", "timeslice"},
+            coords={
+                "technology": CoordinateSchema(("technology",), dtype="object"),
+                "region": CoordinateSchema(("region",), dtype="object"),
+                "year": CoordinateSchema(("year",), dtype="int64"),
+                "timeslice": CoordinateSchema(("timeslice",), dtype="object"),
+                "month": CoordinateSchema(("timeslice",), dtype="object"),
+                "day": CoordinateSchema(("timeslice",), dtype="object"),
+                "hour": CoordinateSchema(("timeslice",), dtype="object"),
+            },
+            data_vars={
+                "utilization_factor": "int64",
+                "minimum_service_factor": "int64",
+            },
+        ),
+    )
 
-    # Check coordinates
-    expected_coord_values = {
-        "technology": ["gasCCGT", "windturbine"],
-        "region": ["R1"],
-        "year": [2020],
-        "timeslice": EXPECTED_TIMESLICES,
-    }
-    assert_coordinate_values(data, expected_coord_values)
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "technology": ["gasCCGT", "windturbine"],
+            "region": ["R1"],
+            "year": [2020],
+            "timeslice": EXPECTED_TIMESLICES,
+        },
+    )
+
+    assert hasattr(data.coords["timeslice"].to_index(), "levels")
 
     # Check values at a single coordinate
     coord = {
@@ -366,28 +441,34 @@ def test_read_io_technodata(model_path):
     data = read_io_technodata(model_path / "power" / "CommIn.csv")
 
     # Check properties of the dataset
-    expected_dims = {"technology", "region", "year", "commodity"}
-    expected_coords = {
-        "technology": ("technology",),
-        "region": ("region",),
-        "year": ("year",),
-        "commodity": ("commodity",),
-    }
-    expected_data_vars = {
-        "fixed": "float64",
-        "flexible": "float64",
-        "commodity_units": "object",
-    }
-    assert_dataset_schema(data, expected_dims, expected_coords, expected_data_vars)
+    assert_schema(
+        data,
+        DatasetSchema(
+            dims={"technology", "region", "year", "commodity"},
+            coords={
+                "technology": CoordinateSchema(("technology",), dtype="object"),
+                "region": CoordinateSchema(("region",), dtype="object"),
+                "year": CoordinateSchema(("year",), dtype="int64"),
+                "commodity": CoordinateSchema(("commodity",), dtype="object"),
+            },
+            data_vars={
+                "fixed": "float64",
+                "flexible": "float64",
+                "commodity_units": "object",
+            },
+        ),
+    )
 
-    # Check coordinates
-    expected_coord_values = {
-        "technology": ["gasCCGT", "windturbine"],
-        "region": ["R1"],
-        "year": [2020],
-        "commodity": COMMODITIES,
-    }
-    assert_coordinate_values(data, expected_coord_values)
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "technology": ["gasCCGT", "windturbine"],
+            "region": ["R1"],
+            "year": [2020],
+            "commodity": COMMODITIES,
+        },
+    )
 
     # Check values at a single coordinate
     coord = {"technology": "gasCCGT", "region": "R1", "year": 2020, "commodity": "gas"}
@@ -401,24 +482,30 @@ def test_read_initial_assets(model_path):
     data = read_initial_assets(model_path / "power" / "ExistingCapacity.csv")
 
     # Check properties of the DataArray
-    expected_dims = {"region", "asset", "year"}
-    expected_coords = {
-        "region": ("region",),
-        "technology": ("asset",),
-        "installed": ("asset",),
-        "year": ("year",),
-    }
-    expected_dtype = "int64"
-    assert_dataarray_schema(data, expected_dims, expected_coords, expected_dtype)
+    assert_schema(
+        data,
+        DataArraySchema(
+            dims={"region", "asset", "year"},
+            coords={
+                "region": CoordinateSchema(("region",), dtype="object"),
+                "technology": CoordinateSchema(("asset",), dtype="object"),
+                "installed": CoordinateSchema(("asset",), dtype="int64"),
+                "year": CoordinateSchema(("year",), dtype="int64"),
+            },
+            dtype="int64",
+        ),
+    )
 
-    # Check coordinates
-    expected_coord_values = {
-        "region": ["R1"],
-        "technology": ["gasCCGT", "windturbine"],
-        "installed": [2020, 2020],
-        "year": list(range(2020, 2055, 5)),
-    }
-    assert_coordinate_values(data, expected_coord_values)
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "region": ["R1"],
+            "technology": ["gasCCGT", "windturbine"],
+            "installed": [2020, 2020],
+            "year": list(range(2020, 2055, 5)),
+        },
+    )
 
     # Check values at a single coordinate
     assert data.installed.sel(asset=0).item() == 2020
@@ -461,24 +548,30 @@ def test_read_existing_trade(trade_model_path):
     data = read_trade(trade_model_path / "gas" / "ExistingTrade.csv", skiprows=[1])
 
     # Check properties of the DataArray
-    expected_dims = {"year", "technology", "dst_region", "region"}
-    expected_coords = {
-        "year": ("year",),
-        "technology": ("technology",),
-        "dst_region": ("dst_region",),
-        "region": ("region",),
-    }
-    expected_dtype = "int64"
-    assert_dataarray_schema(data, expected_dims, expected_coords, expected_dtype)
+    assert_schema(
+        data,
+        DataArraySchema(
+            dims={"year", "technology", "dst_region", "region"},
+            coords={
+                "year": CoordinateSchema(("year",), dtype="int64"),
+                "technology": CoordinateSchema(("technology",), dtype="object"),
+                "dst_region": CoordinateSchema(("dst_region",), dtype="object"),
+                "region": CoordinateSchema(("region",), dtype="object"),
+            },
+            dtype="int64",
+        ),
+    )
 
-    # Check coordinates
-    expected_coord_values = {
-        "year": [2010, 2020, 2030, 2040, 2050],
-        "technology": ["gassupply1"],
-        "dst_region": ["R1", "R2"],
-        "region": ["R1", "R2"],
-    }
-    assert_coordinate_values(data, expected_coord_values)
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "year": [2010, 2020, 2030, 2040, 2050],
+            "technology": ["gassupply1"],
+            "dst_region": ["R1", "R2"],
+            "region": ["R1", "R2"],
+        },
+    )
 
     # Check values at a single coordinate
     assert (
@@ -492,30 +585,36 @@ def test_read_trade_technodata(trade_model_path):
     data = read_trade(trade_model_path / "gas" / "TradeTechnodata.csv", drop="Unit")
 
     # Check properties of the dataset
-    expected_dims = {"technology", "dst_region", "region"}
-    expected_coords = {
-        "technology": ("technology",),
-        "dst_region": ("dst_region",),
-        "region": ("region",),
-    }
-    expected_data_vars = {
-        "cap_par": "float64",
-        "cap_exp": "float64",
-        "fix_par": "float64",
-        "fix_exp": "float64",
-        "max_capacity_addition": "float64",
-        "max_capacity_growth": "float64",
-        "total_capacity_limit": "float64",
-    }
-    assert_dataset_schema(data, expected_dims, expected_coords, expected_data_vars)
+    assert_schema(
+        data,
+        DatasetSchema(
+            dims={"technology", "dst_region", "region"},
+            coords={
+                "technology": CoordinateSchema(("technology",), dtype="object"),
+                "dst_region": CoordinateSchema(("dst_region",), dtype="object"),
+                "region": CoordinateSchema(("region",), dtype="object"),
+            },
+            data_vars={
+                "cap_par": "float64",
+                "cap_exp": "float64",
+                "fix_par": "float64",
+                "fix_exp": "float64",
+                "max_capacity_addition": "float64",
+                "max_capacity_growth": "float64",
+                "total_capacity_limit": "float64",
+            },
+        ),
+    )
 
-    # Check coordinates
-    expected_coord_values = {
-        "technology": ["gassupply1"],
-        "dst_region": ["R1", "R2"],
-        "region": ["R1", "R2", "R3"],
-    }
-    assert_coordinate_values(data, expected_coord_values)
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "technology": ["gassupply1"],
+            "dst_region": ["R1", "R2"],
+            "region": ["R1", "R2", "R3"],
+        },
+    )
 
     # Check values at a single coordinate
     coord = {"technology": "gassupply1", "dst_region": "R1", "region": "R1"}
@@ -539,22 +638,28 @@ def test_read_timeslice_shares(correlation_model_path):
     )
 
     # Check properties of the DataArray
-    expected_dims = {"region", "timeslice", "commodity"}
-    expected_coords = {
-        "region": ("region",),
-        "timeslice": ("timeslice",),
-        "commodity": ("commodity",),
-    }
-    expected_dtype = "float64"
-    assert_dataarray_schema(data, expected_dims, expected_coords, expected_dtype)
+    assert_schema(
+        data,
+        DataArraySchema(
+            dims={"region", "timeslice", "commodity"},
+            coords={
+                "region": CoordinateSchema(("region",), dtype="object"),
+                "timeslice": CoordinateSchema(("timeslice",), dtype="int64"),
+                "commodity": CoordinateSchema(("commodity",), dtype="object"),
+            },
+            dtype="float64",
+        ),
+    )
 
-    # Check coordinates
-    expected_coord_values = {
-        "region": ["R1"],
-        "timeslice": list(range(1, 7)),
-        "commodity": COMMODITIES,
-    }
-    assert_coordinate_values(data, expected_coord_values)
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "region": ["R1"],
+            "timeslice": list(range(1, 7)),
+            "commodity": COMMODITIES,
+        },
+    )
 
     # Check values at a single coordinate
     coord = {"region": "R1", "timeslice": 1, "commodity": "heat"}
@@ -569,23 +674,29 @@ def test_read_macro_drivers(correlation_model_path):
     )
 
     # Check properties of the dataset
-    expected_dims = {"region", "year"}
-    expected_coords = {
-        "region": ("region",),
-        "year": ("year",),
-    }
-    expected_data_vars = {
-        "gdp": "int64",
-        "population": "int64",
-    }
-    assert_dataset_schema(data, expected_dims, expected_coords, expected_data_vars)
+    assert_schema(
+        data,
+        DatasetSchema(
+            dims={"region", "year"},
+            coords={
+                "region": CoordinateSchema(("region",), dtype="<U2"),
+                "year": CoordinateSchema(("year",), dtype="int64"),
+            },
+            data_vars={
+                "gdp": "int64",
+                "population": "int64",
+            },
+        ),
+    )
 
-    # Check coordinates
-    expected_coord_values = {
-        "region": ["R1"],
-        "year": list(range(2010, 2111)),
-    }
-    assert_coordinate_values(data, expected_coord_values)
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "region": ["R1"],
+            "year": list(range(2010, 2111)),
+        },
+    )
 
     # Check values at a single coordinate
     coord = {"year": 2010, "region": "R1"}
@@ -604,28 +715,34 @@ def test_read_regression_parameters(correlation_model_path):
     )
 
     # Check properties of the dataset
-    expected_dims = {"sector", "region", "commodity"}
-    expected_coords = {
-        "sector": ("sector",),
-        "region": ("region",),
-        "commodity": ("commodity",),
-    }
-    expected_data_vars = {
-        "GDPexp": "float64",
-        "constant": "float64",
-        "GDPscaleLess": "float64",
-        "GDPscaleGreater": "float64",
-        "function_type": "<U16",
-    }
-    assert_dataset_schema(data, expected_dims, expected_coords, expected_data_vars)
+    assert_schema(
+        data,
+        DatasetSchema(
+            dims={"sector", "region", "commodity"},
+            coords={
+                "sector": CoordinateSchema(("sector",), dtype="<U11"),
+                "region": CoordinateSchema(("region",), dtype="object"),
+                "commodity": CoordinateSchema(("commodity",), dtype="object"),
+            },
+            data_vars={
+                "GDPexp": "float64",
+                "constant": "float64",
+                "GDPscaleLess": "float64",
+                "GDPscaleGreater": "float64",
+                "function_type": "<U16",
+            },
+        ),
+    )
 
-    # Check coordinates
-    expected_coord_values = {
-        "sector": ["residential"],
-        "region": ["R1"],
-        "commodity": ["electricity", "gas", "heat", "CO2f"],
-    }
-    assert_coordinate_values(data, expected_coord_values)
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "sector": ["residential"],
+            "region": ["R1"],
+            "commodity": ["electricity", "gas", "heat", "CO2f"],
+        },
+    )
 
     # Check function type
     assert data.function_type.sel(sector="residential").item() == "logistic-sigmoid"
