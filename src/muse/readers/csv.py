@@ -454,7 +454,7 @@ def read_global_commodities(path: str | Path) -> xr.Dataset:
 def read_timeslice_shares(
     path: str | Path = DEFAULT_SECTORS_DIRECTORY,
     sector: str | None = None,
-) -> xr.Dataset:
+) -> xr.DataArray:
     """Reads sliceshare information into a xr.Dataset.
 
     Additionally, this function will try and recover the timeslice multi- index from a

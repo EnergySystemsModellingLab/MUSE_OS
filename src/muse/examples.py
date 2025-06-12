@@ -28,8 +28,9 @@ The same models can be instantiated in a python script as follows:
 from __future__ import annotations
 
 from logging import getLogger
+from os import mkdir
 from pathlib import Path
-from shutil import copyfile, copytree
+from shutil import copyfile, copytree, rmtree
 from typing import cast
 
 import numpy as np
@@ -41,11 +42,12 @@ from muse.timeslices import drop_timeslice
 
 __all__ = ["model", "technodata"]
 
-available_examples = [
+AVAILABLE_EXAMPLES = [
     "default",
     "default_retro",
     "default_adhoc",
     "default_timeslice",
+    "default_correlation",
     "medium",
     "multiple_agents",
     "minimum_service",
@@ -101,9 +103,7 @@ def copy_model(
     permission to ``overwrite`` is given, then all files inside the directory are
     deleted.
     """
-    from shutil import rmtree
-
-    if name.lower() not in available_examples:
+    if name.lower() not in AVAILABLE_EXAMPLES:
         raise ValueError(f"Unknown model {name}")
 
     path = Path() if path is None else Path(path)
@@ -127,6 +127,8 @@ def copy_model(
         _copy_default_adhoc(path)
     elif name.lower() == "default_timeslice":
         _copy_default_timeslice(path)
+    elif name.lower() == "default_correlation":
+        _copy_default_correlation(path)
     elif name.lower() == "medium":
         _copy_medium(path)
     elif name.lower() == "multiple_agents":
@@ -319,6 +321,45 @@ def _copy_default_adhoc(path: Path):
 
 def _copy_default_timeslice(path: Path):
     copytree(example_data_dir() / "default_timeslice", path)
+
+
+def _copy_default_correlation(path: Path):
+    from muse.wizard import modify_toml
+
+    # Start with default model
+    copytree(example_data_dir() / "default", path)
+
+    # Delete presets
+    rmtree(path / "residential_presets")
+
+    # Copy regression files
+    mkdir(path / "residential_presets")
+    for file in [
+        "Macrodrivers.csv",
+        "regressionparameters.csv",
+        "TimesliceSharepreset.csv",
+    ]:
+        copyfile(
+            example_data_dir() / "default_correlation" / file,
+            path / "residential_presets" / file,
+        )
+
+    # Modify toml file to point to new presets
+    settings_file = path / "settings.toml"
+    path_prefix = "{path}/residential_presets/"
+    modify_toml(
+        settings_file,
+        lambda settings: (
+            settings["sectors"]["residential_presets"].update(
+                {
+                    "timeslice_shares_path": path_prefix + "TimesliceSharepreset.csv",
+                    "macrodrivers_path": path_prefix + "Macrodrivers.csv",
+                    "regression_path": path_prefix + "regressionparameters.csv",
+                }
+            ),
+            settings["sectors"]["residential_presets"].pop("consumption_path"),
+        ),
+    )
 
 
 def _copy_multiple_agents(path: Path):

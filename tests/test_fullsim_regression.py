@@ -2,12 +2,12 @@ from pathlib import Path
 
 from pytest import mark, xfail
 
-from muse.examples import available_examples
+from muse.examples import AVAILABLE_EXAMPLES
 
 
 @mark.regression
 @mark.example
-@mark.parametrize("model", available_examples)
+@mark.parametrize("model", AVAILABLE_EXAMPLES)
 def test_fullsim_regression(model, tmpdir, compare_dirs):
     from warnings import simplefilter
 

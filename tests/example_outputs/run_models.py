@@ -4,7 +4,7 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Union
 
-from muse.examples import available_examples, model
+from muse.examples import AVAILABLE_EXAMPLES, model
 
 
 def run_model(name: str) -> Union[str, None]:
@@ -34,7 +34,7 @@ def run_model(name: str) -> Union[str, None]:
 
 if __name__ == "__main__":
     with ProcessPoolExecutor() as executor:
-        futures = {executor.submit(run_model, model) for model in available_examples}
+        futures = {executor.submit(run_model, model) for model in AVAILABLE_EXAMPLES}
     for future in futures:
         error_message = future.result()
         if error_message:
