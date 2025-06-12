@@ -756,3 +756,84 @@ def test_read_regression_parameters(correlation_model_path):
         "GDPscaleGreater": 672.9316672,
     }
     assert_single_coordinate(data, coord, expected)
+
+
+def generate_dataarray_schema(data: xr.DataArray) -> DataArraySchema:
+    """Generate a DataArraySchema from an existing DataArray.
+
+    Args:
+        data: The DataArray to generate a schema from
+
+    Returns:
+        A DataArraySchema matching the structure of the input DataArray
+    """
+    return DataArraySchema(
+        dims=set(data.dims),
+        coords={
+            name: CoordinateSchema(dims=coord.dims, dtype=str(coord.dtype))
+            for name, coord in data.coords.items()
+        },
+        dtype=str(data.dtype),
+    )
+
+
+def generate_dataset_schema(data: xr.Dataset) -> DatasetSchema:
+    """Generate a DatasetSchema from an existing Dataset.
+
+    Args:
+        data: The Dataset to generate a schema from
+
+    Returns:
+        A DatasetSchema matching the structure of the input Dataset
+    """
+    return DatasetSchema(
+        dims=set(data.dims),
+        coords={
+            name: CoordinateSchema(dims=coord.dims, dtype=str(coord.dtype))
+            for name, coord in data.coords.items()
+        },
+        data_vars={name: str(var.dtype) for name, var in data.data_vars.items()},
+    )
+
+
+def test_generate_dataarray_schema(model_path):
+    from muse.readers.csv import read_initial_assets
+
+    data = read_initial_assets(model_path / "power" / "ExistingCapacity.csv")
+
+    expected_schema = DataArraySchema(
+        dims={"region", "asset", "year"},
+        coords={
+            "region": CoordinateSchema(("region",), dtype="object"),
+            "technology": CoordinateSchema(("asset",), dtype="object"),
+            "installed": CoordinateSchema(("asset",), dtype="int64"),
+            "year": CoordinateSchema(("year",), dtype="int64"),
+        },
+        dtype="int64",
+    )
+    assert_schema(data, expected_schema)
+
+    generated_schema = generate_dataarray_schema(data)
+    assert generated_schema == expected_schema
+
+
+def test_generate_dataset_schema(model_path):
+    from muse.readers.csv import read_global_commodities
+
+    data = read_global_commodities(model_path / "GlobalCommodities.csv")
+
+    expected_schema = DatasetSchema(
+        dims={"commodity"},
+        coords={"commodity": CoordinateSchema(dims=("commodity",), dtype="object")},
+        data_vars={
+            "comm_name": "object",
+            "comm_type": "object",
+            "emmission_factor": "float64",
+            "heat_rate": "int64",
+            "unit": "object",
+        },
+    )
+    assert_schema(data, expected_schema)
+
+    generated_schema = generate_dataset_schema(data)
+    assert generated_schema == expected_schema
