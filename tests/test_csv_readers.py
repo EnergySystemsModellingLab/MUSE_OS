@@ -110,6 +110,13 @@ def trade_model_path(tmp_path):
     return tmp_path / "model"
 
 
+@fixture
+def correlation_model_path(tmp_path):
+    """Creates temporary folder containing the correlation model."""
+    examples.copy_model(name="default_correlation", path=tmp_path)
+    return tmp_path / "model"
+
+
 def test_read_global_commodities(model_path):
     from muse.readers.csv import read_global_commodities
 
@@ -529,5 +536,123 @@ def test_read_trade_technodata(trade_model_path):
         "max_capacity_addition": 200,
         "max_capacity_growth": 1,
         "total_capacity_limit": 3937.219,
+    }
+    assert_single_coordinate(data, coord, expected)
+
+
+def test_read_timeslice_shares(correlation_model_path):
+    from muse.readers.csv import read_timeslice_shares
+
+    data = read_timeslice_shares(
+        correlation_model_path / "residential_presets" / "TimesliceSharepreset.csv"
+    )
+
+    assert isinstance(data, xr.DataArray)
+
+    # Check properties of the DataArray
+    expected_dims = {"region", "timeslice", "commodity"}
+    expected_coords = {
+        "region": ("region",),
+        "timeslice": ("timeslice",),
+        "commodity": ("commodity",),
+    }
+    assert set(data.dims) == set(expected_dims)
+    for coord, dims in expected_coords.items():
+        assert coord in data.coords
+        assert data.coords[coord].dims == dims
+
+    # Check coordinates
+    expected_coord_values = {
+        "region": ["R1"],
+        "timeslice": list(range(1, 7)),
+        "commodity": COMMODITIES,
+    }
+    assert_coordinate_values(data, expected_coord_values)
+
+    # Check values at a single coordinate
+    coord = {"region": "R1", "timeslice": 1, "commodity": "heat"}
+    assert data.sel(**coord).item() == 0.071
+
+
+def test_read_macro_drivers(correlation_model_path):
+    from muse.readers.csv import read_macro_drivers
+
+    data = read_macro_drivers(
+        correlation_model_path / "residential_presets" / "Macrodrivers.csv"
+    )
+
+    # Check properties of the dataset
+    expected_dims = {"region", "year"}
+    expected_coords = {
+        "region": ("region",),
+        "year": ("year",),
+    }
+    expected_data_vars = {
+        "gdp": "int64",
+        "population": "int64",
+    }
+
+    assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
+    assert_data_types(data, expected_data_vars)
+
+    # Check coordinates
+    expected_coord_values = {
+        "region": ["R1"],
+        "year": list(range(2010, 2111)),
+    }
+    assert_coordinate_values(data, expected_coord_values)
+
+    # Check values at a single coordinate
+    coord = {"year": 2010, "region": "R1"}
+    expected = {
+        "gdp": 1206919,
+        "population": 80004200,
+    }
+    assert_single_coordinate(data, coord, expected)
+
+
+def test_read_regression_parameters(correlation_model_path):
+    from muse.readers.csv import read_regression_parameters
+
+    data = read_regression_parameters(
+        correlation_model_path / "residential_presets" / "regressionparameters.csv"
+    )
+
+    # Check properties of the dataset
+    expected_dims = {"sector", "region", "commodity"}
+    expected_coords = {
+        "sector": ("sector",),
+        "region": ("region",),
+        "commodity": ("commodity",),
+    }
+    expected_data_vars = {
+        "GDPexp": "float64",
+        "constant": "float64",
+        "GDPscaleLess": "float64",
+        "GDPscaleGreater": "float64",
+        "function_type": "<U16",
+    }
+
+    assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
+    assert_data_types(data, expected_data_vars)
+
+    # Check coordinates
+    expected_coord_values = {
+        "sector": ["residential"],
+        "region": ["R1"],
+        "commodity": ["electricity", "gas", "heat", "CO2f"],
+    }
+    assert_coordinate_values(data, expected_coord_values)
+
+    # Check function type
+    assert data.function_type.sel(sector="residential").item() == "logistic-sigmoid"
+
+    # Check values at a single coordinate
+    coord = {"sector": "residential", "region": "R1", "commodity": "heat"}
+    expected = {
+        "GDPexp": 0.0994,
+        "constant": 1.01039e-05,
+        "GDPscaleLess": 753.1068725,
+        "GDPscaleGreater": 672.9316672,
     }
     assert_single_coordinate(data, coord, expected)
