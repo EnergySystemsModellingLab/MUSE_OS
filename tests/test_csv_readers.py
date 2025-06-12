@@ -36,12 +36,17 @@ def assert_data_types(data, expected_types):
         )
 
 
-def assert_coordinate_values(data, coordinate, expected_values):
+def assert_coordinate_values(data, coordinate, expected_values, order_matters=False):
     """Assert coordinate values match expected values."""
     actual_values = data.coords[coordinate].values.tolist()
-    assert actual_values == expected_values, (
-        f"Expected {coordinate} values to be {expected_values}, got {actual_values}"
-    )
+    if order_matters:
+        assert actual_values == expected_values, (
+            f"Expected {coordinate} values to be {expected_values}, got {actual_values}"
+        )
+    else:
+        assert set(actual_values) == set(expected_values), (
+            f"Expected {coordinate} values to be {expected_values}, got {actual_values}"
+        )
 
 
 def assert_single_coordinate(data, selection, expected):
@@ -119,7 +124,12 @@ def test_read_global_commodities(model_path):
         },
     )
 
-    # Check a single coordinate
+    # Check coordinates
+    assert_coordinate_values(
+        data, "commodity", ["electricity", "gas", "heat", "wind", "CO2f"]
+    )
+
+    # Check values at a single coordinate
     assert_single_coordinate(
         data,
         {"commodity": "electricity"},
@@ -147,7 +157,15 @@ def test_read_presets(model_path):
     assert set(data.coords) == set(expected_coords)
     assert data.dtype == expected_dtype
 
-    # Check a single coordinate
+    # Check coordinates
+    assert_coordinate_values(data, "year", [2020, 2050])
+    assert_coordinate_values(
+        data, "commodity", ["electricity", "gas", "heat", "wind", "CO2f"]
+    )
+    assert_coordinate_values(data, "region", ["R1"])
+    assert_coordinate_values(data, "timeslice", list(range(1, 7)))
+
+    # Check values at a single coordinate
     assert data.sel(year=2020, commodity="heat", region="R1", timeslice=1) == 1.0
 
 
@@ -179,7 +197,15 @@ def test_read_initial_market(model_path):
     assert_data_types(data, expected_data_vars)
     assert hasattr(data.coords["timeslice"].to_index(), "levels")
 
-    # Check a single coordinate
+    # Check coordinates
+    assert_coordinate_values(data, "region", ["R1"])
+    assert_coordinate_values(data, "year", list(range(2010, 2105, 5)))
+    assert_coordinate_values(
+        data, "commodity", ["electricity", "gas", "heat", "wind", "CO2f"]
+    )
+    assert_coordinate_values(data, "timeslice", EXPECTED_TIMESLICES)
+
+    # Check values at a single coordinate
     assert_single_coordinate(
         data,
         {
@@ -228,7 +254,18 @@ def test_read_technodictionary(model_path):
     assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
     assert_data_types(data, expected_data_vars)
 
-    # Check single coordinate
+    # Check coordinates
+    assert_coordinate_values(data, "technology", ["gasCCGT", "windturbine"])
+    assert_coordinate_values(data, "region", ["R1"])
+
+    # Check coordinate consistency
+    for var in data.data_vars:
+        if var == "tech_type":
+            assert list(data.data_vars[var].coords) == ["technology"]
+        else:
+            assert data.data_vars[var].coords.equals(data.coords)
+
+    # Check values at a single coordinate
     assert_single_coordinate(
         data,
         {"technology": "gasCCGT", "region": "R1"},
@@ -282,7 +319,7 @@ def test_read_technodata_timeslices(timeslice_model_path):
     # Check timeslice structure
     assert_coordinate_values(data, "timeslice", EXPECTED_TIMESLICES)
 
-    # Check single coordinate
+    # Check values at a single coordinate
     assert_single_coordinate(
         data,
         {
@@ -317,7 +354,15 @@ def test_read_io_technodata(model_path):
     assert_dataset_structure(data, expected_dims, expected_coords, expected_data_vars)
     assert_data_types(data, expected_data_vars)
 
-    # Check single coordinate
+    # Check coordinates
+    assert_coordinate_values(data, "technology", ["gasCCGT", "windturbine"])
+    assert_coordinate_values(data, "region", ["R1"])
+    assert_coordinate_values(data, "year", [2020])
+    assert_coordinate_values(
+        data, "commodity", ["electricity", "gas", "heat", "wind", "CO2f"]
+    )
+
+    # Check values at a single coordinate
     assert_single_coordinate(
         data,
         {"technology": "gasCCGT", "region": "R1", "year": 2020, "commodity": "gas"},
@@ -345,7 +390,13 @@ def test_read_initial_assets(model_path):
         assert coord in data.coords
         assert data.coords[coord].dims == dims
 
-    # Check single coordinate
+    # Check coordinates
+    assert_coordinate_values(data, "region", ["R1"])
+    assert_coordinate_values(data, "technology", ["gasCCGT", "windturbine"])
+    assert_coordinate_values(data, "installed", [2020, 2020])
+    assert_coordinate_values(data, "year", list(range(2020, 2055, 5)))
+
+    # Check values at a single coordinate
     assert data.installed.sel(asset=0).item() == 2020
     assert data.technology.sel(asset=0).item() == "gasCCGT"
     assert data.sel(region="R1", asset=0, year=2020).item() == 1
