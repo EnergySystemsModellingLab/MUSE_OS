@@ -84,7 +84,7 @@ COLUMN_TYPES = {
 }
 
 
-def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
+def standardize_columns(data: pd.DataFrame) -> pd.DataFrame:
     """Standardizes column names in a DataFrame.
 
     This function:
@@ -93,25 +93,25 @@ def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
     3. Preserves any columns not in the mapping
 
     Args:
-        df: DataFrame to standardize
+        data: DataFrame to standardize
 
     Returns:
         DataFrame with standardized column names
     """
     # First convert to snake_case
-    df = df.rename(columns=camel_to_snake)
+    data = data.rename(columns=camel_to_snake)
 
     # Drop any columns that start with "Unname"
-    df.drop(df.filter(regex="Unname"), axis=1, inplace=True)
+    data.drop(data.filter(regex="Unname"), axis=1, inplace=True)
 
     # Then apply global mapping
-    df = df.rename(columns=COLUMN_RENAMES)
+    data = data.rename(columns=COLUMN_RENAMES)
 
     # Make sure there are no duplicate columns
-    if len(df.columns) != len(set(df.columns)):
-        raise ValueError(f"Duplicate columns in {df.columns}")
+    if len(data.columns) != len(set(data.columns)):
+        raise ValueError(f"Duplicate columns in {data.columns}")
 
-    return df
+    return data
 
 
 def create_multiindex(
@@ -203,8 +203,8 @@ def camel_to_snake(name: str) -> str:
     """Transforms CamelCase to snake_case."""
     from re import sub
 
-    re = sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
-    result = sub("([a-z0-9])([A-Z])", r"\1_\2", re).lower()
+    pattern = sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+    result = sub("([a-z0-9])([A-Z])", r"\1_\2", pattern).lower()
     result = result.replace("co2", "CO2")
     result = result.replace("ch4", "CH4")
     result = result.replace("n2_o", "N2O")
@@ -237,18 +237,18 @@ def convert_column_types(data: pd.DataFrame) -> pd.DataFrame:
         DataFrame with converted column types
     """
     result = data.copy()
-    for col, expected_type in COLUMN_TYPES.items():
-        if col in result.columns:
+    for column, expected_type in COLUMN_TYPES.items():
+        if column in result.columns:
             try:
                 if expected_type is int:
-                    result[col] = pd.to_numeric(result[col], downcast="integer")
+                    result[column] = pd.to_numeric(result[column], downcast="integer")
                 elif expected_type is float:
-                    result[col] = pd.to_numeric(result[col])
+                    result[column] = pd.to_numeric(result[column])
                 elif expected_type is str:
-                    result[col] = result[col].astype(str)
+                    result[column] = result[column].astype(str)
             except (ValueError, TypeError) as e:
                 raise ValueError(
-                    f"Could not convert column '{col}' to {expected_type.__name__}: {e}"
+                    f"Could not convert column '{column}' to {expected_type.__name__}: {e}"  # noqa: E501
                 )
     return result
 
@@ -263,7 +263,7 @@ def convert_column_types(data: pd.DataFrame) -> pd.DataFrame:
     data = data[data.process_name != "Unit"]
 
 def read_csv(
-    filename: Path | pd.DataFrame,
+    path: Path | pd.DataFrame,
     float_precision: str = "high",
     required_columns: list[str] | None = None,
     msg: str | None = None,
@@ -271,7 +271,7 @@ def read_csv(
     """Reads and standardizes a CSV file into a DataFrame.
 
     Args:
-        filename: Path to the CSV file
+        path: Path to the CSV file
         float_precision: Precision to use when reading floats
         required_columns: List of column names that must be present (optional)
         msg: Message to log (optional)
@@ -284,26 +284,26 @@ def read_csv(
         getLogger(__name__).info(msg)
 
     # If a Path is passed, read the file
-    if isinstance(filename, Path):
+    if isinstance(path, Path):
         # Check if file exists
-        if not filename.is_file():
-            raise OSError(f"{filename} does not exist.")
+        if not path.is_file():
+            raise OSError(f"{path} does not exist.")
 
         # Check if there's a units row (in which case we need to skip it)
-        with open(filename) as f:
+        with open(path) as f:
             next(f)  # Skip header row
             first_data_row = f.readline().strip()
         skiprows = [1] if first_data_row.startswith("Unit") else None
 
         # Read the file
         data = pd.read_csv(
-            filename,
+            path,
             float_precision=float_precision,
             low_memory=False,
             skiprows=skiprows,
         )
     else:  # Must be DataFrame
-        data = filename
+        data = path
 
     assert isinstance(data, pd.DataFrame)
 
@@ -322,9 +322,7 @@ def read_csv(
     if required_columns is not None:
         missing_columns = [col for col in required_columns if col not in data.columns]
         if missing_columns:
-            raise ValueError(
-                f"Missing required columns in {filename}: {missing_columns}"
-            )
+            raise ValueError(f"Missing required columns in {path}: {missing_columns}")
 
     return data
 
@@ -334,11 +332,11 @@ def read_technodictionary(path: Path) -> xr.Dataset:
     return process_technodictionary(df)
 
 
-def read_technodictionary_csv(filename: Path) -> pd.DataFrame:
+def read_technodictionary_csv(path: Path) -> pd.DataFrame:
     """Reads and formats technodata into a DataFrame.
 
     Args:
-        filename: Path to the technodictionary CSV file
+        path: Path to the technodictionary CSV file
 
     Returns:
         DataFrame containing the technodictionary data
@@ -358,25 +356,25 @@ def read_technodictionary_csv(filename: Path) -> pd.DataFrame:
         "technical_life",
         "fix_par",
     }
-    csv = read_csv(filename, required_columns=required_columns)
+    data = read_csv(path, required_columns=required_columns)
 
     # Check for deprecated columns
-    if "fuel" in csv.columns:
+    if "fuel" in data.columns:
         msg = (
-            f"The 'Fuel' column in {filename} has been deprecated. "
+            f"The 'Fuel' column in {path} has been deprecated. "
             "This information is now determined from CommIn files. "
             "Please remove this column from your Technodata files."
         )
         getLogger(__name__).warning(msg)
-    if "end_use" in csv.columns:
+    if "end_use" in data.columns:
         msg = (
-            f"The 'EndUse' column in {filename} has been deprecated. "
+            f"The 'EndUse' column in {path} has been deprecated. "
             "This information is now determined from CommOut files. "
             "Please remove this column from your Technodata files."
         )
         getLogger(__name__).warning(msg)
 
-    return csv
+    return data
 
 
 def process_technodictionary(data: pd.DataFrame) -> xr.Dataset:
@@ -432,11 +430,11 @@ def read_technodata_timeslices(path: Path) -> xr.Dataset:
     return process_technodata_timeslices(df)
 
 
-def read_technodata_timeslices_csv(filename: Path) -> pd.DataFrame:
+def read_technodata_timeslices_csv(path: Path) -> pd.DataFrame:
     """Reads and formats technodata timeslices into a DataFrame.
 
     Args:
-        filename: Path to the technodata timeslices CSV file
+        path: Path to the technodata timeslices CSV file
 
     Returns:
         DataFrame containing the technodata timeslices data
@@ -448,8 +446,7 @@ def read_technodata_timeslices_csv(filename: Path) -> pd.DataFrame:
         "region",
         "year",
     }
-    csv = read_csv(filename, required_columns=required_columns)
-    return csv
+    return read_csv(path, required_columns=required_columns)
 
 
 def process_technodata_timeslices(data: pd.DataFrame) -> xr.Dataset:
@@ -496,26 +493,26 @@ def read_io_technodata(path: Path) -> xr.Dataset:
     return process_io_technodata(df)
 
 
-def read_io_technodata_csv(filename: Path) -> pd.DataFrame:
+def read_io_technodata_csv(path: Path) -> pd.DataFrame:
     """Reads process inputs or outputs into a DataFrame.
 
     Args:
-        filename: Path to the IO technodata CSV file
+        path: Path to the IO technodata CSV file
 
     Returns:
         DataFrame containing the IO technodata
     """
-    csv = read_csv(filename, required_columns=["technology", "region", "year"])
+    data = read_csv(path, required_columns=["technology", "region", "year"])
 
     # Unspecified Level values default to "fixed"
-    if "level" in csv.columns:
-        csv["level"] = csv["level"].fillna("fixed")
+    if "level" in data.columns:
+        data["level"] = data["level"].fillna("fixed")
     else:
         # Particularly relevant to outputs files where the Level column is omitted by
         # default, as only "fixed" outputs are allowed.
-        csv["level"] = "fixed"
+        data["level"] = "fixed"
 
-    return csv
+    return data
 
 
 def process_io_technodata(data: pd.DataFrame) -> xr.Dataset:
@@ -684,11 +681,11 @@ def read_initial_assets(path: Path) -> xr.DataArray:
     return process_initial_assets(df)
 
 
-def read_initial_assets_csv(filename: Path) -> pd.DataFrame:
+def read_initial_assets_csv(path: Path) -> pd.DataFrame:
     """Reads and formats data about initial capacity into a DataFrame.
 
     Args:
-        filename: Path to the initial assets CSV file
+        path: Path to the initial assets CSV file
 
     Returns:
         DataFrame containing the initial assets data
@@ -697,8 +694,7 @@ def read_initial_assets_csv(filename: Path) -> pd.DataFrame:
         "region",
         "technology",
     }
-    data = read_csv(filename, required_columns=required_columns)
-    return data
+    return read_csv(path, required_columns=required_columns)
 
 
 def process_initial_assets(data: pd.DataFrame) -> xr.DataArray:
@@ -803,14 +799,14 @@ def process_global_commodities(data: pd.DataFrame) -> xr.Dataset:
 
 def read_agent_parameters(path: Path) -> pd.DataFrame:
     df = read_agent_parameters_csv(path)
-    return process_agent_parameters(df, path)
+    return process_agent_parameters(df)
 
 
-def read_agent_parameters_csv(filename: Path) -> pd.DataFrame:
+def read_agent_parameters_csv(path: Path) -> pd.DataFrame:
     """Reads standard MUSE agent-declaration csv-files into a DataFrame.
 
     Args:
-        filename: Path to the agent parameters CSV file
+        path: Path to the agent parameters CSV file
 
     Returns:
         DataFrame with validated agent parameters
@@ -824,7 +820,7 @@ def read_agent_parameters_csv(filename: Path) -> pd.DataFrame:
         "agent_share",
         "decision_method",
     }
-    data = read_csv(filename, required_columns=required_columns)
+    data = read_csv(path, required_columns=required_columns)
 
     # Check for deprecated retrofit agents
     if "type" in data.columns:
@@ -847,18 +843,17 @@ def read_agent_parameters_csv(filename: Path) -> pd.DataFrame:
 
     if len(objectives) != len(floats) or len(objectives) != len(sorting):
         raise ValueError(
-            f"Agent Objective, ObjData, and Objsort columns are inconsistent in {filename}"  # noqa: E501
+            f"Agent Objective, ObjData, and Objsort columns are inconsistent in {path}"
         )
 
     return data
 
 
-def process_agent_parameters(data: pd.DataFrame, filename: Path) -> list[dict]:
+def process_agent_parameters(data: pd.DataFrame) -> list[dict]:
     """Processes agent parameters DataFrame into a list of agent dictionaries.
 
     Args:
         data: DataFrame containing validated agent parameters
-        filename: Path to the original CSV file (used for error messages)
 
     Returns:
         List of dictionaries, where each dictionary can be used to instantiate an
@@ -1031,37 +1026,37 @@ def read_attribute_table_csv(path: Path) -> pd.DataFrame:
     return table
 
 
-def process_attribute_table(table: pd.DataFrame) -> xr.DataArray:
+def process_attribute_table(data: pd.DataFrame) -> xr.DataArray:
     """Process attribute table DataFrame into an xarray DataArray.
 
     Args:
-        table: DataFrame containing the attribute table data
+        data: DataFrame containing the attribute table data
 
     Returns:
         xarray DataArray containing the processed attribute table
     """
     # Set column names and standardize
-    table.columns.name = "commodity"
+    data.columns.name = "commodity"
 
     # Create multiindex for region and year
-    table = create_multiindex(
-        table,
+    data = create_multiindex(
+        data,
         index_columns=["region", "year"],
         index_names=["region", "year"],
         drop_columns=True,
     )
 
     # Convert year to int
-    table.index = table.index.set_levels(
-        [table.index.levels[0], table.index.levels[1].astype(int)], level=[0, 1]
+    data.index = data.index.set_levels(
+        [data.index.levels[0], data.index.levels[1].astype(int)], level=[0, 1]
     )
 
     # Get attribute name and drop column
-    attribute = table.attribute.unique()[0]
-    table = table.drop(["attribute"], axis=1)
+    attribute = data.attribute.unique()[0]
+    data = data.drop(["attribute"], axis=1)
 
     # Create DataArray
-    result = create_xarray_dataarray(table, name=attribute)
+    result = create_xarray_dataarray(data, name=attribute)
 
     # Fill missing values
     result = result.unstack("dim_0").fillna(0)
@@ -1270,33 +1265,33 @@ def read_macro_drivers_csv(path: Path) -> pd.DataFrame:
     return table
 
 
-def process_macro_drivers(table: pd.DataFrame) -> xr.Dataset:
+def process_macro_drivers(data: pd.DataFrame) -> xr.Dataset:
     """Processes macro drivers DataFrame into an xarray Dataset.
 
     Args:
-        table: DataFrame containing the macro drivers data
+        data: DataFrame containing the macro drivers data
 
     Returns:
         xarray Dataset containing the processed macro drivers
     """
     # Set index and column names
-    table.index = table.region
-    table.index.name = "region"
-    table.columns.name = "year"
+    data.index = data.region
+    data.index.name = "region"
+    data.columns.name = "year"
 
     # Drop unit and region columns
-    table = table.drop(["unit", "region"], axis=1)
+    data = data.drop(["unit", "region"], axis=1)
 
     # Split into population and GDP data
-    population = table[table.variable == "Population"].drop("variable", axis=1)
-    gdp = table[table.variable == "GDP|PPP"].drop("variable", axis=1)
+    population = data[data.variable == "Population"].drop("variable", axis=1)
+    gdp = data[data.variable == "GDP|PPP"].drop("variable", axis=1)
 
     # Create dataset with standardized types
     result = create_xarray_dataset(
         data_vars={"gdp": gdp, "population": population},
         coords={
-            "year": ("year", table.columns.values.astype(int)),
-            "region": ("region", table.index.values.astype(str)),
+            "year": ("year", data.columns.values.astype(int)),
+            "region": ("region", data.index.values.astype(str)),
         },
     )
 
