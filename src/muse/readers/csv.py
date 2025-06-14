@@ -386,7 +386,7 @@ def process_technodictionary(data: pd.DataFrame) -> xr.Dataset:
     Returns:
         xarray Dataset containing the processed technodictionary
     """
-    # Create multiindex for technology, region, and year
+    # Create multiindex for technology and region
     data = create_multiindex(
         data,
         index_columns=["technology", "region", "year"],
@@ -394,22 +394,8 @@ def process_technodictionary(data: pd.DataFrame) -> xr.Dataset:
         drop_columns=True,
     )
 
-    # Convert time to integers
-    data.index = data.index.set_levels(
-        [
-            data.index.levels[0],
-            data.index.levels[1],
-            [int(u) for u in data.index.levels[2]],
-        ],
-        level=[0, 1, 2],
-    )
-
-    # Set column and index names
-    data.columns.name = "technodata"
-    data.index.name = "technology"
-
     # Create dataset
-    result = create_xarray_dataset(data.sort_index())
+    result = create_xarray_dataset(data)
 
     # Handle tech_type if present
     if "type" in result.variables:
@@ -460,30 +446,30 @@ def process_technodata_timeslices(data: pd.DataFrame) -> xr.Dataset:
     """
     from muse.timeslices import sort_timeslices
 
-    # Create multiindex excluding factor columns
+    # Create multiindex for all columns except factor columns
+    # This has to be dynamic because timeslice columns can be different for each model
+    # TODO: is there a better way to do this?
     factor_columns = ["utilization_factor", "minimum_service_factor", "obj_sort"]
     index_columns = [col for col in data.columns if col not in factor_columns]
     data = create_multiindex(
-        data, index_columns=index_columns, index_names=["technology"], drop_columns=True
+        data,
+        index_columns=index_columns,
+        index_names=index_columns,
+        drop_columns=True,
     )
-
-    # Set column names
-    data.columns.name = "technodata_timeslice"
-    data.index.name = "technology"
-
-    # Filter to only factor columns
-    data = data.filter(factor_columns)
 
     # Create dataset
     result = create_xarray_dataset(data)
 
-    # Stack timeslice levels
-    timeslice_levels = [
-        item
-        for item in list(result.coords)
-        if item not in ["technology", "region", "year"]
-    ]
-    result = result.stack(timeslice=timeslice_levels)
+    # Convert year to int64 (from int16) and sort
+    # TODO: why is year int16 in the first place?
+    result = result.assign_coords(year=result.year.astype(int))
+    result = result.sortby("year")
+
+    # Stack timeslice levels (month, day, hour) into a single timeslice dimension
+    timeslice_levels = ["month", "day", "hour"]
+    if all(level in result.dims for level in timeslice_levels):
+        result = result.stack(timeslice=timeslice_levels)
 
     return sort_timeslices(result)
 
@@ -532,7 +518,7 @@ def process_io_technodata(data: pd.DataFrame) -> xr.Dataset:
         drop_columns=True,
     )
 
-    # Convert time to integers
+    # Convert year to int
     data.index = data.index.set_levels(
         [
             data.index.levels[0],
