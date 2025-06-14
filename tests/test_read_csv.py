@@ -5,13 +5,12 @@ from muse.readers.csv import (
     read_agent_parameters_csv,
     read_global_commodities_csv,
     read_initial_assets_csv,
-    read_initial_market_csv,
     read_macro_drivers_csv,
     read_presets_csv,
+    read_projections_csv,
     read_regression_parameters_csv,
     read_technodata_timeslices_csv,
     read_technodictionary_csv,
-    read_technologies_csv,
     read_timeslice_shares_csv,
 )
 
@@ -85,24 +84,6 @@ def test_read_technodata_timeslices_csv(timeslice_model_path):
         "day",
     }
     assert set(timeslices_df.columns) == mandatory_columns | extra_columns
-
-
-def test_read_technologies_csv(timeslice_model_path):
-    """Test reading the technologies CSV files."""
-    technodata_path = timeslice_model_path / "power" / "Technodata.csv"
-    comm_out_path = timeslice_model_path / "power" / "CommOut.csv"
-    comm_in_path = timeslice_model_path / "power" / "CommIn.csv"
-    timeslices_path = timeslice_model_path / "power" / "TechnodataTimeslices.csv"
-
-    technodata_df, comm_out_df, comm_in_df, timeslices_df = read_technologies_csv(
-        technodata_path, comm_out_path, comm_in_path, timeslices_path
-    )
-
-    # Check required columns
-    for df in [technodata_df, comm_out_df, comm_in_df]:
-        assert "technology" in df.columns
-        assert "region" in df.columns
-        assert "year" in df.columns
 
 
 def test_read_initial_assets_csv(model_path):
@@ -205,10 +186,10 @@ def test_read_macro_drivers_csv(correlation_model_path):
     assert "GDP|PPP" in macro_df["variable"].values
 
 
-def test_read_initial_market_csv(model_path):
-    """Test reading the initial market CSV files."""
+def test_read_projections_csv(model_path):
+    """Test reading the projections CSV file."""
     projections_path = model_path / "Projections.csv"
-    projections_df, _, _ = read_initial_market_csv(projections_path)
+    projections_df = read_projections_csv(projections_path)
     mandatory_columns = {
         "year",
         "attribute",
@@ -247,13 +228,9 @@ def test_read_regression_parameters_csv(correlation_model_path):
 
 def test_read_presets_csv(model_path):
     """Test reading the presets CSV files."""
-    presets_path = model_path / "residential_presets" / "*.csv"
-    presets_dict = read_presets_csv(presets_path)
-    assert len(presets_dict) > 0
+    presets_path = model_path / "residential_presets" / "Residential2020Consumption.csv"
+    presets_df = read_presets_csv(presets_path)
 
-    # Check first year's data
-    first_year = min(presets_dict.keys())
-    first_year_df = presets_dict[first_year]
     mandatory_columns = {
         "region",
         "timeslice",
@@ -265,4 +242,4 @@ def test_read_presets_csv(model_path):
         "gas",
         "CO2f",
     }
-    assert set(first_year_df.columns) == mandatory_columns | extra_columns
+    assert set(presets_df.columns) == mandatory_columns | extra_columns

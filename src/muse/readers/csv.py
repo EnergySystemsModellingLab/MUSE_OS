@@ -574,137 +574,37 @@ def process_io_technodata(data: pd.DataFrame) -> xr.Dataset:
     return result
 
 
-def read_initial_assets(path: Path) -> xr.DataArray:
-    df = read_initial_assets_csv(path)
-    return process_initial_assets(df)
-
-
-def read_initial_assets_csv(filename: Path) -> pd.DataFrame:
-    """Reads and formats data about initial capacity into a DataFrame.
-
-    Args:
-        filename: Path to the initial assets CSV file
-
-    Returns:
-        DataFrame containing the initial assets data
-    """
-    required_columns = {
-        "region",
-        "technology",
-    }
-    data = read_csv(filename, required_columns=required_columns)
-    return data
-
-
-def process_initial_assets(data: pd.DataFrame) -> xr.DataArray:
-    """Processes initial assets DataFrame into an xarray DataArray.
-
-    Args:
-        data: DataFrame containing the initial assets data
-
-    Returns:
-        xarray DataArray containing the processed initial assets
-    """
-    if "year" in data.columns:  # TODO: need a different way to identify trade file
-        result = process_trade(data)
-    else:
-        result = process_initial_capacity(data)
-
-    # Rename technology to asset
-    technology = result.technology
-    result = result.drop_vars("technology").rename(technology="asset")
-    result["technology"] = "asset", technology.values
-
-    # Add installed year
-    result["installed"] = ("asset", [int(result.year.min())] * len(result.technology))
-    return result
-
-
-def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
-    """Processes initial capacity DataFrame into an xarray DataArray.
-
-    Args:
-        data: DataFrame containing the initial capacity data
-
-    Returns:
-        xarray DataArray containing the processed initial capacity
-    """
-    # Create multiindex for region, technology, and year
-    data = create_multiindex(
-        data,
-        index_columns=["technology", "region"],
-        index_names=["technology", "region"],
-        drop_columns=True,
-    )
-
-    # Melt year columns into rows
-    data = data.melt(var_name="year", value_name="value")
-    data = data.set_index(["region", "technology", "year"])
-
-    # Create DataArray
-    result = create_xarray_dataarray(data["value"])
-    return result
-
-
 def read_technologies(
     technodata_path: Path,
     comm_out_path: Path,
     comm_in_path: Path,
     technodata_timeslices_path: Path | None = None,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame | None]:
-    df = read_technologies_csv(
-        technodata_path, comm_out_path, comm_in_path, technodata_timeslices_path
-    )
-    return process_technologies(df)
-
-
-def read_technologies_csv(
-    technodata_path: Path,
-    comm_out_path: Path,
-    comm_in_path: Path,
-    technodata_timeslices_path: Path | None = None,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame | None]:
-    """Reads data characterising technologies from files into DataFrames.
-
-    Args:
-        technodata_path: Path to the the technodata file.
-        technodata_timeslices_path: This argument refers to the TechnodataTimeslices
-            file which specifies the utilization factor per timeslice for the specified
-            technology.
-        comm_out_path: Refers to the path of the file specifying output commmodities.
-        comm_in_path: Refers to the path of the file specifying input commmodities.
-
-    Returns:
-        Tuple of (technodata_df, comm_out_df, comm_in_df, technodata_timeslices_df)
-        where technodata_timeslices_df may be None if not provided
-    """
-    tpath = technodata_path
-    opath = comm_out_path
-    ipath = comm_in_path
-
+) -> xr.Dataset:
+    # Log message
     msg = f"""Reading technology information from:
-    - technodata: {tpath}
-    - outputs: {opath}
-    - inputs: {ipath}
+    - technodata: {technodata_path}
+    - outputs: {comm_out_path}
+    - inputs: {comm_in_path}
     """
     if technodata_timeslices_path:
-        ttpath = technodata_timeslices_path
-        msg += f"""- technodata_timeslices: {ttpath}
+        msg += f"""- technodata_timeslices: {technodata_timeslices_path}
         """
-    else:
-        ttpath = None
-
     getLogger(__name__).info(msg)
 
     # Read all data
-    technodata_df = read_technodictionary_csv(tpath)
-    comm_out_df = read_io_technodata_csv(opath)
-    comm_in_df = read_io_technodata_csv(ipath)
+    technodata_df = read_technodictionary_csv(technodata_path)
+    comm_out_df = read_io_technodata_csv(comm_out_path)
+    comm_in_df = read_io_technodata_csv(comm_in_path)
     technodata_timeslices_df = (
-        read_technodata_timeslices_csv(ttpath) if ttpath else None
+        read_technodata_timeslices_csv(technodata_timeslices_path)
+        if technodata_timeslices_path
+        else None
     )
 
-    return technodata_df, comm_out_df, comm_in_df, technodata_timeslices_df
+    # Assemble xarray Dataset
+    return process_technologies(
+        technodata_df, comm_out_df, comm_in_df, technodata_timeslices_df
+    )
 
 
 def process_technologies(
@@ -779,6 +679,78 @@ def process_technologies(
     return result
 
 
+def read_initial_assets(path: Path) -> xr.DataArray:
+    df = read_initial_assets_csv(path)
+    return process_initial_assets(df)
+
+
+def read_initial_assets_csv(filename: Path) -> pd.DataFrame:
+    """Reads and formats data about initial capacity into a DataFrame.
+
+    Args:
+        filename: Path to the initial assets CSV file
+
+    Returns:
+        DataFrame containing the initial assets data
+    """
+    required_columns = {
+        "region",
+        "technology",
+    }
+    data = read_csv(filename, required_columns=required_columns)
+    return data
+
+
+def process_initial_assets(data: pd.DataFrame) -> xr.DataArray:
+    """Processes initial assets DataFrame into an xarray DataArray.
+
+    Args:
+        data: DataFrame containing the initial assets data
+
+    Returns:
+        xarray DataArray containing the processed initial assets
+    """
+    if "year" in data.columns:  # TODO: need a different way to identify trade file
+        result = process_trade(data)
+    else:
+        result = process_initial_capacity(data)
+
+    # Rename technology to asset
+    technology = result.technology
+    result = result.drop_vars("technology").rename(technology="asset")
+    result["technology"] = "asset", technology.values
+
+    # Add installed year
+    result["installed"] = ("asset", [int(result.year.min())] * len(result.technology))
+    return result
+
+
+def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
+    """Processes initial capacity DataFrame into an xarray DataArray.
+
+    Args:
+        data: DataFrame containing the initial capacity data
+
+    Returns:
+        xarray DataArray containing the processed initial capacity
+    """
+    # Create multiindex for region, technology, and year
+    data = create_multiindex(
+        data,
+        index_columns=["technology", "region"],
+        index_names=["technology", "region"],
+        drop_columns=True,
+    )
+
+    # Melt year columns into rows
+    data = data.melt(var_name="year", value_name="value")
+    data = data.set_index(["region", "technology", "year"])
+
+    # Create DataArray
+    result = create_xarray_dataarray(data["value"])
+    return result
+
+
 def read_global_commodities(path: Path) -> pd.DataFrame:
     df = read_global_commodities_csv(path)
     return process_global_commodities(df)
@@ -827,56 +799,6 @@ def process_global_commodities(data: pd.DataFrame) -> xr.Dataset:
     data = data.drop("commodity", axis=1)
     data.index.name = "commodity"
     return create_xarray_dataset(data)
-
-
-def read_timeslice_shares(path: Path) -> pd.DataFrame:
-    df = read_timeslice_shares_csv(path)
-    return process_timeslice_shares(df)
-
-
-def read_timeslice_shares_csv(path: Path) -> pd.DataFrame:
-    """Reads sliceshare information into a DataFrame.
-
-    Args:
-        path: Path to the timeslice shares CSV file
-
-    Returns:
-        DataFrame containing the timeslice shares data
-    """
-    data = read_csv(
-        path,
-        required_columns=["region", "timeslice"],
-        msg=f"Reading timeslice shares from {path}.",
-    )
-    return data
-
-
-def process_timeslice_shares(data: pd.DataFrame) -> xr.DataArray:
-    """Processes timeslice shares DataFrame into an xarray DataArray.
-
-    Args:
-        data: DataFrame containing the timeslice shares data
-
-    Returns:
-        xarray DataArray containing the processed timeslice shares
-    """
-    # Create multiindex for region and timeslice
-    data = create_multiindex(
-        data,
-        index_columns=["region", "timeslice"],
-        index_names=["region", "timeslice"],
-        drop_columns=True,
-    )
-
-    # Set index and column names
-    data.index.name = "rt"
-    data.columns.name = "commodity"
-
-    # Create DataArray and unstack
-    result = create_xarray_dataarray(data)
-    result = result.unstack("rt").to_dataset(name="shares")
-
-    return result.shares
 
 
 def read_agent_parameters(path: Path) -> pd.DataFrame:
@@ -987,106 +909,12 @@ def process_agent_parameters(data: pd.DataFrame, filename: Path) -> list[dict]:
     return result
 
 
-def read_macro_drivers(path: Path) -> pd.DataFrame:
-    df = read_macro_drivers_csv(path)
-    return process_macro_drivers(df)
-
-
-def read_macro_drivers_csv(path: Path) -> pd.DataFrame:
-    """Reads a standard MUSE csv file for macro drivers into a DataFrame.
-
-    Args:
-        path: Path to the macro drivers CSV file
-
-    Returns:
-        DataFrame containing the macro drivers data
-    """
-    table = read_csv(
-        path,
-        required_columns=["region", "variable"],
-        msg=f"Reading macro drivers from {path}.",
-    )
-
-    # Validate required variables
-    required_variables = ["Population", "GDP|PPP"]
-    missing_variables = [
-        var for var in required_variables if var not in table.variable.unique()
-    ]
-    if missing_variables:
-        raise ValueError(f"Missing required variables in {path}: {missing_variables}")
-
-    return table
-
-
-def process_macro_drivers(table: pd.DataFrame) -> xr.Dataset:
-    """Processes macro drivers DataFrame into an xarray Dataset.
-
-    Args:
-        table: DataFrame containing the macro drivers data
-
-    Returns:
-        xarray Dataset containing the processed macro drivers
-    """
-    # Set index and column names
-    table.index = table.region
-    table.index.name = "region"
-    table.columns.name = "year"
-
-    # Drop unit and region columns
-    table = table.drop(["unit", "region"], axis=1)
-
-    # Split into population and GDP data
-    population = table[table.variable == "Population"].drop("variable", axis=1)
-    gdp = table[table.variable == "GDP|PPP"].drop("variable", axis=1)
-
-    # Create dataset with standardized types
-    result = create_xarray_dataset(
-        data_vars={"gdp": gdp, "population": population},
-        coords={
-            "year": ("year", table.columns.values.astype(int)),
-            "region": ("region", table.index.values.astype(str)),
-        },
-    )
-
-    return result
-
-
 def read_initial_market(
     projections: Path,
     base_year_import: Path | None = None,
     base_year_export: Path | None = None,
 ) -> xr.Dataset:
-    df = read_initial_market_csv(projections, base_year_import, base_year_export)
-    return process_initial_market(df)
-
-
-def read_initial_market_csv(
-    projections: Path,
-    base_year_import: Path | None = None,
-    base_year_export: Path | None = None,
-) -> tuple[pd.DataFrame, pd.DataFrame | None, pd.DataFrame | None]:
-    """Read projections, import and export csv files into DataFrames.
-
-    Args:
-        projections: Path to projections CSV file
-        base_year_import: Optional path to base year import CSV file
-        base_year_export: Optional path to base year export CSV file
-
-    Returns:
-        Tuple of (projections_df, import_df, export_df) where import_df and export_df
-        may be None if their respective files were not provided
-    """
-    # Projections must always be present
-    required_columns = {
-        "region",
-        "attribute",
-        "year",
-    }
-    projections_df = read_csv(
-        projections,
-        required_columns=required_columns,
-        msg=f"Reading projections from {projections}.",
-    )
+    projections_df = read_projections_csv(projections)
 
     # Base year export is optional
     if base_year_export:
@@ -1106,7 +934,22 @@ def read_initial_market_csv(
     else:
         import_df = None
 
-    return projections_df, import_df, export_df
+    # Assemble into xarray Dataset
+    return process_initial_market(projections_df, import_df, export_df)
+
+
+def read_projections_csv(path: Path) -> pd.DataFrame:
+    required_columns = {
+        "region",
+        "attribute",
+        "year",
+    }
+    projections_df = read_csv(
+        path,
+        required_columns=required_columns,
+        msg=f"Reading projections from {path}.",
+    )
+    return projections_df
 
 
 def process_initial_market(
@@ -1226,6 +1069,240 @@ def process_attribute_table(table: pd.DataFrame) -> xr.DataArray:
     return result
 
 
+def read_presets(paths: Path) -> xr.Dataset:
+    from glob import glob
+    from re import match
+
+    # Find all files matching the path pattern
+    allfiles = [Path(p) for p in glob(str(paths))]
+    if len(allfiles) == 0:
+        raise OSError(f"No files found with paths {paths}")
+
+    # Read all files
+    datas = {}
+    for path in allfiles:
+        # Extract year from filename
+        reyear = match(r"\S*.(\d{4})\S*\.csv", path.name)
+        if reyear is None:
+            raise OSError(f"Unexpected filename {path.name}")
+        year = int(reyear.group(1))
+        if year in datas:
+            raise OSError(f"Year f{year} was found twice")
+
+        # Read data
+        data = read_presets_csv(path)
+        data.year = year
+        datas[year] = data
+
+    # Process data
+    datas = process_presets(datas)
+    return datas
+
+
+def read_presets_csv(path: Path) -> pd.DataFrame:
+    data = read_csv(path, required_columns=["region", "timeslice"])
+
+    # Legacy: drop ProcessName column and sum data (PR #448)
+    if "process" in data.columns:
+        getLogger(__name__).warning(
+            f"The ProcessName column (in file {path}) is deprecated. "
+            "Data has been summed across processes, and this column has been "
+            "dropped."
+        )
+        data = (
+            data.drop(columns=["process"])
+            .groupby(["region", "timeslice"])
+            .sum()
+            .reset_index()
+        )
+
+    return data
+
+
+def process_presets(
+    datas: dict[int, pd.DataFrame],
+) -> xr.Dataset:
+    """Processes preset DataFrames into an xarray Dataset.
+
+    Args:
+        datas: Dictionary mapping years to DataFrames containing preset data
+
+    Returns:
+        xarray Dataset containing the processed preset data
+    """
+    processed_datas = {}
+    for year, data in datas.items():
+        # Create multiindex
+        data = create_multiindex(
+            data,
+            index_columns=["region", "timeslice"],
+            index_names=["asset"],
+            drop_columns=True,
+        )
+
+        # Set column names
+        data.columns.name = "commodity"
+
+        # Create DataArray
+        processed_datas[year] = create_xarray_dataarray(data)
+
+    # Combine into dataset
+    result = (
+        xr.Dataset(processed_datas)
+        .to_array(dim="year")
+        .sortby("year")
+        .fillna(0)
+        .unstack("asset")
+    )
+
+    return result
+
+
+def process_trade(data: pd.DataFrame) -> xr.DataArray | xr.Dataset:
+    """Processes trade DataFrame into an xarray DataArray or Dataset.
+
+    Args:
+        data: DataFrame containing the trade data
+
+    Returns:
+        xarray DataArray or Dataset containing the processed trade data
+    """
+    col_region = "src_region"
+    row_region = "dst_region"
+
+    # Standardize column names
+    data = data.rename({"region": row_region})
+
+    # Get indices for melting
+    indices = list(
+        {"commodity", "year", "src_region", "dst_region", "technology"}.intersection(
+            data.columns
+        )
+    )
+
+    # Melt data
+    data = data.melt(id_vars=indices, var_name=col_region)
+
+    # Create result based on parameters
+    result = create_xarray_dataarray(data.set_index([*indices, col_region])["value"])
+
+    return result.rename(src_region="region")
+
+
+def read_timeslice_shares(path: Path) -> pd.DataFrame:
+    df = read_timeslice_shares_csv(path)
+    return process_timeslice_shares(df)
+
+
+def read_timeslice_shares_csv(path: Path) -> pd.DataFrame:
+    """Reads sliceshare information into a DataFrame.
+
+    Args:
+        path: Path to the timeslice shares CSV file
+
+    Returns:
+        DataFrame containing the timeslice shares data
+    """
+    data = read_csv(
+        path,
+        required_columns=["region", "timeslice"],
+        msg=f"Reading timeslice shares from {path}.",
+    )
+    return data
+
+
+def process_timeslice_shares(data: pd.DataFrame) -> xr.DataArray:
+    """Processes timeslice shares DataFrame into an xarray DataArray.
+
+    Args:
+        data: DataFrame containing the timeslice shares data
+
+    Returns:
+        xarray DataArray containing the processed timeslice shares
+    """
+    # Create multiindex for region and timeslice
+    data = create_multiindex(
+        data,
+        index_columns=["region", "timeslice"],
+        index_names=["region", "timeslice"],
+        drop_columns=True,
+    )
+
+    # Set index and column names
+    data.index.name = "rt"
+    data.columns.name = "commodity"
+
+    # Create DataArray and unstack
+    result = create_xarray_dataarray(data)
+    result = result.unstack("rt").to_dataset(name="shares")
+
+    return result.shares
+
+
+def read_macro_drivers(path: Path) -> pd.DataFrame:
+    df = read_macro_drivers_csv(path)
+    return process_macro_drivers(df)
+
+
+def read_macro_drivers_csv(path: Path) -> pd.DataFrame:
+    """Reads a standard MUSE csv file for macro drivers into a DataFrame.
+
+    Args:
+        path: Path to the macro drivers CSV file
+
+    Returns:
+        DataFrame containing the macro drivers data
+    """
+    table = read_csv(
+        path,
+        required_columns=["region", "variable"],
+        msg=f"Reading macro drivers from {path}.",
+    )
+
+    # Validate required variables
+    required_variables = ["Population", "GDP|PPP"]
+    missing_variables = [
+        var for var in required_variables if var not in table.variable.unique()
+    ]
+    if missing_variables:
+        raise ValueError(f"Missing required variables in {path}: {missing_variables}")
+
+    return table
+
+
+def process_macro_drivers(table: pd.DataFrame) -> xr.Dataset:
+    """Processes macro drivers DataFrame into an xarray Dataset.
+
+    Args:
+        table: DataFrame containing the macro drivers data
+
+    Returns:
+        xarray Dataset containing the processed macro drivers
+    """
+    # Set index and column names
+    table.index = table.region
+    table.index.name = "region"
+    table.columns.name = "year"
+
+    # Drop unit and region columns
+    table = table.drop(["unit", "region"], axis=1)
+
+    # Split into population and GDP data
+    population = table[table.variable == "Population"].drop("variable", axis=1)
+    gdp = table[table.variable == "GDP|PPP"].drop("variable", axis=1)
+
+    # Create dataset with standardized types
+    result = create_xarray_dataset(
+        data_vars={"gdp": gdp, "population": population},
+        coords={
+            "year": ("year", table.columns.values.astype(int)),
+            "region": ("region", table.index.values.astype(str)),
+        },
+    )
+
+    return result
+
+
 def read_regression_parameters(
     path: Path,
 ) -> xr.Dataset:
@@ -1299,129 +1376,6 @@ def process_regression_parameters(
     )
 
     return coeffs
-
-
-def read_presets(paths: Path) -> dict[int, pd.DataFrame]:
-    df = read_presets_csv(paths)
-    return process_presets(df)
-
-
-def read_presets_csv(paths: Path) -> dict[int, pd.DataFrame]:
-    """Read consumption or supply files for preset sectors into DataFrames.
-
-    Args:
-        paths: Path pattern to match preset files
-
-    Returns:
-        Dictionary mapping years to DataFrames containing preset data
-
-    """
-    from glob import glob
-    from re import match
-
-    allfiles = [Path(p) for p in glob(str(paths))]
-    if len(allfiles) == 0:
-        raise OSError(f"No files found with paths {paths}")
-
-    datas = {}
-    for path in allfiles:
-        data = read_csv(path, required_columns=["region", "timeslice"])
-
-        reyear = match(r"\S*.(\d{4})\S*\.csv", path.name)
-        if reyear is None:
-            raise OSError(f"Unexpected filename {path.name}")
-        year = int(reyear.group(1))
-        if year in datas:
-            raise OSError(f"Year f{year} was found twice")
-        data.year = year
-
-        # Legacy: drop ProcessName column and sum data (PR #448)
-        if "process" in data.columns:
-            getLogger(__name__).warning(
-                f"The ProcessName column (in file {path}) is deprecated. "
-                "Data has been summed across processes, and this column has been "
-                "dropped."
-            )
-            data = (
-                data.drop(columns=["process"])
-                .groupby(["region", "timeslice"])
-                .sum()
-                .reset_index()
-            )
-
-        datas[year] = data
-
-    return datas
-
-
-def process_presets(
-    datas: dict[int, pd.DataFrame],
-) -> xr.Dataset:
-    """Processes preset DataFrames into an xarray Dataset.
-
-    Args:
-        datas: Dictionary mapping years to DataFrames containing preset data
-
-    Returns:
-        xarray Dataset containing the processed preset data
-    """
-    processed_datas = {}
-    for year, data in datas.items():
-        # Create multiindex
-        data = create_multiindex(
-            data,
-            index_columns=["region", "timeslice"],
-            index_names=["asset"],
-            drop_columns=True,
-        )
-
-        # Set column names
-        data.columns.name = "commodity"
-
-        # Create DataArray
-        processed_datas[year] = create_xarray_dataarray(data)
-
-    # Combine into dataset
-    result = (
-        xr.Dataset(processed_datas)
-        .to_array(dim="year")
-        .sortby("year")
-        .fillna(0)
-        .unstack("asset")
-    )
-
-    return result
-
-
-def process_trade(data: pd.DataFrame) -> xr.DataArray | xr.Dataset:
-    """Processes trade DataFrame into an xarray DataArray or Dataset.
-
-    Args:
-        data: DataFrame containing the trade data
-
-    Returns:
-        xarray DataArray or Dataset containing the processed trade data
-    """
-    col_region = "src_region"
-    row_region = "dst_region"
-
-    # Standardize column names
-    data = data.rename({"region": row_region})
-
-    # Get indices for melting
-    indices = list(
-        {"commodity", "year", "src_region", "dst_region", "technology"}.intersection(
-            data.columns
-        )
-    )
-
-    # Melt data
-    data = data.melt(id_vars=indices, var_name=col_region)
-
-    # Create result based on parameters
-    result = create_xarray_dataarray(data.set_index([*indices, col_region])["value"])
-
-    return result.rename(src_region="region")
 
 
 def check_utilization_and_minimum_service_factors(
