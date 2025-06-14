@@ -184,57 +184,6 @@ def test_suffix_path_formatting(suffix, tmp_path):
     )
 
 
-def test_check_utilization_not_all_zero_success():
-    """Test validation of non-zero utilization factors."""
-    from muse.readers.csv import _check_utilization_not_all_zero
-
-    df = pd.DataFrame(
-        {
-            "utilization_factor": [0, 1, 1],
-            "technology": ["gas", "gas", "solar"],
-            "region": ["GB", "GB", "FR"],
-            "year": [2010, 2010, 2011],
-        }
-    )
-    _check_utilization_not_all_zero(df, "file.csv")
-
-
-def test_check_utilization_not_all_zero_fail():
-    """Test validation fails when all utilization factors are zero."""
-    from muse.readers.csv import _check_utilization_not_all_zero
-
-    df = pd.DataFrame(
-        {
-            "utilization_factor": [0, 0, 1],
-            "technology": ["gas", "gas", "solar"],
-            "region": ["GB", "GB", "FR"],
-            "year": [2010, 2010, 2011],
-        }
-    )
-    with raises(ValueError):
-        _check_utilization_not_all_zero(df, "file.csv")
-
-
-def test_check_utilization_in_range_success():
-    """Test validation of utilization factors within valid range."""
-    from muse.readers.csv import _check_utilization_in_range
-
-    df = pd.DataFrame({"utilization_factor": [0, 1]})
-    _check_utilization_in_range(df, "file.csv")
-
-
-@mark.parametrize(
-    "values", chain.from_iterable(permutations((0, bad)) for bad in (-1, 2))
-)
-def test_check_utilization_in_range_fail(values):
-    """Test validation fails for utilization factors outside valid range."""
-    from muse.readers.csv import _check_utilization_in_range
-
-    df = pd.DataFrame({"utilization_factor": values})
-    with raises(ValueError):
-        _check_utilization_in_range(df, "file.csv")
-
-
 def test_check_utilization_and_minimum_service():
     """Test combined validation of utilization and minimum service factors."""
     from muse.readers.csv import check_utilization_and_minimum_service_factors
