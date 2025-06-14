@@ -40,6 +40,7 @@ COLUMN_RENAMES = {
     "commodity_price": "prices",
     "units_commodity_price": "units_prices",
     "enduse": "end_use",
+    "sn": "timeslice",
 }
 
 # Columns who's values should be converted from camelCase to snake_case
@@ -72,7 +73,7 @@ COLUMN_TYPES = {
     "decision_method": str,
     "quantity": float,
     "share": float,
-    "coeff": float,
+    "coeff": str,
     "value": float,
     "utilization_factor": float,
     "minimum_service_factor": float,
