@@ -5,8 +5,9 @@ from __future__ import annotations
 __all__ = [
     "read_agent_parameters",
     "read_attribute_table",
+    "read_existing_trade",
     "read_global_commodities",
-    "read_initial_assets",
+    "read_initial_capacity",
     "read_initial_market",
     "read_io_technodata",
     "read_macro_drivers",
@@ -446,7 +447,7 @@ def process_technodata_timeslices(data: pd.DataFrame) -> xr.Dataset:
     """
     from muse.timeslices import sort_timeslices
 
-    # Create multiindex for all columns except factor columns
+    # Create multiindex for all columns except factor columns (i.e. timeslice columns)
     # This has to be dynamic because timeslice columns can be different for each model
     # TODO: is there a better way to do this?
     factor_columns = ["utilization_factor", "minimum_service_factor", "obj_sort"]
@@ -510,49 +511,41 @@ def process_io_technodata(data: pd.DataFrame) -> xr.Dataset:
     Returns:
         xarray Dataset containing the processed IO technodata
     """
-    # Create multiindex for technology, region, and year
-    data = create_multiindex(
-        data,
-        index_columns=["technology", "region", "year"],
-        index_names=["technology", "region", "year"],
-        drop_columns=True,
+    # Extract commodity columns
+    # TODO: a bit hacky as the user may include extra columns aside from commodities
+    commodities = [
+        col
+        for col in data.columns
+        if col not in ["technology", "region", "year", "level"]
+    ]
+
+    # Convert commodity columns to long format (i.e. single "commodity" column)
+    data = data.melt(
+        id_vars=["technology", "region", "year", "level"],
+        value_vars=commodities,
+        var_name="commodity",
+        value_name="value",
     )
 
-    # Convert year to int
-    data.index = data.index.set_levels(
-        [
-            data.index.levels[0],
-            data.index.levels[1],
-            [int(u) for u in data.index.levels[2]],
-        ],
-        level=[0, 1, 2],
+    # Pivot data to create fixed and flexible columns
+    data = data.pivot(
+        index=["technology", "region", "year", "commodity"],
+        columns="level",
+        values="value",
     )
 
-    # Set column names
-    data.columns.name = "commodity"
-    data.index.name = "technology"
+    # Create xarray dataset
+    result = create_xarray_dataset(data)
 
-    # Split into fixed and flexible sets
-    fixed_set = create_xarray_dataset(
-        data[data.level == "fixed"], name="fixed"
-    ).drop_vars("level")
+    # Fill in flexible data
+    if "flexible" in result.data_vars:
+        result["flexible"] = result.flexible.fillna(0)
+    else:
+        result["flexible"] = xr.zeros_like(result.fixed).rename("flexible")
 
-    flexible_set = create_xarray_dataset(
-        data[data.level == "flexible"], name="flexible"
-    ).drop_vars("level")
-
-    # Create commodity dimension
-    commodity = xr.DataArray(
-        list(fixed_set.data_vars.keys()), dims="commodity", name="commodity"
-    )
-
-    # Concatenate fixed and flexible sets
-    fixed = xr.concat(fixed_set.data_vars.values(), dim=commodity)
-    flexible = xr.concat(flexible_set.data_vars.values(), dim=commodity)
-
-    # Create result dataset
-    result = create_xarray_dataset(data_vars={"fixed": fixed, "flexible": flexible})
-    result["flexible"] = result.flexible.fillna(0)
+    # Convert year to int64
+    result = result.assign_coords(year=result.year.astype(int))
+    result = result.sortby("year")
 
     return result
 
@@ -647,6 +640,7 @@ def process_technologies(
         result = result.drop_vars("utilization_factor")
         result = result.merge(technodata_timeslice)
 
+    # Add commodity usage flags
     result["comm_usage"] = (
         "commodity",
         CommodityUsage.from_technologies(result).values,
@@ -662,12 +656,12 @@ def process_technologies(
     return result
 
 
-def read_initial_assets(path: Path) -> xr.DataArray:
-    df = read_initial_assets_csv(path)
-    return process_initial_assets(df)
+def read_initial_capacity(path: Path) -> xr.DataArray:
+    df = read_initial_capacity_csv(path)
+    return process_initial_capacity(df)
 
 
-def read_initial_assets_csv(path: Path) -> pd.DataFrame:
+def read_initial_capacity_csv(path: Path) -> pd.DataFrame:
     """Reads and formats data about initial capacity into a DataFrame.
 
     Args:
@@ -681,30 +675,6 @@ def read_initial_assets_csv(path: Path) -> pd.DataFrame:
         "technology",
     }
     return read_csv(path, required_columns=required_columns)
-
-
-def process_initial_assets(data: pd.DataFrame) -> xr.DataArray:
-    """Processes initial assets DataFrame into an xarray DataArray.
-
-    Args:
-        data: DataFrame containing the initial assets data
-
-    Returns:
-        xarray DataArray containing the processed initial assets
-    """
-    if "year" in data.columns:  # TODO: need a different way to identify trade file
-        result = process_trade(data)
-    else:
-        result = process_initial_capacity(data)
-
-    # Rename technology to asset
-    technology = result.technology
-    result = result.drop_vars("technology").rename(technology="asset")
-    result["technology"] = "asset", technology.values
-
-    # Add installed year
-    result["installed"] = ("asset", [int(result.year.min())] * len(result.technology))
-    return result
 
 
 def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
@@ -730,6 +700,14 @@ def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
 
     # Create DataArray
     result = create_xarray_dataarray(data["value"])
+
+    # Rename technology to asset
+    technology = result.technology
+    result = result.drop_vars("technology").rename(technology="asset")
+    result["technology"] = "asset", technology.values
+
+    # Add installed year
+    result["installed"] = ("asset", [int(result.year.min())] * len(result.technology))
     return result
 
 
@@ -1139,15 +1117,36 @@ def process_presets(
     return result
 
 
-def process_trade(data: pd.DataFrame) -> xr.DataArray | xr.Dataset:
-    """Processes trade DataFrame into an xarray DataArray or Dataset.
+def read_trade_technodata(path: Path) -> xr.DataArray:
+    df = read_trade_technodata_csv(path)
+    return process_trade_technodata(df)
 
-    Args:
-        data: DataFrame containing the trade data
 
-    Returns:
-        xarray DataArray or Dataset containing the processed trade data
-    """
+def read_trade_technodata_csv(path: Path) -> pd.DataFrame:
+    required_columns = {"technology", "region", "parameter"}
+    return read_csv(path, required_columns=required_columns)
+
+
+def process_trade_technodata(data: pd.DataFrame) -> xr.DataArray:
+    # TODO
+    return create_xarray_dataarray(data)
+
+
+def read_existing_trade(path: Path) -> xr.DataArray:
+    df = read_existing_trade_csv(path)
+    return process_existing_trade(df)
+
+
+def read_existing_trade_csv(path: Path) -> pd.DataFrame:
+    required_columns = {
+        "region",
+        "technology",
+        "year",
+    }
+    return read_csv(path, required_columns=required_columns)
+
+
+def process_existing_trade(data: pd.DataFrame) -> xr.DataArray | xr.Dataset:
     col_region = "src_region"
     row_region = "dst_region"
 
@@ -1166,6 +1165,14 @@ def process_trade(data: pd.DataFrame) -> xr.DataArray | xr.Dataset:
 
     # Create result based on parameters
     result = create_xarray_dataarray(data.set_index([*indices, col_region])["value"])
+
+    # Rename technology to asset
+    technology = result.technology
+    result = result.drop_vars("technology").rename(technology="asset")
+    result["technology"] = "asset", technology.values
+
+    # Add installed year
+    result["installed"] = ("asset", [int(result.year.min())] * len(result.technology))
 
     return result.rename(src_region="region")
 
