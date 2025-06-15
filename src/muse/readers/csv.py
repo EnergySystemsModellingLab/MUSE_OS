@@ -37,11 +37,11 @@ COLUMN_RENAMES = {
     "time": "year",
     "commodity_name": "commodity",
     "commodity_type": "comm_type",
-    "commodity_emission_factor_co2": "emmission_factor",
     "commodity_price": "prices",
     "units_commodity_price": "units_prices",
     "enduse": "end_use",
     "sn": "timeslice",
+    "commodity_emission_factor_CO2": "emmission_factor",
 }
 
 # Columns who's values should be converted from camelCase to snake_case
@@ -52,6 +52,7 @@ CAMEL_TO_SNAKE_COLUMNS = [
     "agent_share",
     "attribute",
     "sector",
+    "region",
 ]
 
 # Global mapping of column names to their expected types
@@ -409,6 +410,10 @@ def process_technodictionary(data: pd.DataFrame) -> xr.Dataset:
         if len(result.year) == 1:
             result = result.isel(year=0, drop=True)
 
+    # TODO: what is this?
+    if any(result[u].isnull().any() for u in result.data_vars):
+        raise ValueError("Inconsistent data in technodata (e.g. inconsistent years)")
+
     return result
 
 
@@ -568,92 +573,76 @@ def read_technologies(
     getLogger(__name__).info(msg)
 
     # Read all data
-    technodata_df = read_technodictionary_csv(technodata_path)
-    comm_out_df = read_io_technodata_csv(comm_out_path)
-    comm_in_df = read_io_technodata_csv(comm_in_path)
-    technodata_timeslices_df = (
+    technodata = read_technodictionary_csv(technodata_path)
+    comm_out = read_io_technodata_csv(comm_out_path)
+    comm_in = read_io_technodata_csv(comm_in_path)
+    technodata_timeslices = (
         read_technodata_timeslices_csv(technodata_timeslices_path)
         if technodata_timeslices_path
         else None
     )
 
     # Assemble xarray Dataset
-    return process_technologies(
-        technodata_df, comm_out_df, comm_in_df, technodata_timeslices_df
-    )
+    return process_technologies(technodata, comm_out, comm_in, technodata_timeslices)
 
 
 def process_technologies(
-    technodata_df: pd.DataFrame,
-    comm_out_df: pd.DataFrame,
-    comm_in_df: pd.DataFrame,
-    technodata_timeslices_df: pd.DataFrame | None = None,
+    technodata: xr.Dataset,
+    comm_out: xr.Dataset,
+    comm_in: xr.Dataset,
+    technodata_timeslices: xr.Dataset | None = None,
 ) -> xr.Dataset:
     """Processes technology data DataFrames into an xarray Dataset.
 
     Args:
-        technodata_df: DataFrame containing technodata
-        comm_out_df: DataFrame containing output commodities
-        comm_in_df: DataFrame containing input commodities
-        technodata_timeslices_df: Optional DataFrame containing technodata timeslices
+        technodata: xarray Dataset containing technodata
+        comm_out: xarray Dataset containing output commodities
+        comm_in: xarray Dataset containing input commodities
+        technodata_timeslices: Optional xarray Dataset containing technodata timeslices
 
     Returns:
         xarray Dataset containing the processed technology data
     """
     from muse.commodities import CommodityUsage
 
-    # Process technodata
-    result = process_technodictionary(technodata_df)
-    if any(result[u].isnull().any() for u in result.data_vars):
-        raise ValueError("Inconsistent data in technodata (e.g. inconsistent years)")
+    # Process inputs/outputs
+    ins = comm_in.rename(flexible="flexible_inputs", fixed="fixed_inputs")
+    outs = comm_out.rename(flexible="flexible_outputs", fixed="fixed_outputs")
 
-    # Process outputs
-    outs = process_io_technodata(comm_out_df).rename(
-        flexible="flexible_outputs", fixed="fixed_outputs"
-    )
+    # Legacy: Remove flexible outputs
     if not (outs["flexible_outputs"] == 0).all():
         raise ValueError(
             "'flexible' outputs are not permitted. All outputs must be 'fixed'"
         )
     outs = outs.drop_vars("flexible_outputs")
 
-    # Process inputs
-    ins = process_io_technodata(comm_in_df).rename(
-        flexible="flexible_inputs", fixed="fixed_inputs"
-    )
+    # Interpolate inputs/outputs if needed
+    if "year" in technodata.dims and len(technodata.year) > 1:
+        outs = outs.interp(year=technodata.year)
+        ins = ins.interp(year=technodata.year)
 
-    # Interpolate if needed
-    if "year" in result.dims and len(result.year) > 1:
-        if all(len(outs[d]) > 1 for d in outs.dims if outs[d].dtype.kind in "uifc"):
-            outs = outs.interp(year=result.year)
-        if all(len(ins[d]) > 1 for d in ins.dims if ins[d].dtype.kind in "uifc"):
-            ins = ins.interp(year=result.year)
-
+    # Merge inputs/outputs with technodata
     try:
-        result = result.merge(outs).merge(ins)
+        technodata = technodata.merge(outs).merge(ins)
     except xr.core.merge.MergeError:
+        # TODO: what is this?
         raise UnitsConflictInCommodities
 
     # Process timeslices if provided
-    if technodata_timeslices_df is not None:
-        technodata_timeslice = process_technodata_timeslices(technodata_timeslices_df)
-        result = result.drop_vars("utilization_factor")
-        result = result.merge(technodata_timeslice)
+    if technodata_timeslices:
+        technodata = technodata.drop_vars("utilization_factor")
+        technodata = technodata.merge(technodata_timeslices)
 
     # Add commodity usage flags
-    result["comm_usage"] = (
+    technodata["comm_usage"] = (
         "commodity",
-        CommodityUsage.from_technologies(result).values,
+        CommodityUsage.from_technologies(technodata).values,
     )
-    result = result.set_coords("comm_usage")
+    technodata = technodata.set_coords("comm_usage")
 
-    # Check UF and MSF
-    # TODO: perform checks directly of CSVs instead
-    check_utilization_and_minimum_service_factors(
-        result.to_dataframe(), [technodata_df, technodata_timeslices_df]
-    )
+    # TODO: Check UF and MSF
 
-    return result
+    return technodata
 
 
 def read_initial_capacity(path: Path) -> xr.DataArray:
@@ -686,20 +675,34 @@ def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
     Returns:
         xarray DataArray containing the processed initial capacity
     """
+    # Drop unit column if present
+    if "unit" in data.columns:
+        data = data.drop(columns=["unit"])
+
+    # Select year columns
+    year_columns = [col for col in data.columns if col.isdigit()]
+
+    # Convert year columns to long format (i.e. single "year" column)
+    data = data.melt(
+        id_vars=["technology", "region"],
+        value_vars=year_columns,
+        var_name="year",
+        value_name="value",
+    )
+
+    # Convert year column to int64
+    data["year"] = data["year"].astype(int)
+
     # Create multiindex for region, technology, and year
     data = create_multiindex(
         data,
-        index_columns=["technology", "region"],
-        index_names=["technology", "region"],
+        index_columns=["technology", "region", "year"],
+        index_names=["technology", "region", "year"],
         drop_columns=True,
     )
 
-    # Melt year columns into rows
-    data = data.melt(var_name="year", value_name="value")
-    data = data.set_index(["region", "technology", "year"])
-
-    # Create DataArray
-    result = create_xarray_dataarray(data["value"])
+    # Create Dataarray
+    result = create_xarray_dataset(data).value
 
     # Rename technology to asset
     technology = result.technology
@@ -1128,8 +1131,37 @@ def read_trade_technodata_csv(path: Path) -> pd.DataFrame:
 
 
 def process_trade_technodata(data: pd.DataFrame) -> xr.DataArray:
-    # TODO
-    return create_xarray_dataarray(data)
+    # Drop unit column if present
+    if "unit" in data.columns:
+        data = data.drop(columns=["unit"])
+
+    # Select region columns
+    regions = [
+        col for col in data.columns if col not in ["technology", "region", "parameter"]
+    ]
+
+    # Melt data over regions
+    data = data.melt(
+        id_vars=["technology", "region", "parameter"],
+        value_vars=regions,
+        var_name="dst_region",
+        value_name="value",
+    )
+
+    # Pivot data over parameters
+    data = data.pivot(
+        index=["technology", "region", "dst_region"],
+        columns="parameter",
+        values="value",
+    )
+
+    # Convert CamelCase to snake_case
+    data = standardize_columns(data)
+
+    # TODO: Make sure no nan values
+
+    # Create DataSet
+    return create_xarray_dataset(data)
 
 
 def read_existing_trade(path: Path) -> xr.DataArray:
@@ -1196,6 +1228,10 @@ def read_timeslice_shares_csv(path: Path) -> pd.DataFrame:
         required_columns=["region", "timeslice"],
         msg=f"Reading timeslice shares from {path}.",
     )
+
+    # Convert timeslice column to int64
+    data["timeslice"] = data["timeslice"].astype(int)
+
     return data
 
 
@@ -1208,23 +1244,28 @@ def process_timeslice_shares(data: pd.DataFrame) -> xr.DataArray:
     Returns:
         xarray DataArray containing the processed timeslice shares
     """
+    # Extract commodity columns
+    commodities = [col for col in data.columns if col not in ["timeslice", "region"]]
+
+    # Convert commodity columns to long format (i.e. single "commodity" column)
+    data = data.melt(
+        id_vars=["region", "timeslice"],
+        value_vars=commodities,
+        var_name="commodity",
+        value_name="value",
+    )
+
     # Create multiindex for region and timeslice
     data = create_multiindex(
         data,
-        index_columns=["region", "timeslice"],
-        index_names=["region", "timeslice"],
+        index_columns=["region", "timeslice", "commodity"],
+        index_names=["region", "timeslice", "commodity"],
         drop_columns=True,
     )
 
-    # Set index and column names
-    data.index.name = "rt"
-    data.columns.name = "commodity"
-
-    # Create DataArray and unstack
-    result = create_xarray_dataarray(data)
-    result = result.unstack("rt").to_dataset(name="shares")
-
-    return result.shares
+    # Create DataSet
+    result = create_xarray_dataset(data).value
+    return result
 
 
 def read_macro_drivers(path: Path) -> pd.DataFrame:
@@ -1267,26 +1308,39 @@ def process_macro_drivers(data: pd.DataFrame) -> xr.Dataset:
     Returns:
         xarray Dataset containing the processed macro drivers
     """
-    # Set index and column names
-    data.index = data.region
-    data.index.name = "region"
-    data.columns.name = "year"
+    # Drop unit column if present
+    if "unit" in data.columns:
+        data = data.drop(columns=["unit"])
 
-    # Drop unit and region columns
-    data = data.drop(["unit", "region"], axis=1)
+    # Select year columns
+    year_columns = [col for col in data.columns if col.isdigit()]
 
-    # Split into population and GDP data
-    population = data[data.variable == "Population"].drop("variable", axis=1)
-    gdp = data[data.variable == "GDP|PPP"].drop("variable", axis=1)
-
-    # Create dataset with standardized types
-    result = create_xarray_dataset(
-        data_vars={"gdp": gdp, "population": population},
-        coords={
-            "year": ("year", data.columns.values.astype(int)),
-            "region": ("region", data.index.values.astype(str)),
-        },
+    # Convert year columns to long format (i.e. single "year" column)
+    data = data.melt(
+        id_vars=["variable", "region"],
+        value_vars=year_columns,
+        var_name="year",
+        value_name="value",
     )
+
+    # Convert year column to int64
+    data["year"] = data["year"].astype(int)
+
+    # Pivot data to create Population and GDP|PPP columns
+    data = data.pivot(
+        index=["region", "year"],
+        columns="variable",
+        values="value",
+    )
+
+    # Legacy: rename Population to population and GDP|PPP to gdp
+    if "Population" in data.columns:
+        data = data.rename(columns={"Population": "population"})
+    if "GDP|PPP" in data.columns:
+        data = data.rename(columns={"GDP|PPP": "gdp"})
+
+    # Create DataSet
+    result = create_xarray_dataset(data)
 
     return result
 
@@ -1317,9 +1371,7 @@ def read_regression_parameters_csv(
     return table
 
 
-def process_regression_parameters(
-    table: pd.DataFrame,
-) -> xr.Dataset:
+def process_regression_parameters(table: pd.DataFrames) -> xr.Dataset:
     """Processes regression parameters DataFrame into an xarray Dataset.
 
     Args:
