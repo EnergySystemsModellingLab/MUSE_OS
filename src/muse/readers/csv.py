@@ -64,7 +64,7 @@ COLUMN_TYPES = {
     "sector": str,
     "attribute": str,
     "variable": str,
-    "timeslice": str,
+    "timeslice": int,  # Some tables require int timeslice instead of month, day etc.
     "name": str,
     "comm_type": str,
     "tech_type": str,
@@ -929,43 +929,35 @@ def process_initial_market(
     Returns:
         xarray Dataset containing processed market data
     """
-    from muse.timeslices import TIMESLICE, distribute_timeslice
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     # Process projections
-    projections = process_attribute_table(projections_df)
+    projections = process_attribute_table(projections_df).commodity_price
 
     # Process optional trade data
     if export_df is not None:
-        base_year_export = process_attribute_table(export_df)
+        base_year_export = process_attribute_table(export_df).exports
     else:
         base_year_export = xr.zeros_like(projections)
 
     if import_df is not None:
-        base_year_import = process_attribute_table(import_df)
+        base_year_import = process_attribute_table(import_df).imports
     else:
         base_year_import = xr.zeros_like(projections)
 
+    # Distribute data over timeslices
+    projections = broadcast_timeslice(projections, level=None)
     base_year_export = distribute_timeslice(base_year_export, level=None)
     base_year_import = distribute_timeslice(base_year_import, level=None)
-    base_year_export.name = "exports"
-    base_year_import.name = "imports"
-
-    static_trade = base_year_import - base_year_export
-    static_trade.name = "static_trade"
 
     # Assemble into xarray
     result = xr.Dataset(
         {
-            projections.name: projections,
-            base_year_export.name: base_year_export,
-            base_year_import.name: base_year_import,
-            static_trade.name: static_trade,
+            "prices": projections,
+            "exports": base_year_export,
+            "imports": base_year_import,
+            "static_trade": base_year_import - base_year_export,
         }
-    )
-
-    # Expand prices over timeslices
-    result["prices"] = (
-        result["prices"].expand_dims({"timeslice": TIMESLICE}).drop_vars("timeslice")
     )
 
     return result
@@ -993,41 +985,37 @@ def read_attribute_table_csv(path: Path) -> pd.DataFrame:
     return table
 
 
-def process_attribute_table(data: pd.DataFrame) -> xr.DataArray:
-    """Process attribute table DataFrame into an xarray DataArray.
+def process_attribute_table(data: pd.DataFrame) -> xr.Dataset:
+    """Process attribute table DataFrame into an xarray Dataset.
 
     Args:
         data: DataFrame containing the attribute table data
 
     Returns:
-        xarray DataArray containing the processed attribute table
+        xarray Dataset containing the processed attribute table
     """
-    # Set column names and standardize
-    data.columns.name = "commodity"
+    # Extract commodity columns
+    commodities = [
+        col for col in data.columns if col not in ["region", "year", "attribute"]
+    ]
 
-    # Create multiindex for region and year
-    data = create_multiindex(
-        data,
-        index_columns=["region", "year"],
-        index_names=["region", "year"],
-        drop_columns=True,
+    # Convert commodity columns to long format (i.e. single "commodity" column)
+    data = data.melt(
+        id_vars=["region", "year", "attribute"],
+        value_vars=commodities,
+        var_name="commodity",
+        value_name="value",
     )
 
-    # Convert year to int
-    data.index = data.index.set_levels(
-        [data.index.levels[0], data.index.levels[1].astype(int)], level=[0, 1]
+    # Pivot data over attributes
+    data = data.pivot(
+        index=["region", "year", "commodity"],
+        columns="attribute",
+        values="value",
     )
 
-    # Get attribute name and drop column
-    attribute = data.attribute.unique()[0]
-    data = data.drop(["attribute"], axis=1)
-
-    # Create DataArray
-    result = create_xarray_dataarray(data, name=attribute)
-
-    # Fill missing values
-    result = result.unstack("dim_0").fillna(0)
-
+    # Create DataSet
+    result = create_xarray_dataset(data)
     return result
 
 
@@ -1178,35 +1166,31 @@ def read_existing_trade_csv(path: Path) -> pd.DataFrame:
     return read_csv(path, required_columns=required_columns)
 
 
-def process_existing_trade(data: pd.DataFrame) -> xr.DataArray | xr.Dataset:
-    col_region = "src_region"
-    row_region = "dst_region"
+def process_existing_trade(data: pd.DataFrame) -> xr.DataArray:
+    # Select region columns
+    regions = [
+        col for col in data.columns if col not in ["technology", "region", "year"]
+    ]
 
-    # Standardize column names
-    data = data.rename({"region": row_region})
-
-    # Get indices for melting
-    indices = list(
-        {"commodity", "year", "src_region", "dst_region", "technology"}.intersection(
-            data.columns
-        )
+    # Melt data over regions
+    data = data.melt(
+        id_vars=["technology", "region", "year"],
+        value_vars=regions,
+        var_name="dst_region",
+        value_name="value",
     )
 
-    # Melt data
-    data = data.melt(id_vars=indices, var_name=col_region)
+    # Create multiindex for region, dst_region, technology and year
+    data = create_multiindex(
+        data,
+        index_columns=["region", "dst_region", "technology", "year"],
+        index_names=["region", "dst_region", "technology", "year"],
+        drop_columns=True,
+    )
 
-    # Create result based on parameters
-    result = create_xarray_dataarray(data.set_index([*indices, col_region])["value"])
-
-    # Rename technology to asset
-    technology = result.technology
-    result = result.drop_vars("technology").rename(technology="asset")
-    result["technology"] = "asset", technology.values
-
-    # Add installed year
-    result["installed"] = ("asset", [int(result.year.min())] * len(result.technology))
-
-    return result.rename(src_region="region")
+    # Create DataArray
+    result = create_xarray_dataset(data).value
+    return result
 
 
 def read_timeslice_shares(path: Path) -> pd.DataFrame:
@@ -1228,9 +1212,6 @@ def read_timeslice_shares_csv(path: Path) -> pd.DataFrame:
         required_columns=["region", "timeslice"],
         msg=f"Reading timeslice shares from {path}.",
     )
-
-    # Convert timeslice column to int64
-    data["timeslice"] = data["timeslice"].astype(int)
 
     return data
 

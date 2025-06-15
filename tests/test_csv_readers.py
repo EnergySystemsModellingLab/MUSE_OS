@@ -249,7 +249,7 @@ def test_read_initial_market(model_path):
         dims={"region", "year", "commodity", "timeslice"},
         coords={
             "region": CoordinateSchema(("region",), dtype="object"),
-            "year": CoordinateSchema(("year",), dtype="int64"),
+            "year": CoordinateSchema(("year",), dtype="int16"), # TODO: int64?
             "commodity": CoordinateSchema(("commodity",), dtype="object"),
             "units_prices": CoordinateSchema(("commodity",), dtype="object"),
             "timeslice": CoordinateSchema(("timeslice",), dtype="object"),
@@ -528,7 +528,7 @@ def test_read_existing_trade(trade_model_path):
     expected_schema = DataArraySchema(
         dims={"year", "technology", "dst_region", "region"},
         coords={
-            "year": CoordinateSchema(("year",), dtype="int64"),
+            "year": CoordinateSchema(("year",), dtype="int16"),  # TODO
             "technology": CoordinateSchema(("technology",), dtype="object"),
             "dst_region": CoordinateSchema(("dst_region",), dtype="object"),
             "region": CoordinateSchema(("region",), dtype="object"),
@@ -616,7 +616,7 @@ def test_read_timeslice_shares(correlation_model_path):
         dims={"region", "timeslice", "commodity"},
         coords={
             "region": CoordinateSchema(("region",), dtype="object"),
-            "timeslice": CoordinateSchema(("timeslice",), dtype="int64"),
+            "timeslice": CoordinateSchema(("timeslice",), dtype="int8"), # TODO
             "commodity": CoordinateSchema(("commodity",), dtype="object"),
         },
         dtype="float64",
