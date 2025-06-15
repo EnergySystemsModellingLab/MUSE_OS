@@ -159,14 +159,14 @@ def timeslice_model_path(tmp_path, timeslice):
 
 
 @fixture
-def trade_model_path(tmp_path):
+def trade_model_path(tmp_path, timeslice):
     """Creates temporary folder containing the trade model."""
     examples.copy_model(name="trade", path=tmp_path)
     return tmp_path / "model"
 
 
 @fixture
-def correlation_model_path(tmp_path):
+def correlation_model_path(tmp_path, timeslice):
     """Creates temporary folder containing the correlation model."""
     examples.copy_model(name="default_correlation", path=tmp_path)
     return tmp_path / "model"
@@ -435,7 +435,6 @@ def test_read_io_technodata(model_path):
         data_vars={
             "fixed": "float64",
             "flexible": "float64",
-            "commodity_units": "object",
         },
     )
     assert DatasetSchema.from_ds(data) == expected_schema
@@ -453,7 +452,7 @@ def test_read_io_technodata(model_path):
 
     # Check values at a single coordinate
     coord = {"technology": "gasCCGT", "region": "R1", "year": 2020, "commodity": "gas"}
-    expected = {"fixed": 1.67, "flexible": 0.0, "commodity_units": "PJ/PJ"}
+    expected = {"fixed": 1.67, "flexible": 0.0}
     assert_single_coordinate(data, coord, expected)
 
 
@@ -523,9 +522,9 @@ def test_read_csv_agent_parameters(model_path):
 
 
 def test_read_existing_trade(trade_model_path):
-    from muse.readers.csv import read_trade
+    from muse.readers.csv import read_existing_trade
 
-    data = read_trade(trade_model_path / "gas" / "ExistingTrade.csv", skiprows=[1])
+    data = read_existing_trade(trade_model_path / "gas" / "ExistingTrade.csv")
 
     # Check data against schema
     expected_schema = DataArraySchema(
@@ -559,9 +558,9 @@ def test_read_existing_trade(trade_model_path):
 
 
 def test_read_trade_technodata(trade_model_path):
-    from muse.readers.csv import read_trade
+    from muse.readers.csv import read_trade_technodata
 
-    data = read_trade(trade_model_path / "gas" / "TradeTechnodata.csv", drop="Unit")
+    data = read_trade_technodata(trade_model_path / "gas" / "TradeTechnodata.csv")
 
     # Check data against schema
     expected_schema = DatasetSchema(

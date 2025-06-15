@@ -3,8 +3,9 @@ import pytest
 from muse import examples
 from muse.readers.csv import (
     read_agent_parameters_csv,
+    read_existing_trade_csv,
     read_global_commodities_csv,
-    read_initial_assets_csv,
+    read_initial_capacity_csv,
     read_macro_drivers_csv,
     read_presets_csv,
     read_projections_csv,
@@ -12,6 +13,7 @@ from muse.readers.csv import (
     read_technodata_timeslices_csv,
     read_technodictionary_csv,
     read_timeslice_shares_csv,
+    read_trade_technodata_csv,
 )
 
 
@@ -26,6 +28,13 @@ def model_path(tmp_path):
 def timeslice_model_path(tmp_path):
     """Creates temporary folder containing the default model."""
     examples.copy_model(name="default_timeslice", path=tmp_path)
+    return tmp_path / "model"
+
+
+@pytest.fixture
+def trade_model_path(tmp_path):
+    """Creates temporary folder containing the default model."""
+    examples.copy_model(name="trade", path=tmp_path)
     return tmp_path / "model"
 
 
@@ -86,10 +95,10 @@ def test_read_technodata_timeslices_csv(timeslice_model_path):
     assert set(timeslices_df.columns) == mandatory_columns | extra_columns
 
 
-def test_read_initial_assets_csv(model_path):
-    """Test reading the initial assets CSV file."""
-    assets_path = model_path / "power" / "ExistingCapacity.csv"
-    assets_df = read_initial_assets_csv(assets_path)
+def test_read_initial_capacity_csv(model_path):
+    """Test reading the initial capacity CSV file."""
+    capacity_path = model_path / "power" / "ExistingCapacity.csv"
+    capacity_df = read_initial_capacity_csv(capacity_path)
     mandatory_columns = {
         "region",
         "technology",
@@ -104,7 +113,7 @@ def test_read_initial_assets_csv(model_path):
         "2040",
         "2020",
     }
-    assert set(assets_df.columns) == mandatory_columns | extra_columns
+    assert set(capacity_df.columns) == mandatory_columns | extra_columns
 
 
 def test_read_global_commodities_csv(model_path):
@@ -243,3 +252,25 @@ def test_read_presets_csv(model_path):
         "CO2f",
     }
     assert set(presets_df.columns) == mandatory_columns | extra_columns
+
+
+def test_read_existing_trade_csv(trade_model_path):
+    """Test reading the existing trade CSV file."""
+    trade_path = trade_model_path / "power" / "ExistingTrade.csv"
+    trade_df = read_existing_trade_csv(trade_path)
+    mandatory_columns = {
+        "region",
+        "technology",
+        "year",
+    }
+    extra_columns = {"r1", "r2"}
+    assert set(trade_df.columns) == mandatory_columns | extra_columns
+
+
+def test_read_trade_technodata(trade_model_path):
+    """Test reading the trade technodata CSV file."""
+    trade_path = trade_model_path / "power" / "TradeTechnodata.csv"
+    trade_df = read_trade_technodata_csv(trade_path)
+    mandatory_columns = {"technology", "region", "parameter"}
+    extra_columns = {"unit", "r1", "r2"}
+    assert set(trade_df.columns) == mandatory_columns | extra_columns
