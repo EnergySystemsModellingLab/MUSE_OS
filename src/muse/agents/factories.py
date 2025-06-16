@@ -175,7 +175,20 @@ def agents_factory(
     year: int | None = None,
     **kwargs,
 ) -> list[Agent]:
-    """Creates a list of agents for the chosen sector."""
+    """Creates a list of agents for the chosen sector.
+
+    Args:
+        params_or_path: Path to agent parameters file (string or Path) or list of
+            parameters
+        capacity: Capacity data array
+        technologies: Technologies dataset
+        regions: Optional sequence of regions to filter by
+        year: Optional year to use
+        **kwargs: Additional keyword arguments
+
+    Returns:
+        List of Agent objects
+    """
     from copy import deepcopy
     from logging import getLogger
 

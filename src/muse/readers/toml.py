@@ -137,18 +137,29 @@ def format_paths(
     return result
 
 
-def read_toml(tomlfile: Path, path: Path | None = None) -> MutableMapping:
-    """Reads a TOML file and formats the paths."""
+def read_toml(tomlfile: str | Path, path: str | Path | None = None) -> MutableMapping:
+    """Reads a TOML file and formats the paths.
+
+    Args:
+        tomlfile: Path to the TOML file (string or Path object)
+        path: Optional path to use for formatting relative paths (string or Path object)
+
+    Returns:
+        MutableMapping containing the formatted TOML data
+    """
     from toml import load
 
+    tomlfile = Path(tomlfile)
     toml = load(tomlfile)
     if path is None:
         path = tomlfile.parent
+    else:
+        path = Path(path)
     settings = format_paths(toml, path=path, cwd=Path())
     return settings
 
 
-def read_settings(settings_file: Path) -> Any:
+def read_settings(settings_file: str | Path) -> Any:
     """Loads the input settings for any MUSE simulation.
 
     Loads a MUSE settings file. This must be a TOML formatted file. Missing settings are
@@ -165,6 +176,7 @@ def read_settings(settings_file: Path) -> Any:
     from muse.timeslices import setup_module
 
     getLogger(__name__).info("Reading MUSE settings")
+    settings_file = Path(settings_file)
 
     # The user data
     user_settings = read_toml(settings_file)
