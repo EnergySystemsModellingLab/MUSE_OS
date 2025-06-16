@@ -81,8 +81,8 @@ def model(name: str = "default", test: bool = False) -> MCA:
 
     # we could modify the settings directly, but instead we use the copy_model function.
     # That way, there is only one function to get a model.
-    with TemporaryDirectory() as tmpdir:
-        path = copy_model(name, tmpdir)
+    with TemporaryDirectory() as tmp_path:
+        path = copy_model(name, tmp_path)
         settings = read_settings(path / "settings.toml")
         getLogger("muse").setLevel(settings.log_level)
         if not test:
@@ -152,8 +152,8 @@ def technodata(sector: str, model: str = "default") -> xr.Dataset:
         raise RuntimeError("The preset sector has no technodata.")
     if sector not in allowed:
         raise RuntimeError(f"This model only knows about sectors {allowed}.")
-    with TemporaryDirectory() as tmpdir:
-        path = copy_model(model, tmpdir)
+    with TemporaryDirectory() as tmp_path:
+        path = copy_model(model, tmp_path)
         settings = read_settings(path / "settings.toml")
         return read_technodata(settings, sector)
 
@@ -175,8 +175,8 @@ def sector(sector: str, model: str = "default") -> AbstractSector:
     from muse.readers.toml import read_settings
     from muse.sectors import SECTORS_REGISTERED
 
-    with TemporaryDirectory() as tmpdir:
-        path = copy_model(model, tmpdir)
+    with TemporaryDirectory() as tmp_path:
+        path = copy_model(model, tmp_path)
         settings = read_settings(path / "settings.toml")
         kind = getattr(settings.sectors, sector).type
         return SECTORS_REGISTERED[kind](sector, settings)
@@ -188,8 +188,8 @@ def available_sectors(model: str = "default") -> list[str]:
 
     from muse.readers.toml import read_settings, undo_damage
 
-    with TemporaryDirectory() as tmpdir:
-        path = copy_model(model, tmpdir)
+    with TemporaryDirectory() as tmp_path:
+        path = copy_model(model, tmp_path)
         settings = read_settings(path / "settings.toml").sectors
         return [u for u in undo_damage(settings).keys() if u != "list"]
 
@@ -203,8 +203,8 @@ def mca_market(model: str = "default") -> xr.Dataset:
     from muse.readers.csv import read_initial_market
     from muse.readers.toml import read_settings
 
-    with TemporaryDirectory() as tmpdir:
-        path = copy_model(model, tmpdir)
+    with TemporaryDirectory() as tmp_path:
+        path = copy_model(model, tmp_path)
         settings = read_settings(path / "settings.toml")
 
         market = (

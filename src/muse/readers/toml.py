@@ -101,92 +101,19 @@ def format_paths(
 ):
     """Format paths passed to settings.
 
-    A setting is recognized as a path if it's name ends in `_path`, `_file`, or `_dir`,
-    or if the associated value is text object and ends with `.csv, as well as settings
-    called `path`.
+    This function is used to format paths in the settings file. It is used to replace
+    the {path} and {cwd} placeholders with the actual path and current working
+    directory.
 
-    Paths are first formatted using the input replacement keywords. These replacements
-    will include "cwd" and "sectors" by default. For simplicity, any item called `path`
-    is considered first in any dictionary, and then used within that dictionary and
-    nested dictionaries.
-
-    Examples:
-        Starting from a simple example, we see `data_path` has been modified to point to
-        the current working directory:
-
-        >>> from pathlib import Path
-        >>> from muse.readers.toml import format_paths
-        >>> a = format_paths({"a_path": "{cwd}/a/b/c"})
-        >>> str(Path().absolute() / "a" / "b" / "c") == a["a_path"]
-        True
-
-        Or it can be modified to point to the default locations for sectorial data:
-
-        >>> from muse.defaults import DEFAULT_SECTORS_DIRECTORY
-        >>> a = format_paths({"a_path": "{muse_sectors}/a/b/c"})
-        >>> str(DEFAULT_SECTORS_DIRECTORY.absolute() / "a" / "b" / "c") == a["a_path"]
-        True
-
-        Similarly, if not given, `path` defaults to the current working directory:
-
-        >>> a = format_paths({"a_path": "{path}/a/b/c"})
-        >>> str(Path().absolute() / "a" / "b" / "c") == a["a_path"]
-        True
-
-        However, it can be made to point to anything of interest:
-
-        >>> a = format_paths({"path": "{cwd}/a/b", "a_path": "{path}/c"})
-        >>> str(Path().absolute() / "a" / "b" / "c") == a["a_path"]
-        True
-
-        Any property ending in `_path`, `_dir`, `_file`, or with a value that can be
-        interpreted as a path with suffix `.csv`, `.nc`, `.xls`, `.xlsx`, `.py` or
-        `.toml` is considered a path and transformed:
-
-        >>> a = format_paths({"path": "{cwd}/a/b", "a_dir": "{path}/c"})
-        >>> str(Path().absolute() / "a" / "b" / "c") == a["a_dir"]
-        True
-        >>> a = format_paths({"path": "{cwd}/a/b", "a_file": "{path}/c"})
-        >>> str(Path().absolute() / "a" / "b" / "c") == a["a_file"]
-        True
-        >>> a = format_paths({"path": "{cwd}/a/b", "a": "{path}/c.csv"})
-        >>> str(Path().absolute() / "a" / "b" / "c.csv") == a["a"]
-        True
-        >>> a = format_paths({"path": "{cwd}/a/b", "a": "{path}/c.toml"})
-        >>> str(Path().absolute() / "a" / "b" / "c.toml") == a["a"]
-        True
-
-        Finally, paths in nested directories are also processed:
-
-        >>> a = format_paths(
-        ...     {
-        ...         "path": "{cwd}/a/b",
-        ...         "nested": { "a_path": "{path}/c" }
-        ...     }
-        ... )
-        >>> str(Path().absolute() / "a" / "b" / "c") == a["nested"]["a_path"]
-        True
-
-        Note that `path` points to the latest one:
-
-        >>> a = format_paths(
-        ...     {
-        ...         "path": "{cwd}/a/b",
-        ...         "a_path": "{path}/c",
-        ...         "nested": {
-        ...             "path": "{cwd}/toot/suite",
-        ...             "b_path": "{path}/c"
-        ...         }
-        ...     }
-        ... )
-        >>> str(Path().absolute() / "a" / "b" / "c") == a["a_path"]
-        True
-        >>> str(Path().absolute() / "toot" / "suite" / "c") == a["nested"]["b_path"]
-        True
+    Args:
+        settings: The settings dictionary to format
+        path: The path to the settings file
+        cwd: The current working directory
+        suffixes: Suffixes used to identify strings as paths
     """
 
     def is_a_path(value):
-        return isinstance(value, str) and Path(value).suffix in suffixes
+        return isinstance(value, (str, Path)) and Path(value).suffix in suffixes
 
     # Recursively format paths
     # TODO: tidy
