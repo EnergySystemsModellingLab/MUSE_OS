@@ -34,7 +34,7 @@ class IncorrectSettings(InputError):
     """Error when an input exists but is incorrect."""
 
 
-def convert(dictionary):
+def convert(dictionary: dict) -> namedtuple:
     """Converts a dictionary (with nested ones) to a nametuple."""
     for key, value in dictionary.items():
         if isinstance(value, dict):
@@ -159,7 +159,7 @@ def read_toml(tomlfile: str | Path, path: str | Path | None = None) -> MutableMa
     return settings
 
 
-def read_settings(settings_file: str | Path) -> Any:
+def read_settings(settings_file: str | Path) -> namedtuple:
     """Loads the input settings for any MUSE simulation.
 
     Loads a MUSE settings file. This must be a TOML formatted file. Missing settings are
