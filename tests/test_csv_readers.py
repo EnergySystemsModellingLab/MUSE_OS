@@ -728,13 +728,17 @@ def test_read_regression_parameters(correlation_model_path):
 
 
 def test_read_technologies(model_path):
-    from muse.readers.csv import read_technologies
+    from muse.readers.csv import read_global_commodities, read_technologies
 
+    # Read commodities
+    commodities = read_global_commodities(model_path / "GlobalCommodities.csv")
+
+    # Read technologies
     data = read_technologies(
-        technodata_path_or_sector=model_path / "power" / "Technodata.csv",
+        technodata_path=model_path / "power" / "Technodata.csv",
         comm_out_path=model_path / "power" / "CommOut.csv",
         comm_in_path=model_path / "power" / "CommIn.csv",
-        commodities=model_path / "GlobalCommodities.csv",
+        commodities=commodities,
     )
 
     # Check data against schema
@@ -763,12 +767,10 @@ def test_read_technologies(model_path):
             "interest_rate": "float64",
             "type": "object",
             "agent1": "int64",
-            "tech_type": "<U6",
+            "tech_type": "object",
             "fixed_outputs": "float64",
-            "commodity_units": "object",
             "fixed_inputs": "float64",
             "flexible_inputs": "float64",
-            "comm_name": "object",
             "emmission_factor": "float64",
             "heat_rate": "int64",
             "unit": "object",
@@ -782,7 +784,7 @@ def test_read_technologies(model_path):
         {
             "commodity": ["electricity", "gas", "heat", "wind", "CO2f"],
             "technology": ["gasCCGT", "windturbine"],
-            "region": ["R1"],
+            "region": ["r1"],
             "year": [2020],
             "comm_usage": [10, 9, 8, 6, 9],
         },
