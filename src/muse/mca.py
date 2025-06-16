@@ -42,7 +42,9 @@ class MCA:
         from muse.readers import read_settings
         from muse.readers.toml import convert
 
-        if isinstance(settings, (str, Path)):
+        if isinstance(settings, str):
+            settings = Path(settings)
+        if isinstance(settings, Path):
             settings = read_settings(settings)  # type: ignore
         elif isinstance(settings, Mapping):
             settings = convert(settings)
