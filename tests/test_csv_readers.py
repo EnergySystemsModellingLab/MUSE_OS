@@ -220,7 +220,7 @@ def test_read_presets(model_path):
             "timeslice": CoordinateSchema(("timeslice",), dtype="int8"),  # TODO
         },
         dtype="float64",
-        name=None,
+        name="value",
     )
     assert DataArraySchema.from_da(data) == expected_schema
 
@@ -251,7 +251,6 @@ def test_read_initial_market(model_path):
             "region": CoordinateSchema(("region",), dtype="object"),
             "year": CoordinateSchema(("year",), dtype="int16"),  # TODO: int64?
             "commodity": CoordinateSchema(("commodity",), dtype="object"),
-            "units_prices": CoordinateSchema(("commodity",), dtype="object"),
             "timeslice": CoordinateSchema(("timeslice",), dtype="object"),
             "month": CoordinateSchema(("timeslice",), dtype="object"),
             "day": CoordinateSchema(("timeslice",), dtype="object"),
@@ -323,7 +322,7 @@ def test_read_technodictionary(model_path):
             "interest_rate": "float64",
             "type": "object",
             "agent1": "int64",
-            "tech_type": "<U6",
+            "tech_type": "object",
         },
     )
     assert DatasetSchema.from_ds(data) == expected_schema
@@ -534,7 +533,7 @@ def test_read_existing_trade(trade_model_path):
             "region": CoordinateSchema(("region",), dtype="object"),
         },
         dtype="int64",
-        name=None,
+        name="value",
     )
     assert DataArraySchema.from_da(data) == expected_schema
 
@@ -620,7 +619,7 @@ def test_read_timeslice_shares(correlation_model_path):
             "commodity": CoordinateSchema(("commodity",), dtype="object"),
         },
         dtype="float64",
-        name="shares",
+        name="value",
     )
     assert DataArraySchema.from_da(data) == expected_schema
 
