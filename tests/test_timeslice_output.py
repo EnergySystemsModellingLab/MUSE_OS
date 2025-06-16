@@ -2,6 +2,7 @@ from operator import ge, le
 from pathlib import Path
 
 import pandas as pd
+from conftest import chdir
 from pytest import mark, raises
 
 from muse import examples
@@ -44,7 +45,7 @@ def test_fullsim_timeslices(tmp_path, utilization_factors, process_names):
         tmp_path, sector, process_names, utilization_factors
     )
 
-    with tmp_path.as_cwd():
+    with chdir(tmp_path):
         MCA.factory(model_path / "settings.toml").run()
 
     mca_capacity = pd.read_csv(tmp_path / "Results/MCACapacity.csv")
@@ -81,7 +82,7 @@ def test_zero_utilization_factor_supply_timeslice(
         tmp_path, sector, process_names, utilization_factors
     )
 
-    with tmp_path.as_cwd():
+    with chdir(tmp_path):
         MCA.factory(model_path / "settings.toml").run()
 
     power_supply = pd.read_csv(tmp_path / "Results/Power_Supply.csv").reset_index()
@@ -104,5 +105,5 @@ def test_all_zero_fatal_error(tmp_path, utilization_factors, process_names):
         tmp_path, sector, process_names, utilization_factors
     )
 
-    with tmp_path.as_cwd(), raises(ValueError):
+    with chdir(tmp_path), raises(ValueError):
         MCA.factory(model_path / "settings.toml").run()

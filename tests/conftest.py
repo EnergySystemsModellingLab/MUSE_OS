@@ -1,5 +1,7 @@
+import os
 import random as rand
 from collections.abc import Mapping
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable
 from unittest.mock import patch
@@ -11,6 +13,16 @@ from xarray import DataArray, Dataset
 
 from muse.__main__ import patched_broadcast_compat_data
 from muse.agents import Agent
+
+
+@contextmanager
+def chdir(path):
+    prev_cwd = os.getcwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(prev_cwd)
 
 
 @fixture(autouse=True)

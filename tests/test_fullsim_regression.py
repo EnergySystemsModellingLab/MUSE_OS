@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from conftest import chdir
 from pytest import mark, xfail
 
 from muse.examples import AVAILABLE_EXAMPLES
@@ -23,7 +24,7 @@ def test_fullsim_regression(model, tmp_path, compare_dirs):
     model_path = copy_model(name=model, path=tmp_path)
 
     # main() will output to cwd
-    with tmp_path.as_cwd():
+    with chdir(tmp_path):
         MCA.factory(model_path / "settings.toml").run()
 
     compare_dirs(
@@ -69,7 +70,8 @@ def test_tutorial_regression(tutorial_path, tmp_path, compare_dirs):
     (tmp_path / "Results").rename(expected)
 
     # main() will output to cwd
-    with tmp_path.as_cwd():
+    # Change working directory to tmp_path
+    with chdir(tmp_path):
         MCA.factory(settings[0]).run()
 
     compare_dirs(

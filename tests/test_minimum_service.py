@@ -2,6 +2,7 @@ from itertools import permutations
 from unittest.mock import patch
 
 import numpy as np
+from conftest import chdir
 from pytest import mark
 
 
@@ -54,7 +55,7 @@ def test_minimum_service_factor(check_mock, tmp_path, minimum_service_factors):
         model_path / sector / "TechnodataTimeslices.csv", index=False
     )
 
-    with tmp_path.as_cwd():
+    with chdir(tmp_path):
         MCA.factory(model_path / "settings.toml").run()
     check_mock.assert_called()
 
