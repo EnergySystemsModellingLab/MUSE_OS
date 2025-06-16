@@ -217,7 +217,7 @@ def test_read_presets(model_path):
             "year": CoordinateSchema(("year",), dtype="int64"),
             "commodity": CoordinateSchema(("commodity",), dtype="object"),
             "region": CoordinateSchema(("region",), dtype="object"),
-            "timeslice": CoordinateSchema(("timeslice",), dtype="int8"), # TODO
+            "timeslice": CoordinateSchema(("timeslice",), dtype="int8"),  # TODO
         },
         dtype="float64",
         name=None,
@@ -249,7 +249,7 @@ def test_read_initial_market(model_path):
         dims={"region", "year", "commodity", "timeslice"},
         coords={
             "region": CoordinateSchema(("region",), dtype="object"),
-            "year": CoordinateSchema(("year",), dtype="int16"), # TODO: int64?
+            "year": CoordinateSchema(("year",), dtype="int16"),  # TODO: int64?
             "commodity": CoordinateSchema(("commodity",), dtype="object"),
             "units_prices": CoordinateSchema(("commodity",), dtype="object"),
             "timeslice": CoordinateSchema(("timeslice",), dtype="object"),
@@ -616,7 +616,7 @@ def test_read_timeslice_shares(correlation_model_path):
         dims={"region", "timeslice", "commodity"},
         coords={
             "region": CoordinateSchema(("region",), dtype="object"),
-            "timeslice": CoordinateSchema(("timeslice",), dtype="int8"), # TODO
+            "timeslice": CoordinateSchema(("timeslice",), dtype="int8"),  # TODO
             "commodity": CoordinateSchema(("commodity",), dtype="object"),
         },
         dtype="float64",
