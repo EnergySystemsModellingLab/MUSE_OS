@@ -469,7 +469,7 @@ def capacity(technologies: Dataset) -> DataArray:
 
 
 @fixture
-def settings(tmpdir) -> dict:
+def settings(tmp_path) -> dict:
     """Creates a dummy settings dictionary out of the default settings."""
     import toml
 
@@ -487,7 +487,7 @@ def settings(tmpdir) -> dict:
 
     settings = toml.load(DEFAULT_SETTINGS_PATH)
     drop_optionals(settings)
-    out = format_paths(settings, cwd=tmpdir, path=tmpdir, muse_sectors=tmpdir)
+    out = format_paths(settings, cwd=tmp_path, path=tmp_path, muse_sectors=tmp_path)
 
     required = {
         "time_framework": [2010, 2015, 2020],

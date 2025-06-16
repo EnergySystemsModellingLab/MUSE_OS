@@ -28,7 +28,7 @@ def modify_minimum_service_factors(
     permutations((np.linspace(0, 1, 6), [0] * 6)),
 )
 @patch("muse.readers.csv.check_utilization_and_minimum_service_factors")
-def test_minimum_service_factor(check_mock, tmpdir, minimum_service_factors):
+def test_minimum_service_factor(check_mock, tmp_path, minimum_service_factors):
     """NOTE: Failing due to incorrect supply output (#335)."""
     import pandas as pd
 
@@ -38,9 +38,9 @@ def test_minimum_service_factor(check_mock, tmpdir, minimum_service_factors):
     sector = "power"
     processes = ("gasCCGT", "windturbine")
 
-    # Copy the model inputs to tmpdir
+    # Copy the model inputs to tmp_path
     model_path = examples.copy_model(
-        name="default_timeslice", path=tmpdir, overwrite=True
+        name="default_timeslice", path=tmp_path, overwrite=True
     )
 
     technodata_timeslices = modify_minimum_service_factors(
@@ -54,14 +54,14 @@ def test_minimum_service_factor(check_mock, tmpdir, minimum_service_factors):
         model_path / sector / "TechnodataTimeslices.csv", index=False
     )
 
-    with tmpdir.as_cwd():
+    with tmp_path.as_cwd():
         MCA.factory(model_path / "settings.toml").run()
     check_mock.assert_called()
 
     techno_out = pd.read_csv(model_path / sector / "CommOut.csv")
-    capacity = pd.read_csv(tmpdir / "Results/MCACapacity.csv")
+    capacity = pd.read_csv(tmp_path / "Results/MCACapacity.csv")
     capacity_summed = capacity.groupby(["year", "technology"]).sum().reset_index()
-    supply = pd.read_csv(tmpdir / "Results/MCAMetric_Supply.csv")
+    supply = pd.read_csv(tmp_path / "Results/MCAMetric_Supply.csv")
     supply = supply[supply.commodity == "electricity"].merge(
         capacity_summed[["year", "technology", "capacity"]],
         on=["year", "technology"],

@@ -270,18 +270,18 @@ def test_format_path():
 
 
 @mark.parametrize("suffix", [".xlsx", ".csv", ".toml", ".py", ".xls", ".nc"])
-def test_suffix_path_formatting(suffix, tmpdir):
+def test_suffix_path_formatting(suffix, tmp_path):
     """Test path formatting with different file suffixes."""
     from muse.readers.toml import read_split_toml
 
     # Test path formatting
     settings = {"this": 0, "plugins": f"{{path}}/thisfile{suffix}"}
-    input_file = tmpdir.join("settings.toml")
+    input_file = tmp_path.join("settings.toml")
     with open(input_file, "w") as f:
         toml.dump(settings, f)
 
-    result = read_split_toml(input_file, path=str(tmpdir))
-    assert result["plugins"] == str(tmpdir / f"thisfile{suffix}")
+    result = read_split_toml(input_file, path=str(tmp_path))
+    assert result["plugins"] == str(tmp_path / f"thisfile{suffix}")
 
     # Test cwd formatting
     settings["plugins"] = [f"{{cwd}}/other/thisfile{suffix}"]

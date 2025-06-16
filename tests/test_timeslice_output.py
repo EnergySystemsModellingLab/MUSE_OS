@@ -9,14 +9,14 @@ from muse.mca import MCA
 
 
 def setup_test_environment(
-    tmpdir: Path,
+    tmp_path: Path,
     sector: str,
     process_names: tuple[str, str],
     utilization_factors: list[float],
 ) -> Path:
     """Set up test environment with modified technodata timeslices."""
     model_path = examples.copy_model(
-        name="default_timeslice", path=tmpdir, overwrite=True
+        name="default_timeslice", path=tmp_path, overwrite=True
     )
 
     # Read and modify technodata timeslices
@@ -38,16 +38,16 @@ PROCESS_PAIR = [("gasCCGT", "windturbine")]
 
 @mark.parametrize("utilization_factors", [([0.1], [1]), ([1], [0.1])])
 @mark.parametrize("process_names", PROCESS_PAIR)
-def test_fullsim_timeslices(tmpdir, utilization_factors, process_names):
+def test_fullsim_timeslices(tmp_path, utilization_factors, process_names):
     sector = "power"
     model_path = setup_test_environment(
-        tmpdir, sector, process_names, utilization_factors
+        tmp_path, sector, process_names, utilization_factors
     )
 
-    with tmpdir.as_cwd():
+    with tmp_path.as_cwd():
         MCA.factory(model_path / "settings.toml").run()
 
-    mca_capacity = pd.read_csv(tmpdir / "Results/MCACapacity.csv")
+    mca_capacity = pd.read_csv(tmp_path / "Results/MCACapacity.csv")
     operator = ge if utilization_factors[0] > utilization_factors[1] else le
 
     tech1_count = len(
@@ -74,17 +74,17 @@ def test_fullsim_timeslices(tmpdir, utilization_factors, process_names):
 )
 @mark.parametrize("process_names", PROCESS_PAIR)
 def test_zero_utilization_factor_supply_timeslice(
-    tmpdir, utilization_factors, process_names
+    tmp_path, utilization_factors, process_names
 ):
     sector = "power"
     model_path = setup_test_environment(
-        tmpdir, sector, process_names, utilization_factors
+        tmp_path, sector, process_names, utilization_factors
     )
 
-    with tmpdir.as_cwd():
+    with tmp_path.as_cwd():
         MCA.factory(model_path / "settings.toml").run()
 
-    power_supply = pd.read_csv(tmpdir / "Results/Power_Supply.csv").reset_index()
+    power_supply = pd.read_csv(tmp_path / "Results/Power_Supply.csv").reset_index()
     zero_utilization_indices = [
         i for i, factor in enumerate(utilization_factors) if factor == 0
     ]
@@ -98,11 +98,11 @@ def test_zero_utilization_factor_supply_timeslice(
 
 @mark.parametrize("utilization_factors", [([0], [1]), ([1], [0])])
 @mark.parametrize("process_names", PROCESS_PAIR)
-def test_all_zero_fatal_error(tmpdir, utilization_factors, process_names):
+def test_all_zero_fatal_error(tmp_path, utilization_factors, process_names):
     sector = "power"
     model_path = setup_test_environment(
-        tmpdir, sector, process_names, utilization_factors
+        tmp_path, sector, process_names, utilization_factors
     )
 
-    with tmpdir.as_cwd(), raises(ValueError):
+    with tmp_path.as_cwd(), raises(ValueError):
         MCA.factory(model_path / "settings.toml").run()
