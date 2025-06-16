@@ -178,6 +178,10 @@ def read_settings(settings_file: Path) -> Any:
         "ERROR - There must be at least 1 sector."
     )
 
+    # Timeslice information cannot be merged. Accept only information from one.
+    if "timeslices" in user_settings:
+        default_settings.pop("timeslices", None)
+
     # We update the default information with the user provided data
     settings = add_known_parameters(default_settings, user_settings)
     settings = add_unknown_parameters(settings, user_settings)
@@ -195,60 +199,75 @@ def read_settings(settings_file: Path) -> Any:
     return convert(settings)
 
 
-def add_known_parameters(dd, u, parent=None):
-    """Function for updating the settings dictionary recursively.
+def add_known_parameters(default_dict, user_dict, parent=None):
+    """Recursively merge user settings with default settings.
 
-    Those variables that take default values are logged.
+    Validates required parameters and handles optional ones.
+
+    Args:
+        default_dict: Dictionary containing default settings
+        user_dict: Dictionary containing user-provided settings
+        parent: Parent key for nested dictionaries (used for logging)
+
+    Returns:
+        Merged dictionary with validated settings
     """
+    from logging import getLogger
+
+    merged = deepcopy(default_dict)
     defaults_used = []
     missing = []
-    d = deepcopy(dd)
 
-    for k in dd:
-        # Known parameters with user-defined values
-        if k in u:
-            v = u[k]
-            if isinstance(v, Mapping):
-                new_parent = k
-                if parent is not None:
-                    new_parent = f"{parent}.{k}"
-                d[k] = add_known_parameters(d.get(k, {}), v, new_parent)
+    for key in default_dict:
+        if key in user_dict:
+            value = user_dict[key]
+            if isinstance(value, Mapping):
+                new_parent = f"{parent}.{key}" if parent else key
+                merged[key] = add_known_parameters(
+                    merged.get(key, {}), value, new_parent
+                )
             else:
-                d[k] = v
-        # Required parameters
-        elif isinstance(d[k], str) and d[k].lower() == "required":
-            missing.append(k)
-        # Optional parameters with default values
-        elif isinstance(d[k], str) and d[k].lower() == "optional":
-            d.pop(k)
-        elif parent is not None:
-            defaults_used.append(f"{parent}.{k}")
+                merged[key] = value
+        elif isinstance(merged[key], str):
+            if merged[key].lower() == "required":
+                missing.append(key)
+            elif merged[key].lower() == "optional":
+                merged.pop(key)
         else:
-            defaults_used.append(k)
+            defaults_used.append(f"{parent}.{key}" if parent else key)
 
-    msg = f"ERROR - Required parameters missing in input file: {missing}."
-    if len(missing) > 0:
-        raise MissingSettings(msg)
+    if missing:
+        raise MissingSettings(f"Required parameters missing in input file: {missing}")
 
-    msg = ", ".join(defaults_used)
-    msg = " Default input values used: " + msg
+    if defaults_used:
+        getLogger(__name__).info(
+            f"Default input values used: {', '.join(defaults_used)}"
+        )
 
-    if len(defaults_used) > 0:
-        getLogger(__name__).info(msg)
-
-    return d
+    return merged
 
 
-def add_unknown_parameters(dd, u):
-    """Function for adding new parameters not known in the defaults file."""
-    d = deepcopy(dd)
-    for k, v in u.items():
-        if isinstance(v, Mapping):
-            d[k] = add_unknown_parameters(d.get(k, {}), v)
+def add_unknown_parameters(default_dict, user_dict):
+    """Recursively merge user settings with default settings.
+
+    Preserves unknown parameters from user settings.
+
+    Args:
+        default_dict: Dictionary containing default settings
+        user_dict: Dictionary containing user-provided settings
+
+    Returns:
+        Merged dictionary containing both default and user settings
+    """
+    merged = deepcopy(default_dict)
+
+    for key, value in user_dict.items():
+        if isinstance(value, Mapping):
+            merged[key] = add_unknown_parameters(merged.get(key, {}), value)
         else:
-            d[k] = v
+            merged[key] = value
 
-    return d
+    return merged
 
 
 def validate_settings(settings: dict) -> None:
@@ -257,7 +276,6 @@ def validate_settings(settings: dict) -> None:
     getLogger(__name__).info(msg)
 
     check_plugins(settings)
-
     for check in SETTINGS_CHECKS:
         SETTINGS_CHECKS[check](settings)
 
