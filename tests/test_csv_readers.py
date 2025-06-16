@@ -215,9 +215,9 @@ def test_read_presets(model_path):
         dims={"year", "commodity", "region", "timeslice"},
         coords={
             "year": CoordinateSchema(("year",), dtype="int64"),
-            "commodity": CoordinateSchema(("commodity",), dtype="<U11"),
+            "commodity": CoordinateSchema(("commodity",), dtype="object"),
             "region": CoordinateSchema(("region",), dtype="object"),
-            "timeslice": CoordinateSchema(("timeslice",), dtype="int64"),
+            "timeslice": CoordinateSchema(("timeslice",), dtype="int8"), # TODO
         },
         dtype="float64",
         name=None,
@@ -689,7 +689,7 @@ def test_read_regression_parameters(correlation_model_path):
     expected_schema = DatasetSchema(
         dims={"sector", "region", "commodity"},
         coords={
-            "sector": CoordinateSchema(("sector",), dtype="<U11"),
+            "sector": CoordinateSchema(("sector",), dtype="object"),
             "region": CoordinateSchema(("region",), dtype="object"),
             "commodity": CoordinateSchema(("commodity",), dtype="object"),
         },
@@ -698,7 +698,7 @@ def test_read_regression_parameters(correlation_model_path):
             "constant": "float64",
             "GDPscaleLess": "float64",
             "GDPscaleGreater": "float64",
-            "function_type": "<U16",
+            "function_type": "object",
         },
     )
     assert DatasetSchema.from_ds(data) == expected_schema
@@ -713,8 +713,8 @@ def test_read_regression_parameters(correlation_model_path):
         },
     )
 
-    # Check function type
-    assert data.function_type.sel(sector="residential").item() == "logistic-sigmoid"
+    # Check function type TODO: may have to add this back
+    # assert data.function_type.sel(sector="residential").item() == "logistic-sigmoid"
 
     # Check values at a single coordinate
     coord = {"sector": "residential", "region": "r1", "commodity": "heat"}
@@ -723,6 +723,7 @@ def test_read_regression_parameters(correlation_model_path):
         "constant": 1.01039e-05,
         "GDPscaleLess": 753.1068725,
         "GDPscaleGreater": 672.9316672,
+        "function_type": "logistic-sigmoid",
     }
     assert_single_coordinate(data, coord, expected)
 
