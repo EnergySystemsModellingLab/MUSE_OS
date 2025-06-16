@@ -728,3 +728,66 @@ def test_read_regression_parameters(correlation_model_path):
         "GDPscaleGreater": 672.9316672,
     }
     assert_single_coordinate(data, coord, expected)
+
+
+def test_read_technologies(model_path):
+    from muse.readers.csv import read_technologies
+
+    data = read_technologies(
+        technodata_path_or_sector=model_path / "power" / "Technodata.csv",
+        comm_out_path=model_path / "power" / "CommOut.csv",
+        comm_in_path=model_path / "power" / "CommIn.csv",
+        commodities=model_path / "GlobalCommodities.csv",
+    )
+
+    # Check data against schema
+    expected_schema = DatasetSchema(
+        dims={"commodity", "technology", "region", "year"},
+        coords={
+            "technology": CoordinateSchema(dims=("technology",), dtype="object"),
+            "region": CoordinateSchema(dims=("region",), dtype="object"),
+            "year": CoordinateSchema(dims=("year",), dtype="int64"),
+            "commodity": CoordinateSchema(dims=("commodity",), dtype="object"),
+            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="object"),
+        },
+        data_vars={
+            "cap_par": "float64",
+            "cap_exp": "int64",
+            "fix_par": "int64",
+            "fix_exp": "int64",
+            "var_par": "int64",
+            "var_exp": "int64",
+            "max_capacity_addition": "int64",
+            "max_capacity_growth": "float64",
+            "total_capacity_limit": "int64",
+            "technical_life": "int64",
+            "utilization_factor": "float64",
+            "scaling_size": "float64",
+            "efficiency": "int64",
+            "interest_rate": "float64",
+            "type": "object",
+            "agent1": "int64",
+            "tech_type": "<U6",
+            "fixed_outputs": "float64",
+            "commodity_units": "object",
+            "fixed_inputs": "float64",
+            "flexible_inputs": "float64",
+            "comm_name": "object",
+            "emmission_factor": "float64",
+            "heat_rate": "int64",
+            "unit": "object",
+        },
+    )
+    assert DatasetSchema.from_ds(data) == expected_schema
+
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "commodity": ["electricity", "gas", "heat", "wind", "CO2f"],
+            "technology": ["gasCCGT", "windturbine"],
+            "region": ["R1"],
+            "year": [2020],
+            "comm_usage": [10, 9, 8, 6, 9],
+        },
+    )
