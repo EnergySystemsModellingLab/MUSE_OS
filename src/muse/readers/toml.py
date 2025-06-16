@@ -10,16 +10,13 @@ from collections.abc import Mapping, MutableMapping, Sequence
 from copy import deepcopy
 from logging import getLogger
 from pathlib import Path
-from typing import (
-    IO,
-    Any,
-)
+from typing import Any
 
 import numpy as np
 import xarray as xr
 
 from muse.decorators import SETTINGS_CHECKS, register_settings_check
-from muse.defaults import DATA_DIRECTORY, DEFAULT_SECTORS_DIRECTORY
+from muse.defaults import DATA_DIRECTORY
 
 DEFAULT_SETTINGS_PATH = DATA_DIRECTORY / "default_settings.toml"
 """Default settings path."""
@@ -75,8 +72,7 @@ def format_path(
     replacements: Mapping | None = None,
     path: str | Path | None = None,
     cwd: str | Path | None = None,
-    muse_sectors: str | None = None,
-):
+) -> Path:
     """Replaces known patterns in a path.
 
     Unknown patterns are left alone. This allows downstream object factories to format
@@ -88,24 +84,19 @@ def format_path(
         {
             **{
                 "cwd": Path("" if cwd is None else cwd).absolute(),
-                "muse_sectors": Path(
-                    DEFAULT_SECTORS_DIRECTORY if muse_sectors is None else muse_sectors
-                ).absolute(),
                 "path": Path("" if path is None else path).absolute(),
             },
             **({} if replacements is None else replacements),
         }
     )
     formatter = Formatter()
-    return str(Path(formatter.vformat(str(filepath), (), patterns)).absolute())
+    return Path(formatter.vformat(str(filepath), (), patterns)).absolute()
 
 
 def format_paths(
     settings: Mapping,
-    replacements: Mapping | None = None,
-    path: str | Path | None = None,
-    cwd: str | Path | None = None,
-    muse_sectors: str | None = None,
+    path: Path,
+    cwd: Path,
     suffixes: Sequence[str] = (".csv", ".nc", ".xls", ".xlsx", ".py", ".toml"),
 ):
     """Format paths passed to settings.
@@ -193,54 +184,24 @@ def format_paths(
         >>> str(Path().absolute() / "toot" / "suite" / "c") == a["nested"]["b_path"]
         True
     """
-    import re
-    from pathlib import Path
 
-    patterns = {
-        **{
-            "cwd": Path("" if cwd is None else cwd).absolute(),
-            "muse_sectors": Path(
-                DEFAULT_SECTORS_DIRECTORY if muse_sectors is None else muse_sectors
-            ).absolute(),
-            "path": Path("" if path is None else path).absolute(),
-        },
-        **({} if replacements is None else replacements),
-    }
+    def is_a_path(value):
+        return isinstance(value, str) and Path(value).suffix in suffixes
 
-    def format(path: str) -> str:
-        if path.lower() in ("optional", "required"):
-            return path
-        return format_path(path, **patterns)  # type: ignore
-
-    path_names = (
-        re.compile(r"_path$"),
-        re.compile("_dir$"),
-        re.compile("_file$"),
-        re.compile("filename"),
-    )
-
-    def is_a_path(key, value):
-        return any(re.search(x, key) is not None for x in path_names) or (
-            isinstance(value, str) and Path(value).suffix in suffixes
-        )
-
-    path = format(settings.get("path", str(patterns["path"])))
-    patterns["path"] = path  # type: ignore
-
+    # Recursively format paths
+    # TODO: tidy
     result = dict(**settings)
-    if "path" in settings:
-        result["path"] = path
     for key, value in result.items():
-        if is_a_path(key, value):
-            result[key] = format(value)
+        if is_a_path(value):
+            result[key] = format_path(value, path=path, cwd=cwd)
         elif isinstance(value, Mapping):
-            result[key] = format_paths(value, patterns, path)
+            result[key] = format_paths(settings=value, path=path, cwd=cwd)
         elif isinstance(value, list):
             result[key] = [
-                format_paths(item, patterns, path)
+                format_paths(settings=item, path=path, cwd=cwd)
                 if isinstance(item, Mapping)
-                else format_path(item, patterns, path)
-                if is_a_path("", item)
+                else format_path(item, path=path, cwd=cwd)
+                if is_a_path(item)
                 else item
                 for item in result[key]
             ]
@@ -248,10 +209,7 @@ def format_paths(
     return result
 
 
-def read_split_toml(
-    tomlfile: str | Path | IO[str] | Mapping,
-    path: str | Path | None = None,
-) -> MutableMapping:
+def read_split_toml(tomlfile: Path) -> MutableMapping:
     """Reads and consolidate TOML files.
 
     Our TOML accepts as input sections that are farmed off to other files:
@@ -307,44 +265,12 @@ def read_split_toml(
     """
     from toml import load
 
-    def splice_section(settings: Mapping):
-        settings = dict(**settings)
-
-        for key, section in settings.items():
-            if not isinstance(section, Mapping):
-                continue
-
-            if "include_path" in section and len(section) > 1:
-                raise IncorrectSettings(
-                    "Sections with an `include_path` option "
-                    "should contain only that option."
-                )
-            elif "include_path" in section:
-                inner = read_split_toml(section["include_path"], path=path)
-                if key not in inner:
-                    raise MissingSettings(
-                        f"Could not find section {key} in {section['include_path']}"
-                    )
-                if len(inner) != 1:
-                    raise IncorrectSettings(
-                        "More than one section found in included"
-                        f"file {section['include_path']}"
-                    )
-                settings[key] = inner[key]
-            else:
-                settings[key] = splice_section(section)
-
-        return settings
-
-    toml = tomlfile if isinstance(tomlfile, Mapping) else load(tomlfile)
-    settings = format_paths(toml, path=path)  # type: ignore
-    return splice_section(settings)
+    toml = load(tomlfile)
+    settings = format_paths(toml, path=tomlfile.parent, cwd=Path())
+    return settings
 
 
-def read_settings(
-    settings_file: str | Path | IO[str] | Mapping,
-    path: str | Path | None = None,
-) -> Any:
+def read_settings(settings_file: Path) -> Any:
     """Loads the input settings for any MUSE simulation.
 
     Loads a MUSE settings file. This must be a TOML formatted file. Missing settings are
@@ -354,7 +280,6 @@ def read_settings(
 
     Arguments:
         settings_file: A string or a Path to the settings file
-        path: A string or path to the settings folder
 
     Returns:
         A dictionary with the settings
@@ -364,27 +289,16 @@ def read_settings(
     getLogger(__name__).info("Reading MUSE settings")
 
     # The user data
-    if path is None and not isinstance(settings_file, (Mapping, IO)):
-        path = Path(settings_file).parent
-    elif path is None:
-        path = Path()
-    user_settings = read_split_toml(settings_file, path=path)
+    user_settings = read_split_toml(settings_file)
 
-    # User defined default settings
+    # Get default settings
     default_path = Path(user_settings.get("default_settings", DEFAULT_SETTINGS_PATH))
-
-    if not default_path.is_absolute():
-        default_path = path / default_path
-
-    default_settings = read_split_toml(default_path, path=path)
+    default_settings = read_split_toml(default_path)
 
     # Check that there is at least 1 sector.
-    msg = "ERROR - There must be at least 1 sector."
-    assert len(user_settings["sectors"]) >= 1, msg
-
-    # timeslice information cannot be merged. Accept only information from one.
-    if "timeslices" in user_settings:
-        default_settings.pop("timeslices", None)
+    assert len(user_settings["sectors"]) >= 1, (
+        "ERROR - There must be at least 1 sector."
+    )
 
     # We update the default information with the user provided data
     settings = add_known_parameters(default_settings, user_settings)
@@ -505,6 +419,17 @@ def check_plugins(settings: dict) -> None:
 
 
 @register_settings_check(vary_name=False)
+def standardise_case(settings: dict) -> None:
+    """Standardise certain fields to snake_case."""
+    from muse.readers import camel_to_snake
+
+    fields_to_standardise = ["excluded_commodities"]
+    for field in fields_to_standardise:
+        if field in settings:
+            settings[field] = [camel_to_snake(x) for x in settings[field]]
+
+
+@register_settings_check(vary_name=False)
 def check_log_level(settings: dict) -> None:
     """Check the log level required in the simulation."""
     valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -592,38 +517,6 @@ def check_iteration_control(settings: dict) -> None:
 
 
 @register_settings_check(vary_name=False)
-def check_global_data_files(settings: dict) -> None:
-    """Checks that the global user files exist."""
-    user_data = settings["global_input_files"]
-
-    if Path(user_data["path"]).is_absolute():
-        basedir = Path(user_data["path"])
-    else:
-        basedir = settings["root"] / Path(user_data["path"])
-
-    msg = f"ERROR Directory of global user files does not exist: {basedir}."
-    assert basedir.exists(), msg
-
-    # Update the path to the base directory
-    user_data["path"] = basedir
-
-    files = list(user_data.keys())
-    files.remove("path")
-    for m in files:
-        if user_data[m] == "":
-            user_data.pop(m)
-            continue
-        if Path(user_data[m]).is_absolute():
-            f = Path(user_data[m])
-        else:
-            f = basedir / user_data[m]
-        assert f.exists(), f"{m.title()} file does not exist ({f})"
-
-        # The path is updated so it can be readily used
-        user_data[m] = f
-
-
-@register_settings_check(vary_name=False)
 def check_sectors_files(settings: dict) -> None:
     """Checks that the sector files exist."""
     sectors = settings["sectors"]
@@ -683,7 +576,7 @@ def read_technodata(
         raise MissingSettings("Missing technodata section")
     technosettings = undo_damage(settings.technodata)
 
-    if isinstance(technosettings, str):
+    if isinstance(technosettings, (str, Path)):
         technosettings = dict(
             technodata=technosettings,
             technodata_timeslices=technodata_timeslices,
