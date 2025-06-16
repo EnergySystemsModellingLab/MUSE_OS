@@ -172,35 +172,6 @@ def create_xarray_dataset(
     return result
 
 
-def create_xarray_dataarray(
-    data: pd.DataFrame,
-    name: str | None = None,
-    coords: dict[str, Any] | None = None,
-    attrs: dict[str, Any] | None = None,
-) -> xr.DataArray:
-    """Creates an xarray DataArray from a DataFrame with standardized options.
-
-    Args:
-        data: DataFrame to convert
-        name: Optional name for the DataArray
-        coords: Optional coordinates to add
-        attrs: Optional attributes to add
-
-    Returns:
-        xarray DataArray
-    """
-    result = xr.DataArray(data)
-    if name:
-        result.name = name
-    if coords:
-        for key, value in coords.items():
-            result.coords[key] = value
-    if attrs:
-        for key, value in attrs.items():
-            result.attrs[key] = value
-    return result
-
-
 def camel_to_snake(name: str) -> str:
     """Transforms CamelCase to snake_case."""
     from re import sub
@@ -212,21 +183,6 @@ def camel_to_snake(name: str) -> str:
     result = result.replace("n2_o", "N2O")
     result = result.replace("f-gases", "F-gases")
     return result
-
-
-def to_numeric(x):
-    """Converts a value to numeric if possible.
-
-    Args:
-        x: The value to convert.
-
-    Returns:
-        The value converted to numeric if possible, otherwise the original value.
-    """
-    try:
-        return pd.to_numeric(x)
-    except ValueError:
-        return x
 
 
 def convert_column_types(data: pd.DataFrame) -> pd.DataFrame:
@@ -1029,7 +985,7 @@ def read_presets(paths: Path) -> xr.Dataset:
         raise OSError(f"No files found with paths {paths}")
 
     # Read all files
-    datas = {}
+    datas: dict[int, pd.DataFrame] = {}
     for path in allfiles:
         # Extract year from filename
         reyear = match(r"\S*.(\d{4})\S*\.csv", path.name)
@@ -1041,7 +997,7 @@ def read_presets(paths: Path) -> xr.Dataset:
 
         # Read data
         data = read_presets_csv(path)
-        data.year = year
+        data["year"] = year
         datas[year] = data
 
     # Process data
@@ -1069,9 +1025,7 @@ def read_presets_csv(path: Path) -> pd.DataFrame:
     return data
 
 
-def process_presets(
-    datas: dict[int, pd.DataFrame],
-) -> xr.Dataset:
+def process_presets(datas: dict[int, pd.DataFrame]) -> xr.Dataset:
     """Processes preset DataFrames into an xarray Dataset.
 
     Args:
@@ -1080,32 +1034,32 @@ def process_presets(
     Returns:
         xarray Dataset containing the processed preset data
     """
-    processed_datas = {}
-    for year, data in datas.items():
-        # Create multiindex
-        data = create_multiindex(
-            data,
-            index_columns=["region", "timeslice"],
-            index_names=["asset"],
-            drop_columns=True,
-        )
+    # Combine into a single DataFrame
+    data = pd.concat(datas.values())
 
-        # Set column names
-        data.columns.name = "commodity"
+    # Extract commodity columns
+    commodities = [
+        col for col in data.columns if col not in ["region", "year", "timeslice"]
+    ]
 
-        # Create DataArray
-        processed_datas[year] = create_xarray_dataarray(data)
-
-    # Combine into dataset
-    result = (
-        xr.Dataset(processed_datas)
-        .to_array(dim="year")
-        .sortby("year")
-        .fillna(0)
-        .unstack("asset")
+    # Convert commodity columns to long format (i.e. single "commodity" column)
+    data = data.melt(
+        id_vars=["region", "year", "timeslice"],
+        value_vars=commodities,
+        var_name="commodity",
+        value_name="value",
     )
 
-    return result
+    # Create multiindex for region, year, timeslice and commodity
+    data = create_multiindex(
+        data,
+        index_columns=["region", "year", "timeslice", "commodity"],
+        index_names=["region", "year", "timeslice", "commodity"],
+        drop_columns=True,
+    )
+
+    # Create DataArray
+    return create_xarray_dataset(data).value
 
 
 def read_trade_technodata(path: Path) -> xr.DataArray:
@@ -1326,16 +1280,12 @@ def process_macro_drivers(data: pd.DataFrame) -> xr.Dataset:
     return result
 
 
-def read_regression_parameters(
-    path: Path,
-) -> xr.Dataset:
+def read_regression_parameters(path: Path) -> xr.Dataset:
     df = read_regression_parameters_csv(path)
     return process_regression_parameters(df)
 
 
-def read_regression_parameters_csv(
-    path: Path,
-) -> pd.DataFrame:
+def read_regression_parameters_csv(path: Path) -> pd.DataFrame:
     """Reads the regression parameters from a standard MUSE csv file into a DataFrame.
 
     Args:
@@ -1352,51 +1302,43 @@ def read_regression_parameters_csv(
     return table
 
 
-def process_regression_parameters(table: pd.DataFrames) -> xr.Dataset:
+def process_regression_parameters(data: pd.DataFrame) -> xr.Dataset:
     """Processes regression parameters DataFrame into an xarray Dataset.
 
     Args:
-        table: DataFrame containing the regression parameters data
-        sector: Series of sector names
-        function_type: Series of function types
+        data: DataFrame containing the regression parameters data
 
     Returns:
         xarray Dataset containing the processed regression parameters
     """
-    # Set column names
-    table.columns.name = "commodity"
+    # Extract commodity columns
+    commodities = [
+        col
+        for col in data.columns
+        if col not in ["sector", "region", "function_type", "coeff"]
+    ]
 
-    # Create multiindex for sector and region
-    sector = table.sector
-    function_type = table.function_type
-
-    table = create_multiindex(
-        table.drop(["sector", "region", "function_type"], axis=1),
-        index_columns=["sector", "region"],
-        index_names=["sector", "region"],
-        drop_columns=True,
+    # Convert commodity columns to long format (i.e. single "commodity" column)
+    data = data.melt(
+        id_vars=["sector", "region", "function_type", "coeff"],
+        value_vars=commodities,
+        var_name="commodity",
+        value_name="value",
     )
 
-    # Create dataset with coefficients
-    coeffs = create_xarray_dataset(
-        {
-            k: xr.DataArray(table[table.coeff == k].drop("coeff", axis=1))
-            for k in table.coeff.unique()
-        }
+    # Pivot over coeff
+    data = data.pivot(
+        index=["sector", "region", "commodity", "function_type"],
+        columns="coeff",
+        values="value",
     )
 
-    # Unstack multiindex and fill missing values
-    coeffs = coeffs.unstack("dim_0").fillna(0)
+    # Remove function_type from multiindex
+    data = data.reset_index(level="function_type")
+    # TODO: function_type may have to have sector dimension only
 
-    # Add function type coordinate
-    function_type = list(zip(*set(zip(sector, function_type))))
-    coeffs["function_type"] = xr.DataArray(
-        list(function_type[1]),
-        dims=["sector"],
-        coords={"sector": list(function_type[0])},
-    )
-
-    return coeffs
+    # Convert to Dataset
+    return create_xarray_dataset(data)
 
 
 def check_utilization_and_minimum_service_factors(
