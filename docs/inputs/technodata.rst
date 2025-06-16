@@ -128,9 +128,6 @@ UtilizationFactor
 MinimumServiceFactor (optional, default = 0)
    Is the *minimum* output of the technology in a year, divided by the theoretical maximum output if the technology were operating at full capacity for the whole year. Must be between 0 and 1 and be smaller or equal than the `UtilizationFactor`. It is used to define the minimum service level that a technology must provide due to, typically, technical or efficiency constraints.
 
-ScalingSize (optional)
-   required when using the "capital_costs" agent objective. Represents the reference capacity at which capital costs are estimated when using this objective (see :ref:`inputs-agents`).
-
 efficiency (optional)
    represents the technology efficiency. Required when using the "efficiency" agent objective, which ranks investment options according to their energy or material efficiency (see :ref:`inputs-agents`).
 

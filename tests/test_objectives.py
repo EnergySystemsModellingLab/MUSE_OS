@@ -150,7 +150,6 @@ def test_fixed_costs(_technologies, _demand):
 def test_capital_costs(_technologies, _demand):
     from muse.objectives import capital_costs
 
-    _technologies["scaling_size"] = add_var(_technologies, "replacement")
     result = capital_costs(_technologies, _demand)
     assert set(result.dims) == {"replacement", "asset"}
 
