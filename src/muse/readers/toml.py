@@ -209,64 +209,14 @@ def format_paths(
     return result
 
 
-def read_split_toml(tomlfile: Path) -> MutableMapping:
-    """Reads and consolidate TOML files.
-
-    Our TOML accepts as input sections that are farmed off to other files:
-
-        [some_section]
-            include_path = "path/to/included.toml"
-
-        [another_section]
-            option_a = "a"
-
-    The section `some_section` should contain only one item, `include_path`, giving the
-    path to the toml file to include. This file is then spliced into the original toml.
-    It **must** repeat the section that it splices. Hence if `included.toml` looks like:
-
-        [some_section]
-            some_option = "b"
-
-            [some_section.inner_section]
-                other_option = "c"
-
-    Then the spliced toml would look like:
-
-        [some_section]
-            some_option = "b"
-
-            [some_section.inner_section]
-            other_option = "c"
-
-        [another_section]
-            option_a = "a"
-
-    `included.toml` must contain a single section (possibly with inner options).
-    Anything else will result in an error:
-
-    This is an error:
-
-        outer_option = "b"
-
-        [some_section]
-            some_option = "b"
-
-    This is also an error:
-
-        [some_section]
-            some_option = "b"
-
-        [some_other_section]
-            some_other_option = "c"
-
-    Arguments:
-        tomlfile: path to the toml file. Can be any input to `toml.load`.
-        path: Root path when formatting path options. See `format_paths`.
-    """
+def read_toml(tomlfile: Path, path: Path | None = None) -> MutableMapping:
+    """Reads a TOML file and formats the paths."""
     from toml import load
 
     toml = load(tomlfile)
-    settings = format_paths(toml, path=tomlfile.parent, cwd=Path())
+    if path is None:
+        path = tomlfile.parent
+    settings = format_paths(toml, path=path, cwd=Path())
     return settings
 
 
@@ -289,11 +239,11 @@ def read_settings(settings_file: Path) -> Any:
     getLogger(__name__).info("Reading MUSE settings")
 
     # The user data
-    user_settings = read_split_toml(settings_file)
+    user_settings = read_toml(settings_file)
 
     # Get default settings
     default_path = Path(user_settings.get("default_settings", DEFAULT_SETTINGS_PATH))
-    default_settings = read_split_toml(default_path)
+    default_settings = read_toml(default_path, path=settings_file.parent)
 
     # Check that there is at least 1 sector.
     assert len(user_settings["sectors"]) >= 1, (
