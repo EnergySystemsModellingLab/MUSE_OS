@@ -308,7 +308,6 @@ def read_technodictionary_csv(path: Path) -> pd.DataFrame:
         "fix_exp",
         "interest_rate",
         "utilization_factor",
-        "scaling_size",
         "year",
         "cap_par",
         "var_exp",
@@ -330,6 +329,12 @@ def read_technodictionary_csv(path: Path) -> pd.DataFrame:
         msg = (
             f"The 'EndUse' column in {path} has been deprecated. "
             "This information is now determined from CommOut files. "
+            "Please remove this column from your Technodata files."
+        )
+        getLogger(__name__).warning(msg)
+    if "scaling_size" in data.columns:
+        msg = (
+            f"The 'ScalingSize' column in {path} has been deprecated. "
             "Please remove this column from your Technodata files."
         )
         getLogger(__name__).warning(msg)
