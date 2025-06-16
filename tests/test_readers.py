@@ -114,19 +114,52 @@ def test_check_iteration_control(settings: dict):
         check_iteration_control(settings)
 
 
-def test_format_path():
-    """Test path formatting with different variables."""
-    from muse.readers.toml import format_path
+def test_format_paths(tmp_path):
+    """Test format_paths with various settings structures."""
+    from muse.readers.toml import format_paths
 
-    test_paths = {
-        "cwd": "current_path",
-        "path": "this_path",
+    # Flat dict with path-like values
+    settings = {
+        "input_file": "{path}/data.csv",
+        "script": "{cwd}/run.py",
+        "not_a_path": "foo.txt",
+        "filename": "{cwd}/special",
     }
+    path = tmp_path
+    cwd = tmp_path.parent
+    result = format_paths(settings, path=path, cwd=cwd)
+    assert result["input_file"] == (path / "data.csv").absolute()
+    assert result["script"] == (cwd / "run.py").absolute()
+    assert result["not_a_path"] == "foo.txt"
+    assert result["filename"] == (cwd / "special").absolute()
 
-    for var, value in test_paths.items():
-        expected = Path(value).absolute() / "{other_param}"
-        result = format_path(f"{{{var}}}/{{other_param}}", **{var: value})
-        assert result == expected
+    # Nested dict
+    settings = {
+        "level1": {
+            "input_file": "{path}/nested.csv",
+            "filename": "{cwd}/nested.py",
+        },
+        "other": 123,
+    }
+    result = format_paths(settings, path=path, cwd=cwd)
+    assert result["level1"]["input_file"] == (path / "nested.csv").absolute()
+    assert result["level1"]["filename"] == (cwd / "nested.py").absolute()
+    assert result["other"] == 123
+
+    # List of paths and non-paths
+    settings = {
+        "files": [
+            "{path}/a.csv",
+            "{cwd}/b.py",
+            "not_a_path",
+            {"input_file": "{cwd}/c.nc"},
+        ]
+    }
+    result = format_paths(settings, path=path, cwd=cwd)
+    assert result["files"][0] == (path / "a.csv").absolute()
+    assert result["files"][1] == (cwd / "b.py").absolute()
+    assert result["files"][2] == "not_a_path"
+    assert result["files"][3]["input_file"] == (cwd / "c.nc").absolute()
 
 
 @mark.parametrize("suffix", [".xlsx", ".csv", ".toml", ".py", ".xls", ".nc"])
@@ -148,7 +181,7 @@ def test_suffix_path_formatting(suffix, tmp_path):
 
     result = read_toml(input_file, path="hello")
     assert result["plugins"][0].resolve() == (
-        (Path() / "other" / f"thisfile{suffix}").resolve()
+        (Path.cwd() / "other" / f"thisfile{suffix}").resolve()
     )
 
 

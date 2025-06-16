@@ -113,12 +113,11 @@ def format_paths(
     """
 
     def is_a_path(key, value):
-        return (isinstance(value, (str, Path)) and Path(value).suffix in suffixes) or (
-            key == "filename"
-        )
+        return (
+            isinstance(value, (str, Path)) and Path(value).suffix in suffixes
+        ) or key == "filename"
 
     # Recursively format paths
-    # TODO: tidy
     result = dict(**settings)
     for key, value in result.items():
         if is_a_path(key, value):
