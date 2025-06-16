@@ -241,6 +241,8 @@ def read_csv(
     if msg:
         getLogger(__name__).info(msg)
 
+    assert isinstance(path, (Path, pd.DataFrame)), "Only accepts Path or DataFrame"
+
     # If a Path is passed, read the file
     if isinstance(path, Path):
         # Check if file exists
@@ -529,11 +531,11 @@ def read_technologies(
     getLogger(__name__).info(msg)
 
     # Read all data
-    technodata = read_technodictionary_csv(technodata_path)
-    comm_out = read_io_technodata_csv(comm_out_path)
-    comm_in = read_io_technodata_csv(comm_in_path)
+    technodata = read_technodictionary(technodata_path)
+    comm_out = read_io_technodata(comm_out_path)
+    comm_in = read_io_technodata(comm_in_path)
     technodata_timeslices = (
-        read_technodata_timeslices_csv(technodata_timeslices_path)
+        read_technodata_timeslices(technodata_timeslices_path)
         if technodata_timeslices_path
         else None
     )
