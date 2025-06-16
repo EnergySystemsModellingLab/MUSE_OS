@@ -538,7 +538,10 @@ def read_technodata(
     interpolation_mode: str = "linear",
 ) -> xr.Dataset:
     """Helper function to create technodata for a given sector."""
-    from muse.readers.csv import read_technologies, read_trade
+    from muse.readers.csv import read_global_commodities, read_technologies
+
+    commodities = settings.global_input_files.global_commodities
+    commodities = read_global_commodities(commodities)
 
     if time_framework is None:
         time_framework = getattr(settings, "time_framework", [2010, 2050])
@@ -581,32 +584,33 @@ def read_technodata(
             raise IncorrectSettings(f"File {filename} is not a file.")
 
     technologies = read_technologies(
-        technodata_path_or_sector=Path(technosettings.pop("technodata")),
+        technodata_path=Path(technosettings.pop("technodata")),
         technodata_timeslices_path=technosettings.pop("technodata_timeslices", None),
         comm_out_path=Path(technosettings.pop("commodities_out")),
         comm_in_path=Path(technosettings.pop("commodities_in")),
+        commodities=commodities,
     ).sel(region=regions)
 
     ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
     outs = (technologies.fixed_outputs > 0).any(("year", "region", "technology"))
     techcomms = technologies.commodity[ins | outs]
     technologies = technologies.sel(commodity=techcomms)
-    for name, value in technosettings.items():
-        if isinstance(name, (str, Path)):
-            data = read_trade(value, drop="Unit")
-            if "region" in data.dims:
-                data = data.sel(region=regions)
-            if "dst_region" in data.dims:
-                data = data.sel(dst_region=regions)
-                if data.dst_region.size == 1:
-                    data = data.squeeze("dst_region", drop=True)
+    # for name, value in technosettings.items():
+    #     if isinstance(name, (str, Path)):
+    #         data = read_trade(value, drop="Unit")
+    #         if "region" in data.dims:
+    #             data = data.sel(region=regions)
+    #         if "dst_region" in data.dims:
+    #             data = data.sel(dst_region=regions)
+    #             if data.dst_region.size == 1:
+    #                 data = data.squeeze("dst_region", drop=True)
 
-        else:
-            data = value
-        if isinstance(data, xr.Dataset):
-            technologies = technologies.merge(data)
-        else:
-            technologies[name] = data
+    #     else:
+    #         data = value
+    #     if isinstance(data, xr.Dataset):
+    #         technologies = technologies.merge(data)
+    #     else:
+    #         technologies[name] = data
 
     # make sure technologies includes the requisite years
     maxyear = max(time_framework)

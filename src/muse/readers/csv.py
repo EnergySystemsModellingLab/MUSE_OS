@@ -517,6 +517,7 @@ def read_technologies(
     technodata_path: Path,
     comm_out_path: Path,
     comm_in_path: Path,
+    commodities: xr.Dataset,
     technodata_timeslices_path: Path | None = None,
 ) -> xr.Dataset:
     # Log message
@@ -541,7 +542,9 @@ def read_technologies(
     )
 
     # Assemble xarray Dataset
-    return process_technologies(technodata, comm_out, comm_in, technodata_timeslices)
+    return process_technologies(
+        technodata, comm_out, comm_in, technodata_timeslices, commodities
+    )
 
 
 def process_technologies(
@@ -549,6 +552,7 @@ def process_technologies(
     comm_out: xr.Dataset,
     comm_in: xr.Dataset,
     technodata_timeslices: xr.Dataset | None = None,
+    commodities: xr.Dataset = None,
 ) -> xr.Dataset:
     """Processes technology data DataFrames into an xarray Dataset.
 
@@ -557,6 +561,7 @@ def process_technologies(
         comm_out: xarray Dataset containing output commodities
         comm_in: xarray Dataset containing input commodities
         technodata_timeslices: Optional xarray Dataset containing technodata timeslices
+        commodities: xarray Dataset containing commodities
 
     Returns:
         xarray Dataset containing the processed technology data
@@ -591,12 +596,22 @@ def process_technologies(
         technodata = technodata.drop_vars("utilization_factor")
         technodata = technodata.merge(technodata_timeslices)
 
+    # Add info about commodities
+    if isinstance(commodities, xr.Dataset):
+        if technodata.commodity.isin(commodities.commodity).all():
+            technodata = technodata.merge(
+                commodities.sel(commodity=technodata.commodity)
+            )
+        else:
+            raise OSError("Commodities not found in global commodities file")
+
     # Add commodity usage flags
     technodata["comm_usage"] = (
         "commodity",
         CommodityUsage.from_technologies(technodata).values,
     )
     technodata = technodata.set_coords("comm_usage")
+    technodata = technodata.drop_vars("comm_type")
 
     # TODO: Check UF and MSF
 
