@@ -112,14 +112,16 @@ def format_paths(
         suffixes: Suffixes used to identify strings as paths
     """
 
-    def is_a_path(value):
-        return isinstance(value, (str, Path)) and Path(value).suffix in suffixes
+    def is_a_path(key, value):
+        return (isinstance(value, (str, Path)) and Path(value).suffix in suffixes) or (
+            key == "filename"
+        )
 
     # Recursively format paths
     # TODO: tidy
     result = dict(**settings)
     for key, value in result.items():
-        if is_a_path(value):
+        if is_a_path(key, value):
             result[key] = format_path(value, path=path, cwd=cwd)
         elif isinstance(value, Mapping):
             result[key] = format_paths(settings=value, path=path, cwd=cwd)
@@ -128,7 +130,7 @@ def format_paths(
                 format_paths(settings=item, path=path, cwd=cwd)
                 if isinstance(item, Mapping)
                 else format_path(item, path=path, cwd=cwd)
-                if is_a_path(item)
+                if is_a_path(key, item)
                 else item
                 for item in result[key]
             ]
