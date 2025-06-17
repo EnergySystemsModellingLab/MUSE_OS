@@ -19,7 +19,7 @@ def create_standard_agent(
     region: str,
     share: str | None = None,
     **kwargs,
-):
+) -> Agent:
     """Creates standard (noninvesting) agent from muse primitives."""
     from muse.filters import factory as filter_factory
 
@@ -50,12 +50,13 @@ def create_retrofit_agent(
     region: str,
     decision: Callable | str | Mapping = "mean",
     **kwargs,
-):
+) -> InvestingAgent:
     """Creates retrofit agent from muse primitives."""
     from logging import getLogger
 
     from muse.filters import factory as filter_factory
 
+    # TODO: move this check to the input layer
     if not callable(decision):
         name = decision if isinstance(decision, str) else decision["name"]
         unusual = {"lexo", "lexical_comparison", "epsilon_constaints", "epsilon"}
@@ -71,7 +72,6 @@ def create_retrofit_agent(
     kwargs = _standardize_investing_inputs(decision=decision, **kwargs)
 
     search_rules = kwargs.pop("search_rules")
-
     if len(search_rules) < 2 or search_rules[-2] != "with_asset_technology":
         search_rules.insert(-1, "with_asset_technology")
 
@@ -95,7 +95,7 @@ def create_newcapa_agent(
     housekeeping: str | Mapping | Callable = "clean",
     retrofit_present: bool = True,
     **kwargs,
-):
+) -> InvestingAgent:
     """Creates newcapa agent from muse primitives.
 
     If there are no retrofit agents present in the sector, then the newcapa agent need
@@ -140,9 +140,8 @@ def create_newcapa_agent(
         for name in kwargs.pop("search_rules")
     ]
 
-    if not retrofit_present:
-        if "with_asset_technology" not in search_rules:
-            search_rules.insert(-1, "with_asset_technology")
+    if not retrofit_present and "with_asset_technology" not in search_rules:
+        search_rules.insert(-1, "with_asset_technology")
 
     result = InvestingAgent(
         assets=assets,
@@ -175,20 +174,7 @@ def agents_factory(
     year: int | None = None,
     **kwargs,
 ) -> list[Agent]:
-    """Creates a list of agents for the chosen sector.
-
-    Args:
-        params_or_path: Path to agent parameters file (string or Path) or list of
-            parameters
-        capacity: Capacity data array
-        technologies: Technologies dataset
-        regions: Optional sequence of regions to filter by
-        year: Optional year to use
-        **kwargs: Additional keyword arguments
-
-    Returns:
-        List of Agent objects
-    """
+    """Creates a list of agents for the chosen sector."""
     from copy import deepcopy
     from logging import getLogger
 
@@ -208,12 +194,12 @@ def agents_factory(
         capacity = capacity.sel(dst_region=regions)
         if capacity.dst_region.size == 1:
             capacity = capacity.squeeze("dst_region", drop=True)
+
+    # Check if retrofit agents are present
+    retrofit_present = any(param["agent_type"] == "retrofit" for param in params)
     result = []
 
-    retrofit_present = False
-    for param in params:
-        retrofit_present = retrofit_present or param["agent_type"] == "retrofit"
-
+    # Create agents for each parameter set
     for param in params:
         if regions is not None and param["region"] not in regions:
             continue
@@ -284,6 +270,7 @@ def _standardize_inputs(
     decision: Callable | str | Mapping = "mean",
     **kwargs,
 ):
+    """Standardize common inputs for all agents."""
     from muse.decisions import factory as decision_factory
     from muse.hooks import asset_merge_factory, housekeeping_factory
     from muse.objectives import factory as objectives_factory
@@ -310,20 +297,36 @@ def _standardize_investing_inputs(
     constraints: Callable | str | Mapping | Sequence[str | Mapping] | None = None,
     **kwargs,
 ) -> dict[str, Any]:
+    """Standardize inputs for investing agents."""
     from muse.constraints import factory as constraints_factory
     from muse.investments import factory as investment_factory
 
+    # First standardize base inputs
     kwargs = _standardize_inputs(**kwargs)
+
+    # Process search rules
     if search_rules is None:
-        search_rules = list()
-    if isinstance(search_rules, str):
-        search_rules = [u.strip() for u in search_rules.split("->")]
+        search_rules = []
+    elif isinstance(search_rules, str):
+        search_rules = [rule.strip() for rule in search_rules.split("->")]
+
     search_rules = list(search_rules)
-    if len(search_rules) == 0 or search_rules[-1] != "compress":
+    if not search_rules or search_rules[-1] != "compress":
         search_rules.append("compress")
-    kwargs["search_rules"] = search_rules
+
+    # Process investment and constraints
     if not callable(investment):
-        kwargs["investment"] = investment_factory(investment)
+        investment = investment_factory(investment)
     if not callable(constraints):
-        kwargs["constraints"] = constraints_factory(constraints)
+        constraints = constraints_factory(constraints)
+
+    # Update kwargs with processed values
+    kwargs.update(
+        {
+            "search_rules": search_rules,
+            "investment": investment,
+            "constraints": constraints,
+        }
+    )
+
     return kwargs
