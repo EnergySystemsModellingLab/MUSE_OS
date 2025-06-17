@@ -478,6 +478,61 @@ def sort_sectors(settings: dict) -> None:
     settings["sectors"] = sectors
 
 
+@register_settings_hook
+def check_deprecated_params(settings: dict) -> None:
+    """Check for and warn about deprecated parameters."""
+    deprecated_params = ["foresight", "interest_rate"]
+    for param in deprecated_params:
+        if param in settings:
+            msg = (
+                f"The `{param}` parameter has been deprecated. "
+                "Please remove it from your settings file."
+            )
+            getLogger(__name__).warning(msg)
+            settings.pop(param)
+
+
+@register_settings_hook(priority=10)
+def check_subsector_settings(settings: dict) -> None:
+    """Check for invalid or deprecated subsector settings.
+
+    Validates:
+    - Renamed asset_threshhold parameter (PR #447)
+    - Missing lpsolver parameter (PR #587)
+    - Deprecated forecast parameter (PR #645)
+    """
+    from logging import getLogger
+
+    # Check each sector's subsectors
+    for sector_name, sector in settings["sectors"].items():
+        if "subsectors" not in sector:
+            continue
+
+        for subsector_name, subsector in sector["subsectors"].items():
+            # Check for renamed asset_threshhold parameter
+            if "asset_threshhold" in subsector:
+                msg = (
+                    "Invalid parameter asset_threshhold. Did you mean asset_threshold?"
+                )
+                raise ValueError(msg)
+
+            # Check for missing lpsolver
+            if "lpsolver" not in subsector:
+                msg = (
+                    f"lpsolver not specified for subsector '{subsector_name}' "
+                    "in sector '{sector_name}'. Defaulting to 'scipy'"
+                )
+                getLogger(__name__).warning(msg)
+
+            # Check for deprecated forecast parameter
+            if "forecast" in subsector:
+                msg = (
+                    "The 'forecast' parameter has been deprecated. "
+                    "Please remove from your settings file."
+                )
+                getLogger(__name__).warning(msg)
+
+
 def read_technodata(
     settings: Any,
     sector_name: str | None = None,

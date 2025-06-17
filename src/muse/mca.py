@@ -42,14 +42,16 @@ class MCA:
         from muse.readers import read_settings
         from muse.readers.toml import convert
 
+        # Read settings
         if isinstance(settings, str):
             settings = Path(settings)
         if isinstance(settings, Path):
-            settings = read_settings(settings)  # type: ignore
+            settings = read_settings(settings)
         elif isinstance(settings, Mapping):
             settings = convert(settings)
         settings = cast(Any, settings)
-        # We create the initial market
+
+        # Create the initial market
         market = (
             read_initial_market(
                 settings.global_input_files.projections,
@@ -63,22 +65,23 @@ class MCA:
             .sel(region=settings.regions)
             .interp(year=settings.time_framework, method=settings.interpolation_mode)
         )
-
         market["supply"] = drop_timeslice(zeros_like(market.exports))
         market["consumption"] = drop_timeslice(zeros_like(market.exports))
 
-        # We create the sectors
+        # Create the sectors
         sectors = []
         for sector in settings.sectors.list:
             kind = getattr(settings.sectors, sector).type
             sectors.append(SECTORS_REGISTERED[kind](sector, settings))
             getLogger(__name__).info(f"Created sector {sector}")
 
+        # Create the outputs
         outputs = ofactory(*getattr(settings, "outputs", []))
         outputs_cache = OutputCache(
             *getattr(settings, "outputs_cache", []), sectors=sectors
         )
 
+        # Global settings for MCA
         extras = {
             "regions",
             "log_level",
@@ -95,17 +98,7 @@ class MCA:
             if not hasattr(v, "_asdict") and k not in extras
         }
 
-        # Legacy: warn user about deprecated parameters (#641, #679)
-        deprecated_params = ["foresight", "interest_rate"]
-        for param in deprecated_params:
-            if param in global_kw:
-                msg = (
-                    f"The `{param}` parameter has been deprecated. "
-                    "Please remove it from your settings file."
-                )
-                getLogger(__name__).warning(msg)
-                global_kw.pop(param)
-
+        # Carbon budget settings
         carbon_kw = {
             k: v._asdict() if hasattr(v, "_asdict") else v
             for k, v in settings.carbon_budget_control._asdict().items()
@@ -113,11 +106,13 @@ class MCA:
         for key in {"budget", "commodities", "method"}:
             if key in carbon_kw:
                 carbon_kw[f"carbon_{key}"] = carbon_kw.pop(key)
+
+        # Create the MCA
         return cls(
             sectors=sectors,
             market=market,
-            outputs=outputs,  # type: ignore
-            outputs_cache=outputs_cache,  # type: ignore
+            outputs=outputs,
+            outputs_cache=outputs_cache,
             **global_kw,
             **carbon_kw,
         )
