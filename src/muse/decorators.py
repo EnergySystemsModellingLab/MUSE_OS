@@ -1,37 +1,39 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
 from logging import getLogger
 from typing import Callable
 
-from muse.registration import registrator
-
-SETTINGS_CHECKS_SIGNATURE = Callable[[dict], None]
+SETTINGS_HOOKS_SIGNATURE = Callable[[dict], None]
 """settings checks signature."""
 
-SETTINGS_CHECKS: Mapping[str, SETTINGS_CHECKS_SIGNATURE] = {}
+SETTINGS_HOOKS: list[tuple[int, str, SETTINGS_HOOKS_SIGNATURE]] = []
 """Dictionary of settings checks."""
 
 
-@registrator(registry=SETTINGS_CHECKS, loglevel="info")
-def register_settings_check(function: SETTINGS_CHECKS_SIGNATURE):
-    """Decorator to register a function as a settings check.
+def register_settings_hook(
+    function: SETTINGS_HOOKS_SIGNATURE = None, *, priority: int = 100
+) -> Callable:
+    """Register a function to be called during settings validation.
 
-    Registers a function as a settings check so that it can be applied easily
-    when validating the MUSE input settings.
+    The function will be called with the settings dictionary as its only argument.
+    The function can modify the settings dictionary in place.
 
-    There is no restriction on the function name, although is should be
-    in lower_snake_case, as it is a python function.
+    Args:
+        function: The function to register
+        priority: The priority of the function. Lower numbers are called first.
+
+    Returns:
+        The decorated function
     """
-    from functools import wraps
+    if function is None:
+        return lambda f: register_settings_hook(f, priority=priority)
 
-    @wraps(function)
-    def decorated(settings) -> None:
-        result = function(settings)
+    def decorated(func: SETTINGS_HOOKS_SIGNATURE) -> SETTINGS_HOOKS_SIGNATURE:
+        """Register the function and return it unchanged."""
+        getLogger(__name__).debug(
+            f"Registering settings hook {func.__name__} with priority {priority}"
+        )
+        SETTINGS_HOOKS.append((priority, func.__name__, decorated))
+        return func
 
-        msg = f" {function.__name__} PASSED"
-        getLogger(__name__).info(msg)
-
-        return result
-
-    return decorated
+    return decorated(function)

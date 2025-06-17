@@ -15,7 +15,7 @@ from typing import Any
 import numpy as np
 import xarray as xr
 
-from muse.decorators import SETTINGS_CHECKS, register_settings_check
+from muse.decorators import SETTINGS_HOOKS, register_settings_hook
 from muse.defaults import DATA_DIRECTORY
 
 DEFAULT_SETTINGS_PATH = DATA_DIRECTORY / "default_settings.toml"
@@ -164,8 +164,8 @@ def read_settings(settings_file: str | Path) -> namedtuple:
 
     Loads a MUSE settings file. This must be a TOML formatted file. Missing settings are
     loaded from the DEFAULT_SETTINGS. Custom Python modules, if present, are loaded
-    and checks are run to validate the settings and ensure that they are compatible with
-    a MUSE simulation.
+    and hooks are run to process and validate the settings and ensure that they are
+    compatible with a MUSE simulation.
 
     Arguments:
         settings_file: A string or a Path to the settings file
@@ -173,8 +173,6 @@ def read_settings(settings_file: str | Path) -> namedtuple:
     Returns:
         A dictionary with the settings
     """
-    from muse.timeslices import setup_module
-
     getLogger(__name__).info("Reading MUSE settings")
     settings_file = Path(settings_file)
 
@@ -185,11 +183,6 @@ def read_settings(settings_file: str | Path) -> namedtuple:
     default_path = Path(user_settings.get("default_settings", DEFAULT_SETTINGS_PATH))
     default_settings = read_toml(default_path, path=settings_file.parent)
 
-    # Check that there is at least 1 sector.
-    assert len(user_settings["sectors"]) >= 1, (
-        "ERROR - There must be at least 1 sector."
-    )
-
     # Timeslice information cannot be merged. Accept only information from one.
     if "timeslices" in user_settings:
         default_settings.pop("timeslices", None)
@@ -198,16 +191,8 @@ def read_settings(settings_file: str | Path) -> namedtuple:
     settings = add_known_parameters(default_settings, user_settings)
     settings = add_unknown_parameters(settings, user_settings)
 
-    # Set up timeslices
-    setup_module(settings)
-    settings.pop("timeslices", None)
-
-    # Set up time framework
-    settings["time_framework"] = np.array(sorted(settings["time_framework"]), dtype=int)
-
-    # Finally, we run some checks to make sure all makes sense and files exist.
-    validate_settings(settings)
-
+    # Finally, we run some hooks to make sure all makes sense and files exist.
+    process_settings(settings)
     return convert(settings)
 
 
@@ -282,14 +267,19 @@ def add_unknown_parameters(default_dict, user_dict) -> dict:
     return merged
 
 
-def validate_settings(settings: dict) -> None:
-    """Run the checks on the settings file."""
-    msg = " Validating input settings..."
+def process_settings(settings: dict) -> None:
+    """Run the hooks on the settings file."""
+    msg = " Processing input settings..."
     getLogger(__name__).info(msg)
 
+    # Load extra hooks from plugins
     check_plugins(settings)
-    for check in SETTINGS_CHECKS:
-        SETTINGS_CHECKS[check](settings)
+    # This must be run before the other hooks to ensure that custom defined settings
+    # hooks are all loaded before validating the settings.
+
+    # Run hooks in order of priority
+    for _, _, hook in sorted(SETTINGS_HOOKS, key=lambda x: x[0]):
+        hook(settings)
 
 
 def check_plugins(settings: dict) -> None:
@@ -318,7 +308,28 @@ def check_plugins(settings: dict) -> None:
         getLogger(__name__).info(f"Loaded plugin {plugin_path.stem} from {plugin_path}")
 
 
-@register_settings_check(vary_name=False)
+@register_settings_hook(priority=1)
+def check_sectors(settings: dict) -> None:
+    """Check that there is at least 1 sector."""
+    assert len(settings["sectors"]) >= 1, "ERROR - There must be at least 1 sector."
+
+
+@register_settings_hook(priority=1)
+def setup_timeslices(settings: dict) -> None:
+    """Set up the timeslices."""
+    from muse.timeslices import setup_module
+
+    setup_module(settings)
+    settings.pop("timeslices", None)
+
+
+@register_settings_hook(priority=1)
+def setup_time_framework(settings: dict) -> None:
+    """Set up the time framework."""
+    settings["time_framework"] = np.array(sorted(settings["time_framework"]), dtype=int)
+
+
+@register_settings_hook(priority=1)
 def standardise_case(settings: dict) -> None:
     """Standardise certain fields to snake_case."""
     from muse.readers import camel_to_snake
@@ -329,7 +340,7 @@ def standardise_case(settings: dict) -> None:
             settings[field] = [camel_to_snake(x) for x in settings[field]]
 
 
-@register_settings_check(vary_name=False)
+@register_settings_hook()
 def check_log_level(settings: dict) -> None:
     """Check the log level required in the simulation."""
     valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -339,7 +350,7 @@ def check_log_level(settings: dict) -> None:
     settings["log_level"] = settings["log_level"].upper()
 
 
-@register_settings_check(vary_name=False)
+@register_settings_hook()
 def check_interpolation_mode(settings: dict) -> None:
     """Just updates the interpolation mode to a bool.
 
@@ -371,7 +382,7 @@ def check_interpolation_mode(settings: dict) -> None:
         settings["interpolation_mode"] = "linear"
 
 
-@register_settings_check(vary_name=False)
+@register_settings_hook()
 def check_budget_parameters(settings: dict) -> None:
     """Check the parameters that are required if carbon_budget > 0."""
     budget = settings["carbon_budget_control"]["budget"]
@@ -390,7 +401,7 @@ def check_budget_parameters(settings: dict) -> None:
     )
 
 
-@register_settings_check(vary_name=False)
+@register_settings_hook()
 def check_iteration_control(settings: dict) -> None:
     """Check and set iteration control parameters for equilibrium and convergence."""
     equilibrium = str(settings["equilibrium"]).lower()
@@ -406,7 +417,7 @@ def check_iteration_control(settings: dict) -> None:
         raise ValueError("ERROR - The convergence tolerance must be a positive number.")
 
 
-@register_settings_check(vary_name=False)
+@register_settings_hook()
 def sort_sectors(settings: dict) -> None:
     """Set the priorities of the sectors."""
     sectors = settings["sectors"]
