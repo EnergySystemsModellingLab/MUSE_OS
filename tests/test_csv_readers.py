@@ -467,7 +467,7 @@ def test_read_initial_capacity(model_path):
             "installed": CoordinateSchema(("asset",), dtype="int64"),
             "year": CoordinateSchema(("year",), dtype="int64"),
         },
-        dtype="int64",
+        dtype="float64",
         name="value",
     )
     assert DataArraySchema.from_da(data) == expected_schema
@@ -532,7 +532,7 @@ def test_read_existing_trade(trade_model_path):
             "dst_region": CoordinateSchema(("dst_region",), dtype="object"),
             "region": CoordinateSchema(("region",), dtype="object"),
         },
-        dtype="int64",
+        dtype="float64",
         name="value",
     )
     assert DataArraySchema.from_da(data) == expected_schema

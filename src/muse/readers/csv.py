@@ -32,6 +32,7 @@ from muse.errors import UnitsConflictInCommodities
 # Global mapping of column names to their standardized versions
 COLUMN_RENAMES = {
     "process_name": "technology",
+    "process": "technology",
     "sector_name": "sector",
     "region_name": "region",
     "time": "year",
@@ -680,7 +681,7 @@ def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
     )
 
     # Create Dataarray
-    result = create_xarray_dataset(data).value
+    result = create_xarray_dataset(data).value.astype(float)
 
     # Rename technology to asset
     technology = result.technology
@@ -1031,14 +1032,14 @@ def read_presets_csv(path: Path) -> pd.DataFrame:
     data = read_csv(path, required_columns=["region", "timeslice"])
 
     # Legacy: drop ProcessName column and sum data (PR #448)
-    if "process" in data.columns:
+    if "technology" in data.columns:
         getLogger(__name__).warning(
             f"The ProcessName column (in file {path}) is deprecated. "
             "Data has been summed across processes, and this column has been "
             "dropped."
         )
         data = (
-            data.drop(columns=["process"])
+            data.drop(columns=["technology"])
             .groupby(["region", "timeslice"])
             .sum()
             .reset_index()
@@ -1081,7 +1082,8 @@ def process_presets(datas: dict[int, pd.DataFrame]) -> xr.Dataset:
     )
 
     # Create DataArray
-    return create_xarray_dataset(data).value
+    result = create_xarray_dataset(data).value.astype(float)
+    return result
 
 
 def read_trade_technodata(path: Path) -> xr.DataArray:
@@ -1165,7 +1167,7 @@ def process_existing_trade(data: pd.DataFrame) -> xr.DataArray:
     )
 
     # Create DataArray
-    result = create_xarray_dataset(data).value
+    result = create_xarray_dataset(data).value.astype(float)
     return result
 
 
@@ -1220,8 +1222,8 @@ def process_timeslice_shares(data: pd.DataFrame) -> xr.DataArray:
         drop_columns=True,
     )
 
-    # Create DataSet
-    result = create_xarray_dataset(data).value
+    # Create DataArray
+    result = create_xarray_dataset(data).value.astype(float)
     return result
 
 
