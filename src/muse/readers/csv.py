@@ -43,6 +43,7 @@ COLUMN_RENAMES = {
     "enduse": "end_use",
     "sn": "timeslice",
     "commodity_emission_factor_CO2": "emmission_factor",
+    "utilisation_factor": "utilization_factor",
 }
 
 # Columns who's values should be converted from camelCase to snake_case
@@ -84,6 +85,20 @@ COLUMN_TYPES = {
     "spend_limit": float,
     "prices": float,
     "emmission_factor": float,
+}
+
+DEFAULTS = {
+    "cap_par": 0,
+    "cap_exp": 1,
+    "fix_par": 0,
+    "fix_exp": 1,
+    "var_par": 0,
+    "var_exp": 1,
+    "interest_rate": 0,
+    "utilization_factor": 1,
+    "minimum_service_factor": 0,
+    "search_rule": "all",
+    "decision_method": "single",
 }
 
 
@@ -275,6 +290,12 @@ def read_csv(
     for col in CAMEL_TO_SNAKE_COLUMNS:
         if col in data.columns:
             data[col] = data[col].apply(camel_to_snake)
+
+    # Fill missing values with defaults
+    data = data.fillna(DEFAULTS)
+    for col, default in DEFAULTS.items():
+        if col not in data.columns and col in required_columns:
+            data[col] = default
 
     # Check/convert data types
     data = convert_column_types(data)
@@ -609,7 +630,13 @@ def process_technologies(
                 commodities.sel(commodity=technodata.commodity)
             )
         else:
-            raise OSError("Commodities not found in global commodities file")
+            missing_commodities = technodata.commodity[
+                ~technodata.commodity.isin(commodities.commodity)
+            ].values
+            raise OSError(
+                f"The following commodities were not found in "
+                f"global commodities file: {missing_commodities}"
+            )
 
     # Add commodity usage flags
     technodata["comm_usage"] = (
@@ -852,9 +879,11 @@ def process_agent_parameters(data: pd.DataFrame) -> list[dict]:
 
 def read_initial_market(
     projections: Path,
+    commodities: Path,
     base_year_import: Path | None = None,
     base_year_export: Path | None = None,
 ) -> xr.Dataset:
+    # Read projections
     projections_df = read_projections_csv(projections)
 
     # Base year export is optional
@@ -876,7 +905,16 @@ def read_initial_market(
         import_df = None
 
     # Assemble into xarray Dataset
-    return process_initial_market(projections_df, import_df, export_df)
+    result = process_initial_market(projections_df, import_df, export_df)
+
+    # Read commodities
+    # TODO: this data is read into the program many times - not ideal
+    commodities = read_global_commodities(commodities)
+
+    # Add any missing commodities with zeros
+    result = result.reindex(commodity=commodities.commodity.values, fill_value=0)
+
+    return result
 
 
 def read_projections_csv(path: Path) -> pd.DataFrame:
@@ -911,16 +949,18 @@ def process_initial_market(
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     # Process projections
-    projections = process_attribute_table(projections_df).commodity_price
+    projections = process_attribute_table(projections_df).commodity_price.astype(
+        "float64"
+    )
 
     # Process optional trade data
     if export_df is not None:
-        base_year_export = process_attribute_table(export_df).exports
+        base_year_export = process_attribute_table(export_df).exports.astype("float64")
     else:
         base_year_export = xr.zeros_like(projections)
 
     if import_df is not None:
-        base_year_import = process_attribute_table(import_df).imports
+        base_year_import = process_attribute_table(import_df).imports.astype("float64")
     else:
         base_year_import = xr.zeros_like(projections)
 

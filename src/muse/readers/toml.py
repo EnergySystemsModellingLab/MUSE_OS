@@ -542,6 +542,7 @@ def read_technodata(
 
     commodities = settings.global_input_files.global_commodities
     commodities = read_global_commodities(commodities)
+    # TODO: not ideal to read in the commodities every time we read in technodata
 
     if time_framework is None:
         time_framework = getattr(settings, "time_framework", [2010, 2050])
