@@ -538,7 +538,7 @@ def read_technologies(
     technodata_path: Path,
     comm_out_path: Path,
     comm_in_path: Path,
-    commodities: xr.Dataset,
+    commodities_path: Path,
     technodata_timeslices_path: Path | None = None,
 ) -> xr.Dataset:
     # Log message
@@ -561,10 +561,11 @@ def read_technologies(
         if technodata_timeslices_path
         else None
     )
+    commodities = read_global_commodities(commodities_path)
 
     # Assemble xarray Dataset
     return process_technologies(
-        technodata, comm_out, comm_in, technodata_timeslices, commodities
+        technodata, comm_out, comm_in, commodities, technodata_timeslices
     )
 
 
@@ -572,8 +573,8 @@ def process_technologies(
     technodata: xr.Dataset,
     comm_out: xr.Dataset,
     comm_in: xr.Dataset,
+    commodities: xr.Dataset,
     technodata_timeslices: xr.Dataset | None = None,
-    commodities: xr.Dataset = None,
 ) -> xr.Dataset:
     """Processes technology data DataFrames into an xarray Dataset.
 
@@ -617,20 +618,18 @@ def process_technologies(
         technodata = technodata.drop_vars("utilization_factor")
         technodata = technodata.merge(technodata_timeslices)
 
+    # Make sure there are no commodities in technodata but not in global commodities
+    extra_commodities = [
+        c for c in technodata.commodity.values if c not in commodities.commodity.values
+    ]
+    if extra_commodities:
+        raise ValueError(
+            "The following commodities were not found in global commodities file: "
+            f"{extra_commodities}"
+        )
+
     # Add info about commodities
-    if isinstance(commodities, xr.Dataset):
-        if technodata.commodity.isin(commodities.commodity).all():
-            technodata = technodata.merge(
-                commodities.sel(commodity=technodata.commodity)
-            )
-        else:
-            missing_commodities = technodata.commodity[
-                ~technodata.commodity.isin(commodities.commodity)
-            ].values
-            raise OSError(
-                f"The following commodities were not found in "
-                f"global commodities file: {missing_commodities}"
-            )
+    technodata = technodata.merge(commodities.sel(commodity=technodata.commodity))
 
     # Add commodity usage flags
     technodata["comm_usage"] = (
@@ -872,28 +871,28 @@ def process_agent_parameters(data: pd.DataFrame) -> list[dict]:
 
 
 def read_initial_market(
-    projections: Path,
-    commodities: Path,
-    base_year_import: Path | None = None,
-    base_year_export: Path | None = None,
+    projections_path: Path,
+    commodities_path: Path,
+    base_year_import_path: Path | None = None,
+    base_year_export_path: Path | None = None,
 ) -> xr.Dataset:
     # Read projections
-    projections_df = read_projections_csv(projections)
+    projections_df = read_projections_csv(projections_path)
 
     # Base year export is optional
-    if base_year_export:
+    if base_year_export_path:
         export_df = read_csv(
-            base_year_export,
-            msg=f"Reading base year export from {base_year_export}.",
+            base_year_export_path,
+            msg=f"Reading base year export from {base_year_export_path}.",
         )
     else:
         export_df = None
 
     # Base year import is optional
-    if base_year_import:
+    if base_year_import_path:
         import_df = read_csv(
-            base_year_import,
-            msg=f"Reading base year import from {base_year_import}.",
+            base_year_import_path,
+            msg=f"Reading base year import from {base_year_import_path}.",
         )
     else:
         import_df = None
@@ -903,7 +902,17 @@ def read_initial_market(
 
     # Read commodities
     # TODO: this data is read into the program many times - not ideal
-    commodities = read_global_commodities(commodities)
+    commodities = read_global_commodities(commodities_path)
+
+    # Make sure there are no commodities in result but not in global commodities
+    extra_commodities = [
+        c for c in result.commodity.values if c not in commodities.commodity.values
+    ]
+    if extra_commodities:
+        raise ValueError(
+            "The following commodities were not found in global commodities file: "
+            f"{extra_commodities}"
+        )
 
     # Add any missing commodities with zeros
     result = result.reindex(commodity=commodities.commodity.values, fill_value=0)
@@ -1032,14 +1041,14 @@ def process_attribute_table(data: pd.DataFrame) -> xr.Dataset:
     return result
 
 
-def read_presets(paths: Path) -> xr.Dataset:
+def read_presets(presets_paths: Path, commodities_path: Path) -> xr.Dataset:
     from glob import glob
     from re import match
 
     # Find all files matching the path pattern
-    allfiles = [Path(p) for p in glob(str(paths))]
+    allfiles = [Path(p) for p in glob(str(presets_paths))]
     if len(allfiles) == 0:
-        raise OSError(f"No files found with paths {paths}")
+        raise OSError(f"No files found with paths {presets_paths}")
 
     # Read all files
     datas: dict[int, pd.DataFrame] = {}
@@ -1059,6 +1068,22 @@ def read_presets(paths: Path) -> xr.Dataset:
 
     # Process data
     datas = process_presets(datas)
+
+    # Read commodities
+    commodities = read_global_commodities(commodities_path)
+
+    # Make sure there are no commodities in datas but not in global commodities
+    extra_commodities = [
+        c for c in datas.commodity.values if c not in commodities.commodity.values
+    ]
+    if extra_commodities:
+        raise ValueError(
+            "The following commodities were not found in global commodities file: "
+            f"{extra_commodities}"
+        )
+
+    # Add any missing commodities with zeros
+    datas = datas.reindex(commodity=commodities.commodity.values, fill_value=0)
     return datas
 
 
