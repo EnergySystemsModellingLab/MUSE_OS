@@ -105,12 +105,12 @@ def test_check_iteration_control(settings: dict):
 
     # Test invalid maximum iterations
     settings.update({"equilibrium": True, "maximum_iterations": -1})
-    with raises(AssertionError):
+    with raises(ValueError):
         check_iteration_control(settings)
 
     # Test invalid tolerance
     settings.update({"maximum_iterations": 5, "tolerance": -1})
-    with raises(AssertionError):
+    with raises(ValueError):
         check_iteration_control(settings)
 
 

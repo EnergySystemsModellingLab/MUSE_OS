@@ -42,7 +42,7 @@ def convert(dictionary: dict) -> namedtuple:
     return namedtuple("MUSEOptions", dictionary.keys())(**dictionary)
 
 
-def undo_damage(nt):
+def undo_damage(nt) -> Any:
     """Unconvert nested nametuple."""
     if not hasattr(nt, "_asdict"):
         return nt
@@ -98,7 +98,7 @@ def format_paths(
     path: Path,
     cwd: Path,
     suffixes: Sequence[str] = (".csv", ".nc", ".xls", ".xlsx", ".py", ".toml"),
-):
+) -> dict:
     """Format paths passed to settings.
 
     This function is used to format paths in the settings file. It is used to replace
@@ -211,7 +211,7 @@ def read_settings(settings_file: str | Path) -> namedtuple:
     return convert(settings)
 
 
-def add_known_parameters(default_dict, user_dict, parent=None):
+def add_known_parameters(default_dict, user_dict, parent=None) -> dict:
     """Recursively merge user settings with default settings.
 
     Validates required parameters and handles optional ones.
@@ -259,7 +259,7 @@ def add_known_parameters(default_dict, user_dict, parent=None):
     return merged
 
 
-def add_unknown_parameters(default_dict, user_dict):
+def add_unknown_parameters(default_dict, user_dict) -> dict:
     """Recursively merge user settings with default settings.
 
     Preserves unknown parameters from user settings.
@@ -293,37 +293,29 @@ def validate_settings(settings: dict) -> None:
 
 
 def check_plugins(settings: dict) -> None:
-    """Checks that the user custom defined python files exist.
-
-    Checks that the user custom defined python files exist. If flagged to use, they are
-    also loaded.
-
-    While this is a settings check, it is run separately to ensure that custom defined
-    settings checks are all loaded before validating the settings.
-    """
+    """Check and load user-defined Python plugin files if they exist."""
     plugins = settings.get("plugins", [])
 
+    # Handle plugins as dict, str, or Path
     if isinstance(plugins, (dict, Mapping)):
-        plugins = plugins.get("plugins")
-
+        plugins = plugins.get("plugins", [])
     if isinstance(plugins, (Path, str)):
         plugins = [plugins]
-
     if not plugins:
         return
 
-    for path in map(lambda x: Path(format_path(x)), plugins):
-        if not path.exists():
-            msg = f"ERROR plugin does not exist: {path}"
+    for plugin in plugins:
+        plugin_path = Path(format_path(plugin))
+        if not plugin_path.exists():
+            msg = f"ERROR plugin does not exist: {plugin_path}"
             getLogger(__name__).critical(msg)
             raise IncorrectSettings(msg)
 
-        # The module is loaded, registering anything inside that is decorated
-        spec = implib.spec_from_file_location(path.stem, path)
+        # Load the plugin module
+        spec = implib.spec_from_file_location(plugin_path.stem, plugin_path)
         mod = implib.module_from_spec(spec)
         spec.loader.exec_module(mod)  # type: ignore
-
-        getLogger(__name__).info(f"Loaded plugin {path.stem} from {path}")
+        getLogger(__name__).info(f"Loaded plugin {plugin_path.stem} from {plugin_path}")
 
 
 @register_settings_check(vary_name=False)
@@ -382,51 +374,41 @@ def check_interpolation_mode(settings: dict) -> None:
 @register_settings_check(vary_name=False)
 def check_budget_parameters(settings: dict) -> None:
     """Check the parameters that are required if carbon_budget > 0."""
-    length = len(settings["carbon_budget_control"]["budget"])
-    if length > 0:
-        msg = "ERROR - budget_check must have the same length that time_framework"
-        if isinstance(settings["time_framework"], list):
-            assert length == len(settings["time_framework"]), msg
-            coords = settings["time_framework"]
-        else:
-            assert length == len(settings["time_framework"]), msg
-            coords = settings["time_framework"]
-
-        # If Ok, we transform the list into an xr.DataArray
-        settings["carbon_budget_control"]["budget"] = xr.DataArray(
-            np.array(settings["carbon_budget_control"]["budget"]),
-            dims="year",
-            coords={"year": coords},
-        )
-    else:
+    budget = settings["carbon_budget_control"]["budget"]
+    time_framework = settings["time_framework"]
+    if not budget:
         settings["carbon_budget_control"]["budget"] = xr.DataArray([])
+        return
+
+    msg = "ERROR - budget_check must have the same length that time_framework"
+    if len(budget) != len(time_framework):
+        raise AssertionError(msg)
+
+    coords = time_framework
+    settings["carbon_budget_control"]["budget"] = xr.DataArray(
+        np.array(budget), dims="year", coords={"year": coords}
+    )
 
 
 @register_settings_check(vary_name=False)
 def check_iteration_control(settings: dict) -> None:
-    """Checks the variables related to the control of the iterations.
-
-    This includes whether equilibrium must be reached, the maximum number of iterations
-    or the tolerance to consider convergence.
-    """
-    # Anything that is not "off" or False, means that equilibrium should be reached.
-    if str(settings["equilibrium"]).lower() in ("false", "off"):
+    """Check and set iteration control parameters for equilibrium and convergence."""
+    equilibrium = str(settings["equilibrium"]).lower()
+    if equilibrium in ("false", "off"):
         settings["equilibrium"] = False
+        return
 
-    else:
-        settings["equilibrium"] = True
-
-        msg = "ERROR - The number of iterations must be a positive number."
-        assert settings["maximum_iterations"] > 0, msg
-        settings["maximum_iterations"] = int(settings["maximum_iterations"])
-
-        msg = "ERROR - The convergence tolerance must be a positive number."
-        assert settings["tolerance"] > 0, msg
+    settings["equilibrium"] = True
+    if settings["maximum_iterations"] <= 0:
+        raise ValueError("ERROR - The number of iterations must be a positive number.")
+    settings["maximum_iterations"] = int(settings["maximum_iterations"])
+    if settings["tolerance"] <= 0:
+        raise ValueError("ERROR - The convergence tolerance must be a positive number.")
 
 
 @register_settings_check(vary_name=False)
-def check_sectors_files(settings: dict) -> None:
-    """Checks that the sector files exist."""
+def sort_sectors(settings: dict) -> None:
+    """Set the priorities of the sectors."""
     sectors = settings["sectors"]
     priorities = {
         "preset": 0,
@@ -437,19 +419,17 @@ def check_sectors_files(settings: dict) -> None:
         "last": 100,
     }
 
+    # If sectors has a 'list' key, flatten it
     if "list" in sectors:
         sectors = {k: sectors[k] for k in sectors["list"]}
 
-    for name, sector in sectors.items():
-        # Finally the priority of the sectors is used to set the order of execution
-        sector["priority"] = sector.get("priority", priorities["last"])
-        sector["priority"] = int(
-            priorities.get(str(sector["priority"]).lower().strip(), sector["priority"])
-        )
+    for sector in sectors.values():
+        # Assign priority, using default if not present or not recognized
+        prio = sector.get("priority", priorities["last"])
+        sector["priority"] = int(priorities.get(str(prio).lower().strip(), prio))
 
-    sectors["list"] = sorted(
-        settings["sectors"].keys(), key=lambda x: settings["sectors"][x]["priority"]
-    )
+    # Sort sector names by priority
+    sectors["list"] = sorted(sectors.keys(), key=lambda x: sectors[x]["priority"])
     settings["sectors"] = sectors
 
 
