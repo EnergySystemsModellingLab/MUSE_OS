@@ -354,12 +354,6 @@ def read_technodictionary_csv(path: Path) -> pd.DataFrame:
             "Please remove this column from your Technodata files."
         )
         getLogger(__name__).warning(msg)
-    if "scaling_size" in data.columns:
-        msg = (
-            f"The 'ScalingSize' column in {path} has been deprecated. "
-            "Please remove this column from your Technodata files."
-        )
-        getLogger(__name__).warning(msg)
 
     return data
 
