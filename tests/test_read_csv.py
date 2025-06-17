@@ -57,6 +57,7 @@ def test_read_technodictionary_csv(model_path):
         "fix_exp",
         "interest_rate",
         "utilization_factor",
+        "scaling_size",
         "year",
         "cap_par",
         "var_exp",

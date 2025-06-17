@@ -319,7 +319,13 @@ def capital_costs(
     *args,
     **kwargs,
 ) -> xr.DataArray:
-    """Capital costs for input technologies."""
+    r"""Capital costs for input technologies.
+
+    The capital costs are computed as :math:`a * b^\alpha`, where :math:`a` is
+    "cap_par" from the :ref:`inputs-technodata`, :math:`b` is the "scaling_size", and
+    :math:`\alpha` is "cap_exp". In other words, capital costs are constant across the
+    simulation for each technology.
+    """
     from muse.costs import capital_costs
 
     capacity = capacity_to_service_demand(technologies, demand)
