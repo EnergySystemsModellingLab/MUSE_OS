@@ -242,7 +242,10 @@ def test_read_presets(model_path):
 def test_read_initial_market(model_path):
     from muse.readers.csv import read_initial_market
 
-    data = read_initial_market(model_path / "Projections.csv")
+    data = read_initial_market(
+        model_path / "Projections.csv",
+        model_path / "GlobalCommodities.csv",
+    )
 
     # Check data against schema
     expected_schema = DatasetSchema(
