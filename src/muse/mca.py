@@ -52,7 +52,7 @@ class MCA:
         market = (
             read_initial_market(
                 settings.global_input_files.projections,
-                settings.global_input_files.commodities,
+                settings.global_input_files.global_commodities,
                 base_year_export=getattr(
                     settings.global_input_files, "base_year_export", None
                 ),
