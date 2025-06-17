@@ -538,11 +538,7 @@ def read_technodata(
     interpolation_mode: str = "linear",
 ) -> xr.Dataset:
     """Helper function to create technodata for a given sector."""
-    from muse.readers.csv import read_global_commodities, read_technologies
-
-    commodities = settings.global_input_files.global_commodities
-    commodities = read_global_commodities(commodities)
-    # TODO: not ideal to read in the commodities every time we read in technodata
+    from muse.readers.csv import read_technologies
 
     if time_framework is None:
         time_framework = getattr(settings, "time_framework", [2010, 2050])
@@ -550,6 +546,7 @@ def read_technodata(
     if regions is None:
         regions = settings.regions
 
+    commodities_path = settings.global_input_files.global_commodities
     settings = getattr(settings.sectors, sector_name)
 
     technodata_timeslices = getattr(settings, "technodata_timeslices", None)
@@ -589,7 +586,7 @@ def read_technodata(
         technodata_timeslices_path=technosettings.pop("technodata_timeslices", None),
         comm_out_path=Path(technosettings.pop("commodities_out")),
         comm_in_path=Path(technosettings.pop("commodities_in")),
-        commodities=commodities,
+        commodities_path=commodities_path,
     ).sel(region=regions)
 
     ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
