@@ -10,16 +10,21 @@ from collections.abc import Mapping, MutableMapping, Sequence
 from copy import deepcopy
 from logging import getLogger
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 import xarray as xr
 
-from muse.decorators import SETTINGS_HOOKS, register_settings_hook
 from muse.defaults import DATA_DIRECTORY
 
 DEFAULT_SETTINGS_PATH = DATA_DIRECTORY / "default_settings.toml"
 """Default settings path."""
+
+SETTINGS_HOOKS_SIGNATURE = Callable[[dict], None]
+"""settings checks signature."""
+
+SETTINGS_HOOKS: list[tuple[int, str, SETTINGS_HOOKS_SIGNATURE]] = []
+"""Dictionary of settings checks."""
 
 
 class InputError(Exception):
@@ -308,6 +313,35 @@ def check_plugins(settings: dict) -> None:
         getLogger(__name__).info(f"Loaded plugin {plugin_path.stem} from {plugin_path}")
 
 
+def register_settings_hook(
+    func: SETTINGS_HOOKS_SIGNATURE | None = None, *, priority: int = 100
+) -> Callable:
+    """Register a function to be called during settings validation.
+
+    The function will be called with the settings dictionary as its only argument.
+    The function can modify the settings dictionary in place.
+
+    Args:
+        func: The function to register
+        priority: The priority of the function. Lower numbers are called first.
+
+    Returns:
+        The decorated function
+    """
+
+    def decorated(f: SETTINGS_HOOKS_SIGNATURE) -> SETTINGS_HOOKS_SIGNATURE:
+        """Register the function and return it unchanged."""
+        getLogger(__name__).debug(
+            f"Registering settings hook {f.__name__} with priority {priority}"
+        )
+        SETTINGS_HOOKS.append((priority, f.__name__, f))
+        return f
+
+    if func is None:
+        return decorated
+    return decorated(func)
+
+
 @register_settings_hook(priority=1)
 def check_sectors(settings: dict) -> None:
     """Check that there is at least 1 sector."""
@@ -340,7 +374,7 @@ def standardise_case(settings: dict) -> None:
             settings[field] = [camel_to_snake(x) for x in settings[field]]
 
 
-@register_settings_hook()
+@register_settings_hook
 def check_log_level(settings: dict) -> None:
     """Check the log level required in the simulation."""
     valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -350,7 +384,7 @@ def check_log_level(settings: dict) -> None:
     settings["log_level"] = settings["log_level"].upper()
 
 
-@register_settings_hook()
+@register_settings_hook
 def check_interpolation_mode(settings: dict) -> None:
     """Just updates the interpolation mode to a bool.
 
@@ -382,7 +416,7 @@ def check_interpolation_mode(settings: dict) -> None:
         settings["interpolation_mode"] = "linear"
 
 
-@register_settings_hook()
+@register_settings_hook
 def check_budget_parameters(settings: dict) -> None:
     """Check the parameters that are required if carbon_budget > 0."""
     budget = settings["carbon_budget_control"]["budget"]
@@ -401,7 +435,7 @@ def check_budget_parameters(settings: dict) -> None:
     )
 
 
-@register_settings_hook()
+@register_settings_hook
 def check_iteration_control(settings: dict) -> None:
     """Check and set iteration control parameters for equilibrium and convergence."""
     equilibrium = str(settings["equilibrium"]).lower()
@@ -417,7 +451,7 @@ def check_iteration_control(settings: dict) -> None:
         raise ValueError("ERROR - The convergence tolerance must be a positive number.")
 
 
-@register_settings_hook()
+@register_settings_hook
 def sort_sectors(settings: dict) -> None:
     """Set the priorities of the sectors."""
     sectors = settings["sectors"]
