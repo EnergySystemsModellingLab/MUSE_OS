@@ -116,11 +116,12 @@ def standardize_columns(data: pd.DataFrame) -> pd.DataFrame:
     Returns:
         DataFrame with standardized column names
     """
-    # First convert to snake_case
-    data = data.rename(columns=camel_to_snake)
+    # Drop index column if present
+    if data.columns[0] == "" or data.columns[0].startswith("Unnamed"):
+        data = data.iloc[:, 1:]
 
-    # Drop any columns that start with "Unname"
-    data.drop(data.filter(regex="Unname"), axis=1, inplace=True)
+    # Convert columns to snake_case
+    data = data.rename(columns=camel_to_snake)
 
     # Then apply global mapping
     data = data.rename(columns=COLUMN_RENAMES)
