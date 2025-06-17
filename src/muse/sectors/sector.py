@@ -303,7 +303,7 @@ class Sector(AbstractSector):  # type: ignore
 
         # Calculate LCOE
         # We select data for the second year, which corresponds to the investment year
-        # We base LCOE only on the portion of capacity that is actually used
+        # We base LCOE only on the portion of capacity that is actually used (#728)
         utilized_capacity = capacity_to_service_demand(
             demand=supply.isel(year=1),
             technologies=technodata,
