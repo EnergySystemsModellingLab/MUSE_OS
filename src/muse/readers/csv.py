@@ -309,6 +309,29 @@ def read_csv(
     return data
 
 
+def check_commodities(
+    data: xr.Dataset | xr.DataArray, fill_missing: bool = True, fill_value: float = 0
+) -> xr.Dataset | xr.DataArray:
+    from muse.commodities import COMMODITIES
+
+    # Make sure there are no commodities in data but not in global commodities
+    extra_commodities = [
+        c for c in data.commodity.values if c not in COMMODITIES.commodity.values
+    ]
+    if extra_commodities:
+        raise ValueError(
+            "The following commodities were not found in global commodities file: "
+            f"{extra_commodities}"
+        )
+
+    # Add any missing commodities with zeros
+    if fill_missing:
+        data = data.reindex(
+            commodity=COMMODITIES.commodity.values, fill_value=fill_value
+        )
+    return data
+
+
 def read_technodictionary(path: Path) -> xr.Dataset:
     df = read_technodictionary_csv(path)
     return process_technodictionary(df)
@@ -538,7 +561,6 @@ def read_technologies(
     technodata_path: Path,
     comm_out_path: Path,
     comm_in_path: Path,
-    commodities_path: Path,
     technodata_timeslices_path: Path | None = None,
 ) -> xr.Dataset:
     # Log message
@@ -561,19 +583,15 @@ def read_technologies(
         if technodata_timeslices_path
         else None
     )
-    commodities = read_global_commodities(commodities_path)
 
     # Assemble xarray Dataset
-    return process_technologies(
-        technodata, comm_out, comm_in, commodities, technodata_timeslices
-    )
+    return process_technologies(technodata, comm_out, comm_in, technodata_timeslices)
 
 
 def process_technologies(
     technodata: xr.Dataset,
     comm_out: xr.Dataset,
     comm_in: xr.Dataset,
-    commodities: xr.Dataset,
     technodata_timeslices: xr.Dataset | None = None,
 ) -> xr.Dataset:
     """Processes technology data DataFrames into an xarray Dataset.
@@ -583,12 +601,11 @@ def process_technologies(
         comm_out: xarray Dataset containing output commodities
         comm_in: xarray Dataset containing input commodities
         technodata_timeslices: Optional xarray Dataset containing technodata timeslices
-        commodities: xarray Dataset containing commodities
 
     Returns:
         xarray Dataset containing the processed technology data
     """
-    from muse.commodities import CommodityUsage
+    from muse.commodities import COMMODITIES, CommodityUsage
 
     # Process inputs/outputs
     ins = comm_in.rename(flexible="flexible_inputs", fixed="fixed_inputs")
@@ -618,18 +635,11 @@ def process_technologies(
         technodata = technodata.drop_vars("utilization_factor")
         technodata = technodata.merge(technodata_timeslices)
 
-    # Make sure there are no commodities in technodata but not in global commodities
-    extra_commodities = [
-        c for c in technodata.commodity.values if c not in commodities.commodity.values
-    ]
-    if extra_commodities:
-        raise ValueError(
-            "The following commodities were not found in global commodities file: "
-            f"{extra_commodities}"
-        )
+    # Check commodities
+    technodata = check_commodities(technodata, fill_missing=False)
 
     # Add info about commodities
-    technodata = technodata.merge(commodities.sel(commodity=technodata.commodity))
+    technodata = technodata.merge(COMMODITIES.sel(commodity=technodata.commodity))
 
     # Add commodity usage flags
     technodata["comm_usage"] = (
@@ -713,7 +723,7 @@ def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
     return result
 
 
-def read_global_commodities(path: Path) -> pd.DataFrame:
+def read_global_commodities(path: Path) -> xr.Dataset:
     df = read_global_commodities_csv(path)
     return process_global_commodities(df)
 
@@ -900,23 +910,8 @@ def read_initial_market(
     # Assemble into xarray Dataset
     result = process_initial_market(projections_df, import_df, export_df)
 
-    # Read commodities
-    # TODO: this data is read into the program many times - not ideal
-    commodities = read_global_commodities(commodities_path)
-
-    # Make sure there are no commodities in result but not in global commodities
-    extra_commodities = [
-        c for c in result.commodity.values if c not in commodities.commodity.values
-    ]
-    if extra_commodities:
-        raise ValueError(
-            "The following commodities were not found in global commodities file: "
-            f"{extra_commodities}"
-        )
-
-    # Add any missing commodities with zeros
-    result = result.reindex(commodity=commodities.commodity.values, fill_value=0)
-
+    # Check commodities
+    result = check_commodities(result, fill_missing=True, fill_value=0)
     return result
 
 
@@ -985,7 +980,7 @@ def process_initial_market(
     return result
 
 
-def read_attribute_table(path: Path) -> xr.DataArray:
+def read_attribute_table(path: Path) -> xr.Dataset:
     df = read_attribute_table_csv(path)
     return process_attribute_table(df)
 
@@ -1041,7 +1036,7 @@ def process_attribute_table(data: pd.DataFrame) -> xr.Dataset:
     return result
 
 
-def read_presets(presets_paths: Path, commodities_path: Path) -> xr.Dataset:
+def read_presets(presets_paths: Path) -> xr.Dataset:
     from glob import glob
     from re import match
 
@@ -1069,21 +1064,9 @@ def read_presets(presets_paths: Path, commodities_path: Path) -> xr.Dataset:
     # Process data
     datas = process_presets(datas)
 
-    # Read commodities
-    commodities = read_global_commodities(commodities_path)
+    # Check commodities
+    datas = check_commodities(datas, fill_missing=True, fill_value=0)
 
-    # Make sure there are no commodities in datas but not in global commodities
-    extra_commodities = [
-        c for c in datas.commodity.values if c not in commodities.commodity.values
-    ]
-    if extra_commodities:
-        raise ValueError(
-            "The following commodities were not found in global commodities file: "
-            f"{extra_commodities}"
-        )
-
-    # Add any missing commodities with zeros
-    datas = datas.reindex(commodity=commodities.commodity.values, fill_value=0)
     return datas
 
 
@@ -1145,7 +1128,7 @@ def process_presets(datas: dict[int, pd.DataFrame]) -> xr.Dataset:
     return result
 
 
-def read_trade_technodata(path: Path) -> xr.DataArray:
+def read_trade_technodata(path: Path) -> xr.Dataset:
     df = read_trade_technodata_csv(path)
     return process_trade_technodata(df)
 
@@ -1155,7 +1138,7 @@ def read_trade_technodata_csv(path: Path) -> pd.DataFrame:
     return read_csv(path, required_columns=required_columns)
 
 
-def process_trade_technodata(data: pd.DataFrame) -> xr.DataArray:
+def process_trade_technodata(data: pd.DataFrame) -> xr.Dataset:
     # Drop unit column if present
     if "unit" in data.columns:
         data = data.drop(columns=["unit"])
@@ -1230,7 +1213,7 @@ def process_existing_trade(data: pd.DataFrame) -> xr.DataArray:
     return result
 
 
-def read_timeslice_shares(path: Path) -> pd.DataFrame:
+def read_timeslice_shares(path: Path) -> xr.DataArray:
     df = read_timeslice_shares_csv(path)
     return process_timeslice_shares(df)
 

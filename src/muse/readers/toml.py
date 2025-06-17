@@ -546,7 +546,6 @@ def read_technodata(
     if regions is None:
         regions = settings.regions
 
-    commodities_path = settings.global_input_files.global_commodities
     settings = getattr(settings.sectors, sector_name)
 
     technodata_timeslices = getattr(settings, "technodata_timeslices", None)
@@ -586,7 +585,6 @@ def read_technodata(
         technodata_timeslices_path=technosettings.pop("technodata_timeslices", None),
         comm_out_path=Path(technosettings.pop("commodities_out")),
         comm_in_path=Path(technosettings.pop("commodities_in")),
-        commodities_path=commodities_path,
     ).sel(region=regions)
 
     ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
