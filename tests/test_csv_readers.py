@@ -7,6 +7,7 @@ import xarray as xr
 from pytest import fixture
 
 from muse import examples
+from muse.commodities import setup_module as setup_commodities
 
 # Common test data
 EXPECTED_TIMESLICES = [
@@ -148,28 +149,36 @@ def timeslice():
 def model_path(tmp_path, timeslice):
     """Creates temporary folder containing the default model."""
     examples.copy_model(name="default", path=tmp_path)
-    return tmp_path / "model"
+    path = tmp_path / "model"
+    setup_commodities(path / "GlobalCommodities.csv")
+    return path
 
 
 @fixture
 def timeslice_model_path(tmp_path, timeslice):
     """Creates temporary folder containing the default model."""
     examples.copy_model(name="default_timeslice", path=tmp_path)
-    return tmp_path / "model"
+    path = tmp_path / "model"
+    setup_commodities(path / "GlobalCommodities.csv")
+    return path
 
 
 @fixture
 def trade_model_path(tmp_path, timeslice):
     """Creates temporary folder containing the trade model."""
     examples.copy_model(name="trade", path=tmp_path)
-    return tmp_path / "model"
+    path = tmp_path / "model"
+    setup_commodities(path / "GlobalCommodities.csv")
+    return path
 
 
 @fixture
 def correlation_model_path(tmp_path, timeslice):
     """Creates temporary folder containing the correlation model."""
     examples.copy_model(name="default_correlation", path=tmp_path)
-    return tmp_path / "model"
+    path = tmp_path / "model"
+    setup_commodities(path / "GlobalCommodities.csv")
+    return path
 
 
 def test_read_global_commodities(model_path):
@@ -733,17 +742,13 @@ def test_read_regression_parameters(correlation_model_path):
 
 
 def test_read_technologies(model_path):
-    from muse.readers.csv import read_global_commodities, read_technologies
-
-    # Read commodities
-    commodities = read_global_commodities(model_path / "GlobalCommodities.csv")
+    from muse.readers.csv import read_technologies
 
     # Read technologies
     data = read_technologies(
         technodata_path=model_path / "power" / "Technodata.csv",
         comm_out_path=model_path / "power" / "CommOut.csv",
         comm_in_path=model_path / "power" / "CommIn.csv",
-        commodities=commodities,
     )
 
     # Check data against schema
