@@ -366,9 +366,9 @@ def setup_time_framework(settings: dict) -> None:
 @register_settings_hook(priority=1)
 def standardise_case(settings: dict) -> None:
     """Standardise certain fields to snake_case."""
-    from muse.readers import camel_to_snake
+    from muse.readers.csv import camel_to_snake
 
-    fields_to_standardise = ["excluded_commodities"]
+    fields_to_standardise = ["excluded_commodities", "regions"]
     for field in fields_to_standardise:
         if field in settings:
             settings[field] = [camel_to_snake(x) for x in settings[field]]
@@ -532,26 +532,21 @@ def check_subsector_settings(settings: dict) -> None:
 
 def read_technodata(
     settings: Any,
-    sector_name: str | None = None,
+    sector_name: str,
     time_framework: Sequence[int] | None = None,
-    commodities: str | Path | None = None,
     regions: Sequence[str] | None = None,
     interpolation_mode: str = "linear",
 ) -> xr.Dataset:
     """Helper function to create technodata for a given sector."""
-    from muse.readers.csv import read_technologies, read_trade
+    from muse.readers.csv import read_technologies
 
     if time_framework is None:
         time_framework = getattr(settings, "time_framework", [2010, 2050])
 
-    if commodities is None:
-        commodities = settings.global_input_files.global_commodities
-
     if regions is None:
         regions = settings.regions
 
-    if sector_name is not None:
-        settings = getattr(settings.sectors, sector_name)
+    settings = getattr(settings.sectors, sector_name)
 
     technodata_timeslices = getattr(settings, "technodata_timeslices", None)
     # normalizes case where technodata is not in own subsection
@@ -586,33 +581,32 @@ def read_technodata(
             raise IncorrectSettings(f"File {filename} is not a file.")
 
     technologies = read_technologies(
-        technodata_path_or_sector=technosettings.pop("technodata"),
+        technodata_path=Path(technosettings.pop("technodata")),
         technodata_timeslices_path=technosettings.pop("technodata_timeslices", None),
-        comm_out_path=technosettings.pop("commodities_out"),
-        comm_in_path=technosettings.pop("commodities_in"),
-        commodities=commodities,
+        comm_out_path=Path(technosettings.pop("commodities_out")),
+        comm_in_path=Path(technosettings.pop("commodities_in")),
     ).sel(region=regions)
 
     ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
     outs = (technologies.fixed_outputs > 0).any(("year", "region", "technology"))
     techcomms = technologies.commodity[ins | outs]
     technologies = technologies.sel(commodity=techcomms)
-    for name, value in technosettings.items():
-        if isinstance(name, (str, Path)):
-            data = read_trade(value, drop="Unit")
-            if "region" in data.dims:
-                data = data.sel(region=regions)
-            if "dst_region" in data.dims:
-                data = data.sel(dst_region=regions)
-                if data.dst_region.size == 1:
-                    data = data.squeeze("dst_region", drop=True)
+    # for name, value in technosettings.items():
+    #     if isinstance(name, (str, Path)):
+    #         data = read_trade(value, drop="Unit")
+    #         if "region" in data.dims:
+    #             data = data.sel(region=regions)
+    #         if "dst_region" in data.dims:
+    #             data = data.sel(dst_region=regions)
+    #             if data.dst_region.size == 1:
+    #                 data = data.squeeze("dst_region", drop=True)
 
-        else:
-            data = value
-        if isinstance(data, xr.Dataset):
-            technologies = technologies.merge(data)
-        else:
-            technologies[name] = data
+    #     else:
+    #         data = value
+    #     if isinstance(data, xr.Dataset):
+    #         technologies = technologies.merge(data)
+    #     else:
+    #         technologies[name] = data
 
     # make sure technologies includes the requisite years
     maxyear = max(time_framework)

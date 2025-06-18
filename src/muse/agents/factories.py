@@ -178,10 +178,10 @@ def agents_factory(
     from copy import deepcopy
     from logging import getLogger
 
-    from muse.readers import read_csv_agent_parameters
+    from muse.readers import read_agent_parameters
 
     if isinstance(params_or_path, (str, Path)):
-        params = read_csv_agent_parameters(params_or_path)
+        params = read_agent_parameters(params_or_path)
     else:
         params = params_or_path
     assert isinstance(capacity, xr.DataArray)

@@ -122,11 +122,11 @@ class Subsector:
         from muse import investments as iv
         from muse.agents import InvestingAgent, agents_factory
         from muse.commodities import is_enduse
-        from muse.readers import read_initial_assets
+        from muse.readers import read_initial_capacity
         from muse.readers.toml import undo_damage
 
         # Read existing capacity file
-        existing_capacity = read_initial_assets(settings.existing_capacity)
+        existing_capacity = read_initial_capacity(settings.existing_capacity)
 
         # Create agents
         agents = agents_factory(

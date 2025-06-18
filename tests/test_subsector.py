@@ -7,7 +7,7 @@ from muse import constraints as cs
 from muse import demand_share as ds
 from muse import examples
 from muse.agents.factories import create_agent
-from muse.readers import read_csv_agent_parameters, read_initial_assets
+from muse.readers import read_agent_parameters, read_initial_assets
 from muse.readers.toml import read_settings
 from muse.sectors.subsector import Subsector, aggregate_enduses
 
@@ -40,7 +40,7 @@ def agent_params(model, tmp_path, technologies):
     """Common agent parameters setup."""
     examples.copy_model(model, tmp_path)
     path = tmp_path / "model" / "Agents.csv"
-    params = read_csv_agent_parameters(path)
+    params = read_agent_parameters(path)
     capa = read_initial_assets(path.with_name("residential") / "ExistingCapacity.csv")
 
     for param in params:

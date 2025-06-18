@@ -92,7 +92,7 @@ def model(name: str = "default", test: bool = False) -> MCA:
 
 def copy_model(
     name: str = "default",
-    path: str | Path | None = None,
+    path: Path | None = None,
     overwrite: bool = False,
 ) -> Path:
     """Copy model files to given path.
@@ -210,10 +210,11 @@ def mca_market(model: str = "default") -> xr.Dataset:
         market = (
             read_initial_market(
                 settings.global_input_files.projections,
-                base_year_export=getattr(
+                settings.global_input_files.global_commodities,
+                base_year_export_path=getattr(
                     settings.global_input_files, "base_year_export", None
                 ),
-                base_year_import=getattr(
+                base_year_import_path=getattr(
                     settings.global_input_files, "base_year_import", None
                 ),
             )
