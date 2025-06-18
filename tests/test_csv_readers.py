@@ -922,7 +922,7 @@ def test_read_technodata(model_path):
             "technology": ["gasCCGT", "windturbine"],
             "region": ["R1"],
             "year": [2020, 2025, 2030, 2035, 2040, 2045, 2050],
-            "comm_usage": [10, 9, 8, 6, 9],
+            "comm_usage": [10, 9, 6, 9],
         },
     )
 
@@ -987,6 +987,7 @@ def test_read_technodata__trade(trade_model_path):
             "technology": ["gasCCGT", "windturbine"],
             "region": ["R1", "R2"],
             "dst_region": ["R1", "R2"],
+            "comm_usage": [10, 9, 6, 9],
             "year": [2010, 2020, 2025, 2030, 2035],
         },
     )
@@ -1023,6 +1024,7 @@ def test_read_presets_sector(model_path):
             "year": [2020, 2050],
             "commodity": COMMODITIES,
             "timeslice": EXPECTED_TIMESLICES,
+            "comm_usage": [0, 0, 0, 0, 0],
         },
     )
 
@@ -1073,6 +1075,7 @@ def test_read_presets_sector__correlation(correlation_model_path):
             "year": range(2010, 2111),
             "commodity": ["electricity", "gas", "heat", "CO2f"],
             "timeslice": EXPECTED_TIMESLICES,
+            "comm_usage": [0, 0, 0, 0, 0],
         },
     )
 
