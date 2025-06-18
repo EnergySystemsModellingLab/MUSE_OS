@@ -146,7 +146,7 @@ class Subsector:
         # (i.e. hardcoal for a technology using hydrogen)
 
         # check that all regions have technologies with at least one end-use output
-        # TODO: moove this check to the input layer
+        # TODO: move this check to the input layer
         for a in agents:
             techs = a.filter_input(technologies, region=a.region)
             outputs = techs.fixed_outputs.sel(

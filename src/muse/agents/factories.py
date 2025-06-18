@@ -197,9 +197,9 @@ def agents_factory(
 
     # Check if retrofit agents are present
     retrofit_present = any(param["agent_type"] == "retrofit" for param in params)
-    result = []
 
     # Create agents for each parameter set
+    result = []
     for param in params:
         if regions is not None and param["region"] not in regions:
             continue

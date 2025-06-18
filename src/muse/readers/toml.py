@@ -359,7 +359,7 @@ def setup_timeslices(settings: dict) -> None:
 
 @register_settings_hook(priority=1)
 def setup_time_framework(settings: dict) -> None:
-    """Set up the time framework."""
+    """Converts the time framework to a sorted array."""
     settings["time_framework"] = np.array(sorted(settings["time_framework"]), dtype=int)
 
 
@@ -386,10 +386,7 @@ def check_log_level(settings: dict) -> None:
 
 @register_settings_hook
 def check_interpolation_mode(settings: dict) -> None:
-    """Just updates the interpolation mode to a bool.
-
-    There's no check, actually.
-    """
+    """Checks that the interpolation mode is valid."""
     settings["interpolation_mode"] = settings["interpolation_mode"].lower()
 
     valid_modes = [

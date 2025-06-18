@@ -43,13 +43,10 @@ class MCA:
         from muse.readers.toml import convert
 
         # Read settings
-        if isinstance(settings, str):
-            settings = Path(settings)
-        if isinstance(settings, Path):
-            settings = read_settings(settings)
+        if isinstance(settings, (str, Path)):
+            settings = read_settings(Path(settings))
         elif isinstance(settings, Mapping):
             settings = convert(settings)
-        settings = cast(Any, settings)
 
         # Create the initial market
         market = (
