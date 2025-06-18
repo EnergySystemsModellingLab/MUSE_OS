@@ -804,10 +804,9 @@ def test_read_technologies__timeslice(timeslice_model_path):
     from muse.readers.csv import read_technologies
 
     data = read_technologies(
-        technodata_path_or_sector=timeslice_model_path / "power" / "Technodata.csv",
+        technodata_path=timeslice_model_path / "power" / "Technodata.csv",
         comm_out_path=timeslice_model_path / "power" / "CommOut.csv",
         comm_in_path=timeslice_model_path / "power" / "CommIn.csv",
-        commodities=timeslice_model_path / "GlobalCommodities.csv",
         technodata_timeslices_path=timeslice_model_path
         / "power"
         / "TechnodataTimeslices.csv",
@@ -842,14 +841,12 @@ def test_read_technologies__timeslice(timeslice_model_path):
             "interest_rate": "float64",
             "type": "object",
             "agent1": "int64",
-            "tech_type": "<U6",
+            "tech_type": "object",
             "fixed_outputs": "float64",
-            "commodity_units": "object",
             "fixed_inputs": "float64",
             "flexible_inputs": "float64",
             "utilization_factor": "int64",
             "minimum_service_factor": "int64",
-            "comm_name": "object",
             "emmission_factor": "float64",
             "heat_rate": "int64",
             "unit": "object",
@@ -863,7 +860,7 @@ def test_read_technologies__timeslice(timeslice_model_path):
         {
             "commodity": ["electricity", "gas", "heat", "wind", "CO2f"],
             "technology": ["gasCCGT", "windturbine"],
-            "region": ["R1"],
+            "region": ["r1"],
             "year": [2020],
             "comm_usage": [10, 9, 8, 6, 9],
             "timeslice": EXPECTED_TIMESLICES,
@@ -908,12 +905,10 @@ def test_read_technodata(model_path):
             "interest_rate": "float64",
             "type": "object",
             "agent1": "int64",
-            "tech_type": "<U6",
+            "tech_type": "object",
             "fixed_outputs": "float64",
-            "commodity_units": "object",
             "fixed_inputs": "float64",
             "flexible_inputs": "float64",
-            "comm_name": "object",
             "emmission_factor": "float64",
             "heat_rate": "int64",
             "unit": "object",
@@ -927,7 +922,7 @@ def test_read_technodata(model_path):
         {
             "commodity": ["electricity", "gas", "wind", "CO2f"],
             "technology": ["gasCCGT", "windturbine"],
-            "region": ["R1"],
+            "region": ["r1"],
             "year": [2020, 2025, 2030, 2035, 2040, 2045, 2050],
             "comm_usage": [10, 9, 6, 9],
         },
@@ -968,12 +963,10 @@ def test_read_technodata__trade(trade_model_path):
             "interest_rate": "float64",
             "type": "object",
             "agent1": "int64",
-            "tech_type": "<U6",
+            "tech_type": "object",
             "fixed_outputs": "float64",
-            "commodity_units": "object",
             "fixed_inputs": "float64",
             "flexible_inputs": "float64",
-            "comm_name": "object",
             "emmission_factor": "float64",
             "heat_rate": "int64",
             "unit": "object",
@@ -992,8 +985,8 @@ def test_read_technodata__trade(trade_model_path):
         {
             "commodity": ["electricity", "gas", "wind", "CO2f"],
             "technology": ["gasCCGT", "windturbine"],
-            "region": ["R1", "R2"],
-            "dst_region": ["R1", "R2"],
+            "region": ["r1", "r2"],
+            "dst_region": ["r1", "r2"],
             "comm_usage": [10, 9, 6, 9],
             "year": [2010, 2020, 2025, 2030, 2035],
         },
@@ -1012,7 +1005,7 @@ def test_read_presets_sector(model_path):
         coords={
             "region": CoordinateSchema(dims=("region",), dtype="object"),
             "year": CoordinateSchema(dims=("year",), dtype="int64"),
-            "commodity": CoordinateSchema(dims=("commodity",), dtype="<U11"),
+            "commodity": CoordinateSchema(dims=("commodity",), dtype="object"),
             "timeslice": CoordinateSchema(dims=("timeslice",), dtype="object"),
             "month": CoordinateSchema(dims=("timeslice",), dtype="object"),
             "day": CoordinateSchema(dims=("timeslice",), dtype="object"),
@@ -1027,7 +1020,7 @@ def test_read_presets_sector(model_path):
     assert_coordinate_values(
         data,
         {
-            "region": ["R1"],
+            "region": ["r1"],
             "year": [2020, 2050],
             "commodity": COMMODITIES,
             "timeslice": EXPECTED_TIMESLICES,
@@ -1038,7 +1031,7 @@ def test_read_presets_sector(model_path):
     # Check values at a single coordinate
     coord = {
         "year": 2020,
-        "region": "R1",
+        "region": "r1",
         "commodity": "heat",
         "timeslice": ("all-year", "all-week", "night"),
     }
@@ -1078,7 +1071,7 @@ def test_read_presets_sector__correlation(correlation_model_path):
     assert_coordinate_values(
         data,
         {
-            "region": ["R1"],
+            "region": ["r1"],
             "year": range(2010, 2111),
             "commodity": ["electricity", "gas", "heat", "CO2f"],
             "timeslice": EXPECTED_TIMESLICES,
@@ -1089,7 +1082,7 @@ def test_read_presets_sector__correlation(correlation_model_path):
     # Check values at a single coordinate
     coord = {
         "year": 2020,
-        "region": "R1",
+        "region": "r1",
         "commodity": "heat",
         "timeslice": ("all-year", "all-week", "night"),
     }
@@ -1099,66 +1092,3 @@ def test_read_presets_sector__correlation(correlation_model_path):
         "supply": 0,
     }
     assert_single_coordinate(data, coord, expected)
-
-
-def test_read_technologies(model_path):
-    from muse.readers.csv import read_technologies
-
-    data = read_technologies(
-        technodata_path_or_sector=model_path / "power" / "Technodata.csv",
-        comm_out_path=model_path / "power" / "CommOut.csv",
-        comm_in_path=model_path / "power" / "CommIn.csv",
-        commodities=model_path / "GlobalCommodities.csv",
-    )
-
-    # Check data against schema
-    expected_schema = DatasetSchema(
-        dims={"commodity", "technology", "region", "year"},
-        coords={
-            "technology": CoordinateSchema(dims=("technology",), dtype="object"),
-            "region": CoordinateSchema(dims=("region",), dtype="object"),
-            "year": CoordinateSchema(dims=("year",), dtype="int64"),
-            "commodity": CoordinateSchema(dims=("commodity",), dtype="object"),
-            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="object"),
-        },
-        data_vars={
-            "cap_par": "float64",
-            "cap_exp": "int64",
-            "fix_par": "int64",
-            "fix_exp": "int64",
-            "var_par": "int64",
-            "var_exp": "int64",
-            "max_capacity_addition": "int64",
-            "max_capacity_growth": "float64",
-            "total_capacity_limit": "int64",
-            "technical_life": "int64",
-            "utilization_factor": "float64",
-            "scaling_size": "float64",
-            "efficiency": "int64",
-            "interest_rate": "float64",
-            "type": "object",
-            "agent1": "int64",
-            "tech_type": "<U6",
-            "fixed_outputs": "float64",
-            "commodity_units": "object",
-            "fixed_inputs": "float64",
-            "flexible_inputs": "float64",
-            "comm_name": "object",
-            "emmission_factor": "float64",
-            "heat_rate": "int64",
-            "unit": "object",
-        },
-    )
-    assert DatasetSchema.from_ds(data) == expected_schema
-
-    # Check coordinate values
-    assert_coordinate_values(
-        data,
-        {
-            "commodity": ["electricity", "gas", "heat", "wind", "CO2f"],
-            "technology": ["gasCCGT", "windturbine"],
-            "region": ["R1"],
-            "year": [2020],
-            "comm_usage": [10, 9, 8, 6, 9],
-        },
-    )
