@@ -237,6 +237,7 @@ def convert_column_types(data: pd.DataFrame) -> pd.DataFrame:
     data = data.rename(columns=camel_to_snake)
     data = data[data.process_name != "Unit"]
 
+
 def read_csv(
     path: Path | pd.DataFrame,
     float_precision: str = "high",
