@@ -499,7 +499,7 @@ def settings(tmp_path) -> dict:
 
     settings = toml.load(DEFAULT_SETTINGS_PATH)
     drop_optionals(settings)
-    out = format_paths(settings, cwd=tmp_path, path=tmp_path, muse_sectors=tmp_path)
+    out = format_paths(settings, cwd=tmp_path, path=tmp_path)
 
     required = {
         "time_framework": [2010, 2015, 2020],

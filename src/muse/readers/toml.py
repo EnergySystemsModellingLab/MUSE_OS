@@ -10,19 +10,21 @@ from collections.abc import Mapping, MutableMapping, Sequence
 from copy import deepcopy
 from logging import getLogger
 from pathlib import Path
-from typing import (
-    IO,
-    Any,
-)
+from typing import Any, Callable
 
 import numpy as np
 import xarray as xr
 
-from muse.decorators import SETTINGS_CHECKS, register_settings_check
-from muse.defaults import DATA_DIRECTORY, DEFAULT_SECTORS_DIRECTORY
+from muse.defaults import DATA_DIRECTORY
 
 DEFAULT_SETTINGS_PATH = DATA_DIRECTORY / "default_settings.toml"
 """Default settings path."""
+
+SETTINGS_HOOKS_SIGNATURE = Callable[[dict], None]
+"""settings checks signature."""
+
+SETTINGS_HOOKS: list[tuple[int, str, SETTINGS_HOOKS_SIGNATURE]] = []
+"""Dictionary of settings checks."""
 
 
 class InputError(Exception):
@@ -37,7 +39,7 @@ class IncorrectSettings(InputError):
     """Error when an input exists but is incorrect."""
 
 
-def convert(dictionary):
+def convert(dictionary: dict) -> namedtuple:
     """Converts a dictionary (with nested ones) to a nametuple."""
     for key, value in dictionary.items():
         if isinstance(value, dict):
@@ -45,7 +47,7 @@ def convert(dictionary):
     return namedtuple("MUSEOptions", dictionary.keys())(**dictionary)
 
 
-def undo_damage(nt):
+def undo_damage(nt) -> Any:
     """Unconvert nested nametuple."""
     if not hasattr(nt, "_asdict"):
         return nt
@@ -75,8 +77,7 @@ def format_path(
     replacements: Mapping | None = None,
     path: str | Path | None = None,
     cwd: str | Path | None = None,
-    muse_sectors: str | None = None,
-):
+) -> Path:
     """Replaces known patterns in a path.
 
     Unknown patterns are left alone. This allows downstream object factories to format
@@ -88,159 +89,52 @@ def format_path(
         {
             **{
                 "cwd": Path("" if cwd is None else cwd).absolute(),
-                "muse_sectors": Path(
-                    DEFAULT_SECTORS_DIRECTORY if muse_sectors is None else muse_sectors
-                ).absolute(),
                 "path": Path("" if path is None else path).absolute(),
             },
             **({} if replacements is None else replacements),
         }
     )
     formatter = Formatter()
-    return str(Path(formatter.vformat(str(filepath), (), patterns)).absolute())
+    return Path(formatter.vformat(str(filepath), (), patterns)).absolute()
 
 
 def format_paths(
     settings: Mapping,
-    replacements: Mapping | None = None,
-    path: str | Path | None = None,
-    cwd: str | Path | None = None,
-    muse_sectors: str | None = None,
+    path: Path,
+    cwd: Path,
     suffixes: Sequence[str] = (".csv", ".nc", ".xls", ".xlsx", ".py", ".toml"),
-):
+) -> dict:
     """Format paths passed to settings.
 
-    A setting is recognized as a path if it's name ends in `_path`, `_file`, or `_dir`,
-    or if the associated value is text object and ends with `.csv, as well as settings
-    called `path`.
+    This function is used to format paths in the settings file. It is used to replace
+    the {path} and {cwd} placeholders with the actual path and current working
+    directory.
 
-    Paths are first formatted using the input replacement keywords. These replacements
-    will include "cwd" and "sectors" by default. For simplicity, any item called `path`
-    is considered first in any dictionary, and then used within that dictionary and
-    nested dictionaries.
-
-    Examples:
-        Starting from a simple example, we see `data_path` has been modified to point to
-        the current working directory:
-
-        >>> from pathlib import Path
-        >>> from muse.readers.toml import format_paths
-        >>> a = format_paths({"a_path": "{cwd}/a/b/c"})
-        >>> str(Path().absolute() / "a" / "b" / "c") == a["a_path"]
-        True
-
-        Or it can be modified to point to the default locations for sectorial data:
-
-        >>> from muse.defaults import DEFAULT_SECTORS_DIRECTORY
-        >>> a = format_paths({"a_path": "{muse_sectors}/a/b/c"})
-        >>> str(DEFAULT_SECTORS_DIRECTORY.absolute() / "a" / "b" / "c") == a["a_path"]
-        True
-
-        Similarly, if not given, `path` defaults to the current working directory:
-
-        >>> a = format_paths({"a_path": "{path}/a/b/c"})
-        >>> str(Path().absolute() / "a" / "b" / "c") == a["a_path"]
-        True
-
-        However, it can be made to point to anything of interest:
-
-        >>> a = format_paths({"path": "{cwd}/a/b", "a_path": "{path}/c"})
-        >>> str(Path().absolute() / "a" / "b" / "c") == a["a_path"]
-        True
-
-        Any property ending in `_path`, `_dir`, `_file`, or with a value that can be
-        interpreted as a path with suffix `.csv`, `.nc`, `.xls`, `.xlsx`, `.py` or
-        `.toml` is considered a path and transformed:
-
-        >>> a = format_paths({"path": "{cwd}/a/b", "a_dir": "{path}/c"})
-        >>> str(Path().absolute() / "a" / "b" / "c") == a["a_dir"]
-        True
-        >>> a = format_paths({"path": "{cwd}/a/b", "a_file": "{path}/c"})
-        >>> str(Path().absolute() / "a" / "b" / "c") == a["a_file"]
-        True
-        >>> a = format_paths({"path": "{cwd}/a/b", "a": "{path}/c.csv"})
-        >>> str(Path().absolute() / "a" / "b" / "c.csv") == a["a"]
-        True
-        >>> a = format_paths({"path": "{cwd}/a/b", "a": "{path}/c.toml"})
-        >>> str(Path().absolute() / "a" / "b" / "c.toml") == a["a"]
-        True
-
-        Finally, paths in nested directories are also processed:
-
-        >>> a = format_paths(
-        ...     {
-        ...         "path": "{cwd}/a/b",
-        ...         "nested": { "a_path": "{path}/c" }
-        ...     }
-        ... )
-        >>> str(Path().absolute() / "a" / "b" / "c") == a["nested"]["a_path"]
-        True
-
-        Note that `path` points to the latest one:
-
-        >>> a = format_paths(
-        ...     {
-        ...         "path": "{cwd}/a/b",
-        ...         "a_path": "{path}/c",
-        ...         "nested": {
-        ...             "path": "{cwd}/toot/suite",
-        ...             "b_path": "{path}/c"
-        ...         }
-        ...     }
-        ... )
-        >>> str(Path().absolute() / "a" / "b" / "c") == a["a_path"]
-        True
-        >>> str(Path().absolute() / "toot" / "suite" / "c") == a["nested"]["b_path"]
-        True
+    Args:
+        settings: The settings dictionary to format
+        path: The path to the settings file
+        cwd: The current working directory
+        suffixes: Suffixes used to identify strings as paths
     """
-    import re
-    from pathlib import Path
-
-    patterns = {
-        **{
-            "cwd": Path("" if cwd is None else cwd).absolute(),
-            "muse_sectors": Path(
-                DEFAULT_SECTORS_DIRECTORY if muse_sectors is None else muse_sectors
-            ).absolute(),
-            "path": Path("" if path is None else path).absolute(),
-        },
-        **({} if replacements is None else replacements),
-    }
-
-    def format(path: str) -> str:
-        if path.lower() in ("optional", "required"):
-            return path
-        return format_path(path, **patterns)  # type: ignore
-
-    path_names = (
-        re.compile(r"_path$"),
-        re.compile("_dir$"),
-        re.compile("_file$"),
-        re.compile("filename"),
-    )
 
     def is_a_path(key, value):
-        return any(re.search(x, key) is not None for x in path_names) or (
-            isinstance(value, str) and Path(value).suffix in suffixes
-        )
+        return (
+            isinstance(value, (str, Path)) and Path(value).suffix in suffixes
+        ) or key == "filename"
 
-    path = format(settings.get("path", str(patterns["path"])))
-    patterns["path"] = path  # type: ignore
-
+    # Recursively format paths
     result = dict(**settings)
-    if "path" in settings:
-        result["path"] = path
     for key, value in result.items():
         if is_a_path(key, value):
-            result[key] = format(value)
+            result[key] = format_path(value, path=path, cwd=cwd)
         elif isinstance(value, Mapping):
-            result[key] = format_paths(value, patterns, path)
+            result[key] = format_paths(settings=value, path=path, cwd=cwd)
         elif isinstance(value, list):
             result[key] = [
-                format_paths(item, patterns, path)
+                format_paths(settings=item, path=path, cwd=cwd)
                 if isinstance(item, Mapping)
-                else format_path(item, patterns, path)
-                if is_a_path("", item)
+                else format_path(item, path=path, cwd=cwd)
+                if is_a_path(key, item)
                 else item
                 for item in result[key]
             ]
@@ -248,141 +142,53 @@ def format_paths(
     return result
 
 
-def read_split_toml(
-    tomlfile: str | Path | IO[str] | Mapping,
-    path: str | Path | None = None,
-) -> MutableMapping:
-    """Reads and consolidate TOML files.
+def read_toml(tomlfile: str | Path, path: str | Path | None = None) -> MutableMapping:
+    """Reads a TOML file and formats the paths.
 
-    Our TOML accepts as input sections that are farmed off to other files:
+    Args:
+        tomlfile: Path to the TOML file (string or Path object)
+        path: Optional path to use for formatting relative paths (string or Path object)
 
-        [some_section]
-            include_path = "path/to/included.toml"
-
-        [another_section]
-            option_a = "a"
-
-    The section `some_section` should contain only one item, `include_path`, giving the
-    path to the toml file to include. This file is then spliced into the original toml.
-    It **must** repeat the section that it splices. Hence if `included.toml` looks like:
-
-        [some_section]
-            some_option = "b"
-
-            [some_section.inner_section]
-                other_option = "c"
-
-    Then the spliced toml would look like:
-
-        [some_section]
-            some_option = "b"
-
-            [some_section.inner_section]
-            other_option = "c"
-
-        [another_section]
-            option_a = "a"
-
-    `included.toml` must contain a single section (possibly with inner options).
-    Anything else will result in an error:
-
-    This is an error:
-
-        outer_option = "b"
-
-        [some_section]
-            some_option = "b"
-
-    This is also an error:
-
-        [some_section]
-            some_option = "b"
-
-        [some_other_section]
-            some_other_option = "c"
-
-    Arguments:
-        tomlfile: path to the toml file. Can be any input to `toml.load`.
-        path: Root path when formatting path options. See `format_paths`.
+    Returns:
+        MutableMapping containing the formatted TOML data
     """
     from toml import load
 
-    def splice_section(settings: Mapping):
-        settings = dict(**settings)
-
-        for key, section in settings.items():
-            if not isinstance(section, Mapping):
-                continue
-
-            if "include_path" in section and len(section) > 1:
-                raise IncorrectSettings(
-                    "Sections with an `include_path` option "
-                    "should contain only that option."
-                )
-            elif "include_path" in section:
-                inner = read_split_toml(section["include_path"], path=path)
-                if key not in inner:
-                    raise MissingSettings(
-                        f"Could not find section {key} in {section['include_path']}"
-                    )
-                if len(inner) != 1:
-                    raise IncorrectSettings(
-                        "More than one section found in included"
-                        f"file {section['include_path']}"
-                    )
-                settings[key] = inner[key]
-            else:
-                settings[key] = splice_section(section)
-
-        return settings
-
-    toml = tomlfile if isinstance(tomlfile, Mapping) else load(tomlfile)
-    settings = format_paths(toml, path=path)  # type: ignore
-    return splice_section(settings)
+    tomlfile = Path(tomlfile)
+    toml = load(tomlfile)
+    if path is None:
+        path = tomlfile.parent
+    else:
+        path = Path(path)
+    settings = format_paths(toml, path=path, cwd=Path())
+    return settings
 
 
-def read_settings(
-    settings_file: str | Path | IO[str] | Mapping,
-    path: str | Path | None = None,
-) -> Any:
+def read_settings(settings_file: str | Path) -> namedtuple:
     """Loads the input settings for any MUSE simulation.
 
     Loads a MUSE settings file. This must be a TOML formatted file. Missing settings are
     loaded from the DEFAULT_SETTINGS. Custom Python modules, if present, are loaded
-    and checks are run to validate the settings and ensure that they are compatible with
-    a MUSE simulation.
+    and hooks are run to process and validate the settings and ensure that they are
+    compatible with a MUSE simulation.
 
     Arguments:
         settings_file: A string or a Path to the settings file
-        path: A string or path to the settings folder
 
     Returns:
         A dictionary with the settings
     """
-    from muse.timeslices import setup_module
-
     getLogger(__name__).info("Reading MUSE settings")
+    settings_file = Path(settings_file)
 
     # The user data
-    if path is None and not isinstance(settings_file, (Mapping, IO)):
-        path = Path(settings_file).parent
-    elif path is None:
-        path = Path()
-    user_settings = read_split_toml(settings_file, path=path)
+    user_settings = read_toml(settings_file)
 
-    # User defined default settings
+    # Get default settings
     default_path = Path(user_settings.get("default_settings", DEFAULT_SETTINGS_PATH))
+    default_settings = read_toml(default_path, path=settings_file.parent)
 
-    if not default_path.is_absolute():
-        default_path = path / default_path
-
-    default_settings = read_split_toml(default_path, path=path)
-
-    # Check that there is at least 1 sector.
-    msg = "ERROR - There must be at least 1 sector."
-    assert len(user_settings["sectors"]) >= 1, msg
-
-    # timeslice information cannot be merged. Accept only information from one.
+    # Timeslice information cannot be merged. Accept only information from one.
     if "timeslices" in user_settings:
         default_settings.pop("timeslices", None)
 
@@ -390,121 +196,185 @@ def read_settings(
     settings = add_known_parameters(default_settings, user_settings)
     settings = add_unknown_parameters(settings, user_settings)
 
-    # Set up timeslices
-    setup_module(settings)
-    settings.pop("timeslices", None)
-
-    # Set up time framework
-    settings["time_framework"] = np.array(sorted(settings["time_framework"]), dtype=int)
-
-    # Finally, we run some checks to make sure all makes sense and files exist.
-    validate_settings(settings)
-
+    # Finally, we run some hooks to make sure all makes sense and files exist.
+    process_settings(settings)
     return convert(settings)
 
 
-def add_known_parameters(dd, u, parent=None):
-    """Function for updating the settings dictionary recursively.
+def add_known_parameters(default_dict, user_dict, parent=None) -> dict:
+    """Recursively merge user settings with default settings.
 
-    Those variables that take default values are logged.
+    Validates required parameters and handles optional ones.
+
+    Args:
+        default_dict: Dictionary containing default settings
+        user_dict: Dictionary containing user-provided settings
+        parent: Parent key for nested dictionaries (used for logging)
+
+    Returns:
+        Merged dictionary with validated settings
     """
+    from logging import getLogger
+
+    merged = deepcopy(default_dict)
     defaults_used = []
     missing = []
-    d = deepcopy(dd)
 
-    for k in dd:
-        # Known parameters with user-defined values
-        if k in u:
-            v = u[k]
-            if isinstance(v, Mapping):
-                new_parent = k
-                if parent is not None:
-                    new_parent = f"{parent}.{k}"
-                d[k] = add_known_parameters(d.get(k, {}), v, new_parent)
+    for key in default_dict:
+        if key in user_dict:
+            value = user_dict[key]
+            if isinstance(value, Mapping):
+                new_parent = f"{parent}.{key}" if parent else key
+                merged[key] = add_known_parameters(
+                    merged.get(key, {}), value, new_parent
+                )
             else:
-                d[k] = v
-        # Required parameters
-        elif isinstance(d[k], str) and d[k].lower() == "required":
-            missing.append(k)
-        # Optional parameters with default values
-        elif isinstance(d[k], str) and d[k].lower() == "optional":
-            d.pop(k)
-        elif parent is not None:
-            defaults_used.append(f"{parent}.{k}")
+                merged[key] = value
+        elif isinstance(merged[key], str):
+            if merged[key].lower() == "required":
+                missing.append(key)
+            elif merged[key].lower() == "optional":
+                merged.pop(key)
         else:
-            defaults_used.append(k)
+            defaults_used.append(f"{parent}.{key}" if parent else key)
 
-    msg = f"ERROR - Required parameters missing in input file: {missing}."
-    if len(missing) > 0:
-        raise MissingSettings(msg)
+    if missing:
+        raise MissingSettings(f"Required parameters missing in input file: {missing}")
 
-    msg = ", ".join(defaults_used)
-    msg = " Default input values used: " + msg
+    if defaults_used:
+        getLogger(__name__).info(
+            f"Default input values used: {', '.join(defaults_used)}"
+        )
 
-    if len(defaults_used) > 0:
-        getLogger(__name__).info(msg)
-
-    return d
+    return merged
 
 
-def add_unknown_parameters(dd, u):
-    """Function for adding new parameters not known in the defaults file."""
-    d = deepcopy(dd)
-    for k, v in u.items():
-        if isinstance(v, Mapping):
-            d[k] = add_unknown_parameters(d.get(k, {}), v)
+def add_unknown_parameters(default_dict, user_dict) -> dict:
+    """Recursively merge user settings with default settings.
+
+    Preserves unknown parameters from user settings.
+
+    Args:
+        default_dict: Dictionary containing default settings
+        user_dict: Dictionary containing user-provided settings
+
+    Returns:
+        Merged dictionary containing both default and user settings
+    """
+    merged = deepcopy(default_dict)
+
+    for key, value in user_dict.items():
+        if isinstance(value, Mapping):
+            merged[key] = add_unknown_parameters(merged.get(key, {}), value)
         else:
-            d[k] = v
+            merged[key] = value
 
-    return d
+    return merged
 
 
-def validate_settings(settings: dict) -> None:
-    """Run the checks on the settings file."""
-    msg = " Validating input settings..."
+def process_settings(settings: dict) -> None:
+    """Run the hooks on the settings file."""
+    msg = " Processing input settings..."
     getLogger(__name__).info(msg)
 
+    # Load extra hooks from plugins
     check_plugins(settings)
+    # This must be run before the other hooks to ensure that custom defined settings
+    # hooks are all loaded before validating the settings.
 
-    for check in SETTINGS_CHECKS:
-        SETTINGS_CHECKS[check](settings)
+    # Run hooks in order of priority
+    for _, _, hook in sorted(SETTINGS_HOOKS, key=lambda x: x[0]):
+        hook(settings)
 
 
 def check_plugins(settings: dict) -> None:
-    """Checks that the user custom defined python files exist.
-
-    Checks that the user custom defined python files exist. If flagged to use, they are
-    also loaded.
-
-    While this is a settings check, it is run separately to ensure that custom defined
-    settings checks are all loaded before validating the settings.
-    """
+    """Check and load user-defined Python plugin files if they exist."""
     plugins = settings.get("plugins", [])
 
+    # Handle plugins as dict, str, or Path
     if isinstance(plugins, (dict, Mapping)):
-        plugins = plugins.get("plugins")
-
+        plugins = plugins.get("plugins", [])
     if isinstance(plugins, (Path, str)):
         plugins = [plugins]
-
     if not plugins:
         return
 
-    for path in map(lambda x: Path(format_path(x)), plugins):
-        if not path.exists():
-            msg = f"ERROR plugin does not exist: {path}"
+    for plugin in plugins:
+        plugin_path = Path(format_path(plugin))
+        if not plugin_path.exists():
+            msg = f"ERROR plugin does not exist: {plugin_path}"
             getLogger(__name__).critical(msg)
             raise IncorrectSettings(msg)
 
-        # The module is loaded, registering anything inside that is decorated
-        spec = implib.spec_from_file_location(path.stem, path)
+        # Load the plugin module
+        spec = implib.spec_from_file_location(plugin_path.stem, plugin_path)
         mod = implib.module_from_spec(spec)
         spec.loader.exec_module(mod)  # type: ignore
+        getLogger(__name__).info(f"Loaded plugin {plugin_path.stem} from {plugin_path}")
 
-        getLogger(__name__).info(f"Loaded plugin {path.stem} from {path}")
+
+def register_settings_hook(
+    func: SETTINGS_HOOKS_SIGNATURE | None = None, *, priority: int = 100
+) -> Callable:
+    """Register a function to be called during settings validation.
+
+    The function will be called with the settings dictionary as its only argument.
+    The function can modify the settings dictionary in place.
+
+    Args:
+        func: The function to register
+        priority: The priority of the function. Lower numbers are called first.
+
+    Returns:
+        The decorated function
+    """
+
+    def decorated(f: SETTINGS_HOOKS_SIGNATURE) -> SETTINGS_HOOKS_SIGNATURE:
+        """Register the function and return it unchanged."""
+        getLogger(__name__).debug(
+            f"Registering settings hook {f.__name__} with priority {priority}"
+        )
+        SETTINGS_HOOKS.append((priority, f.__name__, f))
+        return f
+
+    if func is None:
+        return decorated
+    return decorated(func)
 
 
-@register_settings_check(vary_name=False)
+@register_settings_hook(priority=1)
+def check_sectors(settings: dict) -> None:
+    """Check that there is at least 1 sector."""
+    assert len(settings["sectors"]) >= 1, "ERROR - There must be at least 1 sector."
+
+
+@register_settings_hook(priority=1)
+def setup_timeslices(settings: dict) -> None:
+    """Set up the timeslices."""
+    from muse.timeslices import setup_module
+
+    setup_module(settings)
+    settings.pop("timeslices", None)
+
+
+@register_settings_hook(priority=1)
+def setup_time_framework(settings: dict) -> None:
+    """Converts the time framework to a sorted array."""
+    settings["time_framework"] = np.array(sorted(settings["time_framework"]), dtype=int)
+
+
+@register_settings_hook(priority=1)
+def standardise_case(settings: dict) -> None:
+    """Standardise certain fields to snake_case."""
+    from muse.readers import camel_to_snake
+
+    fields_to_standardise = ["excluded_commodities"]
+    for field in fields_to_standardise:
+        if field in settings:
+            settings[field] = [camel_to_snake(x) for x in settings[field]]
+
+
+@register_settings_hook
 def check_log_level(settings: dict) -> None:
     """Check the log level required in the simulation."""
     valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -514,12 +384,9 @@ def check_log_level(settings: dict) -> None:
     settings["log_level"] = settings["log_level"].upper()
 
 
-@register_settings_check(vary_name=False)
+@register_settings_hook
 def check_interpolation_mode(settings: dict) -> None:
-    """Just updates the interpolation mode to a bool.
-
-    There's no check, actually.
-    """
+    """Checks that the interpolation mode is valid."""
     settings["interpolation_mode"] = settings["interpolation_mode"].lower()
 
     valid_modes = [
@@ -546,86 +413,44 @@ def check_interpolation_mode(settings: dict) -> None:
         settings["interpolation_mode"] = "linear"
 
 
-@register_settings_check(vary_name=False)
+@register_settings_hook
 def check_budget_parameters(settings: dict) -> None:
     """Check the parameters that are required if carbon_budget > 0."""
-    length = len(settings["carbon_budget_control"]["budget"])
-    if length > 0:
-        msg = "ERROR - budget_check must have the same length that time_framework"
-        if isinstance(settings["time_framework"], list):
-            assert length == len(settings["time_framework"]), msg
-            coords = settings["time_framework"]
-        else:
-            assert length == len(settings["time_framework"]), msg
-            coords = settings["time_framework"]
-
-        # If Ok, we transform the list into an xr.DataArray
-        settings["carbon_budget_control"]["budget"] = xr.DataArray(
-            np.array(settings["carbon_budget_control"]["budget"]),
-            dims="year",
-            coords={"year": coords},
-        )
-    else:
+    budget = settings["carbon_budget_control"]["budget"]
+    time_framework = settings["time_framework"]
+    if not budget:
         settings["carbon_budget_control"]["budget"] = xr.DataArray([])
+        return
+
+    msg = "ERROR - budget_check must have the same length that time_framework"
+    if len(budget) != len(time_framework):
+        raise AssertionError(msg)
+
+    coords = time_framework
+    settings["carbon_budget_control"]["budget"] = xr.DataArray(
+        np.array(budget), dims="year", coords={"year": coords}
+    )
 
 
-@register_settings_check(vary_name=False)
+@register_settings_hook
 def check_iteration_control(settings: dict) -> None:
-    """Checks the variables related to the control of the iterations.
-
-    This includes whether equilibrium must be reached, the maximum number of iterations
-    or the tolerance to consider convergence.
-    """
-    # Anything that is not "off" or False, means that equilibrium should be reached.
-    if str(settings["equilibrium"]).lower() in ("false", "off"):
+    """Check and set iteration control parameters for equilibrium and convergence."""
+    equilibrium = str(settings["equilibrium"]).lower()
+    if equilibrium in ("false", "off"):
         settings["equilibrium"] = False
+        return
 
-    else:
-        settings["equilibrium"] = True
-
-        msg = "ERROR - The number of iterations must be a positive number."
-        assert settings["maximum_iterations"] > 0, msg
-        settings["maximum_iterations"] = int(settings["maximum_iterations"])
-
-        msg = "ERROR - The convergence tolerance must be a positive number."
-        assert settings["tolerance"] > 0, msg
+    settings["equilibrium"] = True
+    if settings["maximum_iterations"] <= 0:
+        raise ValueError("ERROR - The number of iterations must be a positive number.")
+    settings["maximum_iterations"] = int(settings["maximum_iterations"])
+    if settings["tolerance"] <= 0:
+        raise ValueError("ERROR - The convergence tolerance must be a positive number.")
 
 
-@register_settings_check(vary_name=False)
-def check_global_data_files(settings: dict) -> None:
-    """Checks that the global user files exist."""
-    user_data = settings["global_input_files"]
-
-    if Path(user_data["path"]).is_absolute():
-        basedir = Path(user_data["path"])
-    else:
-        basedir = settings["root"] / Path(user_data["path"])
-
-    msg = f"ERROR Directory of global user files does not exist: {basedir}."
-    assert basedir.exists(), msg
-
-    # Update the path to the base directory
-    user_data["path"] = basedir
-
-    files = list(user_data.keys())
-    files.remove("path")
-    for m in files:
-        if user_data[m] == "":
-            user_data.pop(m)
-            continue
-        if Path(user_data[m]).is_absolute():
-            f = Path(user_data[m])
-        else:
-            f = basedir / user_data[m]
-        assert f.exists(), f"{m.title()} file does not exist ({f})"
-
-        # The path is updated so it can be readily used
-        user_data[m] = f
-
-
-@register_settings_check(vary_name=False)
-def check_sectors_files(settings: dict) -> None:
-    """Checks that the sector files exist."""
+@register_settings_hook
+def sort_sectors(settings: dict) -> None:
+    """Set the priorities of the sectors."""
     sectors = settings["sectors"]
     priorities = {
         "preset": 0,
@@ -636,20 +461,73 @@ def check_sectors_files(settings: dict) -> None:
         "last": 100,
     }
 
+    # If sectors has a 'list' key, flatten it
     if "list" in sectors:
         sectors = {k: sectors[k] for k in sectors["list"]}
 
-    for name, sector in sectors.items():
-        # Finally the priority of the sectors is used to set the order of execution
-        sector["priority"] = sector.get("priority", priorities["last"])
-        sector["priority"] = int(
-            priorities.get(str(sector["priority"]).lower().strip(), sector["priority"])
-        )
+    for sector in sectors.values():
+        # Assign priority, using default if not present or not recognized
+        prio = sector.get("priority", priorities["last"])
+        sector["priority"] = int(priorities.get(str(prio).lower().strip(), prio))
 
-    sectors["list"] = sorted(
-        settings["sectors"].keys(), key=lambda x: settings["sectors"][x]["priority"]
-    )
+    # Sort sector names by priority
+    sectors["list"] = sorted(sectors.keys(), key=lambda x: sectors[x]["priority"])
     settings["sectors"] = sectors
+
+
+@register_settings_hook
+def check_deprecated_params(settings: dict) -> None:
+    """Check for and warn about deprecated parameters."""
+    deprecated_params = ["foresight", "interest_rate"]
+    for param in deprecated_params:
+        if param in settings:
+            msg = (
+                f"The `{param}` parameter has been deprecated. "
+                "Please remove it from your settings file."
+            )
+            getLogger(__name__).warning(msg)
+            settings.pop(param)
+
+
+@register_settings_hook(priority=10)
+def check_subsector_settings(settings: dict) -> None:
+    """Check for invalid or deprecated subsector settings.
+
+    Validates:
+    - Renamed asset_threshhold parameter (PR #447)
+    - Missing lpsolver parameter (PR #587)
+    - Deprecated forecast parameter (PR #645)
+    """
+    from logging import getLogger
+
+    # Check each sector's subsectors
+    for sector_name, sector in settings["sectors"].items():
+        if "subsectors" not in sector:
+            continue
+
+        for subsector_name, subsector in sector["subsectors"].items():
+            # Check for renamed asset_threshhold parameter
+            if "asset_threshhold" in subsector:
+                msg = (
+                    "Invalid parameter asset_threshhold. Did you mean asset_threshold?"
+                )
+                raise ValueError(msg)
+
+            # Check for missing lpsolver
+            if "lpsolver" not in subsector:
+                msg = (
+                    f"lpsolver not specified for subsector '{subsector_name}' "
+                    "in sector '{sector_name}'. Defaulting to 'scipy'"
+                )
+                getLogger(__name__).warning(msg)
+
+            # Check for deprecated forecast parameter
+            if "forecast" in subsector:
+                msg = (
+                    "The 'forecast' parameter has been deprecated. "
+                    "Please remove from your settings file."
+                )
+                getLogger(__name__).warning(msg)
 
 
 def read_technodata(
@@ -683,7 +561,7 @@ def read_technodata(
         raise MissingSettings("Missing technodata section")
     technosettings = undo_damage(settings.technodata)
 
-    if isinstance(technosettings, str):
+    if isinstance(technosettings, (str, Path)):
         technosettings = dict(
             technodata=technosettings,
             technodata_timeslices=technodata_timeslices,
