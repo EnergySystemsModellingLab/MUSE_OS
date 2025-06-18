@@ -237,6 +237,7 @@ def convert_column_types(data: pd.DataFrame) -> pd.DataFrame:
     data = data.rename(columns=camel_to_snake)
     data = data[data.process_name != "Unit"]
 
+
 def read_csv(
     path: Path | pd.DataFrame,
     float_precision: str = "high",
@@ -375,6 +376,12 @@ def read_technodictionary_csv(path: Path) -> pd.DataFrame:
         msg = (
             f"The 'EndUse' column in {path} has been deprecated. "
             "This information is now determined from CommOut files. "
+            "Please remove this column from your Technodata files."
+        )
+        getLogger(__name__).warning(msg)
+    if "scaling_size" in data.columns:
+        msg = (
+            f"The 'ScalingSize' column in {path} has been deprecated. "
             "Please remove this column from your Technodata files."
         )
         getLogger(__name__).warning(msg)
