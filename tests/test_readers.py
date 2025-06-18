@@ -276,21 +276,19 @@ def test_suffix_path_formatting(suffix, tmp_path):
 
     # Test path formatting
     settings = {"this": 0, "plugins": f"{{path}}/thisfile{suffix}"}
-    input_file = tmp_path.join("settings.toml")
-    with open(input_file, "w") as f:
-        toml.dump(settings, f)
+    input_file = tmp_path / "settings.toml"
+    input_file.write_text(toml.dumps(settings), encoding="utf-8")
 
-    result = read_split_toml(input_file, path=str(tmp_path))
-    assert result["plugins"] == str(tmp_path / f"thisfile{suffix}")
+    result = read_split_toml(input_file, path=tmp_path)
+    assert Path(result["plugins"]) == (tmp_path / f"thisfile{suffix}").resolve()
 
     # Test cwd formatting
     settings["plugins"] = [f"{{cwd}}/other/thisfile{suffix}"]
-    with open(input_file, "w") as f:
-        toml.dump(settings, f)
+    input_file.write_text(toml.dumps(settings), encoding="utf-8")
 
     result = read_split_toml(input_file, path="hello")
-    assert result["plugins"][0] == str(
-        (Path() / "other" / f"thisfile{suffix}").absolute()
+    assert Path(result["plugins"][0]) == (
+        (Path.cwd() / "other" / f"thisfile{suffix}").resolve()
     )
 
 
