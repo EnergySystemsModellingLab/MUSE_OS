@@ -915,3 +915,51 @@ def test_read_technodata_trade(trade_model_path):
             "year": [2010, 2020, 2025, 2030, 2035],
         },
     )
+
+
+def test_read_presets_sector(model_path):
+    from muse.readers.toml import read_presets_sector, read_settings
+
+    settings = read_settings(model_path / "settings.toml")
+    data = read_presets_sector(settings, sector_name="residential_presets")
+
+    expected_schema = DatasetSchema(
+        dims={"year", "region", "timeslice", "commodity"},
+        coords={
+            "region": CoordinateSchema(dims=("region",), dtype="object"),
+            "year": CoordinateSchema(dims=("year",), dtype="int64"),
+            "commodity": CoordinateSchema(dims=("commodity",), dtype="<U11"),
+            "timeslice": CoordinateSchema(dims=("timeslice",), dtype="object"),
+            "month": CoordinateSchema(dims=("timeslice",), dtype="object"),
+            "day": CoordinateSchema(dims=("timeslice",), dtype="object"),
+            "hour": CoordinateSchema(dims=("timeslice",), dtype="object"),
+            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="int64"),
+        },
+        data_vars={"consumption": "float64", "costs": "float64", "supply": "float64"},
+    )
+    assert DatasetSchema.from_ds(data) == expected_schema
+
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "region": ["R1"],
+            "year": [2020, 2050],
+            "commodity": COMMODITIES,
+            "timeslice": EXPECTED_TIMESLICES,
+        },
+    )
+
+    # Check values at a single coordinate
+    coord = {
+        "year": 2020,
+        "region": "R1",
+        "commodity": "heat",
+        "timeslice": ("all-year", "all-week", "night"),
+    }
+    expected = {
+        "consumption": 1.0,
+        "costs": 0,
+        "supply": 0,
+    }
+    assert_single_coordinate(data, coord, expected)
