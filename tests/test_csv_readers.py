@@ -762,7 +762,6 @@ def test_read_technologies(model_path):
             "total_capacity_limit": "int64",
             "technical_life": "int64",
             "utilization_factor": "float64",
-            "scaling_size": "float64",
             "efficiency": "int64",
             "interest_rate": "float64",
             "type": "object",
@@ -789,5 +788,130 @@ def test_read_technologies(model_path):
             "region": ["R1"],
             "year": [2020],
             "comm_usage": [10, 9, 8, 6, 9],
+        },
+    )
+
+
+def test_read_technodata(model_path):
+    from muse.readers.toml import read_settings, read_technodata
+
+    settings = read_settings(model_path / "settings.toml")
+    data = read_technodata(
+        settings,
+        sector_name="power",
+        time_framework=settings.time_framework,
+        interpolation_mode="linear",
+    )
+
+    expected_schema = DatasetSchema(
+        dims={"year", "commodity", "technology", "region"},
+        coords={
+            "technology": CoordinateSchema(dims=("technology",), dtype="object"),
+            "region": CoordinateSchema(dims=("region",), dtype="object"),
+            "commodity": CoordinateSchema(dims=("commodity",), dtype="object"),
+            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="object"),
+            "year": CoordinateSchema(dims=("year",), dtype="int64"),
+        },
+        data_vars={
+            "cap_par": "float64",
+            "cap_exp": "int64",
+            "fix_par": "int64",
+            "fix_exp": "int64",
+            "var_par": "int64",
+            "var_exp": "int64",
+            "max_capacity_addition": "int64",
+            "max_capacity_growth": "float64",
+            "total_capacity_limit": "int64",
+            "technical_life": "int64",
+            "utilization_factor": "float64",
+            "efficiency": "int64",
+            "interest_rate": "float64",
+            "type": "object",
+            "agent1": "int64",
+            "tech_type": "<U6",
+            "fixed_outputs": "float64",
+            "commodity_units": "object",
+            "fixed_inputs": "float64",
+            "flexible_inputs": "float64",
+            "comm_name": "object",
+            "emmission_factor": "float64",
+            "heat_rate": "int64",
+            "unit": "object",
+        },
+    )
+    assert DatasetSchema.from_ds(data) == expected_schema
+
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "commodity": ["electricity", "gas", "wind", "CO2f"],
+            "technology": ["gasCCGT", "windturbine"],
+            "region": ["R1"],
+            "year": [2020, 2025, 2030, 2035, 2040, 2045, 2050],
+            "comm_usage": [10, 9, 8, 6, 9],
+        },
+    )
+
+
+def test_read_technodata_trade(trade_model_path):
+    from muse.readers.toml import read_settings, read_technodata
+
+    settings = read_settings(trade_model_path / "settings.toml")
+    data = read_technodata(
+        settings,
+        sector_name="power",
+        time_framework=settings.time_framework,
+        interpolation_mode="linear",
+    )
+
+    expected_schema = DatasetSchema(
+        dims={"dst_region", "commodity", "year", "region", "technology"},
+        coords={
+            "technology": CoordinateSchema(dims=("technology",), dtype="object"),
+            "region": CoordinateSchema(dims=("region",), dtype="object"),
+            "commodity": CoordinateSchema(dims=("commodity",), dtype="object"),
+            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="object"),
+            "dst_region": CoordinateSchema(dims=("dst_region",), dtype="object"),
+            "year": CoordinateSchema(dims=("year",), dtype="int64"),
+        },
+        data_vars={
+            "cap_exp": "int64",
+            "fix_exp": "int64",
+            "var_par": "int64",
+            "var_exp": "int64",
+            "technical_life": "int64",
+            "utilization_factor": "float64",
+            "efficiency": "int64",
+            "interest_rate": "float64",
+            "type": "object",
+            "agent1": "int64",
+            "tech_type": "<U6",
+            "fixed_outputs": "float64",
+            "commodity_units": "object",
+            "fixed_inputs": "float64",
+            "flexible_inputs": "float64",
+            "comm_name": "object",
+            "emmission_factor": "float64",
+            "heat_rate": "int64",
+            "unit": "object",
+            "max_capacity_addition": "float64",
+            "max_capacity_growth": "float64",
+            "total_capacity_limit": "float64",
+            "cap_par": "float64",
+            "fix_par": "float64",
+        },
+    )
+    assert DatasetSchema.from_ds(data) == expected_schema
+
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "commodity": ["electricity", "gas", "wind", "CO2f"],
+            "technology": ["gasCCGT", "windturbine"],
+            "region": ["R1", "R2"],
+            "dst_region": ["R1", "R2"],
+            "year": [2010, 2020, 2025, 2030, 2035],
         },
     )
