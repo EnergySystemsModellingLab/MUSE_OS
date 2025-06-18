@@ -44,7 +44,7 @@ class MCA:
 
         # Read settings
         if isinstance(settings, (str, Path)):
-            settings = read_settings(Path(settings))
+            settings = read_settings(settings)
         elif isinstance(settings, Mapping):
             settings = convert(settings)
 
