@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import MutableMapping, Sequence
+from logging import getLogger
 from typing import Callable
 
 import numpy as np
@@ -329,8 +330,6 @@ def bisection(
     Returns:
         New value of global carbon price
     """
-    from logging import getLogger
-
     # Create cache for emissions at different price points
     emissions_cache = EmissionsCache(market, equilibrium, commodities)
 
@@ -393,6 +392,12 @@ def bisection(
     # threshold. If multiple prices are equally close, it returns the lowest price
     new_price = min(
         emissions_cache, key=lambda k: (abs(emissions_cache[k] - target), k)
+    )
+
+    # Output the new price to the log
+    getLogger(__name__).info(
+        f"Final carbon price for {future}: {new_price} "
+        f"(emissions = {emissions_cache[new_price]})"
     )
 
     # Raise warning message
@@ -589,5 +594,10 @@ def solve_market(
         .sum(["region", "timeslice", "commodity"])
         .round(decimals=2)
     ).values.item()
+
+    # Log the emissions
+    getLogger(__name__).info(
+        f"Emissions in {future} with carbon price {carbon_price}: {new_emissions}"
+    )
 
     return new_emissions

@@ -180,7 +180,6 @@ class MCA:
             )
         else:
             self.carbon_budget = DataArray([], dims="year")
-        self.carbon_price = carbon_price or zeros_like(self.carbon_budget)
         self.carbon_commodities = carbon_commodities or []
         self.debug = debug
         self.control_undershoot = control_undershoot
@@ -293,6 +292,9 @@ class MCA:
 
             # If we need to account for the carbon budget, we do it now.
             if check_carbon_budget:
+                getLogger(__name__).info(
+                    f"Updating carbon price for year {investment_year}"
+                )
                 new_price = self.update_carbon_price(new_market)
                 future_price = DataArray(new_price, coords=dict(year=investment_year))
                 new_market.prices.loc[dict(commodity=self.carbon_commodities)] = (
@@ -301,7 +303,6 @@ class MCA:
                         broadcast_timeslice(future_price),
                     )
                 )
-                self.carbon_price = future_propagation(self.carbon_price, future_price)
 
             # Solve the market
             _, new_market, self.sectors = self.find_equilibrium(new_market)
