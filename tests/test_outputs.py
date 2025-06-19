@@ -36,9 +36,9 @@ def market():
 
 
 @fixture
-def base_config(tmpdir):
+def base_config(tmp_path):
     """Common config fixture used in multiple tests."""
-    path = Path(tmpdir) / "results" / "stuff"
+    path = tmp_path / "results" / "stuff"
     return {
         "filename": path / "{Sector}{year}{Quantity}.csv",
         "quantity": "streetcred",
@@ -62,7 +62,7 @@ def assert_file_exists_and_readable(path, expected_columns=None):
 
 
 @mark.usefixtures("streetcred")
-def test_save_with_dir(tmpdir, market, base_config):
+def test_save_with_dir(tmp_path, market, base_config):
     """Test saving output to directory with sector and year in filename."""
     result = factory(base_config, sector_name="Yoyo")(market, None, None)
     assert len(result) == 1
@@ -72,7 +72,7 @@ def test_save_with_dir(tmpdir, market, base_config):
 
 
 @mark.usefixtures("streetcred")
-def test_overwrite(tmpdir, market, base_config):
+def test_overwrite(tmp_path, market, base_config):
     """Test file overwrite behavior."""
     outputter = factory(base_config, sector_name="Yoyo")
     result = outputter(market, None, None)
@@ -96,9 +96,9 @@ def test_overwrite(tmpdir, market, base_config):
         ("sink", "nc"),
     ],
 )
-def test_save_with_path_to_nc(tmpdir, market, base_config, config_type, suffix):
+def test_save_with_path_to_nc(tmp_path, market, base_config, config_type, suffix):
     """Test saving output to NC file with different config types."""
-    path = Path(tmpdir) / "results" / "stuff"
+    path = tmp_path / "results" / "stuff"
     if config_type == "suffix":
         config = {
             "filename": path / "{Sector}{year}{Quantity}{suffix}",
@@ -124,7 +124,7 @@ def test_save_with_path_to_nc(tmpdir, market, base_config, config_type, suffix):
 
 
 @mark.usefixtures("streetcred")
-def test_save_with_fullpath_to_excel(tmpdir):
+def test_save_with_fullpath_to_excel(tmp_path):
     from warnings import simplefilter
 
     from pandas import read_excel
@@ -132,7 +132,7 @@ def test_save_with_fullpath_to_excel(tmpdir):
     importorskip("openpyxl")
     simplefilter("default", PendingDeprecationWarning)
 
-    path = Path(tmpdir) / "results" / "stuff" / "this.xlsx"
+    path = tmp_path / "results" / "stuff" / "this.xlsx"
     config = {"filename": path, "quantity": "streetcred", "sink": "xlsx"}
     market = xr.DataArray([1], coords={"year": [2010]}, dims="year")
     # can use None because we **know** none of the arguments are used here
@@ -161,11 +161,11 @@ def test_output_functions(mock_consolidate):
 
 
 @mark.usefixtures("streetcred")
-def test_no_sink_or_suffix(tmpdir, market):
+def test_no_sink_or_suffix(tmp_path, market):
     """Test default sink and suffix behavior."""
     config = dict(
         quantity="streetcred",
-        filename=f"{tmpdir}/{{Sector}}{{Quantity}}{{year}}{{suffix}}",
+        filename=f"{tmp_path}/{{Sector}}{{Quantity}}{{year}}{{suffix}}",
     )
     result = factory(config)(market, None, None)
     assert len(result) == 1
@@ -262,11 +262,11 @@ def test_yearly_aggregate():
     assert received_data[received_data.year == 2020].nada.values == approx([0, 1])
 
 
-def test_yearly_aggregate_file(tmpdir):
+def test_yearly_aggregate_file(tmp_path):
     """Test yearly aggregation to file with multiple years of data."""
     from muse.outputs.sinks import factory
 
-    path = Path(tmpdir) / "file.csv"
+    path = tmp_path / "file.csv"
     sink = factory(dict(filename=str(path), sink="aggregate"), sector_name="yoyo")
 
     def verify_year_data(values, year, expected_rows):
@@ -289,7 +289,7 @@ def test_yearly_aggregate_file(tmpdir):
     assert df2[df2.year == 2020].georges.tolist() == [0, 1]
 
 
-def test_yearly_aggregate_no_outputs(tmpdir):
+def test_yearly_aggregate_no_outputs(tmp_path):
     """Test behavior with no outputs configured."""
     from muse.outputs.mca import factory
 
@@ -297,36 +297,37 @@ def test_yearly_aggregate_no_outputs(tmpdir):
     assert len(outputs(None, year=2010)) == 0
 
 
-def setup_mca_test(tmpdir, outputs_config):
+def setup_mca_test(tmp_path, outputs_config):
     """Helper function to set up MCA tests."""
-    from toml import dump, load
+    from toml import dumps, load
 
     from muse import examples
     from muse.mca import MCA
 
-    examples.copy_model(path=str(tmpdir))
-    settings = load(str(tmpdir / "model" / "settings.toml"))
+    examples.copy_model(path=str(tmp_path))
+    settings = load(str(tmp_path / "model" / "settings.toml"))
     settings["outputs"] = [outputs_config]
     settings["time_framework"] = settings["time_framework"][:2]
-    dump(settings, (tmpdir / "model" / "settings.toml"))
-    return MCA.factory(str(tmpdir / "model" / "settings.toml"))
+    file = tmp_path / "model" / "settings.toml"
+    file.write_text(dumps(settings), encoding="utf-8")
+    return MCA.factory(file)
 
 
-def test_mca_aggregate_outputs(tmpdir):
+def test_mca_aggregate_outputs(tmp_path):
     """Test MCA aggregate outputs."""
     mca = setup_mca_test(
-        tmpdir,
+        tmp_path,
         dict(filename="{path}/{Quantity}{suffix}", quantity="prices", sink="aggregate"),
     )
     mca.run()
-    assert (tmpdir / "model" / "Prices.csv").exists()
+    assert (tmp_path / "model" / "Prices.csv").exists()
     # TODO: should pass again after #612
-    # data = pd.read_csv(tmpdir / "model" / "Prices.csv")
+    # data = pd.read_csv(tmp_path / "model" / "Prices.csv")
     # assert set(data.year) == set(settings["time_framework"])
 
 
 @mark.usefixtures("save_registries")
-def test_path_formatting(tmpdir):
+def test_path_formatting(tmp_path):
     """Test path formatting with dummy sink and quantity."""
     from muse.outputs.mca import register_output_quantity
     from muse.outputs.sinks import register_output_sink, sink_to_file
@@ -341,10 +342,10 @@ def test_path_formatting(tmpdir):
         return xr.DataArray()
 
     mca = setup_mca_test(
-        tmpdir,
+        tmp_path,
         dict(quantity="dummy", sink="to_dummy", filename="{path}/{Quantity}{suffix}"),
     )
-    assert mca.outputs(mca.market)[0] == Path(tmpdir / "model" / "Dummy.dummy")
+    assert mca.outputs(mca.market)[0] == tmp_path / "model" / "Dummy.dummy"
 
 
 def test_register_output_quantity_cache():
