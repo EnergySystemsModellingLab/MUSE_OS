@@ -728,3 +728,367 @@ def test_read_regression_parameters(correlation_model_path):
         "GDPscaleGreater": 672.9316672,
     }
     assert_single_coordinate(data, coord, expected)
+
+
+def test_read_technologies(model_path):
+    from muse.readers.csv import read_technologies
+
+    data = read_technologies(
+        technodata_path_or_sector=model_path / "power" / "Technodata.csv",
+        comm_out_path=model_path / "power" / "CommOut.csv",
+        comm_in_path=model_path / "power" / "CommIn.csv",
+        commodities=model_path / "GlobalCommodities.csv",
+    )
+
+    # Check data against schema
+    expected_schema = DatasetSchema(
+        dims={"commodity", "technology", "region", "year"},
+        coords={
+            "technology": CoordinateSchema(dims=("technology",), dtype="object"),
+            "region": CoordinateSchema(dims=("region",), dtype="object"),
+            "year": CoordinateSchema(dims=("year",), dtype="int64"),
+            "commodity": CoordinateSchema(dims=("commodity",), dtype="object"),
+            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="object"),
+        },
+        data_vars={
+            "cap_par": "float64",
+            "cap_exp": "int64",
+            "fix_par": "int64",
+            "fix_exp": "int64",
+            "var_par": "int64",
+            "var_exp": "int64",
+            "max_capacity_addition": "int64",
+            "max_capacity_growth": "float64",
+            "total_capacity_limit": "int64",
+            "technical_life": "int64",
+            "utilization_factor": "float64",
+            "efficiency": "int64",
+            "interest_rate": "float64",
+            "type": "object",
+            "agent1": "int64",
+            "tech_type": "<U6",
+            "fixed_outputs": "float64",
+            "commodity_units": "object",
+            "fixed_inputs": "float64",
+            "flexible_inputs": "float64",
+            "comm_name": "object",
+            "emmission_factor": "float64",
+            "heat_rate": "int64",
+            "unit": "object",
+        },
+    )
+    assert DatasetSchema.from_ds(data) == expected_schema
+
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "commodity": ["electricity", "gas", "heat", "wind", "CO2f"],
+            "technology": ["gasCCGT", "windturbine"],
+            "region": ["R1"],
+            "year": [2020],
+            "comm_usage": [10, 9, 8, 6, 9],
+        },
+    )
+
+
+def test_read_technologies__timeslice(timeslice_model_path):
+    """Testing the read_technologies function with the timeslice model."""
+    from muse.readers.csv import read_technologies
+
+    data = read_technologies(
+        technodata_path_or_sector=timeslice_model_path / "power" / "Technodata.csv",
+        comm_out_path=timeslice_model_path / "power" / "CommOut.csv",
+        comm_in_path=timeslice_model_path / "power" / "CommIn.csv",
+        commodities=timeslice_model_path / "GlobalCommodities.csv",
+        technodata_timeslices_path=timeslice_model_path
+        / "power"
+        / "TechnodataTimeslices.csv",
+    )
+
+    # Check data against schema
+    expected_schema = DatasetSchema(
+        dims={"technology", "timeslice", "region", "year", "commodity"},
+        coords={
+            "technology": CoordinateSchema(dims=("technology",), dtype="object"),
+            "region": CoordinateSchema(dims=("region",), dtype="object"),
+            "year": CoordinateSchema(dims=("year",), dtype="int64"),
+            "commodity": CoordinateSchema(dims=("commodity",), dtype="object"),
+            "timeslice": CoordinateSchema(dims=("timeslice",), dtype="object"),
+            "month": CoordinateSchema(dims=("timeslice",), dtype="object"),
+            "day": CoordinateSchema(dims=("timeslice",), dtype="object"),
+            "hour": CoordinateSchema(dims=("timeslice",), dtype="object"),
+            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="object"),
+        },
+        data_vars={
+            "cap_par": "float64",
+            "cap_exp": "int64",
+            "fix_par": "int64",
+            "fix_exp": "int64",
+            "var_par": "int64",
+            "var_exp": "int64",
+            "max_capacity_addition": "int64",
+            "max_capacity_growth": "float64",
+            "total_capacity_limit": "int64",
+            "technical_life": "int64",
+            "efficiency": "int64",
+            "interest_rate": "float64",
+            "type": "object",
+            "agent1": "int64",
+            "tech_type": "<U6",
+            "fixed_outputs": "float64",
+            "commodity_units": "object",
+            "fixed_inputs": "float64",
+            "flexible_inputs": "float64",
+            "utilization_factor": "int64",
+            "minimum_service_factor": "int64",
+            "comm_name": "object",
+            "emmission_factor": "float64",
+            "heat_rate": "int64",
+            "unit": "object",
+        },
+    )
+    assert DatasetSchema.from_ds(data) == expected_schema
+
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "commodity": ["electricity", "gas", "heat", "wind", "CO2f"],
+            "technology": ["gasCCGT", "windturbine"],
+            "region": ["R1"],
+            "year": [2020],
+            "comm_usage": [10, 9, 8, 6, 9],
+            "timeslice": EXPECTED_TIMESLICES,
+        },
+    )
+
+
+def test_read_technodata(model_path):
+    from muse.readers.toml import read_settings, read_technodata
+
+    settings = read_settings(model_path / "settings.toml")
+    data = read_technodata(
+        settings,
+        sector_name="power",
+        time_framework=settings.time_framework,
+        interpolation_mode="linear",
+    )
+
+    # Check data against schema
+    expected_schema = DatasetSchema(
+        dims={"year", "commodity", "technology", "region"},
+        coords={
+            "technology": CoordinateSchema(dims=("technology",), dtype="object"),
+            "region": CoordinateSchema(dims=("region",), dtype="object"),
+            "commodity": CoordinateSchema(dims=("commodity",), dtype="object"),
+            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="object"),
+            "year": CoordinateSchema(dims=("year",), dtype="int64"),
+        },
+        data_vars={
+            "cap_par": "float64",
+            "cap_exp": "int64",
+            "fix_par": "int64",
+            "fix_exp": "int64",
+            "var_par": "int64",
+            "var_exp": "int64",
+            "max_capacity_addition": "int64",
+            "max_capacity_growth": "float64",
+            "total_capacity_limit": "int64",
+            "technical_life": "int64",
+            "utilization_factor": "float64",
+            "efficiency": "int64",
+            "interest_rate": "float64",
+            "type": "object",
+            "agent1": "int64",
+            "tech_type": "<U6",
+            "fixed_outputs": "float64",
+            "commodity_units": "object",
+            "fixed_inputs": "float64",
+            "flexible_inputs": "float64",
+            "comm_name": "object",
+            "emmission_factor": "float64",
+            "heat_rate": "int64",
+            "unit": "object",
+        },
+    )
+    assert DatasetSchema.from_ds(data) == expected_schema
+
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "commodity": ["electricity", "gas", "wind", "CO2f"],
+            "technology": ["gasCCGT", "windturbine"],
+            "region": ["R1"],
+            "year": [2020, 2025, 2030, 2035, 2040, 2045, 2050],
+            "comm_usage": [10, 9, 6, 9],
+        },
+    )
+
+
+def test_read_technodata__trade(trade_model_path):
+    """Testing the read_technodata function with the trade model."""
+    from muse.readers.toml import read_settings, read_technodata
+
+    settings = read_settings(trade_model_path / "settings.toml")
+    data = read_technodata(
+        settings,
+        sector_name="power",
+        time_framework=settings.time_framework,
+        interpolation_mode="linear",
+    )
+
+    # Check data against schema
+    expected_schema = DatasetSchema(
+        dims={"dst_region", "commodity", "year", "region", "technology"},
+        coords={
+            "technology": CoordinateSchema(dims=("technology",), dtype="object"),
+            "region": CoordinateSchema(dims=("region",), dtype="object"),
+            "commodity": CoordinateSchema(dims=("commodity",), dtype="object"),
+            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="object"),
+            "dst_region": CoordinateSchema(dims=("dst_region",), dtype="object"),
+            "year": CoordinateSchema(dims=("year",), dtype="int64"),
+        },
+        data_vars={
+            "cap_exp": "int64",
+            "fix_exp": "int64",
+            "var_par": "int64",
+            "var_exp": "int64",
+            "technical_life": "int64",
+            "utilization_factor": "float64",
+            "efficiency": "int64",
+            "interest_rate": "float64",
+            "type": "object",
+            "agent1": "int64",
+            "tech_type": "<U6",
+            "fixed_outputs": "float64",
+            "commodity_units": "object",
+            "fixed_inputs": "float64",
+            "flexible_inputs": "float64",
+            "comm_name": "object",
+            "emmission_factor": "float64",
+            "heat_rate": "int64",
+            "unit": "object",
+            "max_capacity_addition": "float64",
+            "max_capacity_growth": "float64",
+            "total_capacity_limit": "float64",
+            "cap_par": "float64",
+            "fix_par": "float64",
+        },
+    )
+    assert DatasetSchema.from_ds(data) == expected_schema
+
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "commodity": ["electricity", "gas", "wind", "CO2f"],
+            "technology": ["gasCCGT", "windturbine"],
+            "region": ["R1", "R2"],
+            "dst_region": ["R1", "R2"],
+            "comm_usage": [10, 9, 6, 9],
+            "year": [2010, 2020, 2025, 2030, 2035],
+        },
+    )
+
+
+def test_read_presets_sector(model_path):
+    from muse.readers.toml import read_presets_sector, read_settings
+
+    settings = read_settings(model_path / "settings.toml")
+    data = read_presets_sector(settings, sector_name="residential_presets")
+
+    # Check data against schema
+    expected_schema = DatasetSchema(
+        dims={"year", "region", "timeslice", "commodity"},
+        coords={
+            "region": CoordinateSchema(dims=("region",), dtype="object"),
+            "year": CoordinateSchema(dims=("year",), dtype="int64"),
+            "commodity": CoordinateSchema(dims=("commodity",), dtype="<U11"),
+            "timeslice": CoordinateSchema(dims=("timeslice",), dtype="object"),
+            "month": CoordinateSchema(dims=("timeslice",), dtype="object"),
+            "day": CoordinateSchema(dims=("timeslice",), dtype="object"),
+            "hour": CoordinateSchema(dims=("timeslice",), dtype="object"),
+            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="int64"),
+        },
+        data_vars={"consumption": "float64", "costs": "float64", "supply": "float64"},
+    )
+    assert DatasetSchema.from_ds(data) == expected_schema
+
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "region": ["R1"],
+            "year": [2020, 2050],
+            "commodity": COMMODITIES,
+            "timeslice": EXPECTED_TIMESLICES,
+            "comm_usage": [0, 0, 0, 0, 0],
+        },
+    )
+
+    # Check values at a single coordinate
+    coord = {
+        "year": 2020,
+        "region": "R1",
+        "commodity": "heat",
+        "timeslice": ("all-year", "all-week", "night"),
+    }
+    expected = {
+        "consumption": 1.0,
+        "costs": 0,
+        "supply": 0,
+    }
+    assert_single_coordinate(data, coord, expected)
+
+
+def test_read_presets_sector__correlation(correlation_model_path):
+    """Testing the read_presets_sector function with the correlation model."""
+    from muse.readers.toml import read_presets_sector, read_settings
+
+    settings = read_settings(correlation_model_path / "settings.toml")
+    data = read_presets_sector(settings, sector_name="residential_presets")
+
+    # Check data against schema
+    expected_schema = DatasetSchema(
+        dims={"commodity", "year", "timeslice", "region"},
+        coords={
+            "region": CoordinateSchema(dims=("region",), dtype="object"),
+            "commodity": CoordinateSchema(dims=("commodity",), dtype="object"),
+            "year": CoordinateSchema(dims=("year",), dtype="int64"),
+            "timeslice": CoordinateSchema(dims=("timeslice",), dtype="object"),
+            "month": CoordinateSchema(dims=("timeslice",), dtype="object"),
+            "day": CoordinateSchema(dims=("timeslice",), dtype="object"),
+            "hour": CoordinateSchema(dims=("timeslice",), dtype="object"),
+            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="int64"),
+        },
+        data_vars={"consumption": "float64", "costs": "float64", "supply": "float64"},
+    )
+    assert DatasetSchema.from_ds(data) == expected_schema
+
+    # Check coordinate values
+    assert_coordinate_values(
+        data,
+        {
+            "region": ["R1"],
+            "year": range(2010, 2111),
+            "commodity": ["electricity", "gas", "heat", "CO2f"],
+            "timeslice": EXPECTED_TIMESLICES,
+            "comm_usage": [0, 0, 0, 0, 0],
+        },
+    )
+
+    # Check values at a single coordinate
+    coord = {
+        "year": 2020,
+        "region": "R1",
+        "commodity": "heat",
+        "timeslice": ("all-year", "all-week", "night"),
+    }
+    expected = {
+        "consumption": 0.8958,
+        "costs": 0,
+        "supply": 0,
+    }
+    assert_single_coordinate(data, coord, expected)
