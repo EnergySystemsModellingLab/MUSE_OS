@@ -273,7 +273,7 @@ class Sector(AbstractSector):  # type: ignore
         """Computes resulting market: production, consumption, and costs."""
         from muse.commodities import is_pollutant
         from muse.costs import levelized_cost_of_energy, supply_cost
-        from muse.quantities import consumption
+        from muse.quantities import capacity_to_service_demand, consumption
         from muse.utilities import broadcast_over_assets, interpolate_capacity
 
         years = market.year.values
@@ -303,10 +303,16 @@ class Sector(AbstractSector):  # type: ignore
 
         # Calculate LCOE
         # We select data for the second year, which corresponds to the investment year
+        # We base LCOE only on the portion of capacity that is actually used (#728)
+        utilized_capacity = capacity_to_service_demand(
+            demand=supply.isel(year=1),
+            technologies=technodata,
+            timeslice_level=self.timeslice_level,
+        )
         lcoe = levelized_cost_of_energy(
             prices=market.prices.sel(region=supply.region).isel(year=1),
             technologies=technodata,
-            capacity=capacity.isel(year=1),
+            capacity=utilized_capacity,
             production=supply.isel(year=1),
             consumption=consume.isel(year=1),
             method="annual",
