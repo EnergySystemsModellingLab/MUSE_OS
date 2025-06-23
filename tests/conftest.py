@@ -1,5 +1,7 @@
+import os
 import random as rand
 from collections.abc import Mapping
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable
 from unittest.mock import patch
@@ -11,6 +13,16 @@ from xarray import DataArray, Dataset
 
 from muse.__main__ import patched_broadcast_compat_data
 from muse.agents import Agent
+
+
+@contextmanager
+def chdir(path):
+    prev_cwd = os.getcwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(prev_cwd)
 
 
 @fixture(autouse=True)
@@ -469,7 +481,7 @@ def capacity(technologies: Dataset) -> DataArray:
 
 
 @fixture
-def settings(tmpdir) -> dict:
+def settings(tmp_path) -> dict:
     """Creates a dummy settings dictionary out of the default settings."""
     import toml
 
@@ -487,7 +499,7 @@ def settings(tmpdir) -> dict:
 
     settings = toml.load(DEFAULT_SETTINGS_PATH)
     drop_optionals(settings)
-    out = format_paths(settings, cwd=tmpdir, path=tmpdir, muse_sectors=tmpdir)
+    out = format_paths(settings, cwd=tmp_path, path=tmp_path, muse_sectors=tmp_path)
 
     required = {
         "time_framework": [2010, 2015, 2020],

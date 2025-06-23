@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from conftest import chdir
 from pytest import mark, xfail
 
 from muse.examples import AVAILABLE_EXAMPLES
@@ -8,7 +9,7 @@ from muse.examples import AVAILABLE_EXAMPLES
 @mark.regression
 @mark.example
 @mark.parametrize("model", AVAILABLE_EXAMPLES)
-def test_fullsim_regression(model, tmpdir, compare_dirs):
+def test_fullsim_regression(model, tmp_path, compare_dirs):
     from warnings import simplefilter
 
     from pandas.errors import DtypeWarning
@@ -19,15 +20,15 @@ def test_fullsim_regression(model, tmpdir, compare_dirs):
     # fail the test if this warning crops up
     simplefilter("error", DtypeWarning)
 
-    # Copy the data to tmpdir
-    model_path = copy_model(name=model, path=tmpdir)
+    # Copy the data to tmp_path
+    model_path = copy_model(name=model, path=tmp_path)
 
     # main() will output to cwd
-    with tmpdir.as_cwd():
+    with chdir(tmp_path):
         MCA.factory(model_path / "settings.toml").run()
 
     compare_dirs(
-        tmpdir / "Results",
+        tmp_path / "Results",
         Path(__file__).parent / "example_outputs" / model.replace("-", "_") / "Results",
         rtol=1e-4,
         atol=1e-7,
@@ -42,7 +43,7 @@ def available_tutorials():
 @mark.regression
 @mark.tutorial
 @mark.parametrize("tutorial_path", available_tutorials())
-def test_tutorial_regression(tutorial_path, tmpdir, compare_dirs):
+def test_tutorial_regression(tutorial_path, tmp_path, compare_dirs):
     import shutil
     from warnings import simplefilter
 
@@ -57,23 +58,24 @@ def test_tutorial_regression(tutorial_path, tmpdir, compare_dirs):
     # fail the test if this warning crops up
     simplefilter("error", DtypeWarning)
 
-    # Copy the data to tmpdir
-    shutil.copytree(tutorial_path, tmpdir, dirs_exist_ok=True)
+    # Copy the data to tmp_path
+    shutil.copytree(tutorial_path, tmp_path, dirs_exist_ok=True)
 
     # Get the toml file to run. There should be only one settings file
-    settings = list(Path(tmpdir).glob("*.toml"))
+    settings = list(tmp_path.glob("*.toml"))
     assert len(settings) == 1
 
     # Rename existing results directory for comparison
-    expected = Path(tmpdir) / "Expected"
-    (Path(tmpdir) / "Results").rename(expected)
+    expected = tmp_path / "Expected"
+    (tmp_path / "Results").rename(expected)
 
     # main() will output to cwd
-    with tmpdir.as_cwd():
+    # Change working directory to tmp_path
+    with chdir(tmp_path):
         MCA.factory(settings[0]).run()
 
     compare_dirs(
-        tmpdir / "Results",
+        tmp_path / "Results",
         expected,
         rtol=1e-4,
         atol=1e-7,
