@@ -226,7 +226,10 @@ def test_read_presets(model_path):
             "year": CoordinateSchema(("year",), dtype="int64"),
             "commodity": CoordinateSchema(("commodity",), dtype="object"),
             "region": CoordinateSchema(("region",), dtype="object"),
-            "timeslice": CoordinateSchema(("timeslice",), dtype="int8"),  # TODO
+            "timeslice": CoordinateSchema(("timeslice",), dtype="object"),
+            "month": CoordinateSchema(("timeslice",), dtype="object"),
+            "day": CoordinateSchema(("timeslice",), dtype="object"),
+            "hour": CoordinateSchema(("timeslice",), dtype="object"),
         },
         dtype="float64",
         name="value",
@@ -240,12 +243,20 @@ def test_read_presets(model_path):
             "year": [2020, 2050],
             "commodity": COMMODITIES,
             "region": ["r1"],
-            "timeslice": list(range(1, 7)),
+            "timeslice": EXPECTED_TIMESLICES,
         },
     )
 
     # Check values at a single coordinate
-    assert data.sel(year=2020, commodity="heat", region="r1", timeslice=1) == 1.0
+    assert (
+        data.sel(
+            year=2020,
+            commodity="heat",
+            region="r1",
+            timeslice=("all-year", "all-week", "night"),
+        )
+        == 1.0
+    )
 
 
 def test_read_initial_market(model_path):
@@ -627,8 +638,11 @@ def test_read_timeslice_shares(correlation_model_path):
         dims={"region", "timeslice", "commodity"},
         coords={
             "region": CoordinateSchema(("region",), dtype="object"),
-            "timeslice": CoordinateSchema(("timeslice",), dtype="int8"),  # TODO
             "commodity": CoordinateSchema(("commodity",), dtype="object"),
+            "timeslice": CoordinateSchema(("timeslice",), dtype="object"),
+            "month": CoordinateSchema(("timeslice",), dtype="object"),
+            "day": CoordinateSchema(("timeslice",), dtype="object"),
+            "hour": CoordinateSchema(("timeslice",), dtype="object"),
         },
         dtype="float64",
         name="value",
@@ -640,13 +654,17 @@ def test_read_timeslice_shares(correlation_model_path):
         data,
         {
             "region": ["r1"],
-            "timeslice": list(range(1, 7)),
+            "timeslice": EXPECTED_TIMESLICES,
             "commodity": COMMODITIES,
         },
     )
 
     # Check values at a single coordinate
-    coord = {"region": "r1", "timeslice": 1, "commodity": "heat"}
+    coord = {
+        "region": "r1",
+        "timeslice": ("all-year", "all-week", "night"),
+        "commodity": "heat",
+    }
     assert data.sel(**coord).item() == 0.071
 
 
@@ -720,12 +738,12 @@ def test_read_regression_parameters(correlation_model_path):
         {
             "sector": ["residential"],
             "region": ["r1"],
-            "commodity": ["electricity", "gas", "heat", "CO2f"],
+            "commodity": COMMODITIES,
         },
     )
 
-    # Check function type TODO: may have to add this back
-    # assert data.function_type.sel(sector="residential").item() == "logistic-sigmoid"
+    # Check function type (should be one value per sector)
+    assert data.function_type.sel(sector="residential").item() == "logistic-sigmoid"
 
     # Check values at a single coordinate
     coord = {"sector": "residential", "region": "r1", "commodity": "heat"}
@@ -1073,7 +1091,7 @@ def test_read_presets_sector__correlation(correlation_model_path):
         {
             "region": ["r1"],
             "year": range(2010, 2111),
-            "commodity": ["electricity", "gas", "heat", "CO2f"],
+            "commodity": COMMODITIES,
             "timeslice": EXPECTED_TIMESLICES,
             "comm_usage": [0, 0, 0, 0, 0],
         },

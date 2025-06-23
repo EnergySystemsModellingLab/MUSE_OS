@@ -1097,6 +1097,8 @@ def process_presets(datas: dict[int, pd.DataFrame]) -> xr.Dataset:
     Returns:
         xarray Dataset containing the processed preset data
     """
+    from muse.timeslices import TIMESLICE
+
     # Combine into a single DataFrame
     data = pd.concat(datas.values())
 
@@ -1123,6 +1125,10 @@ def process_presets(datas: dict[int, pd.DataFrame]) -> xr.Dataset:
 
     # Create DataArray
     result = create_xarray_dataset(data).value.astype(float)
+
+    # Assign timeslices
+    result = result.assign_coords(timeslice=TIMESLICE.timeslice)
+
     return result
 
 
@@ -1243,6 +1249,8 @@ def process_timeslice_shares(data: pd.DataFrame) -> xr.DataArray:
     Returns:
         xarray DataArray containing the processed timeslice shares
     """
+    from muse.timeslices import TIMESLICE
+
     # Extract commodity columns
     commodities = [col for col in data.columns if col not in ["timeslice", "region"]]
 
@@ -1264,6 +1272,12 @@ def process_timeslice_shares(data: pd.DataFrame) -> xr.DataArray:
 
     # Create DataArray
     result = create_xarray_dataset(data).value.astype(float)
+
+    # Assign timeslices
+    result = result.assign_coords(timeslice=TIMESLICE.timeslice)
+
+    # Check commodities
+    result = check_commodities(result, fill_missing=True, fill_value=0)
     return result
 
 
@@ -1360,9 +1374,17 @@ def read_regression_parameters_csv(path: Path) -> pd.DataFrame:
     """
     table = read_csv(
         path,
-        required_columns=["sector", "region", "function_type", "coeff"],
+        required_columns=["region", "function_type", "coeff"],
         msg=f"Reading regression parameters from {path}.",
     )
+
+    # Legacy: warn about "sector" column
+    # TODO: sum across sectors
+    if "sector" in table.columns:
+        getLogger(__name__).warning(
+            f"The sector column (in file {path}) is deprecated. Please remove."
+        )
+
     return table
 
 
@@ -1382,27 +1404,36 @@ def process_regression_parameters(data: pd.DataFrame) -> xr.Dataset:
         if col not in ["sector", "region", "function_type", "coeff"]
     ]
 
-    # Convert commodity columns to long format (i.e. single "commodity" column)
-    data = data.melt(
+    # Melt to long format
+    melted = data.melt(
         id_vars=["sector", "region", "function_type", "coeff"],
         value_vars=commodities,
         var_name="commodity",
         value_name="value",
     )
 
-    # Pivot over coeff
-    data = data.pivot(
-        index=["sector", "region", "commodity", "function_type"],
-        columns="coeff",
-        values="value",
+    # Extract sector -> function_type mapping
+    sector_to_ftype = melted.drop_duplicates(["sector", "function_type"])[
+        ["sector", "function_type"]
+    ].set_index("sector")["function_type"]
+
+    # Pivot to create coefficient variables
+    pivoted = melted.pivot_table(
+        index=["sector", "region", "commodity"], columns="coeff", values="value"
     )
 
-    # Remove function_type from multiindex
-    data = data.reset_index(level="function_type")
-    # TODO: function_type may have to have sector dimension only
+    # Create dataset and add function_type
+    result = create_xarray_dataset(pivoted)
+    result["function_type"] = xr.DataArray(
+        sector_to_ftype[result.sector.values].astype(object),
+        dims=["sector"],
+        name="function_type",
+    )
 
-    # Convert to Dataset
-    return create_xarray_dataset(data)
+    # Check commodities
+    result = check_commodities(result, fill_missing=True, fill_value=0)
+
+    return result
 
 
 def check_utilization_and_minimum_service_factors(
