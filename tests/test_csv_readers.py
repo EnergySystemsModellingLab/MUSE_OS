@@ -893,7 +893,6 @@ def test_read_technodata(model_path):
     data = read_technodata(
         settings,
         sector_name="power",
-        time_framework=settings.time_framework,
         interpolation_mode="linear",
     )
 
@@ -955,7 +954,6 @@ def test_read_technodata__trade(trade_model_path):
     data = read_technodata(
         settings,
         sector_name="power",
-        time_framework=settings.time_framework,
         interpolation_mode="linear",
     )
 

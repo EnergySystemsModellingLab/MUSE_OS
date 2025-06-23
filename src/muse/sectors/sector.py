@@ -47,7 +47,6 @@ class Sector(AbstractSector):  # type: ignore
         technologies = read_technodata(
             settings,
             name,
-            settings.time_framework,
             interpolation_mode=interpolation_mode,
         )
 

@@ -541,82 +541,49 @@ def check_subsector_settings(settings: dict) -> None:
 def read_technodata(
     settings: Any,
     sector_name: str,
-    time_framework: Sequence[int] | None = None,
-    regions: Sequence[str] | None = None,
     interpolation_mode: str = "linear",
 ) -> xr.Dataset:
     """Helper function to create technodata for a given sector."""
-    from muse.readers.csv import read_technologies
+    from muse.readers.csv import read_technologies, read_trade_technodata
 
-    if time_framework is None:
-        time_framework = getattr(settings, "time_framework", [2010, 2050])
-
-    if regions is None:
-        regions = settings.regions
-
+    regions = settings.regions
+    time_framework = settings.time_framework
     settings = getattr(settings.sectors, sector_name)
 
-    technodata_timeslices = getattr(settings, "technodata_timeslices", None)
-    # normalizes case where technodata is not in own subsection
-    if not hasattr(settings, "technodata") and sector_name is not None:
-        raise MissingSettings(f"Missing technodata section in {sector_name}")
-    elif not hasattr(settings, "technodata"):
-        raise MissingSettings("Missing technodata section")
-    technosettings = undo_damage(settings.technodata)
+    # Legacy: technodata settings could be in a "technodata" section
+    if isinstance(undo_damage(settings.technodata), Mapping):
+        settings = settings.technodata
 
-    if isinstance(technosettings, (str, Path)):
-        technosettings = dict(
-            technodata=technosettings,
-            technodata_timeslices=technodata_timeslices,
-            commodities_in=settings.commodities_in,
-            commodities_out=settings.commodities_out,
-        )
-    else:
-        for comm in ("in", "out"):
-            name = f"commodities_{comm}"
-            if hasattr(settings, comm) and comm in technosettings:
-                raise IncorrectSettings(f"{name} specified twice")
-            elif hasattr(settings, comm):
-                technosettings[name] = getattr(settings, name)
-
-    for name in ("technodata", "commodities_in", "commodities_out"):
-        if name not in technosettings:
-            raise MissingSettings(f"Missing required technodata input {name}")
-        filename = technosettings[name]
-        if not Path(filename).exists():
-            raise IncorrectSettings(f"File {filename} does not exist.")
-        if not Path(filename).is_file():
-            raise IncorrectSettings(f"File {filename} is not a file.")
-
+    # Read technodata
     technologies = read_technologies(
-        technodata_path=Path(technosettings.pop("technodata")),
-        technodata_timeslices_path=technosettings.pop("technodata_timeslices", None),
-        comm_out_path=Path(technosettings.pop("commodities_out")),
-        comm_in_path=Path(technosettings.pop("commodities_in")),
+        technodata_path=Path(settings.technodata),
+        technodata_timeslices_path=getattr(settings, "technodata_timeslices", None),
+        comm_out_path=Path(settings.commodities_out),
+        comm_in_path=Path(settings.commodities_in),
     ).sel(region=regions)
 
+    # Only keep commodities that are used as inputs or outputs
     ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
     outs = (technologies.fixed_outputs > 0).any(("year", "region", "technology"))
     techcomms = technologies.commodity[ins | outs]
     technologies = technologies.sel(commodity=techcomms)
-    # for name, value in technosettings.items():
-    #     if isinstance(name, (str, Path)):
-    #         data = read_trade(value, drop="Unit")
-    #         if "region" in data.dims:
-    #             data = data.sel(region=regions)
-    #         if "dst_region" in data.dims:
-    #             data = data.sel(dst_region=regions)
-    #             if data.dst_region.size == 1:
-    #                 data = data.squeeze("dst_region", drop=True)
 
-    #     else:
-    #         data = value
-    #     if isinstance(data, xr.Dataset):
-    #         technologies = technologies.merge(data)
-    #     else:
-    #         technologies[name] = data
+    # Read trade technodata
+    if hasattr(settings, "trade"):
+        trade_data = read_trade_technodata(settings.trade)
+        if "region" in trade_data.dims:
+            trade_data = trade_data.sel(region=regions)
+        if "dst_region" in trade_data.dims:
+            trade_data = trade_data.sel(dst_region=regions)
+            if trade_data.dst_region.size == 1:
+                trade_data = trade_data.squeeze("dst_region", drop=True)
 
-    # make sure technologies includes the requisite years
+        # Drop duplicate data vars before merging
+        common_vars = set(technologies.data_vars) & set(trade_data.data_vars)
+        technologies = technologies.drop_vars(common_vars)
+        technologies = technologies.merge(trade_data)
+
+    # Interpolate technodata to fit simulation timeframe
     maxyear = max(time_framework)
     if technologies.year.max() < maxyear:
         msg = "Forward-filling technodata to fit simulation timeframe"
