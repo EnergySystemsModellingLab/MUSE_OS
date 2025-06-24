@@ -304,8 +304,8 @@ def setup_mca_test(tmp_path, outputs_config):
     from muse import examples
     from muse.mca import MCA
 
-    examples.copy_model(path=str(tmp_path))
-    settings = load(str(tmp_path / "model" / "settings.toml"))
+    examples.copy_model(path=tmp_path)
+    settings = load(tmp_path / "model" / "settings.toml")
     settings["outputs"] = [outputs_config]
     settings["time_framework"] = settings["time_framework"][:2]
     file = tmp_path / "model" / "settings.toml"

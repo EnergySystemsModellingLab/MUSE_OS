@@ -117,8 +117,6 @@ class Subsector:
         name: str = "subsector",
         timeslice_level: str | None = None,
     ) -> Subsector:
-        from logging import getLogger
-
         from muse import constraints as cs
         from muse import demand_share as ds
         from muse import investments as iv
@@ -126,26 +124,6 @@ class Subsector:
         from muse.commodities import is_enduse
         from muse.readers import read_initial_assets
         from muse.readers.toml import undo_damage
-
-        # Raise error for renamed asset_threshhold parameter (PR #447)
-        if hasattr(settings, "asset_threshhold"):
-            msg = "Invalid parameter asset_threshhold. Did you mean asset_threshold?"
-            raise ValueError(msg)
-
-        # Raise warning if lpsolver is not specified (PR #587)
-        if not hasattr(settings, "lpsolver"):
-            msg = (
-                f"lpsolver not specified for subsector '{name}'. Defaulting to 'scipy'"
-            )
-            getLogger(__name__).warning(msg)
-
-        # Raise warning if deprecated forecast parameter is used (PR #645)
-        if hasattr(settings, "forecast"):
-            msg = (
-                "The 'forecast' parameter has been deprecated. "
-                "Please remove from your settings file."
-            )
-            getLogger(__name__).warning(msg)
 
         # Read existing capacity file
         existing_capacity = read_initial_assets(settings.existing_capacity)
@@ -168,6 +146,7 @@ class Subsector:
         # (i.e. hardcoal for a technology using hydrogen)
 
         # check that all regions have technologies with at least one end-use output
+        # TODO: move this check to the input layer
         for a in agents:
             techs = a.filter_input(technologies, region=a.region)
             outputs = techs.fixed_outputs.sel(

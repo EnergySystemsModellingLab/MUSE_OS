@@ -71,13 +71,9 @@ As MUSE requires a number of data file, paths to files can be formatted in a fle
 
    projection = '{path}/inputs/projection.csv'
    timeslices_path = '{cwd}/technodata/timeslices.csv'
-   consumption_path = '{muse_sectors}/technodata/timeslices.csv'
 
 path
    refers to the directory where the TOML file is located
 
 cwd
    refers to the directory from which the muse simulation is launched
-
-muse_sectors
-   refers to the directory where default sectoral data is located
