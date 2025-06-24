@@ -134,7 +134,6 @@ class MCA:
         tolerance_unmet_demand: float = -0.1,
         excluded_commodities: Sequence[str] | None = None,
         carbon_budget: Sequence | None = None,
-        carbon_price: Sequence | None = None,
         carbon_commodities: Sequence[str] | None = None,
         debug: bool = False,
         control_undershoot: bool = False,
