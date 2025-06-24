@@ -233,12 +233,9 @@ def residential_market(model: str = "default") -> xr.Dataset:
 
     market = mca_market(model)
     sectors = [sector("residential_presets", model=model)]
-    return cast(
-        xr.Dataset,
-        single_year_iteration(market, sectors)[0][
-            ["prices", "supply", "consumption"]
-        ].drop_vars("units_prices"),
-    )
+    return single_year_iteration(market, sectors)[0][
+        ["prices", "supply", "consumption"]
+    ]
 
 
 def random_agent_assets(rng: np.random.Generator):
