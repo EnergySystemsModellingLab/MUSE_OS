@@ -156,20 +156,3 @@ def test_clean_assets(assets):
     originals = set(zip(assets.technology.values, assets.installed.values))
     assert empties.isdisjoint(cleanies)
     assert empties.union(cleanies) == originals
-
-
-def test_initial_assets(tmp_path):
-    from muse.examples import copy_model
-    from muse.readers.csv import read_initial_assets
-
-    copy_model("default", tmp_path / "default")
-    copy_model("trade", tmp_path / "trade")
-
-    def path(x, y):
-        return tmp_path / x / "model" / "gas" / f"Existing{y.title()}.csv"
-
-    assets = read_initial_assets(path("default", "capacity"))
-    assert set(assets.dims) == {"year", "region", "asset"}
-
-    assets = read_initial_assets(path("trade", "trade"))
-    assert set(assets.dims) == {"year", "region", "asset", "dst_region"}

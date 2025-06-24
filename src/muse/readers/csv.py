@@ -23,7 +23,6 @@ from logging import getLogger
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -648,7 +647,8 @@ def process_technologies(
     technodata = technodata.set_coords("comm_usage")
     technodata = technodata.drop_vars("comm_type")
 
-    # TODO: Check UF and MSF
+    # Check utilization and minimum service factors
+    check_utilization_and_minimum_service_factors(technodata)
 
     return technodata
 
@@ -1463,44 +1463,48 @@ def process_regression_parameters(data: pd.DataFrame) -> xr.Dataset:
     return result
 
 
-def check_utilization_and_minimum_service_factors(
-    data: pd.DataFrame, filename: Path | list[Path]
-) -> None:
-    filename = [filename] if isinstance(filename, Path) else filename
-    filename = [name for name in filename if name is not None]
-    if "utilization_factor" not in data.columns:
+def check_utilization_and_minimum_service_factors(data: xr.Dataset) -> None:
+    """Check utilization and minimum service factors in an xarray dataset.
+
+    Args:
+        data: xarray Dataset containing utilization_factor and optionally
+            minimum_service_factor
+    """
+    if "utilization_factor" not in data.data_vars:
         raise ValueError(
-            f"""A technology needs to have a utilization factor defined for every
-             timeslice. Please check files: {filename}."""
+            "A technology needs to have a utilization factor defined for every "
+            "timeslice."
         )
 
-    # Check UF not all zero
-    utilization_sum = data.groupby(["technology", "region", "year"]).sum()
-    if (utilization_sum.utilization_factor == 0).any():
+    # Check UF not all zero (sum across timeslice dimension if it exists)
+    if "timeslice" in data.dims:
+        utilization_sum = data.utilization_factor.sum(dim="timeslice")
+    else:
+        utilization_sum = data.utilization_factor
+
+    if (utilization_sum == 0).any():
         raise ValueError(
-            f"""A technology can not have a utilization factor of 0 for every
-                timeslice. Please check files: {filename}."""
+            "A technology can not have a utilization factor of 0 for every timeslice."
         )
 
     # Check UF in range
-    utilization = data["utilization_factor"]
-    if not np.all((0 <= utilization) & (utilization <= 1)):
+    utilization = data.utilization_factor
+    if not ((utilization >= 0) & (utilization <= 1)).all():
         raise ValueError(
-            f"""Utilization factor values must all be between 0 and 1 inclusive.
-            Please check files: {filename}."""
+            "Utilization factor values must all be between 0 and 1 inclusive."
         )
 
-    if "minimum_service_factor" in data.columns:
+    if "minimum_service_factor" in data.data_vars:
         # Check MSF in range
-        min_service_factor = data["minimum_service_factor"]
-        if not np.all((0 <= min_service_factor) & (min_service_factor <= 1)):
+        min_service_factor = data.minimum_service_factor
+        if not ((min_service_factor >= 0) & (min_service_factor <= 1)).all():
             raise ValueError(
-                f"""Minimum service factor values must all be between 0 and 1 inclusive.
-                Please check files: {filename}."""
+                "Minimum service factor values must all be between 0 and 1 inclusive."
             )
 
         # Check UF not below MSF
-        if (data["utilization_factor"] < data["minimum_service_factor"]).any():
-            raise ValueError(f"""Utilization factors must all be greater than or equal
-                        to their corresponding minimum service factors. Please check
-                        {filename}.""")
+        if (data.utilization_factor < data.minimum_service_factor).any():
+            raise ValueError(
+                "Utilization factors must all be greater than or equal "
+                "to their corresponding minimum service factors."
+            )
