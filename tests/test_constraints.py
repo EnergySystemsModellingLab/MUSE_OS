@@ -184,20 +184,20 @@ def test_demand_limiting_capacity(constraints):
 
     # Test capacity values
     expected_capacity = (
-        -max_production.capacity.max("timeslice").values
+        -max_production.capacity.max("timeslice")
         if "timeslice" in max_production.capacity.dims
-        else -max_production.capacity.values
+        else -max_production.capacity
     )
-    assert demand_limiting_capacity.capacity.values == approx(expected_capacity)
+    assert abs(demand_limiting_capacity.capacity - expected_capacity).sum() < 1e-5
 
     # Test production and b values
     assert demand_limiting_capacity.production == 0
     expected_b = (
-        demand_constraint.b.max("timeslice").values
+        demand_constraint.b.max("timeslice")
         if "timeslice" in demand_constraint.b.dims
-        else demand_constraint.b.values
+        else demand_constraint.b
     )
-    assert demand_limiting_capacity.b.values == approx(expected_b)
+    assert abs(demand_limiting_capacity.b - expected_b).sum() < 1e-5
 
 
 def test_max_capacity_expansion_no_limits(model_data):
