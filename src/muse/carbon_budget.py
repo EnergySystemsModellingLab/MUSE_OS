@@ -402,7 +402,7 @@ def bisection(
 
     # Output the new price to the log
     getLogger(__name__).info(
-        f"Final carbon price for {future}: {new_price} "
+        f"Final carbon price for {future.item()}: {new_price} "
         f"(emissions = {emissions_cache[new_price]})"
     )
 
@@ -603,7 +603,8 @@ def solve_market(
 
     # Log the emissions
     getLogger(__name__).info(
-        f"Emissions in {future} with carbon price {carbon_price}: {new_emissions}"
+        f"Emissions in {future.item()} with carbon price {carbon_price}: "
+        f"{new_emissions}"
     )
 
     return new_emissions
