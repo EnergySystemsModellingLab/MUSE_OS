@@ -132,6 +132,7 @@ Example
    - `max_iterations`: maximum number of iterations. Defaults to 5.
    - `tolerance`: tolerance for convergence. E.g. 0.1 means that the algorithm will terminate when emissions are within 10% of the carbon budget. Defaults to 0.1.
    - `early_termination_count`: number of iterations with no change in the carbon price before the algorithm will terminate. Defaults to 5.
+   - `price_penalty`: penalty factor applied to carbon price when selecting optimal solution when convergence isn't reached. Higher values favor lower prices when emissions are similar. Defaults to 0.1.
 
    Parameters for the `fitting` method:
 

@@ -303,6 +303,7 @@ def bisection(
     tolerance: float = 0.1,
     early_termination_count: int = 5,
     resolution: int = 2,
+    price_penalty: float = 0.1,
 ) -> float:
     """Applies bisection algorithm to escalate carbon price and meet the budget.
 
@@ -326,6 +327,9 @@ def bisection(
         early_termination_count: Will terminate the loop early if the last n solutions
             are the same
         resolution: Number of decimal places to solve the carbon price to
+        price_penalty: Penalty factor applied to carbon price when selecting optimal
+            solution when convergence isn't reached. Higher values favor lower prices
+            when emissions are similar.
 
     Returns:
         New value of global carbon price
@@ -388,10 +392,12 @@ def bisection(
             resolution,
         )
 
-    # If convergence isn't reached, new price is that with emissions closest to
-    # threshold. If multiple prices are equally close, it returns the lowest price
+    # If convergence isn't reached, select the price with lowest emissions
+    # We apply a small penalty to the carbon price to keep prices low if there are
+    # solutions with equal (or almost equal) emissions.
     new_price = min(
-        emissions_cache, key=lambda k: (abs(emissions_cache[k] - target), k)
+        emissions_cache.keys(),
+        key=lambda price: emissions_cache[price] + (price * price_penalty),
     )
 
     # Output the new price to the log
