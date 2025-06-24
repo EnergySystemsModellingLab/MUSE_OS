@@ -210,7 +210,6 @@ def mca_market(model: str = "default") -> xr.Dataset:
         market = (
             read_initial_market(
                 settings.global_input_files.projections,
-                settings.global_input_files.global_commodities,
                 base_year_export_path=getattr(
                     settings.global_input_files, "base_year_export", None
                 ),

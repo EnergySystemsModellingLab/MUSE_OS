@@ -262,17 +262,14 @@ def test_read_presets(model_path):
 def test_read_initial_market(model_path):
     from muse.readers.csv import read_initial_market
 
-    data = read_initial_market(
-        model_path / "Projections.csv",
-        model_path / "GlobalCommodities.csv",
-    )
+    data = read_initial_market(model_path / "Projections.csv")
 
     # Check data against schema
     expected_schema = DatasetSchema(
         dims={"region", "year", "commodity", "timeslice"},
         coords={
             "region": CoordinateSchema(("region",), dtype="object"),
-            "year": CoordinateSchema(("year",), dtype="int16"),  # TODO: int64?
+            "year": CoordinateSchema(("year",), dtype="int64"),
             "commodity": CoordinateSchema(("commodity",), dtype="object"),
             "timeslice": CoordinateSchema(("timeslice",), dtype="object"),
             "month": CoordinateSchema(("timeslice",), dtype="object"),
@@ -552,7 +549,7 @@ def test_read_existing_trade(trade_model_path):
         coords={
             "region": CoordinateSchema(dims=("region",), dtype="object"),
             "dst_region": CoordinateSchema(dims=("dst_region",), dtype="object"),
-            "year": CoordinateSchema(dims=("year",), dtype="int16"),
+            "year": CoordinateSchema(dims=("year",), dtype="int64"),
             "technology": CoordinateSchema(dims=("asset",), dtype="object"),
             "installed": CoordinateSchema(dims=("asset",), dtype="int64"),
         },

@@ -21,7 +21,6 @@ __all__ = [
 
 from logging import getLogger
 from pathlib import Path
-from typing import Any
 
 import pandas as pd
 import xarray as xr
@@ -54,6 +53,7 @@ CAMEL_TO_SNAKE_COLUMNS = [
     "attribute",
     "sector",
     "region",
+    "parameter",
 ]
 
 # Global mapping of column names to their expected types
@@ -161,30 +161,26 @@ def create_multiindex(
 
 def create_xarray_dataset(
     data: pd.DataFrame,
-    name: str | None = None,
-    coords: dict[str, Any] | None = None,
-    attrs: dict[str, Any] | None = None,
+    disallow_nan: bool = True,
 ) -> xr.Dataset:
     """Creates an xarray Dataset from a DataFrame with standardized options.
 
     Args:
         data: DataFrame to convert
-        name: Optional name for the Dataset
-        coords: Optional coordinates to add
-        attrs: Optional attributes to add
+        disallow_nan: Whether to raise an error if NaN values are found
 
     Returns:
         xarray Dataset
     """
     result = xr.Dataset.from_dataframe(data)
-    if name:
-        result.name = name
-    if coords:
-        for key, value in coords.items():
-            result.coords[key] = value
-    if attrs:
-        for key, value in attrs.items():
-            result.attrs[key] = value
+    if disallow_nan:
+        if any(result[v].isnull().any() for v in result.data_vars):
+            raise ValueError("NaN values found in data")
+
+    if "year" in result.coords:
+        result = result.assign_coords(year=result.year.astype(int))
+        result = result.sortby("year")
+
     return result
 
 
@@ -231,6 +227,7 @@ def read_csv(
     path: Path | pd.DataFrame,
     float_precision: str = "high",
     required_columns: list[str] | None = None,
+    exclude_extra_columns: bool = False,
     msg: str | None = None,
 ) -> pd.DataFrame:
     """Reads and standardizes a CSV file into a DataFrame.
@@ -239,6 +236,9 @@ def read_csv(
         path: Path to the CSV file
         float_precision: Precision to use when reading floats
         required_columns: List of column names that must be present (optional)
+        exclude_extra_columns: If True, exclude any columns not in required_columns list
+            (optional). This can be important if extra columns can mess up the resulting
+            xarray object.
         msg: Message to log (optional)
 
     Returns:
@@ -297,6 +297,10 @@ def read_csv(
         if missing_columns:
             raise ValueError(f"Missing required columns in {path}: {missing_columns}")
 
+        # Exclude extra columns if requested
+        if exclude_extra_columns:
+            data = data[list(required_columns)]
+
     return data
 
 
@@ -323,20 +327,24 @@ def check_commodities(
     return data
 
 
+def create_assets(data: xr.DataArray | xr.Dataset) -> xr.DataArray | xr.Dataset:
+    """Creates assets from technology data."""
+    # Rename technology to asset
+    result = data.drop_vars("technology").rename(technology="asset")
+    result["technology"] = "asset", data.technology.values
+
+    # Add installed year
+    result["installed"] = ("asset", [int(result.year.min())] * len(result.technology))
+    return result
+
+
 def read_technodictionary(path: Path) -> xr.Dataset:
     df = read_technodictionary_csv(path)
     return process_technodictionary(df)
 
 
 def read_technodictionary_csv(path: Path) -> pd.DataFrame:
-    """Reads and formats technodata into a DataFrame.
-
-    Args:
-        path: Path to the technodictionary CSV file
-
-    Returns:
-        DataFrame containing the technodictionary data
-    """
+    """Reads and formats technodata into a DataFrame."""
     required_columns = {
         "cap_exp",
         "region",
@@ -383,14 +391,7 @@ def read_technodictionary_csv(path: Path) -> pd.DataFrame:
 
 
 def process_technodictionary(data: pd.DataFrame) -> xr.Dataset:
-    """Processes technodictionary DataFrame into an xarray Dataset.
-
-    Args:
-        data: DataFrame containing the technodictionary data
-
-    Returns:
-        xarray Dataset containing the processed technodictionary
-    """
+    """Processes technodictionary DataFrame into an xarray Dataset."""
     # Create multiindex for technology and region
     data = create_multiindex(
         data,
@@ -409,13 +410,8 @@ def process_technodictionary(data: pd.DataFrame) -> xr.Dataset:
     # Sanity checks for year dimension
     if "year" in result.dims:
         assert len(set(result.year.data)) == result.year.data.size
-        result = result.sortby("year")
         if len(result.year) == 1:
             result = result.isel(year=0, drop=True)
-
-    # TODO: what is this?
-    if any(result[u].isnull().any() for u in result.data_vars):
-        raise ValueError("Inconsistent data in technodata (e.g. inconsistent years)")
 
     return result
 
@@ -426,42 +422,30 @@ def read_technodata_timeslices(path: Path) -> xr.Dataset:
 
 
 def read_technodata_timeslices_csv(path: Path) -> pd.DataFrame:
-    """Reads and formats technodata timeslices into a DataFrame.
+    """Reads and formats technodata timeslices into a DataFrame."""
+    from muse.timeslices import TIMESLICE
 
-    Args:
-        path: Path to the technodata timeslices CSV file
-
-    Returns:
-        DataFrame containing the technodata timeslices data
-    """
+    timeslice_columns = set(TIMESLICE.coords["timeslice"].indexes["timeslice"].names)
     required_columns = {
         "utilization_factor",
         "technology",
         "minimum_service_factor",
         "region",
         "year",
-    }
+    } | timeslice_columns
     return read_csv(
         path,
         required_columns=required_columns,
+        exclude_extra_columns=True,
         msg=f"Reading technodata timeslices from {path}.",
     )
 
 
 def process_technodata_timeslices(data: pd.DataFrame) -> xr.Dataset:
-    """Processes technodata timeslices DataFrame into an xarray Dataset.
+    """Processes technodata timeslices DataFrame into an xarray Dataset."""
+    from muse.timeslices import TIMESLICE, sort_timeslices
 
-    Args:
-        data: DataFrame containing the technodata timeslices data
-
-    Returns:
-        xarray Dataset containing the processed technodata timeslices
-    """
-    from muse.timeslices import sort_timeslices
-
-    # Create multiindex for all columns except factor columns (i.e. timeslice columns)
-    # This has to be dynamic because timeslice columns can be different for each model
-    # TODO: is there a better way to do this?
+    # Create multiindex for all columns except factor columns
     factor_columns = ["utilization_factor", "minimum_service_factor", "obj_sort"]
     index_columns = [col for col in data.columns if col not in factor_columns]
     data = create_multiindex(
@@ -474,13 +458,8 @@ def process_technodata_timeslices(data: pd.DataFrame) -> xr.Dataset:
     # Create dataset
     result = create_xarray_dataset(data)
 
-    # Convert year to int64 (from int16) and sort
-    # TODO: why is year int16 in the first place?
-    result = result.assign_coords(year=result.year.astype(int))
-    result = result.sortby("year")
-
     # Stack timeslice levels (month, day, hour) into a single timeslice dimension
-    timeslice_levels = ["month", "day", "hour"]
+    timeslice_levels = TIMESLICE.coords["timeslice"].indexes["timeslice"].names
     if all(level in result.dims for level in timeslice_levels):
         result = result.stack(timeslice=timeslice_levels)
 
@@ -493,14 +472,7 @@ def read_io_technodata(path: Path) -> xr.Dataset:
 
 
 def read_io_technodata_csv(path: Path) -> pd.DataFrame:
-    """Reads process inputs or outputs into a DataFrame.
-
-    Args:
-        path: Path to the IO technodata CSV file
-
-    Returns:
-        DataFrame containing the IO technodata
-    """
+    """Reads process inputs or outputs into a DataFrame."""
     data = read_csv(
         path,
         required_columns=["technology", "region", "year"],
@@ -519,21 +491,11 @@ def read_io_technodata_csv(path: Path) -> pd.DataFrame:
 
 
 def process_io_technodata(data: pd.DataFrame) -> xr.Dataset:
-    """Processes IO technodata DataFrame into an xarray Dataset.
+    """Processes IO technodata DataFrame into an xarray Dataset."""
+    from muse.commodities import COMMODITIES
 
-    Args:
-        data: DataFrame containing the IO technodata
-
-    Returns:
-        xarray Dataset containing the processed IO technodata
-    """
     # Extract commodity columns
-    # TODO: a bit hacky as the user may include extra columns aside from commodities
-    commodities = [
-        col
-        for col in data.columns
-        if col not in ["technology", "region", "year", "level"]
-    ]
+    commodities = [c for c in data.columns if c in COMMODITIES.commodity.values]
 
     # Convert commodity columns to long format (i.e. single "commodity" column)
     data = data.melt(
@@ -558,10 +520,6 @@ def process_io_technodata(data: pd.DataFrame) -> xr.Dataset:
         result["flexible"] = result.flexible.fillna(0)
     else:
         result["flexible"] = xr.zeros_like(result.fixed).rename("flexible")
-
-    # Convert year to int64
-    result = result.assign_coords(year=result.year.astype(int))
-    result = result.sortby("year")
 
     return result
 
@@ -592,17 +550,7 @@ def process_technologies(
     comm_in: xr.Dataset,
     technodata_timeslices: xr.Dataset | None = None,
 ) -> xr.Dataset:
-    """Processes technology data DataFrames into an xarray Dataset.
-
-    Args:
-        technodata: xarray Dataset containing technodata
-        comm_out: xarray Dataset containing output commodities
-        comm_in: xarray Dataset containing input commodities
-        technodata_timeslices: Optional xarray Dataset containing technodata timeslices
-
-    Returns:
-        xarray Dataset containing the processed technology data
-    """
+    """Processes technology data DataFrames into an xarray Dataset."""
     from muse.commodities import COMMODITIES, CommodityUsage
 
     # Process inputs/outputs
@@ -618,6 +566,7 @@ def process_technologies(
 
     # Interpolate inputs/outputs if needed
     if "year" in technodata.dims and len(technodata.year) > 1:
+        # TODO: use a custom interpolation function that supports forward/back filling
         outs = outs.interp(year=technodata.year)
         ins = ins.interp(year=technodata.year)
 
@@ -631,6 +580,8 @@ def process_technologies(
     # Process timeslices if provided
     if technodata_timeslices:
         technodata = technodata.drop_vars("utilization_factor")
+        if "year" in technodata.dims and len(technodata.year) > 1:
+            technodata_timeslices = technodata_timeslices.interp(year=technodata.year)
         technodata = technodata.merge(technodata_timeslices)
 
     # Check commodities
@@ -659,14 +610,7 @@ def read_initial_capacity(path: Path) -> xr.DataArray:
 
 
 def read_initial_capacity_csv(path: Path) -> pd.DataFrame:
-    """Reads and formats data about initial capacity into a DataFrame.
-
-    Args:
-        path: Path to the initial assets CSV file
-
-    Returns:
-        DataFrame containing the initial assets data
-    """
+    """Reads and formats data about initial capacity into a DataFrame."""
     required_columns = {
         "region",
         "technology",
@@ -679,14 +623,7 @@ def read_initial_capacity_csv(path: Path) -> pd.DataFrame:
 
 
 def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
-    """Processes initial capacity DataFrame into an xarray DataArray.
-
-    Args:
-        data: DataFrame containing the initial capacity data
-
-    Returns:
-        xarray DataArray containing the processed initial capacity
-    """
+    """Processes initial capacity DataFrame into an xarray DataArray."""
     # Drop unit column if present
     if "unit" in data.columns:
         data = data.drop(columns=["unit"])
@@ -702,9 +639,6 @@ def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
         value_name="value",
     )
 
-    # Convert year column to int64
-    data["year"] = data["year"].astype(int)
-
     # Create multiindex for region, technology, and year
     data = create_multiindex(
         data,
@@ -716,13 +650,8 @@ def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
     # Create Dataarray
     result = create_xarray_dataset(data).value.astype(float)
 
-    # Rename technology to asset
-    technology = result.technology
-    result = result.drop_vars("technology").rename(technology="asset")
-    result["technology"] = "asset", technology.values
-
-    # Add installed year
-    result["installed"] = ("asset", [int(result.year.min())] * len(result.technology))
+    # Create assets
+    result = create_assets(result)
     return result
 
 
@@ -732,15 +661,7 @@ def read_global_commodities(path: Path) -> xr.Dataset:
 
 
 def read_global_commodities_csv(path: Path) -> pd.DataFrame:
-    """Reads commodities information from input into a DataFrame.
-
-    Args:
-        path: Path to the global commodities CSV file
-
-    Returns:
-        DataFrame containing the global commodities data
-
-    """
+    """Reads commodities information from input into a DataFrame."""
     # Due to legacy reasons, users can supply both Commodity and CommodityName columns
     # In this case, we need to remove the Commodity column to avoid conflicts
     # This is fine because Commodity just contains a long description that isn't needed
@@ -762,14 +683,7 @@ def read_global_commodities_csv(path: Path) -> pd.DataFrame:
 
 
 def process_global_commodities(data: pd.DataFrame) -> xr.Dataset:
-    """Processes global commodities DataFrame into an xarray Dataset.
-
-    Args:
-        data: DataFrame containing the global commodities data
-
-    Returns:
-        xarray Dataset containing the processed global commodities
-    """
+    """Processes global commodities DataFrame into an xarray Dataset."""
     data.index = [u for u in data.commodity]
     data = data.drop("commodity", axis=1)
     data.index.name = "commodity"
@@ -782,14 +696,7 @@ def read_agent_parameters(path: Path) -> pd.DataFrame:
 
 
 def read_agent_parameters_csv(path: Path) -> pd.DataFrame:
-    """Reads standard MUSE agent-declaration csv-files into a DataFrame.
-
-    Args:
-        path: Path to the agent parameters CSV file
-
-    Returns:
-        DataFrame with validated agent parameters
-    """
+    """Reads standard MUSE agent-declaration csv-files into a DataFrame."""
     required_columns = {
         "search_rule",
         "quantity",
@@ -833,15 +740,7 @@ def read_agent_parameters_csv(path: Path) -> pd.DataFrame:
 
 
 def process_agent_parameters(data: pd.DataFrame) -> list[dict]:
-    """Processes agent parameters DataFrame into a list of agent dictionaries.
-
-    Args:
-        data: DataFrame containing validated agent parameters
-
-    Returns:
-        List of dictionaries, where each dictionary can be used to instantiate an
-        agent in :py:func:`muse.agents.factories.factory`.
-    """
+    """Processes agent parameters DataFrame into a list of agent dictionaries."""
     result = []
     for _, row in data.iterrows():
         # Get objectives data
@@ -889,14 +788,13 @@ def process_agent_parameters(data: pd.DataFrame) -> list[dict]:
 
 def read_initial_market(
     projections_path: Path,
-    commodities_path: Path,
     base_year_import_path: Path | None = None,
     base_year_export_path: Path | None = None,
 ) -> xr.Dataset:
     # Read projections
     projections_df = read_projections_csv(projections_path)
 
-    # Base year export is optional
+    # Read base year export (optional)
     if base_year_export_path:
         export_df = read_csv(
             base_year_export_path,
@@ -905,7 +803,7 @@ def read_initial_market(
     else:
         export_df = None
 
-    # Base year import is optional
+    # Read base year import (optional)
     if base_year_import_path:
         import_df = read_csv(
             base_year_import_path,
@@ -916,9 +814,6 @@ def read_initial_market(
 
     # Assemble into xarray Dataset
     result = process_initial_market(projections_df, import_df, export_df)
-
-    # Check commodities
-    result = check_commodities(result, fill_missing=True, fill_value=0)
     return result
 
 
@@ -945,9 +840,6 @@ def process_initial_market(
         projections_df: DataFrame containing projections data
         import_df: Optional DataFrame containing import data
         export_df: Optional DataFrame containing export data
-
-    Returns:
-        xarray Dataset containing processed market data
     """
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
@@ -982,6 +874,8 @@ def process_initial_market(
         }
     )
 
+    # Check commodities
+    result = check_commodities(result, fill_missing=True, fill_value=0)
     return result
 
 
@@ -991,14 +885,7 @@ def read_attribute_table(path: Path) -> xr.Dataset:
 
 
 def read_attribute_table_csv(path: Path) -> pd.DataFrame:
-    """Read a standard MUSE csv file for price projections into a DataFrame.
-
-    Args:
-        path: Path to the attribute table CSV file
-
-    Returns:
-        DataFrame containing the attribute table data
-    """
+    """Read a standard MUSE csv file for price projections into a DataFrame."""
     table = read_csv(
         path,
         required_columns=["region", "attribute", "year"],
@@ -1008,14 +895,7 @@ def read_attribute_table_csv(path: Path) -> pd.DataFrame:
 
 
 def process_attribute_table(data: pd.DataFrame) -> xr.Dataset:
-    """Process attribute table DataFrame into an xarray Dataset.
-
-    Args:
-        data: DataFrame containing the attribute table data
-
-    Returns:
-        xarray Dataset containing the processed attribute table
-    """
+    """Process attribute table DataFrame into an xarray Dataset."""
     # Extract commodity columns
     commodities = [
         col for col in data.columns if col not in ["region", "year", "attribute"]
@@ -1068,10 +948,6 @@ def read_presets(presets_paths: Path) -> xr.Dataset:
 
     # Process data
     datas = process_presets(datas)
-
-    # Check commodities
-    datas = check_commodities(datas, fill_missing=True, fill_value=0)
-
     return datas
 
 
@@ -1100,23 +976,15 @@ def read_presets_csv(path: Path) -> pd.DataFrame:
 
 
 def process_presets(datas: dict[int, pd.DataFrame]) -> xr.Dataset:
-    """Processes preset DataFrames into an xarray Dataset.
-
-    Args:
-        datas: Dictionary mapping years to DataFrames containing preset data
-
-    Returns:
-        xarray Dataset containing the processed preset data
-    """
+    """Processes preset DataFrames into an xarray Dataset."""
+    from muse.commodities import COMMODITIES
     from muse.timeslices import TIMESLICE
 
     # Combine into a single DataFrame
     data = pd.concat(datas.values())
 
     # Extract commodity columns
-    commodities = [
-        col for col in data.columns if col not in ["region", "year", "timeslice"]
-    ]
+    commodities = [c for c in data.columns if c in COMMODITIES.commodity.values]
 
     # Convert commodity columns to long format (i.e. single "commodity" column)
     data = data.melt(
@@ -1140,6 +1008,8 @@ def process_presets(datas: dict[int, pd.DataFrame]) -> xr.Dataset:
     # Assign timeslices
     result = result.assign_coords(timeslice=TIMESLICE.timeslice)
 
+    # Check commodities
+    result = check_commodities(result, fill_missing=True, fill_value=0)
     return result
 
 
@@ -1163,6 +1033,7 @@ def process_trade_technodata(data: pd.DataFrame) -> xr.Dataset:
         data = data.drop(columns=["unit"])
 
     # Select region columns
+    # TODO: this is hacky
     regions = [
         col for col in data.columns if col not in ["technology", "region", "parameter"]
     ]
@@ -1181,11 +1052,6 @@ def process_trade_technodata(data: pd.DataFrame) -> xr.Dataset:
         columns="parameter",
         values="value",
     )
-
-    # Convert CamelCase to snake_case
-    data = standardize_columns(data)
-
-    # TODO: Make sure no nan values
 
     # Create DataSet
     return create_xarray_dataset(data)
@@ -1211,6 +1077,7 @@ def read_existing_trade_csv(path: Path) -> pd.DataFrame:
 
 def process_existing_trade(data: pd.DataFrame) -> xr.DataArray:
     # Select region columns
+    # TODO: this is hacky
     regions = [
         col for col in data.columns if col not in ["technology", "region", "year"]
     ]
@@ -1234,13 +1101,8 @@ def process_existing_trade(data: pd.DataFrame) -> xr.DataArray:
     # Create DataArray
     result = create_xarray_dataset(data).value.astype(float)
 
-    # Rename technology to asset
-    technology = result.technology
-    result = result.drop_vars("technology").rename(technology="asset")
-    result["technology"] = "asset", technology.values
-
-    # Add installed year
-    result["installed"] = ("asset", [int(result.year.min())] * len(result.technology))
+    # Create assets from technologies
+    result = create_assets(result)
     return result
 
 
@@ -1250,14 +1112,7 @@ def read_timeslice_shares(path: Path) -> xr.DataArray:
 
 
 def read_timeslice_shares_csv(path: Path) -> pd.DataFrame:
-    """Reads sliceshare information into a DataFrame.
-
-    Args:
-        path: Path to the timeslice shares CSV file
-
-    Returns:
-        DataFrame containing the timeslice shares data
-    """
+    """Reads sliceshare information into a DataFrame."""
     data = read_csv(
         path,
         required_columns=["region", "timeslice"],
@@ -1268,18 +1123,12 @@ def read_timeslice_shares_csv(path: Path) -> pd.DataFrame:
 
 
 def process_timeslice_shares(data: pd.DataFrame) -> xr.DataArray:
-    """Processes timeslice shares DataFrame into an xarray DataArray.
-
-    Args:
-        data: DataFrame containing the timeslice shares data
-
-    Returns:
-        xarray DataArray containing the processed timeslice shares
-    """
+    """Processes timeslice shares DataFrame into an xarray DataArray."""
+    from muse.commodities import COMMODITIES
     from muse.timeslices import TIMESLICE
 
     # Extract commodity columns
-    commodities = [col for col in data.columns if col not in ["timeslice", "region"]]
+    commodities = [c for c in data.columns if c in COMMODITIES.commodity.values]
 
     # Convert commodity columns to long format (i.e. single "commodity" column)
     data = data.melt(
@@ -1314,14 +1163,7 @@ def read_macro_drivers(path: Path) -> pd.DataFrame:
 
 
 def read_macro_drivers_csv(path: Path) -> pd.DataFrame:
-    """Reads a standard MUSE csv file for macro drivers into a DataFrame.
-
-    Args:
-        path: Path to the macro drivers CSV file
-
-    Returns:
-        DataFrame containing the macro drivers data
-    """
+    """Reads a standard MUSE csv file for macro drivers into a DataFrame."""
     table = read_csv(
         path,
         required_columns=["region", "variable"],
@@ -1340,14 +1182,7 @@ def read_macro_drivers_csv(path: Path) -> pd.DataFrame:
 
 
 def process_macro_drivers(data: pd.DataFrame) -> xr.Dataset:
-    """Processes macro drivers DataFrame into an xarray Dataset.
-
-    Args:
-        data: DataFrame containing the macro drivers data
-
-    Returns:
-        xarray Dataset containing the processed macro drivers
-    """
+    """Processes macro drivers DataFrame into an xarray Dataset."""
     # Drop unit column if present
     if "unit" in data.columns:
         data = data.drop(columns=["unit"])
@@ -1362,9 +1197,6 @@ def process_macro_drivers(data: pd.DataFrame) -> xr.Dataset:
         var_name="year",
         value_name="value",
     )
-
-    # Convert year column to int64
-    data["year"] = data["year"].astype(int)
 
     # Pivot data to create Population and GDP|PPP columns
     data = data.pivot(
@@ -1381,7 +1213,6 @@ def process_macro_drivers(data: pd.DataFrame) -> xr.Dataset:
 
     # Create DataSet
     result = create_xarray_dataset(data)
-
     return result
 
 
@@ -1391,14 +1222,7 @@ def read_regression_parameters(path: Path) -> xr.Dataset:
 
 
 def read_regression_parameters_csv(path: Path) -> pd.DataFrame:
-    """Reads the regression parameters from a standard MUSE csv file into a DataFrame.
-
-    Args:
-        path: Path to the regression parameters CSV file
-
-    Returns:
-        DataFrame containing the regression parameters data
-    """
+    """Reads the regression parameters from a MUSE csv file into a DataFrame."""
     table = read_csv(
         path,
         required_columns=["region", "function_type", "coeff"],
@@ -1416,20 +1240,11 @@ def read_regression_parameters_csv(path: Path) -> pd.DataFrame:
 
 
 def process_regression_parameters(data: pd.DataFrame) -> xr.Dataset:
-    """Processes regression parameters DataFrame into an xarray Dataset.
+    """Processes regression parameters DataFrame into an xarray Dataset."""
+    from muse.commodities import COMMODITIES
 
-    Args:
-        data: DataFrame containing the regression parameters data
-
-    Returns:
-        xarray Dataset containing the processed regression parameters
-    """
     # Extract commodity columns
-    commodities = [
-        col
-        for col in data.columns
-        if col not in ["sector", "region", "function_type", "coeff"]
-    ]
+    commodities = [c for c in data.columns if c in COMMODITIES.commodity.values]
 
     # Melt to long format
     melted = data.melt(
@@ -1459,7 +1274,6 @@ def process_regression_parameters(data: pd.DataFrame) -> xr.Dataset:
 
     # Check commodities
     result = check_commodities(result, fill_missing=True, fill_value=0)
-
     return result
 
 
