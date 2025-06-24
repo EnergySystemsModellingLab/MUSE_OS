@@ -352,7 +352,11 @@ def read_technodictionary_csv(path: Path) -> pd.DataFrame:
         "technical_life",
         "fix_par",
     }
-    data = read_csv(path, required_columns=required_columns)
+    data = read_csv(
+        path,
+        required_columns=required_columns,
+        msg=f"Reading technodictionary from {path}.",
+    )
 
     # Check for deprecated columns
     if "fuel" in data.columns:
@@ -438,7 +442,11 @@ def read_technodata_timeslices_csv(path: Path) -> pd.DataFrame:
         "region",
         "year",
     }
-    return read_csv(path, required_columns=required_columns)
+    return read_csv(
+        path,
+        required_columns=required_columns,
+        msg=f"Reading technodata timeslices from {path}.",
+    )
 
 
 def process_technodata_timeslices(data: pd.DataFrame) -> xr.Dataset:
@@ -494,7 +502,11 @@ def read_io_technodata_csv(path: Path) -> pd.DataFrame:
     Returns:
         DataFrame containing the IO technodata
     """
-    data = read_csv(path, required_columns=["technology", "region", "year"])
+    data = read_csv(
+        path,
+        required_columns=["technology", "region", "year"],
+        msg=f"Reading IO technodata from {path}.",
+    )
 
     # Unspecified Level values default to "fixed"
     if "level" in data.columns:
@@ -561,17 +573,6 @@ def read_technologies(
     comm_in_path: Path,
     technodata_timeslices_path: Path | None = None,
 ) -> xr.Dataset:
-    # Log message
-    msg = f"""Reading technology information from:
-    - technodata: {technodata_path}
-    - outputs: {comm_out_path}
-    - inputs: {comm_in_path}
-    """
-    if technodata_timeslices_path:
-        msg += f"""- technodata_timeslices: {technodata_timeslices_path}
-        """
-    getLogger(__name__).info(msg)
-
     # Read all data
     technodata = read_technodictionary(technodata_path)
     comm_out = read_io_technodata(comm_out_path)
@@ -670,7 +671,11 @@ def read_initial_capacity_csv(path: Path) -> pd.DataFrame:
         "region",
         "technology",
     }
-    return read_csv(path, required_columns=required_columns)
+    return read_csv(
+        path,
+        required_columns=required_columns,
+        msg=f"Reading initial capacity from {path}.",
+    )
 
 
 def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
@@ -794,7 +799,11 @@ def read_agent_parameters_csv(path: Path) -> pd.DataFrame:
         "agent_share",
         "decision_method",
     }
-    data = read_csv(path, required_columns=required_columns)
+    data = read_csv(
+        path,
+        required_columns=required_columns,
+        msg=f"Reading agent parameters from {path}.",
+    )
 
     # Check for deprecated retrofit agents
     if "type" in data.columns:
@@ -920,9 +929,7 @@ def read_projections_csv(path: Path) -> pd.DataFrame:
         "year",
     }
     projections_df = read_csv(
-        path,
-        required_columns=required_columns,
-        msg=f"Reading projections from {path}.",
+        path, required_columns=required_columns, msg=f"Reading projections from {path}."
     )
     return projections_df
 
@@ -995,7 +1002,7 @@ def read_attribute_table_csv(path: Path) -> pd.DataFrame:
     table = read_csv(
         path,
         required_columns=["region", "attribute", "year"],
-        msg=f"Reading prices from {path}.",
+        msg=f"Reading attribute table from {path}.",
     )
     return table
 
@@ -1069,7 +1076,11 @@ def read_presets(presets_paths: Path) -> xr.Dataset:
 
 
 def read_presets_csv(path: Path) -> pd.DataFrame:
-    data = read_csv(path, required_columns=["region", "timeslice"])
+    data = read_csv(
+        path,
+        required_columns=["region", "timeslice"],
+        msg=f"Reading presets from {path}.",
+    )
 
     # Legacy: drop ProcessName column and sum data (PR #448)
     if "technology" in data.columns:
@@ -1139,7 +1150,11 @@ def read_trade_technodata(path: Path) -> xr.Dataset:
 
 def read_trade_technodata_csv(path: Path) -> pd.DataFrame:
     required_columns = {"technology", "region", "parameter"}
-    return read_csv(path, required_columns=required_columns)
+    return read_csv(
+        path,
+        required_columns=required_columns,
+        msg=f"Reading trade technodata from {path}.",
+    )
 
 
 def process_trade_technodata(data: pd.DataFrame) -> xr.Dataset:
@@ -1187,7 +1202,11 @@ def read_existing_trade_csv(path: Path) -> pd.DataFrame:
         "technology",
         "year",
     }
-    return read_csv(path, required_columns=required_columns)
+    return read_csv(
+        path,
+        required_columns=required_columns,
+        msg=f"Reading existing trade from {path}.",
+    )
 
 
 def process_existing_trade(data: pd.DataFrame) -> xr.DataArray:
@@ -1214,6 +1233,14 @@ def process_existing_trade(data: pd.DataFrame) -> xr.DataArray:
 
     # Create DataArray
     result = create_xarray_dataset(data).value.astype(float)
+
+    # Rename technology to asset
+    technology = result.technology
+    result = result.drop_vars("technology").rename(technology="asset")
+    result["technology"] = "asset", technology.values
+
+    # Add installed year
+    result["installed"] = ("asset", [int(result.year.min())] * len(result.technology))
     return result
 
 

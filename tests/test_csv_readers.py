@@ -548,12 +548,13 @@ def test_read_existing_trade(trade_model_path):
 
     # Check data against schema
     expected_schema = DataArraySchema(
-        dims={"year", "technology", "dst_region", "region"},
+        dims={"region", "dst_region", "year", "asset"},
         coords={
-            "year": CoordinateSchema(("year",), dtype="int16"),  # TODO
-            "technology": CoordinateSchema(("technology",), dtype="object"),
-            "dst_region": CoordinateSchema(("dst_region",), dtype="object"),
-            "region": CoordinateSchema(("region",), dtype="object"),
+            "region": CoordinateSchema(dims=("region",), dtype="object"),
+            "dst_region": CoordinateSchema(dims=("dst_region",), dtype="object"),
+            "year": CoordinateSchema(dims=("year",), dtype="int16"),
+            "technology": CoordinateSchema(dims=("asset",), dtype="object"),
+            "installed": CoordinateSchema(dims=("asset",), dtype="int64"),
         },
         dtype="float64",
         name="value",
@@ -566,15 +567,14 @@ def test_read_existing_trade(trade_model_path):
         {
             "year": [2010, 2020, 2030, 2040, 2050],
             "technology": ["gassupply1"],
+            "installed": [2010],
             "dst_region": ["r1", "r2"],
             "region": ["r1", "r2"],
         },
     )
 
     # Check values at a single coordinate
-    assert (
-        data.sel(year=2010, technology="gassupply1", dst_region="r1", region="r2") == 0
-    )
+    assert data.sel(year=2010, asset=0, dst_region="r1", region="r2") == 0
 
 
 def test_read_trade_technodata(trade_model_path):
