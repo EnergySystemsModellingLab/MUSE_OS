@@ -352,8 +352,6 @@ def bisection(
         return 0.0
 
     # Initial lower and upper bounds on carbon price for the bisection algorithm
-    current = market.year[0]
-    time_exp = int(future - current)
     lb_price = 0.0
     epsilon = 10**-resolution  # smallest nonzero price
     ub_price = round(max(price, epsilon), resolution)  # i.e. current price
@@ -514,6 +512,7 @@ def decrease_bounds(
     lb_price_emissions = emissions_cache[lb_price]
     exponent = (lb_price_emissions - target) / abs(denominator)  # will be negative
     exponent = max(exponent, -1)  # cap exponent at -1
+    exponent = min(exponent, -0.5)  # upper bound cap to force exploration
     ub_price = lb_price
     lb_price = round(lb_price * np.exp(exponent), resolution)
     if lb_price == ub_price:
@@ -533,6 +532,7 @@ def increase_bounds(
     ub_price_emissions = emissions_cache[ub_price]
     exponent = (ub_price_emissions - target) / abs(denominator)  # will be positive
     exponent = min(exponent, 1)  # cap exponent at 1
+    exponent = max(exponent, 0.5)  # lower bound cap to force exploration
     lb_price = ub_price
     ub_price = round(ub_price * np.exp(exponent), resolution)
     if ub_price == lb_price:
