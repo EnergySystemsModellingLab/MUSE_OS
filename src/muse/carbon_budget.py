@@ -356,9 +356,7 @@ def bisection(
     time_exp = int(future - current)
     lb_price = 0.0
     epsilon = 10**-resolution  # smallest nonzero price
-    ub_price = round(
-        (max(price, epsilon) * 1.1**time_exp), resolution
-    )  # i.e. 10% yearly increase on current price
+    ub_price = round(max(price, epsilon), resolution)  # i.e. current price
 
     # Bisection loop
     for _ in range(max_iterations):  # maximum number of iterations before terminating
@@ -518,6 +516,8 @@ def decrease_bounds(
     exponent = max(exponent, -1)  # cap exponent at -1
     ub_price = lb_price
     lb_price = round(lb_price * np.exp(exponent), resolution)
+    if lb_price == ub_price:
+        lb_price -= 10**-resolution
     return lb_price, ub_price
 
 
@@ -535,6 +535,8 @@ def increase_bounds(
     exponent = min(exponent, 1)  # cap exponent at 1
     lb_price = ub_price
     ub_price = round(ub_price * np.exp(exponent), resolution)
+    if ub_price == lb_price:
+        ub_price += 10**-resolution
     return lb_price, ub_price
 
 
