@@ -40,6 +40,7 @@ Returns:
 from __future__ import annotations
 
 from collections.abc import Hashable, Mapping, MutableMapping, Sequence
+from functools import wraps
 from typing import Any, Callable, cast
 
 import numpy as np
@@ -47,6 +48,7 @@ import xarray as xr
 from mypy_extensions import KwArg
 
 from muse.agents import AbstractAgent
+from muse.commodities import is_enduse
 from muse.errors import RetrofitAgentInStandardDemandShare
 from muse.quantities import maximum_production
 from muse.registration import registrator
@@ -77,33 +79,17 @@ DEMAND_SHARE: MutableMapping[str, DEMAND_SHARE_SIGNATURE] = {}
 
 
 @registrator(registry=DEMAND_SHARE, loglevel="info")
-def register_demand_share(function: DEMAND_SHARE_SIGNATURE):
-    """Decorator to register a function as a demand share calculation."""
-    return function
+def register_demand_share(function: DEMAND_SHARE_SIGNATURE) -> DEMAND_SHARE_SIGNATURE:
+    """Registers a demand share function with MUSE."""
 
-
-def factory(
-    settings: str | Mapping[str, Any] | None = None,
-) -> DEMAND_SHARE_SIGNATURE:
-    if settings is None or isinstance(settings, str):
-        name = settings or "standard_demand"
-        params: Mapping[str, Any] = {}
-    else:
-        name = settings.get("name", "standard_demand")
-        params = {k: v for k, v in settings.items() if k != "name"}
-
-    function = DEMAND_SHARE[name]
-    keywords = dict(**params)
-
-    def demand_share(
+    @wraps(function)
+    def decorated(
         agents: Sequence[AbstractAgent],
         demand: xr.DataArray,
         technologies: xr.Dataset,
         **kwargs,
     ) -> xr.DataArray:
-        """Wrapper around demand share functions that validates inputs and outputs."""
-        keyword_args = {**keywords, **kwargs}
-
+        """Computes and validates a demand share."""
         # Validate inputs
         check_dimensions(
             demand,
@@ -117,8 +103,14 @@ def factory(
             optional=["timeslice", "commodity", "dst_region"],
         )
 
+        # We can only share demand for enduse commodities
+        # So we need to check that demand is zero for all non-enduse commodities
+        enduse_names = technologies.commodity[is_enduse(technologies.comm_usage)]
+        non_enduse = demand.commodity[~demand.commodity.isin(enduse_names)]
+        assert (demand.sel(commodity=non_enduse) == 0).all()
+
         # Calculate demand share
-        result = function(agents, demand, technologies, **keyword_args)
+        result = function(agents, demand, technologies, **kwargs)
 
         # Validate output
         check_dimensions(
@@ -126,7 +118,19 @@ def factory(
         )  # TODO: asset should be required, but trade model is failing
         return result
 
-    return cast(DEMAND_SHARE_SIGNATURE, demand_share)
+    return cast(DEMAND_SHARE_SIGNATURE, decorated)
+
+
+def factory(
+    settings: str | Mapping[str, Any] | None = None,
+) -> DEMAND_SHARE_SIGNATURE:
+    """Get a demand share function by name or settings."""
+    if settings is None or isinstance(settings, str):
+        name = settings or "standard_demand"
+    else:
+        name = settings.get("name", "standard_demand")
+
+    return DEMAND_SHARE[name]
 
 
 @register_demand_share(name="new_and_retro")

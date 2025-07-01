@@ -115,6 +115,7 @@ def _matching_market(technologies, capacity):
     """
     from numpy.random import random
 
+    from muse.commodities import is_enduse
     from muse.quantities import consumption as calc_consumption
 
     market = xr.Dataset()
@@ -124,7 +125,16 @@ def _matching_market(technologies, capacity):
         production = production.groupby("region")
         cons = cons.groupby("region")
     market["supply"] = production.sum("asset")
-    market["consumption"] = drop_timeslice(cons.sum("asset") + market.supply)
+
+    # Create consumption with only enduse commodities having non-zero demand
+    consumption = drop_timeslice(cons.sum("asset") + market.supply)
+    enduse_mask = is_enduse(technologies.comm_usage)
+    enduse_names = technologies.commodity[enduse_mask]
+    for commodity in consumption.commodity.values:
+        if commodity not in enduse_names.values:
+            consumption.loc[{"commodity": commodity}] = 0
+
+    market["consumption"] = consumption
     market["prices"] = market.supply.dims, random(market.supply.shape)
     return market
 
