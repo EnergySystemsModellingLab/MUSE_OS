@@ -11,6 +11,7 @@ import xarray as xr
 
 from muse.agents import AbstractAgent
 from muse.production import PRODUCTION_SIGNATURE
+from muse.readers.toml import read_technodata
 from muse.sectors.abstract import AbstractSector
 from muse.sectors.register import register_sector
 from muse.sectors.subsector import Subsector
@@ -26,17 +27,21 @@ class Sector(AbstractSector):  # type: ignore
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory
         from muse.production import factory as pfactory
-        from muse.readers.toml import read_technodata
 
         # Read sector settings
         sector_settings = getattr(settings.sectors, name)._asdict()
-        for attribute in ("name", "type", "priority", "path"):
-            sector_settings.pop(attribute, None)
-        if "subsectors" not in sector_settings:
+
+        # Extract required settings
+        subsectors = sector_settings.get("subsectors")
+        if not subsectors:
             raise RuntimeError(f"Missing 'subsectors' section in sector {name}")
-        if len(sector_settings["subsectors"]._asdict()) == 0:
+        if len(subsectors._asdict()) == 0:
             raise RuntimeError(f"Empty 'subsectors' section in sector {name}")
-        interpolation_mode = sector_settings.pop("interpolation", "linear")
+        interpolation_mode = sector_settings.get("interpolation", "linear")
+        timeslice_level = sector_settings.get("timeslice_level", None)
+        dispatch_production = sector_settings.get("dispatch_production", "share")
+        outputs_config = sector_settings.get("outputs", [])
+        interactions_config = sector_settings.get("interactions", None)
 
         # Read technologies
         technologies = read_technodata(
@@ -54,11 +59,9 @@ class Sector(AbstractSector):  # type: ignore
                 regions=settings.regions,
                 current_year=int(min(settings.time_framework)),
                 name=subsec_name,
-                timeslice_level=sector_settings.get("timeslice_level", None),
+                timeslice_level=timeslice_level,
             )
-            for subsec_name, subsec_settings in sector_settings.pop("subsectors")
-            ._asdict()
-            .items()
+            for subsec_name, subsec_settings in subsectors._asdict().items()
         ]
 
         # Check that subsector commodities are disjoint
@@ -69,23 +72,15 @@ class Sector(AbstractSector):  # type: ignore
             raise RuntimeError("Subsector commodities are not disjoint")
 
         # Create outputs
-        outputs = ofactory(*sector_settings.pop("outputs", []), sector_name=name)
+        outputs = ofactory(*outputs_config, sector_name=name)
 
         # Create production method
-        dispatch_production = sector_settings.pop("dispatch_production", "share")
         production = pfactory(dispatch_production)
 
         # Create interactions
-        interactions = interaction_factory(sector_settings.pop("interactions", None))
+        interactions = interaction_factory(interactions_config)
 
         # Create sector
-        for attr in (
-            "technodata",
-            "commodities_out",
-            "commodities_in",
-            "technodata_timeslices",
-        ):
-            sector_settings.pop(attr, None)
         return cls(
             name,
             technologies,
@@ -93,7 +88,7 @@ class Sector(AbstractSector):  # type: ignore
             subsectors=subsectors,
             outputs=outputs,
             interactions=interactions,
-            **sector_settings,
+            timeslice_level=timeslice_level,
         )
 
     def __init__(
