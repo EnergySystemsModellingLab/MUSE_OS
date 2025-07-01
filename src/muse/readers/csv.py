@@ -761,28 +761,20 @@ def read_regression_parameters(path: str | Path) -> xr.Dataset:
 
 
 def read_presets(
-    paths: str | Path | Sequence[str | Path],
+    paths: str | Path,
     columns: str = "commodity",
     indices: Sequence[str] = ("RegionName", "Timeslice"),
     drop: Sequence[str] = ("Unnamed: 0",),
 ) -> xr.Dataset:
     """Read consumption or supply files for preset sectors."""
+    from glob import glob
     from logging import getLogger
     from re import match
 
     from muse.readers import camel_to_snake
 
-    def expand_paths(path):
-        from glob import glob
-
-        if isinstance(paths, str):
-            return [Path(p) for p in glob(path)]
-        return Path(path)
-
-    if isinstance(paths, str):
-        allfiles = expand_paths(paths)
-    else:
-        allfiles = [expand_paths(p) for p in cast(Sequence, paths)]
+    # Find all files matching the path pattern
+    allfiles = [Path(p) for p in glob(str(paths))]
     if len(allfiles) == 0:
         raise OSError(f"No files found with paths {paths}")
 

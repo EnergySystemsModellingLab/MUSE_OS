@@ -17,15 +17,16 @@ import pandas as pd
 from tomlkit import dumps, parse
 
 
-def modify_toml(path_to_toml: Path, function: Callable):
+def modify_toml(path_to_toml: str | Path, function: Callable):
     """Apply the specified function to modify a toml file.
 
     Args:
-        path_to_toml: Path to the toml file
+        path_to_toml: Path to the toml file (string or Path object)
         function: Function to apply to the toml data. Must take a dictionary as a single
             input and modify it in place.
 
     """
+    path_to_toml = Path(path_to_toml)
     data = parse(path_to_toml.read_text())
     function(data)
     path_to_toml.write_text(dumps(data))
