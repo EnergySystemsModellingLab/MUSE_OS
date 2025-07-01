@@ -545,6 +545,10 @@ Sectors contain a number of subsections:
    Note that the aggregate sink always overwrites the final file, since it will
    overwrite itself.
 
+   **Additional sink parameters:**
+
+   You can pass additional parameters that will be forwarded to the underlying save function. For example, when using the "csv" sink, you could use `float_format = "%.6f"` to increase the precision of floating point numbers in the output file (default is 4 decimal places). For a complete list of available parameters, see the documentation for the respective save function (e.g., `pandas.to_csv <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html>`_ for CSV outputs).
+
 --------------
 Preset sectors
 --------------

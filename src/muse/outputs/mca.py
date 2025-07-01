@@ -23,12 +23,7 @@ from __future__ import annotations
 from collections.abc import Mapping, MutableMapping
 from operator import attrgetter
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Union
 
 import numpy as np
 import pandas as pd
@@ -64,36 +59,11 @@ def register_output_quantity(
 
     @wraps(function)
     def decorated(*args, **kwargs):
-        result = function(*args, **kwargs)
-        if isinstance(result, (pd.DataFrame, xr.DataArray)):
-            result.name = function.__name__
+        result: xr.DataArray = function(*args, **kwargs)
+        result.name = function.__name__
         return result
 
     return decorated
-
-
-def round_values(function: Callable) -> OUTPUT_QUANTITY_SIGNATURE:
-    """Rounds the outputs to given number of decimals and drops columns with zeros."""
-    from functools import wraps
-
-    @wraps(function)
-    def rounded(
-        market: xr.Dataset,
-        sectors: list[AbstractSector],
-        year: int,
-        rounding: int = 4,
-        **kwargs,
-    ) -> xr.DataArray:
-        result = function(market=market, sectors=sectors, year=year, **kwargs)
-
-        if hasattr(result, "to_dataframe"):
-            result = result.to_dataframe()
-        result = result.round(rounding)
-        name = getattr(result, "name", function.__name__)
-        if len(result) > 0:
-            return result[result[name] != 0]
-
-    return rounded
 
 
 def factory(
@@ -120,59 +90,28 @@ def factory(
     """
     from muse.outputs.sector import _factory
 
-    def reformat_finite_resources(params):
-        from muse.readers.toml import MissingSettings
-
-        name = params["quantity"]
-        if not isinstance(name, str):
-            name = name["name"]
-        if name.lower() not in {"finite_resources", "finiteresources"}:
-            return params
-
-        quantity = params["quantity"]
-        if isinstance(quantity, str):
-            quantity = dict(name=quantity)
-        else:
-            quantity = dict(**quantity)
-
-        if "limits_path" in params:
-            quantity["limits_path"] = params.pop("limits_path")
-        if "commodities" in params:
-            quantity["commodities"] = params.pop("commodities")
-        if "limits_path" not in quantity:
-            msg = "Missing limits_path tag indicating file with finite resource limits"
-            raise MissingSettings(msg)
-        params["sink"] = params.get("sink", "finite_resource_logger")
-        params["quantity"] = quantity
-        return params
-
-    parameters = cast(  # type: ignore
-        OUTPUTS_PARAMETERS, [reformat_finite_resources(p) for p in parameters]
-    )
-
     return _factory(OUTPUT_QUANTITIES, *parameters, sector_name="MCA")
 
 
 @register_output_quantity
-@round_values
 def consumption(
     market: xr.Dataset, sectors: list[AbstractSector], year: int, **kwargs
 ) -> pd.DataFrame:
     """Current consumption."""
-    return market_quantity(market.consumption, **kwargs).to_dataframe().reset_index()
+    result = market_quantity(market.consumption, **kwargs).to_dataframe().reset_index()
+    return result[result.consumption != 0]
 
 
 @register_output_quantity
-@round_values
 def supply(
     market: xr.Dataset, sectors: list[AbstractSector], year: int, **kwargs
 ) -> pd.DataFrame:
     """Current supply."""
-    return market_quantity(market.supply, **kwargs).to_dataframe().reset_index()
+    result = market_quantity(market.supply, **kwargs).to_dataframe().reset_index()
+    return result[result.supply != 0]
 
 
 @register_output_quantity
-@round_values
 def prices(
     market: xr.Dataset,
     sectors: list[AbstractSector],
@@ -184,7 +123,6 @@ def prices(
 
 
 @register_output_quantity
-@round_values
 def capacity(
     market: xr.Dataset, sectors: list[AbstractSector], year: int, **kwargs
 ) -> pd.DataFrame:
