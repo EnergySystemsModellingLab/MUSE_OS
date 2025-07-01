@@ -1,3 +1,2 @@
 ProcessName,RegionName,Time,cap_par,cap_exp,fix_par,fix_exp,var_par,var_exp,MaxCapacityAddition,MaxCapacityGrowth,TotalCapacityLimit,TechnicalLife,UtilizationFactor,efficiency,InterestRate,Type,Agent1
-Unit,-,Year,MUS$2010/PJ_a,-,MUS$2010/PJ,-,MUS$2010/PJ,-,PJ,%,PJ,Years,-,%,-,-,New
 gassupply1,R1,2020,0,1,0,1,2.55,1,5,1,60,35,0.9,86,0.1,energy,1

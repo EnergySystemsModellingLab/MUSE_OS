@@ -1,5 +1,4 @@
 RegionName,Attribute,Time,electricity,gas,heat,CO2f,wind
-Unit,-,Year,MUS$2010/PJ,MUS$2010/PJ,MUS$2010/PJ,MUS$2010/kt,MUS$2010/PJ
 R1,CommodityPrice,2010,12.61111111,3.8972,0,0,0
 R1,CommodityPrice,2015,13.14814806,4.307,0,0,0
 R1,CommodityPrice,2020,13.98148139,4.7168,0,0,0
