@@ -27,12 +27,8 @@ plugins = []  # paths to each additional plugin
 # All paths and filenames will have a default value (those indicated below) so only need to be included
 # if any of those names are different. This whole section is optional.
 [global_input_files]
-path = '{path}'
 projections = '{path}/Projections.csv'
-regions = 'OPTIONAL'
 global_commodities = '{path}/GlobalCommodities.csv'
-base_year_export = "OPTIONAL"
-base_year_import = "OPTIONAL"
 
 [timeslices]
 level_names = ["month", "day", "hour"]
