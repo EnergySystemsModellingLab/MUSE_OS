@@ -100,6 +100,13 @@ def read_technodictionary(filename: str | Path) -> xr.Dataset:
         )
         getLogger(__name__).warning(msg)
 
+    if "scaling_size" in columns_lower:
+        msg = (
+            f"The 'ScalingSize' column in {filename} has been deprecated. "
+            "Please remove this column from your Technodata files."
+        )
+        getLogger(__name__).warning(msg)
+
     csv = csv.rename(columns=camel_to_snake)
     data = csv[csv.process_name != "Unit"]
 
@@ -454,7 +461,7 @@ def read_global_commodities(path: str | Path) -> xr.Dataset:
 def read_timeslice_shares(
     path: str | Path = DEFAULT_SECTORS_DIRECTORY,
     sector: str | None = None,
-) -> xr.Dataset:
+) -> xr.DataArray:
     """Reads sliceshare information into a xr.Dataset.
 
     Additionally, this function will try and recover the timeslice multi- index from a
