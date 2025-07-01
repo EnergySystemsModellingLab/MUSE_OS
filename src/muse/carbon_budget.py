@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import MutableMapping, Sequence
+from logging import getLogger
 from typing import Callable
 
 import numpy as np
@@ -302,6 +303,7 @@ def bisection(
     tolerance: float = 0.1,
     early_termination_count: int = 5,
     resolution: int = 2,
+    price_penalty: float = 0.1,
 ) -> float:
     """Applies bisection algorithm to escalate carbon price and meet the budget.
 
@@ -325,12 +327,13 @@ def bisection(
         early_termination_count: Will terminate the loop early if the last n solutions
             are the same
         resolution: Number of decimal places to solve the carbon price to
+        price_penalty: Penalty factor applied to carbon price when selecting optimal
+            solution when convergence isn't reached. Higher values favor lower prices
+            when emissions are similar.
 
     Returns:
         New value of global carbon price
     """
-    from logging import getLogger
-
     # Create cache for emissions at different price points
     emissions_cache = EmissionsCache(market, equilibrium, commodities)
 
@@ -349,13 +352,9 @@ def bisection(
         return 0.0
 
     # Initial lower and upper bounds on carbon price for the bisection algorithm
-    current = market.year[0]
-    time_exp = int(future - current)
     lb_price = 0.0
     epsilon = 10**-resolution  # smallest nonzero price
-    ub_price = round(
-        (max(price, epsilon) * 1.1**time_exp), resolution
-    )  # i.e. 10% yearly increase on current price
+    ub_price = round(max(price, epsilon), resolution)  # i.e. current price
 
     # Bisection loop
     for _ in range(max_iterations):  # maximum number of iterations before terminating
@@ -389,10 +388,18 @@ def bisection(
             resolution,
         )
 
-    # If convergence isn't reached, new price is that with emissions closest to
-    # threshold. If multiple prices are equally close, it returns the lowest price
+    # If convergence isn't reached, select the price with lowest emissions
+    # We apply a small penalty to the carbon price to keep prices low if there are
+    # solutions with equal (or almost equal) emissions.
     new_price = min(
-        emissions_cache, key=lambda k: (abs(emissions_cache[k] - target), k)
+        emissions_cache.keys(),
+        key=lambda price: emissions_cache[price] + (price * price_penalty),
+    )
+
+    # Output the new price to the log
+    getLogger(__name__).info(
+        f"Final carbon price for {future.item()}: {new_price} "
+        f"(emissions = {emissions_cache[new_price]})"
     )
 
     # Raise warning message
@@ -505,8 +512,11 @@ def decrease_bounds(
     lb_price_emissions = emissions_cache[lb_price]
     exponent = (lb_price_emissions - target) / abs(denominator)  # will be negative
     exponent = max(exponent, -1)  # cap exponent at -1
+    exponent = min(exponent, -0.1)  # upper bound cap to force exploration
     ub_price = lb_price
     lb_price = round(lb_price * np.exp(exponent), resolution)
+    if lb_price == ub_price:
+        lb_price -= 10**-resolution
     return lb_price, ub_price
 
 
@@ -522,8 +532,11 @@ def increase_bounds(
     ub_price_emissions = emissions_cache[ub_price]
     exponent = (ub_price_emissions - target) / abs(denominator)  # will be positive
     exponent = min(exponent, 1)  # cap exponent at 1
+    exponent = max(exponent, 0.1)  # lower bound cap to force exploration
     lb_price = ub_price
     ub_price = round(ub_price * np.exp(exponent), resolution)
+    if ub_price == lb_price:
+        ub_price += 10**-resolution
     return lb_price, ub_price
 
 
@@ -589,5 +602,11 @@ def solve_market(
         .sum(["region", "timeslice", "commodity"])
         .round(decimals=2)
     ).values.item()
+
+    # Log the emissions
+    getLogger(__name__).info(
+        f"Emissions in {future.item()} with carbon price {carbon_price}: "
+        f"{new_emissions}"
+    )
 
     return new_emissions
