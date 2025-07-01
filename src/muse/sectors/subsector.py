@@ -123,7 +123,6 @@ class Subsector:
         from muse.agents import InvestingAgent, agents_factory
         from muse.commodities import is_enduse
         from muse.readers import read_initial_assets
-        from muse.readers.toml import undo_damage
 
         # Read existing capacity file
         existing_capacity = read_initial_assets(settings.existing_capacity)
@@ -176,7 +175,7 @@ class Subsector:
         if len(commodities) == 0:
             raise RuntimeError(msg)
 
-        demand_share = ds.factory(undo_damage(getattr(settings, "demand_share", None)))
+        demand_share = ds.factory(getattr(settings, "demand_share", "standard_demand"))
         constraints = cs.factory(getattr(settings, "constraints", None))
         # only used by non-self-investing agents
         investment = iv.factory(getattr(settings, "lpsolver", "scipy"))

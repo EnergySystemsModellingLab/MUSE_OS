@@ -27,19 +27,15 @@ Arguments:
     demand: DataArray of commodity demands for the current year and investment year.
     technologies: a dataset containing all constant data characterizing the
         technologies.
-    kwargs: Any number of keyword arguments that can parametrize how the demand is
-        shared. These keyword arguments can be modified from the TOML file.
+    kwargs: Additional keyword arguments.
 
 Returns:
-    The unmet consumption. Unless indicated, all agents will compete for a the full
-    demand. However, if there exists a coordinate "agent" of dimension "asset" giving
-    the :py:attr:`~muse.agents.agent.AbstractAgent.uuid` of the agent, then agents will
-    only service that part of the demand.
+    A DataArray of demand shares.
 """
 
 from __future__ import annotations
 
-from collections.abc import Hashable, Mapping, MutableMapping, Sequence
+from collections.abc import Hashable, MutableMapping, Sequence
 from functools import wraps
 from typing import Any, Callable, cast
 
@@ -121,15 +117,8 @@ def register_demand_share(function: DEMAND_SHARE_SIGNATURE) -> DEMAND_SHARE_SIGN
     return cast(DEMAND_SHARE_SIGNATURE, decorated)
 
 
-def factory(
-    settings: str | Mapping[str, Any] | None = None,
-) -> DEMAND_SHARE_SIGNATURE:
+def factory(name: str) -> DEMAND_SHARE_SIGNATURE:
     """Get a demand share function by name or settings."""
-    if settings is None or isinstance(settings, str):
-        name = settings or "standard_demand"
-    else:
-        name = settings.get("name", "standard_demand")
-
     return DEMAND_SHARE[name]
 
 
