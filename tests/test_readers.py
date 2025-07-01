@@ -82,32 +82,6 @@ def test_check_budget_parameters(settings: dict):
     check_budget_parameters(settings)
 
 
-def test_check_global_data_files(settings: dict, user_data_files):
-    """Tests global data files validation."""
-    from muse.readers.toml import check_global_data_files
-
-    check_global_data_files(settings)
-
-    # Test file not found error
-    proj_file = Path(settings["global_input_files"]["projections"])
-    proj_file.rename(proj_file.parent / "my_file")
-    with raises(AssertionError):
-        check_global_data_files(settings)
-
-
-def test_check_global_data_dir(settings: dict, user_data_files):
-    """Tests global data directory validation."""
-    from muse.readers.toml import check_global_data_files
-
-    check_global_data_files(settings)
-
-    # Test directory not found error
-    path = Path(settings["global_input_files"]["path"])
-    path.rename(path.parent / "my_directory")
-    with raises(AssertionError):
-        check_global_data_files(settings)
-
-
 def test_check_plugins(settings: dict, plugins: Path):
     """Tests plugin validation."""
     from muse.readers.toml import IncorrectSettings, check_plugins
@@ -131,163 +105,82 @@ def test_check_iteration_control(settings: dict):
 
     # Test invalid maximum iterations
     settings.update({"equilibrium": True, "maximum_iterations": -1})
-    with raises(AssertionError):
+    with raises(ValueError):
         check_iteration_control(settings)
 
     # Test invalid tolerance
     settings.update({"maximum_iterations": 5, "tolerance": -1})
-    with raises(AssertionError):
+    with raises(ValueError):
         check_iteration_control(settings)
 
 
-def test_format_paths_cwd():
-    from pathlib import Path
-
+def test_format_paths(tmp_path):
+    """Test format_paths with various settings structures."""
     from muse.readers.toml import format_paths
 
-    settings = format_paths({"a_path": "{cwd}/a/b/c"})
-    assert str(Path().absolute() / "a" / "b" / "c") == settings["a_path"]
-
-
-def test_format_paths_default_path():
-    from pathlib import Path
-
-    from muse.readers.toml import format_paths
-
-    settings = format_paths({"a_path": "{path}/a/b/c"})
-    assert str(Path().absolute() / "a" / "b" / "c") == settings["a_path"]
-
-
-def test_format_paths_path():
-    from pathlib import Path
-
-    from muse.readers.toml import format_paths
-
-    settings = format_paths({"path": "{cwd}/a/b/", "a_path": "{path}/c"})
-    assert str(Path().absolute() / "a" / "b" / "c") == settings["a_path"]
-
-
-def test_split_toml_one_down(tmpdir):
-    """Test single level of TOML file inclusion."""
-    from toml import dumps
-
-    from muse.readers.toml import read_split_toml
-
-    # Create outer TOML with inner file reference
-    outer_content = {
-        "path": str(tmpdir),
-        "some_section": {"include_path": "{path}/inner.toml"},
-        "another_section": {"option_a": "a"},
+    # Flat dict with path-like values
+    settings = {
+        "input_file": "{path}/data.csv",
+        "script": "{cwd}/run.py",
+        "not_a_path": "foo.txt",
+        "filename": "{cwd}/special",
     }
-    (tmpdir / "outer.toml").write(dumps(outer_content))
+    path = tmp_path
+    cwd = tmp_path.parent
+    result = format_paths(settings, path=path, cwd=cwd)
+    assert result["input_file"] == (path / "data.csv").absolute()
+    assert result["script"] == (cwd / "run.py").absolute()
+    assert result["not_a_path"] == "foo.txt"
+    assert result["filename"] == (cwd / "special").absolute()
 
-    # Create inner TOML file
-    inner_content = {"some_section": {"my_option": "found it!"}}
-    (tmpdir / "inner.toml").write(dumps(inner_content))
-
-    # Test merged result
-    result = read_split_toml(tmpdir / "outer.toml")
-    assert set(result) == {"path", "some_section", "another_section"}
-    assert result["another_section"] == {"option_a": "a"}
-    assert result["some_section"] == {"my_option": "found it!"}
-
-
-def test_split_toml_nested(tmpdir):
-    """Test nested TOML file inclusion."""
-    from toml import dumps
-
-    from muse.readers.toml import read_split_toml
-
-    # Create outer TOML with nested inner file reference
-    outer_content = {
-        "path": str(tmpdir),
-        "some_section": {"nested": {"include_path": "{path}/inner.toml"}},
-        "another_section": {"option_a": "a"},
-    }
-    (tmpdir / "outer.toml").write(dumps(outer_content))
-
-    # Create inner TOML file
-    inner_content = {"nested": {"my_option": "found it!"}}
-    (tmpdir / "inner.toml").write(dumps(inner_content))
-
-    # Test merged result
-    result = read_split_toml(tmpdir / "outer.toml")
-    assert set(result) == {"path", "some_section", "another_section"}
-    assert result["another_section"] == {"option_a": "a"}
-    assert result["some_section"]["nested"] == {"my_option": "found it!"}
-
-
-def test_split_toml_errors(tmpdir):
-    """Test error cases for TOML file inclusion."""
-    from toml import dumps
-
-    from muse.readers.toml import IncorrectSettings, MissingSettings, read_split_toml
-
-    # Test too many options in outer file
-    outer_content = {
-        "path": str(tmpdir),
-        "some_section": {
-            "nested": {"include_path": "{path}/inner.toml", "extra": "error"}
+    # Nested dict
+    settings = {
+        "level1": {
+            "input_file": "{path}/nested.csv",
+            "filename": "{cwd}/nested.py",
         },
+        "other": 123,
     }
-    (tmpdir / "outer.toml").write(dumps(outer_content))
-    (tmpdir / "inner.toml").write(dumps({"nested": {"my_option": "found it!"}}))
-    with raises(IncorrectSettings):
-        read_split_toml(tmpdir / "outer.toml")
+    result = format_paths(settings, path=path, cwd=cwd)
+    assert result["level1"]["input_file"] == (path / "nested.csv").absolute()
+    assert result["level1"]["filename"] == (cwd / "nested.py").absolute()
+    assert result["other"] == 123
 
-    # Test too many sections in inner file
-    outer_content = {
-        "path": str(tmpdir),
-        "some_section": {"nested": {"include_path": "{path}/inner.toml"}},
+    # List of paths and non-paths
+    settings = {
+        "files": [
+            "{path}/a.csv",
+            "{cwd}/b.py",
+            "not_a_path",
+            {"input_file": "{cwd}/c.nc"},
+        ]
     }
-    (tmpdir / "outer.toml").write(dumps(outer_content))
-    (tmpdir / "inner.toml").write(
-        dumps({"extra": "error", "nested": {"my_option": "found it!"}})
-    )
-    with raises(IncorrectSettings):
-        read_split_toml(tmpdir / "outer.toml")
-
-    # Test incorrect inner section name
-    (tmpdir / "inner.toml").write(dumps({"incorrect_name": {"my_option": "found it!"}}))
-    with raises(MissingSettings):
-        read_split_toml(tmpdir / "outer.toml")
-
-
-def test_format_path():
-    """Test path formatting with different variables."""
-    from muse.readers.toml import format_path
-
-    test_paths = {
-        "cwd": "current_path",
-        "path": "this_path",
-        "muse_sectors": "sectors_path",
-    }
-
-    for var, value in test_paths.items():
-        expected = str(Path(value).absolute() / "{other_param}")
-        result = format_path(f"{{{var}}}/{{other_param}}", **{var: value})
-        assert result == expected
+    result = format_paths(settings, path=path, cwd=cwd)
+    assert result["files"][0] == (path / "a.csv").absolute()
+    assert result["files"][1] == (cwd / "b.py").absolute()
+    assert result["files"][2] == "not_a_path"
+    assert result["files"][3]["input_file"] == (cwd / "c.nc").absolute()
 
 
 @mark.parametrize("suffix", [".xlsx", ".csv", ".toml", ".py", ".xls", ".nc"])
 def test_suffix_path_formatting(suffix, tmp_path):
     """Test path formatting with different file suffixes."""
-    from muse.readers.toml import read_split_toml
+    from muse.readers.toml import read_toml
 
     # Test path formatting
     settings = {"this": 0, "plugins": f"{{path}}/thisfile{suffix}"}
     input_file = tmp_path / "settings.toml"
     input_file.write_text(toml.dumps(settings), encoding="utf-8")
 
-    result = read_split_toml(input_file, path=tmp_path)
-    assert Path(result["plugins"]) == (tmp_path / f"thisfile{suffix}").resolve()
+    result = read_toml(input_file, path=tmp_path)
+    assert result["plugins"].resolve() == (tmp_path / f"thisfile{suffix}").resolve()
 
     # Test cwd formatting
     settings["plugins"] = [f"{{cwd}}/other/thisfile{suffix}"]
     input_file.write_text(toml.dumps(settings), encoding="utf-8")
 
-    result = read_split_toml(input_file, path="hello")
-    assert Path(result["plugins"][0]) == (
+    result = read_toml(input_file, path="hello")
+    assert result["plugins"][0].resolve() == (
         (Path.cwd() / "other" / f"thisfile{suffix}").resolve()
     )
 
