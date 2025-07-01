@@ -6,6 +6,7 @@ from pytest import fixture
 from muse import constraints as cs
 from muse import demand_share as ds
 from muse import examples
+from muse import investments as iv
 from muse.agents.factories import create_agent
 from muse.readers import read_csv_agent_parameters, read_initial_assets
 from muse.readers.toml import read_settings
@@ -79,7 +80,13 @@ def test_subsector_investing_aggregation():
             ).interp(year=[2020, 2025])
 
             initial_agents = deepcopy(agents)
-            subsector = Subsector(agents, commodities)
+            subsector = Subsector(
+                agents,
+                commodities,
+                demand_share=ds.factory("standard_demand"),
+                constraints=cs.factory("demand"),
+                investment=iv.factory("scipy"),
+            )
 
             assert {agent.year for agent in agents} == {int(market.year.min())}
             subsector.aggregate_lp(technologies.sel(year=2020), market)
@@ -101,6 +108,7 @@ def test_subsector_noninvesting_aggregation(base_market, agent_params, technolog
         commodities,
         demand_share=ds.factory("unmet_forecasted_demand"),
         constraints=cs.factory("demand"),
+        investment=iv.factory("scipy"),
     )
 
     assert all(agent.year == 2020 for agent in agents)
