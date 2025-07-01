@@ -262,16 +262,21 @@ def new_and_retro(
             if agent.region != region:
                 continue
 
+            # Select data for the agent
             current_capacity = interpolate_capacity(
                 agent.assets.capacity, year=[current_year, investment_year]
             )
             current_technodata = technodata.sel(asset=agent.assets.asset)
 
+            # Calculate the agent's share of the retrofit and new demands
+            agent_retrofit_demand = demands.retrofit.sel(region=region) * agent.quantity
+            agent_new_demand = demands.new.sel(region=region) * agent.quantity
+
             if agent.category == "retrofit":
                 agent_demands[agent.uuid] = _inner_split(
                     current_capacity,
                     current_technodata,
-                    demands.retrofit.sel(region=region) * agent.quantity,
+                    agent_retrofit_demand,
                     lambda capacity, technologies: decommissioning_demand(
                         technologies=technologies,
                         capacity=interpolate_capacity(
@@ -284,7 +289,7 @@ def new_and_retro(
                 agent_demands[agent.uuid] = _inner_split(
                     current_capacity,
                     current_technodata,
-                    demands.new.sel(region=region) * agent.quantity,
+                    agent_new_demand,
                     lambda capacity, technologies: maximum_production(
                         capacity=capacity,
                         technologies=technologies,
@@ -352,16 +357,21 @@ def standard_demand(
             if agent.region != region:
                 continue
 
-            current_capacity = interpolate_capacity(
+            # Select data for the agent
+            agent_capacity = interpolate_capacity(
                 agent.assets.capacity, year=[current_year, investment_year]
             )
-            current_technodata = technodata.sel(asset=agent.assets.asset)
+            agent_technodata = technodata.sel(asset=agent.assets.asset)
 
-            # Combine new and retrofit demands for each agent
+            # Calculate the agent's share of the retrofit and new demands
+            agent_retrofit_demand = demands.retrofit.sel(region=region) * agent.quantity
+            agent_new_demand = demands.new.sel(region=region) * agent.quantity
+
+            # Split new and retrofit demands over the agent's assets
             retro_demands = _inner_split(
-                current_capacity,
-                current_technodata,
-                demands.retrofit.sel(region=region) * agent.quantity,
+                agent_capacity,
+                agent_technodata,
+                agent_retrofit_demand,
                 lambda capacity, technologies: decommissioning_demand(
                     technologies=technologies,
                     capacity=capacity,
@@ -369,9 +379,9 @@ def standard_demand(
                 ),
             )
             new_demands = _inner_split(
-                current_capacity,
-                current_technodata,
-                demands.new.sel(region=region) * agent.quantity,
+                agent_capacity,
+                agent_technodata,
+                agent_new_demand,
                 lambda capacity, technologies: maximum_production(
                     capacity=capacity,
                     technologies=technologies,
@@ -379,6 +389,8 @@ def standard_demand(
                     timeslice_level=timeslice_level,
                 ),
             )
+
+            # Sum new and retrofit demands for the agent
             agent_demands[agent.uuid] = retro_demands + new_demands
 
     result = agent_concatenation(agent_demands)
