@@ -118,7 +118,7 @@ def register_demand_share(function: DEMAND_SHARE_SIGNATURE) -> DEMAND_SHARE_SIGN
 
 
 def factory(name: str) -> DEMAND_SHARE_SIGNATURE:
-    """Get a demand share function by name or settings."""
+    """Get a demand share function by name."""
     return DEMAND_SHARE[name]
 
 
@@ -251,6 +251,8 @@ def new_and_retro(
     # Split demand between agents
     agent_demands: MutableMapping[Hashable, xr.DataArray] = {}
     for region in demands.region.values:
+        total_retro_quantity = 0
+        total_new_quantity = 0
         for agent in agents:
             if agent.region != region:
                 continue
@@ -266,6 +268,7 @@ def new_and_retro(
             agent_new_demand = demands.new.sel(region=region) * agent.quantity
 
             if agent.category == "retrofit":
+                total_retro_quantity += agent.quantity
                 agent_demands[agent.uuid] = _inner_split(
                     current_capacity,
                     current_technodata,
@@ -279,6 +282,7 @@ def new_and_retro(
                     ),
                 )
             elif agent.category == "newcapa":
+                total_new_quantity += agent.quantity
                 agent_demands[agent.uuid] = _inner_split(
                     current_capacity,
                     current_technodata,
@@ -292,6 +296,11 @@ def new_and_retro(
                 )
             else:
                 raise ValueError(f"Unknown agent category: {agent.category}")
+
+        # Make sure the total new/retro agent quantity = 1
+        # TODO: ideally we should check this in the input layer
+        assert total_retro_quantity == 1
+        assert total_new_quantity == 1
 
     result = agent_concatenation(agent_demands)
     assert "year" not in result.dims
@@ -346,6 +355,7 @@ def standard_demand(
     # Split demand between agents
     agent_demands: MutableMapping[Hashable, xr.DataArray] = {}
     for region in demands.region.values:
+        total_quantity = 0
         for agent in agents:
             if agent.region != region:
                 continue
@@ -359,6 +369,7 @@ def standard_demand(
             # Calculate the agent's share of the retrofit and new demands
             agent_retrofit_demand = demands.retrofit.sel(region=region) * agent.quantity
             agent_new_demand = demands.new.sel(region=region) * agent.quantity
+            total_quantity += agent.quantity
 
             # Split new and retrofit demands over the agent's assets
             retro_demands = _inner_split(
@@ -385,6 +396,10 @@ def standard_demand(
 
             # Sum new and retrofit demands for the agent
             agent_demands[agent.uuid] = retro_demands + new_demands
+
+        # Make sure the total agent quantity = 1
+        # TODO: ideally we should check this in the input layer
+        assert total_quantity == 1
 
     result = agent_concatenation(agent_demands)
     assert "year" not in result.dims
