@@ -143,12 +143,10 @@ def factory(
 def capacity(
     market: xr.Dataset,
     capacity: xr.DataArray,
-    rounding: int = 4,
     **kwargs,
 ) -> pd.DataFrame:
     """Current capacity."""
-    result = capacity.to_dataframe().round(rounding)
-    result = result.reset_index()
+    result = capacity.to_dataframe().reset_index()
     return result[result.capacity != 0]
 
 
@@ -182,7 +180,6 @@ def consumption(
     capacity: xr.DataArray,
     sum_over: list[str] | None = None,
     drop: list[str] | None = None,
-    rounding: int = 4,
     **kwargs,
 ) -> xr.DataArray:
     """Current consumption."""
@@ -192,7 +189,6 @@ def consumption(
         .rename("consumption")
         .to_dataframe()
         .reset_index()
-        .round(rounding)
     )
     return result[result.consumption != 0]
 
@@ -203,7 +199,6 @@ def supply(
     capacity: xr.DataArray,
     sum_over: list[str] | None = None,
     drop: list[str] | None = None,
-    rounding: int = 4,
     **kwargs,
 ) -> xr.DataArray:
     """Current supply."""
@@ -213,7 +208,6 @@ def supply(
         .rename("supply")
         .to_dataframe()
         .reset_index()
-        .round(rounding)
     )
     return result[result.supply != 0]
 
@@ -224,7 +218,6 @@ def costs(
     capacity: xr.DataArray,
     sum_over: list[str] | None = None,
     drop: list[str] | None = None,
-    rounding: int = 4,
     **kwargs,
 ) -> xr.DataArray:
     """Current costs."""
@@ -239,6 +232,5 @@ def costs(
         .rename("costs")
         .to_dataframe()
         .reset_index()
-        .round(rounding)
     )
-    return result[result.costs != 0]
+    return result
