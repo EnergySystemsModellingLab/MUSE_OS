@@ -531,11 +531,7 @@ def test_read_agent_parameters(model_path):
         "spend_limit": float("inf"),
         "share": "agent1",
     }
-    for k, v in expected.items():
-        if k == "spend_limit":
-            assert np.isinf(agent[k]), f"Expected {k} to be inf, got {agent[k]}"
-        else:
-            assert agent[k] == v, f"Expected {k} to be {v}, got {agent[k]}"
+    assert agent == expected
 
 
 def test_read_existing_trade(trade_model_path):

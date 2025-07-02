@@ -25,8 +25,6 @@ from pathlib import Path
 import pandas as pd
 import xarray as xr
 
-from muse.errors import UnitsConflictInCommodities
-
 # Global mapping of column names to their standardized versions
 COLUMN_RENAMES = {
     "process_name": "technology",
@@ -65,7 +63,7 @@ COLUMN_TYPES = {
     "sector": str,
     "attribute": str,
     "variable": str,
-    "timeslice": int,  # Some tables require int timeslice instead of month, day etc.
+    "timeslice": int,  # For tables that require int timeslice instead of month etc.
     "name": str,
     "comm_type": str,
     "tech_type": str,
@@ -319,7 +317,7 @@ def check_commodities(
             f"{extra_commodities}"
         )
 
-    # Add any missing commodities with zeros
+    # Add any missing commodities with fill_value
     if fill_missing:
         data = data.reindex(
             commodity=COMMODITIES.commodity.values, fill_value=fill_value
@@ -566,16 +564,11 @@ def process_technologies(
 
     # Interpolate inputs/outputs if needed
     if "year" in technodata.dims and len(technodata.year) > 1:
-        # TODO: use a custom interpolation function that supports forward/back filling
         outs = outs.interp(year=technodata.year)
         ins = ins.interp(year=technodata.year)
 
     # Merge inputs/outputs with technodata
-    try:
-        technodata = technodata.merge(outs).merge(ins)
-    except xr.core.merge.MergeError:
-        # TODO: what is this?
-        raise UnitsConflictInCommodities
+    technodata = technodata.merge(outs).merge(ins)
 
     # Process timeslices if provided
     if technodata_timeslices:
@@ -1033,7 +1026,7 @@ def process_trade_technodata(data: pd.DataFrame) -> xr.Dataset:
         data = data.drop(columns=["unit"])
 
     # Select region columns
-    # TODO: this is hacky
+    # TODO: this is a bit unsafe as user could supply other columns
     regions = [
         col for col in data.columns if col not in ["technology", "region", "parameter"]
     ]
@@ -1077,7 +1070,7 @@ def read_existing_trade_csv(path: Path) -> pd.DataFrame:
 
 def process_existing_trade(data: pd.DataFrame) -> xr.DataArray:
     # Select region columns
-    # TODO: this is hacky
+    # TODO: this is a bit unsafe as user could supply other columns
     regions = [
         col for col in data.columns if col not in ["technology", "region", "year"]
     ]
@@ -1230,7 +1223,6 @@ def read_regression_parameters_csv(path: Path) -> pd.DataFrame:
     )
 
     # Legacy: warn about "sector" column
-    # TODO: sum across sectors
     if "sector" in table.columns:
         getLogger(__name__).warning(
             f"The sector column (in file {path}) is deprecated. Please remove."

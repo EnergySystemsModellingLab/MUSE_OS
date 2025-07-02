@@ -650,6 +650,7 @@ def read_presets_sector(settings: Any, sector_name: str) -> xr.Dataset:
 
 
 def read_correlation_consumption(sector_conf: Any) -> xr.Dataset:
+    """Read consumption data for a sector based on correlation files."""
     from muse.readers import (
         read_macro_drivers,
         read_regression_parameters,
