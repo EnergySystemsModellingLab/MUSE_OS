@@ -236,17 +236,14 @@ def to_csv(quantity: pd.DataFrame | xr.DataArray, filename: str, **params) -> No
         filename: File to which the data should be saved
         params: A configuration dictionary accepting any argument to `pandas.to_csv`
     """
-    params.update({"float_format": "%.11f"})
+    if "float_format" not in params:
+        params["float_format"] = "%.4f"
     if "index" not in params:
         params["index"] = False
-
+    if "columns" in params:
+        quantity = quantity.reset_index()
     if isinstance(quantity, xr.DataArray):
         quantity = quantity.to_dataframe()
-
-    par_list = [i for i in params.keys()]
-    if len(par_list) > 0:
-        if "columns" in par_list:
-            quantity = quantity.reset_index()
     quantity.to_csv(filename, **params)
 
 
