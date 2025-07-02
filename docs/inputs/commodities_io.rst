@@ -73,7 +73,7 @@ Level (for **input** commodities only)
 
 The remaining columns should contain the full list of commodities.
 
-The first row of the table reports the units for each column; it is for user reference only.
+
 
 The input data has to be provided for the base year. Additional years within the time
 framework of the overall simulation can be defined. In this case, MUSE would interpolate
