@@ -269,30 +269,30 @@ def new_and_retro(
 
             if agent.category == "retrofit":
                 total_retro_quantity += agent.quantity
-                agent_demands[agent.uuid] = _inner_split(
-                    current_capacity,
-                    current_technodata,
-                    agent_retrofit_demand,
-                    lambda capacity, technologies: decommissioning_demand(
-                        technologies=technologies,
-                        capacity=interpolate_capacity(
-                            capacity, year=[current_year, investment_year]
-                        ),
-                        timeslice_level=timeslice_level,
+                # Split retrofit demand over assets based on decommissioning demand
+                retro_shares = decommissioning_demand(
+                    technologies=current_technodata,
+                    capacity=interpolate_capacity(
+                        current_capacity, year=[current_year, investment_year]
                     ),
+                    timeslice_level=timeslice_level,
+                )
+                agent_demands[agent.uuid] = _inner_split(
+                    agent_retrofit_demand,
+                    retro_shares,
                 )
             elif agent.category == "newcapa":
                 total_new_quantity += agent.quantity
+                # Split new demand over assets based on maximum production
+                new_shares = maximum_production(
+                    capacity=current_capacity,
+                    technologies=current_technodata,
+                    year=current_year,
+                    timeslice_level=timeslice_level,
+                )
                 agent_demands[agent.uuid] = _inner_split(
-                    current_capacity,
-                    current_technodata,
                     agent_new_demand,
-                    lambda capacity, technologies: maximum_production(
-                        capacity=capacity,
-                        technologies=technologies,
-                        year=current_year,
-                        timeslice_level=timeslice_level,
-                    ),
+                    new_shares,
                 )
             else:
                 raise ValueError(f"Unknown agent category: {agent.category}")
@@ -371,27 +371,27 @@ def standard_demand(
             agent_new_demand = demands.new.sel(region=region) * agent.quantity
             total_quantity += agent.quantity
 
-            # Split new and retrofit demands over the agent's assets
+            # Split retrofit demand over assets based on decommissioning demand
+            retro_shares = decommissioning_demand(
+                technologies=agent_technodata,
+                capacity=agent_capacity,
+                timeslice_level=timeslice_level,
+            )
             retro_demands = _inner_split(
-                agent_capacity,
-                agent_technodata,
                 agent_retrofit_demand,
-                lambda capacity, technologies: decommissioning_demand(
-                    technologies=technologies,
-                    capacity=capacity,
-                    timeslice_level=timeslice_level,
-                ),
+                retro_shares,
+            )
+
+            # Split new demand over assets based on maximum production
+            new_shares = maximum_production(
+                capacity=agent_capacity,
+                technologies=agent_technodata,
+                year=current_year,
+                timeslice_level=timeslice_level,
             )
             new_demands = _inner_split(
-                agent_capacity,
-                agent_technodata,
                 agent_new_demand,
-                lambda capacity, technologies: maximum_production(
-                    capacity=capacity,
-                    technologies=technologies,
-                    year=current_year,
-                    timeslice_level=timeslice_level,
-                ),
+                new_shares,
             )
 
             # Sum new and retrofit demands for the agent
@@ -440,31 +440,26 @@ def unmet_forecasted_demand(
 
 
 def _inner_split(
-    capacity: xr.DataArray,
-    technologies: xr.Dataset,
     demand: xr.DataArray,
-    method: Callable,
-) -> MutableMapping[Hashable, xr.DataArray]:
-    """Compute share of the demand for a set of assets.
+    shares: xr.DataArray,
+) -> xr.DataArray:
+    """Split demand over assets based on shares.
 
-    The input ``demand`` is split between assets according to their share of the
-    demand computed by ``method``.
+    Args:
+        demand: the demand to split
+        shares: the shares to apply to each asset
     """
-    # Relative share to apply to each asset
-    # Assets of the same technology type are grouped together at this point
-    shares: xr.DataArray = (
-        method(capacity=capacity, technologies=technologies)
-        .groupby("technology")
-        .sum("asset")
-        .rename(technology="asset")
+    # Assets of the same technology type are grouped together
+    grouped_shares: xr.DataArray = (
+        shares.groupby("technology").sum("asset").rename(technology="asset")
     )
 
-    # Split demand over shares
-    split_demand = demand * (shares / shares.sum("asset")).fillna(0)
+    # Split demand over assets according to shares
+    split_demand = demand * (grouped_shares / grouped_shares.sum("asset")).fillna(0)
 
     # Split unassigned demand equally over assets
     unassigned = (demand - split_demand.sum("asset")).clip(min=0)
-    unassigned_per_asset = unassigned / shares.sizes["asset"]
+    unassigned_per_asset = unassigned / grouped_shares.sizes["asset"]
     split_demand += unassigned_per_asset
     return split_demand
 

@@ -416,14 +416,13 @@ def test_inner_split_basic(_capacity, _market, _technologies):
     demand = _market.consumption.sel(year=INVESTMENT_YEAR, drop=True)
 
     # Test with maximum production method
-    def method(capacity, technologies):
-        return maximum_production(capacity=capacity, technologies=technologies)
+    shares = maximum_production(
+        capacity=_capacity.sel(year=CURRENT_YEAR, drop=True), technologies=tech_data
+    )
 
     result = _inner_split(
-        capacity=_capacity.sel(year=CURRENT_YEAR, drop=True),
-        technologies=tech_data,
         demand=demand,
-        method=method,
+        shares=shares,
     )
 
     # Check dimensions
@@ -458,14 +457,13 @@ def test_inner_split_zero_shares(_capacity, _market, _technologies):
     demand = _market.consumption.sel(year=INVESTMENT_YEAR, drop=True)
 
     # Test with zero production method
-    def zero_method(capacity, technologies):
-        return 0 * maximum_production(capacity=capacity, technologies=technologies)
+    zero_shares = 0 * maximum_production(
+        capacity=_capacity.sel(year=CURRENT_YEAR, drop=True), technologies=tech_data
+    )
 
     result = _inner_split(
-        capacity=_capacity.sel(year=CURRENT_YEAR, drop=True),
-        technologies=tech_data,
         demand=demand,
-        method=zero_method,
+        shares=zero_shares,
     )
 
     # Check dimensions
