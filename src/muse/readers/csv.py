@@ -222,8 +222,55 @@ def convert_column_types(data: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
+def standardize_dataframe(
+    data: pd.DataFrame,
+    required_columns: list[str] | None = None,
+    exclude_extra_columns: bool = False,
+) -> pd.DataFrame:
+    """Standardizes a DataFrame to a common format.
+
+    Args:
+        data: DataFrame to standardize
+        required_columns: List of column names that must be present (optional)
+        exclude_extra_columns: If True, exclude any columns not in required_columns list
+            (optional). This can be important if extra columns can mess up the resulting
+            xarray object.
+
+    Returns:
+        DataFrame containing the standardized data
+    """
+    # Standardize column names
+    data = standardize_columns(data)
+
+    # Convert specified column values from camelCase to snake_case
+    for col in CAMEL_TO_SNAKE_COLUMNS:
+        if col in data.columns:
+            data[col] = data[col].apply(camel_to_snake)
+
+    # Fill missing values with defaults
+    data = data.fillna(DEFAULTS)
+    for col, default in DEFAULTS.items():
+        if col not in data.columns and col in required_columns:
+            data[col] = default
+
+    # Check/convert data types
+    data = convert_column_types(data)
+
+    # Validate required columns if provided
+    if required_columns is not None:
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            raise ValueError(f"Missing required columns: {missing_columns}")
+
+        # Exclude extra columns if requested
+        if exclude_extra_columns:
+            data = data[list(required_columns)]
+
+    return data
+
+
 def read_csv(
-    path: Path | pd.DataFrame,
+    path: Path,
     float_precision: str = "high",
     required_columns: list[str] | None = None,
     exclude_extra_columns: bool = False,
@@ -247,60 +294,30 @@ def read_csv(
     if msg:
         getLogger(__name__).info(msg)
 
-    assert isinstance(path, (Path, pd.DataFrame)), "Only accepts Path or DataFrame"
+    # Check if file exists
+    if not path.is_file():
+        raise OSError(f"{path} does not exist.")
 
-    # If a Path is passed, read the file
-    if isinstance(path, Path):
-        # Check if file exists
-        if not path.is_file():
-            raise OSError(f"{path} does not exist.")
+    # Check if there's a units row (in which case we need to skip it)
+    with open(path) as f:
+        next(f)  # Skip header row
+        first_data_row = f.readline().strip()
+    skiprows = [1] if first_data_row.startswith("Unit") else None
 
-        # Check if there's a units row (in which case we need to skip it)
-        with open(path) as f:
-            next(f)  # Skip header row
-            first_data_row = f.readline().strip()
-        skiprows = [1] if first_data_row.startswith("Unit") else None
+    # Read the file
+    data = pd.read_csv(
+        path,
+        float_precision=float_precision,
+        low_memory=False,
+        skiprows=skiprows,
+    )
 
-        # Read the file
-        data = pd.read_csv(
-            path,
-            float_precision=float_precision,
-            low_memory=False,
-            skiprows=skiprows,
-        )
-    else:  # Must be DataFrame
-        data = path
-
-    assert isinstance(data, pd.DataFrame)
-
-    # Standardize column names
-    data = standardize_columns(data)
-
-    # Convert specified column values from camelCase to snake_case
-    for col in CAMEL_TO_SNAKE_COLUMNS:
-        if col in data.columns:
-            data[col] = data[col].apply(camel_to_snake)
-
-    # Fill missing values with defaults
-    data = data.fillna(DEFAULTS)
-    for col, default in DEFAULTS.items():
-        if col not in data.columns and col in required_columns:
-            data[col] = default
-
-    # Check/convert data types
-    data = convert_column_types(data)
-
-    # Validate required columns if provided
-    if required_columns is not None:
-        missing_columns = [col for col in required_columns if col not in data.columns]
-        if missing_columns:
-            raise ValueError(f"Missing required columns in {path}: {missing_columns}")
-
-        # Exclude extra columns if requested
-        if exclude_extra_columns:
-            data = data[list(required_columns)]
-
-    return data
+    # Standardize the DataFrame
+    return standardize_dataframe(
+        data,
+        required_columns=required_columns,
+        exclude_extra_columns=exclude_extra_columns,
+    )
 
 
 def check_commodities(
@@ -659,6 +676,7 @@ def read_global_commodities_csv(path: Path) -> pd.DataFrame:
     # Due to legacy reasons, users can supply both Commodity and CommodityName columns
     # In this case, we need to remove the Commodity column to avoid conflicts
     # This is fine because Commodity just contains a long description that isn't needed
+    getLogger(__name__).info(f"Reading global commodities from {path}.")
     df = pd.read_csv(path)
     df = df.rename(columns=camel_to_snake)
     if "commodity" in df.columns and "commodity_name" in df.columns:
@@ -668,10 +686,9 @@ def read_global_commodities_csv(path: Path) -> pd.DataFrame:
         "commodity",
         "comm_type",
     }
-    data = read_csv(
+    data = standardize_dataframe(
         df,
         required_columns=required_columns,
-        msg=f"Reading global commodities from {path}.",
     )
     return data
 
