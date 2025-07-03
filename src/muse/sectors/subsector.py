@@ -20,22 +20,18 @@ class Subsector:
         self,
         agents: Sequence[Agent],
         commodities: Sequence[str],
-        demand_share: Callable | None = None,
-        constraints: Callable | None = None,
-        investment: Callable | None = None,
+        demand_share: Callable,
+        constraints: Callable,
+        investment: Callable,
         name: str = "subsector",
         expand_market_prices: bool = False,
         timeslice_level: str | None = None,
     ):
-        from muse import constraints as cs
-        from muse import demand_share as ds
-        from muse import investments as iv
-
         self.agents: Sequence[Agent] = list(agents)
         self.commodities: list[str] = list(commodities)
-        self.demand_share = demand_share or ds.factory()
-        self.constraints = constraints or cs.factory()
-        self.investment = investment or iv.factory()
+        self.demand_share = demand_share
+        self.constraints = constraints
+        self.investment = investment
         self.name = name
         self.expand_market_prices = expand_market_prices
         self.timeslice_level = timeslice_level
@@ -123,7 +119,6 @@ class Subsector:
         from muse.agents import InvestingAgent, agents_factory
         from muse.commodities import is_enduse
         from muse.readers import read_initial_assets
-        from muse.readers.toml import undo_damage
 
         # Read existing capacity file
         existing_capacity = read_initial_assets(settings.existing_capacity)
@@ -176,7 +171,7 @@ class Subsector:
         if len(commodities) == 0:
             raise RuntimeError(msg)
 
-        demand_share = ds.factory(undo_damage(getattr(settings, "demand_share", None)))
+        demand_share = ds.factory(getattr(settings, "demand_share", "standard_demand"))
         constraints = cs.factory(getattr(settings, "constraints", None))
         # only used by non-self-investing agents
         investment = iv.factory(getattr(settings, "lpsolver", "scipy"))
