@@ -17,6 +17,7 @@ __all__ = [
     "read_technodictionary",
     "read_technologies",
     "read_timeslice_shares",
+    "read_trade_technodata",
 ]
 
 from logging import getLogger
