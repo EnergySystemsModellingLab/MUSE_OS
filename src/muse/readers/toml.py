@@ -607,7 +607,6 @@ def read_technodata(
 
 def read_presets_sector(settings: Any, sector_name: str) -> xr.Dataset:
     """Read data for a preset sector."""
-    from muse.commodities import CommodityUsage
     from muse.readers import read_attribute_table, read_presets
     from muse.timeslices import distribute_timeslice, drop_timeslice
 
@@ -639,13 +638,6 @@ def read_presets_sector(settings: Any, sector_name: str) -> xr.Dataset:
         }
     )
 
-    # Add comm_usage - all commodities are OTHER since costs are always zero
-    # TODO: why do we need this?
-    presets["comm_usage"] = (
-        "commodity",
-        [CommodityUsage.OTHER] * len(presets.commodity),
-    )
-    presets = presets.set_coords("comm_usage")
     return presets
 
 

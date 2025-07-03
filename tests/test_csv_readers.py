@@ -7,7 +7,7 @@ import xarray as xr
 from pytest import fixture
 
 from muse import examples
-from muse.commodities import setup_module as setup_commodities
+from muse.readers.toml import read_settings
 
 # Common test data
 EXPECTED_TIMESLICES = [
@@ -146,38 +146,38 @@ def timeslice():
 
 
 @fixture
-def model_path(tmp_path, timeslice):
+def model_path(tmp_path):
     """Creates temporary folder containing the default model."""
     examples.copy_model(name="default", path=tmp_path)
     path = tmp_path / "model"
-    setup_commodities(path / "GlobalCommodities.csv")
+    read_settings(path / "settings.toml")  # setup globals
     return path
 
 
 @fixture
-def timeslice_model_path(tmp_path, timeslice):
+def timeslice_model_path(tmp_path):
     """Creates temporary folder containing the default model."""
     examples.copy_model(name="default_timeslice", path=tmp_path)
     path = tmp_path / "model"
-    setup_commodities(path / "GlobalCommodities.csv")
+    read_settings(path / "settings.toml")  # setup globals
     return path
 
 
 @fixture
-def trade_model_path(tmp_path, timeslice):
+def trade_model_path(tmp_path):
     """Creates temporary folder containing the trade model."""
     examples.copy_model(name="trade", path=tmp_path)
     path = tmp_path / "model"
-    setup_commodities(path / "GlobalCommodities.csv")
+    read_settings(path / "settings.toml")  # setup globals
     return path
 
 
 @fixture
-def correlation_model_path(tmp_path, timeslice):
+def correlation_model_path(tmp_path):
     """Creates temporary folder containing the correlation model."""
     examples.copy_model(name="default_correlation", path=tmp_path)
     path = tmp_path / "model"
-    setup_commodities(path / "GlobalCommodities.csv")
+    read_settings(path / "settings.toml")  # setup globals
     return path
 
 
@@ -1019,7 +1019,6 @@ def test_read_presets_sector(model_path):
             "month": CoordinateSchema(dims=("timeslice",), dtype="object"),
             "day": CoordinateSchema(dims=("timeslice",), dtype="object"),
             "hour": CoordinateSchema(dims=("timeslice",), dtype="object"),
-            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="int64"),
         },
         data_vars={"consumption": "float64", "costs": "float64", "supply": "float64"},
     )
@@ -1033,7 +1032,6 @@ def test_read_presets_sector(model_path):
             "year": [2020, 2050],
             "commodity": COMMODITIES,
             "timeslice": EXPECTED_TIMESLICES,
-            "comm_usage": [0, 0, 0, 0, 0],
         },
     )
 
@@ -1070,7 +1068,6 @@ def test_read_presets_sector__correlation(correlation_model_path):
             "month": CoordinateSchema(dims=("timeslice",), dtype="object"),
             "day": CoordinateSchema(dims=("timeslice",), dtype="object"),
             "hour": CoordinateSchema(dims=("timeslice",), dtype="object"),
-            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="int64"),
         },
         data_vars={"consumption": "float64", "costs": "float64", "supply": "float64"},
     )
@@ -1084,7 +1081,6 @@ def test_read_presets_sector__correlation(correlation_model_path):
             "year": range(2010, 2111),
             "commodity": COMMODITIES,
             "timeslice": EXPECTED_TIMESLICES,
-            "comm_usage": [0, 0, 0, 0, 0],
         },
     )
 
