@@ -51,7 +51,7 @@ class MCA:
         # Create the initial market
         market = (
             read_initial_market(
-                settings.global_input_files.projections,
+                projections_path=settings.global_input_files.projections,
                 base_year_export_path=getattr(
                     settings.global_input_files, "base_year_export", None
                 ),
