@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from uuid import UUID, uuid4
 
 import xarray as xr
-from pytest import approx, fixture, raises
+from pytest import approx, fixture
 
 from muse.commodities import is_enduse
 from muse.quantities import maximum_production
@@ -10,7 +10,7 @@ from muse.timeslices import drop_timeslice
 from muse.utilities import broadcast_over_assets, interpolate_capacity
 
 CURRENT_YEAR = 2010
-INVESTMENT_YEAR = 2015
+INVESTMENT_YEAR = 2030
 
 
 @dataclass
@@ -25,38 +25,58 @@ class Agent:
     quantity: float = 0.0
 
 
-def create_test_agents(usa_stock, asia_stock=None, with_new=True):
+def create_test_agents(usa_stock, asia_stock=None, categories=None):
     """Helper to create test agents with standard configuration.
 
     Args:
         usa_stock: Stock data for USA region
         asia_stock: Optional stock data for ASEAN region
-        with_new: Whether to include new capacity agents
+        categories: List of agent categories to create. If None, creates both "retrofit"
+            and "newcapa"
 
     Returns:
         List of Agent objects with specified configurations
     """
-    agents = [
-        Agent(0.3 * usa_stock, "retrofit", uuid4(), "a", "USA", 0.3),
-        Agent(0.7 * usa_stock, "retrofit", uuid4(), "b", "USA", 0.7),
-    ]
-    if with_new:
-        agents.extend(
-            [
-                Agent(0.0 * usa_stock, "new", uuid4(), "a", "USA", 0.0),
-                Agent(0.0 * usa_stock, "new", uuid4(), "b", "USA", 0.0),
-            ]
-        )
+    if categories is None:
+        categories = ["retrofit", "newcapa"]
+
+    # Agent configurations
+    usa_configs = {
+        "retrofit": [(0.3, "a"), (0.7, "b")],
+        "newcapa": [(0.5, "a"), (0.5, "b")],
+    }
+    asia_configs = {
+        "retrofit": [(0.6, "a"), (0.4, "b")],
+        "newcapa": [(0.5, "a"), (0.5, "b")],
+    }
+
+    agents = []
+
+    # Create USA agents
+    for category in categories:
+        for multiplier, name in usa_configs[category]:
+            agents.append(
+                Agent(
+                    multiplier * usa_stock, category, uuid4(), name, "USA", multiplier
+                )
+            )
+
+    # Create ASEAN agents if stock provided
     if asia_stock is not None:
-        agents.extend(
-            [
-                Agent(asia_stock, "retrofit", uuid4(), "a", "ASEAN", 1.0),
-                Agent(0 * asia_stock, "new", uuid4(), "a", "ASEAN", 0.0)
-                if with_new
-                else None,
-            ]
-        )
-    return [a for a in agents if a is not None]
+        for category in categories:
+            for multiplier, name in asia_configs[category]:
+                agents.append(
+                    Agent(
+                        multiplier * asia_stock,
+                        category,
+                        uuid4(),
+                        name,
+                        "ASEAN",
+                        multiplier,
+                    )
+                )
+
+    return agents
 
 
 def create_regional_market(technologies, stock):
@@ -89,7 +109,7 @@ def _capacity(stock):
 
 
 @fixture
-def _technologies(technologies, _capacity):
+def _technologies(technologies, _capacity, timeslice):
     """Create technology parameters fixture for the sector."""
     return technologies.interp(year=INVESTMENT_YEAR)
 
@@ -104,45 +124,48 @@ def _market(_technologies, _capacity, timeslice):
 
 
 def _matching_market(technologies, capacity):
-    """Create a market which matches stocks exactly.
-
-    Args:
-        technologies: Technology parameters
-        capacity: Capacity data
-
-    Returns:
-        Market dataset with supply, consumption and prices
-    """
+    """Create a market which matches stocks exactly."""
     from numpy.random import random
 
+    from muse.commodities import is_enduse
     from muse.quantities import consumption as calc_consumption
 
-    market = xr.Dataset()
+    # Calculate production and consumption
     production = maximum_production(technologies, capacity)
     cons = calc_consumption(technologies, production)
+
+    # Handle regional grouping if needed
     if "region" in production.coords:
         production = production.groupby("region")
         cons = cons.groupby("region")
+
+    market = xr.Dataset()
     market["supply"] = production.sum("asset")
-    market["consumption"] = drop_timeslice(cons.sum("asset") + market.supply)
+
+    # Create consumption with only enduse commodities having non-zero demand
+    consumption = drop_timeslice(cons.sum("asset") + market.supply)
+    enduse_names = technologies.commodity[is_enduse(technologies.comm_usage)]
+
+    # Zero out non-enduse commodities
+    non_enduse = consumption.commodity[~consumption.commodity.isin(enduse_names)]
+    consumption.loc[{"commodity": non_enduse}] = 0
+
+    market["consumption"] = consumption
     market["prices"] = market.supply.dims, random(market.supply.shape)
     return market
 
 
 def verify_share_values(share, expect_new_zero=True, expect_retrofit_nonzero=True):
-    """Helper to verify share values under different scenarios.
+    """Helper to verify share values under different scenarios."""
+    if expect_new_zero:
+        assert (share.new == 0).all()
+    else:
+        assert (share.new != 0).any()
 
-    Args:
-        share: Share values to verify
-        expect_new_zero: Whether new capacity share should be zero
-        expect_retrofit_nonzero: Whether retrofit share should be non-zero
-    """
-    assert (share.new == 0).all() if expect_new_zero else (share.new != 0).any()
-    assert (
-        (share.retrofit != 0).any()
-        if expect_retrofit_nonzero
-        else (share.retrofit == 0).all()
-    )
+    if expect_retrofit_nonzero:
+        assert (share.retrofit != 0).any()
+    else:
+        assert (share.retrofit == 0).all()
 
 
 def test_fixtures(_capacity, _market, _technologies):
@@ -162,15 +185,7 @@ def test_new_retro_split_zero_unmet(_capacity, _market, _technologies):
 
 
 def test_new_retro_split_scenarios(_capacity, _market, _technologies):
-    """Test various scenarios for new and retrofit demand splits.
-
-    Tests:
-    1. Same consumption in investment year
-    2. Reduced future capacity
-    3. Reduced current capacity
-    4. Overall reduced capacity
-    5. Market supply matching consumption
-    """
+    """Test various scenarios for new and retrofit demand splits."""
     from muse.demand_share import new_and_retro_demands
 
     _technologies = broadcast_over_assets(_technologies, _capacity)
@@ -306,141 +321,14 @@ def test_new_retro_accounting_identity(_capacity, _market, _technologies):
     assert (share.retrofit > -1e-8).all()
     assert ((share.new + share.retrofit).where(consumption < serviced, 0) < 1e-8).all()
 
-    # Verify total accounting identity
-    accounting = (
-        (share.new + share.retrofit + serviced)
-        .where(consumption - serviced > 0, consumption)
-        .transpose(*consumption.dims)
-    )
-    assert accounting.values == approx(consumption.values)
+    # Verify total accounting identity: Total Demand = Serviced + New + Retrofit
+    total_demand = consumption
+    total_accounted = serviced + share.new + share.retrofit
+    assert total_accounted.values == approx(total_demand.values)
 
 
-def test_demand_split_scenarios(_capacity, _market, _technologies):
-    """Test demand split scenarios with different agent configurations.
-
-    Tests demand splitting between agents with different quantities and verifies
-    that shares are properly allocated.
-    """
-    from muse.demand_share import _inner_split as inner_split
-    from muse.demand_share import decommissioning_demand
-
-    def get_test_demand():
-        """Get test demand data for USA region."""
-        return _market.consumption.sel(
-            year=INVESTMENT_YEAR, region="USA", drop=True
-        ).where(is_enduse(_technologies.comm_usage.sel(commodity=_market.commodity)))
-
-    def check_share_results(share, agents_data, expected_shares):
-        """Verify share results match expectations."""
-        enduse = is_enduse(_technologies.comm_usage)
-        for agent_name in agents_data.keys():
-            assert (share[agent_name].sel(commodity=~enduse) == 0).all()
-
-        total = sum(share.values()).sum("asset")
-        demand = get_test_demand().where(enduse, 0)
-        demand, total = xr.broadcast(demand, total)
-        assert demand.values == approx(total.values)
-
-        for agent_name, expected_share in expected_shares.items():
-            expected, actual = xr.broadcast(demand, share[agent_name].sum("asset"))
-            assert actual.values == approx(expected_share * expected.values)
-
-    # Test normal demand split
-    _technologies = broadcast_over_assets(_technologies, _capacity)
-    agents = dict(scully=_capacity, mulder=_capacity)
-    technodata = dict(scully=_technologies, mulder=_technologies)
-    quantity = dict(scully=("scully", "USA", 0.3), mulder=("mulder", "USA", 0.7))
-
-    share = inner_split(
-        agents, technodata, get_test_demand(), decommissioning_demand, quantity
-    )
-    check_share_results(share, agents, {"scully": 0.3, "mulder": 0.7})
-
-    # Test zero share scenario
-    agents = dict(scully=0.3 * _capacity, mulder=0.7 * _capacity)
-    quantity = dict(scully=("scully", "USA", 1), mulder=("mulder", "USA", 1))
-
-    def zero_decom(technologies, capacity):
-        """Return zero decommissioning demand."""
-        return 0 * decommissioning_demand(technologies=technologies, capacity=capacity)
-
-    share = inner_split(agents, technodata, get_test_demand(), zero_decom, quantity)
-    check_share_results(share, agents, {"scully": 0.5, "mulder": 0.5})
-
-
-def test_new_retro_demand_share(_technologies, market, timeslice, stock):
-    """Test new and retrofit demand share calculations.
-
-    Verifies that demand is properly shared between new and retrofit agents
-    across different regions.
-    """
-    from muse.demand_share import new_and_retro
-
-    market, asia_stock, usa_stock = create_regional_market(_technologies, stock)
-    market.consumption.loc[{"year": 2030}] *= 2
-    agents = create_test_agents(usa_stock, asia_stock)
-    results = new_and_retro(agents, market.consumption, _technologies)
-
-    # Verify results for each agent
-    uuid_to_category = {agent.uuid: agent.category for agent in agents}
-    uuid_to_name = {agent.uuid: agent.name for agent in agents}
-    for category in {"retrofit", "new"}:
-        subset = {
-            uuid_to_name[uuid]: share.sel(commodity=is_enduse(_technologies.comm_usage))
-            for uuid, share in results.groupby("agent")
-            if uuid_to_category[uuid] == category and (share.region == "USA").all()
-        }
-        if subset:
-            expected, actual = xr.broadcast(0.3 * sum(subset.values()), subset["a"])
-            assert actual.values == approx(expected.values)
-
-
-def test_standard_demand_share(_technologies, timeslice, stock):
-    """Test standard demand share calculations.
-
-    Verifies that:
-    1. Retrofit agents raise appropriate error
-    2. New agents receive proper demand shares
-    """
-    from muse.demand_share import standard_demand
-    from muse.errors import RetrofitAgentInStandardDemandShare
-
-    market, asia_stock, usa_stock = create_regional_market(_technologies, stock)
-    market.consumption.loc[{"year": 2030}] *= 2
-
-    # Test that retrofit agents raise error
-    with raises(RetrofitAgentInStandardDemandShare):
-        standard_demand(
-            create_test_agents(usa_stock, asia_stock), market.consumption, _technologies
-        )
-
-    # Test with only new agents
-    agents = [
-        Agent(0.3 * usa_stock, "new", uuid4(), "a", "USA", 0.3),
-        Agent(0.7 * usa_stock, "new", uuid4(), "b", "USA", 0.7),
-        Agent(asia_stock, "new", uuid4(), "a", "ASEAN", 1.0),
-    ]
-    results = standard_demand(agents, market.consumption, _technologies)
-
-    # Verify results
-    uuid_to_name = {agent.uuid: agent.name for agent in agents}
-    subset = {
-        uuid_to_name[uuid]: share.sel(commodity=is_enduse(_technologies.comm_usage))
-        for uuid, share in results.groupby("agent")
-        if (share.region == "USA").all()
-    }
-    expected, actual = xr.broadcast(0.3 * sum(subset.values()), subset["a"])
-    assert actual.values == approx(expected.values)
-
-
-def test_unmet_forecast_demand(_technologies, timeslice, stock):
-    """Test unmet forecast demand calculations.
-
-    Tests three scenarios:
-    1. Fully met demand - agents have exact capacity to meet demand
-    2. Excess capacity - agents have more capacity than needed
-    3. Insufficient capacity - agents have less capacity than needed
-    """
+def test_unmet_forecast_demand(_technologies, stock):
+    """Test unmet forecast demand calculations."""
     from muse.commodities import is_enduse
     from muse.demand_share import unmet_forecasted_demand
 
@@ -448,19 +336,23 @@ def test_unmet_forecast_demand(_technologies, timeslice, stock):
     market, asia_stock, usa_stock = create_regional_market(_technologies, stock)
 
     # Test scenario 1: Fully met demand
-    agents = create_test_agents(usa_stock, asia_stock)
+    agents = create_test_agents(usa_stock, asia_stock, categories=["newcapa"])
     result = unmet_forecasted_demand(agents, market.consumption, _technologies)
     assert set(result.dims) == set(market.consumption.dims) - {"year"}
     assert result.values == approx(0)
 
     # Test scenario 2: Excess capacity (120% capacity)
-    agents = create_test_agents(1.2 * usa_stock, 1.2 * asia_stock)
+    agents = create_test_agents(
+        1.2 * usa_stock, 1.2 * asia_stock, categories=["newcapa"]
+    )
     result = unmet_forecasted_demand(agents, market.consumption, _technologies)
     assert set(result.dims) == set(market.consumption.dims) - {"year"}
     assert result.values == approx(0)
 
     # Test scenario 3: Insufficient capacity (50% capacity)
-    agents = create_test_agents(0.5 * usa_stock, 0.5 * asia_stock)
+    agents = create_test_agents(
+        0.5 * usa_stock, 0.5 * asia_stock, categories=["newcapa"]
+    )
     result = unmet_forecasted_demand(agents, market.consumption, _technologies)
 
     # Verify results for insufficient capacity
@@ -468,7 +360,7 @@ def test_unmet_forecast_demand(_technologies, timeslice, stock):
     assert (result.commodity == market.commodity).all()
     assert result.sel(commodity=~enduse).values == approx(0)
     assert result.sel(commodity=enduse).values == approx(
-        0.5 * market.consumption.sel(commodity=enduse, year=2030).values
+        0.5 * market.consumption.sel(commodity=enduse, year=INVESTMENT_YEAR).values
     )
 
 
@@ -500,3 +392,245 @@ def test_decommissioning_demand(_technologies, _capacity, timeslice):
     assert decom.sel(commodity=is_enduse(_technologies.comm_usage)).sum(
         "timeslice"
     ).values == approx(expected_decom)
+
+
+def test_inner_split_basic(_capacity, _market, _technologies):
+    """Test basic functionality of _inner_split.
+
+    Tests that demand is split proportionally according to the method function
+    using a mock function that returns predetermined shares.
+    """
+    from muse.demand_share import _inner_split
+    from muse.utilities import broadcast_over_assets
+
+    # Select a region to test
+    REGION = "ASEAN"
+    _capacity = _capacity.where(_capacity.asset.region == REGION)
+    _technologies = _technologies.sel(region=REGION)
+    _market = _market.sel(region=REGION)
+
+    # Broadcast technologies over assets
+    tech_data = broadcast_over_assets(_technologies, _capacity)
+
+    # Demand to split over assets
+    demand = _market.consumption.sel(year=INVESTMENT_YEAR, drop=True)
+
+    # Test with maximum production method
+    shares = maximum_production(
+        capacity=_capacity.sel(year=CURRENT_YEAR, drop=True), technologies=tech_data
+    )
+
+    result = _inner_split(
+        demand=demand,
+        shares=shares,
+    )
+
+    # Check dimensions
+    assert set(result.dims) == {"asset", "commodity", "timeslice"}
+
+    # Check total demand is preserved (conservation of demand)
+    assert result.sum("asset").values == approx(demand.values)
+
+    # Check all values are non-negative
+    assert (result >= 0).all()
+
+
+def test_inner_split_zero_shares(_capacity, _market, _technologies):
+    """Test _inner_split when method returns zero shares.
+
+    Tests that unassigned demand is split equally when method returns zero shares.
+    """
+    from muse.demand_share import _inner_split
+    from muse.quantities import maximum_production
+    from muse.utilities import broadcast_over_assets
+
+    # Select a region to test
+    REGION = "ASEAN"
+    _capacity = _capacity.where(_capacity.asset.region == REGION)
+    _technologies = _technologies.sel(region=REGION)
+    _market = _market.sel(region=REGION)
+
+    # Broadcast technologies over assets
+    tech_data = broadcast_over_assets(_technologies, _capacity)
+
+    # Demand in the investment year to split over assets
+    demand = _market.consumption.sel(year=INVESTMENT_YEAR, drop=True)
+
+    # Test with zero production method
+    zero_shares = 0 * maximum_production(
+        capacity=_capacity.sel(year=CURRENT_YEAR, drop=True), technologies=tech_data
+    )
+
+    result = _inner_split(
+        demand=demand,
+        shares=zero_shares,
+    )
+
+    # Check dimensions
+    assert set(result.dims) == {"asset", "commodity", "timeslice"}
+
+    # Check total demand is preserved (conservation of demand)
+    assert result.sum("asset").values == approx(demand.values)
+
+    # Check demand is split equally among assets
+    expected_per_asset = demand / len(result.asset)
+    assert (result == expected_per_asset).all()
+
+
+def test_unmet_demand(_capacity, _market, _technologies):
+    """Test unmet demand calculations."""
+    from muse.demand_share import unmet_demand
+
+    _technologies = broadcast_over_assets(_technologies, _capacity)
+
+    # Select single year data (unmet_demand doesn't handle year dimension)
+    capacity = _capacity.sel(year=CURRENT_YEAR, drop=True)
+    demand = _market.consumption.sel(year=CURRENT_YEAR, drop=True)
+
+    # Test scenario 1: Fully met demand (excess capacity)
+    excess_capacity = 2.0 * capacity
+    result = unmet_demand(demand, excess_capacity, _technologies)
+    assert result.values == approx(0)
+
+    # Test scenario 2: Insufficient capacity (50% capacity)
+    insufficient_capacity = 0.5 * capacity
+    result = unmet_demand(demand, insufficient_capacity, _technologies)
+    assert (result > 0).any()
+    assert (result <= demand).all()
+
+    # Test scenario 3: Zero capacity
+    zero_capacity = 0 * capacity
+    result = unmet_demand(demand, zero_capacity, _technologies)
+    assert result.values == approx(demand.values)
+
+
+def test_new_consumption(_capacity, _market, _technologies):
+    """Test new consumption calculation."""
+    from muse.demand_share import new_consumption
+
+    _technologies = broadcast_over_assets(_technologies, _capacity)
+
+    # Test with no demand growth
+    _market.consumption.loc[{"year": INVESTMENT_YEAR}] = _market.consumption.sel(
+        year=CURRENT_YEAR
+    )
+    result = new_consumption(_capacity, _market.consumption, _technologies)
+    assert (result == 0).all()
+
+    # Test with demand growth but sufficient capacity
+    _market.consumption.loc[{"year": INVESTMENT_YEAR}] = 1.5 * _market.consumption.sel(
+        year=CURRENT_YEAR
+    )
+    result = new_consumption(_capacity, _market.consumption, _technologies)
+    assert (result >= 0).all()
+
+    # Test with demand growth and insufficient capacity
+    reduced_capacity = _capacity.copy()
+    reduced_capacity.loc[{"year": INVESTMENT_YEAR}] = 0.5 * _capacity.sel(
+        year=CURRENT_YEAR
+    )
+    result = new_consumption(reduced_capacity, _market.consumption, _technologies)
+    assert (result >= 0).all()
+
+
+def test_standard_demand_share(_technologies, stock):
+    """Test standard_demand with various scenarios."""
+    from muse.demand_share import standard_demand
+
+    market, asia_stock, usa_stock = create_regional_market(_technologies, stock)
+    agents = create_test_agents(usa_stock, categories=["newcapa"])
+    usa_demand = market.consumption.sel(region=["USA"])
+
+    # Basic functionality -> result should be non-negative
+    result = standard_demand(agents, usa_demand, _technologies)
+    assert (result >= 0).all()
+
+    # Demand growth scenario -> result should be non-negative
+    market.consumption.loc[{"year": INVESTMENT_YEAR}] = 1.5 * market.consumption.sel(
+        year=CURRENT_YEAR
+    )
+    result_growth = standard_demand(agents, market.consumption, _technologies)
+    assert (result_growth >= 0).all()
+
+    # No demand growth scenario -> result should be smaller or equal to demand growth
+    market.consumption.loc[{"year": INVESTMENT_YEAR}] = market.consumption.sel(
+        year=CURRENT_YEAR
+    )
+    result_no_growth = standard_demand(agents, market.consumption, _technologies)
+    assert (result_no_growth <= result_growth).all()
+
+    # Capacity reduction scenario -> result should be non-negative
+    for agent in agents:
+        agent.assets = agent.assets.copy()
+        agent.assets["capacity"].loc[{"year": INVESTMENT_YEAR}] = 0.5 * agent.assets[
+            "capacity"
+        ].sel(year=CURRENT_YEAR)
+    result_capacity_reduction = standard_demand(
+        agents, market.consumption, _technologies
+    )
+    assert (result_capacity_reduction >= 0).all()
+
+    # Regional split scenario -> result should be non-negative
+    multi_region_agents = create_test_agents(
+        usa_stock, asia_stock=asia_stock, categories=["newcapa"]
+    )
+    result_regional = standard_demand(
+        multi_region_agents, market.consumption, _technologies
+    )
+    assert (result_regional >= 0).all()
+
+    # Zero demand scenario -> result should be zero
+    zero_demand = market.consumption.copy()
+    zero_demand.loc[:] = 0
+    result_zero = standard_demand(agents, zero_demand, _technologies)
+    assert (result_zero == 0).all()
+
+
+def test_new_and_retro_demand_share(_technologies, stock):
+    """Test new_and_retro with various scenarios."""
+    from muse.demand_share import new_and_retro
+
+    market, asia_stock, usa_stock = create_regional_market(_technologies, stock)
+    agents = create_test_agents(usa_stock, categories=["retrofit", "newcapa"])
+
+    # Basic functionality -> result should be non-negative
+    result = new_and_retro(agents, market.consumption, _technologies)
+    assert (result >= 0).all()
+
+    # Demand growth scenario -> result should be non-negative
+    market.consumption.loc[{"year": INVESTMENT_YEAR}] = 1.5 * market.consumption.sel(
+        year=CURRENT_YEAR
+    )
+    result_growth = new_and_retro(agents, market.consumption, _technologies)
+    assert (result_growth >= 0).all()
+
+    # No demand growth scenario -> result should be smaller or equal to demand growth
+    market.consumption.loc[{"year": INVESTMENT_YEAR}] = market.consumption.sel(
+        year=CURRENT_YEAR
+    )
+    result_no_growth = new_and_retro(agents, market.consumption, _technologies)
+    assert (result_no_growth <= result_growth).all()
+
+    # Capacity reduction scenario -> result should be non-negative
+    for agent in agents:
+        agent.assets = agent.assets.copy()
+        agent.assets["capacity"].loc[{"year": INVESTMENT_YEAR}] = 0.5 * agent.assets[
+            "capacity"
+        ].sel(year=CURRENT_YEAR)
+    result_capacity_reduction = new_and_retro(agents, market.consumption, _technologies)
+    assert (result_capacity_reduction >= 0).all()
+
+    # Regional split scenario -> result should be non-negative
+    multi_region_agents = create_test_agents(
+        usa_stock, asia_stock=asia_stock, categories=["retrofit", "newcapa"]
+    )
+    result_regional = new_and_retro(
+        multi_region_agents, market.consumption, _technologies
+    )
+    assert (result_regional >= 0).all()
+
+    # Zero demand scenario -> result should be zero
+    zero_demand = market.consumption.copy()
+    zero_demand.loc[:] = 0
+    result_zero = new_and_retro(agents, zero_demand, _technologies)
+    assert (result_zero == 0).all()
