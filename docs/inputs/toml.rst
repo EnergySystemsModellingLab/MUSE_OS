@@ -61,11 +61,13 @@ a whole.
 *log_level*
    verbosity of the output. Valid options, from the highest to the lowest level of verbosity, are: "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL".
 
-*currency*
+*currency* (optional)
    The currency used for prices (e.g. "USD", "EUR", "MUS$2010"). All prices in all input
    files should be expressed in this currency. For example, if the currency is "USD",
    then capital costs should be expressed as "USD" per capacity unit, and price
-   projections for a commodity with units "PJ" should be expressed as "USD/PJ".
+   projections for a commodity with units "PJ" should be expressed as "USD/PJ". No
+   currency conversions are performed in the model, and the choice of currency has no
+   impact on the simulation - it is purely for documentation purposes.
 
 *equilibirum_variable*
    whether equilibrium of `demand` or `prices` should be sought. Defaults to `demand`.
