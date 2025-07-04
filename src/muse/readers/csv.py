@@ -673,6 +673,15 @@ def read_global_commodities_csv(path: Path) -> pd.DataFrame:
         required_columns=required_columns,
         msg=f"Reading global commodities from {path}.",
     )
+
+    # Raise warning if units are not defined
+    if "unit" not in data.columns:
+        msg = (
+            "No units defined for commodities. Please define units for all commodities "
+            "in the global commodities file."
+        )
+        getLogger(__name__).warning(msg)
+
     return data
 
 
@@ -784,6 +793,7 @@ def read_initial_market(
     projections_path: Path,
     base_year_import_path: Path | None = None,
     base_year_export_path: Path | None = None,
+    currency: str | None = None,
 ) -> xr.Dataset:
     # Read projections
     projections_df = read_projections_csv(projections_path)
@@ -807,7 +817,7 @@ def read_initial_market(
         import_df = None
 
     # Assemble into xarray Dataset
-    result = process_initial_market(projections_df, import_df, export_df)
+    result = process_initial_market(projections_df, import_df, export_df, currency)
     return result
 
 
@@ -827,6 +837,7 @@ def process_initial_market(
     projections_df: pd.DataFrame,
     import_df: pd.DataFrame | None,
     export_df: pd.DataFrame | None,
+    currency: str | None = None,
 ) -> xr.Dataset:
     """Process market data DataFrames into an xarray Dataset.
 
@@ -834,7 +845,9 @@ def process_initial_market(
         projections_df: DataFrame containing projections data
         import_df: Optional DataFrame containing import data
         export_df: Optional DataFrame containing export data
+        currency: Currency string (e.g. "USD")
     """
+    from muse.commodities import COMMODITIES
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     # Process projections
@@ -870,6 +883,16 @@ def process_initial_market(
 
     # Check commodities
     result = check_commodities(result, fill_missing=True, fill_value=0)
+
+    # Add units_prices coordinate
+    # Only added if the currency is specified and commodity units are defined
+    if currency and "unit" in COMMODITIES.data_vars:
+        units_prices = [
+            f"{currency}/{COMMODITIES.sel(commodity=c).unit.item()}"
+            for c in result.commodity.values
+        ]
+        result = result.assign_coords(units_prices=("commodity", units_prices))
+
     return result
 
 

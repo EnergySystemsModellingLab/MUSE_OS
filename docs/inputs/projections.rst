@@ -60,4 +60,8 @@ Time
 
 com1, ..., comN
    Any further columns represent the commodities modelled, as defined in the global
-   commodities
+   commodities file.
+
+   **Note:** All commodity prices should be expressed in the currency specified in the
+   settings file. For example, if the currency is set to "USD" and a commodity has units
+   "PJ", then the prices for that commodity should be expressed as "USD/PJ".
