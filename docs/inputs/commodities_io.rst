@@ -45,7 +45,6 @@ heater.
 .. csv-table:: Commodities used as consumables - Input commodities
    :header: ProcessName, RegionName, Time, Level, electricity
 
-   Unit, -, Year, -, GWh/PJ
    resBoilerElectric, region1, 2010, fixed, 300
    resBoilerElectric, region1, 2030, fixed, 290
 
