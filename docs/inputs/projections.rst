@@ -36,8 +36,6 @@ The forward price trajectory should follow the structure reported in the table b
 .. csv-table:: Initial market projections
    :header: RegionName, Attribute, Time, com1, com2, com3
 
-
-   Unit, -, Year, MUS$2010/PJ, MUS$2010/PJ, MUS$2010/PJ
    region1, CommodityPrice, 2010, 20, 1.9583, 2
    region1, CommodityPrice, 2015, 20, 1.9583, 2
    region1, CommodityPrice, 2020, 20.38518042, 1.996014941, 2.038518042
@@ -62,6 +60,4 @@ Time
 
 com1, ..., comN
    Any further columns represent the commodities modelled, as defined in the global
-   commodities the row Unit reports the unit in which the technology consumption is
-   defined; it is for the user internal reference only. The names *comX* should be
-   replaced with the names of the commodities.
+   commodities

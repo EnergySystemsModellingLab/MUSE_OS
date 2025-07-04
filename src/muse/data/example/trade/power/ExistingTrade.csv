@@ -1,5 +1,4 @@
 ProcessName,RegionName,Time,R1,R2
-Unit,-,Year,PJ/y,PJ/y
 gasCCGT,R1,2010,300,0
 gasCCGT,R2,2010,0,200
 gasCCGT,R1,2020,240,0

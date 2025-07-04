@@ -74,13 +74,13 @@ def generate_model_2() -> None:
         shutil.rmtree(model_path / "Results")
 
     # Copy price data for 2020 -> 2040
-    add_price_data_for_new_year(model_path, "2040", "power", "2020")
+    add_price_data_for_new_year(model_path, 2040, "power", 2020)
 
     # Modify cap_par for solarPV
     technodata_file = model_path / "power/Technodata.csv"
     df = pd.read_csv(technodata_file)
-    df.loc[(df["ProcessName"] == "solarPV") & (df["Time"] == "2020"), "cap_par"] = 40
-    df.loc[(df["ProcessName"] == "solarPV") & (df["Time"] == "2040"), "cap_par"] = 30
+    df.loc[(df["ProcessName"] == "solarPV") & (df["Time"] == 2020), "cap_par"] = 40
+    df.loc[(df["ProcessName"] == "solarPV") & (df["Time"] == 2040), "cap_par"] = 30
     df.to_csv(technodata_file, index=False)
 
 

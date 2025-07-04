@@ -22,6 +22,7 @@ def setup_test_environment(
 
     # Read and modify technodata timeslices
     technodata = pd.read_csv(model_path / sector / "TechnodataTimeslices.csv")
+    technodata["UtilizationFactor"] = technodata["UtilizationFactor"].astype(float)
     for process, factor in zip(process_names, utilization_factors):
         technodata.loc[technodata["ProcessName"] == process, "UtilizationFactor"] = (
             factor
@@ -37,7 +38,7 @@ def setup_test_environment(
 PROCESS_PAIR = [("gasCCGT", "windturbine")]
 
 
-@mark.parametrize("utilization_factors", [([0.1], [1]), ([1], [0.1])])
+@mark.parametrize("utilization_factors", [(0.1, 1), (1, 0.1)])
 @mark.parametrize("process_names", PROCESS_PAIR)
 def test_fullsim_timeslices(tmp_path, utilization_factors, process_names):
     sector = "power"
@@ -97,7 +98,7 @@ def test_zero_utilization_factor_supply_timeslice(
     assert len(zero_output) == 0
 
 
-@mark.parametrize("utilization_factors", [([0], [1]), ([1], [0])])
+@mark.parametrize("utilization_factors", [(0, 1), (1, 0)])
 @mark.parametrize("process_names", PROCESS_PAIR)
 def test_all_zero_fatal_error(tmp_path, utilization_factors, process_names):
     sector = "power"

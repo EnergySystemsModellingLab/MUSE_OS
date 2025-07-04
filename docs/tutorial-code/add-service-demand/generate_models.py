@@ -31,7 +31,7 @@ def generate_model_1():
     # Modify cook projections
     projections_file = model_path / "Projections.csv"
     df = pd.read_csv(projections_file)
-    df.loc[1:, "cook"] = 100
+    df.loc[:, "cook"] = 100
     df.to_csv(projections_file, index=False)
 
     # Copy processes in power sector -> cook
@@ -41,7 +41,7 @@ def generate_model_1():
     # Modify output commodities
     commout_file = model_path / "residential/CommOut.csv"
     df = pd.read_csv(commout_file)
-    df.loc[1:, "cook"] = 0
+    df.loc[:, "cook"] = 0
     df.loc[df["ProcessName"] == "gas_stove", df.columns[-6:]] = [0, 0, 0, 50, 0, 1]
     df.loc[df["ProcessName"] == "electric_stove", df.columns[-6:]] = [0, 0, 0, 0, 0, 1]
     df.to_csv(commout_file, index=False)
@@ -49,7 +49,7 @@ def generate_model_1():
     # Modify input commodities
     commin_file = model_path / "residential/CommIn.csv"
     df = pd.read_csv(commin_file)
-    df.loc[1:, "cook"] = 0
+    df.loc[:, "cook"] = 0
     df.to_csv(commin_file, index=False)
 
     # Change cap_par

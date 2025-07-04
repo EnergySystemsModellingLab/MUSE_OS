@@ -9,7 +9,6 @@ The techno-data timeslices is an optional file which contains information on tec
 .. csv-table:: Techno-data
    :header: ProcessName,RegionName,Time,month,day,hour,UtilizationFactor,MinimumServiceFactor
 
-   Unit,-,Year,-,-,-,-,-
    gasCCGT,R1,2020,all-year,all-week,night,1,1
    gasCCGT,R1,2020,all-year,all-week,morning,1,2
 

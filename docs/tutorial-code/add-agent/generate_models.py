@@ -49,8 +49,8 @@ def generate_model_1():
     for sector in get_sectors(model_path):
         technodata_file = model_path / f"{sector}/Technodata.csv"
         df = pd.read_csv(technodata_file)
-        df.loc[1:, "Agent1"] = 0.5
-        df.loc[1:, "Agent2"] = 0.5
+        df.loc[:, "Agent1"] = 0.5
+        df.loc[:, "Agent2"] = 0.5
         df.to_csv(technodata_file, index=False)
 
 

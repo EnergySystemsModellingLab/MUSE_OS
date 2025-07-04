@@ -27,7 +27,7 @@ def generate_model_1() -> None:
     # Modify MinimumServiceFactor for gasCCGT
     timeslices_file = model_path / "power/TechnodataTimeslices.csv"
     df = pd.read_csv(timeslices_file)
-    df.loc[1:, "MinimumServiceFactor"] = 0
+    df.loc[:, "MinimumServiceFactor"] = 0
     df.loc[df["ProcessName"] == "gasCCGT", "MinimumServiceFactor"] = [
         0.2,
         0.4,
