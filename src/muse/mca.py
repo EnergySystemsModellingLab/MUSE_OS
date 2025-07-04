@@ -89,6 +89,7 @@ class MCA:
             "plugins",
             "outputs",
             "outputs_cache",
+            "currency",
         }
         global_kw = {
             k: v
