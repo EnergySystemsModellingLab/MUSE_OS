@@ -877,7 +877,7 @@ def process_initial_market(
 
     # Add units_prices coordinate
     # Only added if the currency is specified and commodity units are defined
-    if currency and "unit" in COMMODITIES.coords:
+    if currency and "unit" in COMMODITIES.data_vars:
         units_prices = [
             f"{currency}/{COMMODITIES.sel(commodity=c).unit.item()}"
             for c in result.commodity.values
