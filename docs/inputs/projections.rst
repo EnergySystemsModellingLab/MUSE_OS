@@ -65,3 +65,5 @@ com1, ..., comN
    commodities the row Unit reports the unit in which the technology consumption is
    defined; it is for the user internal reference only. The names *comX* should be
    replaced with the names of the commodities.
+
+   **Note:** All commodity prices should be expressed in the currency specified in the settings file. For example, if the currency is set to "USD" and a commodity has units "PJ", then the price should be expressed as "USD/PJ".

@@ -58,6 +58,7 @@ class MCA:
                 base_year_import_path=getattr(
                     settings.global_input_files, "base_year_import", None
                 ),
+                currency=getattr(settings, "currency", None),
             )
             .sel(region=settings.regions)
             .interp(year=settings.time_framework, method=settings.interpolation_mode)

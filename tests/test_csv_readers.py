@@ -262,7 +262,7 @@ def test_read_presets(model_path):
 def test_read_initial_market(model_path):
     from muse.readers.csv import read_initial_market
 
-    data = read_initial_market(model_path / "Projections.csv")
+    data = read_initial_market(model_path / "Projections.csv", currency="MUS$2010")
 
     # Check data against schema
     expected_schema = DatasetSchema(
@@ -271,6 +271,7 @@ def test_read_initial_market(model_path):
             "region": CoordinateSchema(("region",), dtype="object"),
             "year": CoordinateSchema(("year",), dtype="int64"),
             "commodity": CoordinateSchema(("commodity",), dtype="object"),
+            "units_prices": CoordinateSchema(("commodity",), dtype="<U11"),
             "timeslice": CoordinateSchema(("timeslice",), dtype="object"),
             "month": CoordinateSchema(("timeslice",), dtype="object"),
             "day": CoordinateSchema(("timeslice",), dtype="object"),
@@ -292,6 +293,13 @@ def test_read_initial_market(model_path):
             "region": ["r1"],
             "year": list(range(2010, 2105, 5)),
             "commodity": COMMODITIES,
+            "units_prices": [
+                "MUS$2010/PJ",
+                "MUS$2010/PJ",
+                "MUS$2010/PJ",
+                "MUS$2010/PJ",
+                "MUS$2010/kt",
+            ],
             "timeslice": EXPECTED_TIMESLICES,
         },
     )

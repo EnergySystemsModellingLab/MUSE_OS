@@ -784,6 +784,7 @@ def read_initial_market(
     projections_path: Path,
     base_year_import_path: Path | None = None,
     base_year_export_path: Path | None = None,
+    currency: str | None = None,
 ) -> xr.Dataset:
     # Read projections
     projections_df = read_projections_csv(projections_path)
@@ -807,7 +808,7 @@ def read_initial_market(
         import_df = None
 
     # Assemble into xarray Dataset
-    result = process_initial_market(projections_df, import_df, export_df)
+    result = process_initial_market(projections_df, import_df, export_df, currency)
     return result
 
 
@@ -827,6 +828,7 @@ def process_initial_market(
     projections_df: pd.DataFrame,
     import_df: pd.DataFrame | None,
     export_df: pd.DataFrame | None,
+    currency: str | None = None,
 ) -> xr.Dataset:
     """Process market data DataFrames into an xarray Dataset.
 
@@ -834,6 +836,7 @@ def process_initial_market(
         projections_df: DataFrame containing projections data
         import_df: Optional DataFrame containing import data
         export_df: Optional DataFrame containing export data
+        currency: Currency string
     """
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
@@ -870,6 +873,15 @@ def process_initial_market(
 
     # Check commodities
     result = check_commodities(result, fill_missing=True, fill_value=0)
+
+    # Add units_prices coordinate
+    if currency is not None:
+        from muse.commodities import COMMODITIES
+
+        commodity_units = COMMODITIES.unit.values
+        units_prices = [f"{currency}/{unit}" for unit in commodity_units]
+        result = result.assign_coords(units_prices=("commodity", units_prices))
+
     return result
 
 

@@ -27,6 +27,7 @@ a whole.
    regions = ["USA"]
    interpolation_mode = 'linear'
    log_level = 'info'
+   currency = 'USD'
 
    equilibrium_variable = 'demand'
    maximum_iterations = 100
@@ -59,6 +60,9 @@ a whole.
 
 *log_level*
    verbosity of the output. Valid options, from the highest to the lowest level of verbosity, are: "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL".
+
+*currency*
+   The currency used for prices (e.g. "USD", "EUR", "MUS$2010"). All prices in all input files should be expressed in this currency. For example, if the currency is "USD", then price projections for a commodity with units "PJ" should be expressed as "USD/PJ".
 
 *equilibirum_variable*
    whether equilibrium of `demand` or `prices` should be sought. Defaults to `demand`.
