@@ -673,6 +673,15 @@ def read_global_commodities_csv(path: Path) -> pd.DataFrame:
         required_columns=required_columns,
         msg=f"Reading global commodities from {path}.",
     )
+
+    # Raise warning if units are not defined
+    if "unit" not in data.columns:
+        msg = (
+            "No units defined for commodities. Please define units for all commodities "
+            "in the global commodities file."
+        )
+        getLogger(__name__).warning(msg)
+
     return data
 
 
