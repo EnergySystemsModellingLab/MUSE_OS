@@ -838,6 +838,7 @@ def process_initial_market(
         export_df: Optional DataFrame containing export data
         currency: Currency string
     """
+    from muse.commodities import COMMODITIES
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
     # Process projections
@@ -875,11 +876,12 @@ def process_initial_market(
     result = check_commodities(result, fill_missing=True, fill_value=0)
 
     # Add units_prices coordinate
-    if currency is not None:
-        from muse.commodities import COMMODITIES
-
-        commodity_units = COMMODITIES.unit.values
-        units_prices = [f"{currency}/{unit}" for unit in commodity_units]
+    # Only added if the currency is specified and commodity units are defined
+    if currency is not None and "unit" in COMMODITIES.coords:
+        units_prices = [
+            f"{currency}/{COMMODITIES.sel(commodity=c).unit.item()}"
+            for c in result.commodity.values
+        ]
         result = result.assign_coords(units_prices=("commodity", units_prices))
 
     return result
