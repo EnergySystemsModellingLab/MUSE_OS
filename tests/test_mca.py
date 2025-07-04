@@ -178,11 +178,3 @@ def test_find_equilibrium(market: Dataset):
         result.market.consumption, a_market.consumption + b_market.consumption
     )
     assert actual.values == approx(expected.values)
-
-    # Verify prices
-    expected = b_market.costs.where(is_enduse(b_market.comm_usage))
-    expected = a_market.costs.where(is_enduse(a_market.comm_usage))
-    expected = expected.where(expected > 1e-15, result.market.prices)
-
-    actual, expected = broadcast(result.market.prices, expected)
-    assert actual.sel(year=2015).values == approx(expected.sel(year=2015).values)

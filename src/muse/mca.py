@@ -363,8 +363,6 @@ def single_year_iteration(
     """
     from copy import deepcopy
 
-    from muse.commodities import is_enduse
-
     sectors = deepcopy(sectors)
     market = market.copy(deep=True)
     if "updated_prices" not in market.data_vars:
@@ -389,7 +387,7 @@ def single_year_iteration(
         market.supply.loc[dims] += sector_market.supply
 
         # Update market prices
-        costs = sector_market.costs.sel(commodity=is_enduse(sector_market.comm_usage))
+        costs = sector_market.costs
         if len(costs.commodity) > 0:
             costs = costs.where(costs > 1e-4, 0)
             dims = {i: costs[i] for i in costs.dims}
