@@ -1,4 +1,31 @@
-"""Ensemble of functions to read MUSE data."""
+"""Ensemble of functions to read MUSE data.
+
+In general, there are three functions per input file:
+`read_x`: This is the overall function that is called to read the data. It takes a
+    `Path` as input, and returns the relevant data structure (usually an xarray). The
+    process is generally broken down into two functions that are called by `read_x`:
+
+`read_x_csv`: This takes a path to a csv file as input and returns a pandas dataframe.
+    There are some consistency checks, such as checking data types and columns. There
+    is also some minor processing at this stage, such as standardising column names,
+    but no structural changes to the data. The general rule is that anything returned
+    by this function should still be valid as an input file if saved to csv.
+`process_x`: This is where more major processing and reformatting of the data is done.
+    It takes the dataframe from `read_x_csv` and returns the final data structure
+    (usually an xarray). There are also some more checks (e.g. checking for nan
+    values).
+
+Most of the processing is shared by a few helper functions:
+- read_csv: reads a csv file and returns a dataframe
+- standardize_dataframe: standardizes the dataframe to a common format
+- create_multiindex: creates a multiindex from a dataframe
+- create_xarray_dataset: creates an xarray dataset from a dataframe
+
+A few other helpers perform common operations on xarrays:
+- create_assets: creates assets from technologies
+- check_commodities: checks commodities and fills missing values
+
+"""
 
 from __future__ import annotations
 
@@ -323,6 +350,7 @@ def read_csv(
 def check_commodities(
     data: xr.Dataset | xr.DataArray, fill_missing: bool = True, fill_value: float = 0
 ) -> xr.Dataset | xr.DataArray:
+    """Validates and optionally fills missing commodities in data."""
     from muse.commodities import COMMODITIES
 
     # Make sure there are no commodities in data but not in global commodities
@@ -355,6 +383,7 @@ def create_assets(data: xr.DataArray | xr.Dataset) -> xr.DataArray | xr.Dataset:
 
 
 def read_technodictionary(path: Path) -> xr.Dataset:
+    """Reads and processes technodictionary data from a CSV file."""
     df = read_technodictionary_csv(path)
     return process_technodictionary(df)
 
@@ -433,6 +462,7 @@ def process_technodictionary(data: pd.DataFrame) -> xr.Dataset:
 
 
 def read_technodata_timeslices(path: Path) -> xr.Dataset:
+    """Reads and processes technodata timeslices from a CSV file."""
     df = read_technodata_timeslices_csv(path)
     return process_technodata_timeslices(df)
 
@@ -483,6 +513,7 @@ def process_technodata_timeslices(data: pd.DataFrame) -> xr.Dataset:
 
 
 def read_io_technodata(path: Path) -> xr.Dataset:
+    """Reads and processes input/output technodata from a CSV file."""
     df = read_io_technodata_csv(path)
     return process_io_technodata(df)
 
@@ -546,6 +577,7 @@ def read_technologies(
     comm_in_path: Path,
     technodata_timeslices_path: Path | None = None,
 ) -> xr.Dataset:
+    """Reads and processes technology data from multiple CSV files."""
     # Read all data
     technodata = read_technodictionary(technodata_path)
     comm_out = read_io_technodata(comm_out_path)
@@ -616,6 +648,7 @@ def process_technologies(
 
 
 def read_initial_capacity(path: Path) -> xr.DataArray:
+    """Reads and processes initial capacity data from a CSV file."""
     df = read_initial_capacity_csv(path)
     return process_initial_capacity(df)
 
@@ -667,6 +700,7 @@ def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
 
 
 def read_global_commodities(path: Path) -> xr.Dataset:
+    """Reads and processes global commodities data from a CSV file."""
     df = read_global_commodities_csv(path)
     return process_global_commodities(df)
 
@@ -702,6 +736,7 @@ def process_global_commodities(data: pd.DataFrame) -> xr.Dataset:
 
 
 def read_agent_parameters(path: Path) -> pd.DataFrame:
+    """Reads and processes agent parameters from a CSV file."""
     df = read_agent_parameters_csv(path)
     return process_agent_parameters(df)
 
@@ -802,6 +837,16 @@ def read_initial_market(
     base_year_import_path: Path | None = None,
     base_year_export_path: Path | None = None,
 ) -> xr.Dataset:
+    """Reads and processes initial market data.
+
+    Args:
+        projections_path: path to the projections file
+        base_year_import_path: path to the base year import file (optional)
+        base_year_export_path: path to the base year export file (optional)
+
+    Returns:
+        xr.Dataset: Dataset containing initial market data.
+    """
     # Read projections
     projections_df = read_projections_csv(projections_path)
 
@@ -829,6 +874,7 @@ def read_initial_market(
 
 
 def read_projections_csv(path: Path) -> pd.DataFrame:
+    """Reads projections data from a CSV file."""
     required_columns = {
         "region",
         "attribute",
@@ -891,6 +937,7 @@ def process_initial_market(
 
 
 def read_attribute_table(path: Path) -> xr.Dataset:
+    """Reads and processes attribute table data from a CSV file."""
     df = read_attribute_table_csv(path)
     return process_attribute_table(df)
 
@@ -933,6 +980,11 @@ def process_attribute_table(data: pd.DataFrame) -> xr.Dataset:
 
 
 def read_presets(presets_paths: Path) -> xr.Dataset:
+    """Reads and processes preset data from multiple CSV files.
+
+    Accepts a path pattern for presets files, e.g. `Path("path/to/*Consumption.csv")`.
+    The file name of each file must contain a year (e.g. "2020Consumption.csv").
+    """
     from glob import glob
     from re import match
 
@@ -1025,6 +1077,7 @@ def process_presets(datas: dict[int, pd.DataFrame]) -> xr.Dataset:
 
 
 def read_trade_technodata(path: Path) -> xr.Dataset:
+    """Reads and processes trade technodata from a CSV file."""
     df = read_trade_technodata_csv(path)
     return process_trade_technodata(df)
 
@@ -1069,6 +1122,7 @@ def process_trade_technodata(data: pd.DataFrame) -> xr.Dataset:
 
 
 def read_existing_trade(path: Path) -> xr.DataArray:
+    """Reads and processes existing trade data from a CSV file."""
     df = read_existing_trade_csv(path)
     return process_existing_trade(df)
 
@@ -1118,6 +1172,7 @@ def process_existing_trade(data: pd.DataFrame) -> xr.DataArray:
 
 
 def read_timeslice_shares(path: Path) -> xr.DataArray:
+    """Reads and processes timeslice shares data from a CSV file."""
     df = read_timeslice_shares_csv(path)
     return process_timeslice_shares(df)
 
@@ -1169,6 +1224,7 @@ def process_timeslice_shares(data: pd.DataFrame) -> xr.DataArray:
 
 
 def read_macro_drivers(path: Path) -> pd.DataFrame:
+    """Reads and processes macro drivers data from a CSV file."""
     df = read_macro_drivers_csv(path)
     return process_macro_drivers(df)
 
@@ -1228,6 +1284,7 @@ def process_macro_drivers(data: pd.DataFrame) -> xr.Dataset:
 
 
 def read_regression_parameters(path: Path) -> xr.Dataset:
+    """Reads and processes regression parameters from a CSV file."""
     df = read_regression_parameters_csv(path)
     return process_regression_parameters(df)
 

@@ -543,7 +543,22 @@ def read_technodata(
     sector_name: str,
     interpolation_mode: str = "linear",
 ) -> xr.Dataset:
-    """Helper function to create technodata for a given sector."""
+    """Read and process technodata for a given sector.
+
+    This function reads technology data from CSV files and processes it for use in MUSE
+    simulations. It handles technology specifications, trade data, and interpolates
+    the data to match the simulation timeframe.
+
+    Args:
+        settings: MUSE settings object containing configuration parameters
+        sector_name: Name of the sector to read technodata for
+        interpolation_mode: Method for interpolating data between years.
+            Defaults to "linear"
+
+    Returns:
+        xr.Dataset: Processed technodata containing technology specifications,
+            inputs/outputs, and trade information
+    """
     from muse.readers.csv import read_technologies, read_trade_technodata
 
     regions = settings.regions
@@ -606,7 +621,21 @@ def read_technodata(
 
 
 def read_presets_sector(settings: Any, sector_name: str) -> xr.Dataset:
-    """Read data for a preset sector."""
+    """Read data for a preset sector.
+
+    This function reads consumption and supply data for a preset sector from various
+    data sources. It supports multiple input formats including direct consumption data,
+    demand tables, or correlation-based consumption calculated from macro drivers and
+    regression parameters.
+
+    Args:
+        settings: MUSE settings object containing configuration parameters
+        sector_name: Name of the preset sector to read data for
+
+    Returns:
+        xr.Dataset: Dataset containing consumption and supply data for the sector.
+            Costs are initialized to zero.
+    """
     from muse.readers import read_attribute_table, read_presets
     from muse.timeslices import distribute_timeslice, drop_timeslice
 
@@ -642,7 +671,19 @@ def read_presets_sector(settings: Any, sector_name: str) -> xr.Dataset:
 
 
 def read_correlation_consumption(sector_conf: Any) -> xr.Dataset:
-    """Read consumption data for a sector based on correlation files."""
+    """Read consumption data for a sector based on correlation files.
+
+    This function calculates endogenous demand for a sector using macro drivers and
+    regression parameters. It applies optional filters, handles sector aggregation,
+    and distributes the consumption across timeslices if timeslice shares are provided.
+
+    Args:
+        sector_conf: Sector configuration object containing paths to macro drivers,
+            regression parameters, and timeslice shares files
+
+    Returns:
+        xr.Dataset: Consumption data distributed across timeslices and regions
+    """
     from muse.readers import (
         read_macro_drivers,
         read_regression_parameters,
