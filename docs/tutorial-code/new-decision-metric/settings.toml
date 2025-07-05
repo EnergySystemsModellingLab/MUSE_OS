@@ -7,7 +7,7 @@ log_level = 'info'
 excluded_commodities = ["wind", "solar"]
 # Convergence parameters
 equilibrium_variable = 'demand'
-maximum_iterations = 100
+maximum_iterations = 10
 tolerance = 0.1
 tolerance_unmet_demand = -0.1
 

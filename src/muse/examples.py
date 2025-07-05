@@ -92,7 +92,7 @@ def model(name: str = "default", test: bool = False) -> MCA:
 
 def copy_model(
     name: str = "default",
-    path: str | Path | None = None,
+    path: Path | None = None,
     overwrite: bool = False,
 ) -> Path:
     """Copy model files to given path.
@@ -209,11 +209,11 @@ def mca_market(model: str = "default") -> xr.Dataset:
 
         market = (
             read_initial_market(
-                settings.global_input_files.projections,
-                base_year_export=getattr(
+                projections_path=settings.global_input_files.projections,
+                base_year_export_path=getattr(
                     settings.global_input_files, "base_year_export", None
                 ),
-                base_year_import=getattr(
+                base_year_import_path=getattr(
                     settings.global_input_files, "base_year_import", None
                 ),
             )
@@ -232,12 +232,9 @@ def residential_market(model: str = "default") -> xr.Dataset:
 
     market = mca_market(model)
     sectors = [sector("residential_presets", model=model)]
-    return cast(
-        xr.Dataset,
-        single_year_iteration(market, sectors)[0][
-            ["prices", "supply", "consumption"]
-        ].drop_vars("units_prices"),
-    )
+    return single_year_iteration(market, sectors)[0][
+        ["prices", "supply", "consumption"]
+    ]
 
 
 def random_agent_assets(rng: np.random.Generator):
