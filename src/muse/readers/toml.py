@@ -358,6 +358,14 @@ def setup_timeslices(settings: dict) -> None:
 
 
 @register_settings_hook(priority=1)
+def setup_commodities(settings: dict) -> None:
+    """Set up the commodities."""
+    from muse.commodities import setup_module
+
+    setup_module(settings["global_input_files"]["global_commodities"])
+
+
+@register_settings_hook(priority=1)
 def setup_time_framework(settings: dict) -> None:
     """Converts the time framework to a sorted array."""
     settings["time_framework"] = np.array(sorted(settings["time_framework"]), dtype=int)
@@ -366,9 +374,9 @@ def setup_time_framework(settings: dict) -> None:
 @register_settings_hook(priority=1)
 def standardise_case(settings: dict) -> None:
     """Standardise certain fields to snake_case."""
-    from muse.readers import camel_to_snake
+    from muse.readers.csv import camel_to_snake
 
-    fields_to_standardise = ["excluded_commodities"]
+    fields_to_standardise = ["excluded_commodities", "regions"]
     for field in fields_to_standardise:
         if field in settings:
             settings[field] = [camel_to_snake(x) for x in settings[field]]
@@ -532,89 +540,65 @@ def check_subsector_settings(settings: dict) -> None:
 
 def read_technodata(
     settings: Any,
-    sector_name: str | None = None,
-    time_framework: Sequence[int] | None = None,
-    commodities: str | Path | None = None,
-    regions: Sequence[str] | None = None,
+    sector_name: str,
     interpolation_mode: str = "linear",
 ) -> xr.Dataset:
-    """Helper function to create technodata for a given sector."""
-    from muse.readers.csv import read_technologies, read_trade
+    """Read and process technodata for a given sector.
 
-    if time_framework is None:
-        time_framework = getattr(settings, "time_framework", [2010, 2050])
+    This function reads technology data from CSV files and processes it for use in MUSE
+    simulations. It handles technology specifications, trade data, and interpolates
+    the data to match the simulation timeframe.
 
-    if commodities is None:
-        commodities = settings.global_input_files.global_commodities
+    Args:
+        settings: MUSE settings object containing configuration parameters
+        sector_name: Name of the sector to read technodata for
+        interpolation_mode: Method for interpolating data between years.
+            Defaults to "linear"
 
-    if regions is None:
-        regions = settings.regions
+    Returns:
+        xr.Dataset: Processed technodata containing technology specifications,
+            inputs/outputs, and trade information
+    """
+    from muse.readers.csv import read_technologies, read_trade_technodata
 
-    if sector_name is not None:
-        settings = getattr(settings.sectors, sector_name)
+    regions = settings.regions
+    time_framework = settings.time_framework
+    settings = getattr(settings.sectors, sector_name)
 
-    technodata_timeslices = getattr(settings, "technodata_timeslices", None)
-    # normalizes case where technodata is not in own subsection
-    if not hasattr(settings, "technodata") and sector_name is not None:
-        raise MissingSettings(f"Missing technodata section in {sector_name}")
-    elif not hasattr(settings, "technodata"):
-        raise MissingSettings("Missing technodata section")
-    technosettings = undo_damage(settings.technodata)
+    # Legacy: technodata settings could be in a "technodata" section
+    if isinstance(undo_damage(settings.technodata), Mapping):
+        settings = settings.technodata
 
-    if isinstance(technosettings, (str, Path)):
-        technosettings = dict(
-            technodata=technosettings,
-            technodata_timeslices=technodata_timeslices,
-            commodities_in=settings.commodities_in,
-            commodities_out=settings.commodities_out,
-        )
-    else:
-        for comm in ("in", "out"):
-            name = f"commodities_{comm}"
-            if hasattr(settings, comm) and comm in technosettings:
-                raise IncorrectSettings(f"{name} specified twice")
-            elif hasattr(settings, comm):
-                technosettings[name] = getattr(settings, name)
-
-    for name in ("technodata", "commodities_in", "commodities_out"):
-        if name not in technosettings:
-            raise MissingSettings(f"Missing required technodata input {name}")
-        filename = technosettings[name]
-        if not Path(filename).exists():
-            raise IncorrectSettings(f"File {filename} does not exist.")
-        if not Path(filename).is_file():
-            raise IncorrectSettings(f"File {filename} is not a file.")
-
+    # Read technodata
     technologies = read_technologies(
-        technodata_path_or_sector=technosettings.pop("technodata"),
-        technodata_timeslices_path=technosettings.pop("technodata_timeslices", None),
-        comm_out_path=technosettings.pop("commodities_out"),
-        comm_in_path=technosettings.pop("commodities_in"),
-        commodities=commodities,
+        technodata_path=Path(settings.technodata),
+        technodata_timeslices_path=getattr(settings, "technodata_timeslices", None),
+        comm_out_path=Path(settings.commodities_out),
+        comm_in_path=Path(settings.commodities_in),
     ).sel(region=regions)
 
+    # Only keep commodities that are used as inputs or outputs
     ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
     outs = (technologies.fixed_outputs > 0).any(("year", "region", "technology"))
     techcomms = technologies.commodity[ins | outs]
     technologies = technologies.sel(commodity=techcomms)
-    for name, value in technosettings.items():
-        if isinstance(name, (str, Path)):
-            data = read_trade(value, drop="Unit")
-            if "region" in data.dims:
-                data = data.sel(region=regions)
-            if "dst_region" in data.dims:
-                data = data.sel(dst_region=regions)
-                if data.dst_region.size == 1:
-                    data = data.squeeze("dst_region", drop=True)
 
-        else:
-            data = value
-        if isinstance(data, xr.Dataset):
-            technologies = technologies.merge(data)
-        else:
-            technologies[name] = data
+    # Read trade technodata
+    if hasattr(settings, "trade"):
+        trade_data = read_trade_technodata(settings.trade)
+        if "region" in trade_data.dims:
+            trade_data = trade_data.sel(region=regions)
+        if "dst_region" in trade_data.dims:
+            trade_data = trade_data.sel(dst_region=regions)
+            if trade_data.dst_region.size == 1:
+                trade_data = trade_data.squeeze("dst_region", drop=True)
 
-    # make sure technologies includes the requisite years
+        # Drop duplicate data vars before merging
+        common_vars = set(technologies.data_vars) & set(trade_data.data_vars)
+        technologies = technologies.drop_vars(common_vars)
+        technologies = technologies.merge(trade_data)
+
+    # Interpolate technodata to fit simulation timeframe
     maxyear = max(time_framework)
     if technologies.year.max() < maxyear:
         msg = "Forward-filling technodata to fit simulation timeframe"
@@ -637,105 +621,98 @@ def read_technodata(
 
 
 def read_presets_sector(settings: Any, sector_name: str) -> xr.Dataset:
-    """Read data for a preset sector."""
-    from muse.commodities import CommodityUsage
-    from muse.readers import (
-        read_attribute_table,
-        read_macro_drivers,
-        read_presets,
-        read_regression_parameters,
-        read_timeslice_shares,
-    )
-    from muse.regressions import endogenous_demand
-    from muse.timeslices import (
-        TIMESLICE,
-        broadcast_timeslice,
-        distribute_timeslice,
-        drop_timeslice,
-    )
+    """Read data for a preset sector.
+
+    This function reads consumption and supply data for a preset sector from various
+    data sources. It supports multiple input formats including direct consumption data,
+    demand tables, or correlation-based consumption calculated from macro drivers and
+    regression parameters.
+
+    Args:
+        settings: MUSE settings object containing configuration parameters
+        sector_name: Name of the preset sector to read data for
+
+    Returns:
+        xr.Dataset: Dataset containing consumption and supply data for the sector.
+            Costs are initialized to zero.
+    """
+    from muse.readers import read_attribute_table, read_presets
+    from muse.timeslices import distribute_timeslice, drop_timeslice
 
     sector_conf = getattr(settings.sectors, sector_name)
-    presets = xr.Dataset()
 
-    timeslice = TIMESLICE.timeslice
+    # Read consumption data
     if getattr(sector_conf, "consumption_path", None) is not None:
         consumption = read_presets(sector_conf.consumption_path)
-        presets["consumption"] = consumption.assign_coords(timeslice=timeslice)
     elif getattr(sector_conf, "demand_path", None) is not None:
-        presets["consumption"] = read_attribute_table(sector_conf.demand_path)
+        consumption = read_attribute_table(sector_conf.demand_path)
+        if "timeslice" not in consumption.dims:
+            consumption = distribute_timeslice(consumption)
     elif (
         getattr(sector_conf, "macrodrivers_path", None) is not None
         and getattr(sector_conf, "regression_path", None) is not None
     ):
-        macro_drivers = read_macro_drivers(
-            getattr(sector_conf, "macrodrivers_path", None)
-        )
-        regression_parameters = read_regression_parameters(
-            getattr(sector_conf, "regression_path", None)
-        )
-        forecast = getattr(sector_conf, "forecast", 0)
-        if isinstance(forecast, Sequence):
-            forecast = xr.DataArray(
-                forecast, coords={"forecast": forecast}, dims="forecast"
-            )
-        consumption = endogenous_demand(
-            drivers=macro_drivers,
-            regression_parameters=regression_parameters,
-            forecast=forecast,
-        )
-        if hasattr(sector_conf, "filters"):
-            consumption = consumption.sel(sector_conf.filters._asdict())
-        if "sector" in consumption.dims:
-            consumption = consumption.sum("sector")
+        consumption = read_correlation_consumption(sector_conf)
+    else:
+        raise MissingSettings(f"Missing consumption data for sector {sector_name}")
 
-        if getattr(sector_conf, "timeslice_shares_path", None) is not None:
-            assert isinstance(timeslice, xr.DataArray)
-            shares = read_timeslice_shares(sector_conf.timeslice_shares_path)
-            shares = shares.assign_coords(timeslice=timeslice)
-            assert consumption.commodity.isin(shares.commodity).all()
-            assert consumption.region.isin(shares.region).all()
-            consumption = broadcast_timeslice(consumption) * shares.sel(
-                region=consumption.region, commodity=consumption.commodity
-            )
-        presets["consumption"] = consumption
-
-    if getattr(sector_conf, "supply_path", None) is not None:
-        supply = read_presets(sector_conf.supply_path)
-        supply.coords["timeslice"] = presets.timeslice
-        presets["supply"] = supply
-
-    if getattr(sector_conf, "costs_path", None) is not None:
-        presets["costs"] = read_attribute_table(sector_conf.costs_path)
-    elif getattr(sector_conf, "lcoe_path", None) is not None and "supply" in presets:
-        costs = (
-            read_presets(
-                sector_conf.lcoe_path,
-                indices=("RegionName",),
-                columns="timeslices",
-            )
-            * presets["supply"]
-        )
-        presets["costs"] = costs
-
-    if len(presets.data_vars) == 0:
-        raise OSError("None of supply, consumption, costs given")
-
-    # add missing data as zeros: we only need one of consumption, costs, supply
-    components = {"supply", "consumption", "costs"}
-    for component in components:
-        others = components.intersection(presets.data_vars).difference({component})
-        if component not in presets and len(others) > 0:
-            presets[component] = drop_timeslice(xr.zeros_like(presets[others.pop()]))
-
-    # add timeslice, if missing
-    for component in {"supply", "consumption"}:
-        if "timeslice" not in presets[component].dims:
-            presets[component] = distribute_timeslice(presets[component])
-
-    comm_usage = (presets.costs > 0).any(set(presets.costs.dims) - {"commodity"})
-    presets["comm_usage"] = (
-        "commodity",
-        [CommodityUsage.PRODUCT if u else CommodityUsage.OTHER for u in comm_usage],
+    # Create presets dataset
+    presets = xr.Dataset(
+        {
+            "consumption": consumption,
+            "supply": read_presets(sector_conf.supply_path)
+            if getattr(sector_conf, "supply_path", None) is not None
+            else drop_timeslice(xr.zeros_like(consumption)),
+            "costs": drop_timeslice(xr.zeros_like(consumption)),
+        }
     )
-    presets = presets.set_coords("comm_usage")
+
     return presets
+
+
+def read_correlation_consumption(sector_conf: Any) -> xr.Dataset:
+    """Read consumption data for a sector based on correlation files.
+
+    This function calculates endogenous demand for a sector using macro drivers and
+    regression parameters. It applies optional filters, handles sector aggregation,
+    and distributes the consumption across timeslices if timeslice shares are provided.
+
+    Args:
+        sector_conf: Sector configuration object containing paths to macro drivers,
+            regression parameters, and timeslice shares files
+
+    Returns:
+        xr.Dataset: Consumption data distributed across timeslices and regions
+    """
+    from muse.readers import (
+        read_macro_drivers,
+        read_regression_parameters,
+        read_timeslice_shares,
+    )
+    from muse.regressions import endogenous_demand
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
+
+    macro_drivers = read_macro_drivers(sector_conf.macrodrivers_path)
+    regression_parameters = read_regression_parameters(sector_conf.regression_path)
+    consumption = endogenous_demand(
+        drivers=macro_drivers,
+        regression_parameters=regression_parameters,
+        forecast=0,
+    )
+
+    # Legacy: apply filters
+    if hasattr(sector_conf, "filters"):
+        consumption = consumption.sel(sector_conf.filters._asdict())
+
+    # Legacy: we permit regression parameters to split by sector, so have to sum
+    if "sector" in consumption.dims:
+        consumption = consumption.sum("sector")
+
+    # Split by timeslice
+    if sector_conf.timeslice_shares_path is not None:
+        shares = read_timeslice_shares(sector_conf.timeslice_shares_path)
+        consumption = broadcast_timeslice(consumption) * shares
+    else:
+        consumption = distribute_timeslice(consumption)
+
+    return consumption

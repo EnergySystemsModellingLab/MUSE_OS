@@ -8,7 +8,7 @@ In MUSE, an agent-based formulation was originally introduced for the residentia
 commercial building sectors (`Sachs et al. (2019) <https://doi.org/10.1016/j.energy.2019.01.161>`_).  Agents are defined using a CSV file, with
 one agent per row, using a format meant specifically for retrofit
 and new-capacity agent pairs. This CSV file can be read using
-:py:func:`~muse.readers.csv.read_csv_agent_parameters`. The data is also
+:py:func:`~muse.readers.csv.read_agent_parameters`. The data is also
 interpreted to some degree in the factory functions
 :py:func:`~muse.agent.create_retrofit_agent` and
 :py:func:`~muse.agent.create_newcapa_agent`.

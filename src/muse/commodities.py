@@ -4,9 +4,20 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from enum import IntFlag, auto
+from pathlib import Path
 
 from numpy import ndarray
 from xarray import DataArray, Dataset
+
+COMMODITIES: Dataset = None  # type: ignore
+
+
+def setup_module(commodities_path: Path):
+    """Sets up global commodities."""
+    from muse.readers.csv import read_global_commodities
+
+    global COMMODITIES
+    COMMODITIES = read_global_commodities(commodities_path)
 
 
 class CommodityUsage(IntFlag):

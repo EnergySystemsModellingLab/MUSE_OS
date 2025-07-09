@@ -1,9 +1,8 @@
 from itertools import chain, permutations
 from pathlib import Path
-from unittest.mock import patch
 
-import pandas as pd
 import toml
+import xarray as xr
 from pytest import fixture, mark, raises
 
 
@@ -185,43 +184,74 @@ def test_suffix_path_formatting(suffix, tmp_path):
     )
 
 
-def test_check_utilization_not_all_zero_success():
-    """Test validation of non-zero utilization factors."""
-    from muse.readers.csv import _check_utilization_not_all_zero
+def test_check_utilization_and_minimum_service():
+    """Test combined validation of utilization and minimum service factors."""
+    from muse.readers.csv import check_utilization_and_minimum_service_factors
 
-    df = pd.DataFrame(
+    # Test valid case - create dataset with proper dimensions
+    ds = xr.Dataset(
         {
-            "utilization_factor": [0, 1, 1],
-            "technology": ["gas", "gas", "solar"],
-            "region": ["GB", "GB", "FR"],
-            "year": [2010, 2010, 2011],
+            "utilization_factor": xr.DataArray(
+                [[0.5, 0.5], [0.3, 0.7]],
+                dims=["technology", "timeslice"],
+                coords={"technology": ["tech1", "tech2"], "timeslice": [1, 2]},
+            ),
+            "minimum_service_factor": xr.DataArray(
+                [[0.1, 0.1], [0.0, 0.0]],
+                dims=["technology", "timeslice"],
+                coords={"technology": ["tech1", "tech2"], "timeslice": [1, 2]},
+            ),
         }
     )
-    _check_utilization_not_all_zero(df, "file.csv")
+    check_utilization_and_minimum_service_factors(ds)
+
+    # Test utilization below minimum
+    ds = xr.Dataset(
+        {
+            "utilization_factor": xr.DataArray(
+                [[0.5, 0.5], [0.3, 0.7]],
+                dims=["technology", "timeslice"],
+                coords={"technology": ["tech1", "tech2"], "timeslice": [1, 2]},
+            ),
+            "minimum_service_factor": xr.DataArray(
+                [[0.6, 0.1], [0.0, 0.0]],
+                dims=["technology", "timeslice"],
+                coords={"technology": ["tech1", "tech2"], "timeslice": [1, 2]},
+            ),
+        }
+    )
+    with raises(ValueError):
+        check_utilization_and_minimum_service_factors(ds)
+
+    # Test missing utilization factor
+    ds = xr.Dataset(
+        {
+            "technology": xr.DataArray(
+                ["tech1", "tech2"],
+                dims=["technology"],
+                coords={"technology": ["tech1", "tech2"]},
+            ),
+        }
+    )
+    with raises(ValueError):
+        check_utilization_and_minimum_service_factors(ds)
 
 
 def test_check_utilization_not_all_zero_fail():
     """Test validation fails when all utilization factors are zero."""
-    from muse.readers.csv import _check_utilization_not_all_zero
+    from muse.readers.csv import check_utilization_and_minimum_service_factors
 
-    df = pd.DataFrame(
+    ds = xr.Dataset(
         {
-            "utilization_factor": [0, 0, 1],
-            "technology": ["gas", "gas", "solar"],
-            "region": ["GB", "GB", "FR"],
-            "year": [2010, 2010, 2011],
+            "utilization_factor": xr.DataArray(
+                [[0.0, 0.0], [0.3, 0.7]],
+                dims=["technology", "timeslice"],
+                coords={"technology": ["tech1", "tech2"], "timeslice": [1, 2]},
+            ),
         }
     )
     with raises(ValueError):
-        _check_utilization_not_all_zero(df, "file.csv")
-
-
-def test_check_utilization_in_range_success():
-    """Test validation of utilization factors within valid range."""
-    from muse.readers.csv import _check_utilization_in_range
-
-    df = pd.DataFrame({"utilization_factor": [0, 1]})
-    _check_utilization_in_range(df, "file.csv")
+        check_utilization_and_minimum_service_factors(ds)
 
 
 @mark.parametrize(
@@ -229,92 +259,16 @@ def test_check_utilization_in_range_success():
 )
 def test_check_utilization_in_range_fail(values):
     """Test validation fails for utilization factors outside valid range."""
-    from muse.readers.csv import _check_utilization_in_range
-
-    df = pd.DataFrame({"utilization_factor": values})
-    with raises(ValueError):
-        _check_utilization_in_range(df, "file.csv")
-
-
-def test_check_utilization_and_minimum_service():
-    """Test combined validation of utilization and minimum service factors."""
     from muse.readers.csv import check_utilization_and_minimum_service_factors
 
-    # Test valid case
-    df = pd.DataFrame(
+    ds = xr.Dataset(
         {
-            "utilization_factor": [0, 1],
-            "minimum_service_factor": [0, 0],
-            "technology": ["tech1", "tech1"],
-            "region": ["R1", "R1"],
-            "year": [2020, 2020],
-        }
-    )
-    check_utilization_and_minimum_service_factors(df, "file.csv")
-
-    # Test utilization below minimum
-    df = pd.DataFrame(
-        {
-            "utilization_factor": [0, 1],
-            "minimum_service_factor": [0.1, 0],
-            "technology": ["tech1", "tech1"],
-            "region": ["R1", "R1"],
-            "year": [2020, 2020],
+            "utilization_factor": xr.DataArray(
+                list(values),
+                dims=["timeslice"],
+                coords={"timeslice": range(len(values))},
+            ),
         }
     )
     with raises(ValueError):
-        check_utilization_and_minimum_service_factors(df, "file.csv")
-
-    # Test missing utilization factor
-    df = pd.DataFrame(
-        {"technology": ["tech1", "tech2"], "region": ["R1", "R2"], "year": [2020, 2021]}
-    )
-    with raises(ValueError):
-        check_utilization_and_minimum_service_factors(df, "file.csv")
-
-
-@mark.parametrize(
-    "values", chain.from_iterable(permutations((0, bad)) for bad in (-1, 2))
-)
-def test_check_minimum_service_factors_in_range(values):
-    """Test validation of minimum service factors within valid range."""
-    from muse.readers.csv import _check_minimum_service_factors_in_range
-
-    df = pd.DataFrame({"minimum_service_factor": values})
-    with raises(ValueError):
-        _check_minimum_service_factors_in_range(df, "file.csv")
-
-
-@patch("muse.readers.csv._check_utilization_in_range")
-@patch("muse.readers.csv._check_utilization_not_all_zero")
-@patch("muse.readers.csv._check_utilization_not_below_minimum")
-@patch("muse.readers.csv._check_minimum_service_factors_in_range")
-def test_check_utilization_and_minimum_service_factors_mocked(*mocks):
-    """Test all validation checks are called with correct parameters."""
-    from muse.readers.csv import check_utilization_and_minimum_service_factors
-
-    df = pd.DataFrame(
-        {"utilization_factor": [0, 0, 1], "minimum_service_factor": [0, 0, 0]}
-    )
-    check_utilization_and_minimum_service_factors(df, "file.csv")
-    for mock in mocks:
-        mock.assert_called_once_with(df, ["file.csv"])
-
-
-@patch("muse.readers.csv._check_utilization_in_range")
-@patch("muse.readers.csv._check_utilization_not_all_zero")
-@patch("muse.readers.csv._check_utilization_not_below_minimum")
-@patch("muse.readers.csv._check_minimum_service_factors_in_range")
-def test_check_utilization_no_min_service(
-    min_service_factor_mock, utilization_below_min_mock, *mocks
-):
-    """Test validation when minimum service factors are not present."""
-    from muse.readers.csv import check_utilization_and_minimum_service_factors
-
-    df = pd.DataFrame({"utilization_factor": [0, 0, 1]})
-    check_utilization_and_minimum_service_factors(df, "file.csv")
-
-    for mock in mocks:
-        mock.assert_called_once_with(df, ["file.csv"])
-    min_service_factor_mock.assert_not_called()
-    utilization_below_min_mock.assert_not_called()
+        check_utilization_and_minimum_service_factors(ds)

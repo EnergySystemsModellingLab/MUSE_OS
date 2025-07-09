@@ -12,17 +12,6 @@ that the agent share names match those specified in your agents file.
         return self.msg
 
 
-class UnitsConflictInCommodities(Exception):
-    """Indicates that there is a conflict in the commodity units between files."""
-
-    msg = """The units of “CommIn” “CommOut” and “GlobalCommodities” files must be the
-same, including the casing. Check the consistency of the units across those three files.
-"""
-
-    def __str__(self):
-        return self.msg
-
-
 class GrowthOfCapacityTooConstrained(Exception):
     """Indicates that the investment step failed because capacity could not grow."""
 
