@@ -114,11 +114,11 @@ def test_add_new_process(model_path):
 
 def test_add_price_data_for_new_year(model_path):
     """Test the add_price_data_for_new_year function on the default model."""
-    add_price_data_for_new_year(model_path, "2030", "power", "2020")
+    add_price_data_for_new_year(model_path, 2030, "power", 2020)
 
     files_to_check = ["Technodata.csv", "CommIn.csv", "CommOut.csv"]
     for file in files_to_check:
-        assert_values_in_csv(model_path / "power" / file, "Time", ["2030"])
+        assert_values_in_csv(model_path / "power" / file, "Time", [2030])
 
 
 def test_add_agent(model_path_retro):

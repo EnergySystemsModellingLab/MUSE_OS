@@ -108,7 +108,6 @@ def test_read_initial_capacity_csv(model_path):
         "2035",
         "2050",
         "2045",
-        "unit",
         "2040",
         "2020",
     }
@@ -185,7 +184,6 @@ def test_read_macro_drivers_csv(correlation_model_path):
         "variable",
     }
     extra_columns = {
-        "unit",
         *[str(year) for year in range(2010, 2111)],
     }
     assert set(macro_df.columns) == mandatory_columns | extra_columns
@@ -271,5 +269,5 @@ def test_read_trade_technodata(trade_model_path):
     trade_path = trade_model_path / "power" / "TradeTechnodata.csv"
     trade_df = read_trade_technodata_csv(trade_path)
     mandatory_columns = {"technology", "region", "parameter"}
-    extra_columns = {"unit", "r1", "r2"}
+    extra_columns = {"r1", "r2"}
     assert set(trade_df.columns) == mandatory_columns | extra_columns
