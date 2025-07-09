@@ -484,6 +484,18 @@ def sort_sectors(settings: dict) -> None:
 
 
 @register_settings_hook
+def check_currency(settings: dict) -> None:
+    """Raise a warning if no currency is specified."""
+    if not settings.get("currency", None):
+        msg = (
+            "No currency specified. Please specify a currency in the settings file "
+            "using the 'currency' parameter."
+        )
+        getLogger(__name__).warning(msg)
+        return
+
+
+@register_settings_hook
 def check_deprecated_params(settings: dict) -> None:
     """Check for and warn about deprecated parameters."""
     deprecated_params = ["foresight", "interest_rate"]

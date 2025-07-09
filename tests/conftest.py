@@ -109,8 +109,6 @@ def compare_dirs() -> Callable:
                 assert actual_filename.exists()
                 assert actual_filename.is_file()
                 actual = read_csv(actual_filename)
-                if "units_prices" in expected.columns:  # TODO: this is temporary
-                    expected.drop(columns=["units_prices"], inplace=True)
                 try:
                     compare_df(expected, actual, msg=filename, **kwargs)
                 except Exception:

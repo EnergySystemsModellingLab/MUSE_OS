@@ -2,6 +2,7 @@ plugins = "{path}/new_decision.py"
 # Global settings - most REQUIRED
 time_framework = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
 regions = ["R1"]
+currency = 'MUS$2010'
 interpolation_mode = 'linear'
 log_level = 'info'
 excluded_commodities = ["wind", "solar"]
