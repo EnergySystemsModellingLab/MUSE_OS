@@ -671,6 +671,10 @@ def process_technologies(
         technodata = technodata.drop_vars("utilization_factor")
         technodata = technodata.merge(technodata_timeslices)
 
+    # Add year dimension if not present
+    if "year" not in technodata.dims:
+        technodata["year"] = ("year", time_framework)
+
     # Check commodities
     technodata = check_commodities(technodata, fill_missing=False)
 
