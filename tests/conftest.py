@@ -290,6 +290,7 @@ def technologies(coords) -> Dataset:
 
     result["utilization_factor"] = var("technology", "region", "year", factor=0.05)
     result.utilization_factor.values += 0.95
+    result["minimum_service_factor"] = 0 * result.utilization_factor
     result["fix_par"] = var("technology", "region", "year", factor=2.0)
     result["cap_par"] = var("technology", "region", "year", factor=30.0)
     result["var_par"] = var("technology", "region", "year", factor=1.0)
