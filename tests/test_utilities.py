@@ -323,8 +323,8 @@ def test_interpolate_technodata():
     time_framework = [2022, 2027]
     result = interpolate_technodata(data, time_framework)
     assert set(result.year.values) == {2020, 2022, 2025, 2027, 2030}
-    assert (
-        result.efficiency.sel(technology="tech1", year=2022) == approx(0.82)
+    assert result.efficiency.sel(technology="tech1", year=2022) == approx(
+        0.82
     )  # Linear interpolation
 
     # Test 2: Forward extrapolation (time_framework extends beyond data)
