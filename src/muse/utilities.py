@@ -626,6 +626,16 @@ def interpolate_technodata(
 ) -> xr.Dataset:
     """Interpolates technologies data to a given time framework.
 
+    The approach depends on the format of the data:
+    - If the original data contains data for more than one year, then data will be
+    interpolated with flat back/forward extension to cover the time period.
+    - If the original data does not have a "year" dimension, or only has data for a
+    single year, then this data will not be modified or duplicated, but a dummy
+    "year" dimension covering the time framework will be added.
+
+    In both cases, data for any year in the time framework can be selected
+    using data.sel(year=year) on the returned dataset.
+
     Args:
         data: Dataset to interpolate
         time_framework: List of years to interpolate to
@@ -634,10 +644,13 @@ def interpolate_technodata(
     """
     # If the data has only one year then no interpolation is needed,  we just need to
     # add a year dimension with the time framework
-    if len(data.year) == 1:
-        data = data.isel(year=0, drop=True)
     if "year" not in data.dims:
         data = data.copy()
+        data["year"] = ("year", time_framework)
+        return data
+
+    if len(data.year) == 1:
+        data = data.isel(year=0, drop=True)
         data["year"] = ("year", time_framework)
         return data
 

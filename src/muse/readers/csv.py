@@ -636,6 +636,16 @@ def process_technologies(
         )
     outs = outs.drop_vars("flexible_outputs")
 
+    # Collect all years from the time framework and data files
+    time_framework = list(
+        set(time_framework).union(
+            technodata.year.values.tolist(),
+            ins.year.values.tolist(),
+            outs.year.values.tolist(),
+            technodata_timeslices.year.values.tolist() if technodata_timeslices else [],
+        )
+    )
+
     # Interpolate data to match the time framework
     technodata = interpolate_technodata(technodata, time_framework, interpolation_mode)
     outs = interpolate_technodata(outs, time_framework, interpolation_mode)
