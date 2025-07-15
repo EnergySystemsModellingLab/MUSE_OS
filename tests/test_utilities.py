@@ -307,3 +307,43 @@ def test_check_dimensions():
     # Test extra dimension
     with raises(ValueError, match="Extra dimensions"):
         check_dimensions(data, required=["dim1"])
+
+
+def test_interpolate_technodata():
+    """Test interpolate_technodata function for all essential scenarios."""
+    from muse.utilities import interpolate_technodata
+
+    # Create test data
+    data = xr.Dataset(
+        {"efficiency": (["technology", "year"], [[0.8, 0.85, 0.9], [0.7, 0.75, 0.8]])},
+        coords={"technology": ["tech1", "tech2"], "year": [2020, 2025, 2030]},
+    )
+
+    # Test 1: Basic interpolation
+    time_framework = [2022, 2027]
+    result = interpolate_technodata(data, time_framework)
+    assert set(result.year.values) == {2020, 2022, 2025, 2027, 2030}
+    assert (
+        result.efficiency.sel(technology="tech1", year=2022) == approx(0.82)
+    )  # Linear interpolation
+
+    # Test 2: Forward extrapolation (time_framework extends beyond data)
+    result_forward = interpolate_technodata(data, [2035, 2040])
+    assert 2040 in result_forward.year.values
+    assert (
+        result_forward.efficiency.sel(technology="tech1", year=2035) == 0.9
+    )  # Flat forward fill
+
+    # Test 3: Backward extrapolation (time_framework starts before data)
+    result_backward = interpolate_technodata(data, [2010, 2015])
+    assert 2010 in result_backward.year.values
+    assert (
+        result_backward.efficiency.sel(technology="tech1", year=2010) == 0.8
+    )  # Flat backward fill
+
+    # Test 4: Error case - no year dimension
+    data_no_year = xr.Dataset(
+        {"efficiency": (["technology"], [0.8])}, coords={"technology": ["tech1"]}
+    )
+    with raises(ValueError, match="Data must have a 'year' dimension"):
+        interpolate_technodata(data_no_year, [2025])

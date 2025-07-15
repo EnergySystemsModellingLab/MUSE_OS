@@ -621,7 +621,7 @@ def check_dimensions(
 
 def interpolate_technodata(
     data: xr.Dataset,
-    time_framework: list[int] | None = None,
+    time_framework: list[int],
     interpolation_mode: str = "linear",
 ) -> xr.Dataset:
     """Interpolates technologies data to a given time framework.
@@ -631,8 +631,6 @@ def interpolate_technodata(
         time_framework: List of years to interpolate to
         interpolation_mode: Interpolation mode to use
     """
-    if time_framework is None:
-        return data
     if "year" not in data.dims:
         raise ValueError("Data must have a 'year' dimension to interpolate over")
 
