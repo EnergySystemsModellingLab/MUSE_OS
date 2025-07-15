@@ -329,7 +329,14 @@ def read_csv(
     with open(path) as f:
         next(f)  # Skip header row
         first_data_row = f.readline().strip()
-    skiprows = [1] if first_data_row.startswith("Unit") else None
+    if first_data_row.startswith("Unit"):
+        getLogger(__name__).warning(
+            "Units rows are no longer supported. Please remove the units row from "
+            f"{path}."
+        )
+        skiprows = [1]
+    else:
+        skiprows = None
 
     # Read the file
     data = pd.read_csv(
@@ -412,25 +419,22 @@ def read_technodictionary_csv(path: Path) -> pd.DataFrame:
 
     # Check for deprecated columns
     if "fuel" in data.columns:
-        msg = (
+        getLogger(__name__).warning(
             f"The 'Fuel' column in {path} has been deprecated. "
             "This information is now determined from CommIn files. "
             "Please remove this column from your Technodata files."
         )
-        getLogger(__name__).warning(msg)
     if "end_use" in data.columns:
-        msg = (
+        getLogger(__name__).warning(
             f"The 'EndUse' column in {path} has been deprecated. "
             "This information is now determined from CommOut files. "
             "Please remove this column from your Technodata files."
         )
-        getLogger(__name__).warning(msg)
     if "scaling_size" in data.columns:
-        msg = (
+        getLogger(__name__).warning(
             f"The 'ScalingSize' column in {path} has been deprecated. "
             "Please remove this column from your Technodata files."
         )
-        getLogger(__name__).warning(msg)
 
     return data
 
@@ -727,11 +731,10 @@ def read_global_commodities_csv(path: Path) -> pd.DataFrame:
 
     # Raise warning if units are not defined
     if "unit" not in data.columns:
-        msg = (
+        getLogger(__name__).warning(
             "No units defined for commodities. Please define units for all commodities "
-            "in the global commodities file."
+            f"in {path}."
         )
-        getLogger(__name__).warning(msg)
 
     return data
 
@@ -771,11 +774,10 @@ def read_agent_parameters_csv(path: Path) -> pd.DataFrame:
     if "type" in data.columns:
         retrofit_agents = data[data.type.str.lower().isin(["retrofit", "retro"])]
         if not retrofit_agents.empty:
-            msg = (
+            getLogger(__name__).warning(
                 "Retrofit agents will be deprecated in a future release. "
-                "Please modify your model to use only agents of the 'New' type."
+                f"Please modify {path} to use only agents of the 'New' type."
             )
-            getLogger(__name__).warning(msg)
 
     # Legacy: drop AgentNumber column
     if "agent_number" in data.columns:
