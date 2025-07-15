@@ -194,10 +194,7 @@ class Sector(AbstractSector):  # type: ignore
         )
 
         # Select technology data from the investment year
-        if "year" in self.technologies.dims:
-            techs = self.technologies.sel(year=investment_year, drop=True)
-        else:
-            techs = self.technologies
+        techs = self.technologies.sel(year=investment_year, drop=True)
 
         # Perform investments
         for subsector in self.subsectors:

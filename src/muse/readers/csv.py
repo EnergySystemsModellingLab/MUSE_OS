@@ -453,10 +453,6 @@ def process_technodictionary(data: pd.DataFrame) -> xr.Dataset:
     if "type" in result.variables:
         result["tech_type"] = result.type.isel(region=0, year=0)
 
-    # Drop year dimension if there's only data for one year
-    if len(result.year) == 1:
-        result = result.isel(year=0, drop=True)
-
     return result
 
 
@@ -508,10 +504,6 @@ def process_technodata_timeslices(data: pd.DataFrame) -> xr.Dataset:
     if all(level in result.dims for level in timeslice_levels):
         result = result.stack(timeslice=timeslice_levels)
     result = sort_timeslices(result)
-
-    # Drop year dimension if there's only data for one year
-    if len(result.year) == 1:
-        result = result.isel(year=0, drop=True)
 
     return result
 
@@ -572,10 +564,6 @@ def process_io_technodata(data: pd.DataFrame) -> xr.Dataset:
     else:
         result["flexible"] = xr.zeros_like(result.fixed).rename("flexible")
 
-    # Drop year dimension if there's only data for one year
-    if len(result.year) == 1:
-        result = result.isel(year=0, drop=True)
-
     return result
 
 
@@ -583,9 +571,9 @@ def read_technologies(
     technodata_path: Path,
     comm_out_path: Path,
     comm_in_path: Path,
-    technodata_timeslices_path: Path | None = None,
-    time_framework: list[int] | None = None,
+    time_framework: list[int],
     interpolation_mode: str = "linear",
+    technodata_timeslices_path: Path | None = None,
 ) -> xr.Dataset:
     """Reads and processes technology data from multiple CSV files.
 
@@ -595,9 +583,9 @@ def read_technologies(
         technodata_path: path to the technodata file
         comm_out_path: path to the comm_out file
         comm_in_path: path to the comm_in file
-        technodata_timeslices_path: path to the technodata_timeslices file
         time_framework: list of years to interpolate data to
         interpolation_mode: Interpolation mode to use
+        technodata_timeslices_path: path to the technodata_timeslices file
 
     Returns:
         xr.Dataset: Dataset containing the processed technology data. Any fields
@@ -619,9 +607,9 @@ def read_technologies(
         technodata,
         comm_out,
         comm_in,
-        technodata_timeslices,
         time_framework,
         interpolation_mode,
+        technodata_timeslices,
     )
 
 
@@ -629,9 +617,9 @@ def process_technologies(
     technodata: xr.Dataset,
     comm_out: xr.Dataset,
     comm_in: xr.Dataset,
-    technodata_timeslices: xr.Dataset | None = None,
-    time_framework: list[int] | None = None,
+    time_framework: list[int],
     interpolation_mode: str = "linear",
+    technodata_timeslices: xr.Dataset | None = None,
 ) -> xr.Dataset:
     """Processes technology data DataFrames into an xarray Dataset."""
     from muse.commodities import COMMODITIES, CommodityUsage
@@ -648,17 +636,11 @@ def process_technologies(
         )
     outs = outs.drop_vars("flexible_outputs")
 
-    # Interpolate data if needed
-    # All data with a year dimension must match the time framework
-    if "year" in technodata.dims:
-        technodata = interpolate_technodata(
-            technodata, time_framework, interpolation_mode
-        )
-    if "year" in outs.dims:
-        outs = interpolate_technodata(outs, time_framework, interpolation_mode)
-    if "year" in ins.dims:
-        ins = interpolate_technodata(ins, time_framework, interpolation_mode)
-    if technodata_timeslices and "year" in technodata_timeslices.dims:
+    # Interpolate data to match the time framework
+    technodata = interpolate_technodata(technodata, time_framework, interpolation_mode)
+    outs = interpolate_technodata(outs, time_framework, interpolation_mode)
+    ins = interpolate_technodata(ins, time_framework, interpolation_mode)
+    if technodata_timeslices:
         technodata_timeslices = interpolate_technodata(
             technodata_timeslices, time_framework, interpolation_mode
         )
@@ -670,10 +652,6 @@ def process_technologies(
     if technodata_timeslices:
         technodata = technodata.drop_vars("utilization_factor")
         technodata = technodata.merge(technodata_timeslices)
-
-    # Add year dimension if not present
-    if "year" not in technodata.dims:
-        technodata["year"] = ("year", time_framework)
 
     # Check commodities
     technodata = check_commodities(technodata, fill_missing=False)
@@ -901,6 +879,7 @@ def read_initial_market(
         projections_path: path to the projections file
         base_year_import_path: path to the base year import file (optional)
         base_year_export_path: path to the base year export file (optional)
+        currency: currency string (e.g. "USD")
 
     Returns:
         xr.Dataset: Dataset containing initial market data.

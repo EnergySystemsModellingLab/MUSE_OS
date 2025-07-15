@@ -627,12 +627,19 @@ def interpolate_technodata(
     """Interpolates technologies data to a given time framework.
 
     Args:
-        data: DataArray or Dataset to interpolate
+        data: Dataset to interpolate
         time_framework: List of years to interpolate to
-        interpolation_mode: Interpolation mode to use
+        interpolation_mode: Interpolation mode to use. Must be one of:
+            "linear", "nearest", "zero", "slinear", "quadratic", "cubic"
     """
+    # If the data has only one year then no interpolation is needed,  we just need to
+    # add a year dimension with the time framework
+    if len(data.year) == 1:
+        data = data.isel(year=0, drop=True)
     if "year" not in data.dims:
-        raise ValueError("Data must have a 'year' dimension to interpolate over")
+        data = data.copy()
+        data["year"] = ("year", time_framework)
+        return data
 
     # Flat forward extrapolation
     maxyear = max(time_framework)
