@@ -76,5 +76,4 @@ The remaining columns should contain the full list of commodities.
 
 The input data has to be provided for the base year. Additional years within the time
 framework of the overall simulation can be defined. In this case, MUSE would interpolate
-the values between the provided periods and assume a constant value afterwards. The additional
-years at which input data for input/output commodities, are defined needs to equal for :ref:`inputs-technodata` and :ref:`inputs-technodata-ts`.
+the values between the provided periods and assume a constant value afterwards.

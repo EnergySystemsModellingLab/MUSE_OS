@@ -398,6 +398,7 @@ def read_technodictionary_csv(path: Path) -> pd.DataFrame:
         "fix_exp",
         "interest_rate",
         "utilization_factor",
+        "minimum_service_factor",
         "year",
         "cap_par",
         "var_exp",
@@ -656,10 +657,20 @@ def process_technologies(
     # Merge inputs/outputs with technodata
     technodata = technodata.merge(outs).merge(ins)
 
-    # Process timeslices if provided
+    # Merge technodata_timeslices if provided. This will prioritise values defined in
+    # technodata_timeslices, and fallback to the non-timesliced technodata for any
+    # values that are not defined in technodata_timeslices.
     if technodata_timeslices:
-        technodata = technodata.drop_vars("utilization_factor")
-        technodata = technodata.merge(technodata_timeslices)
+        technodata["utilization_factor"] = (
+            technodata_timeslices.utilization_factor.combine_first(
+                technodata.utilization_factor
+            )
+        )
+        technodata["minimum_service_factor"] = (
+            technodata_timeslices.minimum_service_factor.combine_first(
+                technodata.minimum_service_factor
+            )
+        )
 
     # Check commodities
     technodata = check_commodities(technodata, fill_missing=False)
