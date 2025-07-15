@@ -333,10 +333,6 @@ def minimum_production(
     from muse.commodities import is_enduse
 
     capa = capacity.sel(**{k: v for k, v in filters.items() if k in capacity.dims})
-
-    if "minimum_service_factor" not in technologies:
-        return broadcast_timeslice(xr.zeros_like(capa), level=timeslice_level)
-
     ftechs = technologies.sel(
         **{k: v for k, v in filters.items() if k in technologies.dims}
     )

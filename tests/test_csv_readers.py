@@ -347,6 +347,7 @@ def test_read_technodictionary(model_path):
             "total_capacity_limit": "int64",
             "technical_life": "int64",
             "utilization_factor": "float64",
+            "minimum_service_factor": "float64",
             "efficiency": "int64",
             "interest_rate": "float64",
             "type": "object",
@@ -387,6 +388,7 @@ def test_read_technodictionary(model_path):
         "total_capacity_limit": 100,
         "technical_life": 35,
         "utilization_factor": 0.9,
+        "minimum_service_factor": 0.0,
         "efficiency": 86,
         "interest_rate": 0.1,
         "type": "energy",
@@ -415,8 +417,8 @@ def test_read_technodata_timeslices(timeslice_model_path):
             "hour": CoordinateSchema(("timeslice",), dtype="object"),
         },
         data_vars={
-            "utilization_factor": "int64",
-            "minimum_service_factor": "int64",
+            "utilization_factor": "float64",
+            "minimum_service_factor": "float64",
         },
     )
     assert DatasetSchema.from_ds(data) == expected_schema
@@ -441,7 +443,7 @@ def test_read_technodata_timeslices(timeslice_model_path):
         "timeslice": ("all-year", "all-week", "night"),
         "year": 2020,
     }
-    expected = {"utilization_factor": 1, "minimum_service_factor": 0}
+    expected = {"utilization_factor": 1.0, "minimum_service_factor": 0.0}
     assert_single_coordinate(data, coord, expected)
 
 
@@ -794,6 +796,7 @@ def test_read_technologies(model_path):
             "total_capacity_limit": "int64",
             "technical_life": "int64",
             "utilization_factor": "float64",
+            "minimum_service_factor": "float64",
             "efficiency": "int64",
             "interest_rate": "float64",
             "type": "object",
@@ -869,8 +872,8 @@ def test_read_technologies__timeslice(timeslice_model_path):
             "fixed_outputs": "float64",
             "fixed_inputs": "float64",
             "flexible_inputs": "float64",
-            "utilization_factor": "int64",
-            "minimum_service_factor": "int64",
+            "utilization_factor": "float64",
+            "minimum_service_factor": "float64",
             "emmission_factor": "float64",
             "heat_rate": "int64",
             "unit": "object",
@@ -924,6 +927,7 @@ def test_read_technodata(model_path):
             "total_capacity_limit": "int64",
             "technical_life": "int64",
             "utilization_factor": "float64",
+            "minimum_service_factor": "float64",
             "efficiency": "int64",
             "interest_rate": "float64",
             "type": "object",
@@ -981,6 +985,7 @@ def test_read_technodata__trade(trade_model_path):
             "var_exp": "int64",
             "technical_life": "int64",
             "utilization_factor": "float64",
+            "minimum_service_factor": "float64",
             "efficiency": "int64",
             "interest_rate": "float64",
             "type": "object",

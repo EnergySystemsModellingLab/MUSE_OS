@@ -47,7 +47,7 @@ def model_data():
     technologies = residential.technologies.squeeze("region").sel(year=INVESTMENT_YEAR)
     assets = next(a.assets for a in residential.agents)
 
-    # Add minimum service factor data to allow calculation of the constraint
+    # Add nonzero minimum service factor data to allow calculation of the constraint
     technologies["minimum_service_factor"] = 0.1 * xr.ones_like(
         technologies.technology, dtype=float
     )
@@ -252,8 +252,9 @@ def test_max_capacity_expansion_seed(model_data):
 
 
 def test_no_minimum_service(model_data):
-    """Checking that the constraint is None when no minimum service factor is set."""
-    technologies = model_data["technologies"].drop_vars("minimum_service_factor")
+    """Checking that the constraint is None when minimum service factor is set to 0."""
+    technologies = model_data["technologies"].copy()
+    technologies["minimum_service_factor"] = 0
     assert minimum_service(**{**model_data, "technologies": technologies}) is None
 
 

@@ -44,4 +44,4 @@ framework of the overall simulation can be defined. In this case, MUSE would int
 the values between the provided periods and assume a constant value afterwards.
 
 Utilization factors and minimum service factors defined in this file will override any values defined in the technodata file.
-If data for a particular region/process is not defined in this file, then the values defined in the technodata file will be used.
+If data for a particular region/process is not defined in this file, then the values defined in the technodata file will be used for all timeslices.
