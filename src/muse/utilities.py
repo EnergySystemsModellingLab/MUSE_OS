@@ -617,3 +617,38 @@ def check_dimensions(
     extra = present - set(required) - set(optional)
     if extra:
         raise ValueError(f"Extra dimensions: {extra}")
+
+
+def interpolate_technodata(
+    data: xr.Dataset,
+    time_framework: list[int] | None = None,
+    interpolation_mode: str = "linear",
+) -> xr.Dataset:
+    """Interpolates technologies data to a given time framework.
+
+    Args:
+        data: DataArray or Dataset to interpolate
+        time_framework: List of years to interpolate to
+        interpolation_mode: Interpolation mode to use
+    """
+    if time_framework is None:
+        return data
+    if "year" not in data.dims:
+        raise ValueError("Data must have a 'year' dimension to interpolate over")
+
+    # Flat forward extrapolation
+    maxyear = max(time_framework)
+    if data.year.max() < maxyear:
+        years = [*data.year.values.tolist(), maxyear]
+        data = data.reindex(year=years, method="ffill")
+
+    # Flat backward extrapolation
+    minyear = min(time_framework)
+    if data.year.min() > minyear:
+        years = [minyear, *data.year.values.tolist()]
+        data = data.reindex(year=years, method="bfill")
+
+    # Interpolation to fill gaps
+    years = sorted(set(time_framework).union(data.year.values.tolist()))
+    data = data.interp(year=years, method=interpolation_mode)
+    return data
