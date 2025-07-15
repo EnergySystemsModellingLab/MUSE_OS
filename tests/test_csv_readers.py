@@ -1010,7 +1010,7 @@ def test_read_technodata__trade(trade_model_path):
             "region": ["r1", "r2"],
             "dst_region": ["r1", "r2"],
             "comm_usage": [10, 9, 6, 9],
-            "year": [2020, 2025, 2030, 2035],
+            "year": [2010, 2020, 2025, 2030, 2035],
         },
     )
 
