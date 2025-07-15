@@ -33,15 +33,15 @@ hour
    represents the third level of the timeslice.
 
 UtilizationFactor
-   represents the maximum actual output of the technology in a timeslice, divided by the theoretical maximum output if the technology were operating at full capacity for the whole timeslice. Must be between 0 and 1. This overwrites the UtilizationFactor in the technodata file.
+   represents the maximum actual output of the technology in a timeslice, divided by the theoretical maximum output if the technology were operating at full capacity for the whole timeslice. Must be between 0 and 1 (default = 1).
 
 MinimumServiceFactor
-   represents the minimum service that a technology can output. For instance, the minimum amount of electricity that can be output from a nuclear power plant at a particular timeslice.
+   represents the minimum service that a technology can output. For instance, the minimum amount of electricity that can be output from a nuclear power plant at a particular timeslice. Must be between 0 and 1 (default = 0).
 
 
 The input data has to be provided for the base year. Additional years within the time
 framework of the overall simulation can be defined. In this case, MUSE would interpolate
 the values between the provided periods and assume a constant value afterwards.
 
-Utilization factors and minimum service factors defined in this file will override any values defined in the technodata file.
+Utilization factors and minimum service factors defined in this file will override any values defined in the technodata file for all years of the simulation.
 If data for a particular region/process is not defined in this file, then the values defined in the technodata file will be used for all timeslices.
