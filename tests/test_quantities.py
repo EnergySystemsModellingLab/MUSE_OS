@@ -137,7 +137,7 @@ def test_emission(production: xr.DataArray, technologies: xr.Dataset):
 def test_min_production(technologies: xr.Dataset, capacity: xr.DataArray, timeslice):
     """Test minimum production quantity."""
     # Test without minimum service factor
-    assert "minimum_service_factor" not in technologies
+    technologies["minimum_service_factor"] = 0
     assert (minimum_production(technologies, capacity) == 0).all()
 
     # Test with minimum service factor

@@ -240,7 +240,7 @@ def convert_column_types(data: pd.DataFrame) -> pd.DataFrame:
                 if expected_type is int:
                     result[column] = pd.to_numeric(result[column], downcast="integer")
                 elif expected_type is float:
-                    result[column] = pd.to_numeric(result[column])
+                    result[column] = pd.to_numeric(result[column]).astype(float)
                 elif expected_type is str:
                     result[column] = result[column].astype(str)
             except (ValueError, TypeError) as e:
@@ -398,6 +398,7 @@ def read_technodictionary_csv(path: Path) -> pd.DataFrame:
         "fix_exp",
         "interest_rate",
         "utilization_factor",
+        "minimum_service_factor",
         "year",
         "cap_par",
         "var_exp",
@@ -621,6 +622,7 @@ def process_technologies(
 ) -> xr.Dataset:
     """Processes technology data DataFrames into an xarray Dataset."""
     from muse.commodities import COMMODITIES, CommodityUsage
+    from muse.timeslices import drop_timeslice
     from muse.utilities import interpolate_technodata
 
     # Process inputs/outputs
@@ -656,10 +658,20 @@ def process_technologies(
     # Merge inputs/outputs with technodata
     technodata = technodata.merge(outs).merge(ins)
 
-    # Process timeslices if provided
+    # Merge technodata_timeslices if provided. This will prioritise values defined in
+    # technodata_timeslices, and fallback to the non-timesliced technodata for any
+    # values that are not defined in technodata_timeslices.
     if technodata_timeslices:
-        technodata = technodata.drop_vars("utilization_factor")
-        technodata = technodata.merge(technodata_timeslices)
+        technodata["utilization_factor"] = (
+            technodata_timeslices.utilization_factor.combine_first(
+                technodata.utilization_factor
+            )
+        )
+        technodata["minimum_service_factor"] = drop_timeslice(
+            technodata_timeslices.minimum_service_factor.combine_first(
+                technodata.minimum_service_factor
+            )
+        )
 
     # Check commodities
     technodata = check_commodities(technodata, fill_missing=False)
@@ -1406,8 +1418,7 @@ def check_utilization_and_minimum_service_factors(data: xr.Dataset) -> None:
     """Check utilization and minimum service factors in an xarray dataset.
 
     Args:
-        data: xarray Dataset containing utilization_factor and optionally
-            minimum_service_factor
+        data: xarray Dataset containing utilization_factor and minimum_service_factor
     """
     if "utilization_factor" not in data.data_vars:
         raise ValueError(
@@ -1433,17 +1444,16 @@ def check_utilization_and_minimum_service_factors(data: xr.Dataset) -> None:
             "Utilization factor values must all be between 0 and 1 inclusive."
         )
 
-    if "minimum_service_factor" in data.data_vars:
-        # Check MSF in range
-        min_service_factor = data.minimum_service_factor
-        if not ((min_service_factor >= 0) & (min_service_factor <= 1)).all():
-            raise ValueError(
-                "Minimum service factor values must all be between 0 and 1 inclusive."
-            )
+    # Check MSF in range
+    min_service_factor = data.minimum_service_factor
+    if not ((min_service_factor >= 0) & (min_service_factor <= 1)).all():
+        raise ValueError(
+            "Minimum service factor values must all be between 0 and 1 inclusive."
+        )
 
-        # Check UF not below MSF
-        if (data.utilization_factor < data.minimum_service_factor).any():
-            raise ValueError(
-                "Utilization factors must all be greater than or equal "
-                "to their corresponding minimum service factors."
-            )
+    # Check UF not below MSF
+    if (data.utilization_factor < data.minimum_service_factor).any():
+        raise ValueError(
+            "Utilization factors must all be greater than or equal "
+            "to their corresponding minimum service factors."
+        )

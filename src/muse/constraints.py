@@ -726,8 +726,6 @@ def minimum_service(
     """Constructs constraint between capacity and minimum service."""
     from xarray import ones_like, zeros_like
 
-    if "minimum_service_factor" not in technologies.data_vars:
-        return None
     if np.all(technologies["minimum_service_factor"] == 0):
         return None
 
