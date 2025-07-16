@@ -216,7 +216,7 @@ def get_nan_coordinates(dataset: xr.Dataset) -> list[tuple]:
     """Get coordinates of a Dataset where any data variable has NaN values."""
     any_nan = sum(var.isnull() for var in dataset.data_vars.values())
     if any_nan.any():
-        return any_nan.where(any_nan, drop=True).to_dataframe().index.to_list()
+        return any_nan.where(any_nan, drop=True).to_dataframe(name="").index.to_list()
     return []
 
 
