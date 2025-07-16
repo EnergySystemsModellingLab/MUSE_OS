@@ -193,9 +193,10 @@ class Sector(AbstractSector):  # type: ignore
             commodity=self.technologies.commodity, region=self.technologies.region
         )
 
-        # Investments
-        # uses technology data from the investment year
+        # Select technology data from the investment year
         techs = self.technologies.sel(year=investment_year, drop=True)
+
+        # Perform investments
         for subsector in self.subsectors:
             subsector.invest(technologies=techs, market=market)
 

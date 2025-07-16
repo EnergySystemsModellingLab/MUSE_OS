@@ -200,14 +200,24 @@ def create_xarray_dataset(
     """
     result = xr.Dataset.from_dataframe(data)
     if disallow_nan:
-        if any(result[v].isnull().any() for v in result.data_vars):
-            raise ValueError("NaN values found in data")
+        nan_coords = get_nan_coordinates(result)
+        if nan_coords:
+            raise ValueError(f"Missing data for coordinates: {nan_coords}")
 
     if "year" in result.coords:
         result = result.assign_coords(year=result.year.astype(int))
         result = result.sortby("year")
+        assert len(set(result.year.values)) == result.year.data.size  # no duplicates
 
     return result
+
+
+def get_nan_coordinates(dataset: xr.Dataset) -> list[tuple]:
+    """Get coordinates of a Dataset where any data variable has NaN values."""
+    any_nan = sum(var.isnull() for var in dataset.data_vars.values())
+    if any_nan.any():
+        return any_nan.where(any_nan, drop=True).to_dataframe(name="").index.to_list()
+    return []
 
 
 def camel_to_snake(name: str) -> str:
@@ -239,7 +249,7 @@ def convert_column_types(data: pd.DataFrame) -> pd.DataFrame:
                 if expected_type is int:
                     result[column] = pd.to_numeric(result[column], downcast="integer")
                 elif expected_type is float:
-                    result[column] = pd.to_numeric(result[column])
+                    result[column] = pd.to_numeric(result[column]).astype(float)
                 elif expected_type is str:
                     result[column] = result[column].astype(str)
             except (ValueError, TypeError) as e:
@@ -397,6 +407,7 @@ def read_technodictionary_csv(path: Path) -> pd.DataFrame:
         "fix_exp",
         "interest_rate",
         "utilization_factor",
+        "minimum_service_factor",
         "year",
         "cap_par",
         "var_exp",
@@ -452,12 +463,6 @@ def process_technodictionary(data: pd.DataFrame) -> xr.Dataset:
     if "type" in result.variables:
         result["tech_type"] = result.type.isel(region=0, year=0)
 
-    # Sanity checks for year dimension
-    if "year" in result.dims:
-        assert len(set(result.year.data)) == result.year.data.size
-        if len(result.year) == 1:
-            result = result.isel(year=0, drop=True)
-
     return result
 
 
@@ -508,7 +513,6 @@ def process_technodata_timeslices(data: pd.DataFrame) -> xr.Dataset:
     timeslice_levels = TIMESLICE.coords["timeslice"].indexes["timeslice"].names
     if all(level in result.dims for level in timeslice_levels):
         result = result.stack(timeslice=timeslice_levels)
-
     return sort_timeslices(result)
 
 
@@ -575,9 +579,27 @@ def read_technologies(
     technodata_path: Path,
     comm_out_path: Path,
     comm_in_path: Path,
+    time_framework: list[int],
+    interpolation_mode: str = "linear",
     technodata_timeslices_path: Path | None = None,
 ) -> xr.Dataset:
-    """Reads and processes technology data from multiple CSV files."""
+    """Reads and processes technology data from multiple CSV files.
+
+    Will also interpolate data to the time framework if provided.
+
+    Args:
+        technodata_path: path to the technodata file
+        comm_out_path: path to the comm_out file
+        comm_in_path: path to the comm_in file
+        time_framework: list of years to interpolate data to
+        interpolation_mode: Interpolation mode to use
+        technodata_timeslices_path: path to the technodata_timeslices file
+
+    Returns:
+        xr.Dataset: Dataset containing the processed technology data. Any fields
+        that differ by year will contain a "year" dimension interpolated to the
+        time framework. Other fields will not have a "year" dimension.
+    """
     # Read all data
     technodata = read_technodictionary(technodata_path)
     comm_out = read_io_technodata(comm_out_path)
@@ -589,17 +611,28 @@ def read_technologies(
     )
 
     # Assemble xarray Dataset
-    return process_technologies(technodata, comm_out, comm_in, technodata_timeslices)
+    return process_technologies(
+        technodata,
+        comm_out,
+        comm_in,
+        time_framework,
+        interpolation_mode,
+        technodata_timeslices,
+    )
 
 
 def process_technologies(
     technodata: xr.Dataset,
     comm_out: xr.Dataset,
     comm_in: xr.Dataset,
+    time_framework: list[int],
+    interpolation_mode: str = "linear",
     technodata_timeslices: xr.Dataset | None = None,
 ) -> xr.Dataset:
     """Processes technology data DataFrames into an xarray Dataset."""
     from muse.commodities import COMMODITIES, CommodityUsage
+    from muse.timeslices import drop_timeslice
+    from muse.utilities import interpolate_technodata
 
     # Process inputs/outputs
     ins = comm_in.rename(flexible="flexible_inputs", fixed="fixed_inputs")
@@ -612,20 +645,42 @@ def process_technologies(
         )
     outs = outs.drop_vars("flexible_outputs")
 
-    # Interpolate inputs/outputs if needed
-    if "year" in technodata.dims and len(technodata.year) > 1:
-        outs = outs.interp(year=technodata.year)
-        ins = ins.interp(year=technodata.year)
+    # Collect all years from the time framework and data files
+    time_framework = list(
+        set(time_framework).union(
+            technodata.year.values.tolist(),
+            ins.year.values.tolist(),
+            outs.year.values.tolist(),
+            technodata_timeslices.year.values.tolist() if technodata_timeslices else [],
+        )
+    )
+
+    # Interpolate data to match the time framework
+    technodata = interpolate_technodata(technodata, time_framework, interpolation_mode)
+    outs = interpolate_technodata(outs, time_framework, interpolation_mode)
+    ins = interpolate_technodata(ins, time_framework, interpolation_mode)
+    if technodata_timeslices:
+        technodata_timeslices = interpolate_technodata(
+            technodata_timeslices, time_framework, interpolation_mode
+        )
 
     # Merge inputs/outputs with technodata
     technodata = technodata.merge(outs).merge(ins)
 
-    # Process timeslices if provided
+    # Merge technodata_timeslices if provided. This will prioritise values defined in
+    # technodata_timeslices, and fallback to the non-timesliced technodata for any
+    # values that are not defined in technodata_timeslices.
     if technodata_timeslices:
-        technodata = technodata.drop_vars("utilization_factor")
-        if "year" in technodata.dims and len(technodata.year) > 1:
-            technodata_timeslices = technodata_timeslices.interp(year=technodata.year)
-        technodata = technodata.merge(technodata_timeslices)
+        technodata["utilization_factor"] = (
+            technodata_timeslices.utilization_factor.combine_first(
+                technodata.utilization_factor
+            )
+        )
+        technodata["minimum_service_factor"] = drop_timeslice(
+            technodata_timeslices.minimum_service_factor.combine_first(
+                technodata.minimum_service_factor
+            )
+        )
 
     # Check commodities
     technodata = check_commodities(technodata, fill_missing=False)
@@ -853,6 +908,7 @@ def read_initial_market(
         projections_path: path to the projections file
         base_year_import_path: path to the base year import file (optional)
         base_year_export_path: path to the base year export file (optional)
+        currency: currency string (e.g. "USD")
 
     Returns:
         xr.Dataset: Dataset containing initial market data.
@@ -1371,8 +1427,7 @@ def check_utilization_and_minimum_service_factors(data: xr.Dataset) -> None:
     """Check utilization and minimum service factors in an xarray dataset.
 
     Args:
-        data: xarray Dataset containing utilization_factor and optionally
-            minimum_service_factor
+        data: xarray Dataset containing utilization_factor and minimum_service_factor
     """
     if "utilization_factor" not in data.data_vars:
         raise ValueError(
@@ -1398,17 +1453,16 @@ def check_utilization_and_minimum_service_factors(data: xr.Dataset) -> None:
             "Utilization factor values must all be between 0 and 1 inclusive."
         )
 
-    if "minimum_service_factor" in data.data_vars:
-        # Check MSF in range
-        min_service_factor = data.minimum_service_factor
-        if not ((min_service_factor >= 0) & (min_service_factor <= 1)).all():
-            raise ValueError(
-                "Minimum service factor values must all be between 0 and 1 inclusive."
-            )
+    # Check MSF in range
+    min_service_factor = data.minimum_service_factor
+    if not ((min_service_factor >= 0) & (min_service_factor <= 1)).all():
+        raise ValueError(
+            "Minimum service factor values must all be between 0 and 1 inclusive."
+        )
 
-        # Check UF not below MSF
-        if (data.utilization_factor < data.minimum_service_factor).any():
-            raise ValueError(
-                "Utilization factors must all be greater than or equal "
-                "to their corresponding minimum service factors."
-            )
+    # Check UF not below MSF
+    if (data.utilization_factor < data.minimum_service_factor).any():
+        raise ValueError(
+            "Utilization factors must all be greater than or equal "
+            "to their corresponding minimum service factors."
+        )

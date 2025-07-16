@@ -307,3 +307,57 @@ def test_check_dimensions():
     # Test extra dimension
     with raises(ValueError, match="Extra dimensions"):
         check_dimensions(data, required=["dim1"])
+
+
+def test_interpolate_technodata():
+    """Test interpolate_technodata function for all essential scenarios."""
+    from muse.utilities import interpolate_technodata
+
+    # Create test data
+    data = xr.Dataset(
+        {"efficiency": (["technology", "year"], [[0.8, 0.85, 0.9], [0.7, 0.75, 0.8]])},
+        coords={"technology": ["tech1", "tech2"], "year": [2020, 2025, 2030]},
+    )
+
+    # Test 1: Basic interpolation
+    time_framework = [2022, 2027]
+    result = interpolate_technodata(data, time_framework)
+    assert set(result.year.values) == {2020, 2022, 2025, 2027, 2030}
+    assert "year" in result.efficiency.dims
+    assert result.sel(technology="tech1", year=2022).efficiency == approx(0.82)
+
+    # Test 2: Forward extrapolation (time_framework extends beyond data)
+    result = interpolate_technodata(data, [2035, 2040])
+    assert 2040 in result.year.values
+    assert "year" in result.efficiency.dims
+    assert result.sel(technology="tech1", year=2035).efficiency == 0.9
+
+    # Test 3: Backward extrapolation (time_framework starts before data)
+    result = interpolate_technodata(data, [2010, 2015])
+    assert 2010 in result.year.values
+    assert "year" in result.efficiency.dims
+    assert result.sel(technology="tech1", year=2010).efficiency == 0.8
+
+    # Test 4: Data with only one year
+    single_year_data = xr.Dataset(
+        {"efficiency": (["technology"], [0.8, 0.7])},
+        coords={"technology": ["tech1", "tech2"], "year": [2025]},
+    )
+    result = interpolate_technodata(single_year_data, [2020, 2025, 2030])
+    assert set(result.year.values) == {2020, 2025, 2030}
+    assert "year" not in result.efficiency.dims  # underlying data is not duplicated
+    for year in result.year.values:
+        assert result.sel(technology="tech1", year=year).efficiency == 0.8
+        assert result.sel(technology="tech2", year=year).efficiency == 0.7
+
+    # Test 5: Data without year dimension
+    no_year_data = xr.Dataset(
+        {"efficiency": (["technology"], [0.8, 0.7])},
+        coords={"technology": ["tech1", "tech2"]},
+    )
+    result = interpolate_technodata(no_year_data, [2020, 2025, 2030])
+    assert set(result.year.values) == {2020, 2025, 2030}
+    assert "year" not in result.efficiency.dims  # underlying data is not duplicated
+    for year in result.year.values:
+        assert result.sel(technology="tech1", year=year).efficiency == 0.8
+        assert result.sel(technology="tech2", year=year).efficiency == 0.7

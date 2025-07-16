@@ -122,7 +122,7 @@ GrowthSeed (optional, default = 1)
 TechnicalLife
    represents the number of years that a technology operates before it is decommissioned.
 
-UtilizationFactor
+UtilizationFactor (optional, default = 1)
    represents the *maximum* actual output of the technology in a year, divided by the theoretical maximum output if the technology were operating at full capacity for the whole year. Must be between 0 and 1.
 
 MinimumServiceFactor (optional, default = 0)
@@ -166,5 +166,4 @@ Agent0, ..., AgentN
 
 The input data has to be provided for the base year. Additional years within the time
 framework of the overall simulation can be defined. In this case, MUSE would interpolate
-the values between the provided periods and assume a constant value afterwards. The additional
-years at which input data for techno-data are defined need to equal for :ref:`inputs-iocomms` and :ref:`inputs-technodata-ts`.
+the values between the provided periods and assume a constant value afterwards.

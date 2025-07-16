@@ -587,11 +587,18 @@ def read_technodata(
         technodata_timeslices_path=getattr(settings, "technodata_timeslices", None),
         comm_out_path=Path(settings.commodities_out),
         comm_in_path=Path(settings.commodities_in),
+        time_framework=time_framework,
+        interpolation_mode=interpolation_mode,
     ).sel(region=regions)
 
     # Only keep commodities that are used as inputs or outputs
-    ins = (technologies.fixed_inputs > 0).any(("year", "region", "technology"))
-    outs = (technologies.fixed_outputs > 0).any(("year", "region", "technology"))
+    dims = ("year", "region", "technology")
+    ins = (technologies.fixed_inputs > 0).any(
+        [d for d in dims if d in technologies.fixed_inputs.dims]
+    )
+    outs = (technologies.fixed_outputs > 0).any(
+        [d for d in dims if d in technologies.fixed_outputs.dims]
+    )
     techcomms = technologies.commodity[ins | outs]
     technologies = technologies.sel(commodity=techcomms)
 
@@ -610,24 +617,6 @@ def read_technodata(
         technologies = technologies.drop_vars(common_vars)
         technologies = technologies.merge(trade_data)
 
-    # Interpolate technodata to fit simulation timeframe
-    maxyear = max(time_framework)
-    if technologies.year.max() < maxyear:
-        msg = "Forward-filling technodata to fit simulation timeframe"
-        getLogger(__name__).info(msg)
-        years = [*technologies.year.data.tolist(), maxyear]
-        technologies = technologies.sel(year=years, method="ffill")
-        technologies["year"] = "year", years
-    minyear = min(time_framework)
-    if technologies.year.min() > minyear:
-        msg = "Back-filling technodata to fit simulation timeframe"
-        getLogger(__name__).info(msg)
-        years = [minyear, *technologies.year.data.tolist()]
-        technologies = technologies.sel(year=years, method="bfill")
-        technologies["year"] = "year", years
-
-    year = sorted(set(time_framework).union(technologies.year.data.tolist()))
-    technologies = technologies.interp(year=year, method=interpolation_mode)
     technologies = technologies.set_index(commodity="commodity")  # See PR #638
     return technologies
 
