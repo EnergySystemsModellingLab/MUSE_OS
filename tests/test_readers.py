@@ -1,6 +1,7 @@
 from itertools import chain, permutations
 from pathlib import Path
 
+import pandas as pd
 import toml
 import xarray as xr
 from pytest import fixture, mark, raises
@@ -272,3 +273,44 @@ def test_check_utilization_in_range_fail(values):
     )
     with raises(ValueError):
         check_utilization_and_minimum_service_factors(ds)
+
+
+def test_get_nan_coordinates():
+    """Test get_nan_coordinates for various scenarios."""
+    from muse.readers.csv import get_nan_coordinates
+
+    # Test 1: Explicit NaN values
+    df1 = pd.DataFrame(
+        {
+            "region": ["R1", "R1", "R2", "R2"],
+            "year": [2020, 2021, 2020, 2021],
+            "value": [1.0, float("nan"), 3.0, 4.0],
+        }
+    )
+    dataset1 = xr.Dataset.from_dataframe(df1.set_index(["region", "year"]))
+    nan_coords1 = get_nan_coordinates(dataset1)
+    assert nan_coords1 == [("R1", 2021)]
+
+    # Test 2: Missing coordinate combinations
+    df2 = pd.DataFrame(
+        {
+            "region": ["R1", "R1", "R2"],  # Missing R2-2021
+            "year": [2020, 2021, 2020],
+            "value": [1.0, 2.0, 3.0],
+        }
+    )
+    dataset2 = xr.Dataset.from_dataframe(df2.set_index(["region", "year"]))
+    nan_coords2 = get_nan_coordinates(dataset2)
+    assert nan_coords2 == [("R2", 2021)]
+
+    # Test 3: No NaN values
+    df3 = pd.DataFrame(
+        {
+            "region": ["R1", "R1", "R2", "R2"],
+            "year": [2020, 2021, 2020, 2021],
+            "value": [1.0, 2.0, 3.0, 4.0],
+        }
+    )
+    dataset3 = xr.Dataset.from_dataframe(df3.set_index(["region", "year"]))
+    nan_coords3 = get_nan_coordinates(dataset3)
+    assert nan_coords3 == []

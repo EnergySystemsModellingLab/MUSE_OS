@@ -200,8 +200,9 @@ def create_xarray_dataset(
     """
     result = xr.Dataset.from_dataframe(data)
     if disallow_nan:
-        if any(result[v].isnull().any() for v in result.data_vars):
-            raise ValueError("NaN values found in data")
+        nan_coords = get_nan_coordinates(result)
+        if nan_coords:
+            raise ValueError(f"Missing data for coordinates: {nan_coords}")
 
     if "year" in result.coords:
         result = result.assign_coords(year=result.year.astype(int))
@@ -209,6 +210,14 @@ def create_xarray_dataset(
         assert len(set(result.year.values)) == result.year.data.size  # no duplicates
 
     return result
+
+
+def get_nan_coordinates(dataset: xr.Dataset) -> list[tuple]:
+    """Get coordinates of a Dataset where any data variable has NaN values."""
+    any_nan = sum(var.isnull() for var in dataset.data_vars.values())
+    if any_nan.any():
+        return any_nan.where(any_nan, drop=True).to_dataframe(name="").index.to_list()
+    return []
 
 
 def camel_to_snake(name: str) -> str:
