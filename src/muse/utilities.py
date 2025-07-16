@@ -641,6 +641,9 @@ def interpolate_technodata(
         time_framework: List of years to interpolate to
         interpolation_mode: Interpolation mode to use. Must be one of:
             "linear", "nearest", "zero", "slinear", "quadratic", "cubic"
+
+    Returns:
+        Dataset with the data interpolated to the time framework, sorted by year.
     """
     # If the data has only one year then no interpolation is needed,  we just need to
     # add a year dimension with the time framework
