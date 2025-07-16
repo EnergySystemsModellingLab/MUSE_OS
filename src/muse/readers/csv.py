@@ -503,9 +503,7 @@ def process_technodata_timeslices(data: pd.DataFrame) -> xr.Dataset:
     timeslice_levels = TIMESLICE.coords["timeslice"].indexes["timeslice"].names
     if all(level in result.dims for level in timeslice_levels):
         result = result.stack(timeslice=timeslice_levels)
-    result = sort_timeslices(result)
-
-    return result
+    return sort_timeslices(result)
 
 
 def read_io_technodata(path: Path) -> xr.Dataset:

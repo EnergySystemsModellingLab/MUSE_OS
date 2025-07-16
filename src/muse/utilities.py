@@ -654,6 +654,9 @@ def interpolate_technodata(
         data["year"] = ("year", time_framework)
         return data
 
+    # Sort the data by year, just in case it hasn't already been sorted
+    data = data.sortby("year")
+
     # Flat forward extrapolation
     maxyear = max(time_framework)
     if data.year.max() < maxyear:
