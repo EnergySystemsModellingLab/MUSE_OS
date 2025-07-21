@@ -537,7 +537,7 @@ def check_subsector_settings(settings: dict) -> None:
             if "lpsolver" not in subsector:
                 msg = (
                     f"lpsolver not specified for subsector '{subsector_name}' "
-                    "in sector '{sector_name}'. Defaulting to 'scipy'"
+                    f"in sector '{sector_name}'. Defaulting to 'scipy'"
                 )
                 getLogger(__name__).warning(msg)
 
