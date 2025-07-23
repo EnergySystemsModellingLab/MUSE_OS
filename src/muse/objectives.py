@@ -227,13 +227,16 @@ def efficiency(
 def capacity_to_service_demand(
     technologies: xr.Dataset,
     demand: xr.DataArray,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ) -> xr.DataArray:
     """Minimum capacity required to fulfill the demand."""
     from muse.quantities import capacity_to_service_demand
 
-    return capacity_to_service_demand(demand=demand, technologies=technologies)
+    return capacity_to_service_demand(
+        demand=demand, technologies=technologies, timeslice_level=timeslice_level
+    )
 
 
 @register_objective
@@ -375,7 +378,9 @@ def fuel_consumption_cost(
     from muse.quantities import consumption
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    capacity = capacity_to_service_demand(technologies, demand)
+    capacity = capacity_to_service_demand(
+        technologies, demand, timeslice_level=timeslice_level
+    )
     production = (
         broadcast_timeslice(capacity, level=timeslice_level)
         * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
