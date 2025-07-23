@@ -273,7 +273,9 @@ def consumption(
     from muse.quantities import consumption
     from muse.timeslices import broadcast_timeslice, distribute_timeslice
 
-    capacity = capacity_to_service_demand(technologies, demand)
+    capacity = capacity_to_service_demand(
+        technologies, demand, timeslice_level=timeslice_level
+    )
     production = (
         broadcast_timeslice(capacity, level=timeslice_level)
         * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
@@ -292,6 +294,7 @@ def consumption(
 def fixed_costs(
     technologies: xr.Dataset,
     demand: xr.DataArray,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ) -> xr.DataArray:
@@ -310,7 +313,9 @@ def fixed_costs(
     """
     from muse.costs import fixed_costs
 
-    capacity = capacity_to_service_demand(technologies, demand)
+    capacity = capacity_to_service_demand(
+        technologies, demand, timeslice_level=timeslice_level
+    )
     result = fixed_costs(technologies, capacity)
     return result
 
@@ -319,13 +324,16 @@ def fixed_costs(
 def capital_costs(
     technologies: xr.Dataset,
     demand: xr.Dataset,
+    timeslice_level: str | None = None,
     *args,
     **kwargs,
 ) -> xr.DataArray:
     """Capital costs for input technologies."""
     from muse.costs import capital_costs
 
-    capacity = capacity_to_service_demand(technologies, demand)
+    capacity = capacity_to_service_demand(
+        technologies, demand, timeslice_level=timeslice_level
+    )
     result = capital_costs(technologies, capacity, method="lifetime")
     result = xr.broadcast(result, demand.asset)[0]
     return result
@@ -354,7 +362,9 @@ def emission_cost(
     """
     from muse.costs import environmental_costs
 
-    capacity = capacity_to_service_demand(technologies, demand)
+    capacity = capacity_to_service_demand(
+        technologies, demand, timeslice_level=timeslice_level
+    )
     production = (
         broadcast_timeslice(capacity, level=timeslice_level)
         * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
@@ -416,7 +426,9 @@ def annual_levelized_cost_of_energy(
     from muse.costs import levelized_cost_of_energy as LCOE
     from muse.quantities import consumption
 
-    capacity = capacity_to_service_demand(technologies, demand)
+    capacity = capacity_to_service_demand(
+        technologies, demand, timeslice_level=timeslice_level
+    )
     production = (
         broadcast_timeslice(capacity, level=timeslice_level)
         * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
@@ -503,7 +515,9 @@ def net_present_value(
     from muse.costs import net_present_value as NPV
     from muse.quantities import capacity_to_service_demand, consumption
 
-    capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
+    capacity = capacity_to_service_demand(
+        technologies=technologies, demand=demand, timeslice_level=timeslice_level
+    )
     production = (
         broadcast_timeslice(capacity, level=timeslice_level)
         * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
@@ -543,7 +557,9 @@ def net_present_cost(
     from muse.costs import net_present_cost as NPC
     from muse.quantities import capacity_to_service_demand, consumption
 
-    capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
+    capacity = capacity_to_service_demand(
+        technologies=technologies, demand=demand, timeslice_level=timeslice_level
+    )
     production = (
         broadcast_timeslice(capacity, level=timeslice_level)
         * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
@@ -583,7 +599,9 @@ def equivalent_annual_cost(
     from muse.costs import equivalent_annual_cost as EAC
     from muse.quantities import capacity_to_service_demand, consumption
 
-    capacity = capacity_to_service_demand(technologies=technologies, demand=demand)
+    capacity = capacity_to_service_demand(
+        technologies=technologies, demand=demand, timeslice_level=timeslice_level
+    )
     production = (
         broadcast_timeslice(capacity, level=timeslice_level)
         * distribute_timeslice(technologies.fixed_outputs, level=timeslice_level)
