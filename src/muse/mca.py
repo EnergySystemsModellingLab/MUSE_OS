@@ -405,7 +405,9 @@ def single_year_iteration(
                 dict(commodity=commodity)
             ].where(~is_supplied, sector_market.costs.sel(commodity=commodity))
 
-    return SingleYearIterationResult(market, sectors, updated_prices)
+    return SingleYearIterationResult(
+        market, sectors, updated_prices.sel(year=market.year[1])
+    )
 
 
 class FindEquilibriumResults(NamedTuple):
@@ -471,9 +473,7 @@ def find_equilibrium(
             break
 
         # Update prices
-        market["prices"] = drop_timeslice(
-            future_propagation(market["prices"], updated_prices)
-        )
+        market["prices"].loc[dict(year=market.year[1])] = updated_prices
 
         # Check convergence
         converged = check_equilibrium(

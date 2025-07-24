@@ -441,6 +441,7 @@ def nametuple_to_dict(nametup: Mapping | NamedTuple) -> Mapping:
 def future_propagation(
     data: xr.DataArray,
     future: xr.DataArray,
+    threshold: float = 1e-12,
 ) -> xr.DataArray:
     """Propagates values into the future.
 
@@ -509,7 +510,12 @@ def future_propagation(
     year = future["year"].item()
     if "year" in future.dims:
         future = future.sel(year=year, drop=True)
-    return data.where(data.year < year, future)
+    return data.where(
+        np.logical_or(
+            data.year < year, np.abs(data.sel(year=year) - future) < threshold
+        ),
+        future,
+    )
 
 
 def agent_concatenation(
