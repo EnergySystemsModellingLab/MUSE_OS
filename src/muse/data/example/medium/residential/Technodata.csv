@@ -1,5 +1,5 @@
-ProcessName,RegionName,Time,cap_par,fix_par,var_par,MaxCapacityAddition,MaxCapacityGrowth,TotalCapacityLimit,TechnicalLife,UtilizationFactor,efficiency,InterestRate,Type,Agent1
-gasboiler,R1,2020,3.8,0,0,10,0.2,60,10,1,86,0.1,energy,1
-heatpump,R1,2020,8.866666667,0,0,10,0.2,60,10,1,86,0.1,energy,1
-estove,R1,2020,3.8,0,0,10,0.2,60,10,1,86,0.1,energy,1
-gasstove,R1,2020,8.866666667,0,0,10,0.2,60,10,1,86,0.1,energy,1
+ProcessName,RegionName,Time,cap_par,fix_par,var_par,MaxCapacityAddition,MaxCapacityGrowth,TotalCapacityLimit,TechnicalLife,UtilizationFactor,InterestRate,Agent1
+gasboiler,R1,2020,3.8,0,0,10,0.2,60,10,1,0.1,1
+heatpump,R1,2020,8.866666667,0,0,10,0.2,60,10,1,0.1,1
+estove,R1,2020,3.8,0,0,10,0.2,60,10,1,0.1,1
+gasstove,R1,2020,8.866666667,0,0,10,0.2,60,10,1,0.1,1
