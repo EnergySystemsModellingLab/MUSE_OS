@@ -1,3 +1,3 @@
-ProcessName,RegionName,Time,var_par,var_exp,TechnicalLife,UtilizationFactor,efficiency,InterestRate,Type,Agent1
-gassupply1,R1,2010,3,1,10,0.9,86,0.1,energy,1
-gassupply1,R2,2010,3,1,10,0.9,86,0.1,energy,1
+ProcessName,RegionName,Time,var_par,TechnicalLife,UtilizationFactor,efficiency,InterestRate,Type,Agent1
+gassupply1,R1,2010,3,10,0.9,86,0.1,energy,1
+gassupply1,R2,2010,3,10,0.9,86,0.1,energy,1

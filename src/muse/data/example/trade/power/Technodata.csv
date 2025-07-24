@@ -1,5 +1,5 @@
-ProcessName,RegionName,Time,cap_exp,fix_exp,var_par,var_exp,TechnicalLife,UtilizationFactor,efficiency,InterestRate,Type,Agent1
-gasCCGT,R1,2010,1,1,0,1,35,0.9,86,0.1,energy,1
-windturbine,R1,2010,1,1,0,1,25,0.4,86,0.1,energy,1
-gasCCGT,R2,2010,1,1,0,1,35,0.9,86,0.1,energy,1
-windturbine,R2,2010,1,1,0,1,25,0.4,86,0.1,energy,1
+ProcessName,RegionName,Time,cap_exp,var_par,TechnicalLife,UtilizationFactor,efficiency,InterestRate,Type,Agent1
+gasCCGT,R1,2010,1,0,35,0.9,86,0.1,energy,1
+windturbine,R1,2010,1,0,25,0.4,86,0.1,energy,1
+gasCCGT,R2,2010,1,0,35,0.9,86,0.1,energy,1
+windturbine,R2,2010,1,0,25,0.4,86,0.1,energy,1

@@ -203,7 +203,6 @@ def test_read_projections_csv(model_path):
     extra_columns = {
         "CO2f",
         "electricity",
-        "wind",
         "gas",
         "heat",
     }
