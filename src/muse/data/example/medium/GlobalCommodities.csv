@@ -1,7 +1,7 @@
-Commodity,CommodityType,CommodityName,Unit
-Electricity,Energy,electricity,GWh
-Gas,Energy,gas,PJ
-Heat,Product,heat,PJ
-Cook,Product,cook,PJ
-Wind,Energy,wind,PJ
-CO2fuelcomsbustion,Environmental,CO2f,kt
+CommodityName,Description,CommodityType,Unit
+electricity,Electricity,Energy,GWh
+gas,Gas,Energy,PJ
+heat,Heat,Product,PJ
+cook,Cook,Product,PJ
+wind,Wind,Energy,PJ
+CO2f,CO2fuelcomsbustion,Environmental,kt
