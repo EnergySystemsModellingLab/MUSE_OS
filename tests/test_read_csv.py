@@ -123,7 +123,7 @@ def test_read_global_commodities_csv(model_path):
         "commodity",
         "comm_type",
     }
-    extra_columns = {"heat_rate", "unit", "emmission_factor"}
+    extra_columns = {"unit", "description"}
     assert set(commodities_df.columns) == mandatory_columns | extra_columns
 
 
@@ -163,9 +163,7 @@ def test_read_agent_parameters_csv(model_path):
     extra_columns = {
         "objsort2",
         "objective3",
-        "maturity_threshold",
         "objsort1",
-        "spend_limit",
         "obj_data3",
         "objective2",
         "objective1",

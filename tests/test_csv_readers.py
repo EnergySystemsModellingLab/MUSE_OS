@@ -193,8 +193,6 @@ def test_read_global_commodities(model_path):
         coords={"commodity": CoordinateSchema(dims=("commodity",), dtype="object")},
         data_vars={
             "comm_type": "object",
-            "emmission_factor": "float64",
-            "heat_rate": "int64",
             "unit": "object",
         },
     )
@@ -207,8 +205,6 @@ def test_read_global_commodities(model_path):
     coord = {"commodity": "electricity"}
     expected = {
         "comm_type": "energy",
-        "emmission_factor": 0.0,
-        "heat_rate": 1,
         "unit": "PJ",
     }
     assert_single_coordinate(data, coord, expected)
@@ -539,8 +535,6 @@ def test_read_agent_parameters(model_path):
         "decision": {"name": "singleObj", "parameters": [("LCOE", True, 1)]},
         "agent_type": "newcapa",
         "quantity": 1,
-        "maturity_threshold": -1,
-        "spend_limit": float("inf"),
         "share": "agent1",
     }
     assert agent == expected
@@ -805,8 +799,6 @@ def test_read_technologies(model_path):
             "fixed_outputs": "float64",
             "fixed_inputs": "float64",
             "flexible_inputs": "float64",
-            "emmission_factor": "float64",
-            "heat_rate": "int64",
             "unit": "object",
         },
     )
@@ -874,8 +866,6 @@ def test_read_technologies__timeslice(timeslice_model_path):
             "flexible_inputs": "float64",
             "utilization_factor": "float64",
             "minimum_service_factor": "float64",
-            "emmission_factor": "float64",
-            "heat_rate": "int64",
             "unit": "object",
         },
     )
@@ -936,8 +926,6 @@ def test_read_technodata(model_path):
             "fixed_outputs": "float64",
             "fixed_inputs": "float64",
             "flexible_inputs": "float64",
-            "emmission_factor": "float64",
-            "heat_rate": "int64",
             "unit": "object",
         },
     )
@@ -994,8 +982,6 @@ def test_read_technodata__trade(trade_model_path):
             "fixed_outputs": "float64",
             "fixed_inputs": "float64",
             "flexible_inputs": "float64",
-            "emmission_factor": "float64",
-            "heat_rate": "int64",
             "unit": "object",
             "max_capacity_addition": "float64",
             "max_capacity_growth": "float64",

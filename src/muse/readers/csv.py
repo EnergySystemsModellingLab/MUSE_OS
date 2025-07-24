@@ -793,6 +793,11 @@ def read_global_commodities_csv(path: Path) -> pd.DataFrame:
 
 def process_global_commodities(data: pd.DataFrame) -> xr.Dataset:
     """Processes global commodities DataFrame into an xarray Dataset."""
+    # Drop description column if present. It's useful to include in the file, but we
+    # don't need it for the simulation.
+    if "description" in data.columns:
+        data = data.drop(columns=["description"])
+
     data.index = [u for u in data.commodity]
     data = data.drop("commodity", axis=1)
     data.index.name = "commodity"
