@@ -287,7 +287,7 @@ def test_read_initial_market(model_path):
         data,
         {
             "region": ["r1"],
-            "year": list(range(2010, 2105, 5)),
+            "year": list(range(2020, 2055, 5)),
             "commodity": COMMODITIES,
             "units_prices": [
                 "MUS$2010/PJ",
@@ -304,13 +304,13 @@ def test_read_initial_market(model_path):
 
     # Check values at a single coordinate
     coord = {
-        "year": 2010,
+        "year": 2020,
         "region": "r1",
-        "commodity": "electricity",
+        "commodity": "CO2f",
         "timeslice": ("all-year", "all-week", "night"),
     }
     expected = {
-        "prices": 14.81481472,
+        "prices": 0.08314119,
         "exports": 0.0,
         "imports": 0.0,
         "static_trade": 0.0,
@@ -344,11 +344,8 @@ def test_read_technodictionary(model_path):
             "technical_life": "int64",
             "utilization_factor": "float64",
             "minimum_service_factor": "float64",
-            "efficiency": "int64",
             "interest_rate": "float64",
-            "type": "object",
             "agent1": "int64",
-            "tech_type": "object",
         },
     )
     assert DatasetSchema.from_ds(data) == expected_schema
@@ -385,9 +382,7 @@ def test_read_technodictionary(model_path):
         "technical_life": 35,
         "utilization_factor": 0.9,
         "minimum_service_factor": 0.0,
-        "efficiency": 86,
         "interest_rate": 0.1,
-        "type": "energy",
         "agent1": 1,
     }
     assert_single_coordinate(data, coord, expected)
@@ -591,9 +586,7 @@ def test_read_trade_technodata(trade_model_path):
         },
         data_vars={
             "cap_par": "float64",
-            "cap_exp": "float64",
             "fix_par": "float64",
-            "fix_exp": "float64",
             "max_capacity_addition": "float64",
             "max_capacity_growth": "float64",
             "total_capacity_limit": "float64",
@@ -615,9 +608,7 @@ def test_read_trade_technodata(trade_model_path):
     coord = {"technology": "gassupply1", "dst_region": "r1", "region": "r1"}
     expected = {
         "cap_par": 3,
-        "cap_exp": 1,
         "fix_par": 0.3,
-        "fix_exp": 1,
         "max_capacity_addition": 200,
         "max_capacity_growth": 1,
         "total_capacity_limit": 3937.219,
@@ -791,11 +782,8 @@ def test_read_technologies(model_path):
             "technical_life": "int64",
             "utilization_factor": "float64",
             "minimum_service_factor": "float64",
-            "efficiency": "int64",
             "interest_rate": "float64",
-            "type": "object",
             "agent1": "int64",
-            "tech_type": "object",
             "fixed_outputs": "float64",
             "fixed_inputs": "float64",
             "flexible_inputs": "float64",
@@ -856,11 +844,8 @@ def test_read_technologies__timeslice(timeslice_model_path):
             "max_capacity_growth": "float64",
             "total_capacity_limit": "int64",
             "technical_life": "int64",
-            "efficiency": "int64",
             "interest_rate": "float64",
-            "type": "object",
             "agent1": "int64",
-            "tech_type": "object",
             "fixed_outputs": "float64",
             "fixed_inputs": "float64",
             "flexible_inputs": "float64",
@@ -918,11 +903,8 @@ def test_read_technodata(model_path):
             "technical_life": "int64",
             "utilization_factor": "float64",
             "minimum_service_factor": "float64",
-            "efficiency": "int64",
             "interest_rate": "float64",
-            "type": "object",
             "agent1": "int64",
-            "tech_type": "object",
             "fixed_outputs": "float64",
             "fixed_inputs": "float64",
             "flexible_inputs": "float64",
@@ -974,11 +956,8 @@ def test_read_technodata__trade(trade_model_path):
             "technical_life": "int64",
             "utilization_factor": "float64",
             "minimum_service_factor": "float64",
-            "efficiency": "int64",
             "interest_rate": "float64",
-            "type": "object",
             "agent1": "int64",
-            "tech_type": "object",
             "fixed_outputs": "float64",
             "fixed_inputs": "float64",
             "flexible_inputs": "float64",
