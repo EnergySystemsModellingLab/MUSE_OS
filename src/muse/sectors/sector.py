@@ -64,10 +64,8 @@ class Sector(AbstractSector):  # type: ignore
         ]
 
         # Check that subsector commodities are disjoint
-        are_disjoint_commodities = sum(len(s.commodities) for s in subsectors) == len(
-            set().union(*(set(s.commodities) for s in subsectors))  # type: ignore
-        )
-        if not are_disjoint_commodities:
+        sector_commodities = [c for s in subsectors for c in s.commodities]
+        if len(sector_commodities) != len(set(sector_commodities)):
             raise RuntimeError("Subsector commodities are not disjoint")
 
         # Create outputs
@@ -85,6 +83,7 @@ class Sector(AbstractSector):  # type: ignore
             technologies,
             supply_prod=production,
             subsectors=subsectors,
+            commodities=sector_commodities,
             outputs=outputs,
             interactions=interactions,
             timeslice_level=timeslice_level,
@@ -96,6 +95,7 @@ class Sector(AbstractSector):  # type: ignore
         technologies: xr.Dataset,
         supply_prod: PRODUCTION_SIGNATURE,
         subsectors: Sequence[Subsector] = [],
+        commodities: list[str] = [],
         interactions: Callable[[Sequence[AbstractAgent]], None] | None = None,
         outputs: Callable | None = None,
         timeslice_level: str | None = None,
@@ -155,6 +155,9 @@ class Sector(AbstractSector):  # type: ignore
 
         """Full supply, consumption and costs data for the most recent year."""
         self.output_data: xr.Dataset
+
+        """Commodities that the sector is in charge of producing."""
+        self.commodities: list[str] = commodities
 
     def next(
         self,

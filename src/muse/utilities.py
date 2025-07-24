@@ -441,8 +441,6 @@ def nametuple_to_dict(nametup: Mapping | NamedTuple) -> Mapping:
 def future_propagation(
     data: xr.DataArray,
     future: xr.DataArray,
-    threshold: float = 1e-12,
-    dim: str = "year",
 ) -> xr.DataArray:
     """Propagates values into the future.
 
@@ -501,22 +499,17 @@ def future_propagation(
           * year     (year) int32 16B 2020 2025 2030 2035
           * fuel     (fuel) <U4 32B 'gas' 'coal'
     """
-    if dim not in data.dims or dim not in future.coords:
+    if "year" not in data.dims or "year" not in future.coords:
         raise ValueError("Expected dimension 'year' in `data` and `future`.")
-    if future[dim].ndim != 0 and len(future[dim]) != 1:
-        raise ValueError(f'``future["{dim}"] should be of length 1 or a scalar.')
-    if not future[dim].isin(data[dim]).all():
-        raise ValueError(f'{future[dim]} not found in data["{dim}"].')
+    if future["year"].ndim != 0 and len(future["year"]) != 1:
+        raise ValueError('``future["year"] should be of length 1 or a scalar.')
+    if not future["year"].isin(data["year"]).all():
+        raise ValueError(f'{future["year"]} not found in data["year"].')
 
-    if future[dim].ndim != 0:
-        future = future.loc[{dim: 0}]
-    year = future[dim].values
-    return data.where(
-        np.logical_or(
-            data.year < year, np.abs(data.loc[{dim: year}] - future) < threshold
-        ),
-        future,
-    )
+    year = future["year"].item()
+    if "year" in future.dims:
+        future = future.sel(year=year, drop=True)
+    return data.where(data.year < year, future)
 
 
 def agent_concatenation(
