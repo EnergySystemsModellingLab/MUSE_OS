@@ -377,10 +377,7 @@ def single_year_iteration(
     market = market.copy(deep=True)
 
     # New prices for the investment year
-    # These start off equal to the current year's prices, but will be updated
-    updated_prices = market.prices.sel(year=[market.year[0]]).assign_coords(
-        year=[market.year[1]]
-    )
+    updated_prices = market.prices.sel(year=[market.year[1]])
 
     for sector in sectors:
         # Solve the sector
@@ -453,6 +450,8 @@ def find_equilibrium(
     from numpy import ones
 
     market = market.copy(deep=True)
+    current_year, investment_year = market.year
+
     if excluded_commodities:
         included = ~market.commodity.isin(excluded_commodities)
     else:
@@ -473,7 +472,7 @@ def find_equilibrium(
             break
 
         # Update prices
-        market["prices"].loc[dict(year=market.year[1])] = updated_prices
+        market["prices"].loc[dict(year=investment_year)] = updated_prices
 
         # Check convergence
         converged = check_equilibrium(
@@ -481,14 +480,14 @@ def find_equilibrium(
             prior_market.sel(commodity=included),
             tol,
             equilibrium_variable,
-            market.year[1],
+            investment_year,
         )
         iteration += 1
 
     if not converged:
         msg = (
             f"CONVERGENCE ERROR: Maximum number of iterations ({maxiter}) reached "
-            f"in year {int(market.year[0])}"
+            f"in year {int(current_year)}"
         )
         getLogger(__name__).critical(msg)
 
