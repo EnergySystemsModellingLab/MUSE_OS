@@ -280,6 +280,9 @@ class Sector(AbstractSector):  # type: ignore
             technologies, capacity, installed_as_year=True
         )
 
+        # Select relevant investment year prices for each asset
+        prices = broadcast_over_assets(market.prices.isel(year=1), capacity)
+
         # Calculate supply
         supply = self.supply_prod(
             market=market,
@@ -292,7 +295,7 @@ class Sector(AbstractSector):  # type: ignore
         consume = consumption(
             technologies=technodata,
             production=supply,
-            prices=market.prices,
+            prices=prices,
             timeslice_level=self.timeslice_level,
         )
 
@@ -305,7 +308,7 @@ class Sector(AbstractSector):  # type: ignore
             timeslice_level=self.timeslice_level,
         )
         lcoe = levelized_cost_of_energy(
-            prices=market.prices.sel(region=supply.region).isel(year=1),
+            prices=prices,
             technologies=technodata,
             capacity=utilized_capacity,
             production=supply.isel(year=1),
