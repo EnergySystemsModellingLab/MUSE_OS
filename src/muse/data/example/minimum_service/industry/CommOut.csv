@@ -1,7 +1,7 @@
-ProcessName,RegionName,Time,fuel1,fuel2,fuel3,ammonia,CO2f,CO2r,CO2c,CO2s,N2O
-procammonia_1,R1,2010,0,0,0,1,4168.06,0,0,0,0
-procammonia_2,R1,2010,0,0,0,1,3111.835705,0,0,0,0
-procammonia_1,R1,2050,0,0,0,1,3910.772346,0,0,0,0
-procammonia_2,R1,2050,0,0,0,1,2919.747081,0,0,0,0
-procammonia_1,R1,2100,0,0,0,1,3910.772346,0,0,0,0
-procammonia_2,R1,2100,0,0,0,1,2919.747081,0,0,0,0
+ProcessName,RegionName,Time,ammonia,CO2f
+procammonia_1,R1,2010,1,4168.06
+procammonia_2,R1,2010,1,3111.835705
+procammonia_1,R1,2050,1,3910.772346
+procammonia_2,R1,2050,1,2919.747081
+procammonia_1,R1,2100,1,3910.772346
+procammonia_2,R1,2100,1,2919.747081
