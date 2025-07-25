@@ -781,7 +781,6 @@ def test_read_technologies(model_path):
             "technology": CoordinateSchema(dims=("technology",), dtype="object"),
             "region": CoordinateSchema(dims=("region",), dtype="object"),
             "commodity": CoordinateSchema(dims=("commodity",), dtype="object"),
-            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="object"),
             "year": CoordinateSchema(dims=("year",), dtype="int64"),
         },
         data_vars={
@@ -808,6 +807,7 @@ def test_read_technologies(model_path):
             "emmission_factor": "float64",
             "heat_rate": "int64",
             "unit": "object",
+            "comm_usage": "object",
         },
     )
     assert DatasetSchema.from_ds(data) == expected_schema
@@ -819,7 +819,6 @@ def test_read_technologies(model_path):
             "commodity": ["electricity", "gas", "heat", "wind", "CO2f"],
             "technology": ["gasCCGT", "windturbine"],
             "region": ["r1"],
-            "comm_usage": [10, 9, 8, 6, 9],
         },
     )
 
@@ -850,7 +849,6 @@ def test_read_technologies__timeslice(timeslice_model_path):
             "month": CoordinateSchema(dims=("timeslice",), dtype="object"),
             "day": CoordinateSchema(dims=("timeslice",), dtype="object"),
             "hour": CoordinateSchema(dims=("timeslice",), dtype="object"),
-            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="object"),
             "year": CoordinateSchema(dims=("year",), dtype="int64"),
         },
         data_vars={
@@ -877,6 +875,7 @@ def test_read_technologies__timeslice(timeslice_model_path):
             "emmission_factor": "float64",
             "heat_rate": "int64",
             "unit": "object",
+            "comm_usage": "object",
         },
     )
     assert DatasetSchema.from_ds(data) == expected_schema
@@ -888,7 +887,6 @@ def test_read_technologies__timeslice(timeslice_model_path):
             "commodity": ["electricity", "gas", "heat", "wind", "CO2f"],
             "technology": ["gasCCGT", "windturbine"],
             "region": ["r1"],
-            "comm_usage": [10, 9, 8, 6, 9],
             "timeslice": EXPECTED_TIMESLICES,
             "year": [2020, 2025, 2030, 2035, 2040, 2045, 2050],
         },
@@ -912,7 +910,6 @@ def test_read_technodata(model_path):
             "technology": CoordinateSchema(dims=("technology",), dtype="object"),
             "region": CoordinateSchema(dims=("region",), dtype="object"),
             "commodity": CoordinateSchema(dims=("commodity",), dtype="object"),
-            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="object"),
             "year": CoordinateSchema(dims=("year",), dtype="int64"),
         },
         data_vars={
@@ -939,6 +936,7 @@ def test_read_technodata(model_path):
             "emmission_factor": "float64",
             "heat_rate": "int64",
             "unit": "object",
+            "comm_usage": "object",
         },
     )
     assert DatasetSchema.from_ds(data) == expected_schema
@@ -950,7 +948,6 @@ def test_read_technodata(model_path):
             "commodity": ["electricity", "gas", "wind", "CO2f"],
             "technology": ["gasCCGT", "windturbine"],
             "region": ["r1"],
-            "comm_usage": [10, 9, 6, 9],
             "year": [2020, 2025, 2030, 2035, 2040, 2045, 2050],
         },
     )
@@ -974,7 +971,6 @@ def test_read_technodata__trade(trade_model_path):
             "technology": CoordinateSchema(dims=("technology",), dtype="object"),
             "region": CoordinateSchema(dims=("region",), dtype="object"),
             "commodity": CoordinateSchema(dims=("commodity",), dtype="object"),
-            "comm_usage": CoordinateSchema(dims=("commodity",), dtype="object"),
             "dst_region": CoordinateSchema(dims=("dst_region",), dtype="object"),
             "year": CoordinateSchema(dims=("year",), dtype="int64"),
         },
@@ -1002,6 +998,7 @@ def test_read_technodata__trade(trade_model_path):
             "total_capacity_limit": "float64",
             "cap_par": "float64",
             "fix_par": "float64",
+            "comm_usage": "object",
         },
     )
     assert DatasetSchema.from_ds(data) == expected_schema
@@ -1014,7 +1011,6 @@ def test_read_technodata__trade(trade_model_path):
             "technology": ["gasCCGT", "windturbine"],
             "region": ["r1", "r2"],
             "dst_region": ["r1", "r2"],
-            "comm_usage": [10, 9, 6, 9],
             "year": [2010, 2020, 2025, 2030, 2035],
         },
     )
