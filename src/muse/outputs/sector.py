@@ -221,14 +221,8 @@ def costs(
     **kwargs,
 ) -> xr.DataArray:
     """Current costs."""
-    from muse.commodities import is_pollutant
-
     result = (
-        market_quantity(
-            market.costs.sel(commodity=~is_pollutant(market.comm_usage)),
-            sum_over=sum_over,
-            drop=drop,
-        )
+        market_quantity(market.costs, sum_over=sum_over, drop=drop)
         .rename("costs")
         .to_dataframe()
         .reset_index()

@@ -242,7 +242,7 @@ def maximum_production(
         * distribute_timeslice(ftechs.fixed_outputs, level=timeslice_level)
         * broadcast_timeslice(ftechs.utilization_factor, level=timeslice_level)
     )
-    return result.where(is_enduse(result.comm_usage), 0)
+    return result.where(is_enduse(ftechs.comm_usage), 0)
 
 
 def capacity_in_use(
@@ -341,7 +341,7 @@ def minimum_production(
         * distribute_timeslice(ftechs.fixed_outputs, level=timeslice_level)
         * broadcast_timeslice(ftechs.minimum_service_factor, level=timeslice_level)
     )
-    return result.where(is_enduse(result.comm_usage), 0)
+    return result.where(is_enduse(ftechs.comm_usage), 0)
 
 
 def capacity_to_service_demand(
