@@ -75,8 +75,11 @@ class MCA:
 
         # Check that sector commodities are disjoint
         commodities = [c for s in sectors for c in s.commodities]
-        if len(commodities) != len(set(commodities)):
-            raise ValueError("Sector commodities are not disjoint")
+        duplicates = [c for c in set(commodities) if commodities.count(c) > 1]
+        if duplicates:
+            getLogger(__name__).critical(
+                f"Commodities {duplicates} are outputted by multiple sectors."
+            )
 
         # Create the outputs
         outputs = ofactory(*getattr(settings, "outputs", []))

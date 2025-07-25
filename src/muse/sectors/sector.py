@@ -65,8 +65,13 @@ class Sector(AbstractSector):  # type: ignore
 
         # Check that subsector commodities are disjoint
         sector_commodities = [c for s in subsectors for c in s.commodities]
-        if len(sector_commodities) != len(set(sector_commodities)):
-            raise RuntimeError("Subsector commodities are not disjoint")
+        duplicates = [
+            c for c in set(sector_commodities) if sector_commodities.count(c) > 1
+        ]
+        if duplicates:
+            raise RuntimeError(
+                f"Commodities {duplicates} are outputted by multiple subsectors."
+            )
 
         # Create outputs
         outputs = ofactory(*outputs_config, sector_name=name)
