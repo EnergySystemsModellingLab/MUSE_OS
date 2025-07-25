@@ -5,14 +5,14 @@ A1,240.0000,r1,2010,r1,power,gasCCGT,agent,2020
 A1,200.0000,r2,2010,r2,power,gasCCGT,agent,2020
 A1,3000.0000,r1,2010,r1,gas,gassupply1,agent,2020
 A1,1200.0000,r2,2010,r2,gas,gassupply1,agent,2020
-A1,74.5333,r1,2025,r1,residential,gasboiler,newcapa,2025
+A1,74.5333,r1,2025,r1,residential,heatpump,newcapa,2025
 A1,563.3460,r1,2010,r1,residential,gasboiler,retrofit,2025
-A1,181.9873,r1,2025,r1,residential,gasboiler,retrofit,2025
+A1,181.9873,r1,2025,r1,residential,heatpump,retrofit,2025
 A1,192.0000,r1,2010,r1,power,gasCCGT,agent,2025
 A1,140.0000,r2,2010,r2,power,gasCCGT,agent,2025
 A1,74.5333,r1,2030,r1,residential,heatpump,newcapa,2030
 A1,463.9320,r1,2010,r1,residential,gasboiler,retrofit,2030
-A1,256.5207,r1,2025,r1,residential,gasboiler,retrofit,2030
+A1,256.5207,r1,2025,r1,residential,heatpump,retrofit,2030
 A1,99.4140,r1,2030,r1,residential,heatpump,retrofit,2030
 A1,24.5000,r2,2010,r2,residential,gasboiler,retrofit,2030
 A1,153.6000,r1,2010,r1,power,gasCCGT,agent,2030
