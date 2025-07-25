@@ -121,7 +121,7 @@ def test_read_global_commodities_csv(model_path):
         "commodity",
         "comm_type",
     }
-    extra_columns = {"unit", "description"}
+    extra_columns = {"unit"}
     assert set(commodities_df.columns) == mandatory_columns | extra_columns
 
 
