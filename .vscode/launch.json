@@ -9,6 +9,7 @@
             "type": "debugpy",
             "request": "launch",
             "module": "muse",
+            "pythonArgs": ["-W", "error::DeprecationWarning"],
             "args": ["--model", "default"]
         },
         {
@@ -16,6 +17,7 @@
             "type": "debugpy",
             "request": "launch",
             "module": "muse",
+            "pythonArgs": ["-W", "error::DeprecationWarning"],
             "args": ["--model", "default_retro"]
         },
         {
@@ -23,6 +25,7 @@
             "type": "debugpy",
             "request": "launch",
             "module": "muse",
+            "pythonArgs": ["-W", "error::DeprecationWarning"],
             "args": ["--model", "default_adhoc"]
         },
         {
@@ -30,6 +33,7 @@
             "type": "debugpy",
             "request": "launch",
             "module": "muse",
+            "pythonArgs": ["-W", "error::DeprecationWarning"],
             "args": ["--model", "multiple_agents"]
         },
         {
@@ -37,6 +41,7 @@
             "type": "debugpy",
             "request": "launch",
             "module": "muse",
+            "pythonArgs": ["-W", "error::DeprecationWarning"],
             "args": ["--model", "default_timeslice"]
         },
         {
@@ -44,6 +49,7 @@
             "type": "debugpy",
             "request": "launch",
             "module": "muse",
+            "pythonArgs": ["-W", "error::DeprecationWarning"],
             "args": ["model/settings.toml"]
         },
         {
@@ -51,6 +57,7 @@
             "type": "debugpy",
             "request": "launch",
             "module": "muse",
+            "pythonArgs": ["-W", "error::DeprecationWarning"],
             "args": ["--model", "minimum_service"]
         }
     ]

@@ -388,8 +388,10 @@ def single_year_iteration(
         sector_market = sector_market.reindex_like(market, fill_value=0)
 
         # Update market supply and consumption
-        market["consumption"] += drop_timeslice(sector_market.consumption)
-        market["supply"] += drop_timeslice(sector_market.supply)
+        market["consumption"] = drop_timeslice(
+            market.consumption + sector_market.consumption
+        )
+        market["supply"] = drop_timeslice(market.supply + sector_market.supply)
 
         # Update market prices
         # We only do this for the commodities that the sector is in charge of producing
