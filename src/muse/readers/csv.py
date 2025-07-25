@@ -693,7 +693,6 @@ def process_technologies(
         "commodity",
         CommodityUsage.from_technologies(technodata).values,
     )
-    technodata = technodata.set_coords("comm_usage")
     technodata = technodata.drop_vars("comm_type")
 
     # Check utilization and minimum service factors

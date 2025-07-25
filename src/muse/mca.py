@@ -9,7 +9,7 @@ from typing import (
     cast,
 )
 
-from xarray import Dataset, zeros_like
+from xarray import DataArray, Dataset, zeros_like
 
 from muse.outputs.cache import OutputCache
 from muse.readers import read_initial_market
@@ -72,6 +72,14 @@ class MCA:
             kind = getattr(settings.sectors, sector).type
             sectors.append(SECTORS_REGISTERED[kind](sector, settings))
             getLogger(__name__).info(f"Created sector {sector}")
+
+        # Check that sector commodities are disjoint
+        commodities = [c for s in sectors for c in s.commodities]
+        duplicates = [c for c in set(commodities) if commodities.count(c) > 1]
+        if duplicates:
+            getLogger(__name__).critical(
+                f"Commodities {duplicates} are outputted by multiple sectors."
+            )
 
         # Create the outputs
         outputs = ofactory(*getattr(settings, "outputs", []))
@@ -321,6 +329,8 @@ class MCA:
             dims = {i: new_market[i] for i in new_market.dims}
             self.market.supply.loc[dims] = new_market.supply
             self.market.consumption.loc[dims] = new_market.consumption
+
+            # Update prices
             dims = {i: new_market[i] for i in new_market.prices.dims if i != "year"}
             self.market.prices.loc[dims] = future_propagation(
                 self.market.prices.sel(dims),
@@ -349,6 +359,7 @@ class SingleYearIterationResult(NamedTuple):
 
     market: Dataset
     sectors: list[AbstractSector]
+    updated_prices: DataArray
 
 
 def single_year_iteration(
@@ -361,44 +372,40 @@ def single_year_iteration(
         sectors: A list of the sectors participating in the simulation.
 
     Returns:
-        A tuple with the new market and sectors.
+        A tuple with the new market, sectors and updated prices.
     """
     from copy import deepcopy
 
     sectors = deepcopy(sectors)
     market = market.copy(deep=True)
-    if "updated_prices" not in market.data_vars:
-        market["updated_prices"] = drop_timeslice(market.prices.copy())
+
+    # New prices for the investment year
+    investment_year = market.year[1]
+    updated_prices = market.prices.sel(year=investment_year)
 
     for sector in sectors:
         # Solve the sector
-        sector_market = sector.next(
-            market[["supply", "consumption", "prices"]]  # type:ignore
-        )
-        sector_market = sector_market.sel(year=market.year)
+        sector_market = sector.next(market[["supply", "consumption", "prices"]])
 
-        # Calculate net consumption
-        dims = {i: sector_market[i] for i in sector_market.consumption.dims}
-        sector_market.consumption.loc[dims] = (
-            sector_market.consumption.loc[dims] - sector_market.supply.loc[dims]
-        ).clip(min=0.0, max=None)
+        # Reindex to add back commodities that are not relevant to the sector
+        sector_market = sector_market.reindex_like(market, fill_value=0)
 
         # Update market supply and consumption
-        market.consumption.loc[dims] += sector_market.consumption
-        dims = {i: sector_market[i] for i in sector_market.supply.dims}
-        market.supply.loc[dims] += sector_market.supply
+        market["consumption"] = drop_timeslice(
+            market.consumption + sector_market.consumption
+        )
+        market["supply"] = drop_timeslice(market.supply + sector_market.supply)
 
         # Update market prices
-        costs = sector_market.costs
-        if len(costs.commodity) > 0:
-            costs = costs.where(costs > 1e-4, 0)
-            dims = {i: costs[i] for i in costs.dims}
-            costs = costs.where(costs > 0, market.prices.loc[dims])
-            market.updated_prices.loc[dims] = costs.transpose(
-                *market.updated_prices.dims
-            )
+        # We only do this for the commodities that the sector is in charge of producing
+        # And only for regions/timeslices with >0 production in the investment year
+        supply = sector_market.supply.sel(year=investment_year)
+        supply = supply.where(supply.commodity.isin(sector.commodities), 0)
+        updated_prices = updated_prices.where(
+            supply == 0, sector_market.costs.sel(year=investment_year)
+        )
 
-    return SingleYearIterationResult(market, sectors)
+    return SingleYearIterationResult(market, sectors, updated_prices)
 
 
 class FindEquilibriumResults(NamedTuple):
@@ -444,6 +451,8 @@ def find_equilibrium(
     from numpy import ones
 
     market = market.copy(deep=True)
+    current_year, investment_year = market.year
+
     if excluded_commodities:
         included = ~market.commodity.isin(excluded_commodities)
     else:
@@ -455,18 +464,16 @@ def find_equilibrium(
         prior_market = market.copy(deep=True)
         market.consumption[:] = 0.0
         market.supply[:] = 0.0
-        market, equilibrium_sectors = single_year_iteration(market, sectors)
+        market, equilibrium_sectors, updated_prices = single_year_iteration(
+            market, sectors
+        )
 
         if maxiter == 1 or not equilibrium:
             converged = True
             break
 
         # Update prices
-        market["prices"] = drop_timeslice(
-            future_propagation(
-                market["prices"], market["updated_prices"].sel(year=market.year[1])
-            )
-        )
+        market["prices"].loc[dict(year=investment_year)] = updated_prices
 
         # Check convergence
         converged = check_equilibrium(
@@ -474,23 +481,21 @@ def find_equilibrium(
             prior_market.sel(commodity=included),
             tol,
             equilibrium_variable,
-            market.year[1],
+            investment_year,
         )
         iteration += 1
 
     if not converged:
         msg = (
             f"CONVERGENCE ERROR: Maximum number of iterations ({maxiter}) reached "
-            f"in year {int(market.year[0])}"
+            f"in year {int(current_year)}"
         )
         getLogger(__name__).critical(msg)
 
     # Check that demand is fulfilled (raises a warning if not)
     check_demand_fulfillment(market.sel(commodity=included), tol_unmet_demand)
 
-    return FindEquilibriumResults(
-        converged, market.drop_vars("updated_prices"), equilibrium_sectors
-    )
+    return FindEquilibriumResults(converged, market, equilibrium_sectors)
 
 
 def check_demand_fulfillment(market: Dataset, tol: float) -> bool:

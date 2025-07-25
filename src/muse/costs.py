@@ -500,6 +500,8 @@ def supply_cost(
     In practice, the supply cost is the weighted average LCOE over assets (`asset_dim`),
     where the weights are the production.
 
+    Very low costs are set to zero.
+
     Arguments:
         production: Amount of goods produced. In practice, production can be obtained
             from the capacity for each asset via the method
@@ -516,7 +518,8 @@ def supply_cost(
         else:
             data = data.groupby("region").sum(asset_dim)
 
-    return data.prices / data.production.where(np.abs(data.production) > 1e-15, np.inf)
+    costs = data.prices / data.production.where(np.abs(data.production) > 1e-15, np.inf)
+    return costs.where(costs > 1e-4, 0)
 
 
 def capital_recovery_factor(technologies: xr.Dataset) -> xr.DataArray:

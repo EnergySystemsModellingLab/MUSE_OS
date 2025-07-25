@@ -64,11 +64,14 @@ class Sector(AbstractSector):  # type: ignore
         ]
 
         # Check that subsector commodities are disjoint
-        are_disjoint_commodities = sum(len(s.commodities) for s in subsectors) == len(
-            set().union(*(set(s.commodities) for s in subsectors))  # type: ignore
-        )
-        if not are_disjoint_commodities:
-            raise RuntimeError("Subsector commodities are not disjoint")
+        sector_commodities = [c for s in subsectors for c in s.commodities]
+        duplicates = [
+            c for c in set(sector_commodities) if sector_commodities.count(c) > 1
+        ]
+        if duplicates:
+            raise RuntimeError(
+                f"Commodities {duplicates} are outputted by multiple subsectors."
+            )
 
         # Create outputs
         outputs = ofactory(*outputs_config, sector_name=name)
@@ -85,6 +88,7 @@ class Sector(AbstractSector):  # type: ignore
             technologies,
             supply_prod=production,
             subsectors=subsectors,
+            commodities=sector_commodities,
             outputs=outputs,
             interactions=interactions,
             timeslice_level=timeslice_level,
@@ -96,6 +100,7 @@ class Sector(AbstractSector):  # type: ignore
         technologies: xr.Dataset,
         supply_prod: PRODUCTION_SIGNATURE,
         subsectors: Sequence[Subsector] = [],
+        commodities: list[str] = [],
         interactions: Callable[[Sequence[AbstractAgent]], None] | None = None,
         outputs: Callable | None = None,
         timeslice_level: str | None = None,
@@ -156,6 +161,9 @@ class Sector(AbstractSector):  # type: ignore
         """Full supply, consumption and costs data for the most recent year."""
         self.output_data: xr.Dataset
 
+        """Commodities that the sector is in charge of producing."""
+        self.commodities: list[str] = commodities
+
     def next(
         self,
         mca_market: xr.Dataset,
@@ -190,7 +198,8 @@ class Sector(AbstractSector):  # type: ignore
 
         # Select appropriate data from the market
         market = mca_market.sel(
-            commodity=self.technologies.commodity, region=self.technologies.region
+            commodity=self.technologies.commodity.values,
+            region=self.technologies.region,
         )
 
         # Select technology data from the investment year
@@ -252,10 +261,6 @@ class Sector(AbstractSector):  # type: ignore
             result = xr.Dataset(
                 dict(supply=supply, consumption=consumption, costs=costs)
             )
-        result["comm_usage"] = self.technologies.comm_usage.sel(
-            commodity=result.commodity
-        )
-        result.set_coords("comm_usage")
 
         # Convert result to global timeslicing scheme
         return self.convert_to_global_timeslicing(result)
@@ -266,7 +271,6 @@ class Sector(AbstractSector):  # type: ignore
 
     def market_variables(self, market: xr.Dataset, technologies: xr.Dataset) -> Any:
         """Computes resulting market: production, consumption, and costs."""
-        from muse.commodities import is_pollutant
         from muse.costs import levelized_cost_of_energy, supply_cost
         from muse.quantities import capacity_to_service_demand, consumption
         from muse.utilities import broadcast_over_assets, interpolate_capacity
@@ -280,6 +284,9 @@ class Sector(AbstractSector):  # type: ignore
             technologies, capacity, installed_as_year=True
         )
 
+        # Select relevant investment year prices for each asset
+        prices = broadcast_over_assets(market.prices.isel(year=1), capacity)
+
         # Calculate supply
         supply = self.supply_prod(
             market=market,
@@ -292,7 +299,7 @@ class Sector(AbstractSector):  # type: ignore
         consume = consumption(
             technologies=technodata,
             production=supply,
-            prices=market.prices,
+            prices=prices,
             timeslice_level=self.timeslice_level,
         )
 
@@ -305,7 +312,7 @@ class Sector(AbstractSector):  # type: ignore
             timeslice_level=self.timeslice_level,
         )
         lcoe = levelized_cost_of_energy(
-            prices=market.prices.sel(region=supply.region).isel(year=1),
+            prices=prices,
             technologies=technodata,
             capacity=utilized_capacity,
             production=supply.isel(year=1),
@@ -314,11 +321,7 @@ class Sector(AbstractSector):  # type: ignore
         )
 
         # Calculate new commodity prices
-        costs = supply_cost(
-            supply.where(~is_pollutant(supply.comm_usage), 0),
-            lcoe,
-            asset_dim="asset",
-        )
+        costs = supply_cost(supply, lcoe, asset_dim="asset")
 
         return supply, consume, costs
 

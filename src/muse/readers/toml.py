@@ -593,13 +593,16 @@ def read_technodata(
 
     # Only keep commodities that are used as inputs or outputs
     dims = ("year", "region", "technology")
-    ins = (technologies.fixed_inputs > 0).any(
+    fixed_ins = (technologies.fixed_inputs > 0).any(
         [d for d in dims if d in technologies.fixed_inputs.dims]
+    )
+    flex_ins = (technologies.flexible_inputs > 0).any(
+        [d for d in dims if d in technologies.flexible_inputs.dims]
     )
     outs = (technologies.fixed_outputs > 0).any(
         [d for d in dims if d in technologies.fixed_outputs.dims]
     )
-    techcomms = technologies.commodity[ins | outs]
+    techcomms = technologies.commodity[fixed_ins | flex_ins | outs]
     technologies = technologies.sel(commodity=techcomms)
 
     # Read trade technodata

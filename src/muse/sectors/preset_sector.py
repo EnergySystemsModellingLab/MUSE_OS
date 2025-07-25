@@ -37,6 +37,7 @@ class PresetSector(AbstractSector):  # type: ignore
         """Interpolation method"""
         self.name = name
         """Name by which to identify a sector"""
+        self.commodities: list[str] = []
 
     def next(self, mca_market: Dataset) -> Dataset:
         """Advance sector by one time period."""
