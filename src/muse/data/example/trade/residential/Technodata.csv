@@ -1,5 +1,5 @@
-ProcessName,RegionName,Time,cap_par,cap_exp,fix_par,fix_exp,var_par,var_exp,MaxCapacityAddition,TotalCapacityLimit,TechnicalLife,UtilizationFactor,efficiency,InterestRate,Type,Agent2
-gasboiler,R1,2010,4.52,1,0,1,0,1,600,2000,10,0.9,86,0.1,energy,1
-heatpump,R1,2010,10.55,1,0,1,0,1,600,2000,10,0.9,86,0.1,energy,1
-gasboiler,R2,2010,4.94,1,0,1,0,1,600,2000,10,0.9,86,0.1,energy,1
-heatpump,R2,2010,11.53,1,0,1,0,1,600,2000,10,0.9,86,0.1,energy,1
+ProcessName,RegionName,Time,cap_par,fix_par,var_par,MaxCapacityAddition,TotalCapacityLimit,TechnicalLife,UtilizationFactor,InterestRate,Agent2
+gasboiler,R1,2010,4.52,0,0,600,2000,10,0.9,0.1,1
+heatpump,R1,2010,10.55,0,0,600,2000,10,0.9,0.1,1
+gasboiler,R2,2010,4.94,0,0,600,2000,10,0.9,0.1,1
+heatpump,R2,2010,11.53,0,0,600,2000,10,0.9,0.1,1

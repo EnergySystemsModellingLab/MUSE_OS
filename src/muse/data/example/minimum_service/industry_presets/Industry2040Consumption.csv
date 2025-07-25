@@ -1,4 +1,4 @@
-RegionName,Timeslice,fuel1,fuel2,fuel3,ammonia,CO2f,CO2r,CO2c,CO2s,N2O
-R1,1,0,0,0,14.50612647,0,0,0,0,0
-R1,2,0,0,0,14.94570606,0,0,0,0,0
-R1,3,0,0,0,14.50612647,0,0,0,0,0
+RegionName,Timeslice,ammonia
+R1,1,14.50612647
+R1,2,14.94570606
+R1,3,14.50612647

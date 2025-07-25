@@ -1,5 +1,5 @@
-ProcessName,RegionName,Time,electricity,gas,heat,CO2f,wind
-gasCCGT,R1,2010,1,0,0,91.66666667,0
-windturbine,R1,2010,1,0,0,0,0
-gasCCGT,R2,2010,1,0,0,91.66666667,0
-windturbine,R2,2010,1,0,0,0,0
+ProcessName,RegionName,Time,electricity,CO2f
+gasCCGT,R1,2010,1,91.66666667
+windturbine,R1,2010,1,0
+gasCCGT,R2,2010,1,91.66666667
+windturbine,R2,2010,1,0
