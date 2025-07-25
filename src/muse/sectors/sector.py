@@ -193,7 +193,8 @@ class Sector(AbstractSector):  # type: ignore
 
         # Select appropriate data from the market
         market = mca_market.sel(
-            commodity=self.technologies.commodity, region=self.technologies.region
+            commodity=self.technologies.commodity.values,
+            region=self.technologies.region,
         )
 
         # Select technology data from the investment year
@@ -255,10 +256,6 @@ class Sector(AbstractSector):  # type: ignore
             result = xr.Dataset(
                 dict(supply=supply, consumption=consumption, costs=costs)
             )
-        result["comm_usage"] = self.technologies.comm_usage.sel(
-            commodity=result.commodity
-        )
-        result.set_coords("comm_usage")
 
         # Convert result to global timeslicing scheme
         return self.convert_to_global_timeslicing(result)
@@ -269,7 +266,6 @@ class Sector(AbstractSector):  # type: ignore
 
     def market_variables(self, market: xr.Dataset, technologies: xr.Dataset) -> Any:
         """Computes resulting market: production, consumption, and costs."""
-        from muse.commodities import is_pollutant
         from muse.costs import levelized_cost_of_energy, supply_cost
         from muse.quantities import capacity_to_service_demand, consumption
         from muse.utilities import broadcast_over_assets, interpolate_capacity
@@ -320,11 +316,7 @@ class Sector(AbstractSector):  # type: ignore
         )
 
         # Calculate new commodity prices
-        costs = supply_cost(
-            supply.where(~is_pollutant(supply.comm_usage), 0),
-            lcoe,
-            asset_dim="asset",
-        )
+        costs = supply_cost(supply, lcoe, asset_dim="asset")
 
         return supply, consume, costs
 
