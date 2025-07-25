@@ -1,6 +1,6 @@
-CommodityName,Description,CommodityType,Unit
-electricity,Electricity,Energy,PJ
-gas,Gas,Energy,PJ
-heat,Heat,Energy,PJ
-wind,Wind,Energy,PJ
-CO2f,CO2fuelcomsbustion,Environmental,kt
+CommodityName,CommodityType,Unit
+electricity,Energy,PJ
+gas,Energy,PJ
+heat,Energy,PJ
+wind,Energy,PJ
+CO2f,Environmental,kt
