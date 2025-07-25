@@ -377,34 +377,30 @@ def single_year_iteration(
     market = market.copy(deep=True)
 
     # New prices for the investment year
-    updated_prices = market.prices.sel(year=[market.year[1]])
+    investment_year = market.year[1]
+    updated_prices = market.prices.sel(year=investment_year)
 
     for sector in sectors:
         # Solve the sector
         sector_market = sector.next(market[["supply", "consumption", "prices"]])
-        sector_market = sector_market.sel(year=[market.year[1]])
 
-        # Calculate net consumption
-        sector_market = sector_market.assign(
-            consumption=lambda x: (x.consumption - x.supply).clip(min=0.0, max=None)
-        )
+        # Reindex to add back commodities that are not relevant to the sector
+        sector_market = sector_market.reindex_like(market, fill_value=0)
 
         # Update market supply and consumption
-        market["consumption"] = market.consumption + sector_market.consumption
-        market["supply"] = market.supply + sector_market.supply
+        market["consumption"] += sector_market.consumption
+        market["supply"] += sector_market.supply
 
         # Update market prices
         # We only do this for the commodities that the sector is in charge of producing
         # And only for regions/timeslices with >0 production in the investment year
-        for commodity in sector.commodities:
-            is_supplied = sector_market.supply.sel(commodity=commodity) > 0
-            updated_prices.loc[dict(commodity=commodity)] = updated_prices.loc[
-                dict(commodity=commodity)
-            ].where(~is_supplied, sector_market.costs.sel(commodity=commodity))
+        supply = sector_market.supply.sel(year=investment_year)
+        supply = supply.where(supply.commodity.isin(sector.commodities), 0)
+        updated_prices = updated_prices.where(
+            supply == 0, sector_market.costs.sel(year=investment_year)
+        )
 
-    return SingleYearIterationResult(
-        market, sectors, updated_prices.sel(year=market.year[1])
-    )
+    return SingleYearIterationResult(market, sectors, updated_prices)
 
 
 class FindEquilibriumResults(NamedTuple):
