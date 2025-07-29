@@ -9,8 +9,8 @@ from muse.wizard import (
     add_agent,
     add_new_commodity,
     add_new_process,
-    add_price_data_for_new_year,
     add_region,
+    add_technodata_for_new_year,
     add_timeslice,
     get_sectors,
     modify_toml,
@@ -84,17 +84,6 @@ def test_add_new_commodity(model_path):
         model_path / "GlobalCommodities.csv", "CommodityName", ["new_commodity"]
     )
 
-    # Check commodity appears in relevant files
-    files_to_check = [
-        model_path / "power/CommIn.csv",
-        model_path / "power/CommOut.csv",
-        model_path / "Projections.csv",
-        *(model_path / "residential_presets").glob("*"),
-    ]
-
-    for file in files_to_check:
-        assert_columns_exist(file, ["new_commodity"])
-
 
 def test_add_new_process(model_path):
     """Test the add_new_process function on the default model."""
@@ -112,13 +101,11 @@ def test_add_new_process(model_path):
         )
 
 
-def test_add_price_data_for_new_year(model_path):
+def test_technodata_for_new_year(model_path):
     """Test the add_price_data_for_new_year function on the default model."""
-    add_price_data_for_new_year(model_path, 2030, "power", 2020)
+    add_technodata_for_new_year(model_path, 2030, "power", 2020)
 
-    files_to_check = ["Technodata.csv", "CommIn.csv", "CommOut.csv"]
-    for file in files_to_check:
-        assert_values_in_csv(model_path / "power" / file, "Time", [2030])
+    assert_values_in_csv(model_path / "power" / "Technodata.csv", "Time", [2030])
 
 
 def test_add_agent(model_path_retro):
