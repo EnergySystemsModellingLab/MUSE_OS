@@ -25,25 +25,26 @@ def generate_model_1():
     examples.copy_model(name="default", path=parent_path, overwrite=True)
     os.rename(parent_path / "model", model_path)
 
-    # Copy gas commodity in power sector -> cook
+    # Copy gas heat in residential sector -> cook
     add_new_commodity(model_path, "cook", "residential", "heat")
 
-    # Modify cook projections
-    projections_file = model_path / "Projections.csv"
-    df = pd.read_csv(projections_file)
-    df.loc[:, "cook"] = 100
-    df.to_csv(projections_file, index=False)
-
-    # Copy processes in power sector -> cook
+    # Copy processes in residential sector -> electric_stove and gas_stove
     add_new_process(model_path, "electric_stove", "residential", "heatpump")
     add_new_process(model_path, "gas_stove", "residential", "gasboiler")
+
+    # Add preset demand for cook
+    residential_presets_path = model_path / "residential_presets"
+    for file in residential_presets_path.glob("*.csv"):
+        df = pd.read_csv(file)
+        df.loc[:, "cook"] = df.loc[:, "heat"]
+        df.to_csv(file, index=False)
 
     # Modify output commodities
     commout_file = model_path / "residential/CommOut.csv"
     df = pd.read_csv(commout_file)
     df.loc[:, "cook"] = 0
-    df.loc[df["ProcessName"] == "gas_stove", df.columns[-6:]] = [0, 0, 0, 50, 0, 1]
-    df.loc[df["ProcessName"] == "electric_stove", df.columns[-6:]] = [0, 0, 0, 0, 0, 1]
+    df.loc[df["ProcessName"] == "gas_stove", df.columns[-3:]] = [0, 50, 1]
+    df.loc[df["ProcessName"] == "electric_stove", df.columns[-3:]] = [0, 0, 1]
     df.to_csv(commout_file, index=False)
 
     # Modify input commodities

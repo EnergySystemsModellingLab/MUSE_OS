@@ -1,7 +1,7 @@
-RegionName,Timeslice,electricity,gas,heat,CO2f,wind,solar
-R1,1,0,0,1.0,0,0,0
-R1,2,0,0,1.5,0,0,0
-R1,3,0,0,1.0,0,0,0
-R1,4,0,0,1.5,0,0,0
-R1,5,0,0,3.0,0,0,0
-R1,6,0,0,2.0,0,0,0
+RegionName,Timeslice,heat
+R1,1,1
+R1,2,1.5
+R1,3,1
+R1,4,1.5
+R1,5,3
+R1,6,2
