@@ -572,6 +572,8 @@ def process_io_technodata(data: pd.DataFrame) -> xr.Dataset:
     else:
         result["flexible"] = xr.zeros_like(result.fixed).rename("flexible")
 
+    # Check commodities
+    result = check_commodities(result, fill_missing=True, fill_value=0)
     return result
 
 
