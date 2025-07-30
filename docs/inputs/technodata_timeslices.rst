@@ -23,9 +23,12 @@ For instance, if you were to model solar photovoltaics, you would probably want 
    represents the period of the simulation to which the value applies; it needs to
    contain at least the base year of the simulation
 
-Timeslice levels (e.g. month, day, hour)
+Timeslice levels (e.g. ``month``, ``day``, ``hour``)
     One column for each timeslice level specified in the toml file.
     Together, you should specify one row for each timeslice defined in the model.
+    e.g. the above table would be valid for a model with two timeslices:
+    - ``all-year,all-week,night``
+    - ``all-year,all-week,morning``
 
 ``UtilizationFactor``
    represents the maximum actual output of the technology in a timeslice, divided by the theoretical maximum output if the technology were operating at full capacity for the whole timeslice. Must be between 0 and 1 (default = 1).

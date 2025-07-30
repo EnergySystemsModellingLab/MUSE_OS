@@ -57,7 +57,7 @@ a whole.
 
 
 ``log_level`` (optional, default = **info**)
-   verbosity of the output. Valid options, from the highest to the lowest level of verbosity, are: **DEBUG**, **INFO**, **WARNING**, **ERROR**, **CRITICAL**.
+   verbosity of the output. Valid options, from the highest to the lowest level of verbosity, are: **debug**, **info**, **warning**, **error**, **critical**.
 
 ``currency`` (optional)
    The currency used for prices (e.g. "USD", "EUR", "MUS$2010"). All prices in all input
@@ -89,7 +89,7 @@ a whole.
 
 
 -------------
-Carbon market
+Carbon market (optional)
 -------------
 
 This section contains the settings related to the modelling of the carbon market.
@@ -109,7 +109,7 @@ Example
    carbon market feature is disabled. Defaults to an empty list.
 
 ``commodities``
-   Commodities that make up the carbon market. Defaults to an empty list.
+   Commodities that make up the carbon market.
 
 ``control_undershoot`` (optional, default = False)
    Whether to control carbon budget undershoots. This parameter allows for carbon tax credit from one year to be passed to the next in the case of less carbon being emitted than the budget.
@@ -252,7 +252,7 @@ Standard sectors
 ----------------
 
 A MUSE model requires at least one sector.
-Sectors are declared in the TOML file by adding a subsection to the `sectors` section:
+Sectors are declared in the TOML file by adding a subsection to the ``sectors`` section:
 
 .. code-block:: TOML
 
@@ -339,58 +339,6 @@ A sector accepts these attributes:
    the timeslice level, then ``technodata_timeslices`` must have columns "month" and "day", but not "hour")
 
 Sectors contain a number of subsections:
-
-``interactions`` (optional)
-   Defines interactions between agents. These interactions take place right before new
-   investments are computed. The interactions can be anything. They are expected to
-   modify the agents and their assets. MUSE provides a default set of interactions that
-   have *new* agents pass on their assets to the corresponding *retro* agent, and the
-   *retro* agents pass on the make-up of their assets to the corresponding *new*
-   agents.
-
-   ``interactions`` are specified as a :ref:`TOML array<toml-array>`, e.g. with double
-   brackets. Each sector can specify an arbitrary number of interactaction, simply by
-   adding an extra interaction row.
-
-   There are two orthogonal concepts to interactions:
-
-   - a *net* defines the set of agents that interact. A set can contain any
-     number of agents, whether zero, two, or all agents in a sector. See
-     :py:func:`muse.interactions.register_interaction_net`.
-   - an *interaction* defines how the net actually interacts.  See
-     :py:func:`muse.interactions.register_agent_interaction`.
-
-   In practice, we always consider sequences of nets (i.e. more than one net) that
-   interact using the same interaction function.
-
-   Hence, the input looks something like the following:
-
-   .. code-block:: TOML
-
-      [[sectors.commercial.interactions]]
-      net = 'new_to_retro'
-      interaction = 'transfer'
-
-   **new_to_retro** is a function that figures out all "new/retro" pairs of agents.
-   Whereas **transfer** is a function that performs the transfer of assets and
-   information between each pair.
-
-   Furthermore, it is possible to pass parameters to either the net of the interaction
-   as follows:
-
-   .. code-block:: TOML
-
-      [[sectors.commercial.interactions]]
-      net = {"name": "some_net", "param": "some value"}
-      interaction = {"name": "some_interaction", "param": "some other value"}
-
-   The parameters will depend on the net and interaction functions. Neither
-   "new_to_retro" nor "transfer" take any arguments at this point. MUSE interaction
-   facilities are defined in :py:mod:`muse.interactions`.
-
-   An error is raised if and empty network is found. This is the case, for example, if a
-   "new_to_retro" type of network has been defined but no retro agents are included in
-   the sector.
 
 ``subsectors``
     Subsectors group together agents into separate groups servicing the demand for
@@ -552,6 +500,59 @@ Sectors contain a number of subsections:
    You can pass additional parameters that will be forwarded to the underlying save function.
    For example, when using the "csv" sink, you could use `float_format = "%.6f"` to increase the precision of floating point numbers in the output file (default is 4 decimal places).
    For a complete list of available parameters, see the documentation for the respective save function (e.g., `pandas.to_csv <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html>`_ for CSV outputs).
+
+
+``interactions`` (optional)
+   Defines interactions between agents. These interactions take place right before new
+   investments are computed. The interactions can be anything. They are expected to
+   modify the agents and their assets. MUSE provides a default set of interactions that
+   have *new* agents pass on their assets to the corresponding *retro* agent, and the
+   *retro* agents pass on the make-up of their assets to the corresponding *new*
+   agents.
+
+   ``interactions`` are specified as a :ref:`TOML array<toml-array>`, e.g. with double
+   brackets. Each sector can specify an arbitrary number of interactaction, simply by
+   adding an extra interaction row.
+
+   There are two orthogonal concepts to interactions:
+
+   - a *net* defines the set of agents that interact. A set can contain any
+     number of agents, whether zero, two, or all agents in a sector. See
+     :py:func:`muse.interactions.register_interaction_net`.
+   - an *interaction* defines how the net actually interacts.  See
+     :py:func:`muse.interactions.register_agent_interaction`.
+
+   In practice, we always consider sequences of nets (i.e. more than one net) that
+   interact using the same interaction function.
+
+   Hence, the input looks something like the following:
+
+   .. code-block:: TOML
+
+      [[sectors.commercial.interactions]]
+      net = 'new_to_retro'
+      interaction = 'transfer'
+
+   **new_to_retro** is a function that figures out all "new/retro" pairs of agents.
+   Whereas **transfer** is a function that performs the transfer of assets and
+   information between each pair.
+
+   Furthermore, it is possible to pass parameters to either the net of the interaction
+   as follows:
+
+   .. code-block:: TOML
+
+      [[sectors.commercial.interactions]]
+      net = {"name": "some_net", "param": "some value"}
+      interaction = {"name": "some_interaction", "param": "some other value"}
+
+   The parameters will depend on the net and interaction functions. Neither
+   "new_to_retro" nor "transfer" take any arguments at this point. MUSE interaction
+   facilities are defined in :py:mod:`muse.interactions`.
+
+   An error is raised if and empty network is found. This is the case, for example, if a
+   "new_to_retro" type of network has been defined but no retro agents are included in
+   the sector.
 
 --------------
 Preset sectors

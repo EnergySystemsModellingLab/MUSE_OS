@@ -27,16 +27,16 @@ The columns have the following meaning:
    Name shared by a retrofit and new-capacity agent pair.
 
 ``Type``
-   One of "New" or "Retrofit". "New" and "Retrofit" agents make up a pair with a given
+   One of **New** or **Retrofit**. **New** and **Retrofit** agents make up a pair with a given
    :ref:`name <Name>`. The demand is split into two, with one part coming from
    decommissioned assets, and the other coming from everything else. "Retrofit" agents
    invest only to make up for decommissioned assets. They are often limited in the
-   technologies they can consider (by :ref:`SearchRule <SearchRule>`). "New" agents
+   technologies they can consider (by :ref:`SearchRule <SearchRule>`). **New** agents
    invest on the rest of the demand, and can often consider more general sets of
-   technologies. If only "New" agents are included, they will also invest to make up for
+   technologies. If only **New** agents are included, they will also invest to make up for
    decommissioned assets, but the end mix might be different than using a specialised
-   "Retrofit" agent for that.
-   *Note: Retrofit agents will be deprecated in a future release.*
+   **Retrofit** agent for that.
+   **Note: Retrofit agents will be deprecated in a future release.**
 
 ``AgentShare``
    Name used to assign a fraction of existing capacity to the agent in the :ref:`inputs-technodata` file.
@@ -195,10 +195,17 @@ Additional objectives
 Additional optional columns
    Certain columns may also be required when using certain search rules. These are:
 
-  ``MaturityThreshold``: Only applies when using the :py:func:`maturity <muse.filters.maturity>` search rule.
+  ``MaturityThreshold``
+   Only applies when using the :py:func:`maturity <muse.filters.maturity>` search rule.
    Allows agents to only consider technologies that have achieved a certain market share
    (e.g. if 0.5, the agent will only invest in technologies that have a current market share of 50% or more).
 
-  ``SpendLimit``: Only applies when using the :py:func:`spend_limit <muse.filters.spend_limit>` search rule.
+  ``SpendLimit``
+   Only applies when using the :py:func:`spend_limit <muse.filters.spend_limit>` search rule.
    Allows agents to only consider technologies with a unit capital cost (`cap_par`) lower than the spend limit.
    (e.g. if 10, the agent will only invest in technologies with a `cap_par` of 10 or lower, as listed in the :ref:`inputs-technodata` file).
+
+  ``Type``
+   Only applies when using the :py:func:`similar_technology <muse.filters.similar_technology>` search rule.
+   Allows agents to only consider technologies of a given type.
+   (e.g. if "electric", the agent will only invest in technologies of type "electric", as listed in the :ref:`inputs-technodata` file).

@@ -8,7 +8,7 @@ as capital, fixed and variable cost, lifetime, utilisation factor.
 The technodata should follow the structure reported in the table below.
 In this example, we show an electric boiler for a generic region, region1:
 
-.. csv-table:: Techno-data: cost inputs
+.. csv-table:: Technodata
    :header: ProcessName, RegionName, Time, cap_par, cap_exp, fix_par, ...
 
    resBoilerElectric, region1, 2010, 3.81, 1.00, 0.38, ...
@@ -93,7 +93,7 @@ Growth constraints (optional)
     Taking the above example, if the GrowthSeed is set to 10 PJ (higher than the existing capacity of 7.7 PJ), the MaxCapacityGrowth constraint will be applied as follows:
     10 x (1 + 0.2)\ :sup:`5` - 4.9 = 19.9 PJ.
 
-TechnicalLife
+``TechnicalLife``
    represents the number of years that a technology operates before it is decommissioned.
 
 ``UtilizationFactor`` (optional, default = 1)
@@ -133,9 +133,11 @@ Agent shares (e.g. ``Agent0``, ..., ``AgentN``)
    Values must sum to 1 for each row of the table.
 
 Additional optional columns
-   Certain columns may also be required when using certain agent objectives or search spaces. These are:
+  Certain columns may also be required when using certain agent objectives or search spaces.
+  These are:
 
-  ``efficiency``: represents the technology efficiency. Required when using the "efficiency" agent objective, which ranks investment options according to their energy or material efficiency (see :ref:`inputs-agents`).
+  ``efficiency``
+     represents the technology efficiency. Required when using the "efficiency" agent objective, which ranks investment options according to their energy or material efficiency (see :ref:`inputs-agents`).
 
   ``Type``: defines the type of a technology. Required when using the "similar_technology" search space, which allows agents to filter for technologies of a similar type (see :ref:`inputs-agents`).
 
