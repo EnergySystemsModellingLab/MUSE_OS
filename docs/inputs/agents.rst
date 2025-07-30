@@ -4,14 +4,8 @@
 Agents
 ======
 
-In MUSE, an agent-based formulation was originally introduced for the residential and
-commercial building sectors (`Sachs et al. (2019) <https://doi.org/10.1016/j.energy.2019.01.161>`_).  Agents are defined using a CSV file, with
-one agent per row, using a format meant specifically for retrofit
-and new-capacity agent pairs. This CSV file can be read using
-:py:func:`~muse.readers.csv.read_agent_parameters`. The data is also
-interpreted to some degree in the factory functions
-:py:func:`~muse.agent.create_retrofit_agent` and
-:py:func:`~muse.agent.create_newcapa_agent`.
+Agents are defined using a CSV file, with
+one agent per row, using a format meant specifically for retrofit and new-capacity agent pairs.
 
 For instance, we have the following CSV table:
 
@@ -29,10 +23,10 @@ The columns have the following meaning:
 
 .. _name:
 
-Name
+``Name``
    Name shared by a retrofit and new-capacity agent pair.
 
-Type
+``Type``
    One of "New" or "Retrofit". "New" and "Retrofit" agents make up a pair with a given
    :ref:`name <Name>`. The demand is split into two, with one part coming from
    decommissioned assets, and the other coming from everything else. "Retrofit" agents
@@ -44,7 +38,7 @@ Type
    "Retrofit" agent for that.
    *Note: Retrofit agents will be deprecated in a future release.*
 
-AgentShare
+``AgentShare``
    Name used to assign a fraction of existing capacity to the agent in the :ref:`inputs-technodata` file.
    If using "New" and "Retrofit" agents, you should create a column with the name of each "Retrofit" agent share (e.g. "Agent1Retro", "Agent2Retro" etc.) in the :ref:`inputs-technodata` file,
    with values summing to 1 for each technology.
@@ -52,15 +46,13 @@ AgentShare
    with values summing to 1 for each technology.
    See documentation for the :ref:`inputs-technodata` file for more details.
 
-RegionName
+``RegionName``
    Region where an agent operates.
 
 .. py:currentmodule:: muse.objectives
 
-.. _Objective1:
-
-Objective1
-   First objective that an agent will try and maximize or minimize during investment.
+``Objective1``
+   Objective that an agent will try and maximize or minimize during investment.
    This objective should be one registered with
    :py:func:`@register_objective <register_objective>`. The following objectives are
    available with MUSE:
@@ -104,50 +96,27 @@ Objective1
    :ref:`Objsort1 <Objsort1>`. Multiple objectives are combined using the
    :ref:`DecisionMethod <DecisionMethod>`
 
-.. _Objective2:
 
-Objective2 (optional)
-   Second objective. See :ref:`Objective1 <Objective1>`.
+``ObjData1``
+   A weight associated with the objective.
+   Whether it is used will depend in large part on the :ref:`decision method <DecisionMethod>`.
 
-.. _Objective3:
 
-Objective3 (optional)
-   Third objective. See :ref:`Objective1 <Objective1>`.
+``Objsort1``
+   Determines whether the objective is maximized or minimized.
+   This should be set to "True" for minimization and "False" for maximisation.
 
-.. _ObjData1:
+Additional objectives
+   For certain decision methods you can use more than one objective.
+   In this case, additional objectives can be specified with additional columns (e.g. ``Objective2``, ``ObjData2``, ``Objsort2`` etc.)
+   For example, when using the weighted sum decision method, the ``ObjDataX`` column for each objective defines the weight of the objective in the weighted sum calculation.
 
-ObjData1
-   A weight associated with the :ref:`first objective <Objective1>`. Whether it is used
-   will depend in large part on the :ref:`decision method <DecisionMethod>`.
-
-ObjData2 (optional)
-   A weight associated with the :ref:`second objective <Objective2>`. See :ref:`ObjData1
-   <ObjData1>`.
-
-ObjData3 (optional)
-   A weight associated with the :ref:`third objective <Objective3>`. See :ref:`ObjData1
-   <ObjData1>`.
-
-.. _Objsort1:
-
-Objsort1
-   Sets whether :ref:`first objective <Objective1>` is maximized or minimized. For both
-   "adhoc" and "scipy" solvers this should be set to "True" for minimization and
-   "False" for maximisation.
-
-Objsort2 (optional)
-   Objsort parameter for :ref:`second objective <Objective2>`. See :ref:`Objsort1
-   <Objsort1>`.
-
-Objsort3 (optional)
-   Objsort parameter for :ref:`third objective <Objective3>`. See :ref:`Objsort1
-   <Objsort1>`.
 
 .. py:currentmodule:: muse.filters
 
 .. _SearchRule:
 
-SearchRule
+``SearchRule``
    The search rule allows users to par down the search space of technologies to those an
    agent is likely to consider.
    The search rule is any function with a given signature, and registered with MUSE via
@@ -186,7 +155,7 @@ SearchRule
 
 .. _DecisionMethod:
 
-DecisionMethod
+``DecisionMethod``
    Decision methods reduce multiple objectives into a single scalar objective per
    replacement technology. They allow combining several objectives into a single metric
    through which replacement technologies can be ranked.
@@ -217,18 +186,19 @@ DecisionMethod
    The functions allow for any number of objectives. However, the format described here
    allows only for three.
 
-Quantity
+``Quantity``
    Represents the fraction of new demand that is assigned to the agent
    (e.g. if 0.2, 20% of new demand in each year will be assigned to the agent).
    Must sum to 1 across all "New" agents.
    When using both "Retrofit" agents and "New" agents, this only applies to the "New" agents.
 
-MaturityThreshold (optional)
-   Only applies when using the :py:func:`maturity <muse.filters.maturity>` search rule.
+Additional optional columns
+   Certain columns may also be required when using certain search rules. These are:
+
+  ``MaturityThreshold``: Only applies when using the :py:func:`maturity <muse.filters.maturity>` search rule.
    Allows agents to only consider technologies that have achieved a certain market share
    (e.g. if 0.5, the agent will only invest in technologies that have a current market share of 50% or more).
 
-SpendLimit (optional)
-   Only applies when using the :py:func:`spend_limit <muse.filters.spend_limit>` search rule.
+  ``SpendLimit``: Only applies when using the :py:func:`spend_limit <muse.filters.spend_limit>` search rule.
    Allows agents to only consider technologies with a unit capital cost (`cap_par`) lower than the spend limit.
    (e.g. if 10, the agent will only invest in technologies with a `cap_par` of 10 or lower, as listed in the :ref:`inputs-technodata` file).
