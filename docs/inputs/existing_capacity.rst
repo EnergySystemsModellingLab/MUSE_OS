@@ -1,7 +1,7 @@
 .. _inputs-existing-capacity:
 
 ==========================
-Existing Sectoral Capacity
+Existing Capacity
 ==========================
 
 For each technology, the decommissioning profile should be given to MUSE.
