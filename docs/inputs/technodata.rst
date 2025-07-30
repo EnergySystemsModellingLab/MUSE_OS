@@ -137,9 +137,18 @@ Additional optional columns
   These are:
 
   ``efficiency``
-     represents the technology efficiency. Required when using the "efficiency" agent objective, which ranks investment options according to their energy or material efficiency (see :ref:`inputs-agents`).
+     a numerical value representing the technology efficiency, from 0 to 1.
+     Required when using the "efficiency" agent objective, which ranks investment options according to their energy or material efficiency (see :ref:`inputs-agents`).
+     Note: this has no impact on the commodity flows through the technology, it is merely intended as a customisable value that agents can use to rank technologies.
 
-  ``Type``: defines the type of a technology. Required when using the "similar_technology" search space, which allows agents to filter for technologies of a similar type (see :ref:`inputs-agents`).
+  ``comfort``
+     a numerical value representing the comfort level of a technology, from 0 to 1.
+     Required when using the "comfort" agent objective, which ranks investment options according to their comfort level (see :ref:`inputs-agents`).
+     Like ``efficiency``, this is merely intended as a customisable value that agents can use to rank technologies.
+
+  ``Type``
+     a string value that can be used to define the type of a technology (e.g. "nuclear", "electric vehicle").
+     Required when using the "similar_technology" search space, which allows agents to filter for technologies of a similar type (see :ref:`inputs-agents`).
 
 
 --------------------------------

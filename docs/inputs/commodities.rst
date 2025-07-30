@@ -40,3 +40,7 @@ a whole are defined in a csv file with the following structure.
    This parameter does not need to be included, as it isn't used in the model, but is
    highly recommended for documentation purposes.
    In any case, care should be taken to ensure that units are consistent across all input files.
+
+Additional optional columns
+   Users can provide additional columns for extra information about the commodity (e.g. ``heat_rate``).
+   These will be ignored by the model, but can be useful for documentation purposes.
