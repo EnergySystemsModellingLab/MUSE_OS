@@ -18,11 +18,11 @@ follow the structure reported in the table.
    resBoilerElectric, region2, 39, 3.5, 1, 0.3, 0
 
 
-ProcessName
+``ProcessName``
    represents the technology ID and needs to be consistent across all the data inputs.
 
-RegionName
+``RegionName``
    represents the region ID and needs to be consistent across all the data inputs.
 
-2010,..., 2050
+Years (one column per year)
    represent the simulated periods.
