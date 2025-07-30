@@ -1,4 +1,4 @@
-Correlation demand files
+Correlation Demand Files
 ========================
 
 It is possible to use macrodrivers as a way to infer the service demand. For example, one can use the expected GDP based on purchasing power parity (GDP PPP) and population in the future per region to infer the service demand using a regressor.

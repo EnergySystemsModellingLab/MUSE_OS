@@ -1,7 +1,7 @@
 .. _inputs-iocomms:
 
 =================
-Commodity inputs/outputs
+Commodity Inputs/Outputs
 =================
 
 **Input**

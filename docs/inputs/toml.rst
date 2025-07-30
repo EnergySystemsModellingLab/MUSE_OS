@@ -1,8 +1,8 @@
 .. _simulation-settings:
 
-===================
-Simulation settings
-===================
+=====================
+Simulation settings TOML file
+=====================
 
 .. currentmodule:: muse
 

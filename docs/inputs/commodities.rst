@@ -1,7 +1,7 @@
 .. _inputs-commodities:
 
 =====================
-Commodity Description
+Global Commodities
 =====================
 
 MUSE handles a configurable number and type of commodities which are primarily used to

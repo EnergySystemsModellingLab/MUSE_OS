@@ -1,6 +1,8 @@
+=====================
+Simulation Data Files
+=====================
 
-Input Files
-===========
+This section details the CSV files that are used to populate the simulation data.
 
 .. toctree::
    :maxdepth: 1

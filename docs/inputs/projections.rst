@@ -1,7 +1,7 @@
 .. _inputs-projection:
 
 =========================
-Initial Market Projection
+Commodity Price Projections
 =========================
 
 This file can be used to supply pre-set prices for commodities.
