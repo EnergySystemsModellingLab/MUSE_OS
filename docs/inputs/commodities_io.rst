@@ -75,6 +75,7 @@ Commodities (one column per commodity)
    You do not need to specify all commodities,
    only those that are consumed or produced by the technologies in the sector
 
+--------------------------------
 
 The input data has to be provided for the base year, after which MUSE will assume
 that values are constant for all subsequent years, if no further data is provided.

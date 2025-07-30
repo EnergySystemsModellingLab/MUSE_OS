@@ -36,6 +36,7 @@ Timeslice levels (e.g. ``month``, ``day``, ``hour``)
 ``MinimumServiceFactor``
    represents the minimum service that a technology can output. For instance, the minimum amount of electricity that can be output from a nuclear power plant at a particular timeslice. Must be between 0 and 1 (default = 0).
 
+--------------------------------
 
 The input data has to be provided for the base year, after which MUSE will assume
 that values are constant for all subsequent years, if no further data is provided.

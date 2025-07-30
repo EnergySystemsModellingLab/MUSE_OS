@@ -142,6 +142,8 @@ Additional optional columns
   ``Type``: defines the type of a technology. Required when using the "similar_technology" search space, which allows agents to filter for technologies of a similar type (see :ref:`inputs-agents`).
 
 
+--------------------------------
+
 The input data has to be provided for the base year, after which MUSE will assume
 that values are constant for all subsequent years, if no further data is provided.
 If users wish to vary parameters by year, they can provide rows for additional years.
