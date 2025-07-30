@@ -34,34 +34,32 @@ a whole.
    tolerance = 0.1
    tolerance_unmet_demand = -0.1
 
-*time_framework*
+``time_framework``
    Required. List of years for which the simulation will run.
 
-*region*
-   Subset of regions to consider. If not given, defaults to all regions found in the
-   simulation data.
+``regions``
+   List of regions in the model.
 
-*interpolation_mode*
-   interpolation when reading the initial market. One of
-   `linear`, `nearest`, `zero`, `slinear`, `quadratic`, `cubic`. Defaults to `linear`.
+``interpolation_mode`` (optional, default = **linear**)
+   interpolation when reading the initial market. Options are:
 
-   * `linear` interpolates using a `linear function <https://en.wikipedia.org/wiki/Linear_interpolation>`_.
+   * **linear** interpolates using a `linear function <https://en.wikipedia.org/wiki/Linear_interpolation>`_.
 
-   * `nearest` uses `nearest-neighbour interpolation <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>`_. That is, the closest known data point is used as the prediction for the data point to interpolate.
+   * **nearest** uses `nearest-neighbour interpolation <https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation>`_. That is, the closest known data point is used as the prediction for the data point to interpolate.
 
-   * `zero` assumes that the data point to interpolate is zero.
+   * **zero** assumes that the data point to interpolate is zero.
 
-   * `slinear` uses a spline of order 1. This is a similar method to `linear` interpolation.
+   * **slinear** uses a spline of order 1. This is a similar method to `linear` interpolation.
 
-   * `quadratic` uses a quadratic equation for interpolation. This should be used if you expect your data to take a quadratic form.
+   * **quadratic** uses a quadratic equation for interpolation. This should be used if you expect your data to take a quadratic form.
 
-   * `cubic` interpolation is similar to `quadratic` interpolation, but uses a cubic function for interpolation.
+   * **cubic** interpolation is similar to `quadratic` interpolation, but uses a cubic function for interpolation.
 
 
-*log_level*
-   verbosity of the output. Valid options, from the highest to the lowest level of verbosity, are: "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL".
+``log_level`` (optional, default = **info**)
+   verbosity of the output. Valid options, from the highest to the lowest level of verbosity, are: **DEBUG**, **INFO**, **WARNING**, **ERROR**, **CRITICAL**.
 
-*currency* (optional)
+``currency`` (optional)
    The currency used for prices (e.g. "USD", "EUR", "MUS$2010"). All prices in all input
    files should be expressed in this currency. For example, if the currency is "USD",
    then capital costs should be expressed as "USD" per capacity unit, and price
@@ -69,22 +67,23 @@ a whole.
    currency conversions are performed in the model, and the choice of currency has no
    impact on the simulation - it is purely for documentation purposes.
 
-*equilibirum_variable*
-   whether equilibrium of `demand` or `prices` should be sought. Defaults to `demand`.
+``equilibirum_variable`` (optional, default = **demand**)
+   whether equilibrium of **demand** or **prices** should be sought.
 
-*maximum_iterations*
-   Maximum number of iterations when searching for equilibrium. Defaults to 100.
+``maximum_iterations`` (optional, default = 100)
+   Maximum number of iterations when searching for equilibrium.
 
-*tolerance*
-   Tolerance criteria when checking for equilibrium. Defaults to 0.1. 0.1 signifies that 10% of a deviation is allowed among the iterative value of either demand or price over a year per region.
+``tolerance`` (optional, default = 0.1)
+   Tolerance criteria when checking for equilibrium.
+   e.g. 0.1 signifies that 10% of a deviation is allowed among the iterative value of either demand or price over a year per region.
 
-*tolerance_unmet_demand*
-   Criteria checking whether the demand has been met.  Defaults to -0.1.
+``tolerance_unmet_demand`` (optional, default = -0.1)
+   Criteria checking whether the demand has been met.
 
-*excluded_commodities*
+``excluded_commodities`` (optional)
    List of commodities excluded from the equilibrium considerations.
 
-*plugins*
+``plugins`` (optional)
     Path or list of paths to extra python plugins, i.e. files with registered functions
     such as :py:meth:`~muse.outputs.register_output_quantity`.
 
@@ -103,56 +102,55 @@ Example
    [carbon_budget_control]
    budget = []
 
-*budget*
+``budget``
    Yearly budget. There should be one item for each year the simulation will run. In
    other words, if given and not empty, this is a list with the same length as
    `time_framework` from the main section. If not given or an empty list, then the
    carbon market feature is disabled. Defaults to an empty list.
 
-*commodities*
+``commodities``
    Commodities that make up the carbon market. Defaults to an empty list.
 
-*control_undershoot*
-   Whether to control carbon budget undershoots. This parameter allows for carbon tax credit from one year to be passed to the next in the case of less carbon being emitted than the budget. Defaults to False.
+``control_undershoot`` (optional, default = False)
+   Whether to control carbon budget undershoots. This parameter allows for carbon tax credit from one year to be passed to the next in the case of less carbon being emitted than the budget.
 
-*control_overshoot*
-   Whether to control carbon budget overshoots. If the amount of carbon emitted is above the carbon budget, this parameter specifies whether this deficit is carried over to the next year. Defaults to False.
+``control_overshoot`` (optional, default = False)
+   Whether to control carbon budget overshoots. If the amount of carbon emitted is above the carbon budget, this parameter specifies whether this deficit is carried over to the next year.
 
-*method*
-   Method used to equilibrate the carbon market. Available options are `fitting` and `bisection`, however this can be expanded with the `@register_carbon_budget_method` hook in `muse.carbon_budget`.
+``method`` (optional, default = **bisection**)
+   Method used to equilibrate the carbon market. Available options are **fitting** and **bisection**, however this can be expanded with the `@register_carbon_budget_method` hook in `muse.carbon_budget`.
 
    These methods solve the market with a number of different carbon prices, aiming to find the carbon price at which emissions (pooled across all regions) are equal to the carbon budget.
    The obtained carbon price applies to all regions.
 
-   The `fitting` method samples a number of different carbon prices to build a regression model (linear or exponential) of emissions as a function of carbon price.
+   The **fitting** method samples a number of different carbon prices to build a regression model (linear or exponential) of emissions as a function of carbon price.
    This regression model is then used to estimate the carbon price at which the carbon budget is met.
 
-   The `bisection` method uses an iterative approach to settle on a carbon price.
+   The **bisection** method uses an iterative approach to settle on a carbon price.
    Starting with a lower and upper-bound carbon price, it iteratively halves this price interval until the carbon budget is met to within a user-defined tolerance, or until the maximum number of iterations is reached.
    Generally, this method is more robust for markets with a complex, nonlinear relationship between emissions and carbon price, but may be slower to converge than the `fitting` method.
 
-   Defaults to `bisection`.
 
-*method_options*
+``method_options``
    Additional options for the specified carbon method.
 
-   Parameters for the `bisection` method:
+   Parameters for the **bisection** method:
 
-   - `max_iterations`: maximum number of iterations. Defaults to 5.
-   - `tolerance`: tolerance for convergence. E.g. 0.1 means that the algorithm will terminate when emissions are within 10% of the carbon budget. Defaults to 0.1.
-   - `early_termination_count`: number of iterations with no change in the carbon price before the algorithm will terminate. Defaults to 5.
-   - `price_penalty`: penalty factor applied to carbon price when selecting optimal solution when convergence isn't reached. For example, if the carbon price is measured in units of MUSD/kt, a price penalty of 1000 means that a price increase of 1 MUSD/kt will only be accepted if it reduces emissions by at least 1000 kt. Defaults to 0.1.
+   - ``max_iterations`` (optional, default = 5): maximum number of iterations.
+   - ``tolerance`` (optional, default = 0.1): tolerance for convergence. E.g. 0.1 means that the algorithm will terminate when emissions are within 10% of the carbon budget.
+   - ``early_termination_count`` (optional, default = 5): number of iterations with no change in the carbon price before the algorithm will terminate.
+   - ``price_penalty`` (optional, default = 0.1): penalty factor applied to carbon price when selecting optimal solution when convergence isn't reached. For example, if the carbon price is measured in units of MUSD/kt, a price penalty of 1000 means that a price increase of 1 MUSD/kt will only be accepted if it reduces emissions by at least 1000 kt.
 
-   Parameters for the `fitting` method:
+   Parameters for the **fitting** method:
 
-   - `fitter`: the regression model used to approximate model emissions. Predefined options are `linear` (default) and `exponential`. Further options can be defined using the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
-   - `sample_size`: number of price samples used. Defaults to 5.
+   - ``fitter`` (optional, default = **linear**): the regression model used to approximate model emissions. Predefined options are **linear** (default) and **exponential**. Further options can be defined using the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
+   - ``sample_size`` (optional, default = 5): number of price samples used.
 
    Shared parameters:
 
-   - `refine_price`: If True, applies an upper limit on the carbon price. Defaults to False.
-   - `price_too_high_threshold`: upper limit on the carbon price. Defaults to 10.
-   - `resolution`: Number of decimal places to solve the carbon price to. When using the bisection method, increasing this value may increase the time taken to solve the carbon market. Defaults to 2.
+   - ``refine_price`` (optional, default = False): If True, applies an upper limit on the carbon price.
+   - ``price_too_high_threshold`` (optional, default = 10): upper limit on the carbon price.
+   - ``resolution`` (optional, default = 2): Number of decimal places to solve the carbon price to. When using the bisection method, increasing this value may increase the time taken to solve the carbon market.
 
 
 ------------------
@@ -168,22 +166,12 @@ explained in the :ref:`toml-primer`.
    projections = '{path}/Projections.csv'
    global_commodities = '{path}/GlobalCommodities.csv'
 
-*projections*
+``projections``
    Path to a csv file giving initial market projection. See :ref:`inputs-projection`.
 
-*global_commodities*
+``global_commodities``
    Path to a csv file describing the comodities in the simulation. See
    :ref:`inputs-commodities`.
-
-*base_year_import*
-   Optional. Path to a file describing fixed amounts of commodities imported by region.
-   A CSV file containing the consumption in the
-   same format as :ref:`inputs-projection`.
-
-*base_year_export*
-   Optional. Path to a file describing fixed amounts of commodities imported.
-   A CSV file containing the consumption in the
-   same format as :ref:`inputs-projection`.
 
 .. _timeslices_toml:
 
@@ -239,7 +227,12 @@ levels. For instance, there no ``peak`` periods during weekends. All that matter
 that the relative weights (i.e. the number of hours) are consistent and sum up to a
 year.
 
-*outputs_cache*
+
+-------------
+Output cache
+-------------
+
+``outputs_cache``
    This option behaves exactly like `outputs` for sectors and accepts the same options but
    controls the output of cached quantities instead. This option is NOT available for
    sectors themselves (i.e using `[[sector.commercial.outputs_cache]]` will have no effect). See
@@ -278,76 +271,76 @@ A sector accepts these attributes:
 
 .. _sector-type:
 
-*type*
+``type``
    Defines the kind of sector this is. There are two options:
 
-   * "default": defines a standard sector
-   * "presets": defines a preset sector (see below)
+   * **default**: defines a standard sector
+   * **presets**: defines a preset sector (see below)
 
 .. _sector-priority:
 
-*priority*
+``priority``
    An integer denoting which sectors runs when. Lower values imply the sector will run
    earlier. Later sectors can depend on earlier
    sectors for the their input. If two sectors share the same priority, then their
    order is not defined. Indeed, it should indicate that they can run in parallel.
    For simplicity, the keyword also accepts standard values:
 
-   - "preset": 0
-   - "demand": 10
-   - "conversion": 20
-   - "supply": 30
-   - "last": 100
+   - **preset**: 0
+   - **demand**: 10
+   - **conversion**: 20
+   - **supply**: 30
+   - **last**: 100
 
-   Defaults to "last".
+   Defaults to **last**.
 
-*interpolation* (optional, default = "linear")
+``interpolation`` (optional, default = **linear**)
    Interpolation method used to fill missing years in the *technodata*.
    Available interpolation methods depend on the underlying `scipy method's kind attribute`_.
    Years outside the data range will always be back/forward filled with the closest available data.
 
    .. _scipy method's kind attribute: https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
 
-*dispatch_production* (optional, default = "share")
+``dispatch_production`` (optional, default = **share**)
    The method used to calculate supply of commodities after investments have been made.
 
    MUSE provides two methods in :py:mod:`muse.production`:
 
-   * share: assets each supply a proportion of demand based on their share of total capacity.
-   * maximum: the production is the maximum production for the existing capacity and the technology's utilization factor. See :py:func:`muse.production.maximum_production`.
+   * **share**: assets each supply a proportion of demand based on their share of total capacity.
+   * **maximum**: the production is the maximum production for the existing capacity and the technology's utilization factor. See :py:func:`muse.production.maximum_production`.
 
    Additional methods can be registered with
    :py:func:`muse.production.register_production`
 
-*technodata*
+``technodata``
    Path to a csv file containing the characterization of the technologies involved in
    the sector, e.g. lifetime, capital costs, etc... See :ref:`inputs-technodata`.
 
-*technodata_timeslices* (optional)
+``technodata_timeslices`` (optional)
     Path to a csv file describing the utilization factor and minimum service
     factor of each technology in each timeslice.
     See :ref:`user_guide/inputs/technodata_timeslices`.
 
-*commodities_in*
+``commodities_in``
    Path to a csv file describing the inputs of each technology involved in the sector.
    See :ref:`inputs-iocomms`.
 
-*commodities_out*
+``commodities_out``
    Path to a csv file describing the outputs of each technology involved in the sector.
    See :ref:`inputs-iocomms`.
 
-*timeslice_level* (optional)
+``timeslice_level`` (optional)
    This represents the level of timeslice granularity over which commodity
    flows out of the sector are balanced (e.g. if "day", the sector will aim to meet
    commodity demands on a daily basis, rather than an hourly basis).
-   If not given, defaults to the finest level defined in the global `timeslices` section.
-   Note: If *technodata_timeslices* is used, the data in this file must match the timeslice
+   If not given, defaults to the finest level defined in the global ``timeslices`` section.
+   Note: If ``technodata_timeslices`` is used, the data in this file must match the timeslice
    level of the sector (e.g. with global timeslice levels "month", "day" and "hour", if a sector has "day" as
-   the timeslice level, then *technodata_timeslices* must have columns "month" and "day", but not "hour")
+   the timeslice level, then ``technodata_timeslices`` must have columns "month" and "day", but not "hour")
 
 Sectors contain a number of subsections:
 
-*interactions* (optional)
+``interactions`` (optional)
    Defines interactions between agents. These interactions take place right before new
    investments are computed. The interactions can be anything. They are expected to
    modify the agents and their assets. MUSE provides a default set of interactions that
@@ -355,7 +348,7 @@ Sectors contain a number of subsections:
    *retro* agents pass on the make-up of their assets to the corresponding *new*
    agents.
 
-   *interactions* are specified as a :ref:`TOML array<toml-array>`, e.g. with double
+   ``interactions`` are specified as a :ref:`TOML array<toml-array>`, e.g. with double
    brackets. Each sector can specify an arbitrary number of interactaction, simply by
    adding an extra interaction row.
 
@@ -378,8 +371,8 @@ Sectors contain a number of subsections:
       net = 'new_to_retro'
       interaction = 'transfer'
 
-   "new_to_retro" is a function that figures out all "new/retro" pairs of agents.
-   Whereas "transfer" is a function that performs the transfer of assets and
+   **new_to_retro** is a function that figures out all "new/retro" pairs of agents.
+   Whereas **transfer** is a function that performs the transfer of assets and
    information between each pair.
 
    Furthermore, it is possible to pass parameters to either the net of the interaction
@@ -399,7 +392,7 @@ Sectors contain a number of subsections:
    "new_to_retro" type of network has been defined but no retro agents are included in
    the sector.
 
-*subsectors*
+``subsectors``
     Subsectors group together agents into separate groups servicing the demand for
     different commodities. There must be at least one subsector, and there can be as
     many as required. For instance, a one-subsector setup would look like:
@@ -428,26 +421,26 @@ Sectors contain a number of subsections:
     commodities so that each subsector can service a separate demand.
     The subsectors accept the following keywords:
 
-    *agents*
+    ``agents``
         Path to a csv file describing the agents in the sector.
         See :ref:`user_guide/inputs/agents:agents`.
 
-    *existing_capacity*
+    ``existing_capacity``
        Path to a csv file describing the initial capacity of the sector.
        See :ref:`user_guide/inputs/existing_capacity:existing sectoral capacity`.
 
-    *lpsolver* (optional, default = "scipy")
+    ``lpsolver`` (optional, default = **scipy**)
         The solver for linear problems to use when figuring out investments. The solvers
         are registered via :py:func:`~muse.investments.register_investment`. At time of
         writing, three are available:
 
-        - "scipy" solver (default from v1.3): Formulates investment as a true LP problem and solves it using
+        - **scipy** solver (default from v1.3): Formulates investment as a true LP problem and solves it using
           the `scipy solver`_.
 
-        - an "adhoc" solver: Simple in-house solver that ranks the technologies
+        - **adhoc** solver: Simple in-house solver that ranks the technologies
           according to cost and service the demand incrementally.
 
-    *demand_share* (optional, default = "standard_demand")
+    ``demand_share`` (optional, default = **standard_demand**)
         A method used to split the MCA demand into separate parts to be serviced by
         specific agents. The appropriate choice depends on the type of agents being used
         in the simulation. There are currently two options:
@@ -461,7 +454,7 @@ Sectors contain a number of subsections:
           demand over the investment period, whereas *retrofit* agents are assigned a share
           of the demand that occurs from decommissioned assets.
 
-    *constraints* (optional, defaults to full list)
+    ``constraints`` (optional, defaults to full list)
         The list of constraints to apply to the LP problem solved by the sector. By
         default all of the following are included:
 
@@ -479,11 +472,11 @@ Sectors contain a number of subsections:
           capacity to be installed to the demand of the peak timeslice.
 
 
-*output*
+``output``
    Outputs are made up of several components. MUSE is designed to allow users to
    mix-and-match both how and what to save.
 
-   *output* is specified as a TOML array, e.g. with double brackets. Each sector can
+   ``output`` is specified as a TOML array, e.g. with double brackets. Each sector can
    specify an arbitrary number of outputs, simply by adding an extra output row.
 
    A single row looks like this:
@@ -498,13 +491,13 @@ Sectors contain a number of subsections:
 
    The following attributes are available:
 
-   * *quantity*:
+   ``quantity``
       Name of the quantity to save.
       The options are capacity, consumption, supply and costs.
       Users can also customize and create further output quantities by registering with MUSE via
       :py:func:`muse.outputs.register_output_quantity`. See :py:mod:`muse.outputs` for more details.
 
-   * *sink*:
+   ``sink``
       the sink is the place (disk, cloud, database, etc...) and format with which
       the computed quantity is saved. Currently only sinks that save to files are
       implemented.
@@ -512,7 +505,7 @@ Sectors contain a number of subsections:
       Additional sinks can be added by interested users, and registered with MUSE via
       :py:func:`muse.outputs.register_output_sink`. See :py:mod:`muse.outputs` for more details.
 
-   * *filename*:
+   ``filename``
       defines the format of the file where to save the data. There are several
       standard values that are automatically substituted:
 
@@ -527,9 +520,9 @@ Sectors contain a number of subsections:
 
       Defaults to `{cwd}/{default_output_dir}/{Sector}/{Quantity}/{year}{suffix}`.
 
-   * *overwrite*:
+   ``overwrite`` (optional, default = False)
       If `False` MUSE will issue an error and abort, instead of
-      overwriting an existing file. Defaults to `False`. This prevents important output files from being overwritten.
+      overwriting an existing file. This prevents important output files from being overwritten.
 
    For example, the following would save supply data for the commercial sector as a separate file for each year:
 
@@ -556,7 +549,9 @@ Sectors contain a number of subsections:
 
    **Additional sink parameters:**
 
-   You can pass additional parameters that will be forwarded to the underlying save function. For example, when using the "csv" sink, you could use `float_format = "%.6f"` to increase the precision of floating point numbers in the output file (default is 4 decimal places). For a complete list of available parameters, see the documentation for the respective save function (e.g., `pandas.to_csv <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html>`_ for CSV outputs).
+   You can pass additional parameters that will be forwarded to the underlying save function.
+   For example, when using the "csv" sink, you could use `float_format = "%.6f"` to increase the precision of floating point numbers in the output file (default is 4 decimal places).
+   For a complete list of available parameters, see the documentation for the respective save function (e.g., `pandas.to_csv <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html>`_ for CSV outputs).
 
 --------------
 Preset sectors
@@ -590,16 +585,16 @@ Alternatively, you may define consumption as a function of macro-economic data, 
 
 The following attributes are accepted:
 
-*type* (required)
+``type`` (required)
    See the attribute in the standard mode, :ref:`type<sector-type>`. *Preset* sectors
    are those with type "presets".
 
-*priority* (required)
+``priority`` (required)
    See the attribute in the standard mode, :ref:`priority<sector-priority>`.
 
 .. _preset-consumption:
 
-*consumption_path*
+``consumption_path``
    CSV files, one per year. This attribute can include wild cards, i.e. '*',
    which can match anything. For instance: `consumption_path = "{cwd}/Consumption*.csv"` will match any csv file starting with "Consumption" in the
    current working directory. The file names must include the year for which it defines
@@ -619,37 +614,37 @@ The following attributes are accepted:
    index of the timeslice. Timeslices should be defined consistently to the sectoral
    level timeslices.
 
-*supply_path*
+``supply_path``
    CSV file, one per year, indicating the amount of commodities produced. It follows
    the same format as :ref:`consumption_path <preset-consumption>`.
 
-*prices_path*
+``prices_path``
    CSV file indicating the amount of a commodities produced. The format of the CSV files
    follows that of :ref:`inputs-projection`.
 
 .. _preset-demand:
 
-*demand_path*
+``demand_path``
    Incompatible with :ref:`consumption_path<preset-consumption>` or
    :ref:`macrodrivers_path<preset-macro>`. A CSV file containing the consumption in the
    same format as :ref:`inputs-projection`.
 
 .. _preset-macro:
 
-*macrodrivers_path*
+``macrodrivers_path``
    Incompatible with :ref:`consumption_path<preset-consumption>` or
    :ref:`demand_path<preset-demand>`. Path to a CSV file giving the profile of the
    macrodrivers. Also requires :ref:`regression_path<preset-regression>`.
 
 .. _preset-regression:
 
-*regression_path*
+``regression_path``
    Incompatible with :ref:`consumption_path<preset-consumption>`.
    Path to a CSV file giving the regression
    parameters with respect to the macrodrivers.
    Also requires :ref:`macrodrivers_path<preset-macro>`.
 
-*timeslice_shares_path*
+``timeslice_shares_path``
    Incompatible with :ref:`consumption_path<preset-consumption>` or
    :ref:`demand_path<preset-demand>`. Optional csv file giving shares per timeslice.
    The timeslice share definition needs to have a consistent number of timeslices as the
@@ -657,7 +652,7 @@ The following attributes are accepted:
    Requires
    :ref:`macrodrivers_path<preset-consumption>`.
 
-*filters*
+``filters``
    Optional dictionary of entries by which to filter the consumption.  Requires
    :ref:`macrodrivers_path<preset-consumption>`. For instance,
 
