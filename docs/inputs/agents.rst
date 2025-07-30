@@ -204,8 +204,3 @@ Additional optional columns
    Only applies when using the :py:func:`spend_limit <muse.filters.spend_limit>` search rule.
    Allows agents to only consider technologies with a unit capital cost (`cap_par`) lower than the spend limit.
    (e.g. if 10, the agent will only invest in technologies with a `cap_par` of 10 or lower, as listed in the :ref:`inputs-technodata` file).
-
-  ``Type``
-   Only applies when using the :py:func:`similar_technology <muse.filters.similar_technology>` search rule.
-   Allows agents to only consider technologies of a given type.
-   (e.g. if "electric", the agent will only invest in technologies of type "electric", as listed in the :ref:`inputs-technodata` file).
