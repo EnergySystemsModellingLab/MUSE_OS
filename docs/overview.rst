@@ -40,12 +40,10 @@ Every sector is a user configurable module. This means that a user can configure
 
 MUSE is highly configurable, but it has been built with medium and long-term scenarios in mind; for the short-term, MUSE can be linked with more detailed models. As the number of time steps and regions increase, the computational time also increases, which is something to keep in mind when building highly complex models.
 
-.. MUSE differs from the vast majority of energy systems models, which are intertemporal optimisation, by allowing agents to have "limited foresight". This enables these agents to invest under uncertainty of the future, as in the real world. In addition, MUSE is a "partial equilibrium" model, in the sense that it balances supply and demand of each energy commodity in the system.
-
-
 Most energy systems models are based on cost optimisation and assume that all actors choose the cheapest available options. MUSE, however, uses a simulation framework which allows for the modelling of each sector according to the specific drivers triggering new investments in the sector. Despite the heterogeneity of these sectors, they interact with each other via the partial equilibrium approach which balances supply and demand of each commodity in the energy system.
 
-As opposed to the majority of energy systems models, which assume that investors have full knowledge of future changes in the energy system across decades (intertemporal optimisation), MUSE uses a limited foresight approach. This allows a user to define a configurable number of years over which the investors have knowledge of future commodity prices and demand. This more closely models the real-life case, we believe.
+As opposed to the majority of energy systems models, which assume that investors have full knowledge of future changes in the energy system across decades (intertemporal optimisation), MUSE uses a limited foresight approach in which agents have no information about future changes in price, demand or technology costs beyond the investment year.
+This more closely models the real-life case, we believe.
 
 What questions can MUSE answer?
 -------------------------------
@@ -99,7 +97,10 @@ The figure above displays the key sectors of MUSE:
 How MUSE works
 --------------
 
-MUSE works by iterating between sectors shown above to ensure that energy demands are met by the technologies chosen by the agents. Next, we detail the calculations made by MUSE throughout the simulation.
+MUSE works by iterating between sectors shown above to ensure that energy demands are met by the technologies chosen by the agents.
+The investments balance asset retirements and the increase in demand, ensuring that supply meets demand.
+
+For each year of the simulation, the following steps are taken:
 
 #. The service demand is calculated. For example, how much electricity, gas and oil demand is there for the energy services of cooking, building space heating and lighting in the residential sector? It must be noted, that this is only known after the energy service demand sector is solved and the technologies invested in are decided.
 
@@ -117,22 +118,14 @@ MUSE works by iterating between sectors shown above to ensure that energy demand
 
 #. The supply and conversion sectors are solved: agents in these sectors use the same approach (i.e. search space, objectives, decision rules) to decide which technologies to investment in to serve the energy commodity demand. For example, agents in the power sector may decide to invest in solar photovoltaics, wind turbines and gas power plants to service the electricity demand.
 
-#. As a result of these decisions in supply and conversion sectors, a price for each energy commodity is formed. This price is formed based on the levelized cost of energy of the marginal technology. That, the technology which produces the marginal quantity. This price is then passed to the MCA.
+#. As a result of these decisions in supply and conversion sectors, a price for each energy commodity is formed. Prices reflect the weighted average levelized cost of commodity production. This price is then passed to the MCA.
 
 #. The MCA then sends these prices back to the demand sectors, which are solved again as above.
 
 #. This process repeats itself until commodity supply and demand converges for each energy commodity for each region. Once these converge, the model has found a “partial equilibrium” on the energy system and it moves forward to the next time period.
 
-Foresight in MUSE
------------------
+This whole process then repeats itself at every timestep until the specified number of milestone years have run.
 
-Within MUSE, investment decisions are made by the agents. To make these decisions, agents must use their limited knowledge of the future. This allows them to compare investment options under their expectations on prices and demand.
-
-To model this process in MUSE, the agents are given limited foresight. The amount of limited foresight can be set by the user as a set of years. For example, if agents are given 5 years of limited foresight, they have certainty on the exogenous technology costs for the next 5 years. However, their expectations of future demand and prices for the lifetime of the plant, in that moment, are based on a flat-forward extension of the prices from the current period. However these prices can change in the next iteration. In contrast to perfect foresight, where variables such as prices, demand and technology costs in all the future time periods are known from the beginning of the simulation, using the limited foresight period, agents make investments under expectations of the market, which might be wrong.
-
-The figure below details how MUSE runs. Firstly, the initial capacity, price trajectory and demand trajectory are known and set exogenously. These are used to initialize the MCA convergence algorithm. The MCA convergence algorithm finds a suitable set of investments which equilibrate supply and demand. Once equilibrium has been reached, technologies are decided and the commodity prices, which reflect the technology marginal costs. The investments balance asset retirements and the increase in demand, ensuring that supply meets demand.
-
-This whole process repeats itself at every timestep until the specified number of milestone years have run.
 
 .. graphviz::
     :align: center
@@ -151,9 +144,9 @@ This whole process repeats itself at every timestep until the specified number o
         invSecond [label="Investment based on\ntechnology techno-\neconomics of t=3", color=white]
 
         rank=same {inputs -> first -> second -> repeat -> end [penwidth=5]};
-        first -> mca1 [label="Marginal cost\n& supply", color=red, fontcolor=red, constraint=false];
+        first -> mca1 [label="LCOE\n& supply", color=red, fontcolor=red, constraint=false];
         mca1 -> first [label="Price &\n demand", color=blue, fontcolor=blue];
-        second -> mca2 [label="Marginal cost\n& supply", color=red, fontcolor=red, constraint=false];
+        second -> mca2 [label="LCOE\n& supply", color=red, fontcolor=red, constraint=false];
         mca2 -> second [label="Price &\n demand", color=blue, fontcolor=blue];
         first -> invFirst [style=invis]
         second -> invSecond [style=invis]

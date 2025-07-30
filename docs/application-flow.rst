@@ -105,7 +105,6 @@ The validation step covers a wide range of checks (and more that can be added by
             "Log level"
             "Interpolation\nmode"
             "Carbon budget\nparameters"
-            "Foresight"
             "Iteration control"
             "Timeslices"
             "Global\ndata files"
