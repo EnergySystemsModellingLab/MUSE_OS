@@ -70,8 +70,6 @@ def test_read_technodictionary_csv(model_path):
         "max_capacity_growth",
         "total_capacity_limit",
         "max_capacity_addition",
-        "type",
-        "efficiency",
     }
     assert set(technodictionary_df.columns) == mandatory_columns | extra_columns
 
@@ -123,7 +121,7 @@ def test_read_global_commodities_csv(model_path):
         "commodity",
         "comm_type",
     }
-    extra_columns = {"heat_rate", "unit", "emmission_factor"}
+    extra_columns = {"unit"}
     assert set(commodities_df.columns) == mandatory_columns | extra_columns
 
 
@@ -161,16 +159,8 @@ def test_read_agent_parameters_csv(model_path):
         "decision_method",
     }
     extra_columns = {
-        "objsort2",
-        "objective3",
-        "maturity_threshold",
         "objsort1",
-        "spend_limit",
-        "obj_data3",
-        "objective2",
         "objective1",
-        "obj_data2",
-        "objsort3",
         "obj_data1",
     }
     assert set(agents_df.columns) == mandatory_columns | extra_columns
@@ -205,9 +195,7 @@ def test_read_projections_csv(model_path):
     extra_columns = {
         "CO2f",
         "electricity",
-        "wind",
         "gas",
-        "heat",
     }
     assert set(projections_df.columns) == mandatory_columns | extra_columns
 
@@ -244,10 +232,6 @@ def test_read_presets_csv(model_path):
     }
     extra_columns = {
         "heat",
-        "electricity",
-        "wind",
-        "gas",
-        "CO2f",
     }
     assert set(presets_df.columns) == mandatory_columns | extra_columns
 

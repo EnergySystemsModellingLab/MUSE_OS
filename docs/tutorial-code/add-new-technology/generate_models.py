@@ -8,7 +8,7 @@ from muse import examples
 from muse.wizard import (
     add_new_commodity,
     add_new_process,
-    add_price_data_for_new_year,
+    add_technodata_for_new_year,
     modify_toml,
 )
 
@@ -42,6 +42,7 @@ def generate_model_1() -> None:
     df.loc[(df["ProcessName"] == "solarPV"), "solar"] = 1
     df.loc[(df["ProcessName"] == "solarPV"), "wind"] = 0
     df.loc[(df["ProcessName"] == "windturbine"), "solar"] = 0
+    df.fillna(0, inplace=True)
     df.to_csv(commin_file, index=False)
 
     # Modify technodata for solarPV
@@ -73,8 +74,8 @@ def generate_model_2() -> None:
     if (model_path / "Results").exists():
         shutil.rmtree(model_path / "Results")
 
-    # Copy price data for 2020 -> 2040
-    add_price_data_for_new_year(model_path, 2040, "power", 2020)
+    # Copy technodata for 2020 -> 2040
+    add_technodata_for_new_year(model_path, 2040, "power", 2020)
 
     # Modify cap_par for solarPV
     technodata_file = model_path / "power/Technodata.csv"

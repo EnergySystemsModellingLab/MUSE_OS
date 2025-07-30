@@ -1,5 +1,5 @@
-ProcessName,RegionName,Time,cap_par,cap_exp,fix_par,fix_exp,var_par,var_exp,MaxCapacityAddition,MaxCapacityGrowth,TotalCapacityLimit,TechnicalLife,UtilizationFactor,efficiency,InterestRate,Type,Agent1
-gasCCGT,R1,2020,23.78234399,1,0,1,0,1,10,0.5,100,35,0.9,86,0.1,energy,1
-windturbine,R1,2020,36.30771182,1,0,1,0,1,10,0.5,100,25,0.4,86,0.1,energy,1
-gasCCGT,R2,2020,23.78234399,1,0,1,0,1,10,0.5,100,35,0.9,86,0.1,energy,1
-windturbine,R2,2020,36.30771182,1,0,1,0,1,10,0.5,100,25,0.4,86,0.1,energy,1
+ProcessName,RegionName,Time,cap_par,fix_par,var_par,MaxCapacityAddition,MaxCapacityGrowth,TotalCapacityLimit,TechnicalLife,UtilizationFactor,InterestRate,Agent1
+gasCCGT,R1,2020,23.78234399,0,0,10,0.5,100,35,0.9,0.1,1
+windturbine,R1,2020,36.30771182,0,0,10,0.5,100,25,0.4,0.1,1
+gasCCGT,R2,2020,23.78234399,0,0,10,0.5,100,35,0.9,0.1,1
+windturbine,R2,2020,36.30771182,0,0,10,0.5,100,25,0.4,0.1,1

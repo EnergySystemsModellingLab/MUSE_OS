@@ -2,7 +2,7 @@ commodity,day,hour,month,prices,region,timeslice,units_prices,year
 fuel1,all-week,all-day,winter,1.0000,r1,0,MUS$2010/PJ,2010
 fuel2,all-week,all-day,winter,9.5512,r1,0,MUS$2010/PJ,2010
 fuel3,all-week,all-day,winter,0.0533,r1,0,MUS$2010/PJ,2010
-ammonia,all-week,all-day,winter,321.1500,r1,0,MUS$2010/Mt,2010
+ammonia,all-week,all-day,winter,0.0000,r1,0,MUS$2010/Mt,2010
 CO2f,all-week,all-day,winter,0.0000,r1,0,MUS$2010/kt,2010
 CO2r,all-week,all-day,winter,0.0000,r1,0,MUS$2010/kt,2010
 CO2c,all-week,all-day,winter,0.0000,r1,0,MUS$2010/kt,2010
@@ -11,7 +11,7 @@ N2O,all-week,all-day,winter,0.0000,r1,0,MUS$2010/kt,2010
 fuel1,all-week,all-day,summer,1.0000,r1,1,MUS$2010/PJ,2010
 fuel2,all-week,all-day,summer,9.5512,r1,1,MUS$2010/PJ,2010
 fuel3,all-week,all-day,summer,0.0533,r1,1,MUS$2010/PJ,2010
-ammonia,all-week,all-day,summer,321.1500,r1,1,MUS$2010/Mt,2010
+ammonia,all-week,all-day,summer,0.0000,r1,1,MUS$2010/Mt,2010
 CO2f,all-week,all-day,summer,0.0000,r1,1,MUS$2010/kt,2010
 CO2r,all-week,all-day,summer,0.0000,r1,1,MUS$2010/kt,2010
 CO2c,all-week,all-day,summer,0.0000,r1,1,MUS$2010/kt,2010
@@ -20,7 +20,7 @@ N2O,all-week,all-day,summer,0.0000,r1,1,MUS$2010/kt,2010
 fuel1,all-week,all-day,spring-autumn,1.0000,r1,2,MUS$2010/PJ,2010
 fuel2,all-week,all-day,spring-autumn,9.5512,r1,2,MUS$2010/PJ,2010
 fuel3,all-week,all-day,spring-autumn,0.0533,r1,2,MUS$2010/PJ,2010
-ammonia,all-week,all-day,spring-autumn,321.1500,r1,2,MUS$2010/Mt,2010
+ammonia,all-week,all-day,spring-autumn,0.0000,r1,2,MUS$2010/Mt,2010
 CO2f,all-week,all-day,spring-autumn,0.0000,r1,2,MUS$2010/kt,2010
 CO2r,all-week,all-day,spring-autumn,0.0000,r1,2,MUS$2010/kt,2010
 CO2c,all-week,all-day,spring-autumn,0.0000,r1,2,MUS$2010/kt,2010

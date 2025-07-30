@@ -1,5 +1,5 @@
-ProcessName,RegionName,Time,cap_par,cap_exp,fix_par,fix_exp,var_par,var_exp,MaxCapacityAddition,MaxCapacityGrowth,TotalCapacityLimit,TechnicalLife,UtilizationFactor,InterestRate,Agent1,Type,MinimumServiceFactor
-procammonia_1,R1,2010,100,1,0.5,1,0,1,5,0.03,100,20,0.85,0.1,1,energy,0.01
-procammonia_1,R1,2050,100,1,0.5,1,0,1,5,0.03,100,20,0.85,0.1,1,energy,0.85
-procammonia_2,R1,2010,97.5,1,0.4875,1,0,1,5,0.03,100,20,0.85,0.1,1,energy,0
-procammonia_2,R1,2050,97.5,1,0.4875,1,0,1,5,0.03,100,20,0.85,0.1,1,energy,0
+ProcessName,RegionName,Time,cap_par,fix_par,var_par,MaxCapacityAddition,MaxCapacityGrowth,TotalCapacityLimit,TechnicalLife,UtilizationFactor,InterestRate,Agent1,MinimumServiceFactor
+procammonia_1,R1,2010,100,0.5,0,5,0.03,100,20,0.85,0.1,1,0.01
+procammonia_1,R1,2050,100,0.5,0,5,0.03,100,20,0.85,0.1,1,0.85
+procammonia_2,R1,2010,97.5,0.4875,0,5,0.03,100,20,0.85,0.1,1,0
+procammonia_2,R1,2050,97.5,0.4875,0,5,0.03,100,20,0.85,0.1,1,0

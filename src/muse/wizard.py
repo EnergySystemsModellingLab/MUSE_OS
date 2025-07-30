@@ -58,26 +58,9 @@ def add_new_commodity(
     # Add commodity to global commodities file
     global_commodities_file = model_path / "GlobalCommodities.csv"
     df = pd.read_csv(global_commodities_file)
-    new_rows = df[df["Commodity"] == copy_from.capitalize()].assign(
-        Commodity=commodity_name.capitalize(), CommodityName=commodity_name
-    )
+    new_rows = df[df["CommodityName"] == copy_from].assign(CommodityName=commodity_name)
     df = pd.concat([df, new_rows])
     df.to_csv(global_commodities_file, index=False)
-
-    # Add columns to additional files
-    files_to_update = (
-        model_path / file
-        for file in (
-            f"{sector}/CommIn.csv",
-            f"{sector}/CommOut.csv",
-            "Projections.csv",
-        )
-    )
-    preset_files = model_path.glob("*preset*/*")
-    for file in chain(files_to_update, preset_files):
-        df = pd.read_csv(file)
-        df[commodity_name] = df[copy_from]
-        df.to_csv(file, index=False)
 
 
 def add_new_process(
@@ -109,7 +92,7 @@ def add_new_process(
         df.to_csv(file, index=False)
 
 
-def add_price_data_for_new_year(
+def add_technodata_for_new_year(
     model_path: Path, year: str, sector: str, copy_from: str
 ) -> None:
     """Add price data for a new year by copying from an existing year.
@@ -120,20 +103,16 @@ def add_price_data_for_new_year(
         sector: Sector to add the price data to.
         copy_from: Year to copy the price data from.
     """
-    files_to_update = (
-        model_path / f"{sector}/{file}"
-        for file in ["Technodata.csv", "CommIn.csv", "CommOut.csv"]
-    )
+    file_to_update = model_path / f"{sector}/Technodata.csv"
 
-    for file in files_to_update:
-        df = pd.read_csv(file)
-        df["index"] = df.index
-        new_rows = df[df["Time"] == copy_from].copy()
-        new_rows["Time"] = year
-        df = pd.concat([df, new_rows], ignore_index=True)
-        df.sort_values(by=["index", "Time"], inplace=True)
-        df.drop(columns=["index"], inplace=True)
-        df.to_csv(file, index=False)
+    df = pd.read_csv(file_to_update)
+    df["index"] = df.index
+    new_rows = df[df["Time"] == copy_from].copy()
+    new_rows["Time"] = year
+    df = pd.concat([df, new_rows], ignore_index=True)
+    df.sort_values(by=["index", "Time"], inplace=True)
+    df.drop(columns=["index"], inplace=True)
+    df.to_csv(file_to_update, index=False)
 
 
 def add_agent(
