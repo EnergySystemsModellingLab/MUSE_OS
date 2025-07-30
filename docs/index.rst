@@ -15,13 +15,13 @@ ModUlar energy system Simulation Environment: MUSE
 
    Glossary <glossary>
    Getting Help <getting-help>
+   MUSE Overview <overview>
+   Key MUSE Components <muse-components>
+   Application Flow <application-flow>
    installation/index
    Running MUSE <running-muse-example>
-   MUSE Overview <overview>
-   Application Flow <application-flow>
-   Key MUSE Components <muse-components>
-   user-guide/index
    inputs/index
+   user-guide/index
    advanced-guide/index
    faq
    api
