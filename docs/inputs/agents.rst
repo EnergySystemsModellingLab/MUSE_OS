@@ -91,9 +91,9 @@ The columns have the following meaning:
    - :py:func:`equivalent_annual_cost <equivalent_annual_cost>`: Annualized form of the
      net present value. Aliased to "EAC" for simplicity.
 
-   The weight associated with this objective can be changed using :ref:`obj_data1
-   <obj_data1>`.  Whether the objective should be minimized or maximized depends on
-   :ref:`obj_sort1 <obj_sort1>`. Multiple objectives are combined using the
+   The weight associated with this objective can be changed using ``obj_data1``.
+   Whether the objective should be minimized or maximized depends on
+   ``obj_sort1``. Multiple objectives are combined using the
    :ref:`decision method <decision_method>`
 
 
@@ -146,8 +146,7 @@ Additional objectives
    - :py:func:`maturity <maturity>`: Only allows technologies that have achieved a given
      market share.
 
-   - :py:func:`spend_limit <spend_limit>`: Only allows technologies with a unit capital cost (cap_par in
-      :ref:`inputs-technodata`) lower than the spend limit.
+   - :py:func:`spend_limit <spend_limit>`: Only allows technologies with a unit capital cost (cap_par in :ref:`inputs-technodata`) lower than the spend limit.
 
    Filters can be combined by chaining them with "->". For example, "all->maturity->spend_limit".
 
@@ -193,14 +192,14 @@ Additional objectives
    When using both "Retrofit" agents and "New" agents, this only applies to the "New" agents.
 
 Additional optional columns
-   Certain columns may also be required when using certain search rules. These are:
+  Certain columns may also be required when using certain search rules. These are:
 
   ``maturity_threshold``
-   Only applies when using the :py:func:`maturity <muse.filters.maturity>` search rule.
-   Allows agents to only consider technologies that have achieved a certain market share
-   (e.g. if 0.5, the agent will only invest in technologies that have a current market share of 50% or more).
+     Only applies when using the :py:func:`maturity <muse.filters.maturity>` search rule.
+     Allows agents to only consider technologies that have achieved a certain market share
+     (e.g. if 0.5, the agent will only invest in technologies that have a current market share of 50% or more).
 
   ``spend_limit``
-   Only applies when using the :py:func:`spend_limit <muse.filters.spend_limit>` search rule.
-   Allows agents to only consider technologies with a unit capital cost (`cap_par`) lower than the spend limit.
-   (e.g. if 10, the agent will only invest in technologies with a `cap_par` of 10 or lower, as listed in the :ref:`inputs-technodata` file).
+     Only applies when using the :py:func:`spend_limit <muse.filters.spend_limit>` search rule.
+     Allows agents to only consider technologies with a unit capital cost (`cap_par`) lower than the spend limit.
+     (e.g. if 10, the agent will only invest in technologies with a `cap_par` of 10 or lower, as listed in the :ref:`inputs-technodata` file).

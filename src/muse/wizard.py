@@ -58,7 +58,7 @@ def add_new_commodity(
     # Add commodity to global commodities file
     global_commodities_file = model_path / "GlobalCommodities.csv"
     df = pd.read_csv(global_commodities_file)
-    new_rows = df[df["CommodityName"] == copy_from].assign(CommodityName=commodity_name)
+    new_rows = df[df["commodity"] == copy_from].assign(commodity=commodity_name)
     df = pd.concat([df, new_rows])
     df.to_csv(global_commodities_file, index=False)
 
@@ -86,8 +86,8 @@ def add_new_process(
 
     for file in files_to_update:
         df = pd.read_csv(file)
-        new_rows = df[df["ProcessName"] == copy_from].copy()
-        new_rows["ProcessName"] = process_name
+        new_rows = df[df["technology"] == copy_from].copy()
+        new_rows["technology"] = process_name
         df = pd.concat([df, new_rows])
         df.to_csv(file, index=False)
 
@@ -107,10 +107,10 @@ def add_technodata_for_new_year(
 
     df = pd.read_csv(file_to_update)
     df["index"] = df.index
-    new_rows = df[df["Time"] == copy_from].copy()
-    new_rows["Time"] = year
+    new_rows = df[df["year"] == copy_from].copy()
+    new_rows["year"] = year
     df = pd.concat([df, new_rows], ignore_index=True)
-    df.sort_values(by=["index", "Time"], inplace=True)
+    df.sort_values(by=["index", "year"], inplace=True)
     df.drop(columns=["index"], inplace=True)
     df.to_csv(file_to_update, index=False)
 
@@ -141,8 +141,8 @@ def add_agent(
     copy_from_shares = {}
     for share_type in ["New", "Retrofit"]:
         filtered_df = agents_df.loc[
-            (agents_df["Name"] == copy_from) & (agents_df["Type"] == share_type),
-            "AgentShare",
+            (agents_df["name"] == copy_from) & (agents_df["type"] == share_type),
+            "agent_share",
         ]
         copy_from_shares[share_type] = (
             filtered_df.iat[0] if not filtered_df.empty else None
@@ -152,11 +152,11 @@ def add_agent(
     for share_type in ["New", "Retrofit"]:
         if copy_to_shares[share_type] and copy_from_shares[share_type]:
             rows = agents_df[
-                (agents_df["Name"] == copy_from)
-                & (agents_df["AgentShare"] == copy_from_shares[share_type])
+                (agents_df["name"] == copy_from)
+                & (agents_df["agent_share"] == copy_from_shares[share_type])
             ].copy()
-            rows["Name"] = agent_name
-            rows["AgentShare"] = copy_to_shares[share_type]
+            rows["name"] = agent_name
+            rows["agent_share"] = copy_to_shares[share_type]
             agents_df = pd.concat([agents_df, rows])
     agents_df.to_csv(agents_file, index=False)
 
@@ -209,8 +209,8 @@ def add_region(model_path: Path, region_name: str, copy_from: str) -> None:
     )
     for file_path in chain(sector_files, preset_files, global_files):
         df = pd.read_csv(file_path)
-        new_rows = df[df["RegionName"] == copy_from].copy()
-        new_rows["RegionName"] = region_name
+        new_rows = df[df["region"] == copy_from].copy()
+        new_rows["region"] = region_name
         df = pd.concat([df, new_rows])
         df.to_csv(file_path, index=False)
 
@@ -235,8 +235,8 @@ def add_timeslice(model_path: Path, timeslice_name: str, copy_from: str) -> None
     preset_files = model_path.glob("*preset*/*")
     for file_path in preset_files:
         df = pd.read_csv(file_path)
-        new_rows = df[df["Timeslice"] == copy_from_number].copy()
-        new_rows["Timeslice"] = len(timeslices)
+        new_rows = df[df["timeslice"] == copy_from_number].copy()
+        new_rows["timeslice"] = len(timeslices)
         df = pd.concat([df, new_rows])
-        df = df.sort_values(by=["RegionName", "Timeslice"]).reset_index(drop=True)
+        df = df.sort_values(by=["region", "timeslice"]).reset_index(drop=True)
         df.to_csv(file_path, index=False)

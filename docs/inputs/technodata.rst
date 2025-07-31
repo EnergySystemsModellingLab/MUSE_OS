@@ -61,13 +61,13 @@ Growth constraints (optional)
 
    ``max_capacity_growth``
       represents the fraction growth per year based on the available stock in a year, per region and technology.
-      To allow growth to be initiated, a seed value must be specified (see GrowthSeed below).
+      To allow growth to be initiated, a seed value must be specified (see ``growth_seed`` below).
 
    ``total_capacity_limit``
       represents the total capacity limit per technology, region and year.
 
    .. csv-table:: Techno-data: growth constraints
-      :header: ProcessName,	RegionName,	MaxCapacityAddition,	MaxCapacityGrowth,	TotalCapacityLimit
+      :header: technology,	region,	max_capacity_addition,	max_capacity_growth,	total_capacity_limit
 
       resBoilerElectric, region1, 10,	0.2,	100
 
