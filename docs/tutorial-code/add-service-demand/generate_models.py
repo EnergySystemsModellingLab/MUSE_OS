@@ -43,8 +43,8 @@ def generate_model_1():
     commout_file = model_path / "residential/CommOut.csv"
     df = pd.read_csv(commout_file)
     df.loc[:, "cook"] = 0
-    df.loc[df["ProcessName"] == "gas_stove", df.columns[-3:]] = [0, 50, 1]
-    df.loc[df["ProcessName"] == "electric_stove", df.columns[-3:]] = [0, 0, 1]
+    df.loc[df["technology"] == "gas_stove", df.columns[-3:]] = [0, 50, 1]
+    df.loc[df["technology"] == "electric_stove", df.columns[-3:]] = [0, 0, 1]
     df.to_csv(commout_file, index=False)
 
     # Modify input commodities

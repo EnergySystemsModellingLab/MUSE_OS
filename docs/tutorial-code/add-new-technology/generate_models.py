@@ -39,16 +39,16 @@ def generate_model_1() -> None:
     # Modify input commodities
     commin_file = model_path / "power/CommIn.csv"
     df = pd.read_csv(commin_file)
-    df.loc[(df["ProcessName"] == "solarPV"), "solar"] = 1
-    df.loc[(df["ProcessName"] == "solarPV"), "wind"] = 0
-    df.loc[(df["ProcessName"] == "windturbine"), "solar"] = 0
+    df.loc[(df["technology"] == "solarPV"), "solar"] = 1
+    df.loc[(df["technology"] == "solarPV"), "wind"] = 0
+    df.loc[(df["technology"] == "windturbine"), "solar"] = 0
     df.fillna(0, inplace=True)
     df.to_csv(commin_file, index=False)
 
     # Modify technodata for solarPV
     technodata_file = model_path / "power/Technodata.csv"
     df = pd.read_csv(technodata_file)
-    df.loc[df["ProcessName"] == "solarPV", "cap_par"] = 30
+    df.loc[df["technology"] == "solarPV", "cap_par"] = 30
     df.to_csv(technodata_file, index=False)
 
     # Add solar to excluded commodities
@@ -80,8 +80,8 @@ def generate_model_2() -> None:
     # Modify cap_par for solarPV
     technodata_file = model_path / "power/Technodata.csv"
     df = pd.read_csv(technodata_file)
-    df.loc[(df["ProcessName"] == "solarPV") & (df["Time"] == 2020), "cap_par"] = 40
-    df.loc[(df["ProcessName"] == "solarPV") & (df["Time"] == 2040), "cap_par"] = 30
+    df.loc[(df["technology"] == "solarPV") & (df["year"] == 2020), "cap_par"] = 40
+    df.loc[(df["technology"] == "solarPV") & (df["year"] == 2040), "cap_par"] = 30
     df.to_csv(technodata_file, index=False)
 
 

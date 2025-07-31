@@ -1,4 +1,4 @@
-ProcessName,RegionName,Time,cap_par,fix_par,var_par,MaxCapacityAddition,MaxCapacityGrowth,TotalCapacityLimit,TechnicalLife,UtilizationFactor,InterestRate,Agent1
+technology,region,year,cap_par,fix_par,var_par,max_capacity_addition,max_capacity_growth,total_capacity_limit,technical_life,utilization_factor,interest_rate,Agent1
 gasboiler,R1,2020,3.8,0,0,10,0.5,100,10,1,0.1,1
 heatpump,R1,2020,8.866667,0,0,10,0.5,100,10,1,0.1,1
 gasboiler,R2,2020,3.8,0,0,10,0.5,100,10,1,0.1,1

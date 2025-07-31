@@ -36,13 +36,13 @@ def generate_model_1():
     # Change objective for agent A2
     agents_file = model_path / "Agents.csv"
     df = pd.read_csv(agents_file)
-    df.loc[df["Name"] == "A2", "Objective1"] = "fuel_consumption_cost"
+    df.loc[df["name"] == "A2", "objective1"] = "fuel_consumption_cost"
     df.to_csv(agents_file, index=False)
 
     # Split population between the two agents
     agents_file = model_path / "Agents.csv"
     df = pd.read_csv(agents_file)
-    df.loc[:, "Quantity"] = 0.5
+    df.loc[:, "quantity"] = 0.5
     df.to_csv(agents_file, index=False)
 
     # Split capacity equally between the two agents
@@ -73,10 +73,10 @@ def generate_model_2():
     # Add second objective for agent A2
     agents_file = model_path / "Agents.csv"
     df = pd.read_csv(agents_file)
-    df.loc[df["Name"] == "A2", "Objective2"] = "LCOE"
-    df.loc[df["Name"] == "A2", "DecisionMethod"] = "weighted_sum"
-    df.loc[df["Name"] == "A2", ["ObjData1", "ObjData2"]] = 0.5
-    df.loc[df["Name"] == "A2", "Objsort2"] = True
+    df.loc[df["name"] == "A2", "objective2"] = "LCOE"
+    df.loc[df["name"] == "A2", "decision_method"] = "weighted_sum"
+    df.loc[df["name"] == "A2", ["obj_data1", "obj_data2"]] = 0.5
+    df.loc[df["name"] == "A2", "obj_sort2"] = True
     df.to_csv(agents_file, index=False)
 
 

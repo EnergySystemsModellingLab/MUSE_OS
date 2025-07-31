@@ -1,4 +1,4 @@
-ProcessName,RegionName,Time,month,day,hour,UtilizationFactor,MinimumServiceFactor
+technology,region,year,month,day,hour,utilization_factor,minimum_service_factor
 gasCCGT,R1,2020,all-year,all-week,night,1.0,0.2
 gasCCGT,R1,2020,all-year,all-week,morning,1.0,0.4
 gasCCGT,R1,2020,all-year,all-week,afternoon,1.0,0.6

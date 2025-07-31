@@ -31,8 +31,8 @@ def generate_model_1():
     # Reduce capacity limit for heatpump in R2
     technodata_file = model_path / "residential/Technodata.csv"
     df = pd.read_csv(technodata_file)
-    mask = (df["RegionName"] == "R2") & (df["ProcessName"] == "heatpump")
-    df.loc[mask, "TotalCapacityLimit"] = 20
+    mask = (df["region"] == "R2") & (df["technology"] == "heatpump")
+    df.loc[mask, "total_capacity_limit"] = 20
     df.to_csv(technodata_file, index=False)
 
 
