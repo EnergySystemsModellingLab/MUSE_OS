@@ -32,6 +32,7 @@ from __future__ import annotations
 __all__ = [
     "read_agent_parameters",
     "read_attribute_table",
+    "read_csv",
     "read_existing_trade",
     "read_global_commodities",
     "read_initial_capacity",
@@ -276,6 +277,9 @@ def standardize_dataframe(
     Returns:
         DataFrame containing the standardized data
     """
+    if required_columns is None:
+        required_columns = []
+
     # Standardize column names
     data = standardize_columns(data)
 
@@ -294,7 +298,7 @@ def standardize_dataframe(
     data = convert_column_types(data)
 
     # Validate required columns if provided
-    if required_columns is not None:
+    if required_columns:
         missing_columns = [col for col in required_columns if col not in data.columns]
         if missing_columns:
             raise ValueError(f"Missing required columns: {missing_columns}")
