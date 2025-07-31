@@ -9,19 +9,19 @@ represent energy, services, pollutants/emissions. The commodities for the simula
 a whole are defined in a csv file with the following structure.
 
 .. csv-table:: Global commodities
-   :header: CommodityName, Description, CommodityType, Unit
+   :header: commodity, description, commodity_type, unit
 
    hardcoal, Coal, Energy, PJ
    agires, Agricultural-residues, Energy, PJ
 
-``CommodityName``
+``commodity``
    the internal name used for a commodity inside the model (e.g. "heat" or "elec").
    Any references to commodities in other files must use these names.
 
-``Description`` (optional)
+``description`` (optional)
    an extended name/description of a commodity (e.g. "Heating" or "Electricity").
 
-``CommodityType``
+``commodity_type``
    defines the type of a commodity:
 
    The **energy** type includes energy commodities, such as biomass, electricity, gasoline, and hydrogen,
@@ -35,7 +35,7 @@ a whole are defined in a csv file with the following structure.
    The **environmental** type refers to non-energy commodities whichare used to quantify an impact on the environment,
    such as greenhouse gases or CO2. They can be subjected to different types of environmental fees or taxes.
 
-``Unit`` (optional)
+``unit`` (optional)
    is the unit used to represent quantities of the commodity (e.g "PJ").
    This parameter does not need to be included, as it isn't used in the model, but is
    highly recommended for documentation purposes.

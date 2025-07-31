@@ -22,9 +22,9 @@ An example of a shortened macrodriver file is shown below. This file contains th
    :widths: 50 50 50 25 25 25
    :header-rows: 1
 
-   * - Variable
-     - RegionName
-     - Unit
+   * - variable
+     - region
+     - unit
      - 2010
      - 2011
      - ...
@@ -41,13 +41,13 @@ An example of a shortened macrodriver file is shown below. This file contains th
      - 81.82599
      - ...
 
-``Variable``
+``variable``
     This is the variable that you would like to use in the regression for the service demand.
 
-``RegionName``
+``region``
     This is the region that the data applies to. This must correlate with the regions set in the rest of your input files, as well as the toml file.
 
-``Unit``
+``unit``
     This unit can be whatever you like, however they must be consistent across all input files.
 
 Years (one column per year)
@@ -62,17 +62,17 @@ In the regression parameters file, it is necessary to state the parameters of th
 An example file is shown below:
 
 .. csv-table:: Regression Parameters File
-   :header: SectorName,FunctionType,Coeff,RegionName,electricity,gas,heat,CO2f
+   :header: sector,function_type,coeff,region,electricity,gas,heat,CO2f
 
    Residential,logistic-sigmoid,GDPexp,R1,0,0,9.94E-02,0
    Residential,logistic-sigmoid,constant,R1,0,0,0.0000434,0
    Residential,logistic-sigmoid,GDPscaleLess,R1,0,0,753.1068725,0
    Residential,logistic-sigmoid,GDPscaleGreater,R1,0,0,672.9316672,0
 
-``SectorName``
+``sector``
     This is the sector name in which these parameters apply to.
 
-``FunctionType``
+``function_type``
     This is the function type you would like to MUSE to use. MUSE allows these to be:
 
         - Exponential
@@ -85,10 +85,10 @@ An example file is shown below:
 
     Your own functions can be created using the `@register_regression` hook, from the `regressions.py` file.
 
-``Coeff``
+``coeff``
     This is the coefficient for the respective function type. These are explicitly defined within the `regressions.py` file, as they differ between functions.
 
-``RegionName``
+``region``
     This is the region in which these parameters apply to.
 
 Commodities (one column per commodity)
@@ -103,7 +103,7 @@ In this file, you are able to split the energy service proportionally by timesli
 An example file is shown below:
 
 .. csv-table:: Timeslice share
-   :header: SN,RegionName,electricity,gas,heat,CO2f,wind
+   :header: timeslice,region,electricity,gas,heat,CO2f,wind
 
     1,R1,0,0,0.034835,0,0
     2,R1,0,0,0.064546,0,0
@@ -112,10 +112,10 @@ An example file is shown below:
     5,R1,0,0,0.014145,0,0
     6,R1,0,0,0.085783,0,0
 
-``SN``
+``timeslice``
     This is the timeslice index.
 
-``RegionName``
+``region``
     This is the region in question for this data.
 
 Commodities (one column per commodity)

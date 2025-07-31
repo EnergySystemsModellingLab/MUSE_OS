@@ -62,7 +62,7 @@ COLUMN_RENAMES = {
     "region_name": "region",
     "time": "year",
     "commodity_name": "commodity",
-    "commodity_type": "comm_type",
+    "comm_type": "commodity_type",
     "commodity_price": "prices",
     "units_commodity_price": "units_prices",
     "enduse": "end_use",
@@ -75,7 +75,7 @@ COLUMN_RENAMES = {
 CAMEL_TO_SNAKE_COLUMNS = [
     "tech_type",
     "commodity",
-    "comm_type",
+    "commodity_type",
     "agent_share",
     "attribute",
     "sector",
@@ -94,7 +94,7 @@ COLUMN_TYPES = {
     "variable": str,
     "timeslice": int,  # For tables that require int timeslice instead of month etc.
     "name": str,
-    "comm_type": str,
+    "commodity_type": str,
     "tech_type": str,
     "type": str,
     "function_type": str,
@@ -699,7 +699,7 @@ def process_technologies(
         "commodity",
         CommodityUsage.from_technologies(technodata).values,
     )
-    technodata = technodata.drop_vars("comm_type")
+    technodata = technodata.drop_vars("commodity_type")
 
     # Check utilization and minimum service factors
     check_utilization_and_minimum_service_factors(technodata)
@@ -778,7 +778,7 @@ def read_global_commodities_csv(path: Path) -> pd.DataFrame:
 
     required_columns = {
         "commodity",
-        "comm_type",
+        "commodity_type",
     }
     data = standardize_dataframe(
         df,

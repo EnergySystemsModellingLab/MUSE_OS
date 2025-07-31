@@ -101,14 +101,14 @@ class CommodityUsage(IntFlag):
             for u in consumables
         ]
 
-        if "comm_type" in technologies:
+        if "commodity_type" in technologies:
             envs = [
                 CommodityUsage.ENVIRONMENTAL if u else CommodityUsage.OTHER
-                for u in (technologies.comm_type == "environmental")
+                for u in (technologies.commodity_type == "environmental")
             ]
             nrgs = [
                 CommodityUsage.ENERGY if u else CommodityUsage.OTHER
-                for u in (technologies.comm_type == "energy")
+                for u in (technologies.commodity_type == "energy")
             ]
         else:
             envs = [CommodityUsage.OTHER for u in consumables]

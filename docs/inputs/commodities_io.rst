@@ -41,23 +41,23 @@ Below it is shown the generic structure of the input commodity file for the elec
 heater.
 
 .. csv-table:: Commodities used as consumables - Input commodities
-   :header: ProcessName, RegionName, Time, Level, electricity
+   :header: technology, region, year, level, electricity
 
    resBoilerElectric, region1, 2010, fixed, 300
    resBoilerElectric, region1, 2030, fixed, 290
 
 
-``ProcessName``
+``technology``
    represents the technology ID and needs to be consistent across all the data inputs.
 
-``RegionName``
+``region``
    represents the region ID and needs to be consistent across all the data inputs.
 
-``Time``
+``year``
    represents the period of the simulation to which the value applies; it needs to
    contain at least the base year of the simulation.
 
-``Level`` (for **input** commodities only)
+``level`` (for **input** commodities only)
    characterises inputs as either "fixed" or "flexible".
    Fixed inputs are always used by a technology in a fixed proportion.
    Flexible inputs allow a technology to choose amongst several alternative fuels,

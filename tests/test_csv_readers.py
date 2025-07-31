@@ -192,7 +192,7 @@ def test_read_global_commodities(model_path):
         dims={"commodity"},
         coords={"commodity": CoordinateSchema(dims=("commodity",), dtype="object")},
         data_vars={
-            "comm_type": "object",
+            "commodity_type": "object",
             "unit": "object",
         },
     )
@@ -204,7 +204,7 @@ def test_read_global_commodities(model_path):
     # Check values at a single coordinate
     coord = {"commodity": "electricity"}
     expected = {
-        "comm_type": "energy",
+        "commodity_type": "energy",
         "unit": "PJ",
     }
     assert_single_coordinate(data, coord, expected)
