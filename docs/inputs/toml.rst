@@ -88,71 +88,6 @@ a whole.
     such as :py:meth:`~muse.outputs.register_output_quantity`.
 
 
--------------
-Carbon market (optional)
--------------
-
-This section contains the settings related to the modelling of the carbon market.
-If omitted, it defaults to not including the carbon market in the simulation.
-
-Example
-
-.. code-block:: TOML
-
-   [carbon_budget_control]
-   budget = []
-
-``budget``
-   Yearly budget. There should be one item for each year the simulation will run. In
-   other words, if given and not empty, this is a list with the same length as
-   `time_framework` from the main section. If not given or an empty list, then the
-   carbon market feature is disabled. Defaults to an empty list.
-
-``commodities``
-   Commodities that make up the carbon market.
-
-``control_undershoot`` (optional, default = False)
-   Whether to control carbon budget undershoots. This parameter allows for carbon tax credit from one year to be passed to the next in the case of less carbon being emitted than the budget.
-
-``control_overshoot`` (optional, default = False)
-   Whether to control carbon budget overshoots. If the amount of carbon emitted is above the carbon budget, this parameter specifies whether this deficit is carried over to the next year.
-
-``method`` (optional, default = **bisection**)
-   Method used to equilibrate the carbon market. Available options are **fitting** and **bisection**, however this can be expanded with the `@register_carbon_budget_method` hook in `muse.carbon_budget`.
-
-   These methods solve the market with a number of different carbon prices, aiming to find the carbon price at which emissions (pooled across all regions) are equal to the carbon budget.
-   The obtained carbon price applies to all regions.
-
-   The **fitting** method samples a number of different carbon prices to build a regression model (linear or exponential) of emissions as a function of carbon price.
-   This regression model is then used to estimate the carbon price at which the carbon budget is met.
-
-   The **bisection** method uses an iterative approach to settle on a carbon price.
-   Starting with a lower and upper-bound carbon price, it iteratively halves this price interval until the carbon budget is met to within a user-defined tolerance, or until the maximum number of iterations is reached.
-   Generally, this method is more robust for markets with a complex, nonlinear relationship between emissions and carbon price, but may be slower to converge than the `fitting` method.
-
-
-``method_options``
-   Additional options for the specified carbon method.
-
-   Parameters for the **bisection** method:
-
-   - ``max_iterations`` (optional, default = 5): maximum number of iterations.
-   - ``tolerance`` (optional, default = 0.1): tolerance for convergence. E.g. 0.1 means that the algorithm will terminate when emissions are within 10% of the carbon budget.
-   - ``early_termination_count`` (optional, default = 5): number of iterations with no change in the carbon price before the algorithm will terminate.
-   - ``price_penalty`` (optional, default = 0.1): penalty factor applied to carbon price when selecting optimal solution when convergence isn't reached. For example, if the carbon price is measured in units of MUSD/kt, a price penalty of 1000 means that a price increase of 1 MUSD/kt will only be accepted if it reduces emissions by at least 1000 kt.
-
-   Parameters for the **fitting** method:
-
-   - ``fitter`` (optional, default = **linear**): the regression model used to approximate model emissions. Predefined options are **linear** (default) and **exponential**. Further options can be defined using the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
-   - ``sample_size`` (optional, default = 5): number of price samples used.
-
-   Shared parameters:
-
-   - ``refine_price`` (optional, default = False): If True, applies an upper limit on the carbon price.
-   - ``price_too_high_threshold`` (optional, default = 10): upper limit on the carbon price.
-   - ``resolution`` (optional, default = 2): Number of decimal places to solve the carbon price to. When using the bisection method, increasing this value may increase the time taken to solve the carbon market.
-
-
 ------------------
 Global input files
 ------------------
@@ -180,12 +115,13 @@ Timeslices
 ----------
 
 Time-slices represent a sub-year disaggregation of commodity demand. Generally,
-timeslices are expected to introduce several levels, e.g. season, day, or hour. The
-simplest is to show the TOML for the default timeslice:
+timeslices are expected to introduce several levels, e.g. season, day, or hour.
+For example:
 
 .. code-block:: TOML
 
     [timeslices]
+    level_names = ["month", "day", "hour"]
     winter.weekday.night = 396
     winter.weekday.morning = 396
     winter.weekday.afternoon = 264
@@ -216,36 +152,16 @@ simplest is to show the TOML for the default timeslice:
     summer.weekend.morning = 150
     summer.weekend.afternoon = 150
     summer.weekend.evening = 150
-    level_names = ["month", "day", "hour"]
 
-This input introduces three levels, via ``level_names``: ``month``, ``day``, ``hours``.
-Other simulations may want fewer or more levels.  The ``month`` level is split into
-three points of data, ``winter``, ``spring-autumn``, ``summer``. Then ``day`` splits out
+This input introduces three levels, via ``level_names``: **month**, **day**, **hour**.
+Other simulations may want fewer or more levels.  The **month** level is split into
+three points of data, *winter*, *spring-autumn*, *summer*. Then **day** splits out
 weekdays from weekends, and so on. Each line indicates the number of hours for the
 relevant slice. It should be noted that the slices are not a cartesian products of each
-levels. For instance, there no ``peak`` periods during weekends. All that matters is
+levels. For instance, there no *peak* periods during weekends. All that matters is
 that the relative weights (i.e. the number of hours) are consistent and sum up to a
 year.
 
-
--------------
-Output cache
--------------
-
-``outputs_cache``
-   This option behaves exactly like `outputs` for sectors and accepts the same options but
-   controls the output of cached quantities instead. This option is NOT available for
-   sectors themselves (i.e using `[[sector.commercial.outputs_cache]]` will have no effect). See
-   :py:mod:`muse.outputs.cache` for more details.
-
-   A single row looks like this:
-
-   .. code-block:: TOML
-
-      [[outputs_cache]]
-      quantity = "production"
-      sink = "aggregate"
-      filename = "{cwd}/{default_output_dir}/Cache{Quantity}.csv"
 
 ----------------
 Standard sectors
@@ -264,8 +180,6 @@ Sectors are declared in the TOML file by adding a subsection to the ``sectors`` 
 Above, we've added two sectors, residential and power. The name of the subsection is
 only used for identification. In other words, it should be chosen to be meaningful to
 the user, since it will not affect the model itself.
-
-Sectors are defined in :py:class:`~muse.sectors.Sector`.
 
 A sector accepts these attributes:
 
@@ -472,6 +386,12 @@ Sectors contain a number of subsections:
       If `False` MUSE will issue an error and abort, instead of
       overwriting an existing file. This prevents important output files from being overwritten.
 
+   Additional sink parameters
+      You can pass additional parameters that will be forwarded to the underlying save function.
+      For example, when using the "csv" sink, you could use `float_format = "%.6f"` to increase the precision of floating point numbers in the output file (default is 4 decimal places).
+      For a complete list of available parameters, see the documentation for the respective save function (e.g., `pandas.to_csv <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html>`_ for CSV outputs).
+
+
    For example, the following would save supply data for the commercial sector as a separate file for each year:
 
    .. code-block:: TOML
@@ -492,14 +412,7 @@ Sectors contain a number of subsections:
       sink = "aggregate"
       filename = "{cwd}/{default_output_dir}/{Sector}/{Quantity}.csv"
 
-   Note that the aggregate sink always overwrites the final file, since it will
-   overwrite itself.
-
-   **Additional sink parameters:**
-
-   You can pass additional parameters that will be forwarded to the underlying save function.
-   For example, when using the "csv" sink, you could use `float_format = "%.6f"` to increase the precision of floating point numbers in the output file (default is 4 decimal places).
-   For a complete list of available parameters, see the documentation for the respective save function (e.g., `pandas.to_csv <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_csv.html>`_ for CSV outputs).
+   Note that the aggregate sink always overwrites the final file, since it will overwrite itself.
 
 
 ``interactions`` (optional)
@@ -562,8 +475,6 @@ The commodity production, commodity consumption and product prices of preset sec
 exogeneously. They are know from the start of the simulation and are not affected by the
 simulation.
 
-Preset sectors are defined in :py:class:`~muse.sectors.PresetSector`.
-
 A common example would be the following, where commodity consumption is defined exogeneously:
 
 .. code-block:: TOML
@@ -619,10 +530,6 @@ The following attributes are accepted:
    CSV file, one per year, indicating the amount of commodities produced. It follows
    the same format as :ref:`consumption_path <preset-consumption>`.
 
-``prices_path``
-   CSV file indicating the amount of a commodities produced. The format of the CSV files
-   follows that of :ref:`inputs-projection`.
-
 .. _preset-demand:
 
 ``demand_path``
@@ -653,11 +560,89 @@ The following attributes are accepted:
    Requires
    :ref:`macrodrivers_path<preset-consumption>`.
 
-``filters``
-   Optional dictionary of entries by which to filter the consumption.  Requires
-   :ref:`macrodrivers_path<preset-consumption>`. For instance,
 
-   .. code-block::
+-------------
+Carbon market (optional)
+-------------
 
-      filters.region = ["USA", "ASEA"]
-      filters.commodity = ["algae", "fluorescent light"]
+This section contains the settings related to the modelling of the carbon market.
+If omitted, it defaults to not including the carbon market in the simulation.
+
+For example
+
+.. code-block:: TOML
+
+   [carbon_budget_control]
+   budget = [1000, 800, 600, 400, 200, 0]
+   commodities = ["CO2"]
+
+``budget``
+   Yearly budget. There should be one item for each year the simulation will run. In
+   other words, if given and not empty, this is a list with the same length as
+   `time_framework` from the main section. If not given or an empty list, then the
+   carbon market feature is disabled. Defaults to an empty list.
+
+``commodities``
+   Commodities that make up the carbon market.
+
+``control_undershoot`` (optional, default = False)
+   Whether to control carbon budget undershoots. This parameter allows for carbon tax credit from one year to be passed to the next in the case of less carbon being emitted than the budget.
+
+``control_overshoot`` (optional, default = False)
+   Whether to control carbon budget overshoots. If the amount of carbon emitted is above the carbon budget, this parameter specifies whether this deficit is carried over to the next year.
+
+``method`` (optional, default = **bisection**)
+   Method used to equilibrate the carbon market. Available options are **fitting** and **bisection**, however this can be expanded with the `@register_carbon_budget_method` hook in `muse.carbon_budget`.
+
+   These methods solve the market with a number of different carbon prices, aiming to find the carbon price at which emissions (pooled across all regions) are equal to the carbon budget.
+   The obtained carbon price applies to all regions.
+
+   The **fitting** method samples a number of different carbon prices to build a regression model (linear or exponential) of emissions as a function of carbon price.
+   This regression model is then used to estimate the carbon price at which the carbon budget is met.
+
+   The **bisection** method uses an iterative approach to settle on a carbon price.
+   Starting with a lower and upper-bound carbon price, it iteratively halves this price interval until the carbon budget is met to within a user-defined tolerance, or until the maximum number of iterations is reached.
+   Generally, this method is more robust for markets with a complex, nonlinear relationship between emissions and carbon price, but may be slower to converge than the `fitting` method.
+
+
+``method_options``
+   Additional options for the specified carbon method.
+
+   Parameters for the **bisection** method:
+
+   - ``max_iterations`` (optional, default = 5): maximum number of iterations.
+   - ``tolerance`` (optional, default = 0.1): tolerance for convergence. E.g. 0.1 means that the algorithm will terminate when emissions are within 10% of the carbon budget.
+   - ``early_termination_count`` (optional, default = 5): number of iterations with no change in the carbon price before the algorithm will terminate.
+   - ``price_penalty`` (optional, default = 0.1): penalty factor applied to carbon price when selecting optimal solution when convergence isn't reached. For example, if the carbon price is measured in units of MUSD/kt, a price penalty of 1000 means that a price increase of 1 MUSD/kt will only be accepted if it reduces emissions by at least 1000 kt.
+
+   Parameters for the **fitting** method:
+
+   - ``fitter`` (optional, default = **linear**): the regression model used to approximate model emissions. Predefined options are **linear** (default) and **exponential**. Further options can be defined using the `@register_carbon_budget_fitter` hook in `muse.carbon_budget`.
+   - ``sample_size`` (optional, default = 5): number of price samples used.
+
+   Shared parameters:
+
+   - ``refine_price`` (optional, default = False): If True, applies an upper limit on the carbon price.
+   - ``price_too_high_threshold`` (optional, default = 10): upper limit on the carbon price.
+   - ``resolution`` (optional, default = 2): Number of decimal places to solve the carbon price to. When using the bisection method, increasing this value may increase the time taken to solve the carbon market.
+
+
+
+-------------
+Output cache (for advanced users)
+-------------
+
+``outputs_cache``
+   This option behaves exactly like `outputs` for sectors and accepts the same options but
+   controls the output of cached quantities instead. This option is NOT available for
+   sectors themselves (i.e using `[[sector.commercial.outputs_cache]]` will have no effect). See
+   :py:mod:`muse.outputs.cache` for more details.
+
+   A single row looks like this:
+
+   .. code-block:: TOML
+
+      [[outputs_cache]]
+      quantity = "production"
+      sink = "aggregate"
+      filename = "{cwd}/{default_output_dir}/Cache{Quantity}.csv"
