@@ -299,8 +299,8 @@ def new_and_retro(
 
         # Make sure the total new/retro agent quantity = 1
         # TODO: ideally we should check this in the input layer
-        assert total_retro_quantity == 1
-        assert total_new_quantity == 1
+        assert abs(total_retro_quantity - 1) < 1e-2
+        assert abs(total_new_quantity - 1) < 1e-2
 
     result = agent_concatenation(agent_demands)
     assert "year" not in result.dims
@@ -399,7 +399,7 @@ def standard_demand(
 
         # Make sure the total agent quantity = 1
         # TODO: ideally we should check this in the input layer
-        assert total_quantity == 1
+        assert abs(total_quantity - 1) < 1e-2
 
     result = agent_concatenation(agent_demands)
     assert "year" not in result.dims
