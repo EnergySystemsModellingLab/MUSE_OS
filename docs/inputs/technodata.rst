@@ -4,7 +4,7 @@
 Technodata
 ===========
 The technodata includes the techno-economic characteristics of each technology such
-as capital, fixed and variable cost, lifetime, utilisation factor.
+as capital, fixed and variable cost, lifetime, utilization factor.
 The technodata should follow the structure reported in the table below.
 In this example, we show an electric boiler for a generic region, region1:
 

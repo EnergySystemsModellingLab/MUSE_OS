@@ -55,6 +55,7 @@ import pandas as pd
 import xarray as xr
 
 # Global mapping of column names to their standardized versions
+# This is for backwards compatibility with old file formats
 COLUMN_RENAMES = {
     "process_name": "technology",
     "process": "technology",
