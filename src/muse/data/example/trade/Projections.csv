@@ -1,4 +1,4 @@
-RegionName,Attribute,Time,electricity,gas
+region,attribute,year,electricity,gas
 R1,CommodityPrice,2020,13.98148139,4.7168
 R1,CommodityPrice,2025,16.27777778,5.1266
 R1,CommodityPrice,2030,17.1574075,5.5364

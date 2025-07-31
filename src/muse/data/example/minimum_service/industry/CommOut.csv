@@ -1,4 +1,4 @@
-ProcessName,RegionName,Time,ammonia,CO2f
+technology,region,year,ammonia,CO2f
 procammonia_1,R1,2010,1,4168.06
 procammonia_2,R1,2010,1,3111.835705
 procammonia_1,R1,2050,1,3910.772346

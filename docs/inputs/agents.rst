@@ -28,10 +28,10 @@ The columns have the following meaning:
 
 ``type``
    One of **New** or **Retrofit**. **New** and **Retrofit** agents make up a pair with a given
-   :ref:`name <Name>`. The demand is split into two, with one part coming from
+   :ref:`name <name>`. The demand is split into two, with one part coming from
    decommissioned assets, and the other coming from everything else. "Retrofit" agents
    invest only to make up for decommissioned assets. They are often limited in the
-   technologies they can consider (by :ref:`SearchRule <SearchRule>`). **New** agents
+   technologies they can consider (by :ref:`search_rule <search_rule>`). **New** agents
    invest on the rest of the demand, and can often consider more general sets of
    technologies. If only **New** agents are included, they will also invest to make up for
    decommissioned assets, but the end mix might be different than using a specialised
@@ -91,15 +91,15 @@ The columns have the following meaning:
    - :py:func:`equivalent_annual_cost <equivalent_annual_cost>`: Annualized form of the
      net present value. Aliased to "EAC" for simplicity.
 
-   The weight associated with this objective can be changed using :ref:`ObjData1
-   <ObjData1>`.  Whether the objective should be minimized or maximized depends on
-   :ref:`Objsort1 <Objsort1>`. Multiple objectives are combined using the
-   :ref:`DecisionMethod <DecisionMethod>`
+   The weight associated with this objective can be changed using :ref:`obj_data1
+   <obj_data1>`.  Whether the objective should be minimized or maximized depends on
+   :ref:`obj_sort1 <obj_sort1>`. Multiple objectives are combined using the
+   :ref:`decision method <decision_method>`
 
 
 ``obj_data1``
    A weight associated with the objective.
-   Whether it is used will depend in large part on the :ref:`decision method <DecisionMethod>`.
+   Whether it is used will depend in large part on the :ref:`decision method <decision_method>`.
 
 
 ``obj_sort1``
@@ -114,7 +114,7 @@ Additional objectives
 
 .. py:currentmodule:: muse.filters
 
-.. _SearchRule:
+.. _search_rule:
 
 ``search_rule``
    The search rule allows users to par down the search space of technologies to those an
@@ -153,7 +153,7 @@ Additional objectives
 
 .. py:currentmodule:: muse.decisions
 
-.. _DecisionMethod:
+.. _decision_method:
 
 ``decision_method``
    Decision methods reduce multiple objectives into a single scalar objective per

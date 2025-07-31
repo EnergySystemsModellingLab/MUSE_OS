@@ -1,4 +1,4 @@
-ProcessName,RegionName,Time,cap_exp,var_par,TechnicalLife,UtilizationFactor,InterestRate,Agent1
+technology,region,year,cap_exp,var_par,technical_life,utilization_factor,interest_rate,Agent1
 gasCCGT,R1,2010,1,0,35,0.9,0.1,1
 windturbine,R1,2010,1,0,25,0.4,0.1,1
 gasCCGT,R2,2010,1,0,35,0.9,0.1,1

@@ -69,6 +69,10 @@ COLUMN_RENAMES = {
     "sn": "timeslice",
     "commodity_emission_factor_CO2": "emmission_factor",
     "utilisation_factor": "utilization_factor",
+    "objsort": "obj_sort",
+    "objsort1": "obj_sort1",
+    "objsort2": "obj_sort2",
+    "objsort3": "obj_sort3",
 }
 
 # Columns who's values should be converted from camelCase to snake_case
@@ -849,11 +853,12 @@ def read_agent_parameters_csv(path: Path) -> pd.DataFrame:
     # Check consistency of objectives data columns
     objectives = [col for col in data.columns if col.startswith("objective")]
     floats = [col for col in data.columns if col.startswith("obj_data")]
-    sorting = [col for col in data.columns if col.startswith("objsort")]
+    sorting = [col for col in data.columns if col.startswith("obj_sort")]
 
     if len(objectives) != len(floats) or len(objectives) != len(sorting):
         raise ValueError(
-            f"Agent Objective, ObjData, and Objsort columns are inconsistent in {path}"
+            "Agent objective, obj_data, and obj_sort columns are inconsistent in "
+            f"{path}"
         )
 
     return data
@@ -867,7 +872,7 @@ def process_agent_parameters(data: pd.DataFrame) -> list[dict]:
         objectives = (
             row[[i.startswith("objective") for i in row.index]].dropna().to_list()
         )
-        sorting = row[[i.startswith("objsort") for i in row.index]].dropna().to_list()
+        sorting = row[[i.startswith("obj_sort") for i in row.index]].dropna().to_list()
         floats = row[[i.startswith("obj_data") for i in row.index]].dropna().to_list()
 
         # Create decision parameters

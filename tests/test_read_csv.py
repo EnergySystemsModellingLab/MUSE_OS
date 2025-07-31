@@ -159,7 +159,7 @@ def test_read_agent_parameters_csv(model_path):
         "decision_method",
     }
     extra_columns = {
-        "objsort1",
+        "obj_sort1",
         "objective1",
         "obj_data1",
     }

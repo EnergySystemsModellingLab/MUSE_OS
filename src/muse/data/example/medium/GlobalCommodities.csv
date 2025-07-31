@@ -1,4 +1,4 @@
-CommodityName,CommodityType,Unit
+commodity,commodity_type,unit
 electricity,Energy,GWh
 gas,Energy,PJ
 heat,Product,PJ

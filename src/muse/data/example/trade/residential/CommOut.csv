@@ -1,4 +1,4 @@
-ProcessName,RegionName,Time,heat,CO2f
+technology,region,year,heat,CO2f
 gasboiler,R1,2010,1,64.70588235
 heatpump,R1,2010,1,0
 gasboiler,R2,2010,1,77.64705882

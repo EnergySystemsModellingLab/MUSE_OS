@@ -1,4 +1,4 @@
-ProcessName,RegionName,Parameter,R1,R2
+technology,region,parameter,R1,R2
 gasCCGT,R1,cap_par,28.29,56.58
 windturbine,R1,cap_par,43.2,0
 gasCCGT,R2,cap_par,57.08,28.54

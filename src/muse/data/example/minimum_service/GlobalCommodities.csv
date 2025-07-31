@@ -1,4 +1,4 @@
-CommodityName,CommodityType,Unit
+commodity,commodity_type,unit
 fuel1,Energy,PJ
 fuel2,Energy,PJ
 fuel3,Energy,PJ
