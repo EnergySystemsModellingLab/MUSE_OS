@@ -433,21 +433,21 @@ def read_technodictionary_csv(path: Path) -> pd.DataFrame:
     # Check for deprecated columns
     if "fuel" in data.columns:
         msg = (
-            f"The 'Fuel' column in {path} has been deprecated. "
+            f"The 'fuel' column in {path} has been deprecated. "
             "This information is now determined from CommIn files. "
             "Please remove this column from your Technodata files."
         )
         getLogger(__name__).warning(msg)
     if "end_use" in data.columns:
         msg = (
-            f"The 'EndUse' column in {path} has been deprecated. "
+            f"The 'end_use' column in {path} has been deprecated. "
             "This information is now determined from CommOut files. "
             "Please remove this column from your Technodata files."
         )
         getLogger(__name__).warning(msg)
     if "scaling_size" in data.columns:
         msg = (
-            f"The 'ScalingSize' column in {path} has been deprecated. "
+            f"The 'scaling_size' column in {path} has been deprecated. "
             "Please remove this column from your Technodata files."
         )
         getLogger(__name__).warning(msg)
@@ -1116,12 +1116,12 @@ def read_presets_csv(path: Path) -> pd.DataFrame:
         msg=f"Reading presets from {path}.",
     )
 
-    # Legacy: drop ProcessName column and sum data (PR #448)
+    # Legacy: drop technology column and sum data (PR #448)
     if "technology" in data.columns:
         getLogger(__name__).warning(
-            f"The ProcessName column (in file {path}) is deprecated. "
-            "Data has been summed across processes, and this column has been "
-            "dropped."
+            f"The technology (or ProcessName) column in file {path} is "
+            "deprecated. Data has been summed across technologies, and this column "
+            "has been dropped."
         )
         data = (
             data.drop(columns=["technology"])
