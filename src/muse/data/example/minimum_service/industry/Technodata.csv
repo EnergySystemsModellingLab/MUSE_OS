@@ -1,4 +1,4 @@
-ProcessName,RegionName,Time,cap_par,fix_par,var_par,MaxCapacityAddition,MaxCapacityGrowth,TotalCapacityLimit,TechnicalLife,UtilizationFactor,InterestRate,Agent1,MinimumServiceFactor
+technology,region,year,cap_par,fix_par,var_par,max_capacity_addition,max_capacity_growth,total_capacity_limit,technical_life,utilization_factor,interest_rate,Agent1,MinimumServiceFactor
 procammonia_1,R1,2010,100,0.5,0,5,0.03,100,20,0.85,0.1,1,0.01
 procammonia_1,R1,2050,100,0.5,0,5,0.03,100,20,0.85,0.1,1,0.85
 procammonia_2,R1,2010,97.5,0.4875,0,5,0.03,100,20,0.85,0.1,1,0

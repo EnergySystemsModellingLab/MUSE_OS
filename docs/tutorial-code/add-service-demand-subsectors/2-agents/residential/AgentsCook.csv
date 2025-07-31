@@ -1,2 +1,2 @@
-AgentShare,Name,RegionName,Objective1,ObjData1,Objsort1,SearchRule,DecisionMethod,Quantity,Type
+agent_share,name,region,objective1,obj_data1,obj_sort1,search_rule,decision_method,quantity,type
 Agent1,A1,R1,fuel_consumption_cost,1,True,all,singleObj,1,New

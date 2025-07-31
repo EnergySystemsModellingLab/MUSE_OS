@@ -7,19 +7,19 @@ The techno-data timeslices is an optional file which allows technology utilizati
 For instance, if you were to model solar photovoltaics, you would probably want to specify that they can not produce any electricity at night, or if you're modelling a nuclear power plant, that they must generate a minimum amount of electricity.
 
 .. csv-table:: Techno-data
-   :header: ProcessName,RegionName,Time,month,day,hour,UtilizationFactor,MinimumServiceFactor
+   :header: technology,region,year,month,day,hour,utilization_factor,minimum_service_factor
 
    gasCCGT,R1,2020,all-year,all-week,night,1,1
    gasCCGT,R1,2020,all-year,all-week,morning,1,2
 
 
-``ProcessName``
+``technology``
    represents the technology ID and needs to be consistent across all the data inputs
 
-``RegionName``
+``region``
    represents the region ID and needs to be consistent across all the data inputs
 
-``Time``
+``year``
    represents the period of the simulation to which the value applies; it needs to
    contain at least the base year of the simulation
 
@@ -30,10 +30,10 @@ Timeslice levels (e.g. ``month``, ``day``, ``hour``)
     - ``all-year,all-week,night``
     - ``all-year,all-week,morning``
 
-``UtilizationFactor``
+``utilization_factor``
    represents the maximum actual output of the technology in a timeslice, divided by the theoretical maximum output if the technology were operating at full capacity for the whole timeslice. Must be between 0 and 1 (default = 1).
 
-``MinimumServiceFactor``
+``minimum_service_factor``
    represents the minimum service that a technology can output. For instance, the minimum amount of electricity that can be output from a nuclear power plant at a particular timeslice. Must be between 0 and 1 (default = 0).
 
 --------------------------------

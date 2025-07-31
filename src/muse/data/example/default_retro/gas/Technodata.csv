@@ -1,2 +1,2 @@
-ProcessName,RegionName,Time,cap_par,fix_par,var_par,MaxCapacityAddition,MaxCapacityGrowth,TotalCapacityLimit,TechnicalLife,UtilizationFactor,InterestRate,Agent2
+technology,region,year,cap_par,fix_par,var_par,max_capacity_addition,max_capacity_growth,total_capacity_limit,technical_life,utilization_factor,interest_rate,Agent2
 gassupply1,R1,2020,0,0,2.55,10,1,100,35,0.9,0.1,1

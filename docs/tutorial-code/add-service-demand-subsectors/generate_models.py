@@ -30,8 +30,8 @@ def generate_model_1():
 
     # Split existing capacity
     df = pd.read_csv(model_path / "residential" / "ExistingCapacity.csv")
-    df_heat = df[df["ProcessName"].isin(["gasboiler", "heatpump"])]
-    df_cook = df[df["ProcessName"].isin(["electric_stove", "gas_stove"])]
+    df_heat = df[df["technology"].isin(["gasboiler", "heatpump"])]
+    df_cook = df[df["technology"].isin(["electric_stove", "gas_stove"])]
     df_heat.to_csv(model_path / "residential" / "ExistingCapacityHeat.csv", index=False)
     df_cook.to_csv(model_path / "residential" / "ExistingCapacityCook.csv", index=False)
     os.remove(model_path / "residential" / "ExistingCapacity.csv")
@@ -85,7 +85,7 @@ def generate_model_2():
 
     # Modify agent objective in the cook subsector
     df = pd.read_csv(model_path / "residential" / "AgentsCook.csv")
-    df["Objective1"] = "fuel_consumption_cost"
+    df["objective1"] = "fuel_consumption_cost"
     df.to_csv(model_path / "residential" / "AgentsCook.csv", index=False)
 
     # Update settings file to link to new agents files

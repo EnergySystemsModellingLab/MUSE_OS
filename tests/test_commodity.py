@@ -7,8 +7,8 @@ def test_from_technologies(technologies, coords):
     from muse.commodities import CommodityUsage
 
     technologies = technologies.drop_vars("comm_usage")
-    technologies["comm_type"] = "commodity", coords["comm_type"]
-    technologies = technologies.set_coords("comm_type")
+    technologies["commodity_type"] = "commodity", coords["commodity_type"]
+    technologies = technologies.set_coords("commodity_type")
 
     comm_usage = CommodityUsage.from_technologies(technologies)
 
@@ -32,8 +32,8 @@ def test_from_technologies(technologies, coords):
             bool(comm_usage[i] & CommodityUsage.PRODUCT) == usage_mask.fixed_outputs[i]
         )
         assert bool(comm_usage[i] & CommodityUsage.ENVIRONMENTAL) == (
-            usage_mask.comm_type[i] == "environmental"
+            usage_mask.commodity_type[i] == "environmental"
         )
         assert bool(comm_usage[i] & CommodityUsage.ENERGY) == (
-            usage_mask.comm_type[i] == "energy"
+            usage_mask.commodity_type[i] == "energy"
         )

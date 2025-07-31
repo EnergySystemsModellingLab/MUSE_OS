@@ -1,4 +1,4 @@
-RegionName,Timeslice,cook,heat
+region,timeslice,cook,heat
 R1,1,0.5,0.5
 R1,2,0.75,0.75
 R1,3,0.5,0.5

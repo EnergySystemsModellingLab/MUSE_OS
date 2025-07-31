@@ -81,7 +81,7 @@ def test_add_new_commodity(model_path):
 
     # Check global commodities
     assert_values_in_csv(
-        model_path / "GlobalCommodities.csv", "CommodityName", ["new_commodity"]
+        model_path / "GlobalCommodities.csv", "commodity", ["new_commodity"]
     )
 
 
@@ -96,16 +96,14 @@ def test_add_new_process(model_path):
         "Technodata.csv",
     ]
     for file in files_to_check:
-        assert_values_in_csv(
-            model_path / "power" / file, "ProcessName", ["new_process"]
-        )
+        assert_values_in_csv(model_path / "power" / file, "technology", ["new_process"])
 
 
 def test_technodata_for_new_year(model_path):
     """Test the add_price_data_for_new_year function on the default model."""
     add_technodata_for_new_year(model_path, 2030, "power", 2020)
 
-    assert_values_in_csv(model_path / "power" / "Technodata.csv", "Time", [2030])
+    assert_values_in_csv(model_path / "power" / "Technodata.csv", "year", [2030])
 
 
 def test_add_agent(model_path_retro):
@@ -113,9 +111,9 @@ def test_add_agent(model_path_retro):
     add_agent(model_path_retro, "A2", "A1", "Agent3", "Agent4")
 
     # Check Agents.csv
-    assert_values_in_csv(model_path_retro / "Agents.csv", "Name", ["A2"])
+    assert_values_in_csv(model_path_retro / "Agents.csv", "name", ["A2"])
     for share in ["Agent3", "Agent4"]:
-        assert_values_in_csv(model_path_retro / "Agents.csv", "AgentShare", [share])
+        assert_values_in_csv(model_path_retro / "Agents.csv", "agent_share", [share])
 
     # Check Technodata.csv files
     for sector in ["power", "gas"]:
@@ -140,7 +138,7 @@ def test_add_region(model_path):
     ]
     for sector in get_sectors(model_path):
         for file in files_to_check:
-            assert_values_in_csv(model_path / sector / file, "RegionName", ["R2"])
+            assert_values_in_csv(model_path / sector / file, "region", ["R2"])
 
 
 def test_add_timeslice(model_path):
@@ -157,4 +155,4 @@ def test_add_timeslice(model_path):
     # Check preset files
     for preset in ["Residential2020Consumption.csv", "Residential2050Consumption.csv"]:
         df = pd.read_csv(model_path / "residential_presets" / preset)
-        assert len(df["Timeslice"].unique()) == n_timeslices
+        assert len(df["timeslice"].unique()) == n_timeslices

@@ -1,4 +1,4 @@
-ProcessName,RegionName,Time,cap_par,fix_par,var_par,MaxCapacityAddition,MaxCapacityGrowth,TotalCapacityLimit,TechnicalLife,UtilizationFactor,InterestRate,Agent1
+technology,region,year,cap_par,fix_par,var_par,max_capacity_addition,max_capacity_growth,total_capacity_limit,technical_life,utilization_factor,interest_rate,Agent1
 gasCCGT,R1,2020,23.78234399,0,0,10,0.5,100,35,0.9,0.1,1
 gasCCGT,R1,2040,23.78234399,0,0,10,0.5,100,35,0.9,0.1,1
 windturbine,R1,2020,36.30771182,0,0,10,0.5,100,25,0.4,0.1,1

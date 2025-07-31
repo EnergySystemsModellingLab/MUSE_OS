@@ -55,6 +55,7 @@ import pandas as pd
 import xarray as xr
 
 # Global mapping of column names to their standardized versions
+# This is for backwards compatibility with old file formats
 COLUMN_RENAMES = {
     "process_name": "technology",
     "process": "technology",
@@ -62,20 +63,24 @@ COLUMN_RENAMES = {
     "region_name": "region",
     "time": "year",
     "commodity_name": "commodity",
-    "commodity_type": "comm_type",
+    "comm_type": "commodity_type",
     "commodity_price": "prices",
     "units_commodity_price": "units_prices",
     "enduse": "end_use",
     "sn": "timeslice",
     "commodity_emission_factor_CO2": "emmission_factor",
     "utilisation_factor": "utilization_factor",
+    "objsort": "obj_sort",
+    "objsort1": "obj_sort1",
+    "objsort2": "obj_sort2",
+    "objsort3": "obj_sort3",
 }
 
 # Columns who's values should be converted from camelCase to snake_case
 CAMEL_TO_SNAKE_COLUMNS = [
     "tech_type",
     "commodity",
-    "comm_type",
+    "commodity_type",
     "agent_share",
     "attribute",
     "sector",
@@ -94,7 +99,7 @@ COLUMN_TYPES = {
     "variable": str,
     "timeslice": int,  # For tables that require int timeslice instead of month etc.
     "name": str,
-    "comm_type": str,
+    "commodity_type": str,
     "tech_type": str,
     "type": str,
     "function_type": str,
@@ -428,21 +433,21 @@ def read_technodictionary_csv(path: Path) -> pd.DataFrame:
     # Check for deprecated columns
     if "fuel" in data.columns:
         msg = (
-            f"The 'Fuel' column in {path} has been deprecated. "
+            f"The 'fuel' column in {path} has been deprecated. "
             "This information is now determined from CommIn files. "
             "Please remove this column from your Technodata files."
         )
         getLogger(__name__).warning(msg)
     if "end_use" in data.columns:
         msg = (
-            f"The 'EndUse' column in {path} has been deprecated. "
+            f"The 'end_use' column in {path} has been deprecated. "
             "This information is now determined from CommOut files. "
             "Please remove this column from your Technodata files."
         )
         getLogger(__name__).warning(msg)
     if "scaling_size" in data.columns:
         msg = (
-            f"The 'ScalingSize' column in {path} has been deprecated. "
+            f"The 'scaling_size' column in {path} has been deprecated. "
             "Please remove this column from your Technodata files."
         )
         getLogger(__name__).warning(msg)
@@ -699,7 +704,7 @@ def process_technologies(
         "commodity",
         CommodityUsage.from_technologies(technodata).values,
     )
-    technodata = technodata.drop_vars("comm_type")
+    technodata = technodata.drop_vars("commodity_type")
 
     # Check utilization and minimum service factors
     check_utilization_and_minimum_service_factors(technodata)
@@ -778,7 +783,7 @@ def read_global_commodities_csv(path: Path) -> pd.DataFrame:
 
     required_columns = {
         "commodity",
-        "comm_type",
+        "commodity_type",
     }
     data = standardize_dataframe(
         df,
@@ -849,11 +854,12 @@ def read_agent_parameters_csv(path: Path) -> pd.DataFrame:
     # Check consistency of objectives data columns
     objectives = [col for col in data.columns if col.startswith("objective")]
     floats = [col for col in data.columns if col.startswith("obj_data")]
-    sorting = [col for col in data.columns if col.startswith("objsort")]
+    sorting = [col for col in data.columns if col.startswith("obj_sort")]
 
     if len(objectives) != len(floats) or len(objectives) != len(sorting):
         raise ValueError(
-            f"Agent Objective, ObjData, and Objsort columns are inconsistent in {path}"
+            "Agent objective, obj_data, and obj_sort columns are inconsistent in "
+            f"{path}"
         )
 
     return data
@@ -867,7 +873,7 @@ def process_agent_parameters(data: pd.DataFrame) -> list[dict]:
         objectives = (
             row[[i.startswith("objective") for i in row.index]].dropna().to_list()
         )
-        sorting = row[[i.startswith("objsort") for i in row.index]].dropna().to_list()
+        sorting = row[[i.startswith("obj_sort") for i in row.index]].dropna().to_list()
         floats = row[[i.startswith("obj_data") for i in row.index]].dropna().to_list()
 
         # Create decision parameters
@@ -1110,12 +1116,12 @@ def read_presets_csv(path: Path) -> pd.DataFrame:
         msg=f"Reading presets from {path}.",
     )
 
-    # Legacy: drop ProcessName column and sum data (PR #448)
+    # Legacy: drop technology column and sum data (PR #448)
     if "technology" in data.columns:
         getLogger(__name__).warning(
-            f"The ProcessName column (in file {path}) is deprecated. "
-            "Data has been summed across processes, and this column has been "
-            "dropped."
+            f"The technology (or ProcessName) column in file {path} is "
+            "deprecated. Data has been summed across technologies, and this column "
+            "has been dropped."
         )
         data = (
             data.drop(columns=["technology"])

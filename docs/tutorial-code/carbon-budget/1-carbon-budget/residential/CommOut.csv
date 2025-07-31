@@ -1,3 +1,3 @@
-ProcessName,RegionName,Time,heat,CO2f
+technology,region,year,heat,CO2f
 gasboiler,R1,2020,1,64.71
 heatpump,R1,2020,1,0

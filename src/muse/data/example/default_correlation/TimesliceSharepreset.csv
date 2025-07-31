@@ -1,4 +1,4 @@
-SN,RegionName,electricity,gas,heat,CO2f,wind
+timeslice,region,electricity,gas,heat,CO2f,wind
 1,R1,0,0,0.071,0,0
 2,R1,0,0,0.107,0,0
 3,R1,0,0,0.071,0,0

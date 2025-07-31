@@ -192,7 +192,7 @@ def coords() -> Mapping:
             "calories",
             "addviews",
         ],
-        "comm_type": [
+        "commodity_type": [
             "energy",
             "energy",
             "energy",
@@ -231,10 +231,10 @@ def technologies(coords) -> Dataset:
 
     result = Dataset(coords=coords)
 
-    result["comm_type"] = ("commodity", coords["comm_type"])
+    result["commodity_type"] = ("commodity", coords["commodity_type"])
     result["tech_type"] = "technology", ["solid", "liquid", "solid", "liquid"]
 
-    result = result.set_coords(("comm_type", "tech_type"))
+    result = result.set_coords(("commodity_type", "tech_type"))
 
     def var(*dims, factor=100.0):
         shape = tuple(len(result[u]) for u in dims)
@@ -246,7 +246,7 @@ def technologies(coords) -> Dataset:
 
     # first create a mask so each tech will have consistent inputs/outputs across years
     # and regions
-    fuels = result.comm_type == "energy"
+    fuels = result.commodity_type == "energy"
     result["fixed_inputs"] = var("technology", "commodity")
     result.fixed_inputs[:] = randint(0, 3, result.fixed_inputs.shape) == 0
     result.fixed_inputs.loc[{"commodity": ~fuels}] = 0
@@ -256,8 +256,8 @@ def technologies(coords) -> Dataset:
 
     result["fixed_outputs"] = var("technology", "commodity")
     result.fixed_outputs[:] = randint(0, 3, result.fixed_outputs.shape) == 0
-    enduses = result.comm_type == "service"
-    environmentals = result.comm_type == "environmental"
+    enduses = result.commodity_type == "service"
+    environmentals = result.commodity_type == "environmental"
     result.fixed_outputs.loc[{"commodity": ~(enduses | environmentals)}] = 0
 
     # make sure at least one energy input and service output is set
@@ -304,7 +304,7 @@ def technologies(coords) -> Dataset:
     result["interest_rate"] = var("technology", "region", "year", factor=0.1)
 
     result["comm_usage"] = "commodity", CommodityUsage.from_technologies(result).values
-    result = result.set_coords("comm_usage").drop_vars("comm_type")
+    result = result.set_coords("comm_usage").drop_vars("commodity_type")
 
     return result
 

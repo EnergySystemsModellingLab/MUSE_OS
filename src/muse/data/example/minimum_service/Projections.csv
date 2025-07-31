@@ -1,4 +1,4 @@
-RegionName,Attribute,Time,fuel3,fuel1,fuel2
+region,attribute,year,fuel3,fuel1,fuel2
 R1,CommodityPrice,2010,0.053279574,1,9.551219512
 R1,CommodityPrice,2015,0.061739506,1.087719298,9.516911971
 R1,CommodityPrice,2020,0.070199438,1.175438596,9.482604429

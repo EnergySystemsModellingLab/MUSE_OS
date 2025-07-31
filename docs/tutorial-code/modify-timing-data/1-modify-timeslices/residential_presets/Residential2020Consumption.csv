@@ -1,4 +1,4 @@
-RegionName,Timeslice,heat
+region,timeslice,heat
 R1,1,0.7
 R1,2,1.0
 R1,3,0.7

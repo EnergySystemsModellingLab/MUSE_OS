@@ -1,4 +1,4 @@
-AgentShare,Name,RegionName,Objective1,ObjData1,Objsort1,SearchRule,DecisionMethod,Quantity,Type
+agent_share,name,region,objective1,obj_data1,obj_sort1,search_rule,decision_method,quantity,type
 Agent1,A1,R1,LCOE,1,TRUE,all,singleObj,1,New
 Agent2,A1,R1,LCOE,1,TRUE,all,singleObj,1,Retrofit
 Agent1,A1,R2,LCOE,1,TRUE,all,singleObj,1,New

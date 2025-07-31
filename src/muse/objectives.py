@@ -467,7 +467,7 @@ def lifetime_levelized_cost_of_energy(
     See :py:func:`muse.costs.lifetime_levelized_cost_of_energy` for more details.
 
     The LCOE is set to zero for those timeslices where the production is zero, normally
-    due to a zero utilisation factor.
+    due to a zero utilization factor.
     """
     from muse.costs import levelized_cost_of_energy as LCOE
     from muse.quantities import capacity_to_service_demand, consumption

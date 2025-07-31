@@ -22,12 +22,12 @@ def setup_test_environment(
 
     # Read and modify technodata timeslices
     technodata = pd.read_csv(model_path / sector / "TechnodataTimeslices.csv")
-    technodata["UtilizationFactor"] = technodata["UtilizationFactor"].astype(float)
+    technodata["utilization_factor"] = technodata["utilization_factor"].astype(float)
     for process, factor in zip(process_names, utilization_factors):
-        technodata.loc[technodata["ProcessName"] == process, "UtilizationFactor"] = (
+        technodata.loc[technodata["technology"] == process, "utilization_factor"] = (
             factor
         )
-    technodata["MinimumServiceFactor"] = 0
+    technodata["minimum_service_factor"] = 0
 
     # Save modified data
     output_path = model_path / sector / "TechnodataTimeslices.csv"

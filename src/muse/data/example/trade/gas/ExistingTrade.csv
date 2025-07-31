@@ -1,4 +1,4 @@
-ProcessName,RegionName,Time,R1,R2
+technology,region,year,R1,R2
 gassupply1,R1,2010,3000,0
 gassupply1,R1,2020,3000,0
 gassupply1,R1,2030,2100,0

@@ -28,7 +28,7 @@ The interpretation of these prices depends on the type of commodity:
 The price trajectory should follow the structure shown in the table below.
 
 .. csv-table:: Initial market projections
-   :header: RegionName, Attribute, Time, com1, com2, com3
+   :header: region, attribute, year, com1, com2, com3
 
    region1, CommodityPrice, 2010, 20, 1.9583, 2
    region1, CommodityPrice, 2015, 20, 1.9583, 2
@@ -41,14 +41,14 @@ The price trajectory should follow the structure shown in the table below.
    region1, CommodityPrice, 2050, 22.85714286, 2.238057143, 2.285714286
 
 
-``RegionName``
+``region``
    represents the region ID and needs to be consistent across all the data inputs
 
-``Attribute``
+``attribute``
    defines the attribute type. In this case it refers to the CommodityPrice; it is
    relevant only for internal use
 
-``Time``
+``year``
    corresponds to the time periods of the simulation; the simulated time framework in
    the example goes from 2010 through to 2050 with a 5-year time step
 
