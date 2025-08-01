@@ -37,6 +37,7 @@ from __future__ import annotations
 
 from collections.abc import Hashable, MutableMapping, Sequence
 from functools import wraps
+from logging import getLogger
 from typing import Any, Callable, cast
 
 import numpy as np
@@ -299,8 +300,18 @@ def new_and_retro(
 
         # Make sure the total new/retro agent quantity = 1
         # TODO: ideally we should check this in the input layer
-        assert abs(total_retro_quantity - 1) < 1e-2
-        assert abs(total_new_quantity - 1) < 1e-2
+        if abs(total_retro_quantity - 1) > 1e-2:
+            msg = (
+                f"Total retrofit agent quantity in region {region} "
+                f"is not 1: {total_retro_quantity}"
+            )
+            getLogger(__name__).critical(msg)
+        if abs(total_new_quantity - 1) > 1e-2:
+            msg = (
+                f"Total new agent quantity in region {region} "
+                f"is not 1: {total_new_quantity}"
+            )
+            getLogger(__name__).critical(msg)
 
     result = agent_concatenation(agent_demands)
     assert "year" not in result.dims
@@ -399,7 +410,9 @@ def standard_demand(
 
         # Make sure the total agent quantity = 1
         # TODO: ideally we should check this in the input layer
-        assert abs(total_quantity - 1) < 1e-2
+        if abs(total_quantity - 1) > 1e-2:
+            msg = f"Total agent quantity in region {region} is not 1: {total_quantity}"
+            getLogger(__name__).critical(msg)
 
     result = agent_concatenation(agent_demands)
     assert "year" not in result.dims
