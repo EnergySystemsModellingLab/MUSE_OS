@@ -374,12 +374,18 @@ def setup_time_framework(settings: dict) -> None:
 @register_settings_hook(priority=1)
 def standardise_case(settings: dict) -> None:
     """Standardise certain fields to snake_case."""
-    from muse.readers.csv import camel_to_snake
+    from muse.utilities import camel_to_snake
 
     fields_to_standardise = ["excluded_commodities", "regions"]
     for field in fields_to_standardise:
         if field in settings:
             settings[field] = [camel_to_snake(x) for x in settings[field]]
+
+    # Handle timeslice level_names if present
+    if "level_names" in settings["timeslices"]:
+        settings["timeslices"]["level_names"] = [
+            camel_to_snake(x) for x in settings["timeslices"]["level_names"]
+        ]
 
 
 @register_settings_hook
