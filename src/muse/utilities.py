@@ -675,3 +675,16 @@ def interpolate_technodata(
     years = sorted(set(time_framework).union(data.year.values.tolist()))
     data = data.interp(year=years, method=interpolation_mode)
     return data
+
+
+def camel_to_snake(name: str) -> str:
+    """Transforms CamelCase to snake_case."""
+    from re import sub
+
+    pattern = sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+    result = sub("([a-z0-9])([A-Z])", r"\1_\2", pattern).lower()
+    result = result.replace("co2", "CO2")
+    result = result.replace("ch4", "CH4")
+    result = result.replace("n2_o", "N2O")
+    result = result.replace("f-gases", "F-gases")
+    return result

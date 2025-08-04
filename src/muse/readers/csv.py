@@ -54,6 +54,8 @@ from pathlib import Path
 import pandas as pd
 import xarray as xr
 
+from muse.utilities import camel_to_snake
+
 # Global mapping of column names to their standardized versions
 # This is for backwards compatibility with old file formats
 COLUMN_RENAMES = {
@@ -74,6 +76,8 @@ COLUMN_RENAMES = {
     "objsort1": "obj_sort1",
     "objsort2": "obj_sort2",
     "objsort3": "obj_sort3",
+    "time_slice": "timeslice",
+    "price": "prices",
 }
 
 # Columns who's values should be converted from camelCase to snake_case
@@ -224,19 +228,6 @@ def get_nan_coordinates(dataset: xr.Dataset) -> list[tuple]:
     if any_nan.any():
         return any_nan.where(any_nan, drop=True).to_dataframe(name="").index.to_list()
     return []
-
-
-def camel_to_snake(name: str) -> str:
-    """Transforms CamelCase to snake_case."""
-    from re import sub
-
-    pattern = sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
-    result = sub("([a-z0-9])([A-Z])", r"\1_\2", pattern).lower()
-    result = result.replace("co2", "CO2")
-    result = result.replace("ch4", "CH4")
-    result = result.replace("n2_o", "N2O")
-    result = result.replace("f-gases", "F-gases")
-    return result
 
 
 def convert_column_types(data: pd.DataFrame) -> pd.DataFrame:
