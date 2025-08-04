@@ -2,9 +2,9 @@ from io import StringIO
 from itertools import chain, permutations
 from pathlib import Path
 
-import pandas as pd
 import duckdb
 import numpy as np
+import pandas as pd
 import toml
 import xarray as xr
 from pytest import fixture, mark, raises
@@ -329,9 +329,10 @@ def default_new_input(tmp_path):
 
 @fixture
 def con():
-    from muse.new_input.readers import TableBase
     from sqlalchemy import create_engine
     from sqlalchemy.orm import Session
+
+    from muse.new_input.readers import TableBase
 
     engine = create_engine("duckdb:///:memory:")
     session = Session(engine)
@@ -470,6 +471,7 @@ def test_new_read_demand_csv_primary_key_constraint(
 @mark.xfail
 def test_demand_dataset(default_new_input):
     import duckdb
+
     from muse.new_input.readers import read_commodities, read_demand, read_regions
 
     con = duckdb.connect(":memory:")
@@ -510,3 +512,4 @@ def test_new_read_initial_market(default_new_input):
         exports=np.float64,
         imports=np.float64,
         static_trade=np.float64,
+    )
