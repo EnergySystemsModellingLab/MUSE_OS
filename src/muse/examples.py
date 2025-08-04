@@ -52,6 +52,7 @@ AVAILABLE_EXAMPLES = [
     "multiple_agents",
     "minimum_service",
     "trade",
+    "default_new_input",
 ]
 
 
