@@ -6,7 +6,7 @@ from pytest import mark, xfail
 from muse.examples import AVAILABLE_EXAMPLES
 
 # temporary skip for default_new_input as this is not yet working
-AVAILABLE_EXAMPLES.pop("default_new_input")
+AVAILABLE_EXAMPLES.remove("default_new_input")
 
 
 @mark.regression
