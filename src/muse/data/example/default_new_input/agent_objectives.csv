@@ -1,0 +1,2 @@
+agent_id,objective_type,decision_weight,objective_sort
+Agent1,LCOE,1,TRUE
