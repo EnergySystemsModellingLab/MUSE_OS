@@ -290,3 +290,27 @@ def test_get_nan_coordinates():
     dataset1 = xr.Dataset.from_dataframe(df1.set_index(["region", "year"]))
     nan_coords1 = get_nan_coordinates(dataset1)
     assert nan_coords1 == [("R1", 2021)]
+
+    # Test 2: Missing coordinate combinations
+    df2 = pd.DataFrame(
+        {
+            "region": ["R1", "R1", "R2"],  # Missing R2-2021
+            "year": [2020, 2021, 2020],
+            "value": [1.0, 2.0, 3.0],
+        }
+    )
+    dataset2 = xr.Dataset.from_dataframe(df2.set_index(["region", "year"]))
+    nan_coords2 = get_nan_coordinates(dataset2)
+    assert nan_coords2 == [("R2", 2021)]
+
+    # Test 3: No NaN values
+    df3 = pd.DataFrame(
+        {
+            "region": ["R1", "R1", "R2", "R2"],
+            "year": [2020, 2021, 2020, 2021],
+            "value": [1.0, 2.0, 3.0, 4.0],
+        }
+    )
+    dataset3 = xr.Dataset.from_dataframe(df3.set_index(["region", "year"]))
+    nan_coords3 = get_nan_coordinates(dataset3)
+    assert nan_coords3 == []
