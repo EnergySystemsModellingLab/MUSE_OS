@@ -1,6 +1,6 @@
-process_id,region_id,year,cap_par,cap_exp,fix_par,fix_exp,var_par,var_exp,max_capacity_addition,max_capacity_growth,total_capacity_limit,life,scaling_size,efficiency,discount_rate
-gassupply1,,,0,1,0,1,2.55,1,5,1,60,35,0.00000189,86,0.1
-gasCCGT,,,23.78234399,1,0,1,0,1,2,1,60,35,0.00000189,86,0.1
-windturbine,,,36.30771182,1,0,1,0,1,2,1,60,25,0.00000189,86,0.1
-gasboiler,,,3.8,1,0,1,0,1,10,0.02,60,10,0.00000189,86,0.1
-heatpump,,,8.866667,1,0,1,0,1,10,0.02,60,10,0.00000189,86,0.1
+process_id,region_id,year,cap_par,cap_exp,fix_par,fix_exp,var_par,var_exp,max_capacity_addition,max_capacity_growth,total_capacity_limit,lifetime,discount_rate
+gassupply1,R1,2020,0,1,0,1,2.55,1,5,1,60,35,0.1
+gasCCGT,R1,2020,23.78234399,1,0,1,0,1,2,1,60,35,0.1
+windturbine,R1,2020,36.30771182,1,0,1,0,1,2,1,60,25,0.1
+gasboiler,R1,2020,3.8,1,0,1,0,1,10,0.02,60,10,0.1
+heatpump,R1,2020,8.866667,1,0,1,0,1,10,0.02,60,10,0.1

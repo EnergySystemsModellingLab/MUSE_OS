@@ -1,3 +1,2 @@
-agent_id,objective,objective_data,objective_sort
+agent_id,objective_type,decision_weight,objective_sort
 Agent1,LCOE,1,TRUE
-Agent2,LCOE,1,TRUE

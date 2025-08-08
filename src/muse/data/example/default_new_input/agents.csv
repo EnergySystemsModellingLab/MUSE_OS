@@ -1,3 +1,4 @@
-id,description,type,maturity_threshold,annual_cost_limit,search_rule,decision_rule
-Agent1,New agent for A1,new,-1,inf,all,single
-Agent2,Retrofit agent for A1,retrofit,-1,inf,all,single
+id,description,region_id,sector_id,search_rule,decision_rule,quantity
+Agent1,Agent1_R1_residential,R1,residential,all,single,1
+Agent1,Agent1_R1_power,R1,power,all,single,1
+Agent1,Agent1_R1_gas,R1,gas,all,single,1
