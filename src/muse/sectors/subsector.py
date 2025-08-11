@@ -118,7 +118,7 @@ class Subsector:
         from muse import investments as iv
         from muse.agents import InvestingAgent, agents_factory
         from muse.commodities import is_enduse
-        from muse.readers import read_csv, read_existing_trade, read_initial_capacity
+        from muse.readers import read_assets, read_csv, read_trade_assets
 
         # Read existing capacity or existing trade file
         # Have to peek at the file to determine what format the data is in
@@ -126,9 +126,9 @@ class Subsector:
         # the parameter name in the settings file
         df = read_csv(settings.existing_capacity)
         if "year" not in df.columns:
-            existing_capacity = read_initial_capacity(settings.existing_capacity)
+            existing_capacity = read_assets(settings.existing_capacity)
         else:
-            existing_capacity = read_existing_trade(settings.existing_capacity)
+            existing_capacity = read_trade_assets(settings.existing_capacity)
 
         # Create agents
         agents = agents_factory(

@@ -187,7 +187,9 @@ def test_suffix_path_formatting(suffix, tmp_path):
 
 def test_check_utilization_and_minimum_service():
     """Test combined validation of utilization and minimum service factors."""
-    from muse.readers.csv import check_utilization_and_minimum_service_factors
+    from muse.readers.csv.technologies import (
+        check_utilization_and_minimum_service_factors,
+    )
 
     # Test valid case - create dataset with proper dimensions
     ds = xr.Dataset(
@@ -240,7 +242,9 @@ def test_check_utilization_and_minimum_service():
 
 def test_check_utilization_not_all_zero_fail():
     """Test validation fails when all utilization factors are zero."""
-    from muse.readers.csv import check_utilization_and_minimum_service_factors
+    from muse.readers.csv.technologies import (
+        check_utilization_and_minimum_service_factors,
+    )
 
     ds = xr.Dataset(
         {
@@ -260,7 +264,9 @@ def test_check_utilization_not_all_zero_fail():
 )
 def test_check_utilization_in_range_fail(values):
     """Test validation fails for utilization factors outside valid range."""
-    from muse.readers.csv import check_utilization_and_minimum_service_factors
+    from muse.readers.csv.technologies import (
+        check_utilization_and_minimum_service_factors,
+    )
 
     ds = xr.Dataset(
         {
@@ -277,7 +283,7 @@ def test_check_utilization_in_range_fail(values):
 
 def test_get_nan_coordinates():
     """Test get_nan_coordinates for various scenarios."""
-    from muse.readers.csv import get_nan_coordinates
+    from muse.readers.csv.helpers import get_nan_coordinates
 
     # Test 1: Explicit NaN values
     df1 = pd.DataFrame(

@@ -48,7 +48,7 @@ class Regression(Callable):
     `xarray.Dataset` as input. In any case, it is given the gpd and
     population. These can be read from standard MUSE csv files:
 
-        >>> from muse.readers import read_macro_drivers
+        >>> from muse.readers.csv.correlation_consumption import read_macro_drivers
         >>> from muse.defaults import DATA_DIRECTORY
         >>> path_to_macrodrivers = DATA_DIRECTORY / "Macrodrivers.csv"
         >>> if path_to_macrodrivers.exists():
@@ -117,19 +117,14 @@ class Regression(Callable):
     @classmethod
     def factory(
         cls,
-        regression_data: str | Path | Dataset,
+        regression_data: Dataset,
         interpolation: str = "linear",
         base_year: int = 2010,
         **filters,
     ) -> Regression:
         """Creates a regression function from standard muse input."""
-        from muse.readers import read_regression_parameters
-
         assert cls.__mappings__
         assert cls.__regression__ != ""
-
-        if isinstance(regression_data, (str, Path)):
-            regression_data = read_regression_parameters(regression_data)
 
         # Get the parameters of interest with a 'simple' name
         coeffs = Dataset({k: regression_data[v] for k, v in cls.__mappings__.items()})
@@ -138,15 +133,10 @@ class Regression(Callable):
 
 
 def factory(
-    regression_parameters: str | Path | Dataset,
+    regression_parameters: Dataset,
     sector: str | Sequence[str] | None = None,
 ) -> Regression:
     """Creates regression functor from standard MUSE data for given sector."""
-    from muse.readers import read_regression_parameters
-
-    if isinstance(regression_parameters, (str, Path)):
-        regression_parameters = read_regression_parameters(regression_parameters)
-
     if sector is not None:
         regression_parameters = regression_parameters.sel(sector=sector)
 
@@ -203,7 +193,6 @@ def register_regression(
     registered regression functor.
     """
     from logging import getLogger
-    from pathlib import Path
 
     from muse.registration import name_variations
 
@@ -504,15 +493,11 @@ class Linear(Regression):
 
 
 def endogenous_demand(
-    regression_parameters: str | Path | Dataset,
-    drivers: str | Path | Dataset,
+    regression_parameters: Dataset,
+    drivers: Dataset,
     sector: str | Sequence | None = None,
     **kwargs,
 ) -> Dataset:
     """Endogenous demand based on macro drivers and regression parameters."""
-    from muse.readers import read_macro_drivers
-
     regression = factory(regression_parameters, sector=sector)
-    if isinstance(drivers, (str, Path)):
-        drivers = read_macro_drivers(drivers)
     return regression(drivers, **kwargs)

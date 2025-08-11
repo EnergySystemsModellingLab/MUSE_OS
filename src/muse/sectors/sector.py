@@ -11,7 +11,7 @@ import xarray as xr
 
 from muse.agents import AbstractAgent
 from muse.production import PRODUCTION_SIGNATURE
-from muse.readers.toml import read_technodata
+from muse.readers.toml import read_sector_technodata
 from muse.sectors.abstract import AbstractSector
 from muse.sectors.register import register_sector
 from muse.sectors.subsector import Subsector
@@ -44,7 +44,7 @@ class Sector(AbstractSector):  # type: ignore
         interactions_config = sector_settings.get("interactions", None)
 
         # Read technologies
-        technologies = read_technodata(
+        technologies = read_sector_technodata(
             settings,
             name,
             interpolation_mode=interpolation_mode,

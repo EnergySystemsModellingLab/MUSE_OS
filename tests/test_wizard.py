@@ -1,10 +1,8 @@
 from pathlib import Path
 
 import pandas as pd
-import pytest
 from tomlkit import dumps, parse
 
-from muse import examples
 from muse.wizard import (
     add_agent,
     add_new_commodity,
@@ -15,20 +13,6 @@ from muse.wizard import (
     get_sectors,
     modify_toml,
 )
-
-
-@pytest.fixture
-def model_path(tmp_path):
-    """Creates temporary folder containing the default model."""
-    examples.copy_model(name="default", path=tmp_path)
-    return tmp_path / "model"
-
-
-@pytest.fixture
-def model_path_retro(tmp_path):
-    """Creates temporary folder containing the default_retro model."""
-    examples.copy_model(name="default_retro", path=tmp_path)
-    return tmp_path / "model"
 
 
 def assert_values_in_csv(file_path: Path, column: str, expected_values: list):
@@ -75,19 +59,19 @@ def test_get_sectors(tmp_path):
     assert set(get_sectors(model_path)) == {"sector1", "sector2"}
 
 
-def test_add_new_commodity(model_path):
+def test_add_new_commodity(default_model_path):
     """Test the add_new_commodity function on the default model."""
-    add_new_commodity(model_path, "new_commodity", "power", "wind")
+    add_new_commodity(default_model_path, "new_commodity", "power", "wind")
 
     # Check global commodities
     assert_values_in_csv(
-        model_path / "GlobalCommodities.csv", "commodity", ["new_commodity"]
+        default_model_path / "GlobalCommodities.csv", "commodity", ["new_commodity"]
     )
 
 
-def test_add_new_process(model_path):
+def test_add_new_process(default_model_path):
     """Test the add_new_process function on the default model."""
-    add_new_process(model_path, "new_process", "power", "windturbine")
+    add_new_process(default_model_path, "new_process", "power", "windturbine")
 
     files_to_check = [
         "CommIn.csv",
@@ -96,36 +80,44 @@ def test_add_new_process(model_path):
         "Technodata.csv",
     ]
     for file in files_to_check:
-        assert_values_in_csv(model_path / "power" / file, "technology", ["new_process"])
+        assert_values_in_csv(
+            default_model_path / "power" / file, "technology", ["new_process"]
+        )
 
 
-def test_technodata_for_new_year(model_path):
+def test_technodata_for_new_year(default_model_path):
     """Test the add_price_data_for_new_year function on the default model."""
-    add_technodata_for_new_year(model_path, 2030, "power", 2020)
+    add_technodata_for_new_year(default_model_path, 2030, "power", 2020)
 
-    assert_values_in_csv(model_path / "power" / "Technodata.csv", "year", [2030])
+    assert_values_in_csv(
+        default_model_path / "power" / "Technodata.csv", "year", [2030]
+    )
 
 
-def test_add_agent(model_path_retro):
+def test_add_agent(default_retro_model_path):
     """Test the add_agent function on the default_retro model."""
-    add_agent(model_path_retro, "A2", "A1", "Agent3", "Agent4")
+    add_agent(default_retro_model_path, "A2", "A1", "Agent3", "Agent4")
 
     # Check Agents.csv
-    assert_values_in_csv(model_path_retro / "Agents.csv", "name", ["A2"])
+    assert_values_in_csv(default_retro_model_path / "Agents.csv", "name", ["A2"])
     for share in ["Agent3", "Agent4"]:
-        assert_values_in_csv(model_path_retro / "Agents.csv", "agent_share", [share])
+        assert_values_in_csv(
+            default_retro_model_path / "Agents.csv", "agent_share", [share]
+        )
 
     # Check Technodata.csv files
     for sector in ["power", "gas"]:
-        assert_columns_exist(model_path_retro / sector / "Technodata.csv", ["Agent4"])
+        assert_columns_exist(
+            default_retro_model_path / sector / "Technodata.csv", ["Agent4"]
+        )
 
 
-def test_add_region(model_path):
+def test_add_region(default_model_path):
     """Test the add_region function on the default model."""
-    add_region(model_path, "R2", "R1")
+    add_region(default_model_path, "R2", "R1")
 
     # Check settings.toml
-    with open(model_path / "settings.toml") as f:
+    with open(default_model_path / "settings.toml") as f:
         settings = parse(f.read())
         assert "R2" in settings["regions"]
 
@@ -136,17 +128,17 @@ def test_add_region(model_path):
         "CommOut.csv",
         "ExistingCapacity.csv",
     ]
-    for sector in get_sectors(model_path):
+    for sector in get_sectors(default_model_path):
         for file in files_to_check:
-            assert_values_in_csv(model_path / sector / file, "region", ["R2"])
+            assert_values_in_csv(default_model_path / sector / file, "region", ["R2"])
 
 
-def test_add_timeslice(model_path):
+def test_add_timeslice(default_model_path):
     """Test the add_timeslice function on the default model."""
-    add_timeslice(model_path, "midnight", "evening")
+    add_timeslice(default_model_path, "midnight", "evening")
 
     # Check settings.toml
-    with open(model_path / "settings.toml") as f:
+    with open(default_model_path / "settings.toml") as f:
         settings = parse(f.read())
         timeslices = settings["timeslices"]["all-year"]["all-week"]
         assert "midnight" in timeslices
@@ -154,5 +146,5 @@ def test_add_timeslice(model_path):
 
     # Check preset files
     for preset in ["Residential2020Consumption.csv", "Residential2050Consumption.csv"]:
-        df = pd.read_csv(model_path / "residential_presets" / preset)
+        df = pd.read_csv(default_model_path / "residential_presets" / preset)
         assert len(df["timeslice"].unique()) == n_timeslices

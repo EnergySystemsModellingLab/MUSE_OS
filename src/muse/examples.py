@@ -144,7 +144,7 @@ def technodata(sector: str, model: str = "default") -> xr.Dataset:
     """Technology for a sector of a given example model."""
     from tempfile import TemporaryDirectory
 
-    from muse.readers.toml import read_settings, read_technodata
+    from muse.readers.toml import read_sector_technodata, read_settings
 
     sector = sector.lower()
     allowed = {"residential", "power", "gas", "preset"}
@@ -155,7 +155,7 @@ def technodata(sector: str, model: str = "default") -> xr.Dataset:
     with TemporaryDirectory() as tmpdir:
         path = copy_model(model, tmpdir)
         settings = read_settings(path / "settings.toml")
-        return read_technodata(settings, sector)
+        return read_sector_technodata(settings, sector)
 
 
 def search_space(sector: str, model: str = "default") -> xr.DataArray:

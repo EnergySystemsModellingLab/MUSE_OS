@@ -14,10 +14,10 @@ COMMODITIES: Dataset = None  # type: ignore
 
 def setup_module(commodities_path: Path):
     """Sets up global commodities."""
-    from muse.readers.csv import read_global_commodities
+    from muse.readers.csv import read_commodities
 
     global COMMODITIES
-    COMMODITIES = read_global_commodities(commodities_path)
+    COMMODITIES = read_commodities(commodities_path)
 
 
 class CommodityUsage(IntFlag):
