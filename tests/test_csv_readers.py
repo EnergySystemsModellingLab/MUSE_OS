@@ -4,9 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import xarray as xr
-from pytest import fixture
 
-from muse import examples
 from muse.readers.toml import read_settings
 
 # Common test data
@@ -127,46 +125,10 @@ def assert_single_coordinate(data, selection, expected):
             )
 
 
-@fixture
-def model_path(tmp_path):
-    """Creates temporary folder containing the default model."""
-    examples.copy_model(name="default", path=tmp_path)
-    path = tmp_path / "model"
-    read_settings(path / "settings.toml")  # setup globals
-    return path
-
-
-@fixture
-def timeslice_model_path(tmp_path):
-    """Creates temporary folder containing the default model."""
-    examples.copy_model(name="default_timeslice", path=tmp_path)
-    path = tmp_path / "model"
-    read_settings(path / "settings.toml")  # setup globals
-    return path
-
-
-@fixture
-def trade_model_path(tmp_path):
-    """Creates temporary folder containing the trade model."""
-    examples.copy_model(name="trade", path=tmp_path)
-    path = tmp_path / "model"
-    read_settings(path / "settings.toml")  # setup globals
-    return path
-
-
-@fixture
-def correlation_model_path(tmp_path):
-    """Creates temporary folder containing the correlation model."""
-    examples.copy_model(name="default_correlation", path=tmp_path)
-    path = tmp_path / "model"
-    read_settings(path / "settings.toml")  # setup globals
-    return path
-
-
-def test_read_global_commodities(model_path):
+def test_read_global_commodities(default_model_path):
     from muse.readers.csv import read_global_commodities
 
-    path = model_path / "GlobalCommodities.csv"
+    path = default_model_path / "GlobalCommodities.csv"
     data = read_global_commodities(path)
 
     # Check data against schema
@@ -192,10 +154,10 @@ def test_read_global_commodities(model_path):
     assert_single_coordinate(data, coord, expected)
 
 
-def test_read_presets(model_path):
+def test_read_presets(default_model_path):
     from muse.readers.csv import read_presets
 
-    data = read_presets(str(model_path / "residential_presets" / "*.csv"))
+    data = read_presets(str(default_model_path / "residential_presets" / "*.csv"))
 
     # Check data against schema
     expected_schema = DataArraySchema(
@@ -237,10 +199,12 @@ def test_read_presets(model_path):
     )
 
 
-def test_read_initial_market(model_path):
+def test_read_initial_market(default_model_path):
     from muse.readers.csv import read_initial_market
 
-    data = read_initial_market(model_path / "Projections.csv", currency="MUS$2010")
+    data = read_initial_market(
+        default_model_path / "Projections.csv", currency="MUS$2010"
+    )
 
     # Check data against schema
     expected_schema = DatasetSchema(
@@ -300,10 +264,10 @@ def test_read_initial_market(model_path):
     assert_single_coordinate(data, coord, expected)
 
 
-def test_read_technodictionary(model_path):
+def test_read_technodictionary(default_model_path):
     from muse.readers.csv import read_technodictionary
 
-    data = read_technodictionary(model_path / "power" / "Technodata.csv")
+    data = read_technodictionary(default_model_path / "power" / "Technodata.csv")
 
     # Check data against schema
     expected_schema = DatasetSchema(
@@ -370,11 +334,11 @@ def test_read_technodictionary(model_path):
     assert_single_coordinate(data, coord, expected)
 
 
-def test_read_technodata_timeslices(timeslice_model_path):
+def test_read_technodata_timeslices(default_timeslice_model_path):
     from muse.readers.csv import read_technodata_timeslices
 
     data = read_technodata_timeslices(
-        timeslice_model_path / "power" / "TechnodataTimeslices.csv"
+        default_timeslice_model_path / "power" / "TechnodataTimeslices.csv"
     )
 
     # Check data against schema
@@ -420,10 +384,10 @@ def test_read_technodata_timeslices(timeslice_model_path):
     assert_single_coordinate(data, coord, expected)
 
 
-def test_read_io_technodata(model_path):
+def test_read_io_technodata(default_model_path):
     from muse.readers.csv import read_io_technodata
 
-    data = read_io_technodata(model_path / "power" / "CommIn.csv")
+    data = read_io_technodata(default_model_path / "power" / "CommIn.csv")
 
     # Check data against schema
     expected_schema = DatasetSchema(
@@ -458,10 +422,10 @@ def test_read_io_technodata(model_path):
     assert_single_coordinate(data, coord, expected)
 
 
-def test_read_initial_capacity(model_path):
+def test_read_initial_capacity(default_model_path):
     from muse.readers.csv import read_initial_capacity
 
-    data = read_initial_capacity(model_path / "power" / "ExistingCapacity.csv")
+    data = read_initial_capacity(default_model_path / "power" / "ExistingCapacity.csv")
 
     # Check data against schema
     expected_schema = DataArraySchema(
@@ -494,10 +458,10 @@ def test_read_initial_capacity(model_path):
     assert data.sel(region="r1", asset=0, year=2020).item() == 1
 
 
-def test_read_agent_parameters(model_path):
+def test_read_agent_parameters(default_model_path):
     from muse.readers.csv import read_agent_parameters
 
-    data = read_agent_parameters(model_path / "Agents.csv")
+    data = read_agent_parameters(default_model_path / "Agents.csv")
     assert isinstance(data, list)
     assert len(data) == 1
 
@@ -598,11 +562,13 @@ def test_read_trade_technodata(trade_model_path):
     assert_single_coordinate(data, coord, expected)
 
 
-def test_read_timeslice_shares(correlation_model_path):
+def test_read_timeslice_shares(default_correlation_model_path):
     from muse.readers.csv import read_timeslice_shares
 
     data = read_timeslice_shares(
-        correlation_model_path / "residential_presets" / "TimesliceSharepreset.csv"
+        default_correlation_model_path
+        / "residential_presets"
+        / "TimesliceSharepreset.csv"
     )
 
     # Check data against schema
@@ -640,11 +606,11 @@ def test_read_timeslice_shares(correlation_model_path):
     assert data.sel(**coord).item() == 0.071
 
 
-def test_read_macro_drivers(correlation_model_path):
+def test_read_macro_drivers(default_correlation_model_path):
     from muse.readers.csv import read_macro_drivers
 
     data = read_macro_drivers(
-        correlation_model_path / "residential_presets" / "Macrodrivers.csv"
+        default_correlation_model_path / "residential_presets" / "Macrodrivers.csv"
     )
 
     # Check data against schema
@@ -679,11 +645,13 @@ def test_read_macro_drivers(correlation_model_path):
     assert_single_coordinate(data, coord, expected)
 
 
-def test_read_regression_parameters(correlation_model_path):
+def test_read_regression_parameters(default_correlation_model_path):
     from muse.readers.csv import read_regression_parameters
 
     data = read_regression_parameters(
-        correlation_model_path / "residential_presets" / "regressionparameters.csv"
+        default_correlation_model_path
+        / "residential_presets"
+        / "regressionparameters.csv"
     )
 
     # Check data against schema
@@ -729,14 +697,14 @@ def test_read_regression_parameters(correlation_model_path):
     assert_single_coordinate(data, coord, expected)
 
 
-def test_read_technologies(model_path):
+def test_read_technologies(default_model_path):
     from muse.readers.csv import read_technologies
 
     # Read technologies
     data = read_technologies(
-        technodata_path=model_path / "power" / "Technodata.csv",
-        comm_out_path=model_path / "power" / "CommOut.csv",
-        comm_in_path=model_path / "power" / "CommIn.csv",
+        technodata_path=default_model_path / "power" / "Technodata.csv",
+        comm_out_path=default_model_path / "power" / "CommOut.csv",
+        comm_in_path=default_model_path / "power" / "CommIn.csv",
         time_framework=[2020, 2025, 2030, 2035, 2040, 2045, 2050],
         interpolation_mode="linear",
     )
@@ -785,15 +753,15 @@ def test_read_technologies(model_path):
     )
 
 
-def test_read_technologies__timeslice(timeslice_model_path):
+def test_read_technologies__timeslice(default_timeslice_model_path):
     """Testing the read_technologies function with the timeslice model."""
     from muse.readers.csv import read_technologies
 
     data = read_technologies(
-        technodata_path=timeslice_model_path / "power" / "Technodata.csv",
-        comm_out_path=timeslice_model_path / "power" / "CommOut.csv",
-        comm_in_path=timeslice_model_path / "power" / "CommIn.csv",
-        technodata_timeslices_path=timeslice_model_path
+        technodata_path=default_timeslice_model_path / "power" / "Technodata.csv",
+        comm_out_path=default_timeslice_model_path / "power" / "CommOut.csv",
+        comm_in_path=default_timeslice_model_path / "power" / "CommIn.csv",
+        technodata_timeslices_path=default_timeslice_model_path
         / "power"
         / "TechnodataTimeslices.csv",
         time_framework=[2020, 2025, 2030, 2035, 2040, 2045, 2050],
@@ -850,10 +818,10 @@ def test_read_technologies__timeslice(timeslice_model_path):
     )
 
 
-def test_read_technodata(model_path):
+def test_read_technodata(default_model_path):
     from muse.readers.toml import read_settings, read_technodata
 
-    settings = read_settings(model_path / "settings.toml")
+    settings = read_settings(default_model_path / "settings.toml")
     data = read_technodata(
         settings,
         sector_name="power",
@@ -963,10 +931,10 @@ def test_read_technodata__trade(trade_model_path):
     )
 
 
-def test_read_presets_sector(model_path):
-    from muse.readers.toml import read_presets_sector, read_settings
+def test_read_presets_sector(default_model_path):
+    from muse.readers.toml import read_presets_sector
 
-    settings = read_settings(model_path / "settings.toml")
+    settings = read_settings(default_model_path / "settings.toml")
     data = read_presets_sector(settings, sector_name="residential_presets")
 
     # Check data against schema
@@ -1011,11 +979,11 @@ def test_read_presets_sector(model_path):
     assert_single_coordinate(data, coord, expected)
 
 
-def test_read_presets_sector__correlation(correlation_model_path):
+def test_read_presets_sector__correlation(default_correlation_model_path):
     """Testing the read_presets_sector function with the correlation model."""
-    from muse.readers.toml import read_presets_sector, read_settings
+    from muse.readers.toml import read_presets_sector
 
-    settings = read_settings(correlation_model_path / "settings.toml")
+    settings = read_settings(default_correlation_model_path / "settings.toml")
     data = read_presets_sector(settings, sector_name="residential_presets")
 
     # Check data against schema

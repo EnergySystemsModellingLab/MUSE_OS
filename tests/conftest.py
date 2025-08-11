@@ -11,8 +11,10 @@ from pandas import DataFrame
 from pytest import fixture
 from xarray import DataArray, Dataset
 
+from muse import examples
 from muse.__main__ import patched_broadcast_compat_data
 from muse.agents import Agent
+from muse.readers.toml import read_settings
 
 
 @contextmanager
@@ -598,3 +600,48 @@ def rng(request):
     from numpy.random import default_rng
 
     return default_rng(getattr(request.config.option, "randomly_seed", None))
+
+
+@fixture
+def default_model_path(tmp_path):
+    """Creates temporary folder containing the default model."""
+    examples.copy_model(name="default", path=tmp_path)
+    path = tmp_path / "model"
+    read_settings(path / "settings.toml")  # setup globals
+    return path
+
+
+@fixture
+def default_timeslice_model_path(tmp_path):
+    """Creates temporary folder containing the default model."""
+    examples.copy_model(name="default_timeslice", path=tmp_path)
+    path = tmp_path / "model"
+    read_settings(path / "settings.toml")  # setup globals
+    return path
+
+
+@fixture
+def default_retro_model_path(tmp_path):
+    """Creates temporary folder containing the default_retro model."""
+    examples.copy_model(name="default_retro", path=tmp_path)
+    path = tmp_path / "model"
+    read_settings(path / "settings.toml")  # setup globals
+    return path
+
+
+@fixture
+def trade_model_path(tmp_path):
+    """Creates temporary folder containing the trade model."""
+    examples.copy_model(name="trade", path=tmp_path)
+    path = tmp_path / "model"
+    read_settings(path / "settings.toml")  # setup globals
+    return path
+
+
+@fixture
+def default_correlation_model_path(tmp_path):
+    """Creates temporary folder containing the correlation model."""
+    examples.copy_model(name="default_correlation", path=tmp_path)
+    path = tmp_path / "model"
+    read_settings(path / "settings.toml")  # setup globals
+    return path
