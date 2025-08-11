@@ -556,7 +556,7 @@ def check_subsector_settings(settings: dict) -> None:
                 getLogger(__name__).warning(msg)
 
 
-def read_technodata(
+def read_sector_technodata(
     settings: Any,
     sector_name: str,
     interpolation_mode: str = "linear",

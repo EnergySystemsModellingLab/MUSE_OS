@@ -818,11 +818,11 @@ def test_read_technologies__timeslice(default_timeslice_model_path):
     )
 
 
-def test_read_technodata(default_model_path):
-    from muse.readers.toml import read_settings, read_technodata
+def test_read_sector_technodata(default_model_path):
+    from muse.readers.toml import read_sector_technodata, read_settings
 
     settings = read_settings(default_model_path / "settings.toml")
-    data = read_technodata(
+    data = read_sector_technodata(
         settings,
         sector_name="power",
         interpolation_mode="linear",
@@ -873,12 +873,12 @@ def test_read_technodata(default_model_path):
     )
 
 
-def test_read_technodata__trade(trade_model_path):
+def test_read_sector_technodata__trade(trade_model_path):
     """Testing the read_technodata function with the trade model."""
-    from muse.readers.toml import read_settings, read_technodata
+    from muse.readers.toml import read_sector_technodata, read_settings
 
     settings = read_settings(trade_model_path / "settings.toml")
-    data = read_technodata(
+    data = read_sector_technodata(
         settings,
         sector_name="power",
         interpolation_mode="linear",
