@@ -1,4 +1,4 @@
-process_id,commodity_id,region_id,year,flow
+process_id,commodity_id,region_id,year,coeff
 gassupply1,gas,R1,2020,1
 gasCCGT,gas,R1,2020,-1.67
 gasCCGT,electricity,R1,2020,1

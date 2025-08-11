@@ -1,7 +1,7 @@
-commodity_id,region_id,year,timeslice,fraction
-heat,R1,2020,all-year.all-week.night,0.1
-heat,R1,2020,all-year.all-week.morning,0.15
-heat,R1,2020,all-year.all-week.afternoon,0.1
-heat,R1,2020,all-year.all-week.early-peak,0.15
-heat,R1,2020,all-year.all-week.late-peak,0.3
-heat,R1,2020,all-year.all-week.evening,0.2
+commodity_id,region_id,time_slice,fraction
+heat,R1,all-year.all-week.night,0.1
+heat,R1,all-year.all-week.morning,0.15
+heat,R1,all-year.all-week.afternoon,0.1
+heat,R1,all-year.all-week.early-peak,0.15
+heat,R1,all-year.all-week.late-peak,0.3
+heat,R1,all-year.all-week.evening,0.2

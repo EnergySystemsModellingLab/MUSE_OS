@@ -1,4 +1,4 @@
 id,description,region_id,sector_id,search_rule,decision_rule,quantity
-Agent1,Agent1_R1_residential,R1,residential,all,single,1
-Agent1,Agent1_R1_power,R1,power,all,single,1
-Agent1,Agent1_R1_gas,R1,gas,all,single,1
+A1_RES,Residential sector agent,R1,residential,all,single,1
+A1_PWR,Power sector agent,R1,power,all,single,1
+A1_GAS,Gas sector agent,R1,gas,all,single,1

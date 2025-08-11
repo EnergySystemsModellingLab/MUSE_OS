@@ -1,8 +1,6 @@
-agent_id,process_id,region_id,year,capacity
-Agent1,gassupply1,R1,2020,15
-Agent1,gassupply1,R1,2025,15
-Agent1,gassupply1,R1,2030,7.5
-Agent1,gasCCGT,R1,2020,1
-Agent1,gasCCGT,R1,2025,1
-Agent1,gasboiler,R1,2020,10
-Agent1,gasboiler,R1,2025,5
+agent_id,process_id,region_id,commission_year,capacity
+A1_GAS,gassupply1,R1,1995,7.5
+A1_GAS,gassupply1,R1,2000,7.5
+A1_PWR,gasCCGT,R1,1995,1
+A1_RES,gasboiler,R1,2015,5
+A1_RES,gasboiler,R1,2020,5
