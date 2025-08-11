@@ -1,3 +1,5 @@
+"""Helper functions for reading and processing CSV files."""
+
 from __future__ import annotations
 
 from logging import getLogger

@@ -126,10 +126,10 @@ def assert_single_coordinate(data, selection, expected):
 
 
 def test_read_global_commodities(default_model_path):
-    from muse.readers.csv import read_global_commodities
+    from muse.readers.csv import read_commodities
 
     path = default_model_path / "GlobalCommodities.csv"
-    data = read_global_commodities(path)
+    data = read_commodities(path)
 
     # Check data against schema
     expected_schema = DatasetSchema(
@@ -265,7 +265,7 @@ def test_read_initial_market(default_model_path):
 
 
 def test_read_technodictionary(default_model_path):
-    from muse.readers.csv import read_technodictionary
+    from muse.readers.csv.technologies import read_technodictionary
 
     data = read_technodictionary(default_model_path / "power" / "Technodata.csv")
 
@@ -335,7 +335,7 @@ def test_read_technodictionary(default_model_path):
 
 
 def test_read_technodata_timeslices(default_timeslice_model_path):
-    from muse.readers.csv import read_technodata_timeslices
+    from muse.readers.csv.technologies import read_technodata_timeslices
 
     data = read_technodata_timeslices(
         default_timeslice_model_path / "power" / "TechnodataTimeslices.csv"
@@ -385,7 +385,7 @@ def test_read_technodata_timeslices(default_timeslice_model_path):
 
 
 def test_read_io_technodata(default_model_path):
-    from muse.readers.csv import read_io_technodata
+    from muse.readers.csv.technologies import read_io_technodata
 
     data = read_io_technodata(default_model_path / "power" / "CommIn.csv")
 
@@ -422,10 +422,10 @@ def test_read_io_technodata(default_model_path):
     assert_single_coordinate(data, coord, expected)
 
 
-def test_read_initial_capacity(default_model_path):
-    from muse.readers.csv import read_initial_capacity
+def test_read_existing_capacity(default_model_path):
+    from muse.readers.csv import read_assets
 
-    data = read_initial_capacity(default_model_path / "power" / "ExistingCapacity.csv")
+    data = read_assets(default_model_path / "power" / "ExistingCapacity.csv")
 
     # Check data against schema
     expected_schema = DataArraySchema(
@@ -458,10 +458,10 @@ def test_read_initial_capacity(default_model_path):
     assert data.sel(region="r1", asset=0, year=2020).item() == 1
 
 
-def test_read_agent_parameters(default_model_path):
-    from muse.readers.csv import read_agent_parameters
+def test_read_agents(default_model_path):
+    from muse.readers.csv import read_agents
 
-    data = read_agent_parameters(default_model_path / "Agents.csv")
+    data = read_agents(default_model_path / "Agents.csv")
     assert isinstance(data, list)
     assert len(data) == 1
 
@@ -482,9 +482,9 @@ def test_read_agent_parameters(default_model_path):
 
 
 def test_read_existing_trade(trade_model_path):
-    from muse.readers.csv import read_existing_trade
+    from muse.readers.csv import read_trade_assets
 
-    data = read_existing_trade(trade_model_path / "gas" / "ExistingTrade.csv")
+    data = read_trade_assets(trade_model_path / "gas" / "ExistingTrade.csv")
 
     # Check data against schema
     expected_schema = DataArraySchema(
@@ -563,7 +563,7 @@ def test_read_trade_technodata(trade_model_path):
 
 
 def test_read_timeslice_shares(default_correlation_model_path):
-    from muse.readers.csv import read_timeslice_shares
+    from muse.readers.csv.correlation_consumption import read_timeslice_shares
 
     data = read_timeslice_shares(
         default_correlation_model_path
@@ -607,7 +607,7 @@ def test_read_timeslice_shares(default_correlation_model_path):
 
 
 def test_read_macro_drivers(default_correlation_model_path):
-    from muse.readers.csv import read_macro_drivers
+    from muse.readers.csv.correlation_consumption import read_macro_drivers
 
     data = read_macro_drivers(
         default_correlation_model_path / "residential_presets" / "Macrodrivers.csv"
@@ -646,7 +646,7 @@ def test_read_macro_drivers(default_correlation_model_path):
 
 
 def test_read_regression_parameters(default_correlation_model_path):
-    from muse.readers.csv import read_regression_parameters
+    from muse.readers.csv.correlation_consumption import read_regression_parameters
 
     data = read_regression_parameters(
         default_correlation_model_path

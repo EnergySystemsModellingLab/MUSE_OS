@@ -1,3 +1,9 @@
+"""Reads and processes agent parameters from a CSV file.
+
+This runs once per subsector, reading in a csv file and outputting a list of
+dictionaries (one dictionary per agent containing the agent's parameters).
+"""
+
 from logging import getLogger
 from pathlib import Path
 
@@ -6,13 +12,13 @@ import pandas as pd
 from .helpers import read_csv
 
 
-def read_agent_parameters(path: Path) -> pd.DataFrame:
+def read_agents(path: Path) -> list[dict]:
     """Reads and processes agent parameters from a CSV file."""
-    df = read_agent_parameters_csv(path)
-    return process_agent_parameters(df)
+    df = read_agents_csv(path)
+    return process_agents(df)
 
 
-def read_agent_parameters_csv(path: Path) -> pd.DataFrame:
+def read_agents_csv(path: Path) -> pd.DataFrame:
     """Reads standard MUSE agent-declaration csv-files into a DataFrame."""
     required_columns = {
         "search_rule",
@@ -57,7 +63,7 @@ def read_agent_parameters_csv(path: Path) -> pd.DataFrame:
     return data
 
 
-def process_agent_parameters(data: pd.DataFrame) -> list[dict]:
+def process_agents(data: pd.DataFrame) -> list[dict]:
     """Processes agent parameters DataFrame into a list of agent dictionaries."""
     result = []
     for _, row in data.iterrows():

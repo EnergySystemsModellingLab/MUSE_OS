@@ -646,7 +646,11 @@ def read_presets_sector(settings: Any, sector_name: str) -> xr.Dataset:
         xr.Dataset: Dataset containing consumption and supply data for the sector.
             Costs are initialized to zero.
     """
-    from muse.readers import read_attribute_table, read_presets
+    from muse.readers import (
+        read_attribute_table,
+        read_correlation_consumption,
+        read_presets,
+    )
     from muse.timeslices import distribute_timeslice, drop_timeslice
 
     sector_conf = getattr(settings.sectors, sector_name)
@@ -662,7 +666,11 @@ def read_presets_sector(settings: Any, sector_name: str) -> xr.Dataset:
         getattr(sector_conf, "macrodrivers_path", None) is not None
         and getattr(sector_conf, "regression_path", None) is not None
     ):
-        consumption = read_correlation_consumption(sector_conf)
+        consumption = read_correlation_consumption(
+            macro_drivers_path=sector_conf.macrodrivers_path,
+            regression_path=sector_conf.regression_path,
+            timeslice_shares_path=getattr(sector_conf, "timeslice_shares_path", None),
+        )
     else:
         raise MissingSettings(f"Missing consumption data for sector {sector_name}")
 
@@ -678,51 +686,3 @@ def read_presets_sector(settings: Any, sector_name: str) -> xr.Dataset:
     )
 
     return presets
-
-
-def read_correlation_consumption(sector_conf: Any) -> xr.Dataset:
-    """Read consumption data for a sector based on correlation files.
-
-    This function calculates endogenous demand for a sector using macro drivers and
-    regression parameters. It applies optional filters, handles sector aggregation,
-    and distributes the consumption across timeslices if timeslice shares are provided.
-
-    Args:
-        sector_conf: Sector configuration object containing paths to macro drivers,
-            regression parameters, and timeslice shares files
-
-    Returns:
-        xr.Dataset: Consumption data distributed across timeslices and regions
-    """
-    from muse.readers import (
-        read_macro_drivers,
-        read_regression_parameters,
-        read_timeslice_shares,
-    )
-    from muse.regressions import endogenous_demand
-    from muse.timeslices import broadcast_timeslice, distribute_timeslice
-
-    macro_drivers = read_macro_drivers(sector_conf.macrodrivers_path)
-    regression_parameters = read_regression_parameters(sector_conf.regression_path)
-    consumption = endogenous_demand(
-        drivers=macro_drivers,
-        regression_parameters=regression_parameters,
-        forecast=0,
-    )
-
-    # Legacy: apply filters
-    if hasattr(sector_conf, "filters"):
-        consumption = consumption.sel(sector_conf.filters._asdict())
-
-    # Legacy: we permit regression parameters to split by sector, so have to sum
-    if "sector" in consumption.dims:
-        consumption = consumption.sum("sector")
-
-    # Split by timeslice
-    if sector_conf.timeslice_shares_path is not None:
-        shares = read_timeslice_shares(sector_conf.timeslice_shares_path)
-        consumption = broadcast_timeslice(consumption) * shares
-    else:
-        consumption = distribute_timeslice(consumption)
-
-    return consumption

@@ -1,3 +1,14 @@
+"""Reads and processes technology data from multiple CSV files.
+
+This runs once per sector, reading in csv files and outputting an xarray Dataset.
+
+Several csv files are read in:
+- technodictionary: contains technology parameters
+- comm_out: contains output commodity data
+- comm_in: contains input commodity data
+- technodata_timeslices (optional): allows some parameters to be defined per timeslice
+"""
+
 from __future__ import annotations
 
 from logging import getLogger
@@ -12,6 +23,52 @@ from .helpers import (
     create_xarray_dataset,
     read_csv,
 )
+
+
+def read_technologies(
+    technodata_path: Path,
+    comm_out_path: Path,
+    comm_in_path: Path,
+    time_framework: list[int],
+    interpolation_mode: str = "linear",
+    technodata_timeslices_path: Path | None = None,
+) -> xr.Dataset:
+    """Reads and processes technology data from multiple CSV files.
+
+    Will also interpolate data to the time framework if provided.
+
+    Args:
+        technodata_path: path to the technodata file
+        comm_out_path: path to the comm_out file
+        comm_in_path: path to the comm_in file
+        time_framework: list of years to interpolate data to
+        interpolation_mode: Interpolation mode to use
+        technodata_timeslices_path: path to the technodata_timeslices file
+
+    Returns:
+        xr.Dataset: Dataset containing the processed technology data. Any fields
+        that differ by year will contain a "year" dimension interpolated to the
+        time framework. Other fields will not have a "year" dimension.
+    """
+    # Read all data
+    technodata = read_technodictionary(technodata_path)
+    comm_out = read_io_technodata(comm_out_path)
+    comm_in = read_io_technodata(comm_in_path)
+    technodata_timeslices = (
+        read_technodata_timeslices(technodata_timeslices_path)
+        if technodata_timeslices_path
+        else None
+    )
+
+    # Assemble xarray Dataset
+    return process_technologies(
+        technodata,
+        comm_out,
+        comm_in,
+        time_framework,
+        interpolation_mode,
+        technodata_timeslices,
+    )
 
 
 def read_technodictionary(path: Path) -> xr.Dataset:
@@ -197,52 +254,6 @@ def process_io_technodata(data: pd.DataFrame) -> xr.Dataset:
     # Check commodities
     result = check_commodities(result, fill_missing=True, fill_value=0)
     return result
-
-
-def read_technologies(
-    technodata_path: Path,
-    comm_out_path: Path,
-    comm_in_path: Path,
-    time_framework: list[int],
-    interpolation_mode: str = "linear",
-    technodata_timeslices_path: Path | None = None,
-) -> xr.Dataset:
-    """Reads and processes technology data from multiple CSV files.
-
-    Will also interpolate data to the time framework if provided.
-
-    Args:
-        technodata_path: path to the technodata file
-        comm_out_path: path to the comm_out file
-        comm_in_path: path to the comm_in file
-        time_framework: list of years to interpolate data to
-        interpolation_mode: Interpolation mode to use
-        technodata_timeslices_path: path to the technodata_timeslices file
-
-    Returns:
-        xr.Dataset: Dataset containing the processed technology data. Any fields
-        that differ by year will contain a "year" dimension interpolated to the
-        time framework. Other fields will not have a "year" dimension.
-    """
-    # Read all data
-    technodata = read_technodictionary(technodata_path)
-    comm_out = read_io_technodata(comm_out_path)
-    comm_in = read_io_technodata(comm_in_path)
-    technodata_timeslices = (
-        read_technodata_timeslices(technodata_timeslices_path)
-        if technodata_timeslices_path
-        else None
-    )
-
-    # Assemble xarray Dataset
-    return process_technologies(
-        technodata,
-        comm_out,
-        comm_in,
-        time_framework,
-        interpolation_mode,
-        technodata_timeslices,
-    )
 
 
 def process_technologies(

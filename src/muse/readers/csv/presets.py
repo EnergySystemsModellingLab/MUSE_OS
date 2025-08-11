@@ -1,3 +1,8 @@
+"""Reads and processes preset data from multiple CSV files.
+
+This runs once per sector, reading in csv files and outputting an xarray Dataset.
+"""
+
 from logging import getLogger
 from pathlib import Path
 

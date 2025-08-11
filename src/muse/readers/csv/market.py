@@ -1,3 +1,16 @@
+"""Reads and processes initial market data.
+
+The data is shared between sectors, so we only do this once per simulation.
+
+This data is contained in three csv files:
+- projections: contains price projections for commodities
+- base year import (optional): contains imports for commodities
+- base year export (optional): contains exports for commodities
+
+A single xarray Dataset is returned, with dimensions for `region`, `year`, `commodity`,
+and `timeslice`, and variables for `prices`, `exports`, `imports`, and `static_trade`.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path

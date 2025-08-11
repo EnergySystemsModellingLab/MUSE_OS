@@ -55,12 +55,12 @@ def test_read_technodata_timeslices_csv(default_timeslice_model_path):
     assert set(timeslices_df.columns) == mandatory_columns | extra_columns
 
 
-def test_read_initial_capacity_csv(default_model_path):
+def test_read_existing_capacity_csv(default_model_path):
     """Test reading the initial capacity CSV file."""
-    from muse.readers.csv.assets import read_initial_capacity_csv
+    from muse.readers.csv.assets import read_existing_capacity_csv
 
     capacity_path = default_model_path / "power" / "ExistingCapacity.csv"
-    capacity_df = read_initial_capacity_csv(capacity_path)
+    capacity_df = read_existing_capacity_csv(capacity_path)
     mandatory_columns = {
         "region",
         "technology",
@@ -93,7 +93,7 @@ def test_read_global_commodities_csv(default_model_path):
 
 def test_read_timeslice_shares_csv(default_correlation_model_path):
     """Test reading the timeslice shares CSV file."""
-    from muse.readers.csv.regression import read_timeslice_shares_csv
+    from muse.readers.csv.correlation_consumption import read_timeslice_shares_csv
 
     shares_path = (
         default_correlation_model_path
@@ -115,12 +115,12 @@ def test_read_timeslice_shares_csv(default_correlation_model_path):
     assert set(shares_df.columns) == mandatory_columns | extra_columns
 
 
-def test_read_agent_parameters_csv(default_model_path):
+def test_read_agents_csv(default_model_path):
     """Test reading the agent parameters CSV file."""
-    from muse.readers.csv.agents import read_agent_parameters_csv
+    from muse.readers.csv.agents import read_agents_csv
 
     agents_path = default_model_path / "Agents.csv"
-    agents_df = read_agent_parameters_csv(agents_path)
+    agents_df = read_agents_csv(agents_path)
     mandatory_columns = {
         "search_rule",
         "quantity",
@@ -140,7 +140,7 @@ def test_read_agent_parameters_csv(default_model_path):
 
 def test_read_macro_drivers_csv(default_correlation_model_path):
     """Test reading the macro drivers CSV file."""
-    from muse.readers.csv.regression import read_macro_drivers_csv
+    from muse.readers.csv.correlation_consumption import read_macro_drivers_csv
 
     macro_path = (
         default_correlation_model_path / "residential_presets" / "Macrodrivers.csv"
@@ -180,7 +180,7 @@ def test_read_projections_csv(default_model_path):
 
 def test_read_regression_parameters_csv(default_correlation_model_path):
     """Test reading the regression parameters CSV file."""
-    from muse.readers.csv.regression import read_regression_parameters_csv
+    from muse.readers.csv.correlation_consumption import read_regression_parameters_csv
 
     regression_path = (
         default_correlation_model_path
@@ -224,7 +224,7 @@ def test_read_presets_csv(default_model_path):
 
 def test_read_existing_trade_csv(trade_model_path):
     """Test reading the existing trade CSV file."""
-    from muse.readers.csv.trade import read_existing_trade_csv
+    from muse.readers.csv.trade_assets import read_existing_trade_csv
 
     trade_path = trade_model_path / "power" / "ExistingTrade.csv"
     trade_df = read_existing_trade_csv(trade_path)
@@ -239,7 +239,7 @@ def test_read_existing_trade_csv(trade_model_path):
 
 def test_read_trade_technodata(trade_model_path):
     """Test reading the trade technodata CSV file."""
-    from muse.readers.csv.trade import read_trade_technodata_csv
+    from muse.readers.csv.trade_technodata import read_trade_technodata_csv
 
     trade_path = trade_model_path / "power" / "TradeTechnodata.csv"
     trade_df = read_trade_technodata_csv(trade_path)

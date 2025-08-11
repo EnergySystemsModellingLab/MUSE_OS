@@ -1,3 +1,14 @@
+"""Reads and processes global commodities data from a CSV file.
+
+This runs once per simulation, reading in a csv file and outputting an xarray Dataset.
+
+The CSV file will generally have the following columns: `commodity`, `commodity_type`,
+unit (optional), description (optional).
+
+The resulting xarray Dataset will have a single `commodity` dimension, and variables
+for `commodity_type` and `unit`.
+"""
+
 from logging import getLogger
 from pathlib import Path
 
@@ -7,7 +18,7 @@ import xarray as xr
 from .helpers import camel_to_snake, create_xarray_dataset, standardize_dataframe
 
 
-def read_global_commodities(path: Path) -> xr.Dataset:
+def read_commodities(path: Path) -> xr.Dataset:
     """Reads and processes global commodities data from a CSV file."""
     df = read_global_commodities_csv(path)
     return process_global_commodities(df)

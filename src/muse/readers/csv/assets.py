@@ -1,3 +1,8 @@
+"""Reads and processes existing capacity data from a CSV file.
+
+This runs once per subsector, reading in a csv file and outputting an xarray DataArray.
+"""
+
 from pathlib import Path
 
 import pandas as pd
@@ -6,13 +11,13 @@ import xarray as xr
 from .helpers import create_assets, create_multiindex, create_xarray_dataset, read_csv
 
 
-def read_initial_capacity(path: Path) -> xr.DataArray:
-    """Reads and processes initial capacity data from a CSV file."""
-    df = read_initial_capacity_csv(path)
-    return process_initial_capacity(df)
+def read_assets(path: Path) -> xr.DataArray:
+    """Reads and processes existing capacity data from a CSV file."""
+    df = read_existing_capacity_csv(path)
+    return process_existing_capacity(df)
 
 
-def read_initial_capacity_csv(path: Path) -> pd.DataFrame:
+def read_existing_capacity_csv(path: Path) -> pd.DataFrame:
     """Reads and formats data about initial capacity into a DataFrame."""
     required_columns = {
         "region",
@@ -25,7 +30,7 @@ def read_initial_capacity_csv(path: Path) -> pd.DataFrame:
     )
 
 
-def process_initial_capacity(data: pd.DataFrame) -> xr.DataArray:
+def process_existing_capacity(data: pd.DataFrame) -> xr.DataArray:
     """Processes initial capacity DataFrame into an xarray DataArray."""
     # Drop unit column if present
     if "unit" in data.columns:

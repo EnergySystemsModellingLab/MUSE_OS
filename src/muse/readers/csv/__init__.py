@@ -15,53 +15,45 @@ In general, there are three functions per input file:
     (usually an xarray). There are also some more checks (e.g. checking for nan
     values).
 
-Most of the processing is shared by a few helper functions:
-- read_csv: reads a csv file and returns a dataframe
-- standardize_dataframe: standardizes the dataframe to a common format
-- create_multiindex: creates a multiindex from a dataframe
-- create_xarray_dataset: creates an xarray dataset from a dataframe
+The code in this module is spread over multiple files. In general, we have one `read_x`
+function per file, and as many `read_x_csv` and `process_x` functions as are required
+(e.g. if a dataset is assembled from three csv files we will have three `read_x_csv`
+functions, and potentially multiple `process_x` functions).
+
+Most of the processing is shared by a few helper functions (in `helpers.py`):
+- `read_csv`: reads a csv file and returns a dataframe
+- `standardize_dataframe`: standardizes the dataframe to a common format
+- `create_multiindex`: creates a multiindex from a dataframe
+- `create_xarray_dataset`: creates an xarray dataset from a dataframe
 
 A few other helpers perform common operations on xarrays:
-- create_assets: creates assets from technologies
-- check_commodities: checks commodities and fills missing values
+- `create_assets`: creates assets from technologies
+- `check_commodities`: checks commodities and fills missing values
 
 """
 
-from .agents import read_agent_parameters
-from .assets import read_initial_capacity
-from .commodities import read_global_commodities
+from .agents import read_agents
+from .assets import read_assets
+from .commodities import read_commodities
+from .correlation_consumption import read_correlation_consumption
 from .general import read_attribute_table
 from .helpers import read_csv
 from .market import read_initial_market
 from .presets import read_presets
-from .regression import (
-    read_macro_drivers,
-    read_regression_parameters,
-    read_timeslice_shares,
-)
-from .technologies import (
-    read_io_technodata,
-    read_technodata_timeslices,
-    read_technodictionary,
-    read_technologies,
-)
-from .trade import read_existing_trade, read_trade_technodata
+from .technologies import read_technologies
+from .trade_assets import read_trade_assets
+from .trade_technodata import read_trade_technodata
 
 __all__ = [
-    "read_agent_parameters",
+    "read_agents",
+    "read_assets",
     "read_attribute_table",
+    "read_commodities",
+    "read_correlation_consumption",
     "read_csv",
-    "read_existing_trade",
-    "read_global_commodities",
-    "read_initial_capacity",
     "read_initial_market",
-    "read_io_technodata",
-    "read_macro_drivers",
     "read_presets",
-    "read_regression_parameters",
-    "read_technodata_timeslices",
-    "read_technodictionary",
     "read_technologies",
-    "read_timeslice_shares",
+    "read_trade_assets",
     "read_trade_technodata",
 ]

@@ -1,3 +1,9 @@
+"""Reads and processes correlation consumption data from CSV files.
+
+This will only run for preset sectors that have macro drivers and regression files.
+Otherwise, read_presets will be used instead.
+"""
+
 from __future__ import annotations
 
 from logging import getLogger
@@ -12,6 +18,50 @@ from .helpers import (
     create_xarray_dataset,
     read_csv,
 )
+
+
+def read_correlation_consumption(
+    macro_drivers_path: Path,
+    regression_path: Path,
+    timeslice_shares_path: Path | None = None,
+) -> xr.Dataset:
+    """Read consumption data for a sector based on correlation files.
+
+    This function calculates endogenous demand for a sector using macro drivers and
+    regression parameters. It applies optional filters, handles sector aggregation,
+    and distributes the consumption across timeslices if timeslice shares are provided.
+
+    Args:
+        macro_drivers_path: Path to macro drivers file
+        regression_path: Path to regression parameters file
+        timeslice_shares_path: Path to timeslice shares file (optional)
+
+    Returns:
+        xr.Dataset: Consumption data distributed across timeslices and regions
+    """
+    from muse.regressions import endogenous_demand
+    from muse.timeslices import broadcast_timeslice, distribute_timeslice
+
+    macro_drivers = read_macro_drivers(macro_drivers_path)
+    regression_parameters = read_regression_parameters(regression_path)
+    consumption = endogenous_demand(
+        drivers=macro_drivers,
+        regression_parameters=regression_parameters,
+        forecast=0,
+    )
+
+    # Legacy: we permit regression parameters to split by sector, so have to sum
+    if "sector" in consumption.dims:
+        consumption = consumption.sum("sector")
+
+    # Split by timeslice
+    if timeslice_shares_path is not None:
+        shares = read_timeslice_shares(timeslice_shares_path)
+        consumption = broadcast_timeslice(consumption) * shares
+    else:
+        consumption = distribute_timeslice(consumption)
+
+    return consumption
 
 
 def read_timeslice_shares(path: Path) -> xr.DataArray:
