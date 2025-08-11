@@ -1,52 +1,51 @@
-import pytest
+from __future__ import annotations
+
+from pytest import fixture
 
 from muse import examples
-from muse.readers.csv import (
-    read_agent_parameters_csv,
-    read_existing_trade_csv,
-    read_global_commodities_csv,
-    read_initial_capacity_csv,
-    read_macro_drivers_csv,
-    read_presets_csv,
-    read_projections_csv,
-    read_regression_parameters_csv,
-    read_technodata_timeslices_csv,
-    read_technodictionary_csv,
-    read_timeslice_shares_csv,
-    read_trade_technodata_csv,
-)
+from muse.readers.toml import read_settings
 
 
-@pytest.fixture
+@fixture
 def model_path(tmp_path):
     """Creates temporary folder containing the default model."""
     examples.copy_model(name="default", path=tmp_path)
-    return tmp_path / "model"
+    path = tmp_path / "model"
+    read_settings(path / "settings.toml")  # setup globals
+    return path
 
 
-@pytest.fixture
+@fixture
 def timeslice_model_path(tmp_path):
     """Creates temporary folder containing the default model."""
     examples.copy_model(name="default_timeslice", path=tmp_path)
-    return tmp_path / "model"
+    path = tmp_path / "model"
+    read_settings(path / "settings.toml")  # setup globals
+    return path
 
 
-@pytest.fixture
+@fixture
 def trade_model_path(tmp_path):
-    """Creates temporary folder containing the default model."""
+    """Creates temporary folder containing the trade model."""
     examples.copy_model(name="trade", path=tmp_path)
-    return tmp_path / "model"
+    path = tmp_path / "model"
+    read_settings(path / "settings.toml")  # setup globals
+    return path
 
 
-@pytest.fixture
+@fixture
 def correlation_model_path(tmp_path):
     """Creates temporary folder containing the correlation model."""
     examples.copy_model(name="default_correlation", path=tmp_path)
-    return tmp_path / "model"
+    path = tmp_path / "model"
+    read_settings(path / "settings.toml")  # setup globals
+    return path
 
 
 def test_read_technodictionary_csv(model_path):
     """Test reading the technodictionary CSV file."""
+    from muse.readers.csv.technologies import read_technodictionary_csv
+
     technodictionary_path = model_path / "power" / "Technodata.csv"
     technodictionary_df = read_technodictionary_csv(technodictionary_path)
     assert technodictionary_df is not None
@@ -76,6 +75,8 @@ def test_read_technodictionary_csv(model_path):
 
 def test_read_technodata_timeslices_csv(timeslice_model_path):
     """Test reading the technodata timeslices CSV file."""
+    from muse.readers.csv.technologies import read_technodata_timeslices_csv
+
     timeslices_path = timeslice_model_path / "power" / "TechnodataTimeslices.csv"
     timeslices_df = read_technodata_timeslices_csv(timeslices_path)
     mandatory_columns = {
@@ -95,6 +96,8 @@ def test_read_technodata_timeslices_csv(timeslice_model_path):
 
 def test_read_initial_capacity_csv(model_path):
     """Test reading the initial capacity CSV file."""
+    from muse.readers.csv.assets import read_initial_capacity_csv
+
     capacity_path = model_path / "power" / "ExistingCapacity.csv"
     capacity_df = read_initial_capacity_csv(capacity_path)
     mandatory_columns = {
@@ -115,6 +118,8 @@ def test_read_initial_capacity_csv(model_path):
 
 def test_read_global_commodities_csv(model_path):
     """Test reading the global commodities CSV file."""
+    from muse.readers.csv.commodities import read_global_commodities_csv
+
     commodities_path = model_path / "GlobalCommodities.csv"
     commodities_df = read_global_commodities_csv(commodities_path)
     mandatory_columns = {
@@ -127,6 +132,8 @@ def test_read_global_commodities_csv(model_path):
 
 def test_read_timeslice_shares_csv(correlation_model_path):
     """Test reading the timeslice shares CSV file."""
+    from muse.readers.csv.regression import read_timeslice_shares_csv
+
     shares_path = (
         correlation_model_path / "residential_presets" / "TimesliceSharepreset.csv"
     )
@@ -147,6 +154,8 @@ def test_read_timeslice_shares_csv(correlation_model_path):
 
 def test_read_agent_parameters_csv(model_path):
     """Test reading the agent parameters CSV file."""
+    from muse.readers.csv.agents import read_agent_parameters_csv
+
     agents_path = model_path / "Agents.csv"
     agents_df = read_agent_parameters_csv(agents_path)
     mandatory_columns = {
@@ -168,6 +177,8 @@ def test_read_agent_parameters_csv(model_path):
 
 def test_read_macro_drivers_csv(correlation_model_path):
     """Test reading the macro drivers CSV file."""
+    from muse.readers.csv.regression import read_macro_drivers_csv
+
     macro_path = correlation_model_path / "residential_presets" / "Macrodrivers.csv"
     macro_df = read_macro_drivers_csv(macro_path)
     mandatory_columns = {
@@ -185,6 +196,8 @@ def test_read_macro_drivers_csv(correlation_model_path):
 
 def test_read_projections_csv(model_path):
     """Test reading the projections CSV file."""
+    from muse.readers.csv.market import read_projections_csv
+
     projections_path = model_path / "Projections.csv"
     projections_df = read_projections_csv(projections_path)
     mandatory_columns = {
@@ -202,6 +215,8 @@ def test_read_projections_csv(model_path):
 
 def test_read_regression_parameters_csv(correlation_model_path):
     """Test reading the regression parameters CSV file."""
+    from muse.readers.csv.regression import read_regression_parameters_csv
+
     regression_path = (
         correlation_model_path / "residential_presets" / "regressionparameters.csv"
     )
@@ -223,6 +238,8 @@ def test_read_regression_parameters_csv(correlation_model_path):
 
 def test_read_presets_csv(model_path):
     """Test reading the presets CSV files."""
+    from muse.readers.csv.presets import read_presets_csv
+
     presets_path = model_path / "residential_presets" / "Residential2020Consumption.csv"
     presets_df = read_presets_csv(presets_path)
 
@@ -238,6 +255,8 @@ def test_read_presets_csv(model_path):
 
 def test_read_existing_trade_csv(trade_model_path):
     """Test reading the existing trade CSV file."""
+    from muse.readers.csv.trade import read_existing_trade_csv
+
     trade_path = trade_model_path / "power" / "ExistingTrade.csv"
     trade_df = read_existing_trade_csv(trade_path)
     mandatory_columns = {
@@ -251,6 +270,8 @@ def test_read_existing_trade_csv(trade_model_path):
 
 def test_read_trade_technodata(trade_model_path):
     """Test reading the trade technodata CSV file."""
+    from muse.readers.csv.trade import read_trade_technodata_csv
+
     trade_path = trade_model_path / "power" / "TradeTechnodata.csv"
     trade_df = read_trade_technodata_csv(trade_path)
     mandatory_columns = {"technology", "region", "parameter"}

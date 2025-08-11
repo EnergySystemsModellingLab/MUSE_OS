@@ -128,24 +128,6 @@ def assert_single_coordinate(data, selection, expected):
 
 
 @fixture
-def timeslice():
-    """Sets up global timeslicing scheme to match the default model."""
-    from muse.timeslices import setup_module
-
-    timeslice = """
-    [timeslices]
-    all-year.all-week.night = 1460
-    all-year.all-week.morning = 1460
-    all-year.all-week.afternoon = 1460
-    all-year.all-week.early-peak = 1460
-    all-year.all-week.late-peak = 1460
-    all-year.all-week.evening = 1460
-    """
-
-    setup_module(timeslice)
-
-
-@fixture
 def model_path(tmp_path):
     """Creates temporary folder containing the default model."""
     examples.copy_model(name="default", path=tmp_path)
