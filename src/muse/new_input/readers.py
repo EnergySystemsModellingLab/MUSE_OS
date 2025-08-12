@@ -1,59 +1,62 @@
 import duckdb
 import numpy as np
-import pandas as pd
 import xarray as xr
-
-from muse.timeslices import QuantityType
 
 
 def read_inputs(data_dir):
     data = {}
     con = duckdb.connect(":memory:")
 
-    with open(data_dir / "timeslices.csv") as f:
-        timeslices = read_timeslices_csv(f, con)
+    with open(data_dir / "time_slices.csv") as f:
+        _time_slices = read_time_slices_csv(f, con)
 
     with open(data_dir / "commodities.csv") as f:
         commodities = read_commodities_csv(f, con)
 
     with open(data_dir / "regions.csv") as f:
-        regions = read_regions_csv(f, con)
-
-    with open(data_dir / "commodity_trade.csv") as f:
-        commodity_trade = read_commodity_trade_csv(f, con)
+        _regions = read_regions_csv(f, con)
 
     with open(data_dir / "commodity_costs.csv") as f:
-        commodity_costs = read_commodity_costs_csv(f, con)
+        _commodity_costs = read_commodity_costs_csv(f, con)
 
     with open(data_dir / "demand.csv") as f:
-        demand = read_demand_csv(f, con)
+        _demand = read_demand_csv(f, con)
 
     with open(data_dir / "demand_slicing.csv") as f:
-        demand_slicing = read_demand_slicing_csv(f, con)
+        _demand_slicing = read_demand_slicing_csv(f, con)
 
     data["global_commodities"] = calculate_global_commodities(commodities)
-    data["demand"] = calculate_demand(
-        commodities, regions, timeslices, demand, demand_slicing
-    )
-    data["initial_market"] = calculate_initial_market(
-        commodities, regions, timeslices, commodity_trade, commodity_costs
-    )
     return data
 
 
-def read_timeslices_csv(buffer_, con):
-    sql = """CREATE TABLE timeslices (
-      id BIGINT PRIMARY KEY,
-      month VARCHAR,
+def read_time_slices_csv(buffer_, con):
+    sql = """
+    CREATE TABLE time_slices (
+      id VARCHAR PRIMARY KEY,
+      season VARCHAR,
       day VARCHAR,
-      hour VARCHAR,
-      fraction DOUBLE CHECK (fraction >= 0 AND fraction <= 1),
+      time_of_day VARCHAR,
+      fraction DOUBLE CHECK (fraction >= 0 AND fraction <= 1)
     );
     """
     con.sql(sql)
+
+    # Read CSV into a temporary relation
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    con.sql("INSERT INTO timeslices SELECT id, month, day, hour, fraction FROM rel;")
-    return con.sql("SELECT * from timeslices").fetchnumpy()
+
+    # Insert into the table with computed id
+    con.sql("""
+        INSERT INTO time_slices
+        SELECT
+            season || '.' || day || '.' || time_of_day AS id,
+            season,
+            day,
+            time_of_day,
+            fraction
+        FROM rel
+    """)
+
+    return con.sql("SELECT * FROM time_slices").fetchnumpy()
 
 
 def read_commodities_csv(buffer_, con):
@@ -78,23 +81,6 @@ def read_regions_csv(buffer_, con):
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
     con.sql("INSERT INTO regions SELECT id FROM rel;")
     return con.sql("SELECT * from regions").fetchnumpy()
-
-
-def read_commodity_trade_csv(buffer_, con):
-    sql = """CREATE TABLE commodity_trade (
-    commodity VARCHAR REFERENCES commodities(id),
-    region VARCHAR REFERENCES regions(id),
-    year BIGINT,
-    import DOUBLE,
-    export DOUBLE,
-    PRIMARY KEY (commodity, region, year)
-    );
-    """
-    con.sql(sql)
-    rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    con.sql("""INSERT INTO commodity_trade SELECT
-            commodity_id, region_id, year, import, export FROM rel;""")
-    return con.sql("SELECT * from commodity_trade").fetchnumpy()
 
 
 def read_commodity_costs_csv(buffer_, con):
@@ -132,17 +118,15 @@ def read_demand_slicing_csv(buffer_, con):
     sql = """CREATE TABLE demand_slicing (
     commodity VARCHAR REFERENCES commodities(id),
     region VARCHAR REFERENCES regions(id),
-    year BIGINT,
-    timeslice BIGINT REFERENCES timeslices(id),
+    time_slice VARCHAR REFERENCES time_slices(id),
     fraction DOUBLE CHECK (fraction >= 0 AND fraction <= 1),
-    PRIMARY KEY (commodity, region, year, timeslice),
-    FOREIGN KEY (commodity, region, year) REFERENCES demand(commodity, region, year)
+    PRIMARY KEY (commodity, region, time_slice),
     );
     """
     con.sql(sql)
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
     con.sql("""INSERT INTO demand_slicing SELECT
-            commodity_id, region_id, year, timeslice_id, fraction FROM rel;""")
+            commodity_id, region_id, time_slice, fraction FROM rel;""")
     return con.sql("SELECT * from demand_slicing").fetchnumpy()
 
 
@@ -161,228 +145,3 @@ def calculate_global_commodities(commodities):
 
     data = xr.Dataset(data_vars=dict(type=type_array, unit=unit_array))
     return data
-
-
-def calculate_demand(
-    commodities, regions, timeslices, demand, demand_slicing
-) -> xr.DataArray:
-    """Calculate demand data for all commodities, regions, years, and timeslices.
-
-    Result: A DataArray with a demand value for every combination of:
-    - commodity: all commodities specified in the commodities table
-    - region: all regions specified in the regions table
-    - year: all years specified in the demand table
-    - timeslice: all timeslices specified in the timeslices table
-
-    Checks:
-    - If demand data is specified for one year, it must be specified for all years.
-    - If demand is nonzero, slicing data must be present.
-    - If slicing data is specified for a commodity/region/year, the sum of
-    the fractions must be 1, and all timeslices must be present.
-
-    Fills:
-    - If demand data is not specified for a commodity/region combination, the demand is
-    0 for all years and timeslices.
-
-    Todo:
-    - Interpolation to allow for missing years in demand data.
-    - Ability to leave the year field blank in both tables to indicate all years
-    - Allow slicing data to be missing -> demand is spread equally across timeslices
-    - Allow more flexibility for timeslices (e.g. can specify "winter" to apply to all
-    winter timeslices, or "all" to apply to all timeslices)
-    """
-    # Prepare dataframes
-    df_demand = pd.DataFrame(demand).set_index(["commodity", "region", "year"])
-    df_slicing = pd.DataFrame(demand_slicing).set_index(
-        ["commodity", "region", "year", "timeslice"]
-    )
-
-    # DataArray dimensions
-    all_commodities = commodities["id"].astype(np.dtype("str"))
-    all_regions = regions["id"].astype(np.dtype("str"))
-    all_years = df_demand.index.get_level_values("year").unique()
-    all_timeslices = timeslices["id"].astype(np.dtype("int"))
-
-    # CHECK: all years are specified for each commodity/region combination
-    check_all_values_specified(df_demand, ["commodity", "region"], "year", all_years)
-
-    # CHECK: if slicing data is present, all timeslices must be specified
-    check_all_values_specified(
-        df_slicing, ["commodity", "region", "year"], "timeslice", all_timeslices
-    )
-
-    # CHECK: timeslice fractions sum to 1
-    check_timeslice_sum = df_slicing.groupby(["commodity", "region", "year"]).apply(
-        lambda x: np.isclose(x["fraction"].sum(), 1)
-    )
-    if not check_timeslice_sum.all():
-        raise DataValidationError
-
-    # CHECK: if demand data >0, fraction data must be specified
-    check_fraction_data_present = (
-        df_demand[df_demand["demand"] > 0]
-        .index.isin(df_slicing.droplevel("timeslice").index)
-        .all()
-    )
-    if not check_fraction_data_present.all():
-        raise DataValidationError
-
-    # FILL: demand is zero if unspecified
-    df_demand = df_demand.reindex(
-        pd.MultiIndex.from_product(
-            [all_commodities, all_regions, all_years],
-            names=["commodity", "region", "year"],
-        ),
-        fill_value=0,
-    )
-
-    # FILL: slice data is zero if unspecified
-    df_slicing = df_slicing.reindex(
-        pd.MultiIndex.from_product(
-            [all_commodities, all_regions, all_years, all_timeslices],
-            names=["commodity", "region", "year", "timeslice"],
-        ),
-        fill_value=0,
-    )
-
-    # Create DataArray
-    da_demand = df_demand.to_xarray()["demand"]
-    da_slicing = df_slicing.to_xarray()["fraction"]
-    data = da_demand * da_slicing
-    return data
-
-
-def calculate_initial_market(
-    commodities, regions, timeslices, commodity_trade, commodity_costs
-) -> xr.Dataset:
-    """Calculate trade and price data for all commodities, regions and years.
-
-    Result: A Dataset with variables:
-    - prices
-    - exports
-    - imports
-    - static_trade
-    For every combination of:
-    - commodity: all commodities specified in the commodities table
-    - region: all regions specified in the regions table
-    - year: all years specified in the commodity_costs table
-    - timeslice (multiindex): all timeslices specified in the timeslices table
-
-    Checks:
-    - If trade data is specified for one year, it must be specified for all years.
-    - If price data is specified for one year, it must be specified for all years.
-
-    Fills:
-    - If trade data is not specified for a commodity/region combination, imports and
-    exports are both zero
-    - If price data is not specified for a commodity/region combination, the price is
-    zero
-
-    Todo:
-    - Allow data to be specified on a timeslice level (optional)
-    - Interpolation, missing year field, flexible timeslice specification as above
-
-    """
-    # Prepare dataframes
-    df_trade = pd.DataFrame(commodity_trade).set_index(["commodity", "region", "year"])
-    df_costs = (
-        pd.DataFrame(commodity_costs)
-        .set_index(["commodity", "region", "year"])
-        .rename(columns={"value": "prices"})
-    )
-    df_timeslices = pd.DataFrame(timeslices).set_index(["month", "day", "hour"])
-
-    # DataArray dimensions
-    all_commodities = commodities["id"].astype(np.dtype("str"))
-    all_regions = regions["id"].astype(np.dtype("str"))
-    all_years = df_costs.index.get_level_values("year").unique()
-
-    # CHECK: all years are specified for each commodity/region combination
-    check_all_values_specified(df_trade, ["commodity", "region"], "year", all_years)
-    check_all_values_specified(df_costs, ["commodity", "region"], "year", all_years)
-
-    # FILL: price is zero if unspecified
-    df_costs = df_costs.reindex(
-        pd.MultiIndex.from_product(
-            [all_commodities, all_regions, all_years],
-            names=["commodity", "region", "year"],
-        ),
-        fill_value=0,
-    )
-
-    # FILL: trade is zero if unspecified
-    df_trade = df_trade.reindex(
-        pd.MultiIndex.from_product(
-            [all_commodities, all_regions, all_years],
-            names=["commodity", "region", "year"],
-        ),
-        fill_value=0,
-    )
-
-    # Calculate static trade
-    df_trade["static_trade"] = df_trade["export"] - df_trade["import"]
-
-    # Create xarray datasets
-    xr_costs = df_costs.to_xarray()
-    xr_trade = df_trade.to_xarray()
-
-    # Project over timeslices
-    ts = df_timeslices.to_xarray()["fraction"].stack(timeslice=("month", "day", "hour"))
-    xr_costs = project_timeslice(xr_costs, ts, QuantityType.EXTENSIVE)
-    xr_trade = project_timeslice(xr_trade, ts, QuantityType.INTENSIVE)
-
-    # Combine data
-    data = xr.merge([xr_costs, xr_trade])
-    return data
-
-
-class DataValidationError(ValueError):
-    pass
-
-
-def check_all_values_specified(
-    df: pd.DataFrame, group_by_cols: list[str], column_name: str, values: list
-) -> None:
-    """Check that the required values are specified in a dataframe.
-
-    Checks that a row exists for all specified values of column_name for each
-    group in the grouped dataframe.
-    """
-    if not (
-        df.groupby(group_by_cols)
-        .apply(
-            lambda x: (
-                set(x.index.get_level_values(column_name).unique()) == set(values)
-            )
-        )
-        .all()
-    ).all():
-        msg = ""  # TODO
-        raise DataValidationError(msg)
-
-
-def project_timeslice(
-    data: xr.Dataset, timeslices: xr.DataArray, quantity_type: QuantityType
-) -> xr.Dataset:
-    """Project a dataset over a new timeslice dimension.
-
-    The projection can be done in one of two ways, depending on whether the
-    quantity type is extensive or intensive. See `QuantityType`.
-
-    Args:
-        data: Dataset to project
-        timeslices: DataArray of timeslice levels, with values between 0 and 1
-            representing the timeslice length (fraction of the year)
-        quantity_type: Type of projection to perform. QuantityType.EXTENSIVE or
-            QuantityType.INTENSIVE
-
-    Returns:
-        Projected dataset
-    """
-    assert "timeslice" in timeslices.dims
-    assert "timeslice" not in data.dims
-
-    if quantity_type is QuantityType.INTENSIVE:
-        return data * timeslices
-    if quantity_type is QuantityType.EXTENSIVE:
-        return data * xr.ones_like(timeslices)
