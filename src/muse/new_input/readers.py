@@ -1,10 +1,8 @@
 import duckdb
+import pandas as pd
 import xarray as xr
 
-from muse.readers.csv import (
-    create_multiindex,
-    create_xarray_dataset,
-)
+from muse.readers.csv import create_assets, create_multiindex, create_xarray_dataset
 
 
 def read_inputs(data_dir) -> duckdb.DuckDBPyConnection:
@@ -465,3 +463,79 @@ def process_agent_parameters(con: duckdb.DuckDBPyConnection, sector: str) -> lis
         result.append(agent_dict)
 
     return result
+
+
+def process_initial_capacity(
+    con: duckdb.DuckDBPyConnection, sector: str, years: list[int]
+) -> xr.DataArray:
+    """Create existing capacity over time from assets and lifetimes.
+
+    Args:
+        con: DuckDB connection
+        sector: Sector name to filter processes
+        years: List of years to include (no interpolation)
+
+    Returns:
+        xr.DataArray with dims (asset) and coordinates (asset, technology, region, year)
+        showing capacity available in each year based on commission year and lifetime.
+    """
+    years_sql = ", ".join(f"({y})" for y in years)
+
+    # Compute capacity trajectory per technology/region/year
+    # Note: this sums up the capacity of all assets in the same technology/region
+    # I think ideally we wouldn't do that and would keep these as separate assets
+    # Also, this isn't taking into account agent ownership
+    assets_df = con.execute(
+        f"""
+        WITH years(year) AS (VALUES {years_sql}),
+        lifetimes AS (
+            SELECT DISTINCT pp.process, pp.region, pp.lifetime
+            FROM process_parameters pp
+            JOIN processes p ON p.id = pp.process
+            WHERE p.sector = ?
+        ),
+        assets_enriched AS (
+            SELECT
+              a.process AS technology,
+              a.region,
+              a.commission_year,
+              a.capacity,
+              lt.lifetime
+            FROM assets a
+            JOIN lifetimes lt
+              ON lt.process = a.process AND lt.region = a.region
+        )
+        SELECT
+          ae.technology,
+          ae.region,
+          y.year,
+          SUM(
+            CASE
+              WHEN y.year >= ae.commission_year AND
+                   y.year < (ae.commission_year + ae.lifetime)
+              THEN ae.capacity ELSE 0
+            END
+          ) AS value
+        FROM assets_enriched ae
+        CROSS JOIN years y
+        GROUP BY ae.technology, ae.region, y.year
+        ORDER BY ae.technology, ae.region, y.year
+        """,
+        [sector],
+    ).fetchdf()
+
+    # If no assets, return an empty DataArray
+    if assets_df.empty:
+        return xr.DataArray([], dims=("asset",))
+
+    df = pd.DataFrame(assets_df)
+    df = create_multiindex(
+        df,
+        index_columns=["technology", "region", "year"],
+        index_names=["technology", "region", "year"],
+        drop_columns=True,
+    )
+    da = create_xarray_dataset(df).value.astype(float)
+
+    da = create_assets(da)
+    return da

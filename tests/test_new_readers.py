@@ -143,3 +143,11 @@ def test_process_initial_market(con):
     process_initial_market(
         con, currency="EUR", years=[2020, 2025, 2030, 2035, 2040, 2045, 2050]
     )
+
+
+def test_process_initial_capacity(con):
+    from muse.new_input.readers import process_initial_capacity
+
+    process_initial_capacity(
+        con, sector="power", years=[2020, 2025, 2030, 2035, 2040, 2045, 2050]
+    )
