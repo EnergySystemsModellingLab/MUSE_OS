@@ -447,7 +447,8 @@ def read_process_flows_csv(buffer_, con):
       commodity VARCHAR REFERENCES commodities(id),
       region VARCHAR REFERENCES regions(id),
       year BIGINT REFERENCES years(year),
-      coeff DOUBLE,
+      input_coeff DOUBLE CHECK (input_coeff >= 0),
+      output_coeff DOUBLE CHECK (output_coeff >= 0),
       PRIMARY KEY (process, commodity, region, year)
     );
     """
@@ -463,7 +464,8 @@ def read_process_flows_csv(buffer_, con):
           commodity_id,
           region_id,
           year,
-          coeff
+          CASE WHEN coeff < 0 THEN -coeff ELSE 0 END AS input_coeff,
+          CASE WHEN coeff > 0 THEN coeff ELSE 0 END AS output_coeff
         FROM ({expansion_sql}) AS unioned;
         """
     )
