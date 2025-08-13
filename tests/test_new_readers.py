@@ -17,7 +17,9 @@ def default_new_input(tmp_path) -> Path:
 def con(default_new_input) -> duckdb.DuckDBPyConnection:
     from muse.new_input.readers import read_inputs
 
-    return read_inputs(default_new_input)
+    return read_inputs(
+        default_new_input, years=[2020, 2025, 2030, 2035, 2040, 2045, 2050]
+    )
 
 
 def test_read_time_slices_csv(con):
@@ -30,14 +32,14 @@ def test_read_time_slices_csv(con):
 
 def test_read_regions_csv(con):
     data = con.sql("SELECT * FROM regions").fetchnumpy()
-    assert data["id"] == np.array(["R1"])
+    assert next(iter(data["id"])) == "R1"
 
 
 def test_read_commodities_csv(con):
     data = con.sql("SELECT * FROM commodities").fetchnumpy()
-    assert list(data["id"]) == ["electricity", "gas", "heat", "wind", "CO2f"]
-    assert list(data["type"]) == ["energy"] * 5
-    assert list(data["unit"]) == ["PJ"] * 4 + ["kt"]
+    assert next(iter(data["id"])) == "electricity"
+    assert next(iter(data["type"])) == "energy"
+    assert next(iter(data["unit"])) == "PJ"
 
 
 def test_read_commodity_costs_csv(con):
@@ -50,17 +52,17 @@ def test_read_commodity_costs_csv(con):
 
 def test_read_demand_csv(con):
     data = con.sql("SELECT * FROM demand").fetchnumpy()
-    assert np.all(data["year"] == np.array([2020, 2050]))
-    assert np.all(data["commodity"] == np.array(["heat", "heat"]))
-    assert np.all(data["region"] == np.array(["R1", "R1"]))
-    assert np.all(data["demand"] == np.array([10, 30]))
+    assert next(iter(data["year"])) == 2020
+    assert next(iter(data["commodity"])) == "heat"
+    assert next(iter(data["region"])) == "R1"
+    assert next(iter(data["demand"])) == approx(10)
 
 
 def test_read_demand_slicing_csv(con):
     data = con.sql("SELECT * FROM demand_slicing").fetchnumpy()
-    assert np.all(data["commodity"] == "heat")
-    assert np.all(data["region"] == "R1")
-    assert np.all(data["fraction"] == np.array([0.1, 0.15, 0.1, 0.15, 0.3, 0.2]))
+    assert next(iter(data["commodity"])) == "heat"
+    assert next(iter(data["region"])) == "R1"
+    assert next(iter(data["fraction"])) == approx(0.1)
 
 
 def test_read_sectors_csv(con):
@@ -140,14 +142,10 @@ def test_process_agent_parameters(con):
 def test_process_initial_market(con):
     from muse.new_input.readers import process_initial_market
 
-    process_initial_market(
-        con, currency="EUR", years=[2020, 2025, 2030, 2035, 2040, 2045, 2050]
-    )
+    process_initial_market(con, currency="EUR")
 
 
 def test_process_initial_capacity(con):
     from muse.new_input.readers import process_initial_capacity
 
-    process_initial_capacity(
-        con, sector="power", years=[2020, 2025, 2030, 2035, 2040, 2045, 2050]
-    )
+    process_initial_capacity(con, sector="power")

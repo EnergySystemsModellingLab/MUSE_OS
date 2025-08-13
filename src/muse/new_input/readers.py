@@ -5,8 +5,118 @@ import xarray as xr
 from muse.readers.csv import create_assets, create_multiindex, create_xarray_dataset
 
 
-def read_inputs(data_dir) -> duckdb.DuckDBPyConnection:
+def expand_years(source_relation: str = "rel") -> str:
+    """Return SQL that expands 'year' values of 'all' or semicolon lists.
+
+    - If year == 'all': duplicates for every row in `years(year)` table.
+    - If year contains a semicolon-separated list (e.g. '2020;2025'):
+      splits and duplicates for each year item.
+    - Otherwise: casts the single value to BIGINT.
+    """
+    return f"""
+    WITH src AS (
+      SELECT *, CAST(year AS VARCHAR) AS year_str FROM {source_relation}
+    ),
+    explicit AS (
+      SELECT s.* REPLACE (CAST(s.year_str AS BIGINT) AS year)
+      FROM src s
+      WHERE lower(s.year_str) <> 'all'
+        AND POSITION(';' IN s.year_str) = 0
+    ),
+    multi AS (
+      SELECT s.* REPLACE (CAST(TRIM(item) AS BIGINT) AS year)
+      FROM src s
+      CROSS JOIN UNNEST(str_split(s.year_str, ';')) AS t(item)
+      WHERE POSITION(';' IN s.year_str) > 0
+    ),
+    expanded AS (
+      SELECT s.* REPLACE (y.year AS year)
+      FROM src s
+      JOIN years y ON lower(s.year_str) = 'all'
+    ),
+    unioned AS (
+      SELECT * FROM explicit
+      UNION ALL
+      SELECT * FROM multi
+      UNION ALL
+      SELECT * FROM expanded
+    )
+    SELECT * FROM unioned
+    """
+
+
+def expand_regions(source_relation: str = "rel") -> str:
+    """Return SQL that expands 'region' values of 'all' or semicolon lists.
+
+    - If region == 'all': duplicates for every row in `regions(id)` table.
+    - If region contains a semicolon-separated list (e.g. 'R1;R2'):
+      splits and duplicates for each region item.
+    - Otherwise: uses the single region value as-is.
+    """
+    return f"""
+    WITH src AS (
+      SELECT *, CAST(region AS VARCHAR) AS region_str FROM {source_relation}
+    ),
+    explicit AS (
+      SELECT s.*
+      FROM src s
+      WHERE lower(s.region_str) <> 'all'
+        AND POSITION(';' IN s.region_str) = 0
+    ),
+    multi AS (
+      SELECT s.* REPLACE (TRIM(item) AS region)
+      FROM src s
+      CROSS JOIN UNNEST(str_split(s.region_str, ';')) AS t(item)
+      WHERE POSITION(';' IN s.region_str) > 0
+    ),
+    expanded AS (
+      SELECT s.* REPLACE (r.id AS region)
+      FROM src s
+      JOIN regions r ON lower(s.region_str) = 'all'
+    ),
+    unioned AS (
+      SELECT * FROM explicit
+      UNION ALL
+      SELECT * FROM multi
+      UNION ALL
+      SELECT * FROM expanded
+    )
+    SELECT * FROM unioned
+    """
+
+
+def expand_time_slices(source_relation: str = "rel") -> str:
+    """Return SQL that expands 'time_slice' values of 'annual' or a specific id.
+
+    - If time_slice == 'annual': duplicates for every row in `time_slices(id)`.
+    - Otherwise: passes through the provided time_slice value.
+    """
+    return f"""
+    WITH src AS (
+      SELECT *, CAST(time_slice AS VARCHAR) AS ts_str FROM {source_relation}
+    ),
+    explicit AS (
+      SELECT s.* REPLACE (s.ts_str AS time_slice)
+      FROM src s
+      WHERE lower(s.ts_str) <> 'annual'
+    ),
+    expanded AS (
+      SELECT s.* REPLACE (t.id AS time_slice)
+      FROM src s
+      JOIN time_slices t ON lower(s.ts_str) = 'annual'
+    ),
+    unioned AS (
+      SELECT * FROM explicit
+      UNION ALL
+      SELECT * FROM expanded
+    )
+    SELECT * FROM unioned
+    """
+
+
+def read_inputs(data_dir, years: list[int]) -> duckdb.DuckDBPyConnection:
     con = duckdb.connect(":memory:")
+    insert_years(con, years)
     load_order = [
         ("time_slices.csv", read_time_slices_csv),
         ("regions.csv", read_regions_csv),
@@ -28,6 +138,11 @@ def read_inputs(data_dir) -> duckdb.DuckDBPyConnection:
             reader(f, con)
 
     return con
+
+
+def insert_years(con: duckdb.DuckDBPyConnection, years: list[int]):
+    con.sql("CREATE TABLE years(year BIGINT PRIMARY KEY);")
+    con.sql(f"INSERT INTO years VALUES {', '.join(f'({y})' for y in years)};")
 
 
 def read_time_slices_csv(buffer_, con):
@@ -91,8 +206,11 @@ def read_commodity_costs_csv(buffer_, con):
     """
     con.sql(sql)
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    con.sql("""INSERT INTO commodity_costs SELECT
-            commodity_id, region_id, year, value FROM rel;""")
+    expansion_sql = expand_years(source_relation="rel")
+    con.sql(
+        f"""INSERT INTO commodity_costs SELECT
+            commodity_id, region_id, year, value FROM ({expansion_sql}) AS unioned;"""
+    )
 
 
 def read_demand_csv(buffer_, con):
@@ -106,7 +224,14 @@ def read_demand_csv(buffer_, con):
     """
     con.sql(sql)
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    con.sql("INSERT INTO demand SELECT commodity_id, region_id, year, demand FROM rel;")
+    expansion_sql = expand_years(source_relation="rel")
+    con.sql(
+        f"""
+        INSERT INTO demand
+        SELECT commodity_id, region_id, year, demand
+        FROM ({expansion_sql}) AS unioned;
+        """
+    )
 
 
 def read_demand_slicing_csv(buffer_, con):
@@ -163,8 +288,9 @@ def read_process_parameters_csv(buffer_, con):
     """
     con.sql(sql)
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
+    expansion_sql = expand_years(source_relation="rel")
     con.sql(
-        """
+        f"""
         INSERT INTO process_parameters SELECT
           process_id,
           region_id,
@@ -177,7 +303,7 @@ def read_process_parameters_csv(buffer_, con):
           total_capacity_limit,
           lifetime,
           discount_rate
-        FROM rel;
+        FROM ({expansion_sql}) AS unioned;
         """
     )
 
@@ -194,15 +320,16 @@ def read_process_flows_csv(buffer_, con):
     """
     con.sql(sql)
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
+    expansion_sql = expand_years(source_relation="rel")
     con.sql(
-        """
+        f"""
         INSERT INTO process_flows SELECT
           process_id,
           commodity_id,
           region_id,
           year,
           coeff
-        FROM rel;
+        FROM ({expansion_sql}) AS unioned;
         """
     )
 
@@ -337,9 +464,7 @@ def process_technodictionary(con: duckdb.DuckDBPyConnection, sector: str) -> xr.
     return result
 
 
-def process_initial_market(
-    con: duckdb.DuckDBPyConnection, currency: str, years: list[int]
-) -> xr.Dataset:
+def process_initial_market(con: duckdb.DuckDBPyConnection, currency: str) -> xr.Dataset:
     """Create initial market dataset with prices and zero trade variables.
 
     Args:
@@ -355,10 +480,8 @@ def process_initial_market(
     if not isinstance(currency, str) or not currency.strip():
         raise ValueError("currency must be a non-empty string")
 
-    years_sql = ", ".join(f"({y})" for y in years)
     df = con.execute(
-        f"""
-        WITH years(year) AS (VALUES {years_sql})
+        """
         SELECT
           r.id AS region,
           y.year AS year,
@@ -466,7 +589,7 @@ def process_agent_parameters(con: duckdb.DuckDBPyConnection, sector: str) -> lis
 
 
 def process_initial_capacity(
-    con: duckdb.DuckDBPyConnection, sector: str, years: list[int]
+    con: duckdb.DuckDBPyConnection, sector: str
 ) -> xr.DataArray:
     """Create existing capacity over time from assets and lifetimes.
 
@@ -479,16 +602,13 @@ def process_initial_capacity(
         xr.DataArray with dims (asset) and coordinates (asset, technology, region, year)
         showing capacity available in each year based on commission year and lifetime.
     """
-    years_sql = ", ".join(f"({y})" for y in years)
-
     # Compute capacity trajectory per technology/region/year
     # Note: this sums up the capacity of all assets in the same technology/region
     # I think ideally we wouldn't do that and would keep these as separate assets
     # Also, this isn't taking into account agent ownership
     assets_df = con.execute(
-        f"""
-        WITH years(year) AS (VALUES {years_sql}),
-        lifetimes AS (
+        """
+        WITH lifetimes AS (
             SELECT DISTINCT pp.process, pp.region, pp.lifetime
             FROM process_parameters pp
             JOIN processes p ON p.id = pp.process
