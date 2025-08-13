@@ -219,6 +219,7 @@ def read_inputs(data_dir, years: list[int]) -> duckdb.DuckDBPyConnection:
         ("processes.csv", read_processes_csv),
         ("process_parameters.csv", read_process_parameters_csv),
         ("process_flows.csv", read_process_flows_csv),
+        ("process_availabilities.csv", read_process_availabilities_csv),
         ("agents.csv", read_agents_csv),
         ("agent_objectives.csv", read_agent_objectives_csv),
         ("assets.csv", read_assets_csv),
@@ -456,6 +457,37 @@ def read_process_flows_csv(buffer_, con):
 
     # Validate coverage
     ensure_full_process_commodity_region_year(con)
+
+
+def read_process_availabilities_csv(buffer_, con):
+    sql = """CREATE TABLE process_availabilities (
+      process VARCHAR REFERENCES processes(id),
+      region VARCHAR REFERENCES regions(id),
+      year BIGINT,
+      time_slice VARCHAR REFERENCES time_slices(id),
+      limit_type VARCHAR CHECK (limit_type IN ('up','down')),
+      value DOUBLE,
+      PRIMARY KEY (process, region, year, time_slice, limit_type)
+    );
+    """
+    con.sql(sql)
+    rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
+    years_sql = expand_years(source_relation="rel")
+    regions_sql = expand_regions(source_relation=f"({years_sql})")
+    ts_sql = expand_time_slices(source_relation=f"({regions_sql})")
+    expansion_sql = ts_sql
+    con.sql(
+        f"""
+        INSERT INTO process_availabilities SELECT
+          process_id,
+          region_id,
+          year,
+          time_slice,
+          limit_type,
+          value
+        FROM ({expansion_sql}) AS unioned;
+        """
+    )
 
 
 def read_agents_csv(buffer_, con):
