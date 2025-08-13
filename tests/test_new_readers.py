@@ -1,6 +1,5 @@
 import duckdb
 import numpy as np
-import xarray as xr
 from pytest import approx, fixture
 
 
@@ -74,6 +73,68 @@ def populate_time_slices(default_new_input, con):
         return read_time_slices_csv(f, con)
 
 
+@fixture
+def populate_sectors(default_new_input, con):
+    from muse.new_input.readers import read_sectors_csv
+
+    with open(default_new_input / "sectors.csv") as f:
+        return read_sectors_csv(f, con)
+
+
+@fixture
+def populate_processes(default_new_input, con, populate_sectors):
+    from muse.new_input.readers import read_processes_csv
+
+    with open(default_new_input / "processes.csv") as f:
+        return read_processes_csv(f, con)
+
+
+@fixture
+def populate_process_parameters(
+    default_new_input, con, populate_regions, populate_processes
+):
+    from muse.new_input.readers import read_process_parameters_csv
+
+    with open(default_new_input / "process_parameters.csv") as f:
+        return read_process_parameters_csv(f, con)
+
+
+@fixture
+def populate_process_flows(
+    default_new_input, con, populate_processes, populate_commodities, populate_regions
+):
+    from muse.new_input.readers import read_process_flows_csv
+
+    with open(default_new_input / "process_flows.csv") as f:
+        return read_process_flows_csv(f, con)
+
+
+@fixture
+def populate_agents(default_new_input, con, populate_regions, populate_sectors):
+    from muse.new_input.readers import read_agents_csv
+
+    with open(default_new_input / "agents.csv") as f:
+        return read_agents_csv(f, con)
+
+
+@fixture
+def populate_agent_objectives(default_new_input, con, populate_agents):
+    from muse.new_input.readers import read_agent_objectives_csv
+
+    with open(default_new_input / "agent_objectives.csv") as f:
+        return read_agent_objectives_csv(f, con)
+
+
+@fixture
+def populate_assets(
+    default_new_input, con, populate_agents, populate_processes, populate_regions
+):
+    from muse.new_input.readers import read_assets_csv
+
+    with open(default_new_input / "assets.csv") as f:
+        return read_assets_csv(f, con)
+
+
 def test_read_time_slices_csv(populate_time_slices):
     data = populate_time_slices
     assert next(iter(data["season"])) == "all-year"
@@ -95,7 +156,6 @@ def test_read_commodities_csv(populate_commodities):
 
 def test_read_commodity_costs_csv(populate_commodity_costs):
     data = populate_commodity_costs
-    # Only checking the first element of each array, as the table is large
     assert next(iter(data["commodity"])) == "electricity"
     assert next(iter(data["region"])) == "R1"
     assert next(iter(data["year"])) == 2020
@@ -117,16 +177,57 @@ def test_read_demand_slicing_csv(populate_demand_slicing):
     assert np.all(data["fraction"] == np.array([0.1, 0.15, 0.1, 0.15, 0.3, 0.2]))
 
 
-def test_calculate_global_commodities(populate_commodities):
-    from muse.new_input.readers import calculate_global_commodities
+def test_read_sectors_csv(populate_sectors):
+    data = populate_sectors
+    assert next(iter(data["id"])) == "gas"
 
-    data = calculate_global_commodities(populate_commodities)
 
-    assert isinstance(data, xr.Dataset)
-    assert set(data.dims) == {"commodity"}
-    for dt in data.dtypes.values():
-        assert np.issubdtype(dt, np.dtype("str"))
+def test_read_processes_csv(populate_processes):
+    data = populate_processes
+    assert next(iter(data["id"])) == "gassupply1"
+    assert next(iter(data["sector"])) == "gas"
 
-    assert list(data.coords["commodity"].values) == list(populate_commodities["id"])
-    assert list(data.data_vars["type"].values) == list(populate_commodities["type"])
-    assert list(data.data_vars["unit"].values) == list(populate_commodities["unit"])
+
+def test_read_process_parameters_csv(populate_process_parameters):
+    data = populate_process_parameters
+    assert next(iter(data["process"])) == "gassupply1"
+    assert next(iter(data["region"])) == "R1"
+    assert next(iter(data["year"])) == 2020
+    assert next(iter(data["cap_par"])) == approx(0)
+    assert next(iter(data["discount_rate"])) == approx(0.1)
+
+
+def test_read_process_flows_csv(populate_process_flows):
+    data = populate_process_flows
+    assert next(iter(data["process"])) == "gassupply1"
+    assert next(iter(data["commodity"])) == "gas"
+    assert next(iter(data["region"])) == "R1"
+    assert next(iter(data["year"])) == 2020
+    assert next(iter(data["coeff"])) == approx(1)
+
+
+def test_read_agents_csv(populate_agents):
+    data = populate_agents
+    assert next(iter(data["id"])) == "A1_RES"
+    assert next(iter(data["region"])) == "R1"
+    assert next(iter(data["sector"])) == "residential"
+    assert next(iter(data["search_rule"])) == "all"
+    assert next(iter(data["decision_rule"])) == "single"
+    assert next(iter(data["quantity"])) == approx(1)
+
+
+def test_read_agent_objectives_csv(populate_agent_objectives):
+    data = populate_agent_objectives
+    assert next(iter(data["agent"])) == "A1_RES"
+    assert next(iter(data["objective_type"])) == "LCOE"
+    assert next(iter(data["decision_weight"])) == approx(1)
+    assert next(iter(data["objective_sort"])) is np.True_
+
+
+def test_read_assets_csv(populate_assets):
+    data = populate_assets
+    assert next(iter(data["agent"])) == "A1_GAS"
+    assert next(iter(data["process"])) == "gassupply1"
+    assert next(iter(data["region"])) == "R1"
+    assert next(iter(data["commission_year"])) == 1995
+    assert next(iter(data["capacity"])) == approx(7.5)
