@@ -135,3 +135,11 @@ def test_process_agent_parameters(con):
     from muse.new_input.readers import process_agent_parameters
 
     process_agent_parameters(con, sector="power")
+
+
+def test_process_initial_market(con):
+    from muse.new_input.readers import process_initial_market
+
+    process_initial_market(
+        con, currency="EUR", years=[2020, 2025, 2030, 2035, 2040, 2045, 2050]
+    )

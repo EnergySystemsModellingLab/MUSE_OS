@@ -339,6 +339,64 @@ def process_technodictionary(con: duckdb.DuckDBPyConnection, sector: str) -> xr.
     return result
 
 
+def process_initial_market(
+    con: duckdb.DuckDBPyConnection, currency: str, years: list[int]
+) -> xr.Dataset:
+    """Create initial market dataset with prices and zero trade variables.
+
+    Args:
+        con: DuckDB connection with tables loaded.
+        currency: Currency string, e.g. "USD". Mandatory.
+        years: List of years to cover. Missing combinations are filled with zero.
+
+    Returns:
+        xr.Dataset with dims (region, year, commodity) and variables
+        prices, exports, imports, static_trade. Adds coordinate
+        units_prices = f"{currency}/{unit}" per commodity.
+    """
+    if not isinstance(currency, str) or not currency.strip():
+        raise ValueError("currency must be a non-empty string")
+
+    years_sql = ", ".join(f"({y})" for y in years)
+    df = con.execute(
+        f"""
+        WITH years(year) AS (VALUES {years_sql})
+        SELECT
+          r.id AS region,
+          y.year AS year,
+          c.id AS commodity,
+          COALESCE(cc.value, 0) AS prices,
+          (? || '/' || c.unit) AS units_prices
+        FROM regions r
+        CROSS JOIN years y
+        CROSS JOIN commodities c
+        LEFT JOIN commodity_costs cc
+          ON cc.region = r.id AND cc.year = y.year AND cc.commodity = c.id
+        """,
+        [currency],
+    ).fetchdf()
+
+    if df.empty:
+        raise ValueError("No commodity cost data found to build initial market.")
+
+    # Build dataset from prices
+    prices_df = create_multiindex(
+        df,
+        index_columns=["region", "year", "commodity"],
+        index_names=["region", "year", "commodity"],
+        drop_columns=True,
+    )
+    result = create_xarray_dataset(prices_df)
+
+    # Add zero trade variables (legacy)
+    result["exports"] = xr.zeros_like(result["prices"]).rename("exports")
+    result["imports"] = xr.zeros_like(result["prices"]).rename("imports")
+    result["static_trade"] = (result["imports"] - result["exports"]).rename(
+        "static_trade"
+    )
+    return result
+
+
 def process_agent_parameters(con: duckdb.DuckDBPyConnection, sector: str) -> list[dict]:
     """Create a list of agent dictionaries for a sector from DB tables.
 
