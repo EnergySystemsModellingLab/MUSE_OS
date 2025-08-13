@@ -291,7 +291,7 @@ def read_commodity_costs_csv(buffer_, con):
     sql = """CREATE TABLE commodity_costs (
     commodity VARCHAR REFERENCES commodities(id),
     region VARCHAR REFERENCES regions(id),
-    year BIGINT,
+    year BIGINT REFERENCES years(year),
     value DOUBLE,
     PRIMARY KEY (commodity, region, year)
     );
@@ -334,8 +334,8 @@ def read_demand_csv(buffer_, con):
     sql = """CREATE TABLE demand (
     commodity VARCHAR REFERENCES commodities(id),
     region VARCHAR REFERENCES regions(id),
-    year BIGINT,
-    demand DOUBLE,
+    year BIGINT REFERENCES years(year),
+    demand DOUBLE CHECK (demand >= 0),
     PRIMARY KEY (commodity, region, year)
     );
     """
@@ -350,7 +350,7 @@ def read_demand_csv(buffer_, con):
         present_cols=["commodity"],
         dims=["region", "year"],
         error_message=(
-            "commodity_costs must include all regions/years for any mentioned commodity"
+            "demand must include all regions/years for any mentioned commodity"
         ),
     )
 
@@ -400,15 +400,15 @@ def read_process_parameters_csv(buffer_, con):
     sql = """CREATE TABLE process_parameters (
       process VARCHAR REFERENCES processes(id),
       region VARCHAR REFERENCES regions(id),
-      year BIGINT,
-      cap_par DOUBLE,
-      fix_par DOUBLE,
-      var_par DOUBLE,
-      max_capacity_addition DOUBLE,
-      max_capacity_growth DOUBLE,
-      total_capacity_limit DOUBLE,
-      lifetime DOUBLE,
-      discount_rate DOUBLE,
+      year BIGINT REFERENCES years(year),
+      cap_par DOUBLE CHECK (cap_par >= 0),
+      fix_par DOUBLE CHECK (fix_par >= 0),
+      var_par DOUBLE CHECK (var_par >= 0),
+      max_capacity_addition DOUBLE CHECK (max_capacity_addition >= 0),
+      max_capacity_growth DOUBLE CHECK (max_capacity_growth >= 0),
+      total_capacity_limit DOUBLE CHECK (total_capacity_limit >= 0),
+      lifetime DOUBLE CHECK (lifetime > 0),
+      discount_rate DOUBLE CHECK (discount_rate >= 0),
       PRIMARY KEY (process, region, year)
     );
     """
@@ -446,7 +446,7 @@ def read_process_flows_csv(buffer_, con):
       process VARCHAR REFERENCES processes(id),
       commodity VARCHAR REFERENCES commodities(id),
       region VARCHAR REFERENCES regions(id),
-      year BIGINT,
+      year BIGINT REFERENCES years(year),
       coeff DOUBLE,
       PRIMARY KEY (process, commodity, region, year)
     );
@@ -484,7 +484,7 @@ def read_process_availabilities_csv(buffer_, con):
     sql = """CREATE TABLE process_availabilities (
       process VARCHAR REFERENCES processes(id),
       region VARCHAR REFERENCES regions(id),
-      year BIGINT,
+      year BIGINT REFERENCES years(year),
       time_slice VARCHAR REFERENCES time_slices(id),
       limit_type VARCHAR CHECK (limit_type IN ('up','down')),
       value DOUBLE,
@@ -518,7 +518,7 @@ def read_agents_csv(buffer_, con):
       sector VARCHAR REFERENCES sectors(id),
       search_rule VARCHAR,
       decision_rule VARCHAR,
-      quantity DOUBLE
+      quantity DOUBLE CHECK (quantity >= 0 AND quantity <= 1)
     );
     """
     con.sql(sql)
@@ -568,7 +568,7 @@ def read_agent_objectives_csv(buffer_, con):
     sql = """CREATE TABLE agent_objectives (
       agent VARCHAR REFERENCES agents(id),
       objective_type VARCHAR,
-      decision_weight DOUBLE,
+      decision_weight DOUBLE CHECK (decision_weight >= 0 AND decision_weight <= 1),
       objective_sort BOOLEAN,
       PRIMARY KEY (agent, objective_type)
     );
@@ -604,7 +604,7 @@ def read_assets_csv(buffer_, con):
       process VARCHAR REFERENCES processes(id),
       region VARCHAR REFERENCES regions(id),
       commission_year BIGINT,
-      capacity DOUBLE,
+      capacity DOUBLE CHECK (capacity > 0),
       PRIMARY KEY (agent, process, region, commission_year)
     );
     """
