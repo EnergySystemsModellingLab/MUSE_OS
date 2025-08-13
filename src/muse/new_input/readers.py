@@ -73,45 +73,41 @@ def validate_present_full_dim_coverage(
 ) -> None:
     """Ensure that for each present entity (present_cols), all dims combos exist.
 
-    The target table must use these exact column names.
+    Generates the cartesian product of present entities crossed with the dim
+    sources and compares to the table using EXCEPT.
     """
     for d in dims:
         if d not in DIM_TO_SOURCE:
             raise ValueError(f"Unsupported dim: {d}")
 
-    present_cols_csv = ", ".join(present_cols)
-    select_present = f"SELECT DISTINCT {present_cols_csv} FROM {table}"
+    present_csv = ", ".join(present_cols)
+    proj = ", ".join([*present_cols, *dims])
 
-    fg_parts = [f"p.{c} AS {c}" for c in present_cols]
-    cross_joins = []
-    for d in dims:
-        src_table, src_col = DIM_TO_SOURCE[d]
-        alias = f"{d[0]}src"
-        fg_parts.append(f"{alias}.{src_col} AS {d}")
-        cross_joins.append(f"CROSS JOIN {src_table} {alias}")
-    fg_select = ", ".join(fg_parts)
-    cross_join_sql = "\n      ".join(cross_joins)
+    # Columns from present set (aliased p.<col>)
+    present_select = [f"p.{c} AS {c}" for c in present_cols]
 
-    join_keys = " AND ".join([f"t.{c} = fg.{c}" for c in present_cols + dims])
-    null_check_col = present_cols[0]
+    # Columns from dimension sources (dim_table.dim_id AS dim_name)
+    dim_cols = [f"{DIM_TO_SOURCE[d][0]}.{DIM_TO_SOURCE[d][1]} AS {d}" for d in dims]
+    cols_sql = ", ".join([*present_select, *dim_cols])
 
-    query = f"""
-    WITH present AS (
-      {select_present}
+    # FROM present set then CROSS JOIN each dim source table to get the grid
+    joins = [f"(SELECT DISTINCT {present_csv} FROM {table}) p"]
+    joins += [DIM_TO_SOURCE[d][0] for d in dims]
+    joins_sql = " CROSS JOIN ".join(joins)
+
+    sql = f"""
+    WITH a AS (
+      SELECT {cols_sql}
+      FROM {joins_sql}
     ),
-    full_grid AS (
-      SELECT {fg_select}
-      FROM present p
-      {cross_join_sql}
+    missing AS (
+      SELECT {proj} FROM a
+      EXCEPT
+      SELECT {proj} FROM {table}
     )
-    SELECT COUNT(*) AS missing_count
-    FROM full_grid fg
-    LEFT JOIN {table} t
-      ON {join_keys}
-    WHERE t.{null_check_col} IS NULL
+    SELECT COUNT(*) FROM missing
     """
-    missing_count = con.execute(query).fetchone()[0]
-    if missing_count:
+    if con.execute(sql).fetchone()[0]:
         raise ValueError(error_message)
 
 
@@ -123,36 +119,31 @@ def validate_full_coverage(
         if d not in DIM_TO_SOURCE:
             raise ValueError(f"Unsupported dim: {d}")
 
-    # Build full grid FROM and CROSS JOINs over all dims
-    select_parts = []
-    from_and_joins = []
-    first = True
+    # Build full grid FROM and CROSS JOINs over all dims in one compact SQL
+    select_cols = []
+    tables = []
     for d in dims:
         src_table, src_col = DIM_TO_SOURCE[d]
-        alias = f"{d[0]}src"
-        select_parts.append(f"{alias}.{src_col} AS {d}")
-        if first:
-            from_and_joins.append(f"FROM {src_table} {alias}")
-            first = False
-        else:
-            from_and_joins.append(f"CROSS JOIN {src_table} {alias}")
+        select_cols.append(f"{src_table}.{src_col} AS {d}")
+        tables.append(src_table)
 
-    full_select_cols = ", ".join(select_parts)
-    from_clause_sql = "\n      ".join(from_and_joins)
-    join_keys = " AND ".join([f"t.{d} = fg.{d}" for d in dims])
-    first_dim = dims[0]
+    proj = ", ".join(dims)
+    cols_sql = ", ".join(select_cols)
+    joins_sql = " CROSS JOIN ".join(tables)
 
-    query = f"""
-    WITH full_grid AS (
-      SELECT {full_select_cols}
-      {from_clause_sql}
+    sql = f"""
+    WITH a AS (
+      SELECT {cols_sql}
+      FROM {joins_sql}
+    ),
+    missing AS (
+      SELECT {proj} FROM a
+      EXCEPT
+      SELECT {proj} FROM {table}
     )
-    SELECT COUNT(*) AS missing_count
-    FROM full_grid fg
-    LEFT JOIN {table} t ON {join_keys}
-    WHERE t.{first_dim} IS NULL
+    SELECT COUNT(*) FROM missing
     """
-    missing_count = con.execute(query).fetchone()[0]
+    missing_count = con.execute(sql).fetchone()[0]
     if missing_count:
         raise ValueError("Missing required combinations across dims")
 
@@ -166,50 +157,42 @@ def fill_missing_dim_combinations(
 ) -> None:
     """Insert fill_value for any missing combinations across the given dims.
 
+    Anchors on the first dim's present values to avoid generating rows for
+    completely absent entities, then uses an EXCEPT comparison to find and
+    insert missing keys.
     The target table must use these exact column names for the dims.
     """
     for d in dims:
         if d not in DIM_TO_SOURCE:
             raise ValueError(f"Unsupported dim: {d}")
 
-    # Build full grid anchored on present values of the first dim (e.g., commodity)
     present_key = dims[0]
-    present_cte = f"SELECT DISTINCT {present_key} FROM {table}"
-
-    select_parts = [f"p.{present_key} AS {present_key}"]
-    from_and_joins = [f"FROM ({present_cte}) p"]
-    for d in dims[1:]:
-        src_table, src_col = DIM_TO_SOURCE[d]
-        alias = f"{d[0]}src"
-        select_parts.append(f"{alias}.{src_col} AS {d}")
-        from_and_joins.append(f"CROSS JOIN {src_table} {alias}")
-    full_select_cols = ", ".join(select_parts)
-    from_clause_sql = "\n          ".join(from_and_joins)
-
-    # Build join keys to detect missing rows
-    join_keys = " AND ".join([f"t.{d} = fg.{d}" for d in dims])
-    insert_cols_csv = ", ".join([*dims, value_column])
-    select_cols_missing = ", ".join([f"fg.{d}" for d in dims])
-    select_cols_plain = ", ".join(dims)
-
-    con.execute(
-        f"""
-        WITH full_grid AS (
-          SELECT {full_select_cols}
-          {from_clause_sql}
-        ),
-        missing AS (
-          SELECT {select_cols_missing}
-          FROM full_grid fg
-          LEFT JOIN {table} t ON {join_keys}
-          WHERE t.{present_key} IS NULL
-        )
-        INSERT INTO {table} ({insert_cols_csv})
-        SELECT {select_cols_plain}, ? AS {value_column}
-        FROM missing
-        """,
-        [fill_value],
+    proj = ", ".join(dims)
+    # Build column list: present key from p, other dims from their sources
+    present_cols_sql = f"p.{present_key} AS {present_key}"
+    dim_cols_sql = ", ".join(
+        [f"{DIM_TO_SOURCE[d][0]}.{DIM_TO_SOURCE[d][1]} AS {d}" for d in dims[1:]]
     )
+    cols_sql = ", ".join([c for c in [present_cols_sql, dim_cols_sql] if c])
+    # Build CROSS JOIN chain: present set, then each dim source table
+    joins = [f"(SELECT DISTINCT {present_key} FROM {table}) p"]
+    joins += [DIM_TO_SOURCE[d][0] for d in dims[1:]]
+    joins_sql = " CROSS JOIN ".join(joins)
+
+    sql = f"""
+    WITH a AS (
+      SELECT {cols_sql}
+      FROM {joins_sql}
+    ),
+    missing AS (
+      SELECT {proj} FROM a
+      EXCEPT
+      SELECT {proj} FROM {table}
+    )
+    INSERT INTO {table} ({proj}, {value_column})
+    SELECT {proj}, ? FROM missing
+    """
+    con.execute(sql, [fill_value])
 
 
 def read_inputs(data_dir, years: list[int]) -> duckdb.DuckDBPyConnection:
