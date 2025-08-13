@@ -6,111 +6,52 @@ from muse.readers.csv import create_assets, create_multiindex, create_xarray_dat
 
 
 def expand_years(source_relation: str = "rel") -> str:
-    """Return SQL that expands 'year' values of 'all' or semicolon lists.
-
-    - If year == 'all': duplicates for every row in `years(year)` table.
-    - If year contains a semicolon-separated list (e.g. '2020;2025'):
-      splits and duplicates for each year item.
-    - Otherwise: casts the single value to BIGINT.
-    """
+    """Return a composable SQL that expands 'year' over 'all' or semicolon lists."""
     return f"""
-    WITH src AS (
-      SELECT *, CAST(year AS VARCHAR) AS year_str FROM {source_relation}
-    ),
-    explicit AS (
-      SELECT s.* REPLACE (CAST(s.year_str AS BIGINT) AS year)
-      FROM src s
-      WHERE lower(s.year_str) <> 'all'
-        AND POSITION(';' IN s.year_str) = 0
-    ),
-    multi AS (
-      SELECT s.* REPLACE (CAST(TRIM(item) AS BIGINT) AS year)
-      FROM src s
-      CROSS JOIN UNNEST(str_split(s.year_str, ';')) AS t(item)
-      WHERE POSITION(';' IN s.year_str) > 0
-    ),
-    expanded AS (
-      SELECT s.* REPLACE (y.year AS year)
-      FROM src s
-      JOIN years y ON lower(s.year_str) = 'all'
-    ),
-    unioned AS (
-      SELECT * FROM explicit
-      UNION ALL
-      SELECT * FROM multi
-      UNION ALL
-      SELECT * FROM expanded
-    )
-    SELECT * FROM unioned
-    """
+    SELECT s.* REPLACE (CAST(s.year AS BIGINT) AS year)
+    FROM {source_relation} s
+    WHERE lower(CAST(s.year AS VARCHAR)) <> 'all' AND POSITION(';' IN CAST(s.year AS VARCHAR)) = 0
+    UNION ALL
+    SELECT s.* REPLACE (CAST(TRIM(item) AS BIGINT) AS year)
+    FROM {source_relation} s
+    CROSS JOIN UNNEST(str_split(CAST(s.year AS VARCHAR), ';')) AS t(item)
+    WHERE POSITION(';' IN CAST(s.year AS VARCHAR)) > 0
+    UNION ALL
+    SELECT s.* REPLACE (y.year AS year)
+    FROM {source_relation} s
+    CROSS JOIN years y
+    WHERE lower(CAST(s.year AS VARCHAR)) = 'all'
+    """  # noqa: E501
 
 
 def expand_regions(source_relation: str = "rel") -> str:
-    """Return SQL that expands 'region' values of 'all' or semicolon lists.
-
-    - If region == 'all': duplicates for every row in `regions(id)` table.
-    - If region contains a semicolon-separated list (e.g. 'R1;R2'):
-      splits and duplicates for each region item.
-    - Otherwise: uses the single region value as-is.
-    """
+    """Return a composable SQL that expands 'region_id' over 'all' or lists."""
     return f"""
-    WITH src AS (
-      SELECT *, CAST(region AS VARCHAR) AS region_str FROM {source_relation}
-    ),
-    explicit AS (
-      SELECT s.*
-      FROM src s
-      WHERE lower(s.region_str) <> 'all'
-        AND POSITION(';' IN s.region_str) = 0
-    ),
-    multi AS (
-      SELECT s.* REPLACE (TRIM(item) AS region)
-      FROM src s
-      CROSS JOIN UNNEST(str_split(s.region_str, ';')) AS t(item)
-      WHERE POSITION(';' IN s.region_str) > 0
-    ),
-    expanded AS (
-      SELECT s.* REPLACE (r.id AS region)
-      FROM src s
-      JOIN regions r ON lower(s.region_str) = 'all'
-    ),
-    unioned AS (
-      SELECT * FROM explicit
-      UNION ALL
-      SELECT * FROM multi
-      UNION ALL
-      SELECT * FROM expanded
-    )
-    SELECT * FROM unioned
-    """
+    SELECT s.*
+    FROM {source_relation} s
+    WHERE lower(CAST(s.region_id AS VARCHAR)) <> 'all' AND POSITION(';' IN CAST(s.region_id AS VARCHAR)) = 0
+    UNION ALL
+    SELECT s.* REPLACE (TRIM(item) AS region_id)
+    FROM {source_relation} s
+    CROSS JOIN UNNEST(str_split(CAST(s.region_id AS VARCHAR), ';')) AS t(item)
+    WHERE POSITION(';' IN CAST(s.region_id AS VARCHAR)) > 0
+    UNION ALL
+    SELECT s.* REPLACE (r.id AS region_id)
+    FROM {source_relation} s
+    JOIN regions r ON lower(CAST(s.region_id AS VARCHAR)) = 'all'
+    """  # noqa: E501
 
 
 def expand_time_slices(source_relation: str = "rel") -> str:
-    """Return SQL that expands 'time_slice' values of 'annual' or a specific id.
-
-    - If time_slice == 'annual': duplicates for every row in `time_slices(id)`.
-    - Otherwise: passes through the provided time_slice value.
-    """
+    """Return a composable SQL that expands 'time_slice' over 'annual'."""
     return f"""
-    WITH src AS (
-      SELECT *, CAST(time_slice AS VARCHAR) AS ts_str FROM {source_relation}
-    ),
-    explicit AS (
-      SELECT s.* REPLACE (s.ts_str AS time_slice)
-      FROM src s
-      WHERE lower(s.ts_str) <> 'annual'
-    ),
-    expanded AS (
-      SELECT s.* REPLACE (t.id AS time_slice)
-      FROM src s
-      JOIN time_slices t ON lower(s.ts_str) = 'annual'
-    ),
-    unioned AS (
-      SELECT * FROM explicit
-      UNION ALL
-      SELECT * FROM expanded
-    )
-    SELECT * FROM unioned
+    SELECT s.*
+    FROM {source_relation} s
+    WHERE lower(CAST(s.time_slice AS VARCHAR)) <> 'annual'
+    UNION ALL
+    SELECT s.* REPLACE (t.id AS time_slice)
+    FROM {source_relation} s
+    JOIN time_slices t ON lower(CAST(s.time_slice AS VARCHAR)) = 'annual'
     """
 
 
@@ -195,6 +136,16 @@ def read_regions_csv(buffer_, con):
     con.sql("INSERT INTO regions SELECT id FROM rel;")
 
 
+def read_sectors_csv(buffer_, con):
+    sql = """CREATE TABLE sectors (
+      id VARCHAR PRIMARY KEY,
+    );
+    """
+    con.sql(sql)
+    rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
+    con.sql("INSERT INTO sectors SELECT id FROM rel;")
+
+
 def read_commodity_costs_csv(buffer_, con):
     sql = """CREATE TABLE commodity_costs (
     commodity VARCHAR REFERENCES commodities(id),
@@ -206,10 +157,13 @@ def read_commodity_costs_csv(buffer_, con):
     """
     con.sql(sql)
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    expansion_sql = expand_years(source_relation="rel")
+    years_sql = expand_years(source_relation="rel")
+    regions_sql = expand_regions(source_relation=f"({years_sql})")
+    expansion_sql = regions_sql
     con.sql(
         f"""INSERT INTO commodity_costs SELECT
-            commodity_id, region_id, year, value FROM ({expansion_sql}) AS unioned;"""
+            commodity_id, region_id, year, value FROM ({expansion_sql}) AS unioned;
+        """
     )
 
 
@@ -224,14 +178,7 @@ def read_demand_csv(buffer_, con):
     """
     con.sql(sql)
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    expansion_sql = expand_years(source_relation="rel")
-    con.sql(
-        f"""
-        INSERT INTO demand
-        SELECT commodity_id, region_id, year, demand
-        FROM ({expansion_sql}) AS unioned;
-        """
-    )
+    con.sql("INSERT INTO demand SELECT commodity_id, region_id, year, demand FROM rel;")
 
 
 def read_demand_slicing_csv(buffer_, con):
@@ -245,18 +192,14 @@ def read_demand_slicing_csv(buffer_, con):
     """
     con.sql(sql)
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    con.sql("""INSERT INTO demand_slicing SELECT
-            commodity_id, region_id, time_slice, fraction FROM rel;""")
-
-
-def read_sectors_csv(buffer_, con):
-    sql = """CREATE TABLE sectors (
-      id VARCHAR PRIMARY KEY,
-    );
-    """
-    con.sql(sql)
-    rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    con.sql("INSERT INTO sectors SELECT id FROM rel;")
+    regions_sql = expand_regions(source_relation="rel")
+    ts_sql = expand_time_slices(source_relation=f"({regions_sql})")
+    expansion_sql = ts_sql
+    con.sql(
+        f"""INSERT INTO demand_slicing SELECT
+            commodity_id, region_id, time_slice, fraction FROM ({expansion_sql}) AS unioned;
+        """  # noqa: E501
+    )
 
 
 def read_processes_csv(buffer_, con):
@@ -288,7 +231,9 @@ def read_process_parameters_csv(buffer_, con):
     """
     con.sql(sql)
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    expansion_sql = expand_years(source_relation="rel")
+    years_sql = expand_years(source_relation="rel")
+    regions_sql = expand_regions(source_relation=f"({years_sql})")
+    expansion_sql = regions_sql
     con.sql(
         f"""
         INSERT INTO process_parameters SELECT
@@ -320,7 +265,9 @@ def read_process_flows_csv(buffer_, con):
     """
     con.sql(sql)
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    expansion_sql = expand_years(source_relation="rel")
+    years_sql = expand_years(source_relation="rel")
+    regions_sql = expand_regions(source_relation=f"({years_sql})")
+    expansion_sql = regions_sql
     con.sql(
         f"""
         INSERT INTO process_flows SELECT
