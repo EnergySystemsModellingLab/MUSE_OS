@@ -129,3 +129,9 @@ def test_process_technodictionary(con):
     from muse.new_input.readers import process_technodictionary
 
     process_technodictionary(con, sector="power")
+
+
+def test_process_agent_parameters(con):
+    from muse.new_input.readers import process_agent_parameters
+
+    process_agent_parameters(con, sector="power")

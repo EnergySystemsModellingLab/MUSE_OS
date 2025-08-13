@@ -337,3 +337,73 @@ def process_technodictionary(con: duckdb.DuckDBPyConnection, sector: str) -> xr.
 
     result = create_xarray_dataset(df)
     return result
+
+
+def process_agent_parameters(con: duckdb.DuckDBPyConnection, sector: str) -> list[dict]:
+    """Create a list of agent dictionaries for a sector from DB tables.
+
+    The result matches the structure returned by the legacy CSV-based
+    process_agent_parameters, but only includes the required fields:
+    - name, region, objectives, search_rules, decision, quantity
+
+    The following legacy fields are intentionally omitted: agent_type,
+    share, maturity_threshold, spend_limit.
+    """
+    # Gather agent base data for the sector
+    agents_df = con.execute(
+        """
+        SELECT id AS name,
+               region AS region,
+               search_rule,
+               decision_rule,
+               quantity
+        FROM agents
+        WHERE sector = ?
+        """,
+        [sector],
+    ).fetchdf()
+
+    # Gather objectives per agent
+    objectives_df = con.execute(
+        """
+        SELECT agent AS name,
+               objective_type,
+               objective_sort,
+               decision_weight
+        FROM agent_objectives
+        WHERE agent IN (SELECT id FROM agents WHERE sector = ?)
+        ORDER BY name
+        """,
+        [sector],
+    ).fetchdf()
+
+    # Assemble result
+    result: list[dict] = []
+    for _, row in agents_df.iterrows():
+        agent_name = row["name"]
+        agent_objectives = objectives_df[objectives_df["name"] == agent_name]
+
+        # Objectives list: in legacy, these are strings like 'LCOE'
+        objectives = agent_objectives["objective_type"].tolist()
+
+        # Decision parameters: tuples of
+        # (objective_type, objective_sort, decision_weight)
+        decision_params = list(
+            zip(
+                agent_objectives["objective_type"].tolist(),
+                agent_objectives["objective_sort"].tolist(),
+                agent_objectives["decision_weight"].tolist(),
+            )
+        )
+
+        agent_dict = {
+            "name": agent_name,
+            "region": row["region"],
+            "objectives": objectives,
+            "search_rules": row["search_rule"],
+            "decision": {"name": row["decision_rule"], "parameters": decision_params},
+            "quantity": row["quantity"],
+        }
+        result.append(agent_dict)
+
+    return result
