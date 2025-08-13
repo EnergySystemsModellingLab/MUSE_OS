@@ -117,3 +117,15 @@ def test_read_assets_csv(con):
     assert next(iter(data["region"])) == "R1"
     assert next(iter(data["commission_year"])) == 1995
     assert next(iter(data["capacity"])) == approx(7.5)
+
+
+def test_process_global_commodities(con):
+    from muse.new_input.readers import process_global_commodities
+
+    process_global_commodities(con)
+
+
+def test_process_technodictionary(con):
+    from muse.new_input.readers import process_technodictionary
+
+    process_technodictionary(con, sector="power")

@@ -1,4 +1,10 @@
 import duckdb
+import xarray as xr
+
+from muse.readers.csv import (
+    create_multiindex,
+    create_xarray_dataset,
+)
 
 
 def read_inputs(data_dir) -> duckdb.DuckDBPyConnection:
@@ -275,3 +281,59 @@ def read_assets_csv(buffer_, con):
         FROM rel;
         """
     )
+
+
+def process_global_commodities(con: duckdb.DuckDBPyConnection) -> xr.Dataset:
+    """Create an xarray Dataset of global commodities from the `commodities` table."""
+    df = con.sql(
+        """
+        SELECT
+          id AS commodity,
+          type AS commodity_type,
+          unit
+        FROM commodities
+        """
+    ).df()
+
+    df.index = df["commodity"]
+    df = df.drop(columns=["commodity"])
+    df.index.name = "commodity"
+    return create_xarray_dataset(df)
+
+
+def process_technodictionary(con: duckdb.DuckDBPyConnection, sector: str) -> xr.Dataset:
+    """Create an xarray Dataset analogous to technodictionary from DB tables.
+
+    Uses `processes` and `process_parameters` to build variables over
+    dimensions (technology, region, year).
+    """
+    df = con.execute(
+        """
+            SELECT
+              p.id AS technology,
+              pp.region,
+              pp.year,
+              pp.cap_par,
+              pp.fix_par,
+              pp.var_par,
+              pp.max_capacity_addition,
+              pp.max_capacity_growth,
+              pp.total_capacity_limit,
+              pp.lifetime AS technical_life,
+              pp.discount_rate AS interest_rate
+            FROM process_parameters pp
+            JOIN processes p ON p.id = pp.process
+            WHERE p.sector = ?
+            """,
+        [sector],
+    ).fetchdf()
+
+    df = create_multiindex(
+        df,
+        index_columns=["technology", "region", "year"],
+        index_names=["technology", "region", "year"],
+        drop_columns=True,
+    )
+
+    result = create_xarray_dataset(df)
+    return result
