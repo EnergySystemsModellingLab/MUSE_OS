@@ -1,20 +1,17 @@
 import duckdb
-import numpy as np
-import xarray as xr
 
 
-def read_inputs(data_dir):
-    data = {}
+def read_inputs(data_dir) -> duckdb.DuckDBPyConnection:
     con = duckdb.connect(":memory:")
 
     with open(data_dir / "time_slices.csv") as f:
         _time_slices = read_time_slices_csv(f, con)
 
-    with open(data_dir / "commodities.csv") as f:
-        commodities = read_commodities_csv(f, con)
-
     with open(data_dir / "regions.csv") as f:
         _regions = read_regions_csv(f, con)
+
+    with open(data_dir / "commodities.csv") as f:
+        _commodities = read_commodities_csv(f, con)
 
     with open(data_dir / "commodity_costs.csv") as f:
         _commodity_costs = read_commodity_costs_csv(f, con)
@@ -25,8 +22,7 @@ def read_inputs(data_dir):
     with open(data_dir / "demand_slicing.csv") as f:
         _demand_slicing = read_demand_slicing_csv(f, con)
 
-    data["global_commodities"] = calculate_global_commodities(commodities)
-    return data
+    return con
 
 
 def read_time_slices_csv(buffer_, con):
@@ -128,20 +124,3 @@ def read_demand_slicing_csv(buffer_, con):
     con.sql("""INSERT INTO demand_slicing SELECT
             commodity_id, region_id, time_slice, fraction FROM rel;""")
     return con.sql("SELECT * from demand_slicing").fetchnumpy()
-
-
-def calculate_global_commodities(commodities):
-    names = commodities["id"].astype(np.dtype("str"))
-    types = commodities["type"].astype(np.dtype("str"))
-    units = commodities["unit"].astype(np.dtype("str"))
-
-    type_array = xr.DataArray(
-        data=types, dims=["commodity"], coords=dict(commodity=names)
-    )
-
-    unit_array = xr.DataArray(
-        data=units, dims=["commodity"], coords=dict(commodity=names)
-    )
-
-    data = xr.Dataset(data_vars=dict(type=type_array, unit=unit_array))
-    return data
