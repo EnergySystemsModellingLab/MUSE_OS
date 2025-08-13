@@ -4,6 +4,15 @@ import xarray as xr
 
 from muse.readers.csv import create_assets, create_multiindex, create_xarray_dataset
 
+# Global mapping from dimension name to (source_table, source_column)
+DIM_TO_SOURCE: dict[str, tuple[str, str]] = {
+    "process": ("processes", "id"),
+    "commodity": ("commodities", "id"),
+    "region": ("regions", "id"),
+    "year": ("years", "year"),
+    "time_slice": ("time_slices", "id"),
+}
+
 
 def expand_years(source_relation: str = "rel") -> str:
     """Return a composable SQL that expands 'year' over 'all' or semicolon lists."""
@@ -55,157 +64,152 @@ def expand_time_slices(source_relation: str = "rel") -> str:
     """
 
 
-def check_years_for_region_commodity(con: duckdb.DuckDBPyConnection, table) -> None:
-    """Validate that commodities present have data for all regions/years.
+def validate_present_full_dim_coverage(
+    con: duckdb.DuckDBPyConnection,
+    table: str,
+    present_cols: list[str],
+    dims: list[str],
+    error_message: str,
+) -> None:
+    """Ensure that for each present entity (present_cols), all dims combos exist.
 
-    Raises ValueError if any (commodity, region, year) combination is missing.
+    The target table must use these exact column names.
     """
+    for d in dims:
+        if d not in DIM_TO_SOURCE:
+            raise ValueError(f"Unsupported dim: {d}")
+
+    present_cols_csv = ", ".join(present_cols)
+    select_present = f"SELECT DISTINCT {present_cols_csv} FROM {table}"
+
+    fg_parts = [f"p.{c} AS {c}" for c in present_cols]
+    cross_joins = []
+    for d in dims:
+        src_table, src_col = DIM_TO_SOURCE[d]
+        alias = f"{d[0]}src"
+        fg_parts.append(f"{alias}.{src_col} AS {d}")
+        cross_joins.append(f"CROSS JOIN {src_table} {alias}")
+    fg_select = ", ".join(fg_parts)
+    cross_join_sql = "\n      ".join(cross_joins)
+
+    join_keys = " AND ".join([f"t.{c} = fg.{c}" for c in present_cols + dims])
+    null_check_col = present_cols[0]
+
     query = f"""
-    WITH present_commodities AS (
-      SELECT DISTINCT commodity AS commodity FROM {table}
+    WITH present AS (
+      {select_present}
     ),
     full_grid AS (
-      SELECT pc.commodity, r.id AS region, y.year AS year
-      FROM present_commodities pc
-      CROSS JOIN regions r
-      CROSS JOIN years y
+      SELECT {fg_select}
+      FROM present p
+      {cross_join_sql}
     )
     SELECT COUNT(*) AS missing_count
     FROM full_grid fg
     LEFT JOIN {table} t
-      ON t.commodity = fg.commodity
-     AND t.region = fg.region
-     AND t.year = fg.year
-    WHERE t.commodity IS NULL
+      ON {join_keys}
+    WHERE t.{null_check_col} IS NULL
     """
     missing_count = con.execute(query).fetchone()[0]
     if missing_count:
-        raise ValueError(
-            "commodity_costs must include all regions/years for any mentioned commodity"
-        )
+        raise ValueError(error_message)
 
 
-def fill_missing_commodity_region_year(
-    con: duckdb.DuckDBPyConnection, table: str, value_column: str, fill_value: float
+def validate_full_coverage(
+    con: duckdb.DuckDBPyConnection, table: str, dims: list[str]
 ) -> None:
-    """Insert fill_value for any missing (commodity, region, year) combinations.
+    """Validate that all combinations across dims exist in table."""
+    for d in dims:
+        if d not in DIM_TO_SOURCE:
+            raise ValueError(f"Unsupported dim: {d}")
 
-    Builds the full grid from tables `commodities`, `regions`, and `years` and
-    inserts rows only where the given table lacks a record. Existing rows are
-    not modified.
+    # Build full grid FROM and CROSS JOINs over all dims
+    select_parts = []
+    from_and_joins = []
+    first = True
+    for d in dims:
+        src_table, src_col = DIM_TO_SOURCE[d]
+        alias = f"{d[0]}src"
+        select_parts.append(f"{alias}.{src_col} AS {d}")
+        if first:
+            from_and_joins.append(f"FROM {src_table} {alias}")
+            first = False
+        else:
+            from_and_joins.append(f"CROSS JOIN {src_table} {alias}")
+
+    full_select_cols = ", ".join(select_parts)
+    from_clause_sql = "\n      ".join(from_and_joins)
+    join_keys = " AND ".join([f"t.{d} = fg.{d}" for d in dims])
+    first_dim = dims[0]
+
+    query = f"""
+    WITH full_grid AS (
+      SELECT {full_select_cols}
+      {from_clause_sql}
+    )
+    SELECT COUNT(*) AS missing_count
+    FROM full_grid fg
+    LEFT JOIN {table} t ON {join_keys}
+    WHERE t.{first_dim} IS NULL
     """
+    missing_count = con.execute(query).fetchone()[0]
+    if missing_count:
+        raise ValueError("Missing required combinations across dims")
+
+
+def fill_missing_dim_combinations(
+    con: duckdb.DuckDBPyConnection,
+    table: str,
+    dims: list[str],
+    value_column: str,
+    fill_value: float,
+) -> None:
+    """Insert fill_value for any missing combinations across the given dims.
+
+    The target table must use these exact column names for the dims.
+    """
+    for d in dims:
+        if d not in DIM_TO_SOURCE:
+            raise ValueError(f"Unsupported dim: {d}")
+
+    # Build full grid anchored on present values of the first dim (e.g., commodity)
+    present_key = dims[0]
+    present_cte = f"SELECT DISTINCT {present_key} FROM {table}"
+
+    select_parts = [f"p.{present_key} AS {present_key}"]
+    from_and_joins = [f"FROM ({present_cte}) p"]
+    for d in dims[1:]:
+        src_table, src_col = DIM_TO_SOURCE[d]
+        alias = f"{d[0]}src"
+        select_parts.append(f"{alias}.{src_col} AS {d}")
+        from_and_joins.append(f"CROSS JOIN {src_table} {alias}")
+    full_select_cols = ", ".join(select_parts)
+    from_clause_sql = "\n          ".join(from_and_joins)
+
+    # Build join keys to detect missing rows
+    join_keys = " AND ".join([f"t.{d} = fg.{d}" for d in dims])
+    insert_cols_csv = ", ".join([*dims, value_column])
+    select_cols_missing = ", ".join([f"fg.{d}" for d in dims])
+    select_cols_plain = ", ".join(dims)
+
     con.execute(
         f"""
         WITH full_grid AS (
-          SELECT c.id AS commodity, r.id AS region, y.year AS year
-          FROM commodities c
-          CROSS JOIN regions r
-          CROSS JOIN years y
+          SELECT {full_select_cols}
+          {from_clause_sql}
         ),
         missing AS (
-          SELECT fg.commodity, fg.region, fg.year
+          SELECT {select_cols_missing}
           FROM full_grid fg
-          LEFT JOIN {table} t
-            ON t.commodity = fg.commodity
-           AND t.region = fg.region
-           AND t.year = fg.year
-          WHERE t.commodity IS NULL
+          LEFT JOIN {table} t ON {join_keys}
+          WHERE t.{present_key} IS NULL
         )
-        INSERT INTO {table} (commodity, region, year, {value_column})
-        SELECT commodity, region, year, ? AS {value_column}
+        INSERT INTO {table} ({insert_cols_csv})
+        SELECT {select_cols_plain}, ? AS {value_column}
         FROM missing
         """,
         [fill_value],
     )
-
-
-def check_process_region_year_coverage(
-    con: duckdb.DuckDBPyConnection, table: str
-) -> None:
-    """Validate that all combinations of process/region/year exist in table.
-
-    Raises ValueError if any (process, region, year) combination is missing.
-    """
-    query = f"""
-    WITH full_grid AS (
-      SELECT p.id AS process, r.id AS region, y.year AS year
-      FROM processes p
-      CROSS JOIN regions r
-      CROSS JOIN years y
-    )
-    SELECT COUNT(*) AS missing_count
-    FROM full_grid fg
-    LEFT JOIN {table} t
-      ON t.process = fg.process
-     AND t.region = fg.region
-     AND t.year = fg.year
-    WHERE t.process IS NULL
-    """
-    missing_count = con.execute(query).fetchone()[0]
-    if missing_count:
-        raise ValueError(
-            "process_parameters must include all combinations of process/region/year"
-        )
-
-
-def ensure_agents_region_sector_coverage(
-    con: duckdb.DuckDBPyConnection, table: str = "agents"
-) -> None:
-    """Validate there is at least one agent for every (region, sector)."""
-    query = f"""
-    WITH full_grid AS (
-      SELECT r.id AS region, s.id AS sector
-      FROM regions r
-      CROSS JOIN sectors s
-    ),
-    present AS (
-      SELECT DISTINCT region, sector FROM {table}
-    )
-    SELECT COUNT(*) AS missing_count
-    FROM full_grid fg
-    LEFT JOIN present p
-      ON p.region = fg.region AND p.sector = fg.sector
-    WHERE p.region IS NULL
-    """
-    missing_count = con.execute(query).fetchone()[0]
-    if missing_count:
-        raise ValueError("agents must include at least one agent per (region, sector)")
-
-
-def ensure_full_process_commodity_region_year(
-    con: duckdb.DuckDBPyConnection, table: str = "process_flows"
-) -> None:
-    """Validate that each present (process, commodity) has all (region, year).
-
-    Raises ValueError if any required combinations are missing.
-    """
-    query = f"""
-    WITH present AS (
-      SELECT DISTINCT process, commodity FROM {table}
-    ),
-    full_grid AS (
-      SELECT p.process, p.commodity, r.id AS region, y.year AS year
-      FROM present p
-      CROSS JOIN regions r
-      CROSS JOIN years y
-    ),
-    missing AS (
-      SELECT fg.process, fg.commodity, fg.region, fg.year
-      FROM full_grid fg
-      LEFT JOIN {table} t
-        ON t.process = fg.process
-       AND t.commodity = fg.commodity
-       AND t.region = fg.region
-       AND t.year = fg.year
-      WHERE t.process IS NULL
-    )
-    SELECT COUNT(*) AS missing_count FROM missing
-    """
-    missing_count = con.execute(query).fetchone()[0]
-    if missing_count:
-        raise ValueError(
-            "process_flows must include all regions/years for any present (process, commodity)"  # noqa: E501
-        )
 
 
 def read_inputs(data_dir, years: list[int]) -> duckdb.DuckDBPyConnection:
@@ -323,11 +327,23 @@ def read_commodity_costs_csv(buffer_, con):
     )
 
     # Validate coverage
-    check_years_for_region_commodity(con, table="commodity_costs")
+    validate_present_full_dim_coverage(
+        con,
+        table="commodity_costs",
+        present_cols=["commodity"],
+        dims=["region", "year"],
+        error_message=(
+            "commodity_costs must include all regions/years for any mentioned commodity"
+        ),
+    )
 
     # Insert data for missing commodities
-    fill_missing_commodity_region_year(
-        con, table="commodity_costs", value_column="value", fill_value=0.0
+    fill_missing_dim_combinations(
+        con,
+        table="commodity_costs",
+        dims=["commodity", "region", "year"],
+        value_column="value",
+        fill_value=0.0,
     )
 
 
@@ -345,11 +361,23 @@ def read_demand_csv(buffer_, con):
     con.sql("INSERT INTO demand SELECT commodity_id, region_id, year, demand FROM rel;")
 
     # Validate coverage
-    check_years_for_region_commodity(con, table="demand")
+    validate_present_full_dim_coverage(
+        con,
+        table="demand",
+        present_cols=["commodity"],
+        dims=["region", "year"],
+        error_message=(
+            "commodity_costs must include all regions/years for any mentioned commodity"
+        ),
+    )
 
     # Insert data for missing commodities
-    fill_missing_commodity_region_year(
-        con, table="demand", value_column="demand", fill_value=0.0
+    fill_missing_dim_combinations(
+        con,
+        table="demand",
+        dims=["commodity", "region", "year"],
+        value_column="demand",
+        fill_value=0.0,
     )
 
 
@@ -425,7 +453,9 @@ def read_process_parameters_csv(buffer_, con):
     )
 
     # Validate coverage
-    check_process_region_year_coverage(con, table="process_parameters")
+    validate_full_coverage(
+        con, table="process_parameters", dims=["process", "region", "year"]
+    )
 
 
 def read_process_flows_csv(buffer_, con):
@@ -456,7 +486,15 @@ def read_process_flows_csv(buffer_, con):
     )
 
     # Validate coverage
-    ensure_full_process_commodity_region_year(con)
+    validate_present_full_dim_coverage(
+        con,
+        table="process_flows",
+        present_cols=["process", "commodity"],
+        dims=["region", "year"],
+        error_message=(
+            "process_flows must include all regions/years for any present (process, commodity)"  # noqa: E501
+        ),
+    )
 
 
 def read_process_availabilities_csv(buffer_, con):
@@ -517,6 +555,30 @@ def read_agents_csv(buffer_, con):
 
     # Validate coverage across region/sector
     ensure_agents_region_sector_coverage(con)
+
+
+def ensure_agents_region_sector_coverage(
+    con: duckdb.DuckDBPyConnection, table: str = "agents"
+) -> None:
+    """Validate there is at least one agent for every (region, sector)."""
+    query = f"""
+    WITH full_grid AS (
+      SELECT r.id AS region, s.id AS sector
+      FROM regions r
+      CROSS JOIN sectors s
+    ),
+    present AS (
+      SELECT DISTINCT region, sector FROM {table}
+    )
+    SELECT COUNT(*) AS missing_count
+    FROM full_grid fg
+    LEFT JOIN present p
+      ON p.region = fg.region AND p.sector = fg.sector
+    WHERE p.region IS NULL
+    """
+    missing_count = con.execute(query).fetchone()[0]
+    if missing_count:
+        raise ValueError("agents must include at least one agent per (region, sector)")
 
 
 def read_agent_objectives_csv(buffer_, con):
