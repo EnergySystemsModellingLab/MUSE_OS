@@ -1,5 +1,3 @@
-import uuid
-
 import duckdb
 import pandas as pd
 import xarray as xr
@@ -80,28 +78,12 @@ def expand_time_slices(source_relation: str = "rel") -> str:
 
 
 def chain_expanders(source: str, *expanders) -> str:
-    """Compose multiple expander functions over a source relation name/SQL."""
+    """Compose expander SQLs and return a FROM-ready subquery alias."""
     sql = source
     for i, expander in enumerate(expanders):
         src = sql if i == 0 else f"({sql})"
         sql = expander(source_relation=src)
-    return sql
-
-
-def insert_from_csv(
-    con: duckdb.DuckDBPyConnection,
-    buffer_,
-    insert_into: str,
-    select_sql: str,
-    expanders: tuple = (),
-) -> None:
-    """Standardize: CSV -> unique temp view -> optional expanders -> INSERT."""
-    view_name = f"rel_{uuid.uuid4().hex}"
-    rel = con.read_csv(buffer_, header=True, delimiter=",")
-    rel.create(view_name)
-    src_sql = chain_expanders(view_name, *expanders) if expanders else view_name
-    wrapped_src = src_sql if not expanders else f"({src_sql}) AS unioned"
-    con.sql(f"INSERT INTO {insert_into} {select_sql.format(src=wrapped_src)}")
+    return f"({sql})"
 
 
 def validate_coverage(
@@ -243,11 +225,9 @@ def read_time_slices_csv(buffer_, con):
     """
     con.sql(sql)
 
-    # Read CSV into a temporary relation
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-
-    # Insert into the table with computed id
-    con.sql("""
+    con.sql(
+        """
         INSERT INTO time_slices
         SELECT
             season || '.' || day || '.' || time_of_day AS id,
@@ -256,7 +236,8 @@ def read_time_slices_csv(buffer_, con):
             time_of_day,
             fraction
         FROM rel
-    """)
+        """
+    )
 
 
 def read_commodities_csv(buffer_, con):
@@ -301,12 +282,14 @@ def read_commodity_costs_csv(buffer_, con):
     );
     """
     con.sql(sql)
-    insert_from_csv(
-        con,
-        buffer_,
-        "commodity_costs(commodity, region, year, value)",
-        "SELECT commodity_id, region_id, year, value FROM {src}",
-        expanders=(expand_years, expand_regions),
+    rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
+    expansion_sql = chain_expanders("rel", expand_years, expand_regions)
+    con.sql(
+        f"""
+        INSERT INTO commodity_costs
+        SELECT commodity_id, region_id, year, value
+        FROM {expansion_sql};
+        """
     )
 
     # Validate coverage
@@ -337,12 +320,8 @@ def read_demand_csv(buffer_, con):
     );
     """
     con.sql(sql)
-    insert_from_csv(
-        con,
-        buffer_,
-        "demand(commodity, region, year, demand)",
-        "SELECT commodity_id, region_id, year, demand FROM {src}",
-    )
+    rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
+    con.sql("INSERT INTO demand SELECT commodity_id, region_id, year, demand FROM rel;")
 
     # Validate coverage
     validate_coverage(
@@ -372,12 +351,14 @@ def read_demand_slicing_csv(buffer_, con):
     );
     """
     con.sql(sql)
-    insert_from_csv(
-        con,
-        buffer_,
-        "demand_slicing(commodity, region, time_slice, fraction)",
-        "SELECT commodity_id, region_id, time_slice, fraction FROM {src}",
-        expanders=(expand_regions, expand_time_slices),
+    rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
+    expansion_sql = chain_expanders("rel", expand_regions, expand_time_slices)
+    con.sql(
+        f"""
+        INSERT INTO demand_slicing SELECT
+            commodity_id, region_id, time_slice, fraction
+        FROM {expansion_sql};
+        """
     )
 
 
@@ -409,18 +390,11 @@ def read_process_parameters_csv(buffer_, con):
     );
     """
     con.sql(sql)
-    insert_from_csv(
-        con,
-        buffer_,
-        (
-            "process_parameters("
-            "process, region, year, cap_par, fix_par, var_par, "
-            "max_capacity_addition, max_capacity_growth, total_capacity_limit, "
-            "lifetime, discount_rate)"
-        ),
-        (
-            """
-        SELECT
+    rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
+    expansion_sql = chain_expanders("rel", expand_years, expand_regions)
+    con.sql(
+        f"""
+        INSERT INTO process_parameters SELECT
           process_id,
           region_id,
           year,
@@ -432,10 +406,8 @@ def read_process_parameters_csv(buffer_, con):
           total_capacity_limit,
           lifetime,
           discount_rate
-        FROM {src}
-            """
-        ),
-        expanders=(expand_years, expand_regions),
+        FROM {expansion_sql};
+        """
     )
 
     # Validate coverage
@@ -456,21 +428,19 @@ def read_process_flows_csv(buffer_, con):
     );
     """
     con.sql(sql)
-    insert_from_csv(
-        con,
-        buffer_,
-        "process_flows(process, commodity, region, year, input_coeff, output_coeff)",
-        """
-        SELECT
+    rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
+    expansion_sql = chain_expanders("rel", expand_years, expand_regions)
+    con.sql(
+        f"""
+        INSERT INTO process_flows SELECT
           process_id,
           commodity_id,
           region_id,
           year,
-          CASE WHEN coeff < 0 THEN -coeff ELSE 0 END,
-          CASE WHEN coeff > 0 THEN  coeff ELSE 0 END
-        FROM {src}
-        """,
-        expanders=(expand_years, expand_regions),
+          CASE WHEN coeff < 0 THEN -coeff ELSE 0 END AS input_coeff,
+          CASE WHEN coeff > 0 THEN coeff ELSE 0 END AS output_coeff
+        FROM {expansion_sql};
+        """
     )
 
     # Validate coverage
@@ -494,21 +464,21 @@ def read_process_availabilities_csv(buffer_, con):
     );
     """
     con.sql(sql)
-    insert_from_csv(
-        con,
-        buffer_,
-        "process_availabilities(process, region, year, time_slice, limit_type, value)",
-        """
-        SELECT
+    rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
+    expansion_sql = chain_expanders(
+        "rel", expand_years, expand_regions, expand_time_slices
+    )
+    con.sql(
+        f"""
+        INSERT INTO process_availabilities SELECT
           process_id,
           region_id,
           year,
           time_slice,
           limit_type,
           value
-        FROM {src}
-        """,
-        expanders=(expand_years, expand_regions, expand_time_slices),
+        FROM {expansion_sql};
+        """
     )
 
 
