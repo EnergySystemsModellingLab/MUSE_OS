@@ -1,3 +1,5 @@
+import uuid
+
 import duckdb
 import pandas as pd
 import xarray as xr
@@ -14,91 +16,130 @@ DIM_TO_SOURCE: dict[str, tuple[str, str]] = {
 }
 
 
-def expand_years(source_relation: str = "rel") -> str:
-    """Return a composable SQL that expands 'year' over 'all' or semicolon lists."""
+def _expand_list_or_all(
+    col: str,
+    *,
+    domain_table: str,
+    domain_col: str,
+    source_relation: str = "rel",
+) -> str:
+    """Return composable SQL that expands a column over 'all' or ';'-lists.
+
+    - For scalar values (not 'all' and no ';'), rows are passed through.
+    - For lists, rows are duplicated for each trimmed item.
+    - For 'all', rows are joined to the full domain table; value comes from
+      `domain_table.domain_col`.
+    """
+    col_text = f"CAST(s.{col} AS VARCHAR)"
+
     return f"""
-    SELECT s.* REPLACE (CAST(s.year AS BIGINT) AS year)
+    SELECT s.* REPLACE (s.{col} AS {col})
     FROM {source_relation} s
-    WHERE lower(CAST(s.year AS VARCHAR)) <> 'all' AND POSITION(';' IN CAST(s.year AS VARCHAR)) = 0
+    WHERE lower({col_text}) <> 'all'
+      AND POSITION(';' IN {col_text}) = 0
     UNION ALL
-    SELECT s.* REPLACE (CAST(TRIM(item) AS BIGINT) AS year)
+    SELECT s.* REPLACE (TRIM(item) AS {col})
     FROM {source_relation} s
-    CROSS JOIN UNNEST(str_split(CAST(s.year AS VARCHAR), ';')) AS t(item)
-    WHERE POSITION(';' IN CAST(s.year AS VARCHAR)) > 0
+    CROSS JOIN UNNEST(str_split({col_text}, ';')) AS t(item)
+    WHERE POSITION(';' IN {col_text}) > 0
     UNION ALL
-    SELECT s.* REPLACE (y.year AS year)
+    SELECT s.* REPLACE (d.{domain_col} AS {col})
     FROM {source_relation} s
-    CROSS JOIN years y
-    WHERE lower(CAST(s.year AS VARCHAR)) = 'all'
-    """  # noqa: E501
-
-
-def expand_regions(source_relation: str = "rel") -> str:
-    """Return a composable SQL that expands 'region_id' over 'all' or lists."""
-    return f"""
-    SELECT s.*
-    FROM {source_relation} s
-    WHERE lower(CAST(s.region_id AS VARCHAR)) <> 'all' AND POSITION(';' IN CAST(s.region_id AS VARCHAR)) = 0
-    UNION ALL
-    SELECT s.* REPLACE (TRIM(item) AS region_id)
-    FROM {source_relation} s
-    CROSS JOIN UNNEST(str_split(CAST(s.region_id AS VARCHAR), ';')) AS t(item)
-    WHERE POSITION(';' IN CAST(s.region_id AS VARCHAR)) > 0
-    UNION ALL
-    SELECT s.* REPLACE (r.id AS region_id)
-    FROM {source_relation} s
-    JOIN regions r ON lower(CAST(s.region_id AS VARCHAR)) = 'all'
-    """  # noqa: E501
-
-
-def expand_time_slices(source_relation: str = "rel") -> str:
-    """Return a composable SQL that expands 'time_slice' over 'annual'."""
-    return f"""
-    SELECT s.*
-    FROM {source_relation} s
-    WHERE lower(CAST(s.time_slice AS VARCHAR)) <> 'annual'
-    UNION ALL
-    SELECT s.* REPLACE (t.id AS time_slice)
-    FROM {source_relation} s
-    JOIN time_slices t ON lower(CAST(s.time_slice AS VARCHAR)) = 'annual'
+    JOIN {domain_table} d ON lower({col_text}) = 'all'
     """
 
 
-def validate_full_coverage_for_present(
+def expand_years(source_relation: str = "rel") -> str:
+    """Expand `year` over 'all' and ';'-lists."""
+    return _expand_list_or_all(
+        "year",
+        domain_table="years",
+        domain_col="year",
+        source_relation=source_relation,
+    )
+
+
+def expand_regions(source_relation: str = "rel") -> str:
+    """Expand `region_id` over 'all' and ';'-lists."""
+    return _expand_list_or_all(
+        "region_id",
+        domain_table="regions",
+        domain_col="id",
+        source_relation=source_relation,
+    )
+
+
+def expand_time_slices(source_relation: str = "rel") -> str:
+    """Expand `time_slice` over 'all' and ';'-lists."""
+    return _expand_list_or_all(
+        "time_slice",
+        domain_table="time_slices",
+        domain_col="id",
+        source_relation=source_relation,
+    )
+
+
+def chain_expanders(source: str, *expanders) -> str:
+    """Compose multiple expander functions over a source relation name/SQL."""
+    sql = source
+    for i, expander in enumerate(expanders):
+        src = sql if i == 0 else f"({sql})"
+        sql = expander(source_relation=src)
+    return sql
+
+
+def insert_from_csv(
+    con: duckdb.DuckDBPyConnection,
+    buffer_,
+    insert_into: str,
+    select_sql: str,
+    expanders: tuple = (),
+) -> None:
+    """Standardize: CSV -> unique temp view -> optional expanders -> INSERT."""
+    view_name = f"rel_{uuid.uuid4().hex}"
+    rel = con.read_csv(buffer_, header=True, delimiter=",")
+    rel.create(view_name)
+    src_sql = chain_expanders(view_name, *expanders) if expanders else view_name
+    wrapped_src = src_sql if not expanders else f"({src_sql}) AS unioned"
+    con.sql(f"INSERT INTO {insert_into} {select_sql.format(src=wrapped_src)}")
+
+
+def validate_coverage(
     con: duckdb.DuckDBPyConnection,
     table: str,
-    present_cols: list[str],
     dims: list[str],
-    error_message: str,
+    present: list[str] | None = None,
 ) -> None:
-    """Ensure that for each present entity (present_cols), all dims combos exist.
+    """Validate that required combinations exist in `table`.
 
-    Generates the cartesian product of present entities crossed with the dim
-    sources and compares to the table using EXCEPT.
+    - If `present` is None: requires full cartesian product across `dims`.
+    - If `present` is provided: for each distinct `present` key in `table`,
+      requires all combinations across `dims`.
     """
     for d in dims:
         if d not in DIM_TO_SOURCE:
             raise ValueError(f"Unsupported dim: {d}")
 
-    present_csv = ", ".join(present_cols)
-    proj = ", ".join([*present_cols, *dims])
+    select_cols: list[str] = []
+    joins: list[str] = []
 
-    # Columns from present set (aliased p.<col>)
-    present_select = [f"p.{c} AS {c}" for c in present_cols]
+    if present:
+        present_csv = ", ".join(present)
+        joins.append(f"(SELECT DISTINCT {present_csv} FROM {table}) p")
+        select_cols.extend([f"p.{c} AS {c}" for c in present])
 
-    # Columns from dimension sources (dim_table.dim_id AS dim_name)
-    dim_cols = [f"{DIM_TO_SOURCE[d][0]}.{DIM_TO_SOURCE[d][1]} AS {d}" for d in dims]
-    cols_sql = ", ".join([*present_select, *dim_cols])
+    for d in dims:
+        src_table, src_col = DIM_TO_SOURCE[d]
+        select_cols.append(f"{src_table}.{src_col} AS {d}")
+        joins.append(src_table)
 
-    # FROM present set then CROSS JOIN each dim source table to get the grid
-    joins = [f"(SELECT DISTINCT {present_csv} FROM {table}) p"]
-    joins += [DIM_TO_SOURCE[d][0] for d in dims]
-    joins_sql = " CROSS JOIN ".join(joins)
+    proj_cols = [*(present or []), *dims]
+    proj = ", ".join(proj_cols)
 
     sql = f"""
     WITH a AS (
-      SELECT {cols_sql}
-      FROM {joins_sql}
+      SELECT {", ".join(select_cols)}
+      FROM {" CROSS JOIN ".join(joins)}
     ),
     missing AS (
       SELECT {proj} FROM a
@@ -108,43 +149,6 @@ def validate_full_coverage_for_present(
     SELECT COUNT(*) FROM missing
     """
     if con.execute(sql).fetchone()[0]:
-        raise ValueError(error_message)
-
-
-def validate_full_coverage(
-    con: duckdb.DuckDBPyConnection, table: str, dims: list[str]
-) -> None:
-    """Validate that all combinations across dims exist in table."""
-    for d in dims:
-        if d not in DIM_TO_SOURCE:
-            raise ValueError(f"Unsupported dim: {d}")
-
-    # Build full grid FROM and CROSS JOINs over all dims in one compact SQL
-    select_cols = []
-    tables = []
-    for d in dims:
-        src_table, src_col = DIM_TO_SOURCE[d]
-        select_cols.append(f"{src_table}.{src_col} AS {d}")
-        tables.append(src_table)
-
-    proj = ", ".join(dims)
-    cols_sql = ", ".join(select_cols)
-    joins_sql = " CROSS JOIN ".join(tables)
-
-    sql = f"""
-    WITH a AS (
-      SELECT {cols_sql}
-      FROM {joins_sql}
-    ),
-    missing AS (
-      SELECT {proj} FROM a
-      EXCEPT
-      SELECT {proj} FROM {table}
-    )
-    SELECT COUNT(*) FROM missing
-    """
-    missing_count = con.execute(sql).fetchone()[0]
-    if missing_count:
         raise ValueError("Missing required combinations across dims")
 
 
@@ -297,27 +301,20 @@ def read_commodity_costs_csv(buffer_, con):
     );
     """
     con.sql(sql)
-    rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    years_sql = expand_years(source_relation="rel")
-    regions_sql = expand_regions(source_relation=f"({years_sql})")
-    expansion_sql = regions_sql
-    con.sql(
-        f"""
-        INSERT INTO commodity_costs
-        SELECT commodity_id, region_id, year, value
-        FROM ({expansion_sql}) AS unioned;
-        """
+    insert_from_csv(
+        con,
+        buffer_,
+        "commodity_costs(commodity, region, year, value)",
+        "SELECT commodity_id, region_id, year, value FROM {src}",
+        expanders=(expand_years, expand_regions),
     )
 
     # Validate coverage
-    validate_full_coverage_for_present(
+    validate_coverage(
         con,
         table="commodity_costs",
-        present_cols=["commodity"],
         dims=["region", "year"],
-        error_message=(
-            "commodity_costs must include all regions/years for any mentioned commodity"
-        ),
+        present=["commodity"],
     )
 
     # Insert data for missing commodities
@@ -340,18 +337,19 @@ def read_demand_csv(buffer_, con):
     );
     """
     con.sql(sql)
-    rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    con.sql("INSERT INTO demand SELECT commodity_id, region_id, year, demand FROM rel;")
+    insert_from_csv(
+        con,
+        buffer_,
+        "demand(commodity, region, year, demand)",
+        "SELECT commodity_id, region_id, year, demand FROM {src}",
+    )
 
     # Validate coverage
-    validate_full_coverage_for_present(
+    validate_coverage(
         con,
         table="demand",
-        present_cols=["commodity"],
         dims=["region", "year"],
-        error_message=(
-            "demand must include all regions/years for any mentioned commodity"
-        ),
+        present=["commodity"],
     )
 
     # Insert data for missing commodities
@@ -374,14 +372,12 @@ def read_demand_slicing_csv(buffer_, con):
     );
     """
     con.sql(sql)
-    rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    regions_sql = expand_regions(source_relation="rel")
-    ts_sql = expand_time_slices(source_relation=f"({regions_sql})")
-    expansion_sql = ts_sql
-    con.sql(
-        f"""INSERT INTO demand_slicing SELECT
-            commodity_id, region_id, time_slice, fraction FROM ({expansion_sql}) AS unioned;
-        """  # noqa: E501
+    insert_from_csv(
+        con,
+        buffer_,
+        "demand_slicing(commodity, region, time_slice, fraction)",
+        "SELECT commodity_id, region_id, time_slice, fraction FROM {src}",
+        expanders=(expand_regions, expand_time_slices),
     )
 
 
@@ -413,13 +409,18 @@ def read_process_parameters_csv(buffer_, con):
     );
     """
     con.sql(sql)
-    rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    years_sql = expand_years(source_relation="rel")
-    regions_sql = expand_regions(source_relation=f"({years_sql})")
-    expansion_sql = regions_sql
-    con.sql(
-        f"""
-        INSERT INTO process_parameters SELECT
+    insert_from_csv(
+        con,
+        buffer_,
+        (
+            "process_parameters("
+            "process, region, year, cap_par, fix_par, var_par, "
+            "max_capacity_addition, max_capacity_growth, total_capacity_limit, "
+            "lifetime, discount_rate)"
+        ),
+        (
+            """
+        SELECT
           process_id,
           region_id,
           year,
@@ -431,12 +432,14 @@ def read_process_parameters_csv(buffer_, con):
           total_capacity_limit,
           lifetime,
           discount_rate
-        FROM ({expansion_sql}) AS unioned;
-        """
+        FROM {src}
+            """
+        ),
+        expanders=(expand_years, expand_regions),
     )
 
     # Validate coverage
-    validate_full_coverage(
+    validate_coverage(
         con, table="process_parameters", dims=["process", "region", "year"]
     )
 
@@ -453,32 +456,29 @@ def read_process_flows_csv(buffer_, con):
     );
     """
     con.sql(sql)
-    rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    years_sql = expand_years(source_relation="rel")
-    regions_sql = expand_regions(source_relation=f"({years_sql})")
-    expansion_sql = regions_sql
-    con.sql(
-        f"""
-        INSERT INTO process_flows SELECT
+    insert_from_csv(
+        con,
+        buffer_,
+        "process_flows(process, commodity, region, year, input_coeff, output_coeff)",
+        """
+        SELECT
           process_id,
           commodity_id,
           region_id,
           year,
-          CASE WHEN coeff < 0 THEN -coeff ELSE 0 END AS input_coeff,
-          CASE WHEN coeff > 0 THEN coeff ELSE 0 END AS output_coeff
-        FROM ({expansion_sql}) AS unioned;
-        """
+          CASE WHEN coeff < 0 THEN -coeff ELSE 0 END,
+          CASE WHEN coeff > 0 THEN  coeff ELSE 0 END
+        FROM {src}
+        """,
+        expanders=(expand_years, expand_regions),
     )
 
     # Validate coverage
-    validate_full_coverage_for_present(
+    validate_coverage(
         con,
         table="process_flows",
-        present_cols=["process", "commodity"],
         dims=["region", "year"],
-        error_message=(
-            "process_flows must include all regions/years for any present (process, commodity)"  # noqa: E501
-        ),
+        present=["process", "commodity"],
     )
 
 
@@ -494,22 +494,21 @@ def read_process_availabilities_csv(buffer_, con):
     );
     """
     con.sql(sql)
-    rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
-    years_sql = expand_years(source_relation="rel")
-    regions_sql = expand_regions(source_relation=f"({years_sql})")
-    ts_sql = expand_time_slices(source_relation=f"({regions_sql})")
-    expansion_sql = ts_sql
-    con.sql(
-        f"""
-        INSERT INTO process_availabilities SELECT
+    insert_from_csv(
+        con,
+        buffer_,
+        "process_availabilities(process, region, year, time_slice, limit_type, value)",
+        """
+        SELECT
           process_id,
           region_id,
           year,
           time_slice,
           limit_type,
           value
-        FROM ({expansion_sql}) AS unioned;
-        """
+        FROM {src}
+        """,
+        expanders=(expand_years, expand_regions, expand_time_slices),
     )
 
 
@@ -726,72 +725,48 @@ def process_initial_market(con: duckdb.DuckDBPyConnection, currency: str) -> xr.
 
 
 def process_agent_parameters(con: duckdb.DuckDBPyConnection, sector: str) -> list[dict]:
-    """Create a list of agent dictionaries for a sector from DB tables.
-
-    The result matches the structure returned by the legacy CSV-based
-    process_agent_parameters, but only includes the required fields:
-    - name, region, objectives, search_rules, decision, quantity
-
-    The following legacy fields are intentionally omitted: agent_type,
-    share, maturity_threshold, spend_limit.
-    """
-    # Gather agent base data for the sector
-    agents_df = con.execute(
+    """Create a list of agent dictionaries for a sector from DB tables."""
+    df = con.execute(
         """
-        SELECT id AS name,
-               region AS region,
-               search_rule,
-               decision_rule,
-               quantity
-        FROM agents
-        WHERE sector = ?
+        SELECT
+          a.id AS name,
+          a.region AS region,
+          a.search_rule,
+          a.decision_rule,
+          a.quantity,
+          LIST(o.objective_type)
+            FILTER (WHERE o.objective_type IS NOT NULL) AS objectives,
+          LIST(struct_pack(
+            objective_type := o.objective_type,
+            objective_sort := o.objective_sort,
+            decision_weight := o.decision_weight
+          ))
+            FILTER (WHERE o.objective_type IS NOT NULL) AS decision_params
+        FROM agents a
+        LEFT JOIN agent_objectives o ON o.agent = a.id
+        WHERE a.sector = ?
+        GROUP BY 1,2,3,4,5
+        ORDER BY 1
         """,
         [sector],
     ).fetchdf()
 
-    # Gather objectives per agent
-    objectives_df = con.execute(
-        """
-        SELECT agent AS name,
-               objective_type,
-               objective_sort,
-               decision_weight
-        FROM agent_objectives
-        WHERE agent IN (SELECT id FROM agents WHERE sector = ?)
-        ORDER BY name
-        """,
-        [sector],
-    ).fetchdf()
-
-    # Assemble result
     result: list[dict] = []
-    for _, row in agents_df.iterrows():
-        agent_name = row["name"]
-        agent_objectives = objectives_df[objectives_df["name"] == agent_name]
-
-        # Objectives list: in legacy, these are strings like 'LCOE'
-        objectives = agent_objectives["objective_type"].tolist()
-
-        # Decision parameters: tuples of
-        # (objective_type, objective_sort, decision_weight)
-        decision_params = list(
-            zip(
-                agent_objectives["objective_type"].tolist(),
-                agent_objectives["objective_sort"].tolist(),
-                agent_objectives["decision_weight"].tolist(),
-            )
+    for _, r in df.iterrows():
+        params = [
+            (d["objective_type"], d["objective_sort"], d["decision_weight"])  # type: ignore[index]
+            for d in (r["decision_params"] or [])
+        ]
+        result.append(
+            {
+                "name": r["name"],
+                "region": r["region"],
+                "objectives": (r["objectives"] or []),
+                "search_rules": r["search_rule"],
+                "decision": {"name": r["decision_rule"], "parameters": params},
+                "quantity": r["quantity"],
+            }
         )
-
-        agent_dict = {
-            "name": agent_name,
-            "region": row["region"],
-            "objectives": objectives,
-            "search_rules": row["search_rule"],
-            "decision": {"name": row["decision_rule"], "parameters": decision_params},
-            "quantity": row["quantity"],
-        }
-        result.append(agent_dict)
-
     return result
 
 

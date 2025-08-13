@@ -1,4 +1,4 @@
 process_id,region_id,year,time_slice,limit_type,value
-gassupply1,R1,all,annual,up,0.9
-gasCCGT,R1,all,annual,up,0.9
-windturbine,R1,all,annual,up,0.4
+gassupply1,R1,all,all,up,0.9
+gasCCGT,R1,all,all,up,0.9
+windturbine,R1,all,all,up,0.4
