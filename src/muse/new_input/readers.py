@@ -55,6 +55,159 @@ def expand_time_slices(source_relation: str = "rel") -> str:
     """
 
 
+def check_years_for_region_commodity(con: duckdb.DuckDBPyConnection, table) -> None:
+    """Validate that commodities present have data for all regions/years.
+
+    Raises ValueError if any (commodity, region, year) combination is missing.
+    """
+    query = f"""
+    WITH present_commodities AS (
+      SELECT DISTINCT commodity AS commodity FROM {table}
+    ),
+    full_grid AS (
+      SELECT pc.commodity, r.id AS region, y.year AS year
+      FROM present_commodities pc
+      CROSS JOIN regions r
+      CROSS JOIN years y
+    )
+    SELECT COUNT(*) AS missing_count
+    FROM full_grid fg
+    LEFT JOIN {table} t
+      ON t.commodity = fg.commodity
+     AND t.region = fg.region
+     AND t.year = fg.year
+    WHERE t.commodity IS NULL
+    """
+    missing_count = con.execute(query).fetchone()[0]
+    if missing_count:
+        raise ValueError(
+            "commodity_costs must include all regions/years for any mentioned commodity"
+        )
+
+
+def fill_missing_commodity_region_year(
+    con: duckdb.DuckDBPyConnection, table: str, value_column: str, fill_value: float
+) -> None:
+    """Insert fill_value for any missing (commodity, region, year) combinations.
+
+    Builds the full grid from tables `commodities`, `regions`, and `years` and
+    inserts rows only where the given table lacks a record. Existing rows are
+    not modified.
+    """
+    con.execute(
+        f"""
+        WITH full_grid AS (
+          SELECT c.id AS commodity, r.id AS region, y.year AS year
+          FROM commodities c
+          CROSS JOIN regions r
+          CROSS JOIN years y
+        ),
+        missing AS (
+          SELECT fg.commodity, fg.region, fg.year
+          FROM full_grid fg
+          LEFT JOIN {table} t
+            ON t.commodity = fg.commodity
+           AND t.region = fg.region
+           AND t.year = fg.year
+          WHERE t.commodity IS NULL
+        )
+        INSERT INTO {table} (commodity, region, year, {value_column})
+        SELECT commodity, region, year, ? AS {value_column}
+        FROM missing
+        """,
+        [fill_value],
+    )
+
+
+def check_process_region_year_coverage(
+    con: duckdb.DuckDBPyConnection, table: str
+) -> None:
+    """Validate that all combinations of process/region/year exist in table.
+
+    Raises ValueError if any (process, region, year) combination is missing.
+    """
+    query = f"""
+    WITH full_grid AS (
+      SELECT p.id AS process, r.id AS region, y.year AS year
+      FROM processes p
+      CROSS JOIN regions r
+      CROSS JOIN years y
+    )
+    SELECT COUNT(*) AS missing_count
+    FROM full_grid fg
+    LEFT JOIN {table} t
+      ON t.process = fg.process
+     AND t.region = fg.region
+     AND t.year = fg.year
+    WHERE t.process IS NULL
+    """
+    missing_count = con.execute(query).fetchone()[0]
+    if missing_count:
+        raise ValueError(
+            "process_parameters must include all combinations of process/region/year"
+        )
+
+
+def ensure_agents_region_sector_coverage(
+    con: duckdb.DuckDBPyConnection, table: str = "agents"
+) -> None:
+    """Validate there is at least one agent for every (region, sector)."""
+    query = f"""
+    WITH full_grid AS (
+      SELECT r.id AS region, s.id AS sector
+      FROM regions r
+      CROSS JOIN sectors s
+    ),
+    present AS (
+      SELECT DISTINCT region, sector FROM {table}
+    )
+    SELECT COUNT(*) AS missing_count
+    FROM full_grid fg
+    LEFT JOIN present p
+      ON p.region = fg.region AND p.sector = fg.sector
+    WHERE p.region IS NULL
+    """
+    missing_count = con.execute(query).fetchone()[0]
+    if missing_count:
+        raise ValueError("agents must include at least one agent per (region, sector)")
+
+
+def ensure_full_process_commodity_region_year(
+    con: duckdb.DuckDBPyConnection, table: str = "process_flows"
+) -> None:
+    """Validate that each present (process, commodity) has all (region, year).
+
+    Raises ValueError if any required combinations are missing.
+    """
+    query = f"""
+    WITH present AS (
+      SELECT DISTINCT process, commodity FROM {table}
+    ),
+    full_grid AS (
+      SELECT p.process, p.commodity, r.id AS region, y.year AS year
+      FROM present p
+      CROSS JOIN regions r
+      CROSS JOIN years y
+    ),
+    missing AS (
+      SELECT fg.process, fg.commodity, fg.region, fg.year
+      FROM full_grid fg
+      LEFT JOIN {table} t
+        ON t.process = fg.process
+       AND t.commodity = fg.commodity
+       AND t.region = fg.region
+       AND t.year = fg.year
+      WHERE t.process IS NULL
+    )
+    SELECT COUNT(*) AS missing_count FROM missing
+    """
+    missing_count = con.execute(query).fetchone()[0]
+    if missing_count:
+        raise ValueError(
+            "process_flows must include all regions/years for any present (process, commodity)"  # noqa: E501
+        )
+
+
 def read_inputs(data_dir, years: list[int]) -> duckdb.DuckDBPyConnection:
     con = duckdb.connect(":memory:")
     insert_years(con, years)
@@ -161,9 +314,19 @@ def read_commodity_costs_csv(buffer_, con):
     regions_sql = expand_regions(source_relation=f"({years_sql})")
     expansion_sql = regions_sql
     con.sql(
-        f"""INSERT INTO commodity_costs SELECT
-            commodity_id, region_id, year, value FROM ({expansion_sql}) AS unioned;
+        f"""
+        INSERT INTO commodity_costs
+        SELECT commodity_id, region_id, year, value
+        FROM ({expansion_sql}) AS unioned;
         """
+    )
+
+    # Validate coverage
+    check_years_for_region_commodity(con, table="commodity_costs")
+
+    # Insert data for missing commodities
+    fill_missing_commodity_region_year(
+        con, table="commodity_costs", value_column="value", fill_value=0.0
     )
 
 
@@ -179,6 +342,14 @@ def read_demand_csv(buffer_, con):
     con.sql(sql)
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
     con.sql("INSERT INTO demand SELECT commodity_id, region_id, year, demand FROM rel;")
+
+    # Validate coverage
+    check_years_for_region_commodity(con, table="demand")
+
+    # Insert data for missing commodities
+    fill_missing_commodity_region_year(
+        con, table="demand", value_column="demand", fill_value=0.0
+    )
 
 
 def read_demand_slicing_csv(buffer_, con):
@@ -252,6 +423,9 @@ def read_process_parameters_csv(buffer_, con):
         """
     )
 
+    # Validate coverage
+    check_process_region_year_coverage(con, table="process_parameters")
+
 
 def read_process_flows_csv(buffer_, con):
     sql = """CREATE TABLE process_flows (
@@ -280,6 +454,9 @@ def read_process_flows_csv(buffer_, con):
         """
     )
 
+    # Validate coverage
+    ensure_full_process_commodity_region_year(con)
+
 
 def read_agents_csv(buffer_, con):
     sql = """CREATE TABLE agents (
@@ -306,6 +483,9 @@ def read_agents_csv(buffer_, con):
         """
     )
 
+    # Validate coverage across region/sector
+    ensure_agents_region_sector_coverage(con)
+
 
 def read_agent_objectives_csv(buffer_, con):
     sql = """CREATE TABLE agent_objectives (
@@ -328,6 +508,17 @@ def read_agent_objectives_csv(buffer_, con):
         FROM rel;
         """
     )
+
+    # Validate: each agent must have at least one objective
+    if con.execute(
+        """
+        SELECT EXISTS (
+          SELECT 1 FROM agents a
+          WHERE a.id NOT IN (SELECT agent FROM agent_objectives)
+        )
+        """
+    ).fetchone()[0]:
+        raise ValueError("Each agent must have at least one objective")
 
 
 def read_assets_csv(buffer_, con):
@@ -430,22 +621,16 @@ def process_initial_market(con: duckdb.DuckDBPyConnection, currency: str) -> xr.
     df = con.execute(
         """
         SELECT
-          r.id AS region,
-          y.year AS year,
-          c.id AS commodity,
-          COALESCE(cc.value, 0) AS prices,
+          cc.region AS region,
+          cc.year AS year,
+          cc.commodity AS commodity,
+          cc.value AS prices,
           (? || '/' || c.unit) AS units_prices
-        FROM regions r
-        CROSS JOIN years y
-        CROSS JOIN commodities c
-        LEFT JOIN commodity_costs cc
-          ON cc.region = r.id AND cc.year = y.year AND cc.commodity = c.id
+        FROM commodity_costs cc
+        JOIN commodities c ON c.id = cc.commodity
         """,
         [currency],
     ).fetchdf()
-
-    if df.empty:
-        raise ValueError("No commodity cost data found to build initial market.")
 
     # Build dataset from prices
     prices_df = create_multiindex(
