@@ -64,7 +64,7 @@ def expand_time_slices(source_relation: str = "rel") -> str:
     """
 
 
-def validate_present_full_dim_coverage(
+def validate_full_coverage_for_present(
     con: duckdb.DuckDBPyConnection,
     table: str,
     present_cols: list[str],
@@ -310,7 +310,7 @@ def read_commodity_costs_csv(buffer_, con):
     )
 
     # Validate coverage
-    validate_present_full_dim_coverage(
+    validate_full_coverage_for_present(
         con,
         table="commodity_costs",
         present_cols=["commodity"],
@@ -344,7 +344,7 @@ def read_demand_csv(buffer_, con):
     con.sql("INSERT INTO demand SELECT commodity_id, region_id, year, demand FROM rel;")
 
     # Validate coverage
-    validate_present_full_dim_coverage(
+    validate_full_coverage_for_present(
         con,
         table="demand",
         present_cols=["commodity"],
@@ -469,7 +469,7 @@ def read_process_flows_csv(buffer_, con):
     )
 
     # Validate coverage
-    validate_present_full_dim_coverage(
+    validate_full_coverage_for_present(
         con,
         table="process_flows",
         present_cols=["process", "commodity"],
@@ -702,7 +702,10 @@ def process_initial_market(con: duckdb.DuckDBPyConnection, currency: str) -> xr.
           cc.year AS year,
           cc.commodity AS commodity,
           cc.value AS prices,
-          (? || '/' || c.unit) AS units_prices
+          (? || '/' || c.unit) AS units_prices,
+          CAST(0.0 AS DOUBLE) AS exports,
+          CAST(0.0 AS DOUBLE) AS imports,
+          CAST(0.0 AS DOUBLE) AS static_trade
         FROM commodity_costs cc
         JOIN commodities c ON c.id = cc.commodity
         """,
@@ -710,20 +713,13 @@ def process_initial_market(con: duckdb.DuckDBPyConnection, currency: str) -> xr.
     ).fetchdf()
 
     # Build dataset from prices
-    prices_df = create_multiindex(
+    df = create_multiindex(
         df,
         index_columns=["region", "year", "commodity"],
         index_names=["region", "year", "commodity"],
         drop_columns=True,
     )
-    result = create_xarray_dataset(prices_df)
-
-    # Add zero trade variables (legacy)
-    result["exports"] = xr.zeros_like(result["prices"]).rename("exports")
-    result["imports"] = xr.zeros_like(result["prices"]).rename("imports")
-    result["static_trade"] = (result["imports"] - result["exports"]).rename(
-        "static_trade"
-    )
+    result = create_xarray_dataset(df)
     return result
 
 
