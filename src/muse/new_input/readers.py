@@ -138,36 +138,34 @@ def fill_missing_dim_combinations(
     con: duckdb.DuckDBPyConnection,
     table: str,
     dims: list[str],
-    value_column: str,
-    fill_value: float,
+    value_columns: dict[str, float],
 ) -> None:
-    """Insert fill_value for any missing combinations across the given dims.
+    """Insert fill values for any missing combinations across the given dims.
 
-    Anchors on the first dim's present values to avoid generating rows for
-    completely absent entities, then uses an EXCEPT comparison to find and
-    insert missing keys.
+    Generates the full cartesian product across all dimensions from their source tables,
+    then uses an EXCEPT comparison to find and insert missing keys.
     The target table must use these exact column names for the dims.
     """
     for d in dims:
         if d not in DIM_TO_SOURCE:
             raise ValueError(f"Unsupported dim: {d}")
 
-    present_key = dims[0]
     proj = ", ".join(dims)
-    # Build column list: present key from p, other dims from their sources
-    present_cols_sql = f"p.{present_key} AS {present_key}"
+
+    # Build column list: all dims from their source tables
     dim_cols_sql = ", ".join(
-        [f"{DIM_TO_SOURCE[d][0]}.{DIM_TO_SOURCE[d][1]} AS {d}" for d in dims[1:]]
+        [f"{DIM_TO_SOURCE[d][0]}.{DIM_TO_SOURCE[d][1]} AS {d}" for d in dims]
     )
-    cols_sql = ", ".join([c for c in [present_cols_sql, dim_cols_sql] if c])
-    # Build CROSS JOIN chain: present set, then each dim source table
-    joins = [f"(SELECT DISTINCT {present_key} FROM {table}) p"]
-    joins += [DIM_TO_SOURCE[d][0] for d in dims[1:]]
+    # Build CROSS JOIN chain: all dim source tables
+    joins = [DIM_TO_SOURCE[d][0] for d in dims]
     joins_sql = " CROSS JOIN ".join(joins)
+
+    value_cols = ", ".join(value_columns.keys())
+    value_placeholders = ", ".join(["?" for _ in value_columns])
 
     sql = f"""
     WITH a AS (
-      SELECT {cols_sql}
+      SELECT {dim_cols_sql}
       FROM {joins_sql}
     ),
     missing AS (
@@ -175,10 +173,10 @@ def fill_missing_dim_combinations(
       EXCEPT
       SELECT {proj} FROM {table}
     )
-    INSERT INTO {table} ({proj}, {value_column})
-    SELECT {proj}, ? FROM missing
+    INSERT INTO {table} ({proj}, {value_cols})
+    SELECT {proj}, {value_placeholders} FROM missing
     """
-    con.execute(sql, [fill_value])
+    con.execute(sql, list(value_columns.values()))
 
 
 def read_inputs(data_dir, years: list[int]) -> duckdb.DuckDBPyConnection:
@@ -292,7 +290,7 @@ def read_commodity_costs_csv(buffer_, con):
         """
     )
 
-    # Validate coverage
+    # Validate coverage for included commodities
     validate_coverage(
         con,
         table="commodity_costs",
@@ -305,8 +303,14 @@ def read_commodity_costs_csv(buffer_, con):
         con,
         table="commodity_costs",
         dims=["commodity", "region", "year"],
-        value_column="value",
-        fill_value=0.0,
+        value_columns={"value": 0.0},
+    )
+
+    # Confirm that coverage is now complete
+    validate_coverage(
+        con,
+        table="commodity_costs",
+        dims=["commodity", "region", "year"],
     )
 
 
@@ -323,7 +327,7 @@ def read_demand_csv(buffer_, con):
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
     con.sql("INSERT INTO demand SELECT commodity_id, region_id, year, demand FROM rel;")
 
-    # Validate coverage
+    # Validate coverage for included commodities
     validate_coverage(
         con,
         table="demand",
@@ -336,8 +340,14 @@ def read_demand_csv(buffer_, con):
         con,
         table="demand",
         dims=["commodity", "region", "year"],
-        value_column="demand",
-        fill_value=0.0,
+        value_columns={"demand": 0.0},
+    )
+
+    # Confirm that coverage is now complete
+    validate_coverage(
+        con,
+        table="demand",
+        dims=["commodity", "region", "year"],
     )
 
 
@@ -359,6 +369,38 @@ def read_demand_slicing_csv(buffer_, con):
             commodity_id, region_id, time_slice, fraction
         FROM {expansion_sql};
         """
+    )
+
+    # Validate coverage for included commodities
+    validate_coverage(
+        con,
+        table="demand_slicing",
+        dims=["region", "time_slice"],
+        present=["commodity"],
+    )
+
+    # Fill missing combinations with fraction values from time_slices
+    sql = """
+    WITH missing AS (
+        SELECT c.id AS commodity, r.id AS region, ts.id AS time_slice
+        FROM commodities c
+        CROSS JOIN regions r
+        CROSS JOIN time_slices ts
+        EXCEPT
+        SELECT commodity, region, time_slice FROM demand_slicing
+    )
+    INSERT INTO demand_slicing (commodity, region, time_slice, fraction)
+    SELECT commodity, region, time_slice, ts.fraction
+    FROM missing m
+    JOIN time_slices ts ON m.time_slice = ts.id
+    """
+    con.execute(sql)
+
+    # Confirm that coverage is now complete
+    validate_coverage(
+        con,
+        table="demand_slicing",
+        dims=["commodity", "region", "time_slice"],
     )
 
 
@@ -410,7 +452,7 @@ def read_process_parameters_csv(buffer_, con):
         """
     )
 
-    # Validate coverage
+    # Validate that coverage is complete
     validate_coverage(
         con, table="process_parameters", dims=["process", "region", "year"]
     )
@@ -443,7 +485,7 @@ def read_process_flows_csv(buffer_, con):
         """
     )
 
-    # Validate coverage
+    # Validate coverage for included process/commodity combinations
     validate_coverage(
         con,
         table="process_flows",
@@ -507,7 +549,7 @@ def read_agents_csv(buffer_, con):
         """
     )
 
-    # Validate coverage across region/sector
+    # Validate there is at least one agent for every (region, sector)
     ensure_agents_region_sector_coverage(con)
 
 
@@ -704,19 +746,17 @@ def process_agent_parameters(con: duckdb.DuckDBPyConnection, sector: str) -> lis
           a.search_rule,
           a.decision_rule,
           a.quantity,
-          LIST(o.objective_type)
-            FILTER (WHERE o.objective_type IS NOT NULL) AS objectives,
+          LIST(o.objective_type) AS objectives,
           LIST(struct_pack(
             objective_type := o.objective_type,
             objective_sort := o.objective_sort,
             decision_weight := o.decision_weight
-          ))
-            FILTER (WHERE o.objective_type IS NOT NULL) AS decision_params
+          )) AS decision_params
         FROM agents a
-        LEFT JOIN agent_objectives o ON o.agent = a.id
+        JOIN agent_objectives o ON o.agent = a.id
         WHERE a.sector = ?
-        GROUP BY 1,2,3,4,5
-        ORDER BY 1
+        GROUP BY a.id, a.region, a.search_rule, a.decision_rule, a.quantity
+        ORDER BY a.id
         """,
         [sector],
     ).fetchdf()
@@ -724,14 +764,14 @@ def process_agent_parameters(con: duckdb.DuckDBPyConnection, sector: str) -> lis
     result: list[dict] = []
     for _, r in df.iterrows():
         params = [
-            (d["objective_type"], d["objective_sort"], d["decision_weight"])  # type: ignore[index]
-            for d in (r["decision_params"] or [])
+            (d["objective_type"], d["objective_sort"], d["decision_weight"])
+            for d in r["decision_params"]
         ]
         result.append(
             {
                 "name": r["name"],
                 "region": r["region"],
-                "objectives": (r["objectives"] or []),
+                "objectives": r["objectives"],
                 "search_rules": r["search_rule"],
                 "decision": {"name": r["decision_rule"], "parameters": params},
                 "quantity": r["quantity"],
