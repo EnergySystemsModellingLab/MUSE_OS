@@ -493,35 +493,84 @@ def read_process_flows_csv(buffer_, con):
         present=["process", "commodity"],
     )
 
+    # Insert data for missing combinations
+    fill_missing_dim_combinations(
+        con,
+        table="process_flows",
+        dims=["process", "commodity", "region", "year"],
+        value_columns={"input_coeff": 0.0, "output_coeff": 0.0},
+    )
+
+    # Confirm that coverage is now complete
+    validate_coverage(
+        con,
+        table="process_flows",
+        dims=["process", "commodity", "region", "year"],
+    )
+
 
 def read_process_availabilities_csv(buffer_, con):
-    sql = """CREATE TABLE process_availabilities (
+    # Create temporary tables with shared schema
+    table_schema = """(
       process VARCHAR REFERENCES processes(id),
       region VARCHAR REFERENCES regions(id),
       year BIGINT REFERENCES years(year),
       time_slice VARCHAR REFERENCES time_slices(id),
-      limit_type VARCHAR CHECK (limit_type IN ('up','down')),
       value DOUBLE,
-      PRIMARY KEY (process, region, year, time_slice, limit_type)
-    );
-    """
-    con.sql(sql)
+      PRIMARY KEY (process, region, year, time_slice)
+    )"""
+    con.sql(f"CREATE TABLE process_lower_availabilities {table_schema};")
+    con.sql(f"CREATE TABLE process_upper_availabilities {table_schema};")
+
+    # Read and expand data, then insert into both tables
     rel = con.read_csv(buffer_, header=True, delimiter=",")  # noqa: F841
     expansion_sql = chain_expanders(
         "rel", expand_years, expand_regions, expand_time_slices
     )
-    con.sql(
-        f"""
-        INSERT INTO process_availabilities SELECT
-          process_id,
-          region_id,
-          year,
-          time_slice,
-          limit_type,
-          value
-        FROM {expansion_sql};
-        """
-    )
+    for limit_type, table_name in [
+        ("down", "process_lower_availabilities"),
+        ("up", "process_upper_availabilities"),
+    ]:
+        con.sql(f"""
+            INSERT INTO {table_name} SELECT
+              process_id, region_id, year, time_slice, value
+            FROM {expansion_sql}
+            WHERE limit_type = '{limit_type}';
+        """)
+
+    # Validate and fill missing combinations for both tables
+    for table_name, fill_value in [
+        ("process_lower_availabilities", 0.0),
+        ("process_upper_availabilities", 1.0),
+    ]:
+        validate_coverage(
+            con,
+            table=table_name,
+            dims=["region", "year", "time_slice"],
+            present=["process"],
+        )
+        fill_missing_dim_combinations(
+            con,
+            table=table_name,
+            dims=["process", "region", "year", "time_slice"],
+            value_columns={"value": fill_value},
+        )
+        validate_coverage(
+            con, table=table_name, dims=["process", "region", "year", "time_slice"]
+        )
+
+    # Merge into final table and cleanup
+    con.sql("""
+        CREATE TABLE process_availabilities AS
+        SELECT l.process, l.region, l.year, l.time_slice,
+               l.value AS lower_bound, u.value AS upper_bound
+        FROM process_lower_availabilities l
+        JOIN process_upper_availabilities u USING (process, region, year, time_slice)
+    """)
+
+    # Drop the temporary tables
+    con.sql("DROP TABLE process_lower_availabilities")
+    con.sql("DROP TABLE process_upper_availabilities")
 
 
 def read_agents_csv(buffer_, con):
