@@ -107,6 +107,12 @@ def test_process_technodata_timeslices(con):
     process_technodata_timeslices(con, sector="power")
 
 
+def test_process_technologies(con):
+    from muse.new_input.readers import process_technologies
+
+    process_technologies(con, sector="power")
+
+
 def test_process_agent_parameters(con):
     from muse.new_input.readers import process_agent_parameters
 

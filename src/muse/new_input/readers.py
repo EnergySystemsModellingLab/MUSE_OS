@@ -896,6 +896,32 @@ def process_initial_market(con: duckdb.DuckDBPyConnection, currency: str) -> xr.
     return result
 
 
+def process_technologies(con: duckdb.DuckDBPyConnection, sector: str) -> xr.Dataset:
+    """Create an xarray Dataset combining all technology data for a sector.
+
+    Combines technodictionary, io_technodata, and technodata_timeslices into a
+    single dataset with commodity usage flags.
+    """
+    from muse.commodities import CommodityUsage
+
+    technodata = process_technodictionary(con, sector)
+    io_data = process_io_technodata(con, sector)
+    technodata_timeslices = process_technodata_timeslices(con, sector)
+    technodata = technodata.merge(io_data).merge(technodata_timeslices)
+
+    # Add commodity information
+    commodities = process_global_commodities(con)
+    technodata = technodata.merge(commodities.sel(commodity=technodata.commodity))
+
+    # Add commodity usage flags
+    technodata["comm_usage"] = (
+        "commodity",
+        CommodityUsage.from_technologies(technodata).values,
+    )
+    technodata = technodata.drop_vars("commodity_type")
+    return technodata
+
+
 def process_agent_parameters(con: duckdb.DuckDBPyConnection, sector: str) -> list[dict]:
     """Create a list of agent dictionaries for a sector from DB tables."""
     df = con.execute(
