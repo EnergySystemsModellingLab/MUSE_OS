@@ -203,6 +203,9 @@ def read_inputs(data_dir, years: list[int]) -> duckdb.DuckDBPyConnection:
         with open(data_dir / filename) as f:
             reader(f, con)
 
+    # Set up global TIMESLICE object
+    setup_timeslice_globals(con)
+
     return con
 
 
@@ -685,6 +688,29 @@ def read_assets_csv(buffer_, con):
     )
 
 
+def setup_timeslice_globals(con: duckdb.DuckDBPyConnection):
+    """Set up global TIMESLICE object from database timeslice data.
+
+    Queries the time_slices table, assembles into settings format,
+    and calls timeslices.setup_module to initialize the global TIMESLICE.
+    """
+    from muse import timeslices
+
+    timeslice_settings = {}
+    for season, day, time_of_day, fraction in con.execute(
+        """
+        SELECT season, day, time_of_day, fraction
+        FROM time_slices
+        ORDER BY season, day, time_of_day
+        """
+    ).fetchall():
+        timeslice_settings.setdefault(season, {}).setdefault(day, {})[time_of_day] = (
+            fraction
+        )
+
+    timeslices.setup_module(timeslice_settings)
+
+
 def process_global_commodities(con: duckdb.DuckDBPyConnection) -> xr.Dataset:
     """Create an xarray Dataset of global commodities from the `commodities` table."""
     df = con.sql(
@@ -741,6 +767,86 @@ def process_technodictionary(con: duckdb.DuckDBPyConnection, sector: str) -> xr.
     return result
 
 
+def process_io_technodata(con: duckdb.DuckDBPyConnection, sector: str) -> xr.Dataset:
+    """Create an xarray Dataset for IO technodata from DB tables.
+
+    Uses `process_flows` to build input/output coefficients over
+    dimensions (technology, region, year, commodity) with 'fixed' and
+    'flexible' variables. Since flexible inputs/outputs are eliminated,
+    'flexible' is filled with zeros.
+    """
+    # Get both input and output coefficients for the sector
+    df = con.execute(
+        """
+        SELECT
+            p.id AS technology,
+            pf.commodity,
+            pf.region,
+            pf.year,
+            pf.input_coeff AS fixed_inputs,
+            pf.output_coeff AS fixed_outputs,
+            0.0 AS flexible_inputs,
+            0.0 AS flexible_outputs
+        FROM process_flows pf
+        JOIN processes p ON p.id = pf.process
+        WHERE p.sector = ?
+        """,
+        [sector],
+    ).fetchdf()
+
+    df = create_multiindex(
+        df,
+        index_columns=["technology", "region", "year", "commodity"],
+        index_names=["technology", "region", "year", "commodity"],
+        drop_columns=True,
+    )
+
+    result = create_xarray_dataset(df)
+    return result
+
+
+def process_technodata_timeslices(
+    con: duckdb.DuckDBPyConnection, sector: str
+) -> xr.Dataset:
+    """Create an xarray Dataset for technodata timeslices from process_availabilities.
+
+    Maps upper_bound to utilization_factor and lower_bound to minimum_service_factor
+    over dimensions (technology, region, year, timeslice).
+    """
+    from muse.timeslices import TIMESLICE, sort_timeslices
+
+    df = con.execute(
+        """
+        SELECT
+            p.id AS technology,
+            pa.region,
+            pa.year,
+            pa.time_slice,
+            pa.upper_bound AS utilization_factor,
+            pa.lower_bound AS minimum_service_factor
+        FROM process_availabilities pa
+        JOIN processes p ON p.id = pa.process
+        WHERE p.sector = ?
+        """,
+        [sector],
+    ).fetchdf()
+
+    # Create dataset
+    df = create_multiindex(
+        df,
+        index_columns=["technology", "region", "year", "time_slice"],
+        index_names=["technology", "region", "year", "timeslice"],
+        drop_columns=True,
+    )
+    result = create_xarray_dataset(df)
+
+    # Stack timeslice levels (month, day, hour) into a single timeslice dimension
+    timeslice_levels = TIMESLICE.coords["timeslice"].indexes["timeslice"].names
+    if all(level in result.dims for level in timeslice_levels):
+        result = result.stack(timeslice=timeslice_levels)
+    return sort_timeslices(result)
+
+
 def process_initial_market(con: duckdb.DuckDBPyConnection, currency: str) -> xr.Dataset:
     """Create initial market dataset with prices and zero trade variables.
 
@@ -754,6 +860,8 @@ def process_initial_market(con: duckdb.DuckDBPyConnection, currency: str) -> xr.
         prices, exports, imports, static_trade. Adds coordinate
         units_prices = f"{currency}/{unit}" per commodity.
     """
+    from muse.timeslices import broadcast_timeslice
+
     if not isinstance(currency, str) or not currency.strip():
         raise ValueError("currency must be a non-empty string")
 
@@ -782,6 +890,9 @@ def process_initial_market(con: duckdb.DuckDBPyConnection, currency: str) -> xr.
         drop_columns=True,
     )
     result = create_xarray_dataset(df)
+
+    # Broadcast over time slices
+    result = broadcast_timeslice(result)
     return result
 
 
@@ -826,44 +937,6 @@ def process_agent_parameters(con: duckdb.DuckDBPyConnection, sector: str) -> lis
                 "quantity": r["quantity"],
             }
         )
-    return result
-
-
-def process_io_technodata(con: duckdb.DuckDBPyConnection, sector: str) -> xr.Dataset:
-    """Create an xarray Dataset for IO technodata from DB tables.
-
-    Uses `process_flows` to build input/output coefficients over
-    dimensions (technology, region, year, commodity) with 'fixed' and
-    'flexible' variables. Since flexible inputs/outputs are eliminated,
-    'flexible' is filled with zeros.
-    """
-    # Get both input and output coefficients for the sector
-    df = con.execute(
-        """
-        SELECT
-            p.id AS technology,
-            pf.commodity,
-            pf.region,
-            pf.year,
-            pf.input_coeff AS fixed_inputs,
-            pf.output_coeff AS fixed_outputs,
-            0.0 AS flexible_inputs,
-            0.0 AS flexible_outputs
-        FROM process_flows pf
-        JOIN processes p ON p.id = pf.process
-        WHERE p.sector = ?
-        """,
-        [sector],
-    ).fetchdf()
-
-    df = create_multiindex(
-        df,
-        index_columns=["technology", "region", "year", "commodity"],
-        index_names=["technology", "region", "year", "commodity"],
-        drop_columns=True,
-    )
-
-    result = create_xarray_dataset(df)
     return result
 
 
