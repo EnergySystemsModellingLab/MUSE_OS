@@ -829,6 +829,44 @@ def process_agent_parameters(con: duckdb.DuckDBPyConnection, sector: str) -> lis
     return result
 
 
+def process_io_technodata(con: duckdb.DuckDBPyConnection, sector: str) -> xr.Dataset:
+    """Create an xarray Dataset for IO technodata from DB tables.
+
+    Uses `process_flows` to build input/output coefficients over
+    dimensions (technology, region, year, commodity) with 'fixed' and
+    'flexible' variables. Since flexible inputs/outputs are eliminated,
+    'flexible' is filled with zeros.
+    """
+    # Get both input and output coefficients for the sector
+    df = con.execute(
+        """
+        SELECT
+            p.id AS technology,
+            pf.commodity,
+            pf.region,
+            pf.year,
+            pf.input_coeff AS fixed_inputs,
+            pf.output_coeff AS fixed_outputs,
+            0.0 AS flexible_inputs,
+            0.0 AS flexible_outputs
+        FROM process_flows pf
+        JOIN processes p ON p.id = pf.process
+        WHERE p.sector = ?
+        """,
+        [sector],
+    ).fetchdf()
+
+    df = create_multiindex(
+        df,
+        index_columns=["technology", "region", "year", "commodity"],
+        index_names=["technology", "region", "year", "commodity"],
+        drop_columns=True,
+    )
+
+    result = create_xarray_dataset(df)
+    return result
+
+
 def process_initial_capacity(
     con: duckdb.DuckDBPyConnection, sector: str
 ) -> xr.DataArray:

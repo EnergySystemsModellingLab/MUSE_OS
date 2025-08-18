@@ -101,6 +101,12 @@ def test_process_initial_market(con):
     process_initial_market(con, currency="EUR")
 
 
+def test_process_io_technodata(con):
+    from muse.new_input.readers import process_io_technodata
+
+    process_io_technodata(con, sector="power")
+
+
 def test_process_initial_capacity(con):
     from muse.new_input.readers import process_initial_capacity
 
