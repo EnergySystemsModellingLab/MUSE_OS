@@ -71,14 +71,10 @@ def create_retrofit_agent(
 
     kwargs = _standardize_investing_inputs(decision=decision, **kwargs)
 
-    search_rules = kwargs.pop("search_rules")
-    if len(search_rules) < 2 or search_rules[-2] != "with_asset_technology":
-        search_rules.insert(-1, "with_asset_technology")
-
     return InvestingAgent(
         assets=xr.Dataset(dict(capacity=assets)),
         region=region,
-        search_rules=filter_factory(search_rules),
+        search_rules=filter_factory(kwargs.pop("search_rules")),
         year=year,
         **kwargs,
     )
@@ -139,9 +135,6 @@ def create_newcapa_agent(
         "currently_referenced_tech" if name in variations else name
         for name in kwargs.pop("search_rules")
     ]
-
-    if not retrofit_present and "with_asset_technology" not in search_rules:
-        search_rules.insert(-1, "with_asset_technology")
 
     result = InvestingAgent(
         assets=assets,
