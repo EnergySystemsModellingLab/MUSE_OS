@@ -160,7 +160,7 @@ def create_agent(agent_type: str, **kwargs) -> Agent:
 
 
 def agents_factory(
-    params_or_path: str | Path | list,
+    path: Path,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
     regions: Sequence[str] | None = None,
@@ -171,12 +171,9 @@ def agents_factory(
     from copy import deepcopy
     from logging import getLogger
 
-    from muse.readers import read_agent_parameters
+    from muse.readers import read_agents
 
-    if isinstance(params_or_path, (str, Path)):
-        params = read_agent_parameters(params_or_path)
-    else:
-        params = params_or_path
+    params = read_agents(path)
     assert isinstance(capacity, xr.DataArray)
     if year is None:
         year = int(capacity.year.min())
