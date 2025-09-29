@@ -409,26 +409,11 @@ def consolidate_quantity(
     """
     data = _aggregate_cache(quantity, cached)
 
-    ignore_dst_region = "dst_region" in data.columns
     for agent in tuple(agents):
         filter = data.agent == agent
         for key, value in agents[agent].items():
-            if key == "dst_region" and ignore_dst_region:
-                continue
             data.loc[filter, key] = value
 
-    data = data.rename(columns={"replacement": "technology"})
-
-    group_cols = [c for c in data.columns if c not in [quantity, "asset"]]
-    data = (
-        data.groupby(group_cols)
-        .sum()
-        .infer_objects()
-        .fillna(0)
-        .reset_index()
-        .drop("asset", axis=1, errors="ignore")
-    )
-    data = data[data[quantity] != 0]
     return data[sorted(data.columns)]
 
 
