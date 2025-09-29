@@ -367,6 +367,9 @@ def sector_lcoe(
 
     market = market.copy(deep=True)
 
+    if (sector.name.lower() == "export") and (year == 2040):
+        breakpoint()
+
     # Filtering of the inputs
     data_sector: list[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
