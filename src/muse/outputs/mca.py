@@ -367,9 +367,6 @@ def sector_lcoe(
 
     market = market.copy(deep=True)
 
-    if (sector.name.lower() == "export") and (year == 2040):
-        breakpoint()
-
     # Filtering of the inputs
     data_sector: list[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
@@ -379,7 +376,7 @@ def sector_lcoe(
     agents = retro if len(retro) > 0 else new
     if len(technologies) > 0:
         for agent in agents:
-            agent_market = market.sel(year=agent.year)
+            agent_market = market.sel(year=agent.year).copy(deep=True)
             agent_market["consumption"] = agent_market.consumption * agent.quantity
 
             # Filter commodities based on end-use status
@@ -468,7 +465,7 @@ def sector_eac(
     agents = retro if len(retro) > 0 else new
     if len(technologies) > 0:
         for agent in agents:
-            agent_market = market.sel(year=agent.year)
+            agent_market = market.sel(year=agent.year).copy(deep=True)
             agent_market["consumption"] = agent_market.consumption * agent.quantity
 
             # Filter commodities based on end-use status
