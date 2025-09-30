@@ -577,8 +577,16 @@ def test_consolidate_quantity(newcapa_agent, retro_agent):
     b = create_agent_array(retro_agent.uuid, modify_first=True)
 
     actual = consolidate_quantity("height", [a, b], agents)
-    cols = set((*agents[retro_agent.uuid].keys(), "technology", "height"))
-    assert set(actual.columns) == cols
+    assert set(actual.columns) == {
+        "agent",
+        "asset",
+        "category",
+        "sector",
+        "dst_region",
+        "height",
+        "replacement",
+        "sector",
+    }
     assert all(
         name in (newcapa_agent.name, retro_agent.name) for name in actual.agent.unique()
     )
