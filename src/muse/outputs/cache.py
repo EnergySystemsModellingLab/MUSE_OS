@@ -409,9 +409,12 @@ def consolidate_quantity(
     """
     data = _aggregate_cache(quantity, cached)
 
+    ignore_dst_region = "dst_region" in data.columns
     for agent in tuple(agents):
         filter = data.agent == agent
         for key, value in agents[agent].items():
+            if key == "dst_region" and ignore_dst_region:
+                continue
             data.loc[filter, key] = value
 
     return data[sorted(data.columns)]
