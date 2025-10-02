@@ -90,7 +90,10 @@ class Subsector:
         # Further filer demands to only include commodities with positive unmet demand
         # Some commodities may be lost here if capacity is already sufficient to meet
         # demand
-        demands = demands.where(demands.sum(["timeslice", "asset"]) > 0, drop=True)
+        demands = demands.where(
+            demands.sum([dim for dim in demands.dims if dim != "commodity"]) > 0,
+            drop=True,
+        )
 
         if "dst_region" in demands.dims:
             msg = """
