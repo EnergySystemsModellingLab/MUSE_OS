@@ -20,7 +20,7 @@ jobs:
           python -m pip install --upgrade build
           python -m build
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           path: dist/muse*
 
@@ -103,7 +103,7 @@ jobs:
       - name: Build directory-based standalone
         run: pyinstaller muse_dir.spec --distpath standalone
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           path: standalone/MUSE*
           name: MUSE
