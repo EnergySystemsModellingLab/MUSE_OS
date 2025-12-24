@@ -362,7 +362,7 @@ class InvestingAgent(Agent):
         )
 
         # Calculate investments
-        investments = self.invest(
+        result = self.invest(
             search=search[["search_space", "decision"]],
             technologies=technologies,
             constraints=constraints,
@@ -373,7 +373,7 @@ class InvestingAgent(Agent):
         # Add investments
         self.add_investments(
             technologies=technologies,
-            investments=investments,
+            investments=result["capacity"].rename("investment"),
             investment_year=investment_year,
         )
 
