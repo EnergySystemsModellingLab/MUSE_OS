@@ -1,0 +1,6 @@
+name,description,type,unit
+electricity,Electricity,energy,PJ
+gas,Gas,energy,PJ
+heat,Heat,energy,PJ
+wind,Wind,energy,PJ
+CO2f,Carbon dioxide,energy,kt

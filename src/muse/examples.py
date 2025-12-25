@@ -52,6 +52,7 @@ AVAILABLE_EXAMPLES = [
     "multiple_agents",
     "minimum_service",
     "trade",
+    "default_new_input",
 ]
 
 
@@ -137,6 +138,8 @@ def copy_model(
         _copy_minimum_service(path)
     elif name.lower() == "trade":
         _copy_trade(path)
+    elif name.lower() == "default_new_input":
+        _copy_default_new_input(path)
     return path
 
 
@@ -314,6 +317,12 @@ def _copy_default_adhoc(path: Path):
                 subsectors[sub]["lpsolver"] = "adhoc"
 
     modify_toml(path / "settings.toml", update_lpsolver)
+
+
+def _copy_default_new_input(path: Path):
+    from shutil import copytree
+
+    copytree(example_data_dir() / "default_new_input", path)
 
 
 def _copy_default_timeslice(path: Path):

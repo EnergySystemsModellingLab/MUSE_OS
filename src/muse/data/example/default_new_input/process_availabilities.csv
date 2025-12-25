@@ -1,0 +1,6 @@
+process_id,region_id,year,timeslice,lim_type,value
+gassupply1,,,ALL,UP,0.9
+gasCCGT,,,ALL,UP,0.9
+windturbine,,,ALL,UP,0.4
+gasboiler,,,ALL,UP,1
+heatpump,,,ALL,UP,1
