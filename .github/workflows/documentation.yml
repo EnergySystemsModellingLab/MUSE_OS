@@ -37,12 +37,12 @@ jobs:
           cd docs/build/latex
           latexmk -interaction=nonstopmode -pdf muse
       - name: Upload HTML
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: DocumentationHTML
           path: docs/build/html
       - name: Upload PDF
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: DocumentationPDF
           path: docs/build/latex/muse.pdf
