@@ -1,8 +1,7 @@
 .. _inputs-projection:
 
-=========================
 Commodity Price Projections
-=========================
+===========================
 
 This file can be used to supply pre-set prices for commodities.
 The interpretation of these prices depends on the type of commodity:

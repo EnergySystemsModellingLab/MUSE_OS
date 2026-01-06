@@ -354,8 +354,8 @@ Sectors contain a number of subsections:
    ``quantity``
       Name of the quantity to save.
       The options are capacity, consumption, supply and costs.
-      Users can also customize and create further output quantities by registering with MUSE via
-      :py:func:`muse.outputs.mca.register_output_quantity`. See :py:mod:`muse.outputs` for more details.
+      Users can also customize and create further output quantities by registering with
+      MUSE via :py:func:`muse.outputs.mca.register_output_quantity`. See :py:mod:`muse.outputs` for more details.
 
    ``sink``
       the sink is the place (disk, cloud, database, etc...) and format with which
@@ -510,7 +510,7 @@ The following attributes are accepted:
    current working directory. The file names must include the year for which it defines
    the consumption, e.g. `Consumption2015.csv`.
 
-   The CSV format should follow the format described in :ref:`consumption_path <preset-consumption>`.
+   The CSV format should follow the format described in :ref:`consumption_path <_preset-consumption-file>`.
 
 ``supply_path``
    CSV file, one per year, indicating the amount of commodities produced. It follows
@@ -548,10 +548,11 @@ The following attributes are accepted:
 
 
 ========================
+.. _/inputs/toml.rst#carbon-market:
 .. _carbon-market:
 
 Carbon market (optional)
-========================
+------------------------
 
 This section contains the settings related to the modelling of the carbon market.
 If omitted, it defaults to not including the carbon market in the simulation.
@@ -623,8 +624,8 @@ Output cache (for advanced users)
 ``outputs_cache``
    This option behaves exactly like `outputs` for sectors and accepts the same options but
    controls the output of cached quantities instead. This option is NOT available for
-   sectors themselves (i.e using `[[sector.commercial.outputs_cache]]` will have no effect). See
-   :py:mod:`muse.outputs.cache` for more details.
+   sectors themselves (i.e using `[[sector.commercial.outputs_cache]]` will have no effect).
+   See :py:mod:`muse.outputs.cache` for more details.
 
    A single row looks like this:
 

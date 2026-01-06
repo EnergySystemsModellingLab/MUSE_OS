@@ -1,4 +1,4 @@
-.. _preset-consumption:
+.. _preset-consumption-file:
 
 =============================
 Preset Commodity Demands
