@@ -168,6 +168,18 @@ Sectorial Outputs
 .. automodule:: muse.outputs.sector
    :members:
 
+Global Outputs
+~~~~~~~~~~~~~~
+
+.. automodule:: muse.outputs.mca
+   :members:
+
+Cache
+~~~~~
+
+.. automodule:: muse.outputs.cache
+   :members:
+
 
 ----------
 Quantities
