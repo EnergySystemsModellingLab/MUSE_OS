@@ -168,6 +168,7 @@ def compress_timeslice(
     """Convert a fully timesliced array to a coarser level.
 
     The operation can be either 'sum', or 'mean':
+
     - sum: sum values at each compressed timeslice level
     - mean: take a weighted average of values at each compressed timeslice level,
         according to the timeslice weights in ts
@@ -229,8 +230,9 @@ def expand_timeslice(
     """Convert a timesliced array to a finer level.
 
     The operation can be either 'distribute', or 'broadcast'
+
     - distribute: distribute values over the new timeslice level(s) according to
-        timeslice weights in `ts`, such that the sum of the output over all timeslices
+        timeslice weights in ``ts``, such that the sum of the output over all timeslices
         is equal to the sum of the input
     - broadcast: broadcast values across over the new timeslice level(s)
 

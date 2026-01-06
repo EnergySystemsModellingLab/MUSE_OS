@@ -2,6 +2,8 @@
 Simulation Data Files
 =====================
 
+.. _inputs_csv:
+
 This section details the CSV files that are used to populate the simulation data.
 
 .. toctree::
@@ -15,4 +17,5 @@ This section details the CSV files that are used to populate the simulation data
    commodities_io
    existing_capacity
    agents
+   preset_commodity_demands
    correlation_files

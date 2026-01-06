@@ -1,5 +1,7 @@
 """Demand share computations.
 
+.. currentmodule:: muse.demand_share
+
 The demand share splits a demand amongst agents. It is used within a sector to assign
 part of the input MCA demand to each agent.
 
@@ -62,6 +64,7 @@ __all__ = [
     "factory",
     "new_and_retro",
     "register_demand_share",
+    "standard_demand",
     "unmet_demand",
     "unmet_forecasted_demand",
 ]
@@ -208,9 +211,8 @@ def new_and_retro(
                      {\sum_{i, t, \iota}P[\mathcal{A}_{s, t, \iota}^{r, i}(y)]}
 
 
-    #. similarly, each *retrofit* agent gets a share of :math:`N` proportional to it's
-        share of the :py:func:`decommissioning demand
-        <muse.quantities.decommissioning_demand>`, :math:`D^{r, i}_{t, c}`.
+    #. similarly, each *retrofit* agent gets a share of :math:`N` proportional to its
+        share of the ``decommissioning_demand``, :math:`D^{r, i}_{t, c}`.
         Then the share of the demand for retrofit agent :math:`i` is:
 
         .. math::
@@ -225,12 +227,10 @@ def new_and_retro(
     disaggregated over each technology, rather than not over each *model* of each
     technology (asset).
 
-    .. SeeAlso::
+    .. seealso::
 
-        :ref:`indices`, :ref:`quantities`,
-        :ref:`Agent investments<model, agent investment>`,
-        :py:func:`~muse.quantities.decommissioning_demand`,
-        :py:func:`~muse.quantities.maximum_production`
+        ``decommissioning_demand``,
+        :py:func:`muse.quantities.maximum_production`
     """
     current_year, investment_year = map(int, demand.year.values)
 
@@ -493,7 +493,8 @@ def unmet_demand(
     The resulting expression has the same indices as the consumption
     :math:`\mathcal{C}_{c, s}^r`.
 
-    :math:`P` is the maximum production, given by <muse.quantities.maximum_production>.
+    :math:`P` is the maximum production, given by
+    :py:func:`muse.quantities.maximum_production`.
     """
     from muse.quantities import maximum_production
 
@@ -540,7 +541,7 @@ def new_consumption(
         \right)
 
     Where :math:`P` the maximum production by existing assets, given by
-    <muse.quantities.maximum_production>.
+    :py:func:`muse.quantities.maximum_production`.
     """
     # Validate inputs have matching years
     if not (

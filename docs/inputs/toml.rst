@@ -1,8 +1,8 @@
 .. _simulation-settings:
 
-=====================
+=============================
 Simulation settings TOML file
-=====================
+=============================
 
 .. currentmodule:: muse
 
@@ -85,7 +85,7 @@ a whole.
 
 ``plugins`` (optional)
     Path or list of paths to extra python plugins, i.e. files with registered functions
-    such as :py:meth:`~muse.outputs.register_output_quantity`.
+    such as :py:meth:`~muse.outputs.mca.register_output_quantity`.
 
 
 ------------------
@@ -228,12 +228,11 @@ A sector accepts these attributes:
 
 ``technodata``
    Path to a csv file containing the characterization of the technologies involved in
-   the sector, e.g. lifetime, capital costs, etc... See :ref:`inputs-technodata`.
+   the sector, e.g. lifetime, capital costs, etc.. See :ref:`inputs-technodata`.
 
 ``technodata_timeslices`` (optional)
     Path to a csv file describing the utilization factor and minimum service
-    factor of each technology in each timeslice.
-    See :ref:`user_guide/inputs/technodata_timeslices`.
+    factor of each technology in each timeslice. See :ref:`inputs-technodata-ts`.
 
 ``commodities_in``
    Path to a csv file describing the inputs of each technology involved in the sector.
@@ -285,19 +284,19 @@ Sectors contain a number of subsections:
 
     ``agents``
         Path to a csv file describing the agents in the sector.
-        See :ref:`user_guide/inputs/agents:agents`.
+        See :ref:`inputs-agents`.
 
     ``existing_capacity``
        Path to a csv file describing the initial capacity of the sector.
-       See :ref:`user_guide/inputs/existing_capacity:existing sectoral capacity`.
+       See :ref:`inputs-existing-capacity`.
 
     ``lpsolver`` (optional, default = **scipy**)
         The solver for linear problems to use when figuring out investments. The solvers
         are registered via :py:func:`~muse.investments.register_investment`. At time of
         writing, three are available:
 
-        - **scipy** solver (default from v1.3): Formulates investment as a true LP problem and solves it using
-          the `scipy solver`_.
+            - **scipy** solver (default from v1.3): Formulates investment as a true LP problem and solves it using
+               the ``scipy`` solver.
 
         - **adhoc** solver: Simple in-house solver that ranks the technologies
           according to cost and service the demand incrementally.
@@ -357,7 +356,7 @@ Sectors contain a number of subsections:
       Name of the quantity to save.
       The options are capacity, consumption, supply and costs.
       Users can also customize and create further output quantities by registering with MUSE via
-      :py:func:`muse.outputs.register_output_quantity`. See :py:mod:`muse.outputs` for more details.
+      :py:func:`muse.outputs.mca.register_output_quantity`. See :py:mod:`muse.outputs` for more details.
 
    ``sink``
       the sink is the place (disk, cloud, database, etc...) and format with which
@@ -453,11 +452,11 @@ Sectors contain a number of subsections:
    Furthermore, it is possible to pass parameters to either the net of the interaction
    as follows:
 
-   .. code-block:: TOML
+   .. code-block:: toml
 
       [[sectors.commercial.interactions]]
-      net = {"name": "some_net", "param": "some value"}
-      interaction = {"name": "some_interaction", "param": "some other value"}
+      net = { name = "some_net", param = "some value" }
+      interaction = { name = "some_interaction", param = "some other value" }
 
    The parameters will depend on the net and interaction functions. Neither
    "new_to_retro" nor "transfer" take any arguments at this point. MUSE interaction
@@ -472,10 +471,10 @@ Preset sectors
 --------------
 
 The commodity production, commodity consumption and product prices of preset sectors are determined
-exogeneously. They are know from the start of the simulation and are not affected by the
+exogeneously. They are known from the start of the simulation and are not affected by the
 simulation.
 
-A common example would be the following, where commodity consumption is defined exogeneously:
+A common example would be the following, where commodity consumption is defined exogeneously (see :ref:`consumption_path <preset-consumption>`):
 
 .. code-block:: TOML
 
@@ -484,7 +483,7 @@ A common example would be the following, where commodity consumption is defined 
     priority = 0
     consumption_path = "{path}/commercial_presets/*Consumption.csv"
 
-Alternatively, you may define consumption as a function of macro-economic data, i.e. population and GDP:
+Alternatively, you may define consumption as a function of macro-economic data, i.e. population and GDP (see :ref:`correlation-files`):
 
 .. code-block:: TOML
 
@@ -512,19 +511,7 @@ The following attributes are accepted:
    current working directory. The file names must include the year for which it defines
    the consumption, e.g. `Consumption2015.csv`.
 
-   The CSV format should follow the following format:
-
-   .. csv-table:: Consumption
-      :header: "RegionName", "Timeslice", "electricity", "diesel", "algae"
-      :stub-columns: 2
-
-      USA,1,1.9,0,0
-      USA,2,1.8,0,0
-
-   The "RegionName" and "Timeslice" columns must be present.
-   Further columns are reserved for commodities. "Timeslice" refers to the
-   index of the timeslice. Timeslices should be defined consistently to the sectoral
-   level timeslices.
+   The CSV format should follow the format described in :ref:`consumption_path <preset-consumption>`.
 
 ``supply_path``
    CSV file, one per year, indicating the amount of commodities produced. It follows
@@ -561,9 +548,9 @@ The following attributes are accepted:
    :ref:`macrodrivers_path<preset-consumption>`.
 
 
--------------
+========================
 Carbon market (optional)
--------------
+========================
 
 This section contains the settings related to the modelling of the carbon market.
 If omitted, it defaults to not including the carbon market in the simulation.
@@ -628,9 +615,9 @@ For example
 
 
 
--------------
+=================================
 Output cache (for advanced users)
--------------
+=================================
 
 ``outputs_cache``
    This option behaves exactly like `outputs` for sectors and accepts the same options but

@@ -114,7 +114,7 @@ on `GNU bash, version 5.1.16(1)-release (x86_64-pc-linux-gnu)` and `zsh 5.8.1 (x
 
 Now, we go through the installation procedure of ``pyenv`` on Linux, step-by-step:
 
- .. code-block::
+.. code-block::
 
             # Step 1: Install essential libraries needed for pyenv
             sudo apt install -y make build-essential libssl-dev zlib1g-dev \

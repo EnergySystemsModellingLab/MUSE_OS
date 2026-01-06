@@ -1,3 +1,5 @@
+.. _correlation-files:
+
 Correlation Demand Files
 ========================
 

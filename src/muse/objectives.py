@@ -420,7 +420,7 @@ def annual_levelized_cost_of_energy(
     It needs to be used for trade agents where the actual service is unknown. It follows
     the `simplified LCOE` given by NREL.
 
-    See :py:func:`muse.costs.annual_levelized_cost_of_energy` for more details.
+    See ``muse.costs.levelized_cost_of_energy`` for more details.
 
     """
     from muse.costs import levelized_cost_of_energy as LCOE
@@ -464,7 +464,7 @@ def lifetime_levelized_cost_of_energy(
 ):
     """Levelized cost of energy (LCOE) of technologies over their lifetime.
 
-    See :py:func:`muse.costs.lifetime_levelized_cost_of_energy` for more details.
+    See ``muse.costs.levelized_cost_of_energy`` for more details.
 
     The LCOE is set to zero for those timeslices where the production is zero, normally
     due to a zero utilization factor.
@@ -510,7 +510,7 @@ def net_present_value(
 ):
     """Net present value (NPV) of the relevant technologies.
 
-    See :py:func:`muse.costs.net_present_value` for more details.
+    See ``muse.costs.net_present_value`` for more details.
     """
     from muse.costs import net_present_value as NPV
     from muse.quantities import capacity_to_service_demand, consumption
@@ -594,7 +594,7 @@ def equivalent_annual_cost(
 ):
     """Equivalent annual costs (or annualized cost) of a technology.
 
-    See :py:func:`muse.costs.equivalent_annual_cost` for more details.
+    See ``muse.costs.equivalent_annual_cost`` for more details.
     """
     from muse.costs import equivalent_annual_cost as EAC
     from muse.quantities import capacity_to_service_demand, consumption

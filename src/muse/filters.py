@@ -84,6 +84,7 @@ __all__ = [
     "same_enduse",
     "same_fuels",
     "similar_technology",
+    "spend_limit",
     "with_asset_technology",
 ]
 
