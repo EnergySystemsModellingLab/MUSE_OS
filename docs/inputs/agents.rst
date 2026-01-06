@@ -7,7 +7,11 @@ Agents
 Agents are defined using a CSV file, with
 one agent per row, using a format meant specifically for retrofit and new-capacity agent pairs.
 
-For instance, we have the following CSV table:
+Each sector should have an agents file, which should follow the structure
+reported in the table below, and be referenced from the TOML settings file using the
+``agents`` key.
+
+This is an example of what an agents file could look like:
 
 .. csv-table::
    :header: name, type, agent_share, region, objective1, search_rule, decision_method, ...

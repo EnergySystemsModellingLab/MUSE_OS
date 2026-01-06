@@ -1,19 +1,22 @@
 """Ensemble of functions to read MUSE data.
 
 In general, there are three functions per input file:
-`read_x`: This is the overall function that is called to read the data. It takes a
-    `Path` as input, and returns the relevant data structure (usually an xarray). The
-    process is generally broken down into two functions that are called by `read_x`:
 
-`read_x_csv`: This takes a path to a csv file as input and returns a pandas dataframe.
-    There are some consistency checks, such as checking data types and columns. There
-    is also some minor processing at this stage, such as standardising column names,
-    but no structural changes to the data. The general rule is that anything returned
-    by this function should still be valid as an input file if saved to csv.
-`process_x`: This is where more major processing and reformatting of the data is done.
-    It takes the dataframe from `read_x_csv` and returns the final data structure
-    (usually an xarray). There are also some more checks (e.g. checking for nan
-    values).
+- ``read_x``: This is the overall function that is called to read the data. It takes a
+    ``Path`` as input, and returns the relevant data structure (usually an xarray). The
+    process is generally broken down into two functions that are called by ``read_x``:
+
+- ``read_x_csv``: This takes a path to a csv file as input and returns a pandas
+    DataFrame. There are some consistency checks, such as checking data types and
+    columns. There is also some minor processing at this stage, such as standardising
+    column names, but no structural changes to the data. The general rule is that
+    anything returned by this function should still be valid as an input file if saved
+    to CSV.
+
+- ``process_x``: This is where more major processing and reformatting of the data is
+    done. It takes the DataFrame from ``read_x_csv`` and returns the final data
+    structure (usually an xarray). There are also some more checks (e.g. checking for
+    NaN values).
 
 Most of the processing is shared by a few helper functions:
 - read_csv: reads a csv file and returns a dataframe

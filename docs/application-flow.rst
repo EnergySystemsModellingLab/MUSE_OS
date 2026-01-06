@@ -1,7 +1,7 @@
 Application Flow
 ================
 
-While not essential to be able to use MUSE, it is useful to know the sequence of events that a run of MUSE will follow in a bit more detail that the brief overview of the :ref:`MUSE Overview` section. Let's start with the big picture.
+While not essential to be able to use MUSE, it is useful to know the sequence of events that a run of MUSE will follow in a bit more detail than the brief overview of the :doc:`MUSE Overview <overview>` section. Let's start with the big picture.
 
 .. note::
 
@@ -245,7 +245,7 @@ The sequence of steps related to the carbon budget control are as follows:
             single_year [label="Single year\niteration", fillcolor="lightgrey", style="rounded,filled"]
             emissions [label="Calculate emissions\nof carbon comodities"]
             comparison [label="Emissions\n> budget\n", shape=diamond, style=""]
-            new_price [label="Calculate new\ncarbon price", fillcolor="lightgrey", style="rounded,filled"]
+            new_price_node [label="Calculate new\ncarbon price", fillcolor="lightgrey", style="rounded,filled"]
 
 
             subgraph cluster_1 {
@@ -255,8 +255,8 @@ The sequence of steps related to the carbon budget control are as follows:
 
             start -> single_year
             comparison -> end [label="No", constraint=false]
-            comparison -> new_price [label="Yes"]
-            new_price -> end
+            comparison -> new_price_node [label="Yes"]
+            new_price_node -> end
         }
 
 The **method used to calculate the new carbon price** can be selected by the user. There are currently only two options for this method, ``fitting`` and ``bisection``, however this can be expanded by the user with the ``@register_carbon_budget_method`` hook in ``muse.carbon_budget``.
@@ -440,15 +440,15 @@ The following graph summarises the process.
             input_search[label="SearchRule\n(Agents.csv)", fillcolor="#ffb3b3", style="rounded,filled"]
             input_objectives[label="Objective\n(Agents.csv)s", fillcolor="#ffb3b3", style="rounded,filled"]
             input_decision[label="DecisionMethod\n(Agents.csv)", fillcolor="#ffb3b3", style="rounded,filled"]
-            input_constrains[label="Constrains\n(settings.toml)", fillcolor="#ffb3b3", style="rounded,filled"]
+            input_constraints[label="Constraints\n(settings.toml)", fillcolor="#ffb3b3", style="rounded,filled"]
             input_solver[label="lpsolver\n(settings.toml)", fillcolor="#ffb3b3", style="rounded,filled"]
 
-            start ->  demand_share -> search -> objectives -> decision -> constrains -> invest -> end
+            start ->  demand_share -> search -> objectives -> decision -> constraints -> invest -> end
             input_demand -> demand_share
             input_search -> search
             input_objectives -> objectives
             input_decision -> decision
-            input_constrains -> constrains
+            input_constraints -> constraints
             input_solver -> invest
         }
 
@@ -463,7 +463,7 @@ For those selected replacement technologies, an objective function is computed. 
 
 Then, a decision is computed. Decision methods reduce multiple objectives into a single scalar objective per replacement technology. The decision method to use is selected in the ``Agents.csv`` file. They allow combining several objectives into a single metric through which replacement technologies can be ranked. See :py:mod:`muse.decisions`.
 
-The final step of preparing the investment process is to compute the constrains, e.g. factors that will determine how much a technology could be invested in and include things like matching the demand, the search rules calculated above, the maximum production of a technology for a given capacity or the maximum capacity expansion for a given time period. Available constrains are set in the subsector section of the ``settings.toml`` file and described in :py:mod:`muse.constrains`. By default, all of them are applied. Note that these constrains might result in unfeasible situations if they do not allow the production to grow enough to match the demand. This is one of the common reasons for a MUSE simulation not converging.
+The final step of preparing the investment process is to compute the constraints, e.g. factors that will determine how much a technology could be invested in and include things like matching the demand, the search rules calculated above, the maximum production of a technology for a given capacity or the maximum capacity expansion for a given time period. Available constraints are set in the subsector section of the ``settings.toml`` file and described in :py:mod:`muse.constraints`. By default, all of them are applied. Note that these constraints might result in unfeasible situations if they do not allow the production to grow enough to match the demand. This is one of the common reasons for a MUSE simulation not converging.
 
 With all this information, the investment process can proceed. This is done per sector using the method described by the ``lpsolver`` in the ``settings.toml`` file. Available solvers are described in :py:mod:`muse.investments`
 

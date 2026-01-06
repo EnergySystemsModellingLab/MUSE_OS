@@ -100,6 +100,8 @@ There are multiple ways of installing Python, as well as multiple distributions.
 
     If you have Anaconda Python installed, then you can use it instead of ``pyenv`` to create an environment with a suitable Python version. Go to section :ref:`conda-venvs` and jump to `Installing pipx`_ when it is completed.
 
+.. _pipx-based-installing-pyenv:
+
 Installing ``pyenv``
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -108,13 +110,13 @@ Installing ``pyenv``
 To install ``pyenv``, follow these steps:
 
 - **Linux**: In this case, you will need to clone the GitHub repository using ``git``. Most Linux distributions come with ``git`` installed, so this should work out of the box.
-Then, complete the setup by adding ``pyenv`` to your profile, so the executable can be found. You can `check the instructions in the official webpage <https://github.com/pyenv/pyenv#set-up-your-shell-environment-for-pyenv>`_,
-or follow the below commands that were tested on `Ubuntu 22.04 LTS` using its popular `bash shell` and `z-shell`. To be specific, we tested them
-on `GNU bash, version 5.1.16(1)-release (x86_64-pc-linux-gnu)` and `zsh 5.8.1 (x86_64-ubuntu-linux-gnu)`.
+  Then, complete the setup by adding ``pyenv`` to your profile, so the executable can be found. You can `check the instructions in the official webpage <https://github.com/pyenv/pyenv#set-up-your-shell-environment-for-pyenv>`_,
+  or follow the below commands that were tested on `Ubuntu 22.04 LTS` using its popular `bash shell` and `z-shell`. To be specific, we tested them
+  on `GNU bash, version 5.1.16(1)-release (x86_64-pc-linux-gnu)` and `zsh 5.8.1 (x86_64-ubuntu-linux-gnu)`.
 
-Now, we go through the installation procedure of ``pyenv`` on Linux, step-by-step:
+  Now, we go through the installation procedure of ``pyenv`` on Linux, step-by-step:
 
- .. code-block::
+  .. code-block::
 
             # Step 1: Install essential libraries needed for pyenv
             sudo apt install -y make build-essential libssl-dev zlib1g-dev \
@@ -154,9 +156,8 @@ Now, we go through the installation procedure of ``pyenv`` on Linux, step-by-ste
 
     Then, complete the setup by adding ``pyenv`` to your profile, so the executable can be found. `Check the instructions in the official webpage <https://github.com/pyenv/pyenv#set-up-your-shell-environment-for-pyenv>`_.
 
-- **Windows**: ``pyenv-win`` is a separate project but it has the same functionality and it is also simpler to setup.
-You can read the detailed installation instructions `from the official pyenv-win website <https://github.com/pyenv-win/pyenv-win/tree/master>`_,
-but the easiest way is to run the following command in the ``powershell`` and, upon closing and launching a new shell, you should be ready to go:
+
+- **Windows**: ``pyenv-win`` is a separate project but it has the same functionality and it is also simpler to setup. You can read the detailed installation instructions `from the official pyenv-win website <https://github.com/pyenv-win/pyenv-win/tree/master>`_, but the easiest way is to run the following command in the ``powershell`` and, upon closing and launching a new shell, you should be ready to go:
 
     .. code-block:: powershell
 
@@ -180,7 +181,7 @@ but the easiest way is to run the following command in the ``powershell`` and, u
 
 
 Installing your chosen Python version
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 With ``pyenv`` installed and correctly configured, it is now easy to install any Python version we want. To see the versions available run:
 

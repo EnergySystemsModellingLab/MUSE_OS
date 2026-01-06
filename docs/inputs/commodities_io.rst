@@ -1,8 +1,8 @@
 .. _inputs-iocomms:
 
-=================
+=========================
 Commodity Inputs/Outputs
-=================
+=========================
 
 **Input**
 
@@ -37,8 +37,10 @@ to cover space heating and water heating energy service demands.
    :alt: Electric boilers input output commodities
 
 
-Below it is shown the generic structure of the input commodity file for the electric
-heater.
+Each sector in MUSE should have two separate CSV files for commodity inputs and outputs,
+each of which should follow the structure reported in the table below. These should be
+referenced from the TOML settings file using the ``commodities_in`` and ``commodities_out`` keys
+respectively.
 
 .. csv-table:: Commodities used as consumables - Input commodities
    :header: technology, region, year, level, electricity

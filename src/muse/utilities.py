@@ -201,21 +201,20 @@ def broadcast_over_assets(
     example, it could also be used on a dataset of commodity prices to select prices
     relevant to each asset (e.g. if assets exist in multiple regions).
 
-    Arguments:
-        data: The dataset/data-array to broadcast
-        template: The dataset/data-array to use as a template
-        installed_as_year: True means that the "year" dimension in 'data`
+    Args:
+        data: The dataset/data-array to broadcast.
+        template: The dataset/data-array to use as a template.
+        installed_as_year: True means that the ``year`` dimension in ``data``
             corresponds to the year that the asset was installed. This will commonly
-            be the case for most technology parameters (e.g. var_par/fix_par are
-            specified the year that an asset is installed, and fixed for the lifetime of
-            the asset). In this case, `data` must have a year coordinate for every
-            possible "installed" year in the template.
-
-            Conversely, if the values in `data` apply to the year of activity, rather
-            than the year of installation, `installed_as_year` should be False.
+            be the case for most technology parameters (e.g. ``var_par``/``fix_par`` are
+            specified for the year that an asset is installed, and fixed for the
+            lifetime of the asset). In this case, ``data`` must have a ``year``
+            coordinate for every possible ``installed`` year in the template.
+            Conversely, if the values in ``data`` apply to the year of activity, rather
+            than the year of installation, ``installed_as_year`` should be False.
             An example would be commodity prices, which can change over the lifetime
-            of an asset. In this case, if "year" is present as a dimension in `data`,
-            it will be maintained as a separate dimension in the output.
+            of an asset. In this case, if ``year`` is present as a dimension in
+            ``data``, it will be maintained as a separate dimension in the output.
 
     Example:
         Define the data array:

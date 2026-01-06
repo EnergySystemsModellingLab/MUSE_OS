@@ -102,7 +102,7 @@ def fitting(
         resolution: Number of decimal places to solve the carbon price to
 
     Returns:
-        new_price: adjusted carbon price to meet budget
+        Adjusted carbon price to meet budget
     """
     # Calculate the carbon price and emissions threshold in the investment year
     future = market.year[-1]

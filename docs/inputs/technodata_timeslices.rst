@@ -6,6 +6,8 @@ Technodata Timeslices
 The techno-data timeslices is an optional file which allows technology utilization factors and minimum service factors to be specified for each timeslice.
 For instance, if you were to model solar photovoltaics, you would probably want to specify that they can not produce any electricity at night, or if you're modelling a nuclear power plant, that they must generate a minimum amount of electricity.
 
+Technodata timeslice files, if present, should follow the structure reported in the table below, and be referenced from the TOML settings file using the ``technodata_timeslices`` key.
+
 .. csv-table:: Techno-data
    :header: technology,region,year,month,day,hour,utilization_factor,minimum_service_factor
 

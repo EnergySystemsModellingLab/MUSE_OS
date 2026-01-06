@@ -571,7 +571,6 @@ def save_registries():
         saveme("muse.carbon_budget", "CARBON_BUDGET_METHODS"),
         saveme("muse.constraints", "CONSTRAINTS"),
         saveme("muse.decisions", "DECISIONS"),
-        saveme("muse.decorators", "SETTINGS_CHECKS"),
         saveme("muse.demand_share", "DEMAND_SHARE"),
         saveme("muse.filters", "FILTERS"),
         saveme("muse.hooks", "INITIAL_ASSET_TRANSFORM"),

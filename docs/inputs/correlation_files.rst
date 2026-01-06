@@ -1,3 +1,5 @@
+.. _correlation-files:
+
 Correlation Demand Files
 ========================
 
@@ -11,7 +13,9 @@ To do this, a minimum of three files are required:
 
 #. A file which dictates how the demand per benchmark year is split across the timeslices.
 
-We will go into the details of each of these files below.
+These files (explained in more detail below) should be referenced from the TOML settings
+file using the ``macrodrivers_path``, ``regression_path``, and ``timeslice_shares_path``
+keys respectively.
 
 Macrodrivers
 ------------

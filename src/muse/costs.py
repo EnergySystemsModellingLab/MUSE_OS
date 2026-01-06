@@ -26,21 +26,22 @@ unwanted broadcasting.
 The dimensions of the output will be the sum of all dimensions from the input data,
 minus "commodity", plus "timeslice" (if not already present).
 
-Some functions have a `method` argument, which can be "annual" or "lifetime":
+Some functions have a `method` argument, which can be either ``"annual"`` or
+``"lifetime"``. In brief:
 
-Costs can either be annual or lifetime:
-- annual: calculates the cost in a single year
-- lifetime: calculates the total cost over the lifetime of the
-    technology, using the `technical_life` attribute from the `technologies` dataset.
-    - In this case, technology parameters, production, consumption, capacity and prices
-        are assumed to be constant over the lifetime of the technology. The cost in each
-        year is discounted according to the `interest_rate` attribute from the
-        `technologies` dataset, and summed across years.
-    - Capital costs are different, as these are a one time cost for the lifetime of the
-        technology. This can be annualized by dividing by the `technical_life`.
-Some functions can calculate both lifetime and annual costs, with a `method` argument
-to specify. Others can only calculate one or the other (see individual function
-docstrings for more details).
+- ``annual``: calculates the cost in a single year.
+- ``lifetime``: calculates the total cost over the lifetime of the technology,
+  using the `technical_life` attribute from the `technologies` dataset. In this
+  case, technology parameters, production, consumption, capacity and prices are
+  assumed constant over the lifetime; annual costs are discounted using the
+  `interest_rate` attribute from the `technologies` dataset and summed across years.
+
+Capital costs are different, as these are a one-time cost for the lifetime of the
+technology. These can be annualized by dividing by `technical_life`.
+
+Some functions can calculate both lifetime and annual costs (use the ``method``
+argument to select); others implement only one of these modes (see individual
+function docstrings for details).
 
 """
 
@@ -87,9 +88,10 @@ def capital_costs(
     `capacity` input.
 
     Method can be "lifetime" or "annual":
-    - lifetime: returns the full capital costs
-    - annual: total capital costs are multiplied by the capital recovery factor to get
-        annualized costs
+
+    - ``lifetime``: returns the full capital costs.
+    - ``annual``: total capital costs are multiplied by the capital recovery factor to
+      obtain annualized costs.
     """
     if method not in ["lifetime", "annual"]:
         raise ValueError("method must be either 'lifetime' or 'annual'.")
@@ -249,11 +251,13 @@ def net_present_value(
 ) -> xr.DataArray:
     """Net present value (NPV) of the relevant technologies.
 
-    The net present value of a technology is the present value of all the revenues that
-    a technology earns over its lifetime minus all the costs of installing and operating
-    it. Follows the definition of the `net present cost`_ given by HOMER Energy.
-    .. _net present cost:
-    ..      https://www.homerenergy.com/products/pro/docs/3.15/net_present_cost.html
+     The net present value of a technology is the present value of all the revenues that
+     a technology earns over its lifetime minus all the costs of installing and
+     operating it. Follows the definition of the `net present cost`_ given by HOMER
+     Energy.
+
+     .. _net present cost:
+         https://www.homerenergy.com/products/pro/docs/3.15/net_present_cost.html
 
     - energy commodities INPUTS are related to fuel costs
     - environmental commodities OUTPUTS are related to environmental costs
@@ -426,17 +430,17 @@ def levelized_cost_of_energy(
         :py:func:`running_costs`
 
     Can calculate either a lifetime or annual LCOE.
-    - lifetime: the average cost per unit of production over the entire lifetime of the
-        technology.
-        Annual running costs and production are calculated for the full lifetime of the
-        technology, and adjusted to a present value using the discount rate. Total
-        costs (running costs over the lifetime + initial capital costs) are then divided
-        by total production to get the average cost per unit of production.
-    - annual: the average cost per unit of production in a single year.
-        Annual running costs and production are calculated for a single year. Capital
-        costs are multiplied by the capital recovery factor to get an annualized cost.
-        Total costs (annualized capital costs + running costs) are then divided by
-        production to get the average cost per unit of production.
+
+    - ``lifetime``: the average cost per unit of production over the entire lifetime
+      of the technology. Annual running costs and production are calculated for the
+      full lifetime and adjusted to present value using the discount rate. Total
+      costs (running costs over the lifetime + initial capital costs) are divided by
+      total production to obtain the average cost per unit.
+
+    - ``annual``: the average cost per unit of production in a single year. Annual
+      running costs and production are calculated for a single year, capital costs
+      are annualized using the capital recovery factor, and total costs are divided
+      by production to obtain the average cost per unit.
 
     Arguments:
         technologies: xr.Dataset of technology parameters

@@ -33,7 +33,7 @@ three examples are equivalent:
 .. code-block:: TOML
 
    [sectors.residential]
-   production = {"name": "match", "costing": "prices"}
+   production = { name = "match", costing = "prices" }
 
 .. code-block:: TOML
 

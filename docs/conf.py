@@ -50,13 +50,18 @@ autodoc_typehints = "none"
 add_module_names = False
 nbsphinx_allow_errors = True
 autosectionlabel_prefix_document = True
+nitpicky = True
+
+# Suppress warnings for documents not included in any toctree (e.g. release notes)
+suppress_warnings = ["toc.not_included"]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("http://docs.scipy.org/doc/numpy/", None),
-    "pandas": ("http://pandas.pydata.org/pandas-docs/dev", None),
-    "xarray": ("http://xarray.pydata.org/en/stable/", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "xarray": ("https://xarray.pydata.org/en/stable/", None),
 }
+
 
 bibtex_bibfiles: list[str] = []
 

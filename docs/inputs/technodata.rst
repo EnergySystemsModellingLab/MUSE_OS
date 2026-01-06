@@ -5,7 +5,9 @@ Technodata
 ===========
 The technodata includes the techno-economic characteristics of each technology such
 as capital, fixed and variable cost, lifetime, utilization factor.
-The technodata should follow the structure reported in the table below.
+Models should have one technodata file for each sector, which is referenced
+in the TOML settings file using the ``technodata`` key.
+Technodata files should follow the structure reported in the table below.
 In this example, we show an electric boiler for a generic region, region1:
 
 .. csv-table:: Technodata
