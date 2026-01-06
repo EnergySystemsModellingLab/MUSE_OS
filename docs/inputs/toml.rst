@@ -510,7 +510,7 @@ The following attributes are accepted:
    current working directory. The file names must include the year for which it defines
    the consumption, e.g. `Consumption2015.csv`.
 
-   The CSV format should follow the format described in :ref:`consumption_path <preset-consumption-file>`.
+   The CSV format should follow the format described in the :ref:`Preset commodity demands <preset-consumption-file>` document.
 
 ``supply_path``
    CSV file, one per year, indicating the amount of commodities produced. It follows

@@ -1,8 +1,8 @@
-.. _preset-consumption-file:
-
 =============================
 Preset Commodity Demands
 =============================
+
+.. _preset-consumption-file:
 
 This document describes the CSV files used to supply pre-set commodity consumption
 profiles to MUSE. These files are referenced from the TOML setting ``consumption_path``
