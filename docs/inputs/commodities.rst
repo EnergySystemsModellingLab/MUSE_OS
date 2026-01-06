@@ -6,7 +6,8 @@ Global Commodities
 
 MUSE handles a configurable number and type of commodities which are primarily used to
 represent energy, services, pollutants/emissions. The commodities for the simulation as
-a whole are defined in a csv file with the following structure.
+a whole are defined in a csv file with the following structure, which is referenced from
+the TOML settings file using the ``global_commodities`` key.
 
 .. csv-table:: Global commodities
    :header: commodity, description, commodity_type, unit

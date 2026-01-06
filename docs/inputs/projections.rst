@@ -24,7 +24,8 @@ The interpretation of these prices depends on the type of commodity:
   Lack of a price trajectory will be interpreted as a price of 0 for all periods (i.e. no levy on production),
   again with the exception of the carbon budget mode.
 
-The price trajectory should follow the structure shown in the table below.
+Price trajectories should be stored in a CSV file with the structure shown in the
+table below, and referenced from the TOML settings file using the ``projections`` key.
 
 .. csv-table:: Initial market projections
    :header: region, attribute, year, com1, com2, com3

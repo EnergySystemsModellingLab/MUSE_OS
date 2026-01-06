@@ -17,7 +17,7 @@ model_name/
     - :ref:`GlobalCommodities.csv <inputs-commodities>`
     - :ref:`Projections.csv <inputs-projection>`
     - sector1/
-        - :ref:`Technodata <inputs-technodata>`
+        - :ref:`Technodata.csv <inputs-technodata>`
         - :ref:`CommoditiesIn.csv <inputs-iocomms>`
         - :ref:`CommoditiesOut.csv <inputs-iocomms>`
         - :ref:`ExistingCapacity.csv <inputs-existing-capacity>`
@@ -26,7 +26,7 @@ model_name/
         - :ref:`Consumption2020.csv <preset-consumption-file>`
         - etc.
 
-Note, however, that this is just a convention, and more complex models may benefit from or require a different file structure.
+Note, however, that this is just a convention for simple models, and more complex models may benefit from or require a different file structure.
 See full documentation below for more details on the settings TOML and all the different types of data file.
 
 .. toctree::
