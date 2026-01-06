@@ -258,7 +258,7 @@ Sectors contain a number of subsections:
     different commodities. There must be at least one subsector, and there can be as
     many as required. For instance, a one-subsector setup would look like:
 
-    .. code-block:: toml
+    .. code-block:: TOML
 
         [sectors.gas.subsectors.all]
         agents = '{path}/gas/Agents.csv'
@@ -266,7 +266,7 @@ Sectors contain a number of subsections:
 
     A two-subsector could look like:
 
-    .. code-block:: toml
+    .. code-block:: TOML
 
         [sectors.gas.subsectors.methane_and_ethanol]
         agents = '{path}/gas/me_agents.csv'
@@ -295,8 +295,7 @@ Sectors contain a number of subsections:
         are registered via :py:func:`~muse.investments.register_investment`. At time of
         writing, three are available:
 
-            - **scipy** solver (default from v1.3): Formulates investment as a true LP problem and solves it using
-               the ``scipy`` solver.
+        - **scipy** solver (default from v1.3): Formulates investment as a true LP problem and solves it using the ``scipy`` solver.
 
         - **adhoc** solver: Simple in-house solver that ranks the technologies
           according to cost and service the demand incrementally.
@@ -452,7 +451,7 @@ Sectors contain a number of subsections:
    Furthermore, it is possible to pass parameters to either the net of the interaction
    as follows:
 
-   .. code-block:: toml
+   .. code-block:: TOML
 
       [[sectors.commercial.interactions]]
       net = { name = "some_net", param = "some value" }
@@ -549,6 +548,8 @@ The following attributes are accepted:
 
 
 ========================
+.. _carbon-market:
+
 Carbon market (optional)
 ========================
 

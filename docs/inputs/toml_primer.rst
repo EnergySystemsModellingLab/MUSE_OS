@@ -30,7 +30,7 @@ three examples are equivalent:
    costing = "prices"
 
 
-.. code-block:: toml
+.. code-block:: TOML
 
    [sectors.residential]
    production = { name = "match", costing = "prices" }
@@ -67,7 +67,7 @@ dictionary).
 As MUSE requires a number of data file, paths to files can be formatted in a flexible manner. Paths can be formatted with shorthands for specific directories and are defined with curly-brackets. For example:
 
 
-.. code-block:: toml
+.. code-block:: TOML
 
    projection = '{path}/inputs/projection.csv'
    timeslices_path = '{cwd}/technodata/timeslices.csv'

@@ -213,6 +213,12 @@ Functionality Registration
 .. automodule:: muse.registration
    :members:
 
+Costs
+~~~~~
+
+.. automodule:: muse.costs
+   :members:
+
 Utilities
 ~~~~~~~~~
 
