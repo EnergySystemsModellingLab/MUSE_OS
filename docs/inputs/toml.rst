@@ -355,7 +355,7 @@ Sectors contain a number of subsections:
       Name of the quantity to save.
       The options are capacity, consumption, supply and costs.
       Users can also customize and create further output quantities by registering with
-      MUSE via :py:func:`muse.outputs.mca.register_output_quantity`. See :py:mod:`muse.outputs` for more details.
+      MUSE via :py:func:`muse.outputs.mca.register_output_quantity`. See :py:mod:`muse.outputs.sector` for more details.
 
    ``sink``
       the sink is the place (disk, cloud, database, etc...) and format with which
@@ -363,7 +363,7 @@ Sectors contain a number of subsections:
       implemented.
       The following sinks are available: "csv", "netcfd", "excel" and "aggregate".
       Additional sinks can be added by interested users, and registered with MUSE via
-      :py:func:`muse.outputs.register_output_sink`. See :py:mod:`muse.outputs` for more details.
+      :py:func:`muse.outputs.sinks.register_output_sink`. See :py:mod:`muse.outputs.sinks` for more details.
 
    ``filename``
       defines the format of the file where to save the data. There are several
@@ -510,7 +510,7 @@ The following attributes are accepted:
    current working directory. The file names must include the year for which it defines
    the consumption, e.g. `Consumption2015.csv`.
 
-   The CSV format should follow the format described in :ref:`consumption_path <_preset-consumption-file>`.
+   The CSV format should follow the format described in :ref:`consumption_path <preset-consumption-file>`.
 
 ``supply_path``
    CSV file, one per year, indicating the amount of commodities produced. It follows
