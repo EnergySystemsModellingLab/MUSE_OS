@@ -110,13 +110,13 @@ Installing ``pyenv``
 To install ``pyenv``, follow these steps:
 
 - **Linux**: In this case, you will need to clone the GitHub repository using ``git``. Most Linux distributions come with ``git`` installed, so this should work out of the box.
-Then, complete the setup by adding ``pyenv`` to your profile, so the executable can be found. You can `check the instructions in the official webpage <https://github.com/pyenv/pyenv#set-up-your-shell-environment-for-pyenv>`_,
-or follow the below commands that were tested on `Ubuntu 22.04 LTS` using its popular `bash shell` and `z-shell`. To be specific, we tested them
-on `GNU bash, version 5.1.16(1)-release (x86_64-pc-linux-gnu)` and `zsh 5.8.1 (x86_64-ubuntu-linux-gnu)`.
+  Then, complete the setup by adding ``pyenv`` to your profile, so the executable can be found. You can `check the instructions in the official webpage <https://github.com/pyenv/pyenv#set-up-your-shell-environment-for-pyenv>`_,
+  or follow the below commands that were tested on `Ubuntu 22.04 LTS` using its popular `bash shell` and `z-shell`. To be specific, we tested them
+  on `GNU bash, version 5.1.16(1)-release (x86_64-pc-linux-gnu)` and `zsh 5.8.1 (x86_64-ubuntu-linux-gnu)`.
 
-Now, we go through the installation procedure of ``pyenv`` on Linux, step-by-step:
+  Now, we go through the installation procedure of ``pyenv`` on Linux, step-by-step:
 
-.. code-block::
+  .. code-block::
 
             # Step 1: Install essential libraries needed for pyenv
             sudo apt install -y make build-essential libssl-dev zlib1g-dev \

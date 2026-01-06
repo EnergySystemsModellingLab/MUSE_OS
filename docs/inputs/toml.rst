@@ -547,8 +547,6 @@ The following attributes are accepted:
    :ref:`macrodrivers_path<preset-consumption>`.
 
 
-========================
-.. _/inputs/toml.rst#carbon-market:
 .. _carbon-market:
 
 Carbon market (optional)
