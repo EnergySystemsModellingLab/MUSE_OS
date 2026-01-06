@@ -615,9 +615,9 @@ For example
 
 
 
-=================================
+---------------------------------
 Output cache (for advanced users)
-=================================
+---------------------------------
 
 ``outputs_cache``
    This option behaves exactly like `outputs` for sectors and accepts the same options but
