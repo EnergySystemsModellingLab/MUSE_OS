@@ -23,6 +23,7 @@ ModUlar energy system Simulation Environment: MUSE
    inputs/index
    user-guide/index
    advanced-guide/index
+   developer-guide
    faq
    api
    release-notes/index
