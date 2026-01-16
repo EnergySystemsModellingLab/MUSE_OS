@@ -5,6 +5,7 @@ This is the list of changes to MUSE between each release.
 
 To update to the latest version, run ``pip install --upgrade muse-os``
 
+* :ref:`/release-notes/v1.5.4.md`
 * :ref:`/release-notes/v1.5.3.md`
 * :ref:`/release-notes/v1.5.2.md`
 * :ref:`/release-notes/v1.5.1.md`
