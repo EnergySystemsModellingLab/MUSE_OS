@@ -569,11 +569,20 @@ def process_io_technodata(data: pd.DataFrame) -> xr.Dataset:
     # Create xarray dataset
     result = create_xarray_dataset(data)
 
-    # Fill in flexible data
-    if "flexible" in result.data_vars:
-        result["flexible"] = result.flexible.fillna(0)
-    else:
+    # Ensure both `fixed` and `flexible` inputs/outputs are defined. If only one is
+    # defined in the input data, create the other as a zeros array with the same shape.
+    has_fixed = "fixed" in result.data_vars
+    has_flexible = "flexible" in result.data_vars
+    if has_fixed and not has_flexible:
         result["flexible"] = xr.zeros_like(result.fixed).rename("flexible")
+    elif has_flexible and not has_fixed:
+        result["fixed"] = xr.zeros_like(result.flexible).rename("fixed")
+    elif not has_fixed and not has_flexible:
+        raise ValueError("Neither 'fixed' nor 'flexible' levels were found.")
+
+    # Fill any NaNs with zero
+    result["fixed"] = result.fixed.fillna(0)
+    result["flexible"] = result.flexible.fillna(0)
 
     # Check commodities
     result = check_commodities(result, fill_missing=True, fill_value=0)
