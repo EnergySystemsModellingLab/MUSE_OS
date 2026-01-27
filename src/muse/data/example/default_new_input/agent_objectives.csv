@@ -1,0 +1,4 @@
+agent_id,objective_type,decision_weight,objective_sort
+A1_RES,LCOE,1,TRUE
+A1_PWR,LCOE,1,TRUE
+A1_GAS,LCOE,1,TRUE
