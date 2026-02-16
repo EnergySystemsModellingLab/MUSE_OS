@@ -71,10 +71,14 @@ def test_minimum_service_factor(check_mock, tmp_path, minimum_service_factors):
     for process, service_factor in zip(processes, minimum_service_factors):
         supply_process = supply[supply.technology == process]
         supply_process.loc[:, "min_supply"] = supply_process.apply(
-            lambda x: x.capacity
-            * service_factor[x.timeslice]
-            * float(
-                techno_out[techno_out.ProcessName == process]["electricity"].values[0]
+            lambda x: (
+                x.capacity
+                * service_factor[x.timeslice]
+                * float(
+                    techno_out[techno_out.ProcessName == process]["electricity"].values[
+                        0
+                    ]
+                )
             ),
             axis=1,
         )
