@@ -14,15 +14,15 @@ The interpretation of these prices depends on the type of commodity:
     be provided as they are calculated endogenously by the model in all years after the
     base year, so long as the model is in equilibrium mode. Equilibrium mode is active
     as long as the ``maximum_iterations`` parameter in the settings file is greater than 1.
-  * For commodities that are **not produced by processes in the model**, prices should be
+  * For commodities that are **not produced by processes in the model**, and are not free, prices should be
     provided for all years as they cannot be endogenously calculated.
 
 * For **environmental** commodities, prices represent levies on production (e.g. carbon tax).
   In most cases, these will not be calculated endogenously, so users should provide
   full price trajectories. The exception is when using the carbon budget
   mode, where the prices of environmental commodities may be updated throughout the simulation.
-  Lack of a price trajectory will be interpreted as a price of 0 for all periods (i.e. no levy on production),
-  again with the exception of the carbon budget mode.
+  
+Lack of a price trajectory for any commodity will be interpreted as a price of 0 for all periods (i.e. no cost to purchase, and no levy on production), again with the exception of the carbon budget mode.
 
 Price trajectories should be stored in a CSV file with the structure shown in the
 table below, and referenced from the TOML settings file using the ``projections`` key.
