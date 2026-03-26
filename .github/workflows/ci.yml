@@ -16,7 +16,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         # Test with the earliest and the latest python versions supported
-        python-version: ["3.9", "3.13"]
+        python-version: ["3.11", "3.14"]
 
     steps:
       - uses: actions/checkout@v6
@@ -40,7 +40,7 @@ jobs:
               --cov-report=xml
 
       - name: Upload coverage to Codecov
-        if: success() && (github.event_name == 'push' && runner.os == 'Linux' && matrix.python-version == 3.9)
+        if: success() && (github.event_name == 'push' && runner.os == 'Linux' && matrix.python-version == 3.11)
         uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
@@ -59,7 +59,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         # Test with the earliest and the latest python versions supported
-        python-version: ["3.9", "3.13"]
+        python-version: ["3.11", "3.14"]
 
     steps:
       - uses: actions/checkout@v6

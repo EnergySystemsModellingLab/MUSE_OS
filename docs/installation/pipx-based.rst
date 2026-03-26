@@ -6,7 +6,7 @@ pipx-based installation
 To help you installing MUSE in your system we will follow these steps:
 
 - `Launching a terminal`_: Needed to both install and run MUSE.
-- `Installing a compatible Python version`_: MUSE works with Python 3.9 to 3.13.
+- `Installing a compatible Python version`_: MUSE works with Python 3.11 to 3.14.
 - `Installing pipx`_: A Python application manager that facilitates installing, keeping applications updated and run them in their own isolated environments.
 - `Installing MUSE itself`_
 
@@ -22,8 +22,8 @@ In the following sections, we will guide you step by step in configuring your sy
 
         .. code-block::
 
-            pyenv install 3.9.13
-            pyenv shell 3.9.13
+            pyenv install 3.11.0
+            pyenv shell 3.11.0
             python -m pip install pipx
             python -m pipx ensurepath
             python -m pipx install muse-os
@@ -67,7 +67,7 @@ Once you have launched the Terminal, the window that opens will show the command
 Installing a compatible Python version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-MUSE needs Python to run and it works with versions 3.9 to 3.13, so the next step is to install a suitable version of Python.
+MUSE needs Python to run and it works with versions 3.11 to 3.14, so the next step is to install a suitable version of Python.
 
 .. note::
 
@@ -92,7 +92,7 @@ The first thing will be to check if you already have a suitable python version i
 
     python --version
 
-If the output is ``Python 3.Y.X`` or ``Python 3.Y.X``, where ``X`` is any number and ``Y`` is 9, 10, 11 or 12, then **you have a version of Python compatible with MUSE and you can skip this section altogether**. Move to `Installing pipx`_. In any other case, keep reading.
+If the output is ``Python 3.Y.X`` or ``Python 3.Y.X``, where ``X`` is any number and ``Y`` is 11, 12, 13 or 14, then **you have a version of Python compatible with MUSE and you can skip this section altogether**. Move to `Installing pipx`_. In any other case, keep reading.
 
 There are multiple ways of installing Python, as well as multiple distributions. Here we have opted for the one that we believe is simplest, requires the smallest downloads and gives the maximum flexibility: using ``pyenv``.
 
@@ -189,22 +189,22 @@ With ``pyenv`` installed and correctly configured, it is now easy to install any
 
     pyenv install -l
 
-You should see a long list of versions to choose from. Let's install one of the later versions of the 3.9 family:
+You should see a long list of versions to choose from. Let's install 3.11.0 as an example:
 
 .. code-block:: bash
 
-    pyenv install 3.9.13
+    pyenv install 3.11.0
 
 The command will take a minute or two to complete, depending on your internet connection, and show an output similar to the following (this is an example from Windows):
 
 .. code-block:: output
 
     :: [Info] ::  Mirror: https://www.python.org/ftp/python
-    :: [Downloading] ::  3.9.13 ...
-    :: [Downloading] ::  From https://www.python.org/ftp/python/3.9.13/python-3.9.13-amd64.exe
-    :: [Downloading] ::  To C:\Users\your_username\.pyenv\pyenv-win\install_cache\python-3.9.13-amd64.exe
-    :: [Installing] ::  3.9.13 ...
-    :: [Info] :: completed! 3.9.13
+    :: [Downloading] ::  3.11.0 ...
+    :: [Downloading] ::  From https://www.python.org/ftp/python/3.11.0/python-3.11.0-amd64.exe
+    :: [Downloading] ::  To C:\Users\your_username\.pyenv\pyenv-win\install_cache\python-3.11.0-amd64.exe
+    :: [Installing] ::  3.11.0 ...
+    :: [Info] :: completed! 3.11.0§
 
 Now, we have a new Python version in our system, but it is still not available (if you run ``python --version`` you will get the same result as before). There are two options moving forward:
 
@@ -212,15 +212,15 @@ Now, we have a new Python version in our system, but it is still not available (
 
     .. code-block:: bash
 
-        pyenv global 3.9.13
+        pyenv global 3.11.0
 
 - If you just want it momentarily to install MUSE run instead the following command:
 
     .. code-block:: bash
 
-        pyenv shell 3.9.13
+        pyenv shell 3.11.0
 
-In both cases, if you run ``python --version`` afterwards, you should get ``Python 3.9.13``.
+In both cases, if you run ``python --version`` afterwards, you should get ``Python 3.11.0``.
 
 Installing ``pipx``
 ~~~~~~~~~~~~~~~~~~~
