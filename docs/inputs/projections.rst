@@ -21,7 +21,7 @@ The interpretation of these prices depends on the type of commodity:
   In most cases, these will not be calculated endogenously, so users should provide
   full price trajectories. The exception is when using the carbon budget
   mode, where the prices of environmental commodities may be updated throughout the simulation.
-  
+
 Lack of a price trajectory for any commodity will be interpreted as a price of 0 for all periods (i.e. no cost to purchase, and no levy on production), again with the exception of the carbon budget mode.
 
 Price trajectories should be stored in a CSV file with the structure shown in the
