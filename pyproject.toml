@@ -11,24 +11,23 @@ name = "MUSE_OS"
 description = "Energy System Model"
 readme = "README.md"
 license = {file = "LICENSE"}
-requires-python = ">= 3.9, <3.14"
+requires-python = ">= 3.11, <3.15"
 keywords = ["energy", "modelling"]
 classifiers = [
     "Development Status :: 4 - Beta",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Other Audience",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
 ]
 dependencies = [
-    "numpy>=2.0",
-    "scipy>=1.13",
-    "pandas>=2.2,<3.0",
-    "xarray>=2024.6,<=2024.11",
+    "numpy>=2.4,<3.0",
+    "scipy>=1.17,<2.0",
+    "pandas>=3.0,<4.0",
+    "xarray>=2026.2",
     "bottleneck>=1.4",
     "coloredlogs",
     "toml",

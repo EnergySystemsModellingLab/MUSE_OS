@@ -34,7 +34,7 @@ To create an environment called ``muse_env`` run:
 
 .. code-block:: bash
 
-    conda create -n muse_env python=3.9
+    conda create -n muse_env python=3.11
 
 Now, you can activate the environment with:
 
@@ -95,7 +95,7 @@ Creating a virtual environment with ``pyenv + venv``
 
 Alternatively to creating virtual environments in ``conda``, you can also make use of two well-tested and maintained libraries.
 We met the first one, ``pyenv``, already in the :ref:`pipx-based <pipx-based>` under the section :ref:`Installing pyenv <pipx-based-installing-pyenv>` and the installation procedure is exactly the same.
-If you go down that route, please follow the steps outlined there and chose a recent version ``Python``, say 3.9.
+If you go down that route, please follow the steps outlined there and chose a recent version ``Python``, say 3.13.
 
 The second package we need to create virtual environments for any specific ``Python`` version is called
 ``venv``, and it ships with ``Python`` by default. To create such an environment, we first need to ensure that the
