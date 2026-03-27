@@ -1,0 +1,12 @@
+process_id,commodity_id,region_id,year,coeff
+gassupply1,gas,R1,all,1
+gasCCGT,gas,R1,all,-1.67
+gasCCGT,electricity,R1,all,1
+gasCCGT,CO2f,R1,all,91.67
+windturbine,wind,R1,all,-1
+windturbine,electricity,R1,all,1
+gasboiler,gas,R1,all,-1.16
+gasboiler,heat,R1,all,1
+gasboiler,CO2f,R1,all,64.71
+heatpump,electricity,R1,all,-0.4
+heatpump,heat,R1,all,1
