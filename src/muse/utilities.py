@@ -150,7 +150,7 @@ def reduce_assets(
 
     # Concatenate assets if a sequence is given
     if not isinstance(assets, (xr.Dataset, xr.DataArray)):
-        assets = xr.concat(assets, dim=dim)
+        assets = xr.concat(assets, dim=dim, join="outer")
     assert isinstance(assets, (xr.Dataset, xr.DataArray))
 
     # If there are no assets, nothing needs to be done
@@ -370,7 +370,7 @@ def merge_assets(
         capa_b_interp = interpolate_capacity(capa_b, year=years)
 
     # Concatenate the two capacity arrays
-    result = xr.concat((capa_a_interp, capa_b_interp), dim=dimension)
+    result = xr.concat((capa_a_interp, capa_b_interp), dim=dimension, join="outer")
 
     #
     forgroup = result.pipe(coords_to_multiindex, dimension=dimension)
@@ -583,7 +583,9 @@ def agent_concatenation(
             )
         else:
             datum[name] = key
-    result = xr.concat(data.values(), dim=dim)
+    result = xr.concat(
+        data.values(), dim=dim, join="outer", coords="different", compat="equals"
+    )
     if isinstance(result, xr.Dataset):
         result = result.set_coords("agent")
     if "year" in result.dims:

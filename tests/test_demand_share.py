@@ -98,7 +98,7 @@ def create_regional_market(technologies, stock):
     usa_market = _matching_market(
         broadcast_over_assets(technologies, usa_stock), usa_stock.capacity
     )
-    market = xr.concat((asia_market, usa_market), dim="region")
+    market = xr.concat((asia_market, usa_market), dim="region", join="outer")
     return market, asia_stock, usa_stock
 
 
