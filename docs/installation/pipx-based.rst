@@ -204,7 +204,7 @@ The command will take a minute or two to complete, depending on your internet co
     :: [Downloading] ::  From https://www.python.org/ftp/python/3.11.0/python-3.11.0-amd64.exe
     :: [Downloading] ::  To C:\Users\your_username\.pyenv\pyenv-win\install_cache\python-3.11.0-amd64.exe
     :: [Installing] ::  3.11.0 ...
-    :: [Info] :: completed! 3.11.0§
+    :: [Info] :: completed! 3.11.0
 
 Now, we have a new Python version in our system, but it is still not available (if you run ``python --version`` you will get the same result as before). There are two options moving forward:
 
