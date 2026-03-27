@@ -150,7 +150,9 @@ def reduce_assets(
 
     # Concatenate assets if a sequence is given
     if not isinstance(assets, (xr.Dataset, xr.DataArray)):
-        assets = xr.concat(assets, dim=dim, join="outer")
+        assets = xr.concat(
+            assets, dim=dim, join="outer", coords="different", compat="equals"
+        )
     assert isinstance(assets, (xr.Dataset, xr.DataArray))
 
     # If there are no assets, nothing needs to be done
@@ -584,7 +586,12 @@ def agent_concatenation(
         else:
             datum[name] = key
     result = xr.concat(
-        data.values(), dim=dim, join="outer", coords="different", compat="equals"
+        data.values(),
+        dim=dim,
+        join="outer",
+        coords="different",
+        compat="equals",
+        data_vars="all",
     )
     if isinstance(result, xr.Dataset):
         result = result.set_coords("agent")

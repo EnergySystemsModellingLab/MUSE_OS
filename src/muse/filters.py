@@ -489,9 +489,7 @@ def initialize_from_assets(
     if "asset" not in agent.assets.dims or len(agent.assets.asset) == 0:
         return replacement
 
-    assets = (
-        xr.ones_like(reduce_assets(agent.assets.asset, coords=coords), dtype=bool)
-        .rename(technology="asset")
-        .set_index()
-    )
+    assets = xr.ones_like(
+        reduce_assets(agent.assets.asset, coords=coords), dtype=bool
+    ).set_index(asset="technology")
     return (assets * replacement).transpose("asset", "replacement")
