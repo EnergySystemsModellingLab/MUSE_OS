@@ -151,7 +151,12 @@ def reduce_assets(
     # Concatenate assets if a sequence is given
     if not isinstance(assets, (xr.Dataset, xr.DataArray)):
         assets = xr.concat(
-            assets, dim=dim, join="outer", coords="different", compat="equals"
+            assets,
+            dim=dim,
+            join="outer",
+            coords="different",
+            compat="equals",
+            data_vars="all",
         )
     assert isinstance(assets, (xr.Dataset, xr.DataArray))
 
@@ -372,7 +377,14 @@ def merge_assets(
         capa_b_interp = interpolate_capacity(capa_b, year=years)
 
     # Concatenate the two capacity arrays
-    result = xr.concat((capa_a_interp, capa_b_interp), dim=dimension, join="outer")
+    result = xr.concat(
+        (capa_a_interp, capa_b_interp),
+        dim=dimension,
+        join="outer",
+        coords="different",
+        compat="equals",
+        data_vars="all",
+    )
 
     #
     forgroup = result.pipe(coords_to_multiindex, dimension=dimension)
