@@ -35,7 +35,11 @@ dependencies = [
     "xlrd",
     "mypy-extensions",
     "pypubsub",
-    "tomlkit"
+    "tomlkit",
+    "duckdb",
+    "fsspec",
+    "sqlalchemy",
+    "duckdb-engine"
 ]
 dynamic = ["version"]
 
