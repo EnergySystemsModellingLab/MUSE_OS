@@ -280,9 +280,9 @@ def max_capacity_expansion(
 ) -> Constraint | None:
     r"""Max-capacity addition, max-capacity growth, and capacity limits constraints.
 
-    Limits by how much the capacity of each technology owned by an agent can grow in
-    a given year. This is a constraint on the agent's ability to invest in a
-    technology.
+    Limits how much the total capacity of each replacement technology can grow in a
+    given year. This constraint applies to the combined investment across all of an
+    agent's assets, rather than separately to each asset.
 
     Let :math:`L_t^r(y)` be the total capacity limit for a given year, technology,
     and region. :math:`G_t^r(y)` is the maximum growth. And :math:`W_t^r(y)` is
@@ -291,7 +291,7 @@ def max_capacity_expansion(
 
     Let :math:`\mathcal{A}^{i, r}_{t, \iota}(y)` be the current assets, before
     investment, and let :math:`\Delta\mathcal{A}^{i,r}_t` be the future investments.
-    The the constraint on agent :math:`i` are given as:
+    The combined constraint across all assets is given as:
 
     .. math::
 
@@ -305,8 +305,9 @@ def max_capacity_expansion(
         (y_1 - y_0)W_t^r(y_0) \geq  \Delta\mathcal{A}^{i,r}_t
 
     The three constraints are combined into a single one which is returned as the
-    maximum capacity expansion, :math:`\Gamma_t^{r, i}`. The maximum capacity
-    expansion cannot impose negative investments:
+    maximum capacity expansion, :math:`\Gamma_t^r`. The maximum capacity expansion
+    cannot impose negative investments:
+
     Maximum capacity addition:
 
         .. math::
@@ -405,7 +406,7 @@ def max_capacity_expansion(
         )
 
     if b.region.dims == ():
-        capa = 1
+        capa = xr.ones_like(b, dtype=float)
     elif "dst_region" in b.dims:
         b = b.rename(region="src_region")
         capa = search_space.agent.region == b.src_region

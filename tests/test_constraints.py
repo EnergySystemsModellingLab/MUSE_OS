@@ -161,6 +161,7 @@ def test_constraints_dimensions(constraints):
 def test_max_capacity_expansion(constraints):
     """Checking basic properties of the max capacity expansion constraint."""
     max_capacity_expansion = constraints["max_capacity_expansion"]
+    assert max_capacity_expansion.capacity.dims == ("replacement",)
     assert (max_capacity_expansion.capacity == 1).all()
     assert max_capacity_expansion.production == 0
     assert max_capacity_expansion.b.dims == ("replacement",)
