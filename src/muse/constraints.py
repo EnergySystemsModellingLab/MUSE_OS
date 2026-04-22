@@ -375,9 +375,7 @@ def max_capacity_expansion(
 
     # MaxCapacityGrowth constraint
     if "max_capacity_growth" in techs:
-        assert "growth_seed" in techs
-        seed = techs.growth_seed
-        seeded_initial = np.maximum(initial, seed)
+        seeded_initial = np.maximum(initial, techs.growth_seed)
         growth_cap = (
             (seeded_initial * (techs.max_capacity_growth + 1) ** time_frame)
             - forecasted

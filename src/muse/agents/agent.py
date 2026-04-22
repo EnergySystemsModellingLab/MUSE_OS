@@ -357,7 +357,7 @@ class InvestingAgent(Agent):
         for var in ["max_capacity_addition", "total_capacity_limit"]:
             if var in technologies:
                 technologies[var] = self.quantity * technologies[var]
-        technologies["growth_seed"] = self.quantity * technologies.get("growth_seed", 1)
+        technologies["growth_seed"] = self.quantity * technologies["growth_seed"]
 
         # Calculate constraints
         constraints = self.constraints(
