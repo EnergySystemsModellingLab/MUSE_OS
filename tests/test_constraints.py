@@ -148,7 +148,7 @@ def test_constraints_dimensions(constraints):
     assert set(constraints["demand_limiting_capacity"].b.dims) == {"asset", "commodity"}
 
     # Max capacity expansion constraint
-    assert set(constraints["max_capacity_expansion"].capacity.dims) == set()
+    assert set(constraints["max_capacity_expansion"].capacity.dims) == {"replacement"}
     assert set(constraints["max_capacity_expansion"].production.dims) == set()
     assert set(constraints["max_capacity_expansion"].b.dims) == {"replacement"}
 
