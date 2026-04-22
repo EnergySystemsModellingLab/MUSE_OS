@@ -22,7 +22,7 @@ class AbstractAgent(ABC):
         region: str = "",
         assets: xr.Dataset | None = None,
         category: str | None = None,
-        quantity: float | None = 1,
+        quantity: float = 1.0,
         timeslice_level: str | None = None,
     ):
         """Creates a standard MUSE agent.
@@ -118,7 +118,7 @@ class Agent(AbstractAgent):
         demand_threshold: float | None = None,
         category: str | None = None,
         asset_threshold: float = 1e-4,
-        quantity: float | None = 1,
+        quantity: float = 1.0,
         spend_limit: int = 0,
         timeslice_level: str | None = None,
         **kwargs,
@@ -351,6 +351,13 @@ class InvestingAgent(Agent):
             reduce_assets(self.assets.capacity, coords=("technology", "region")),
             year=[current_year, investment_year],
         )
+
+        # Scale capacity constraints by agent quantity
+        technologies = technologies.copy()
+        for var in ["max_capacity_addition", "total_capacity_limit"]:
+            if var in technologies:
+                technologies[var] = self.quantity * technologies[var]
+        technologies["growth_seed"] = self.quantity * technologies.get("growth_seed", 1)
 
         # Calculate constraints
         constraints = self.constraints(
