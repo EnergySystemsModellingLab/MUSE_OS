@@ -85,7 +85,8 @@ Capacity constraints (optional)
    * Overall, the most restrictive constraint will apply, which in this case is 14.3 PJ.
 
    Capacity constraints are applied separately for each agent. In multi-agent simulations,
-   each agent receives a proportion of the overall limit according to its agent quantity.
+   each agent receives a proportion of the overall limit according to its quantity (i.e. share of the commodity demand).
+   For example, if a technology has a ``max_capacity_addition`` of 100 MW per year, then an agent with a quantity of 0.5 would have an addition limit of 50 MW per year (noting that quantities for all agents should sum to 1).
 
    If any of the three parameters are not provided in the technodata file, that particular constraint is not applied.
 
