@@ -448,6 +448,9 @@ def unmet_forecasted_demand(
         ),
         timeslice_level=timeslice_level,
     )
+
+    # Add dummy asset dimension to result
+    result = result.expand_dims({"asset": ["all"]}).squeeze("region")
     assert "year" not in result.dims
     return result
 
