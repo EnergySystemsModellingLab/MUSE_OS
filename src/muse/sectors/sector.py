@@ -267,7 +267,9 @@ class Sector(AbstractSector):  # type: ignore
 
     def save_outputs(self, year: int) -> None:
         """Calls the outputs function with the current output data."""
-        self.outputs(self.output_data, self.capacity, year=year)
+        self.outputs(
+            self.output_data, self.capacity, year=year, commodities=self.commodities
+        )
 
     def market_variables(self, market: xr.Dataset, technologies: xr.Dataset) -> Any:
         """Computes resulting market: production, consumption, and costs."""

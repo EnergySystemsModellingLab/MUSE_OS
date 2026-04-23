@@ -102,12 +102,14 @@ def _factory(
     quantities = [_quantity_factory(param, registry) for param in params]
     sinks = [sink_factory(param, sector_name=sector_name) for param in params]
 
-    def save_multiple_outputs(market, *args, year: int | None = None) -> list[Any]:
+    def save_multiple_outputs(
+        market, *args, year: int | None = None, **kwargs
+    ) -> list[Any]:
         if year is None:
             year = int(market.year.max())
 
         return [
-            sink(quantity(market, *args, year=year), year=year)
+            sink(quantity(market, *args, year=year, **kwargs), year=year)
             for quantity, sink in zip(quantities, sinks)
         ]
 
@@ -218,19 +220,22 @@ def costs(
     capacity: xr.DataArray,
     sum_over: list[str] | None = None,
     drop: list[str] | None = None,
+    *,
+    commodities: list[str],
     **kwargs,
 ) -> xr.DataArray:
     """Weighted average cost of production (filtered where total supply > 0)."""
-    costs_da = market_quantity(market.costs, sum_over=sum_over, drop=drop)
-    supply_da = market_quantity(market.supply, sum_over="asset", drop=drop)
+    costs = market_quantity(market.costs, sum_over=sum_over, drop=drop)
+    supply = market_quantity(market.supply, sum_over="asset", drop=drop)
 
-    # Mask costs where supply is zero
-    costs_filtered = costs_da.where(supply_da > 1e-15)
+    # Mask costs where supply is effectively zero
+    costs = costs.where(supply > 1e-15)
 
-    result = (
-        costs_filtered.rename("costs")
-        .to_dataframe()
-        .reset_index()
-        .dropna(subset=["costs"])  # drop NaN rows (i.e., where supply was zero)
-    )
+    # Filter to only include commodities owned by the sector (i.e. excludes
+    # environmental commodities)
+    costs = costs.sel(commodity=costs.commodity.isin(commodities))
+
+    # Create a DataFrame from the filtered costs, dropping rows where costs are NaN
+    # (i.e., where supply was zero)
+    result = costs.rename("costs").to_dataframe().reset_index().dropna(subset=["costs"])
     return result
