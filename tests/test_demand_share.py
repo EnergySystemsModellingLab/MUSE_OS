@@ -338,7 +338,7 @@ def test_unmet_forecast_demand(_technologies, stock):
     # Test scenario 1: Fully met demand
     agents = create_test_agents(usa_stock, asia_stock, categories=["newcapa"])
     result = unmet_forecasted_demand(agents, market.consumption, _technologies)
-    assert set(result.dims) == set(market.consumption.dims) - {"year"}
+    assert set(result.dims) == {"timeslice", "commodity", "asset"}
     assert result.values == approx(0)
 
     # Test scenario 2: Excess capacity (120% capacity)
@@ -346,7 +346,7 @@ def test_unmet_forecast_demand(_technologies, stock):
         1.2 * usa_stock, 1.2 * asia_stock, categories=["newcapa"]
     )
     result = unmet_forecasted_demand(agents, market.consumption, _technologies)
-    assert set(result.dims) == set(market.consumption.dims) - {"year"}
+    assert set(result.dims) == {"timeslice", "commodity", "asset"}
     assert result.values == approx(0)
 
     # Test scenario 3: Insufficient capacity (50% capacity)
