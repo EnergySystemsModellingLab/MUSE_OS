@@ -1,0 +1,6 @@
+id,description,sector_id
+gassupply1,Gas supply,gas
+gasCCGT,Gas CCGT,power
+windturbine,Wind turbine,power
+gasboiler,Gas boiler,residential
+heatpump,Heat pump,residential
