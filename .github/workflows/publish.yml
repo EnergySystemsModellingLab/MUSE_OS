@@ -24,7 +24,7 @@ jobs:
         with:
           path: dist/muse*
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: dist/muse*
 
@@ -108,6 +108,6 @@ jobs:
           path: standalone/MUSE*
           name: MUSE
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: standalone/MUSE*
