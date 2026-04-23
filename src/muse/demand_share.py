@@ -522,105 +522,50 @@ def unmet_demand(
     return (demand - produced).clip(min=0)
 
 
-def new_consumption(
-    capacity: xr.DataArray,
-    demand: xr.DataArray,
-    technologies: xr.Dataset,
-    timeslice_level: str | None = None,
-) -> xr.DataArray:
-    r"""Computes share of the demand attributed to new agents.
-
-    The new agents service the demand that can be attributed specifically to growth and
-    that cannot be serviced by existing assets. In other words:
-
-    .. math::
-        N_{c, s}^r = \min\left(
-            C_{c, s}^(y + \Delta y) - C_{c, s}^(y),
-            C_{c, s}^(y + \Delta y)
-                - P[\mathcal{M}(y + \Delta y), \mathcal{A}_{a, s}^r(y)]
-        \right)
-
-    Where :math:`P` the maximum production by existing assets, given by
-    :py:func:`muse.quantities.maximum_production`.
-    """
-    # Validate inputs have matching years
-    if not (
-        len(demand.year) == len(capacity.year) == 2
-        and (demand.year.values == capacity.year.values).all()
-    ):
-        raise ValueError("Capacity and demand must have matching years")
-
-    current_year, investment_year = map(int, demand.year.values)
-
-    # Calculate demand growth
-    current_demand = demand.sel(year=current_year, drop=True)
-    future_demand = demand.sel(year=investment_year, drop=True)
-    new_demand = (future_demand - current_demand).clip(min=0)
-
-    # If future capacity is higher than existing capacity, it's possible that
-    # this might already be able to make up some of the increase in demand
-    missing = unmet_demand(
-        demand=future_demand,
-        capacity=capacity.sel(year=investment_year),
-        technologies=technologies,
-        timeslice_level=timeslice_level,
-    )
-
-    # Return minimum of growth and unmet demand
-    return np.minimum(new_demand, missing)
-
-
 def new_and_retro_demands(
     capacity: xr.DataArray,
     demand: xr.DataArray,
     technologies: xr.Dataset,
     timeslice_level: str | None = None,
 ) -> xr.Dataset:
-    """Splits demand into *new* and *retrofit* demand.
+    """Split demand into *new* (growth-driven) and *retrofit* demand.
 
-    The demand in the investment year is split three ways:
-
-    #. the demand that can be serviced by the assets that will still be operational that
-        year.
-    #. the *new* demand is defined as the growth in consumption that cannot be serviced
-        by existing assets in the current year, as computed in :py:func:`new_demand`.
-    #. the retrofit demand is everything else.
+    In the investment year:
+    - unmet demand = demand not covered by existing capacity
+    - new demand = growth from current year, capped by unmet demand
+    - retrofit demand = remaining unmet demand
     """
-    # Validate inputs have matching years
-    if not (
-        len(demand.year) == len(capacity.year) == 2
-        and (demand.year.values == capacity.year.values).all()
-    ):
-        raise ValueError("Capacity and demand must have matching years")
+    # Validate years
+    if len(demand.year) != 2 or not (demand.year.values == capacity.year.values).all():
+        raise ValueError("Capacity and demand must have matching two years")
+    current_year, investment_year = map(int, demand.year.values)
 
-    investment_year = int(demand.year[1])
-
+    # Ensure region dimension is aligned
     if hasattr(capacity, "region") and capacity.region.dims == ():
         capacity["region"] = (
             "asset",
             [str(capacity.region.values)] * len(capacity.asset),
         )
 
-    # Calculate new demand from growth
-    new_demand = new_consumption(
-        capacity=capacity,
-        demand=demand,
+    # Extract demand slices
+    demand_now = demand.sel(year=current_year, drop=True)
+    demand_future = demand.sel(year=investment_year, drop=True)
+
+    # Unmet demand in investment year
+    unmet = unmet_demand(
+        demand=demand_future,
+        capacity=capacity.sel(year=investment_year),
         technologies=technologies,
         timeslice_level=timeslice_level,
     )
 
-    # Calculate retrofit demand as remaining unmet demand
-    retrofit_demand = (
-        unmet_demand(
-            demand=demand.sel(year=investment_year, drop=True),
-            capacity=capacity.sel(year=investment_year),
-            technologies=technologies,
-            timeslice_level=timeslice_level,
-        )
-        - new_demand
-    ).clip(0)
+    # Growth-based demand (cannot be negative)
+    growth = (demand_future - demand_now).clip(min=0)
 
-    return xr.Dataset({"new": new_demand, "retrofit": retrofit_demand})
+    # Split unmet demand
+    new = np.minimum(growth, unmet)
+    retrofit = (unmet - new).clip(min=0)
+    return xr.Dataset({"new": new, "retrofit": retrofit})
 
 
 def decommissioning_demand(

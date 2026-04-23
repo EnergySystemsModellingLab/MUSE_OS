@@ -504,35 +504,6 @@ def test_unmet_demand(_capacity, _market, _technologies):
     assert result.values == approx(demand.values)
 
 
-def test_new_consumption(_capacity, _market, _technologies):
-    """Test new consumption calculation."""
-    from muse.demand_share import new_consumption
-
-    _technologies = broadcast_over_assets(_technologies, _capacity)
-
-    # Test with no demand growth
-    _market.consumption.loc[{"year": INVESTMENT_YEAR}] = _market.consumption.sel(
-        year=CURRENT_YEAR
-    )
-    result = new_consumption(_capacity, _market.consumption, _technologies)
-    assert (result == 0).all()
-
-    # Test with demand growth but sufficient capacity
-    _market.consumption.loc[{"year": INVESTMENT_YEAR}] = 1.5 * _market.consumption.sel(
-        year=CURRENT_YEAR
-    )
-    result = new_consumption(_capacity, _market.consumption, _technologies)
-    assert (result >= 0).all()
-
-    # Test with demand growth and insufficient capacity
-    reduced_capacity = _capacity.copy()
-    reduced_capacity.loc[{"year": INVESTMENT_YEAR}] = 0.5 * _capacity.sel(
-        year=CURRENT_YEAR
-    )
-    result = new_consumption(reduced_capacity, _market.consumption, _technologies)
-    assert (result >= 0).all()
-
-
 def test_standard_demand_share(_technologies, stock):
     """Test standard_demand with various scenarios."""
     from muse.demand_share import standard_demand
