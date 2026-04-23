@@ -162,7 +162,7 @@ def market_quantity(
     if isinstance(sum_over, str):
         sum_over = [sum_over]
     if sum_over:
-        sum_over = [s for s in sum_over if s in quantity.coords]
+        sum_over = [s for s in sum_over if s in quantity.dims]
     if sum_over:
         quantity = quantity.sum(sum_over)
     if "timeslice" in quantity.coords and isinstance(
@@ -220,9 +220,9 @@ def costs(
     drop: list[str] | None = None,
     **kwargs,
 ) -> xr.DataArray:
-    """Cost of production (filtered where supply > 0)."""
+    """Weighted average cost of production (filtered where total supply > 0)."""
     costs_da = market_quantity(market.costs, sum_over=sum_over, drop=drop)
-    supply_da = market_quantity(market.supply, sum_over=sum_over, drop=drop)
+    supply_da = market_quantity(market.supply, sum_over="asset", drop=drop)
 
     # Mask costs where supply is zero
     costs_filtered = costs_da.where(supply_da > 1e-15)
