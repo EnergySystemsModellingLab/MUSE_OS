@@ -220,11 +220,17 @@ def costs(
     drop: list[str] | None = None,
     **kwargs,
 ) -> xr.DataArray:
-    """Current costs."""
+    """Cost of production (filtered where supply > 0)."""
+    costs_da = market_quantity(market.costs, sum_over=sum_over, drop=drop)
+    supply_da = market_quantity(market.supply, sum_over=sum_over, drop=drop)
+
+    # Mask costs where supply is zero
+    costs_filtered = costs_da.where(supply_da > 1e-15)
+
     result = (
-        market_quantity(market.costs, sum_over=sum_over, drop=drop)
-        .rename("costs")
+        costs_filtered.rename("costs")
         .to_dataframe()
         .reset_index()
+        .dropna(subset=["costs"])  # drop NaN rows (i.e., where supply was zero)
     )
     return result
