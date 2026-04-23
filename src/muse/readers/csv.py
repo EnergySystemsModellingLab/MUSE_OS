@@ -137,6 +137,7 @@ DEFAULTS = {
     "minimum_service_factor": 0,
     "search_rule": "all",
     "decision_method": "single",
+    "growth_seed": 1.0,
 }
 
 
@@ -417,6 +418,7 @@ def read_technodictionary_csv(path: Path) -> pd.DataFrame:
         "technology",
         "technical_life",
         "fix_par",
+        "growth_seed",
     }
     data = read_csv(
         path,

@@ -345,6 +345,7 @@ def test_read_technodictionary(model_path):
             "utilization_factor": "float64",
             "minimum_service_factor": "float64",
             "interest_rate": "float64",
+            "growth_seed": "float64",
             "agent1": "int64",
         },
     )
@@ -383,6 +384,7 @@ def test_read_technodictionary(model_path):
         "utilization_factor": 0.9,
         "minimum_service_factor": 0.0,
         "interest_rate": 0.1,
+        "growth_seed": 1.0,
         "agent1": 1,
     }
     assert_single_coordinate(data, coord, expected)
@@ -788,6 +790,7 @@ def test_read_technologies(model_path):
             "flexible_inputs": "float64",
             "unit": "object",
             "comm_usage": "object",
+            "growth_seed": "float64",
         },
     )
     assert DatasetSchema.from_ds(data) == expected_schema
@@ -851,6 +854,7 @@ def test_read_technologies__timeslice(timeslice_model_path):
             "minimum_service_factor": "float64",
             "unit": "object",
             "comm_usage": "object",
+            "growth_seed": "float64",
         },
     )
     assert DatasetSchema.from_ds(data) == expected_schema
@@ -907,6 +911,7 @@ def test_read_technodata(model_path):
             "flexible_inputs": "float64",
             "unit": "object",
             "comm_usage": "object",
+            "growth_seed": "float64",
         },
     )
     assert DatasetSchema.from_ds(data) == expected_schema
@@ -964,6 +969,7 @@ def test_read_technodata__trade(trade_model_path):
             "cap_par": "float64",
             "fix_par": "float64",
             "comm_usage": "object",
+            "growth_seed": "float64",
         },
     )
     assert DatasetSchema.from_ds(data) == expected_schema

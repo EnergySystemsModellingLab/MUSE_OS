@@ -57,7 +57,7 @@ Variable costs (optional, default ``var_par = 0`` and ``var_exp = 1``)
 
    The exponent allows the model to take into account economies of scale (ie. As `Production` increases, the variable cost of the technology decreases).
 
-Growth constraints (optional)
+Capacity constraints (optional)
    ``max_capacity_addition``
       represents the maximum addition of installed capacity per technology, per year in a period, per region.
 
@@ -68,7 +68,7 @@ Growth constraints (optional)
    ``total_capacity_limit``
       represents the total capacity limit per technology, region and year.
 
-   .. csv-table:: Techno-data: growth constraints
+   .. csv-table:: Techno-data: capacity constraints
       :header: technology,	region,	max_capacity_addition,	max_capacity_growth,	total_capacity_limit
 
       resBoilerElectric, region1, 10,	0.2,	100
@@ -84,8 +84,9 @@ Growth constraints (optional)
    * ``total_capacity_limit`` will restrict new addition to 100 - 4.9 = 95.1 PJ (so that total capacity in the investment year will not exceed 100 PJ).
    * Overall, the most restrictive constraint will apply, which in this case is 14.3 PJ.
 
-   Growth constraints are applied for each single agent in a multi-agent simulation. When only one agent is present, the growth constraints
-   apply individually to the "New" and "Retrofit" agent, when present.
+   Capacity constraints are applied separately for each agent. In multi-agent simulations,
+   each agent receives a proportion of the overall limit according to its quantity (i.e. share of the commodity demand).
+   For example, if a technology has a ``max_capacity_addition`` of 100 MW per year, then an agent with a quantity of 0.5 would have an addition limit of 50 MW per year (noting that quantities for all agents should sum to 1).
 
    If any of the three parameters are not provided in the technodata file, that particular constraint is not applied.
 
@@ -94,6 +95,8 @@ Growth constraints (optional)
 
     Taking the above example, if the GrowthSeed is set to 10 PJ (higher than the existing capacity of 7.7 PJ), the MaxCapacityGrowth constraint will be applied as follows:
     10 x (1 + 0.2)\ :sup:`5` - 4.9 = 19.9 PJ.
+
+    In multi-agent simulations, the growth seed for each agent is scaled by the agent quantity.
 
 ``technical_life``
    represents the number of years that a technology operates before it is decommissioned.
