@@ -183,7 +183,7 @@ def consumption(
     sum_over: list[str] | None = None,
     drop: list[str] | None = None,
     **kwargs,
-) -> xr.DataArray:
+) -> pd.DataFrame:
     """Current consumption."""
     moutput = market.copy(deep=True).reset_index("timeslice")
     result = (
@@ -202,7 +202,7 @@ def supply(
     sum_over: list[str] | None = None,
     drop: list[str] | None = None,
     **kwargs,
-) -> xr.DataArray:
+) -> pd.DataFrame:
     """Current supply."""
     moutput = market.copy(deep=True).reset_index("timeslice")
     result = (
@@ -223,10 +223,10 @@ def costs(
     *,
     commodities: list[str],
     **kwargs,
-) -> xr.DataArray:
+) -> pd.DataFrame:
     """Weighted average cost of production (filtered where total supply > 0)."""
     costs = market_quantity(market.costs, sum_over=sum_over, drop=drop)
-    supply = market_quantity(market.supply, sum_over="asset", drop=drop)
+    supply = market_quantity(market.supply.sum("asset"), sum_over, drop=drop)
 
     # Mask costs where supply is effectively zero
     costs = costs.where(supply > 1e-15)
