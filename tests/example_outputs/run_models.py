@@ -6,6 +6,8 @@ from typing import Union
 
 from muse.examples import AVAILABLE_EXAMPLES, model
 
+parent_path = Path(__file__).parent
+
 
 def run_model(name: str) -> Union[str, None]:
     """Run a model with the specified settings file.
@@ -16,20 +18,23 @@ def run_model(name: str) -> Union[str, None]:
     Returns:
         Error message for failed runs, otherwise None.
     """
+    prev_cwd = Path.cwd()
+    run_dir = parent_path / name
     try:
         # Prepare results folder
-        folder_path = Path(name)
-        if folder_path.exists():
-            shutil.rmtree(folder_path)
-        folder_path.mkdir()
+        if run_dir.exists():
+            shutil.rmtree(run_dir)
+        run_dir.mkdir()
 
         # Run model
-        os.chdir(folder_path)
+        os.chdir(run_dir)
         m = model(name)
         m.run()
         return None
     except Exception as e:
         return f"Failed to run model {name}. Error: {e}"
+    finally:
+        os.chdir(prev_cwd)
 
 
 if __name__ == "__main__":

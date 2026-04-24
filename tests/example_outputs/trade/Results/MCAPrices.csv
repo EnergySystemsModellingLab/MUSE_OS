@@ -1,7 +1,7 @@
 commodity,day,hour,month,prices,region,timeslice,units_prices,year
 electricity,all-week,night,all-year,13.9815,r1,0,MUS$2010/PJ,2020
-gas,all-week,night,all-year,4.7168,r1,0,MUS$2010/PJ,2020
-heat,all-week,night,all-year,0.0000,r1,0,MUS$2010/PJ,2020
+gas,all-week,night,all-year,11.2701,r1,0,MUS$2010/PJ,2020
+heat,all-week,night,all-year,11.8176,r1,0,MUS$2010/PJ,2020
 wind,all-week,night,all-year,0.0000,r1,0,MUS$2010/PJ,2020
 CO2f,all-week,night,all-year,0.0000,r1,0,MUS$2010/kt,2020
 electricity,all-week,night,all-year,19.1389,r2,0,MUS$2010/PJ,2020
@@ -10,8 +10,8 @@ heat,all-week,night,all-year,0.0000,r2,0,MUS$2010/PJ,2020
 wind,all-week,night,all-year,0.0000,r2,0,MUS$2010/PJ,2020
 CO2f,all-week,night,all-year,0.0000,r2,0,MUS$2010/kt,2020
 electricity,all-week,morning,all-year,13.9815,r1,1,MUS$2010/PJ,2020
-gas,all-week,morning,all-year,4.7168,r1,1,MUS$2010/PJ,2020
-heat,all-week,morning,all-year,0.0000,r1,1,MUS$2010/PJ,2020
+gas,all-week,morning,all-year,11.2701,r1,1,MUS$2010/PJ,2020
+heat,all-week,morning,all-year,11.8176,r1,1,MUS$2010/PJ,2020
 wind,all-week,morning,all-year,0.0000,r1,1,MUS$2010/PJ,2020
 CO2f,all-week,morning,all-year,0.0000,r1,1,MUS$2010/kt,2020
 electricity,all-week,morning,all-year,19.1389,r2,1,MUS$2010/PJ,2020
@@ -20,8 +20,8 @@ heat,all-week,morning,all-year,0.0000,r2,1,MUS$2010/PJ,2020
 wind,all-week,morning,all-year,0.0000,r2,1,MUS$2010/PJ,2020
 CO2f,all-week,morning,all-year,0.0000,r2,1,MUS$2010/kt,2020
 electricity,all-week,afternoon,all-year,13.9815,r1,2,MUS$2010/PJ,2020
-gas,all-week,afternoon,all-year,4.7168,r1,2,MUS$2010/PJ,2020
-heat,all-week,afternoon,all-year,0.0000,r1,2,MUS$2010/PJ,2020
+gas,all-week,afternoon,all-year,11.2701,r1,2,MUS$2010/PJ,2020
+heat,all-week,afternoon,all-year,11.8176,r1,2,MUS$2010/PJ,2020
 wind,all-week,afternoon,all-year,0.0000,r1,2,MUS$2010/PJ,2020
 CO2f,all-week,afternoon,all-year,0.0000,r1,2,MUS$2010/kt,2020
 electricity,all-week,afternoon,all-year,19.1389,r2,2,MUS$2010/PJ,2020
@@ -30,8 +30,8 @@ heat,all-week,afternoon,all-year,0.0000,r2,2,MUS$2010/PJ,2020
 wind,all-week,afternoon,all-year,0.0000,r2,2,MUS$2010/PJ,2020
 CO2f,all-week,afternoon,all-year,0.0000,r2,2,MUS$2010/kt,2020
 electricity,all-week,early-peak,all-year,13.9815,r1,3,MUS$2010/PJ,2020
-gas,all-week,early-peak,all-year,4.7168,r1,3,MUS$2010/PJ,2020
-heat,all-week,early-peak,all-year,0.0000,r1,3,MUS$2010/PJ,2020
+gas,all-week,early-peak,all-year,11.2701,r1,3,MUS$2010/PJ,2020
+heat,all-week,early-peak,all-year,11.8176,r1,3,MUS$2010/PJ,2020
 wind,all-week,early-peak,all-year,0.0000,r1,3,MUS$2010/PJ,2020
 CO2f,all-week,early-peak,all-year,0.0000,r1,3,MUS$2010/kt,2020
 electricity,all-week,early-peak,all-year,19.1389,r2,3,MUS$2010/PJ,2020
@@ -40,8 +40,8 @@ heat,all-week,early-peak,all-year,0.0000,r2,3,MUS$2010/PJ,2020
 wind,all-week,early-peak,all-year,0.0000,r2,3,MUS$2010/PJ,2020
 CO2f,all-week,early-peak,all-year,0.0000,r2,3,MUS$2010/kt,2020
 electricity,all-week,late-peak,all-year,13.9815,r1,4,MUS$2010/PJ,2020
-gas,all-week,late-peak,all-year,4.7168,r1,4,MUS$2010/PJ,2020
-heat,all-week,late-peak,all-year,0.0000,r1,4,MUS$2010/PJ,2020
+gas,all-week,late-peak,all-year,11.2701,r1,4,MUS$2010/PJ,2020
+heat,all-week,late-peak,all-year,11.8176,r1,4,MUS$2010/PJ,2020
 wind,all-week,late-peak,all-year,0.0000,r1,4,MUS$2010/PJ,2020
 CO2f,all-week,late-peak,all-year,0.0000,r1,4,MUS$2010/kt,2020
 electricity,all-week,late-peak,all-year,19.1389,r2,4,MUS$2010/PJ,2020
@@ -50,8 +50,8 @@ heat,all-week,late-peak,all-year,0.0000,r2,4,MUS$2010/PJ,2020
 wind,all-week,late-peak,all-year,0.0000,r2,4,MUS$2010/PJ,2020
 CO2f,all-week,late-peak,all-year,0.0000,r2,4,MUS$2010/kt,2020
 electricity,all-week,evening,all-year,13.9815,r1,5,MUS$2010/PJ,2020
-gas,all-week,evening,all-year,4.7168,r1,5,MUS$2010/PJ,2020
-heat,all-week,evening,all-year,0.0000,r1,5,MUS$2010/PJ,2020
+gas,all-week,evening,all-year,11.2701,r1,5,MUS$2010/PJ,2020
+heat,all-week,evening,all-year,11.8176,r1,5,MUS$2010/PJ,2020
 wind,all-week,evening,all-year,0.0000,r1,5,MUS$2010/PJ,2020
 CO2f,all-week,evening,all-year,0.0000,r1,5,MUS$2010/kt,2020
 electricity,all-week,evening,all-year,19.1389,r2,5,MUS$2010/PJ,2020
