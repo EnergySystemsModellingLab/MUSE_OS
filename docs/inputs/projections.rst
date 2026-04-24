@@ -17,8 +17,10 @@ The interpretation of these prices depends on the type of commodity:
       If not provided, prices are initialised to zero for all years.
       Once the commodity is produced, its price is calculated endogenously for that year
       and carried forward to subsequent years until updated again.
-      Until the first year of production, the price remains at the projected value
+      Until the first time a commodity is produced, the price remains at the projected value
       (or zero if no projection is provided).
+      **Note:** because prices are updated during intermediate iterations, a commodity may
+      retain a previously calculated price even if it is not produced in the final converged solution.
 
     * Outside equilibrium mode (``maximum_iterations = 1``), prices are **not** calculated
       endogenously, so projections are required for all years. Any missing values will be
