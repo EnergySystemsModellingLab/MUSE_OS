@@ -12,15 +12,18 @@ The interpretation of these prices depends on the type of commodity:
 
   * For commodities that are **produced by processes in the model**, the behaviour
     depends on the similation mode:
+
     * In equilibrium mode (``maximum_iterations > 1``), price projections are **optional**.
       If not provided, prices are initialised to zero for all years.
       Once the commodity is produced, its price is calculated endogenously for that year
       and carried forward to subsequent years until updated again.
       Until the first year of production, the price remains at the projected value
       (or zero if no projection is provided).
+
     * Outside equilibrium mode (``maximum_iterations = 1``), prices are **not** calculated
       endogenously, so projections are required for all years. Any missing values will be
       interpreted as zero (i.e. no cost to purchase).
+
   * For commodities that are **not produced by processes in the model**, and are not free,
     prices should be provided for all years as they cannot be endogenously calculated.
     Lack of a price trajectory will be interpreted as a price of 0 for all periods (i.e. no cost to purchase).
