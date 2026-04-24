@@ -11,7 +11,7 @@ The interpretation of these prices depends on the type of commodity:
   or not depends on the processes in the model and the simulation settings:
 
   * For commodities that are **produced by processes in the model**, the behaviour
-    depends on the similation mode:
+    depends on the simulation mode:
 
     * In equilibrium mode (``maximum_iterations > 1``), price projections are **optional**.
       If not provided, prices are initialised to zero for all years.

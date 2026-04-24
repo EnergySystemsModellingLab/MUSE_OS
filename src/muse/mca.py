@@ -400,7 +400,7 @@ def single_year_iteration(
 
         # Update market prices
         # We only do this for the commodities that the sector is in charge of producing
-        # And only for regions/timeslices with >0 production in the investment year
+        # And only for regions/timeslices with >0 production
         supply = sector_market.supply
         supply = supply.where(supply.commodity.isin(sector.commodities), 0)
         updated_prices = updated_prices.where(supply == 0, sector_market.costs)
