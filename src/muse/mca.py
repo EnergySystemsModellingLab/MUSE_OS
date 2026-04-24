@@ -330,7 +330,8 @@ class MCA:
             self.market.supply.loc[dims] = new_market.supply
             self.market.consumption.loc[dims] = new_market.consumption
 
-            # Update prices
+            # Update prices for the investment year
+            # In the first iteration we also update prices for the first year
             dims = {i: new_market[i] for i in new_market.prices.dims if i != "year"}
             if year_idx == 0:
                 self.market.prices.loc[{**dims, "year": current_year}] = (
