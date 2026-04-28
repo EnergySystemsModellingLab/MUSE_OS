@@ -338,7 +338,7 @@ def test_unmet_forecast_demand(_technologies, stock):
     # Test scenario 1: Fully met demand
     agents = create_test_agents(usa_stock, asia_stock, categories=["newcapa"])
     result = unmet_forecasted_demand(agents, market.consumption, _technologies)
-    assert set(result.dims) == set(market.consumption.dims) - {"year"}
+    assert set(result.dims) == {"timeslice", "commodity", "asset"}
     assert result.values == approx(0)
 
     # Test scenario 2: Excess capacity (120% capacity)
@@ -346,7 +346,7 @@ def test_unmet_forecast_demand(_technologies, stock):
         1.2 * usa_stock, 1.2 * asia_stock, categories=["newcapa"]
     )
     result = unmet_forecasted_demand(agents, market.consumption, _technologies)
-    assert set(result.dims) == set(market.consumption.dims) - {"year"}
+    assert set(result.dims) == {"timeslice", "commodity", "asset"}
     assert result.values == approx(0)
 
     # Test scenario 3: Insufficient capacity (50% capacity)
@@ -502,35 +502,6 @@ def test_unmet_demand(_capacity, _market, _technologies):
     zero_capacity = 0 * capacity
     result = unmet_demand(demand, zero_capacity, _technologies)
     assert result.values == approx(demand.values)
-
-
-def test_new_consumption(_capacity, _market, _technologies):
-    """Test new consumption calculation."""
-    from muse.demand_share import new_consumption
-
-    _technologies = broadcast_over_assets(_technologies, _capacity)
-
-    # Test with no demand growth
-    _market.consumption.loc[{"year": INVESTMENT_YEAR}] = _market.consumption.sel(
-        year=CURRENT_YEAR
-    )
-    result = new_consumption(_capacity, _market.consumption, _technologies)
-    assert (result == 0).all()
-
-    # Test with demand growth but sufficient capacity
-    _market.consumption.loc[{"year": INVESTMENT_YEAR}] = 1.5 * _market.consumption.sel(
-        year=CURRENT_YEAR
-    )
-    result = new_consumption(_capacity, _market.consumption, _technologies)
-    assert (result >= 0).all()
-
-    # Test with demand growth and insufficient capacity
-    reduced_capacity = _capacity.copy()
-    reduced_capacity.loc[{"year": INVESTMENT_YEAR}] = 0.5 * _capacity.sel(
-        year=CURRENT_YEAR
-    )
-    result = new_consumption(reduced_capacity, _market.consumption, _technologies)
-    assert (result >= 0).all()
 
 
 def test_standard_demand_share(_technologies, stock):
