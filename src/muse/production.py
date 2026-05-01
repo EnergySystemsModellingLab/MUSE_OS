@@ -107,3 +107,22 @@ def supply(
     return supply(
         capacity, market.consumption, technologies, timeslice_level=timeslice_level
     )
+
+
+@register_production
+def cost_minimising_supply(
+    market: xr.Dataset,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
+    timeslice_level: str | None = None,
+) -> xr.DataArray:
+    """Service current demand from the cheapest assets."""
+    from muse.quantities import cost_minimising_supply
+
+    return cost_minimising_supply(
+        capacity,
+        market.consumption,
+        technologies,
+        prices=market.prices,
+        timeslice_level=timeslice_level,
+    )

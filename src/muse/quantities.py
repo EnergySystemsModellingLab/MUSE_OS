@@ -98,6 +98,99 @@ def supply(
     return result
 
 
+def cost_minimising_supply(
+    capacity: xr.DataArray,
+    demand: xr.DataArray,
+    technologies: xr.Dataset | xr.DataArray,
+    prices: xr.DataArray,
+    timeslice_level: str | None = None,
+) -> xr.DataArray:
+    from muse.commodities import CommodityUsage, check_usage, is_pollutant
+    from muse.costs import levelized_cost_of_energy
+
+    assert "asset" not in demand.dims
+    assert "asset" in capacity.dims
+
+    # Maximum and minimum production for each asset
+    maxprod = maximum_production(
+        technologies, capacity, timeslice_level=timeslice_level
+    )
+    minprod = minimum_production(
+        technologies, capacity, timeslice_level=timeslice_level
+    )
+
+    # Consumption of each asset assuming full dispatch, for calculating costs later on.
+    maxcons = consumption(
+        technologies, maxprod, prices=prices, timeslice_level=timeslice_level
+    )
+
+    # All assets operate at at least their minimum production
+    result = minprod.copy()
+
+    # Normalise region dimension
+    if len(set(maxprod.region.values.flatten())) == 1:
+        if "region" in demand.dims:
+            demand = demand.sel(region=maxprod.region)
+            prices = prices.sel(region=maxprod.region)
+    else:
+        raise ValueError(
+            "cost_minimising_supply not yet supported in multi-reigon models"
+        )
+
+    # Set capital costs to zero so they're not included in the cost-minimisation
+    technologies = technologies.assign(cap_par=xr.zeros_like(technologies.cap_par))
+
+    for y in maxprod.year.values:
+        # Calculate timeslice-level costs for each asset in this year assuming full
+        # dispatch. We use LCOE excluding capital costs.
+        technology_costs = levelized_cost_of_energy(
+            technologies,
+            prices.sel(year=y),
+            capacity.sel(year=y),
+            production=maxprod.sel(year=y),
+            consumption=maxcons.sel(year=y),
+        )
+
+        # Meet supply in each timeslice by utilising the cheapest assets first, up to
+        # their maximum production
+        for ts in maxprod.timeslice.values:
+            # Remaining demand after minimum production (i.e. what we need to meet with
+            # the available headroom above minimum)
+            remaining = demand.sel(year=y, timeslice=ts) - minprod.sel(
+                year=y, timeslice=ts
+            ).sum("asset")
+
+            # Rank assets by cost (cheapest first)
+            costs_ts = technology_costs.sel(timeslice=ts)
+            order = costs_ts.sortby(costs_ts).asset
+
+            # Available extra production above minimum, sorted by cost
+            available = (maxprod - minprod).sel(year=y, timeslice=ts).sel(asset=order)
+
+            # cumsum_before[i] = total available production of all assets cheaper than
+            # i
+            cumsum_before = available.cumsum("asset") - available
+
+            # (remaining - cumsum_before)[i] = demand still unmet after cheaper assets
+            # are fully utilised. Clipping to [0, available[i]] ensures we never
+            # produce negative amounts or exceed this asset's headroom above minprod.
+            addition = (remaining - cumsum_before).clip(min=0, max=available)
+            result.loc[dict(year=y, timeslice=ts)] += addition.reindex(
+                asset=result.asset.values
+            )
+
+    # Add production of environmental pollutants
+    env = is_pollutant(technologies.comm_usage)
+    result[{"commodity": env}] = emission(
+        result, technologies, timeslice_level=timeslice_level
+    ).transpose(*result.dims)
+    result[
+        {"commodity": ~check_usage(technologies.comm_usage, CommodityUsage.PRODUCT)}
+    ] = 0
+
+    return result
+
+
 def emission(
     production: xr.DataArray,
     technologies: xr.Dataset,
