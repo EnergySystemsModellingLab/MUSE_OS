@@ -223,7 +223,6 @@ def merit_order_supply(
     if len(set(maxprod.region.values.flatten())) == 1:
         if "region" in demand.dims:
             demand = demand.sel(region=maxprod.region)
-            prices = prices.sel(region=maxprod.region)
     else:
         raise ValueError("merit_order_supply not yet supported in multi-region models")
 
