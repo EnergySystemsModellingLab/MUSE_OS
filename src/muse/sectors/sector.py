@@ -154,7 +154,7 @@ class Sector(AbstractSector):  # type: ignore
         """Computes production as used to return the supply to the MCA.
 
         It can be anything registered with
-        :py:func:`@register_production<muse.production.register_production>`.
+        :py:func:`@register_production<muse.dispatch.register_production>`.
         """
         self.supply_prod = supply_prod
 

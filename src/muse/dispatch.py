@@ -42,17 +42,26 @@ __all__ = [
 ]
 
 from collections.abc import MutableMapping
-from typing import Callable
+from typing import Any, Protocol
 
 import numpy as np
 import xarray as xr
 
 from muse.registration import registrator
 
-"""Production signature."""
-PRODUCTION_SIGNATURE = Callable[
-    [xr.Dataset, xr.DataArray, xr.Dataset, str], xr.DataArray
-]
+
+class PRODUCTION_SIGNATURE(Protocol):
+    """Callable protocol for registered production methods."""
+
+    def __call__(
+        self,
+        demand: xr.DataArray,
+        capacity: xr.DataArray,
+        technologies: xr.Dataset,
+        timeslice_level: str | None = None,
+        **kwargs: Any,
+    ) -> xr.DataArray: ...
+
 
 """Dictionary of production methods. """
 PRODUCTION_METHODS: MutableMapping[str, PRODUCTION_SIGNATURE] = {}
@@ -64,7 +73,7 @@ def register_production(function: PRODUCTION_SIGNATURE):
 
     .. seealso::
 
-        :py:mod:`muse.production`
+        :py:mod:`muse.dispatch`
     """
     return function
 

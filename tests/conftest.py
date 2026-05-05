@@ -576,7 +576,7 @@ def save_registries():
         saveme("muse.hooks", "INITIAL_ASSET_TRANSFORM"),
         saveme("muse.hooks", "FINAL_ASSET_TRANSFORM"),
         saveme("muse.investments", "INVESTMENTS"),
-        saveme("muse.production", "PRODUCTION_METHODS"),
+        saveme("muse.dispatch", "PRODUCTION_METHODS"),
         saveme("muse.outputs.mca", "OUTPUT_QUANTITIES"),
         saveme("muse.outputs.sectors", "OUTPUT_QUANTITIES"),
         saveme("muse.outputs.sinks", "OUTPUT_SINKS"),

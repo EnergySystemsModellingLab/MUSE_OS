@@ -221,19 +221,18 @@ A sector accepts these attributes:
    MUSE provides three methods in :py:mod:`muse.dispatch`:
 
    * **share**: assets each supply a proportion of demand based on their share of total capacity.
-   This method is most appropriate for sectors where demand is inherently distributed across assets and cannot be shifted between them
-   (e.g. residential heating systems, where assets in each household meets their own share of the demand).
-   See :py:func:`muse.dispatch.share_based_production`.
+    This method is most appropriate for sectors where demand is inherently distributed across assets and cannot be shifted between them
+    (e.g. residential heating systems, where assets in each household meets their own share of the demand).
+    See :py:func:`muse.dispatch.share_based_production`.
    * **merit-order**: supply in each timeslice is obtained by dispatching the cheapest assets first until the demand is met.
-   See :py:func:`muse.dispatch.merit_order_production`.
-   This method is best suited to sectors where supply is pooled across assets and short-run marginal cost is the dominant driver of dispatch decisions
-   (e.g. electricity production).
+    See :py:func:`muse.dispatch.merit_order_production`.
+    This method is best suited to sectors where supply is pooled across assets and short-run marginal cost is the dominant driver of dispatch decisions
+    (e.g. electricity production).
    * **maximum**: the production is the maximum production for the existing capacity and the technology's utilization factor.
-   This is largely intended for testing purposes.
-   See :py:func:`muse.dispatch.maximum_production`.
+    This is largely intended for testing purposes.
+    See :py:func:`muse.dispatch.maximum_production`.
 
-   Additional methods can be registered with
-   :py:func:`muse.dispatch.register_dispatch`
+   Additional methods can be registered with :py:func:`muse.dispatch.register_dispatch`
 
 ``technodata``
    Path to a csv file containing the characterization of the technologies involved in
