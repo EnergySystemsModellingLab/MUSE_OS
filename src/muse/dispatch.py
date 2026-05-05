@@ -15,13 +15,13 @@ following signatures:
 
     @register_production
     def production(
-        market: xr.Dataset, capacity: xr.DataArray, technologies: xr.Dataset, **kwargs
+        demand: xr.DataArray, capacity: xr.DataArray, technologies: xr.Dataset, **kwargs
     ) -> xr.DataArray:
         pass
 
 
 Arguments:
-    market: Market, including demand and prices.
+    demand: The demand for each commodity.
     capacity: The capacity of each asset within a market.
     technologies: A dataset characterising the technologies of the same assets.
     **kwargs: Any number of keyword arguments
