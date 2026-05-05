@@ -218,13 +218,14 @@ A sector accepts these attributes:
 ``dispatch_production`` (optional, default = **share**)
    The method used to calculate supply of commodities after investments have been made.
 
-   MUSE provides two methods in :py:mod:`muse.production`:
+   MUSE provides three methods in :py:mod:`muse.dispatch`:
 
-   * **share**: assets each supply a proportion of demand based on their share of total capacity.
-   * **maximum**: the production is the maximum production for the existing capacity and the technology's utilization factor. See :py:func:`muse.production.maximum_production`.
+   * **share**: assets each supply a proportion of demand based on their share of total capacity. See :py:func:`muse.dispatch.share_based_production`.
+   * **merit-order**: supply is obtained by dispatching the cheapest assets first until the demand is met. See :py:func:`muse.dispatch.merit_order_production`.
+   * **maximum**: the production is the maximum production for the existing capacity and the technology's utilization factor. See :py:func:`muse.dispatch.maximum_production`.
 
    Additional methods can be registered with
-   :py:func:`muse.production.register_production`
+   :py:func:`muse.dispatch.register_dispatch`
 
 ``technodata``
    Path to a csv file containing the characterization of the technologies involved in

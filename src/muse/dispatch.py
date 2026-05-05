@@ -36,8 +36,9 @@ __all__ = [
     "PRODUCTION_SIGNATURE",
     "factory",
     "maximum_production",
+    "merit_order_production",
     "register_production",
-    "share_based_supply",
+    "share_based_production",
 ]
 
 from collections.abc import MutableMapping
@@ -93,7 +94,7 @@ def maximum_production(
 
 
 @register_production(name=("share", "shares"))
-def share_based_supply(
+def share_based_production(
     demand: xr.DataArray,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
@@ -184,7 +185,7 @@ def share_based_supply(
 
 
 @register_production(name=("merit", "merit_order"))
-def merit_order_supply(
+def merit_order_production(
     demand: xr.DataArray,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
@@ -201,7 +202,7 @@ def merit_order_supply(
 
     Each timeslice and year is treated independently, so the dispatch order can vary
     across timeslices and years. For an example in a single timeslice/year/region, see
-    the docstring of :py:func:`merit_order_dispatch`.
+    the docstring of :py:func:`dispatch_by_merit_order`.
 
     This is best suited to sectors where demand can be met by any of a number of assets,
     and where there is a strong economic rationale for preferentially dispatching

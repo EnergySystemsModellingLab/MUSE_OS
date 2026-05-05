@@ -31,7 +31,7 @@ def test_share_based_supply_single_region(
     production: xr.DataArray,
     timeslice,
 ):
-    from muse.dispatch import share_based_supply
+    from muse.dispatch import share_based_production
 
     # Setup single region data
     region = "USA"
@@ -44,7 +44,7 @@ def test_share_based_supply_single_region(
     assert "region" not in demand.dims
 
     # Test supply matches demand for end-use commodities
-    spl = share_based_supply(demand, capacity, technologies).sum("asset")
+    spl = share_based_production(demand, capacity, technologies).sum("asset")
     enduses = is_enduse(technologies.comm_usage)
     assert abs(spl.sel(commodity=enduses) - demand.sel(commodity=enduses)).sum() < 1e-5
 
@@ -55,7 +55,7 @@ def test_share_based_supply_multi_region(
     production: xr.DataArray,
     timeslice,
 ):
-    from muse.dispatch import share_based_supply
+    from muse.dispatch import share_based_production
 
     # Create random demand
     demand = production.groupby("region").sum("asset")
@@ -64,7 +64,7 @@ def test_share_based_supply_multi_region(
 
     # Test supply matches demand for end-use commodities by region
     spl = (
-        share_based_supply(demand, capacity, technologies)
+        share_based_production(demand, capacity, technologies)
         .groupby("region")
         .sum("asset")
     )
@@ -78,7 +78,7 @@ def test_share_based_supply_with_min_service(
     production: xr.DataArray,
     timeslice,
 ):
-    from muse.dispatch import share_based_supply
+    from muse.dispatch import share_based_production
     from muse.quantities import minimum_production
 
     technologies["minimum_service_factor"] = 0.3
@@ -89,7 +89,7 @@ def test_share_based_supply_with_min_service(
     demand = demand * np.random.rand(*demand.shape)
 
     # Test supply meets minimum production constraint
-    spl = share_based_supply(demand, capacity, technologies)
+    spl = share_based_production(demand, capacity, technologies)
     assert (spl >= minprod).all()
 
 
