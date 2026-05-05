@@ -193,7 +193,21 @@ def merit_order_supply(
     prices: xr.DataArray,
     **kwargs,
 ) -> xr.DataArray:
-    """Service current demand from the cheapest assets."""
+    """Service demand by preferentially dispatching the cheapest assets.
+
+    This method fully utilises the cheapest assets (up to their maximum production)
+    before dispatching more expensive assets, until demand is met, whilst also
+    respecting minimum production constraints.
+
+    Each timeslice and year is treated independently, so the dispatch order can vary
+    across timeslices and years. For an example in a single timeslice/year/region, see
+    the docstring of :py:func:`merit_order_dispatch`.
+
+    This is best suited to sectors where demand can be met by any of a number of assets,
+    and where there is a strong economic rationale for preferentially dispatching
+    cheaper assets. A good example is the electricity production sector, where
+    demand/supply are generally pooled across assets in a common grid.
+    """
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
     from muse.costs import levelized_cost_of_energy
     from muse.quantities import (
@@ -224,13 +238,16 @@ def merit_order_supply(
         if "region" in demand.dims:
             demand = demand.sel(region=maxprod.region)
     else:
+        # TODO: get this working with multi-region models - not a priority right now
         raise ValueError("merit_order_supply not yet supported in multi-region models")
 
-    # Set capital costs to zero so they're not included in the cost-minimisation
+    # Set capital costs and fixed costs to zero so they're not included in the
+    # cost-minimisation
     technologies = technologies.assign(cap_par=xr.zeros_like(technologies.cap_par))
+    technologies = technologies.assign(fix_par=xr.zeros_like(technologies.fix_par))
 
-    # All assets operate at at least their minimum production
-    result = minprod.copy()
+    # Initialise result with zeros
+    result = xr.zeros_like(maxprod)
 
     for y in maxprod.year.values:
         # Calculate timeslice-level costs for each asset in this year assuming full
@@ -243,32 +260,14 @@ def merit_order_supply(
             consumption=maxcons.sel(year=y),
         )
 
-        # Meet supply in each timeslice by utilising the cheapest assets first, up to
-        # their maximum production
+        # Calculate production for this year by dispatching assets in order of
+        # increasing cost until demand is met
         for ts in maxprod.timeslice.values:
-            # Remaining demand after minimum production (i.e. what we need to meet with
-            # the available headroom above minimum)
-            remaining = demand.sel(year=y, timeslice=ts) - minprod.sel(
-                year=y, timeslice=ts
-            ).sum("asset")
-
-            # Rank assets by cost (cheapest first)
-            costs_ts = technology_costs.sel(timeslice=ts)
-            order = costs_ts.sortby(costs_ts).asset
-
-            # Available extra production above minimum, sorted by cost
-            available = (maxprod - minprod).sel(year=y, timeslice=ts).sel(asset=order)
-
-            # cumsum_before[i] = total available production of all assets cheaper than
-            # i
-            cumsum_before = available.cumsum("asset") - available
-
-            # (remaining - cumsum_before)[i] = demand still unmet after cheaper assets
-            # are fully utilised. Clipping to [0, available[i]] ensures we never
-            # produce negative amounts or exceed this asset's headroom above minprod.
-            addition = (remaining - cumsum_before).clip(min=0, max=available)
-            result.loc[dict(year=y, timeslice=ts)] += addition.reindex(
-                asset=result.asset.values
+            result.loc[dict(year=y, timeslice=ts)] = dispatch_by_merit_order(
+                demand=demand.sel(year=y, timeslice=ts),
+                minprod=minprod.sel(year=y, timeslice=ts),
+                maxprod=maxprod.sel(year=y, timeslice=ts),
+                technology_costs=technology_costs.sel(timeslice=ts),
             )
 
     # Add production of environmental pollutants
@@ -280,4 +279,74 @@ def merit_order_supply(
         {"commodity": ~check_usage(technologies.comm_usage, CommodityUsage.PRODUCT)}
     ] = 0
 
+    return result
+
+
+def dispatch_by_merit_order(
+    demand: xr.DataArray,
+    minprod: xr.DataArray,
+    maxprod: xr.DataArray,
+    technology_costs: xr.DataArray,
+) -> xr.DataArray:
+    """Dispatch assets in order of increasing cost until demand is met.
+
+    For example, we have the following three assets (ordered from cheapest to most
+    expensive):
+    - Asset A: minprod=10, maxprod=100, cost=5
+    - Asset B: minprod=20, maxprod=50, cost=10
+    - Asset C: minprod=0, maxprod=30, cost=15
+
+    If the total demand is 140 units, we would dispatch as follows:
+    - First we dispatch Assets A and B at their minimum production, which gives us 30
+    units of supply, leaving 110 units of remaining demand.
+    - Next we dispatch Asset A up to its maximum, which gives us an additional 90 units
+    of supply, leaving 20 units of remaining demand.
+    - The remaining demand of 20 is less than the headroom of Asset B above its
+    minimum (i.e. 50 - 20 = 30), so we dispatch Asset B for an additional 20 units,
+    which meets the total demand of 140.
+    - Asset C is not dispatched at all since it's the most expensive and demand is
+    already met by cheaper assets.
+
+    Arguments:
+        demand: DataArray of demand values, which should have a single 'commodity'
+            dimension
+        minprod: DataArray of minimum production values for the candidate assets, with
+            dimensions 'asset' and 'commodity'
+        maxprod: DataArray of maximum production values for the candidate assets, with
+            dimensions 'asset' and 'commodity'
+        technology_costs: DataArray of technology costs for the candidate assets, which
+            should have a single 'asset' dimension. This is the cost per unit of
+            production for each asset, which determines the order of dispatch (cheapest
+            first).
+    """
+    assert set(demand.dims) == {"commodity"}
+    assert set(minprod.dims) == {"asset", "commodity"}
+    assert set(maxprod.dims) == {"asset", "commodity"}
+    assert set(technology_costs.dims) == {"asset"}
+
+    # Start with minimum production
+    result = minprod.copy()
+
+    # Calculate remaining demand after minimum production (i.e. what we need to meet
+    # with the available headroom above minimum)
+    remaining = demand - minprod.sum("asset")
+
+    # Rank assets by cost (cheapest first)
+    order = technology_costs.sortby(technology_costs).asset
+
+    # Available extra production above minimum, sorted by cost
+    available = (maxprod - minprod).sel(asset=order)
+
+    # cumsum_before[i] = total available production of all assets cheaper than
+    # i
+    cumsum_before = available.cumsum("asset") - available
+
+    # (remaining - cumsum_before)[i] = demand still unmet after cheaper assets
+    # are fully utilised. Clipping to [0, available[i]] ensures we never
+    # produce negative amounts or exceed this asset's headroom above minprod.
+    addition = (remaining - cumsum_before).clip(min=0, max=available)
+
+    # Final production is minimum production plus any additional production from these
+    # assets
+    result = minprod + addition
     return result

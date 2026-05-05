@@ -91,3 +91,33 @@ def test_share_based_supply_with_min_service(
     # Test supply meets minimum production constraint
     spl = share_based_supply(demand, capacity, technologies)
     assert (spl >= minprod).all()
+
+
+def test_merit_order_dispatch():
+    from muse.dispatch import dispatch_by_merit_order
+
+    demand = xr.DataArray(
+        [140], dims=("commodity",), coords={"commodity": ["electricity"]}
+    )
+    minprod = xr.DataArray(
+        [[10], [20], [0]],
+        dims=("asset", "commodity"),
+        coords={"asset": ["A", "B", "C"], "commodity": ["electricity"]},
+    )
+    maxprod = xr.DataArray(
+        [[100], [50], [30]],
+        dims=("asset", "commodity"),
+        coords={"asset": ["A", "B", "C"], "commodity": ["electricity"]},
+    )
+    technology_costs = xr.DataArray(
+        [5, 10, 15], dims=("asset",), coords={"asset": ["A", "B", "C"]}
+    )
+
+    result = dispatch_by_merit_order(demand, minprod, maxprod, technology_costs)
+
+    expected = xr.DataArray(
+        [[100], [40], [0]],
+        dims=("asset", "commodity"),
+        coords={"asset": ["A", "B", "C"], "commodity": ["electricity"]},
+    )
+    xr.testing.assert_equal(result, expected)
