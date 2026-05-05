@@ -233,14 +233,6 @@ def merit_order_supply(
         technologies, maxprod, prices=prices, timeslice_level=timeslice_level
     )
 
-    # Normalise region dimension
-    if len(set(maxprod.region.values.flatten())) == 1:
-        if "region" in demand.dims:
-            demand = demand.sel(region=maxprod.region)
-    else:
-        # TODO: get this working with multi-region models - not a priority right now
-        raise ValueError("merit_order_supply not yet supported in multi-region models")
-
     # Set capital costs and fixed costs to zero so they're not included in the
     # cost-minimisation
     technologies = technologies.assign(cap_par=xr.zeros_like(technologies.cap_par))
@@ -250,25 +242,40 @@ def merit_order_supply(
     result = xr.zeros_like(maxprod)
 
     for y in maxprod.year.values:
-        # Calculate timeslice-level costs for each asset in this year assuming full
-        # dispatch. We use LCOE excluding capital costs.
-        technology_costs = levelized_cost_of_energy(
-            technologies,
-            prices.sel(year=y),
-            capacity.sel(year=y),
-            production=maxprod.sel(year=y),
-            consumption=maxcons.sel(year=y),
-        )
+        prices_y = prices.sel(year=y)
+        capacity_y = capacity.sel(year=y)
+        maxprod_y = maxprod.sel(year=y)
+        minprod_y = minprod.sel(year=y)
+        maxcons_y = maxcons.sel(year=y)
 
-        # Calculate production for this year by dispatching assets in order of
-        # increasing cost until demand is met
-        for ts in maxprod.timeslice.values:
-            result.loc[dict(year=y, timeslice=ts)] = dispatch_by_merit_order(
-                demand=demand.sel(year=y, timeslice=ts),
-                minprod=minprod.sel(year=y, timeslice=ts),
-                maxprod=maxprod.sel(year=y, timeslice=ts),
-                technology_costs=technology_costs.sel(timeslice=ts),
+        for region in demand.region.values:
+            maxprod_region = maxprod_y.where(maxprod_y.region == region, drop=True)
+            region_assets = maxprod_region.asset
+            techs_region = technologies.sel(asset=region_assets)
+
+            # Calculate timeslice-level costs for each asset in this year assuming full
+            # dispatch. We use LCOE excluding capital costs.
+            technology_costs = levelized_cost_of_energy(
+                techs_region,
+                prices_y.where(prices_y.region == region, drop=True),
+                capacity_y.sel(asset=region_assets),
+                production=maxprod_region,
+                consumption=maxcons_y.sel(asset=region_assets),
             )
+
+            minprod_region = minprod_y.sel(asset=region_assets)
+
+            # Calculate production for this year by dispatching assets in order of
+            # increasing cost until demand is met
+            for ts in maxprod.timeslice.values:
+                result.loc[dict(year=y, timeslice=ts, asset=region_assets.values)] = (
+                    dispatch_by_merit_order(
+                        demand=demand.sel(year=y, timeslice=ts, region=region),
+                        minprod=minprod_region.sel(timeslice=ts),
+                        maxprod=maxprod_region.sel(timeslice=ts),
+                        technology_costs=technology_costs.sel(timeslice=ts),
+                    )
+                )
 
     # Add production of environmental pollutants
     env = is_pollutant(technologies.comm_usage)
