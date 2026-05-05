@@ -23,12 +23,16 @@ def supply(
 ) -> xr.DataArray:
     """Production and emission for a given capacity servicing a given demand.
 
-    Supply includes two components, end-uses outputs and environmental pollutants. The
-    former consists of the demand that the current capacity is capable of servicing.
-    Where there is excess capacity, then service is assigned to each asset a share of
-    the maximum production (e.g. utilization across similar assets is the same in
-    percentage). Then, environmental pollutants are computing as a function of
-    commodity outputs.
+    This method distributes the demand across assets in proportion to their maximum
+    production. For example, if asset A can produce 10 units at full capacity and asset
+    B can produce 20 units, then A will service 1/3 of the total demand and B will
+    service 2/3of the total demand. If demand is lower than total maximum production,
+    then the supply from each asset is reduced proportionally. If demand exceeds
+    capacity, production is capped at each asset's maximum.
+
+    This function is most appropriate for sectors where demand is inherently
+    distributed across assets and cannot be shifted between them (e.g.
+    residential heating systems, where each household meets its own demand).
 
     Arguments:
         capacity: number/quantity of assets that can service the demand
@@ -98,7 +102,7 @@ def supply(
     return result
 
 
-def cost_minimising_supply(
+def merit_order_supply(
     capacity: xr.DataArray,
     demand: xr.DataArray,
     technologies: xr.Dataset | xr.DataArray,
@@ -124,21 +128,19 @@ def cost_minimising_supply(
         technologies, maxprod, prices=prices, timeslice_level=timeslice_level
     )
 
-    # All assets operate at at least their minimum production
-    result = minprod.copy()
-
     # Normalise region dimension
     if len(set(maxprod.region.values.flatten())) == 1:
         if "region" in demand.dims:
             demand = demand.sel(region=maxprod.region)
             prices = prices.sel(region=maxprod.region)
     else:
-        raise ValueError(
-            "cost_minimising_supply not yet supported in multi-reigon models"
-        )
+        raise ValueError("merit_order_supply not yet supported in multi-region models")
 
     # Set capital costs to zero so they're not included in the cost-minimisation
     technologies = technologies.assign(cap_par=xr.zeros_like(technologies.cap_par))
+
+    # All assets operate at at least their minimum production
+    result = minprod.copy()
 
     for y in maxprod.year.values:
         # Calculate timeslice-level costs for each asset in this year assuming full

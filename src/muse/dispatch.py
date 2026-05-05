@@ -37,7 +37,7 @@ __all__ = [
     "factory",
     "maximum_production",
     "register_production",
-    "supply",
+    "share_based_supply",
 ]
 
 from collections.abc import MutableMapping
@@ -68,7 +68,7 @@ def register_production(function: PRODUCTION_SIGNATURE):
 
 
 def factory(name) -> PRODUCTION_SIGNATURE:
-    from muse.production import PRODUCTION_METHODS
+    from muse.dispatch import PRODUCTION_METHODS
 
     return PRODUCTION_METHODS[name]
 
@@ -91,7 +91,7 @@ def maximum_production(
 
 
 @register_production(name=("share", "shares"))
-def supply(
+def share_based_supply(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
@@ -109,17 +109,17 @@ def supply(
     )
 
 
-@register_production
-def cost_minimising_supply(
+@register_production(name=("merit", "merit_order"))
+def merit_order_supply(
     market: xr.Dataset,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
     timeslice_level: str | None = None,
 ) -> xr.DataArray:
     """Service current demand from the cheapest assets."""
-    from muse.quantities import cost_minimising_supply
+    from muse.quantities import merit_order_supply
 
-    return cost_minimising_supply(
+    return merit_order_supply(
         capacity,
         market.consumption,
         technologies,

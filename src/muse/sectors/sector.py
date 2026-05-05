@@ -10,7 +10,7 @@ from typing import (
 import xarray as xr
 
 from muse.agents import AbstractAgent
-from muse.production import PRODUCTION_SIGNATURE
+from muse.dispatch import PRODUCTION_SIGNATURE
 from muse.readers.toml import read_technodata
 from muse.sectors.abstract import AbstractSector
 from muse.sectors.register import register_sector
@@ -24,9 +24,9 @@ class Sector(AbstractSector):  # type: ignore
 
     @classmethod
     def factory(cls, name: str, settings: Any) -> Sector:
+        from muse.dispatch import factory as pfactory
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory
-        from muse.production import factory as pfactory
 
         # Read sector settings
         sector_settings = getattr(settings.sectors, name)._asdict()
