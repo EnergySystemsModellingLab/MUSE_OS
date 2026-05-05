@@ -195,7 +195,7 @@ def sector_fuel_costs(
     """Sector fuel costs with agent annotations."""
     from muse.commodities import is_fuel
     from muse.dispatch import (
-        _share_based_supply_internal,
+        share_based_supply,
     )  # TODO: should not have to recalculate supply
     from muse.quantities import consumption
 
@@ -216,9 +216,9 @@ def sector_fuel_costs(
                 year=year,
             ).fillna(0.0)
 
-            production = _share_based_supply_internal(
-                capacity,
+            production = share_based_supply(
                 agent_market.consumption,
+                capacity,
                 technologies,
             )
 
@@ -301,7 +301,7 @@ def sector_emission_costs(
     """Sector emission costs with agent annotations."""
     from muse.commodities import is_enduse, is_pollutant
     from muse.dispatch import (
-        _share_based_supply_internal,
+        share_based_supply,
     )  # TODO: should not have to recalculate supply
 
     data_sector: list[xr.DataArray] = []
@@ -327,9 +327,9 @@ def sector_emission_costs(
             i = (np.where(envs))[0][0]
             red_envs = envs[i].commodity.values
             prices = a.filter_input(market.prices, year=year, commodity=red_envs)
-            production = _share_based_supply_internal(
-                capacity,
+            production = share_based_supply(
                 agent_market.consumption,
+                capacity,
                 technologies,
             )
 

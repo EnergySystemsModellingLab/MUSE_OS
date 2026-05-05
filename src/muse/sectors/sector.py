@@ -291,10 +291,11 @@ class Sector(AbstractSector):  # type: ignore
 
         # Calculate supply
         supply = self.supply_prod(
-            market=market,
+            demand=market.consumption,
             capacity=capacity,
             technologies=technodata,
             timeslice_level=self.timeslice_level,
+            prices=prices,
         )
 
         # Calculate consumption

@@ -76,10 +76,11 @@ def factory(name) -> PRODUCTION_SIGNATURE:
 
 @register_production(name=("max", "maximum"))
 def maximum_production(
-    market: xr.Dataset,
+    demand: xr.DataArray,
     capacity: xr.DataArray,
     technologies: xr.Dataset,
     timeslice_level: str | None = None,
+    **kwargs,
 ) -> xr.DataArray:
     """Production when running at full capacity.
 
@@ -93,43 +94,11 @@ def maximum_production(
 
 @register_production(name=("share", "shares"))
 def share_based_supply(
-    market: xr.Dataset,
-    capacity: xr.DataArray,
-    technologies: xr.Dataset,
-    timeslice_level: str | None = None,
-) -> xr.DataArray:
-    """Service current demand equally from all assets.
-
-    "Equally" means that equivalent technologies are used to the same percentage of
-    their respective capacity.
-    """
-    return _share_based_supply_internal(
-        capacity, market.consumption, technologies, timeslice_level=timeslice_level
-    )
-
-
-@register_production(name=("merit", "merit_order"))
-def merit_order_supply(
-    market: xr.Dataset,
-    capacity: xr.DataArray,
-    technologies: xr.Dataset,
-    timeslice_level: str | None = None,
-) -> xr.DataArray:
-    """Service current demand from the cheapest assets."""
-    return _merit_order_supply_internal(
-        capacity,
-        market.consumption,
-        technologies,
-        prices=market.prices,
-        timeslice_level=timeslice_level,
-    )
-
-
-def _share_based_supply_internal(
-    capacity: xr.DataArray,
     demand: xr.DataArray,
-    technologies: xr.Dataset | xr.DataArray,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
     timeslice_level: str | None = None,
+    **kwargs,
 ) -> xr.DataArray:
     """Production and emission for a given capacity servicing a given demand.
 
@@ -145,12 +114,13 @@ def _share_based_supply_internal(
     residential heating systems, where each household meets its own demand).
 
     Arguments:
-        capacity: number/quantity of assets that can service the demand
         demand: amount of each end-use required. The supply of each process will not
             exceed its share of the demand.
+        capacity: number/quantity of assets that can service the demand
         technologies: factors bindings the capacity of an asset with its production of
             commodities and environmental pollutants.
         timeslice_level: the desired timeslice level of the result (e.g. "hour", "day")
+        **kwargs: any number of keyword arguments (not used in this method)
 
     Return:
         A data array where the commodity dimension only contains actual outputs (i.e. no
@@ -213,13 +183,17 @@ def _share_based_supply_internal(
     return result
 
 
-def _merit_order_supply_internal(
-    capacity: xr.DataArray,
+@register_production(name=("merit", "merit_order"))
+def merit_order_supply(
     demand: xr.DataArray,
-    technologies: xr.Dataset | xr.DataArray,
-    prices: xr.DataArray,
+    capacity: xr.DataArray,
+    technologies: xr.Dataset,
     timeslice_level: str | None = None,
+    *,
+    prices: xr.DataArray,
+    **kwargs,
 ) -> xr.DataArray:
+    """Service current demand from the cheapest assets."""
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
     from muse.costs import levelized_cost_of_energy
     from muse.quantities import (
