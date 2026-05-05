@@ -196,18 +196,23 @@ def merit_order_production(
 ) -> xr.DataArray:
     """Service demand by preferentially dispatching the cheapest assets.
 
-    This method fully utilises the cheapest assets (up to their maximum production)
-    before dispatching more expensive assets, until demand is met, whilst also
-    respecting minimum production constraints.
+    This function allocates production across a set of assets by dispatching them
+    in order of increasing marginal cost (i.e. cheapest first), until demand is met.
+    Each asset is operated between its minimum and maximum production constraints,
+    and higher-cost assets are only used once cheaper options are exhausted.
+
+    The merit-order principle is widely used in systems where:
+    - Multiple assets can supply a homogeneous or substitutable service
+    - Supply is pooled or centrally coordinated
+    - Short-run marginal cost is the dominant driver of dispatch decisions
+
+    A good example is the power sector (electricity production), where supply from all
+    assets feeds into a common grid. Low cost generators are drawn on first, followed by
+    more expensive generators as grid demand increases.
 
     Each timeslice and year is treated independently, so the dispatch order can vary
-    across timeslices and years. For an example in a single timeslice/year/region, see
-    the docstring of :py:func:`dispatch_by_merit_order`.
-
-    This is best suited to sectors where demand can be met by any of a number of assets,
-    and where there is a strong economic rationale for preferentially dispatching
-    cheaper assets. A good example is the electricity production sector, where
-    demand/supply are generally pooled across assets in a common grid.
+    across timeslices and years. For a numerical example in a single
+    timeslice/year/region, see the docstring of :py:func:`dispatch_by_merit_order`.
     """
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
     from muse.costs import levelized_cost_of_energy
