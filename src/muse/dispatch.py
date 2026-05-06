@@ -410,12 +410,7 @@ def dispatch_by_merit_order(
     # produce negative amounts or exceed this asset's headroom above minprod.
     addition_sorted = (remaining - cumsum_before).clip(min=0, max=available)
 
-    # Map dispatch additions back to the original asset order.
-    inverse_order = np.empty_like(order)
-    inverse_order[order] = np.arange(order.size)
-    addition = addition_sorted.isel(asset=inverse_order)
-
-    # Final production is minimum production plus any additional production from these
-    # assets
-    result = minprod + addition
-    return result
+    # Map dispatch additions back to the original asset order before combining
+    # with minprod.
+    addition = addition_sorted.isel(asset=np.argsort(order))
+    return minprod + addition
