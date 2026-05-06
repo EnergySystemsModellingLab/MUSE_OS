@@ -30,7 +30,7 @@ def prices(
     technologies: xr.Dataset, capacity: xr.DataArray, timeslice: xr.DataArray
 ) -> xr.DataArray:
     # Make random prices for all commodities/timeslices/years/regions
-    regions = regions = xr.DataArray(
+    regions = xr.DataArray(
         capacity["region"].to_index().unique(),
         dims="region",
         name="region",
