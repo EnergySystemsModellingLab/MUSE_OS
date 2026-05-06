@@ -28,7 +28,7 @@ global_commodities = '{path}/GlobalCommodities.csv'
 [sectors.industry]
 type = 'default'
 priority = 1
-dispatch_production = "merit-order"
+dispatch_production = "share"
 technodata = '{path}/industry/Technodata.csv'
 commodities_in = '{path}/industry/CommIn.csv'
 commodities_out = '{path}/industry/CommOut.csv'

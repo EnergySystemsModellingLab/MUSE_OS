@@ -63,7 +63,7 @@ filename = "{cwd}/{default_output_dir}/{Sector}_{Quantity}.csv"
 [sectors.gas]
 type = 'default'
 priority = 3
-dispatch_production = "merit-order"
+dispatch_production = "share"
 technodata = '{path}/gas/Technodata.csv'
 commodities_in = '{path}/gas/CommIn.csv'
 commodities_out = '{path}/gas/CommOut.csv'

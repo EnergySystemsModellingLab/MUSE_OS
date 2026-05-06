@@ -193,7 +193,7 @@ def share_based_production(
     return result
 
 
-@register_production(name=("merit", "merit_order"))
+@register_production(name=("merit", "merit-order"))
 def merit_order_production(
     demand: xr.DataArray,
     capacity: xr.DataArray,
