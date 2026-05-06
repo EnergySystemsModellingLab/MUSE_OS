@@ -232,7 +232,7 @@ A sector accepts these attributes:
      This is largely intended for testing purposes.
      See :py:func:`muse.dispatch.maximum_production`.
 
-   Additional methods can be registered with :py:func:`muse.dispatch.register_dispatch`
+   Additional methods can be registered with :py:func:`muse.dispatch.register_production`
 
 ``technodata``
    Path to a csv file containing the characterization of the technologies involved in
