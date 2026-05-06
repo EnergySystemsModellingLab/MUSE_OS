@@ -285,7 +285,6 @@ def merit_order_production(
 
     for y in maxprod.year.values:
         prices_y = prices.sel(year=y)
-        capacity_y = capacity.sel(year=y)
         maxprod_y = maxprod.sel(year=y)
         minprod_y = minprod.sel(year=y)
         maxcons_y = maxcons.sel(year=y)
@@ -303,7 +302,6 @@ def merit_order_production(
             technology_costs = marginal_cost(
                 techs_region,
                 prices_y.sel(region=region),
-                capacity_y.sel(asset=region_assets),
                 production=maxprod_region,
                 consumption=maxcons_y.sel(asset=region_assets),
             )

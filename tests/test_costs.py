@@ -153,8 +153,8 @@ def test_levelized_cost_of_energy(
     assert set(result.dims) == {"asset", "timeslice"}
 
 
-def test_marginal_cost(_technologies, _prices, _capacity, _production, _consumption):
-    result = marginal_cost(_technologies, _prices, _capacity, _production, _consumption)
+def test_marginal_cost(_technologies, _prices, _production, _consumption):
+    result = marginal_cost(_technologies, _prices, _production, _consumption)
     assert set(result.dims) == {"asset", "timeslice"}
 
 
@@ -306,21 +306,6 @@ def test_lcoe_aggregate(
         _production,
         _consumption,
         method=method,
-        aggregate_timeslices=True,
-    )
-    assert set(result.dims) == {"asset"}
-
-
-def test_marginal_cost_aggregate(
-    _technologies, _prices, _capacity, _production, _consumption
-):
-    """Test marginal cost aggregation over timeslices."""
-    result = marginal_cost(
-        _technologies,
-        _prices,
-        _capacity,
-        _production,
-        _consumption,
         aggregate_timeslices=True,
     )
     assert set(result.dims) == {"asset"}
