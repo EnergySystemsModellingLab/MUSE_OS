@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-from pytest import fixture
+from pytest import fixture, raises
 
 from muse.commodities import is_enduse
 from muse.timeslices import broadcast_timeslice, distribute_timeslice
@@ -220,6 +220,93 @@ def test_dispatch_by_merit_order():
 
     expected = xr.DataArray(
         [[40], [100], [0]],
+        dims=("asset", "commodity"),
+        coords={"asset": ["A", "B", "C"], "commodity": ["electricity"]},
+    )
+    xr.testing.assert_equal(result, expected)
+
+
+def test_dispatch_by_merit_order_with_unlabelled_assets():
+    """Dispatch remains correct when the asset dimension has no labels."""
+    from muse.dispatch import dispatch_by_merit_order
+
+    demand = xr.DataArray(
+        [140], dims=("commodity",), coords={"commodity": ["electricity"]}
+    )
+    minprod = xr.DataArray(
+        [[20], [10], [0]],
+        dims=("asset", "commodity"),
+        coords={"commodity": ["electricity"]},
+    )
+    maxprod = xr.DataArray(
+        [[50], [100], [30]],
+        dims=("asset", "commodity"),
+        coords={"commodity": ["electricity"]},
+    )
+    technology_costs = xr.DataArray([10, 5, 15], dims=("asset",))
+
+    result = dispatch_by_merit_order(demand, minprod, maxprod, technology_costs)
+
+    expected = xr.DataArray(
+        [[40], [100], [0]],
+        dims=("asset", "commodity"),
+        coords={"commodity": ["electricity"]},
+    )
+    xr.testing.assert_equal(result, expected)
+
+
+def test_dispatch_by_merit_order_rejects_reordered_costs():
+    """Reordered labelled cost inputs are rejected by exact alignment."""
+    from muse.dispatch import dispatch_by_merit_order
+
+    demand = xr.DataArray(
+        [140], dims=("commodity",), coords={"commodity": ["electricity"]}
+    )
+    minprod = xr.DataArray(
+        [[20], [10], [0]],
+        dims=("asset", "commodity"),
+        coords={"asset": ["A", "B", "C"], "commodity": ["electricity"]},
+    )
+    maxprod = xr.DataArray(
+        [[50], [100], [30]],
+        dims=("asset", "commodity"),
+        coords={"asset": ["A", "B", "C"], "commodity": ["electricity"]},
+    )
+    technology_costs = xr.DataArray(
+        [5, 10, 15],
+        dims=("asset",),
+        coords={"asset": ["B", "A", "C"]},
+    )
+
+    with raises(ValueError, match="join='exact'"):
+        dispatch_by_merit_order(demand, minprod, maxprod, technology_costs)
+
+
+def test_dispatch_by_merit_order_preserves_input_order_for_ties():
+    """Stable sorting keeps the original asset order when costs are tied."""
+    from muse.dispatch import dispatch_by_merit_order
+
+    demand = xr.DataArray(
+        [45], dims=("commodity",), coords={"commodity": ["electricity"]}
+    )
+    minprod = xr.DataArray(
+        [[0], [0], [0]],
+        dims=("asset", "commodity"),
+        coords={"asset": ["A", "B", "C"], "commodity": ["electricity"]},
+    )
+    maxprod = xr.DataArray(
+        [[30], [30], [30]],
+        dims=("asset", "commodity"),
+        coords={"asset": ["A", "B", "C"], "commodity": ["electricity"]},
+    )
+    technology_costs = xr.DataArray(
+        [10, 10, 20], dims=("asset",), coords={"asset": ["A", "B", "C"]}
+    )
+
+    result = dispatch_by_merit_order(demand, minprod, maxprod, technology_costs)
+
+    expected = xr.DataArray(
+        [[30], [15], [0]],
         dims=("asset", "commodity"),
         coords={"asset": ["A", "B", "C"], "commodity": ["electricity"]},
     )
