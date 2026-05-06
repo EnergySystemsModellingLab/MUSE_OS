@@ -290,10 +290,18 @@ def merit_order_production(
         maxcons_y = maxcons.sel(year=y)
 
         for region in demand.region.values:
-            maxprod_region = maxprod_y.where(maxprod_y.region == region, drop=True)
-            techs_region = technologies.where(technologies.region == region, drop=True)
-            minprod_region = minprod_y.where(minprod_y.region == region, drop=True)
-            maxcons_region = maxcons_y.where(maxcons_y.region == region, drop=True)
+            maxprod_region = maxprod_y.sel(
+                asset=maxprod_y.asset[maxprod_y.region == region]
+            )
+            techs_region = technologies.sel(
+                asset=technologies.asset[technologies.region == region]
+            )
+            minprod_region = minprod_y.sel(
+                asset=minprod_y.asset[minprod_y.region == region]
+            )
+            maxcons_region = maxcons_y.sel(
+                asset=maxcons_y.asset[maxcons_y.region == region]
+            )
 
             # Calculate timeslice-level costs for each asset in this year assuming full
             # dispatch. We use LCOE excluding capital costs.
