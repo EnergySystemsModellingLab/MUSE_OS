@@ -225,7 +225,7 @@ def merit_order_production(
     timeslice/year/region, see the docstring of :py:func:`dispatch_by_merit_order`.
     """
     from muse.commodities import CommodityUsage, check_usage, is_pollutant
-    from muse.costs import levelized_cost_of_energy
+    from muse.costs import marginal_cost
     from muse.quantities import (
         consumption,
         emission,
@@ -280,13 +280,6 @@ def merit_order_production(
         technologies, capacity, maxprod, minprod, maxcons, join="exact", copy=False
     )
 
-    # Set capital costs and fixed costs to zero so they're not included in the
-    # cost-minimisation
-    technologies = technologies.assign(
-        cap_par=xr.zeros_like(technologies.cap_par),
-        fix_par=xr.zeros_like(technologies.fix_par),
-    )
-
     # Initialise result with zeros
     result = xr.zeros_like(maxprod)
 
@@ -307,7 +300,7 @@ def merit_order_production(
 
             # Calculate timeslice-level costs for each asset in this year assuming full
             # dispatch. We use LCOE excluding capital costs.
-            technology_costs = levelized_cost_of_energy(
+            technology_costs = marginal_cost(
                 techs_region,
                 prices_y.sel(region=region),
                 capacity_y.sel(asset=region_assets),

@@ -191,10 +191,12 @@ def running_costs(
     production: xr.DataArray,
     consumption: xr.DataArray,
     aggregate_timeslices: bool = False,
+    include_fixed_costs: bool = True,
 ) -> xr.DataArray:
     """Total annual running costs (excluding capital costs).
 
-    This is the sum of environmental, fuel, material, fixed and variable costs.
+    This is the sum of environmental, fuel, material, variable and (optionally) fixed
+    costs.
 
     .. seealso::
         :py:func:`environmental_costs`
@@ -215,8 +217,11 @@ def running_costs(
         _material_costs = _material_costs.sum("timeslice")
 
     # Costs associated with capacity and production level (annual)
-    _fixed_costs = fixed_costs(technologies, capacity)
     _variable_costs = variable_costs(technologies, production)
+    if include_fixed_costs:
+        _fixed_costs = fixed_costs(technologies, capacity)
+    else:
+        _fixed_costs = xr.zeros_like(_variable_costs)
 
     # Split fixed/variable across timeslices in proportion to production (if required)
     if not aggregate_timeslices:
@@ -493,6 +498,61 @@ def levelized_cost_of_energy(
 
     # LCOE
     result = (_capital_costs + _running_costs) / prod
+    return result
+
+
+@cost
+def marginal_cost(
+    technologies: xr.Dataset,
+    prices: xr.DataArray,
+    capacity: xr.DataArray,
+    production: xr.DataArray,
+    consumption: xr.DataArray,
+    aggregate_timeslices: bool = False,
+) -> xr.DataArray:
+    """Marginal cost of technologies.
+
+    The average cost of producing one unit of output, excluding capital costs and fixed
+    costs.
+
+    Arguments:
+        technologies: xr.Dataset of technology parameters
+        prices: xr.DataArray with commodity prices
+        capacity: xr.DataArray with the capacity of the relevant technologies
+        production: xr.DataArray with commodity production by the relevant technologies
+        consumption: xr.DataArray with commodity consumption by the relevant
+            technologies
+        aggregate_timeslices: If True, the LCOE is aggregated over timeslices (result
+            will not have a "timeslice" dimension)
+
+    Return:
+        xr.DataArray with marginal costs calculated for the relevant technologies
+    """
+    # Running costs (annual)
+    _running_costs = running_costs(
+        technologies,
+        prices,
+        capacity,
+        production,
+        consumption,
+        aggregate_timeslices,
+        include_fixed_costs=False,
+    )
+
+    # Production (annual)
+    products = is_enduse(technologies.comm_usage)
+    prod = (
+        production.where(production > 0.0, 1e-6)
+        .sel(commodity=products)
+        .sum(
+            "commodity"
+        )  # TODO: is this the correct way to deal with multiple products?
+    )
+    if aggregate_timeslices:
+        prod = prod.sum("timeslice")
+
+    # LCOE
+    result = _running_costs / prod
     return result
 
 
