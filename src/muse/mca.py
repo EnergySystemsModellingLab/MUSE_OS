@@ -15,7 +15,7 @@ from muse.outputs.cache import OutputCache
 from muse.readers import read_initial_market
 from muse.sectors import SECTORS_REGISTERED, AbstractSector, Sector
 from muse.timeslices import broadcast_timeslice, drop_timeslice
-from muse.utilities import future_propagation
+from muse.utilities import broadcast_regions, future_propagation
 
 
 class MCA:
@@ -298,12 +298,14 @@ class MCA:
                 getLogger(__name__).info(
                     f"Updating carbon price for year {investment_year}"
                 )
-                new_price = self.update_carbon_price(new_market)
+                new_price: float = self.update_carbon_price(new_market)
                 future_price = DataArray(new_price, coords=dict(year=investment_year))
                 new_market.prices.loc[dict(commodity=self.carbon_commodities)] = (
                     future_propagation(
                         new_market.prices.sel(commodity=self.carbon_commodities),
-                        broadcast_timeslice(future_price),
+                        broadcast_timeslice(
+                            broadcast_regions(future_price, new_market.region)
+                        ),
                     )
                 )
 
