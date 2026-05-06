@@ -34,6 +34,7 @@ from __future__ import annotations
 
 __all__ = [
     "PRODUCTION_SIGNATURE",
+    "dispatch_by_merit_order",
     "factory",
     "maximum_production",
     "merit_order_production",
@@ -231,9 +232,19 @@ def merit_order_production(
         maximum_production,
         minimum_production,
     )
+    from muse.utilities import broadcast_over_assets
 
     assert "asset" not in demand.dims
     assert "asset" in capacity.dims
+    assert "asset" not in prices.dims
+
+    # Normalise demand/prices dataarrays to ensure they have a region dimension
+    if "region" not in demand.dims:
+        region = np.unique(technologies.region.values).item()
+        demand = demand.expand_dims(region=[region])
+    if "region" not in prices.dims:
+        region = np.unique(technologies.region.values).item()
+        prices = prices.expand_dims(region=[region])
 
     # Maximum and minimum production for each asset
     maxprod = maximum_production(
@@ -245,7 +256,10 @@ def merit_order_production(
 
     # Consumption of each asset assuming full dispatch, for calculating costs later on.
     maxcons = consumption(
-        technologies, maxprod, prices=prices, timeslice_level=timeslice_level
+        technologies,
+        maxprod,
+        prices=broadcast_over_assets(prices, capacity, installed_as_year=False),
+        timeslice_level=timeslice_level,
     )
 
     # Set capital costs and fixed costs to zero so they're not included in the
@@ -264,15 +278,15 @@ def merit_order_production(
         maxcons_y = maxcons.sel(year=y)
 
         for region in demand.region.values:
-            maxprod_region = maxprod_y.where(maxprod_y.region == region, drop=True)
-            region_assets = maxprod_region.asset
+            region_assets = maxprod_y.asset.isel(asset=(maxprod_y.region == region))
+            maxprod_region = maxprod_y.sel(asset=region_assets)
             techs_region = technologies.sel(asset=region_assets)
 
             # Calculate timeslice-level costs for each asset in this year assuming full
             # dispatch. We use LCOE excluding capital costs.
             technology_costs = levelized_cost_of_energy(
                 techs_region,
-                prices_y.where(prices_y.region == region, drop=True),
+                prices_y.sel(region=region),
                 capacity_y.sel(asset=region_assets),
                 production=maxprod_region,
                 consumption=maxcons_y.sel(asset=region_assets),

@@ -286,17 +286,17 @@ class Sector(AbstractSector):  # type: ignore
             technologies, capacity, installed_as_year=True
         )
 
-        # Select relevant prices for each asset
-        prices = broadcast_over_assets(market.prices, capacity, installed_as_year=False)
-
         # Calculate supply
         supply = self.supply_prod(
             demand=market.consumption,
             capacity=capacity,
             technologies=technodata,
             timeslice_level=self.timeslice_level,
-            prices=prices,
+            prices=market.prices,
         )
+
+        # Select relevant prices for each asset
+        prices = broadcast_over_assets(market.prices, capacity, installed_as_year=False)
 
         # Calculate consumption
         consume = consumption(
