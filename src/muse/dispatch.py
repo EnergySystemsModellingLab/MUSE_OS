@@ -239,6 +239,7 @@ def merit_order_production(
     assert "asset" not in prices.dims
 
     # Normalise demand/prices dataarrays to ensure they have a region dimension
+    # Multi-region models will already have a region dimension
     if "region" not in demand.dims:
         region = np.unique(technologies.region.values).item()
         demand = demand.expand_dims(region=[region])
@@ -262,10 +263,17 @@ def merit_order_production(
         timeslice_level=timeslice_level,
     )
 
+    # Verify all asset-level inputs are positionally aligned before using isel.
+    xr.align(
+        technologies, capacity, maxprod, minprod, maxcons, join="exact", copy=False
+    )
+
     # Set capital costs and fixed costs to zero so they're not included in the
     # cost-minimisation
-    technologies = technologies.assign(cap_par=xr.zeros_like(technologies.cap_par))
-    technologies = technologies.assign(fix_par=xr.zeros_like(technologies.fix_par))
+    technologies = technologies.assign(
+        cap_par=xr.zeros_like(technologies.cap_par),
+        fix_par=xr.zeros_like(technologies.fix_par),
+    )
 
     # Initialise result with zeros
     result = xr.zeros_like(maxprod)
@@ -278,26 +286,28 @@ def merit_order_production(
         maxcons_y = maxcons.sel(year=y)
 
         for region in demand.region.values:
-            region_assets = maxprod_y.asset.isel(asset=(maxprod_y.region == region))
-            maxprod_region = maxprod_y.sel(asset=region_assets)
-            techs_region = technologies.sel(asset=region_assets)
+            region_mask = np.broadcast_to(
+                maxprod_y.region.values == region, maxprod_y.sizes["asset"]
+            )
+            maxprod_region = maxprod_y.isel(asset=region_mask)
+            techs_region = technologies.isel(asset=region_mask)
 
             # Calculate timeslice-level costs for each asset in this year assuming full
             # dispatch. We use LCOE excluding capital costs.
             technology_costs = levelized_cost_of_energy(
                 techs_region,
                 prices_y.sel(region=region),
-                capacity_y.sel(asset=region_assets),
+                capacity_y.isel(asset=region_mask),
                 production=maxprod_region,
-                consumption=maxcons_y.sel(asset=region_assets),
+                consumption=maxcons_y.isel(asset=region_mask),
             )
 
-            minprod_region = minprod_y.sel(asset=region_assets)
+            minprod_region = minprod_y.isel(asset=region_mask)
 
             # Calculate production for this year by dispatching assets in order of
             # increasing cost until demand is met
             for ts in maxprod.timeslice.values:
-                result.loc[dict(year=y, timeslice=ts, asset=region_assets.values)] = (
+                result.loc[dict(year=y, timeslice=ts, asset=region_mask)] = (
                     dispatch_by_merit_order(
                         demand=demand.sel(year=y, timeslice=ts, region=region),
                         minprod=minprod_region.sel(timeslice=ts),
