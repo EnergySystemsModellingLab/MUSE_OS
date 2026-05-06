@@ -503,6 +503,10 @@ def unmet_demand(
     assert "year" not in capacity.dims
     assert "year" not in demand.dims
 
+    # If there are no assets, no production is possible, so all demand is unmet.
+    if capacity.sizes["asset"] == 0:
+        return demand.copy()
+
     # Calculate maximum production by existing assets
     produced = maximum_production(
         capacity=capacity,
