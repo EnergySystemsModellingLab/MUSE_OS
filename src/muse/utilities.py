@@ -706,4 +706,4 @@ def broadcast_regions(data: xr.DataArray, template: xr.DataArray) -> xr.DataArra
             return data
         raise ValueError("Data is already regioned, but does not match the reference.")
 
-    return data.expand_dims(region=template.region, axis=template.dims.index("region"))
+    return data.expand_dims(region=template.region)
