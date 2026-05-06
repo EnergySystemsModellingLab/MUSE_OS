@@ -259,6 +259,11 @@ def merit_order_production(
             region=("asset", [capacity.region.item()] * capacity.sizes["asset"])
         )
 
+    # Align arrays
+    demand, capacity, technologies, prices = xr.align(
+        demand, capacity, technologies, prices, join="exact"
+    )
+
     # Maximum and minimum production for each asset
     maxprod = maximum_production(
         technologies, capacity, timeslice_level=timeslice_level
@@ -275,11 +280,6 @@ def merit_order_production(
         timeslice_level=timeslice_level,
     )
 
-    # Verify all asset-level inputs are positionally aligned before using isel.
-    xr.align(
-        technologies, capacity, maxprod, minprod, maxcons, join="exact", copy=False
-    )
-
     # Initialise result with zeros
     result = xr.zeros_like(maxprod)
 
@@ -290,12 +290,18 @@ def merit_order_production(
         maxcons_y = maxcons.sel(year=y)
 
         for region in demand.region.values:
-            region_assets = maxprod_y.get_index("asset")[
-                maxprod_y.region.values == region
-            ]
-            maxprod_region = maxprod_y.sel(asset=region_assets)
-            techs_region = technologies.sel(asset=region_assets)
-            minprod_region = minprod_y.sel(asset=region_assets)
+            maxprod_region = maxprod_y.sel(
+                asset=maxprod_y.asset[maxprod_y.region == region]
+            )
+            techs_region = technologies.sel(
+                asset=technologies.asset[technologies.region == region]
+            )
+            minprod_region = minprod_y.sel(
+                asset=minprod_y.asset[minprod_y.region == region]
+            )
+            maxcons_region = maxcons_y.sel(
+                asset=maxcons_y.asset[maxcons_y.region == region]
+            )
 
             # Calculate timeslice-level costs for each asset in this year assuming full
             # dispatch. We use LCOE excluding capital costs.
@@ -303,20 +309,25 @@ def merit_order_production(
                 techs_region,
                 prices_y.sel(region=region),
                 production=maxprod_region,
-                consumption=maxcons_y.sel(asset=region_assets),
+                consumption=maxcons_region,
             )
 
             # Calculate production for this year by dispatching assets in order of
             # increasing cost until demand is met
             for ts in maxprod_y.timeslice.values:
-                result.loc[dict(year=y, timeslice=ts, asset=region_assets)] = (
-                    dispatch_by_merit_order(
-                        demand=demand.sel(year=y, timeslice=ts, region=region),
-                        minprod=minprod_region.sel(timeslice=ts),
-                        maxprod=maxprod_region.sel(timeslice=ts),
-                        technology_costs=technology_costs.sel(timeslice=ts),
-                    )
+                dispatch = dispatch_by_merit_order(
+                    demand=demand.sel(year=y, timeslice=ts, region=region),
+                    minprod=minprod_region.sel(timeslice=ts),
+                    maxprod=maxprod_region.sel(timeslice=ts),
+                    technology_costs=technology_costs.sel(timeslice=ts),
                 )
+                result.loc[
+                    dict(
+                        year=y,
+                        timeslice=ts,
+                        asset=result.asset[result.region == region],
+                    )
+                ] = dispatch
 
     # Add production of environmental pollutants
     env = is_pollutant(technologies.comm_usage)
@@ -340,17 +351,17 @@ def dispatch_by_merit_order(
 
     For example, we have the following three assets (ordered from cheapest to most
     expensive):
-    - Asset A: minprod=10, maxprod=100, cost=5
-    - Asset B: minprod=20, maxprod=50, cost=10
+    - Asset A: minprod=20, maxprod=50, cost=10
+    - Asset B: minprod=10, maxprod=100, cost=5
     - Asset C: minprod=0, maxprod=30, cost=15
 
     If the total demand is 140 units, we would dispatch as follows:
     - First we dispatch Assets A and B at their minimum production, which gives us 30
     units of supply, leaving 110 units of remaining demand.
-    - Next we dispatch Asset A up to its maximum, which gives us an additional 90 units
+    - Next we dispatch Asset B up to its maximum, which gives us an additional 90 units
     of supply, leaving 20 units of remaining demand.
-    - The remaining demand of 20 is less than the headroom of Asset B above its
-    minimum (i.e. 50 - 20 = 30), so we dispatch Asset B for an additional 20 units,
+    - The remaining demand of 20 is less than the headroom of Asset A above its
+    minimum (i.e. 50 - 20 = 30), so we dispatch Asset A for an additional 20 units,
     which meets the total demand of 140.
     - Asset C is not dispatched at all since it's the most expensive and demand is
     already met by cheaper assets.
@@ -372,18 +383,23 @@ def dispatch_by_merit_order(
     assert set(maxprod.dims) == {"asset", "commodity"}
     assert set(technology_costs.dims) == {"asset"}
 
-    # Start with minimum production
-    result = minprod.copy()
+    # Align all inputs by asset labels before dispatch calculations.
+    minprod, maxprod, technology_costs = xr.align(
+        minprod, maxprod, technology_costs, join="exact"
+    )
 
     # Calculate remaining demand after minimum production (i.e. what we need to meet
     # with the available headroom above minimum)
     remaining = demand - minprod.sum("asset")
 
-    # Rank assets by cost (cheapest first)
-    order = technology_costs.sortby(technology_costs).asset
+    # Numerical noise or inconsistent inputs can yield tiny negative headroom;
+    # clamp to zero so additional dispatch never drives production below minprod.
+    available_headroom = (maxprod - minprod).clip(min=0)
 
-    # Available extra production above minimum, sorted by cost
-    available = (maxprod - minprod).sel(asset=order)
+    # Sort assets by increasing cost using explicit positional indexing.
+    # This works for both labelled and unlabelled asset dimensions.
+    order = np.argsort(technology_costs.values, kind="stable")
+    available = available_headroom.isel(asset=order)
 
     # cumsum_before[i] = total available production of all assets cheaper than
     # i
@@ -392,7 +408,12 @@ def dispatch_by_merit_order(
     # (remaining - cumsum_before)[i] = demand still unmet after cheaper assets
     # are fully utilised. Clipping to [0, available[i]] ensures we never
     # produce negative amounts or exceed this asset's headroom above minprod.
-    addition = (remaining - cumsum_before).clip(min=0, max=available)
+    addition_sorted = (remaining - cumsum_before).clip(min=0, max=available)
+
+    # Map dispatch additions back to the original asset order.
+    inverse_order = np.empty_like(order)
+    inverse_order[order] = np.arange(order.size)
+    addition = addition_sorted.isel(asset=inverse_order)
 
     # Final production is minimum production plus any additional production from these
     # assets

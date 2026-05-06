@@ -91,6 +91,7 @@ def test_merit_order_supply_single_region(
     technologies = technologies.where(technologies.region == region, drop=True)
     capacity = capacity.where(capacity.region == region, drop=True)
     production = production.where(production.region == region, drop=True)
+    prices = prices.sel(region=region)
 
     # Create random demand
     demand = production.sum("asset") * np.random.rand(*production.sum("asset").shape)
@@ -202,23 +203,23 @@ def test_dispatch_by_merit_order():
         [140], dims=("commodity",), coords={"commodity": ["electricity"]}
     )
     minprod = xr.DataArray(
-        [[10], [20], [0]],
+        [[20], [10], [0]],
         dims=("asset", "commodity"),
         coords={"asset": ["A", "B", "C"], "commodity": ["electricity"]},
     )
     maxprod = xr.DataArray(
-        [[100], [50], [30]],
+        [[50], [100], [30]],
         dims=("asset", "commodity"),
         coords={"asset": ["A", "B", "C"], "commodity": ["electricity"]},
     )
     technology_costs = xr.DataArray(
-        [5, 10, 15], dims=("asset",), coords={"asset": ["A", "B", "C"]}
+        [10, 5, 15], dims=("asset",), coords={"asset": ["A", "B", "C"]}
     )
 
     result = dispatch_by_merit_order(demand, minprod, maxprod, technology_costs)
 
     expected = xr.DataArray(
-        [[100], [40], [0]],
+        [[40], [100], [0]],
         dims=("asset", "commodity"),
         coords={"asset": ["A", "B", "C"], "commodity": ["electricity"]},
     )
