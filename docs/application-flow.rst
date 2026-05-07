@@ -502,7 +502,8 @@ The dispatch stage when running a sector can be described by the following graph
 
 After the investment stage is completed, then the new capacity of the sector is obtained by aggregating the assets of all agents of the sector. Then, the supply of commodities is calculated as requested by the ``dispatch_production`` argument defined for each sector in the ``settings.toml`` file.
 
-There are two possible options for ``dispatch_production`` built into MUSE:
+There are three possible options for ``dispatch_production`` built into MUSE:
+- ``merit-order``: supply is obtained by dispatching the cheapest assets first until the demand is met.
 - ``share``: assets each supply a proportion of demand based on their share of total capacity.
 - ``maximum``: all the assets dispatch their maximum production, regardless of the demand.
 

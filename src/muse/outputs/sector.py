@@ -102,12 +102,14 @@ def _factory(
     quantities = [_quantity_factory(param, registry) for param in params]
     sinks = [sink_factory(param, sector_name=sector_name) for param in params]
 
-    def save_multiple_outputs(market, *args, year: int | None = None) -> list[Any]:
+    def save_multiple_outputs(
+        market, *args, year: int | None = None, **kwargs
+    ) -> list[Any]:
         if year is None:
             year = int(market.year.max())
 
         return [
-            sink(quantity(market, *args, year=year), year=year)
+            sink(quantity(market, *args, year=year, **kwargs), year=year)
             for quantity, sink in zip(quantities, sinks)
         ]
 
@@ -162,7 +164,7 @@ def market_quantity(
     if isinstance(sum_over, str):
         sum_over = [sum_over]
     if sum_over:
-        sum_over = [s for s in sum_over if s in quantity.coords]
+        sum_over = [s for s in sum_over if s in quantity.dims]
     if sum_over:
         quantity = quantity.sum(sum_over)
     if "timeslice" in quantity.coords and isinstance(
@@ -181,7 +183,7 @@ def consumption(
     sum_over: list[str] | None = None,
     drop: list[str] | None = None,
     **kwargs,
-) -> xr.DataArray:
+) -> pd.DataFrame:
     """Current consumption."""
     moutput = market.copy(deep=True).reset_index("timeslice")
     result = (
@@ -200,7 +202,7 @@ def supply(
     sum_over: list[str] | None = None,
     drop: list[str] | None = None,
     **kwargs,
-) -> xr.DataArray:
+) -> pd.DataFrame:
     """Current supply."""
     moutput = market.copy(deep=True).reset_index("timeslice")
     result = (
@@ -218,13 +220,22 @@ def costs(
     capacity: xr.DataArray,
     sum_over: list[str] | None = None,
     drop: list[str] | None = None,
+    *,
+    commodities: list[str],
     **kwargs,
-) -> xr.DataArray:
-    """Current costs."""
-    result = (
-        market_quantity(market.costs, sum_over=sum_over, drop=drop)
-        .rename("costs")
-        .to_dataframe()
-        .reset_index()
-    )
+) -> pd.DataFrame:
+    """Weighted average cost of production (filtered where total supply > 0)."""
+    costs = market_quantity(market.costs, sum_over=sum_over, drop=drop)
+    supply = market_quantity(market.supply.sum("asset"), sum_over, drop=drop)
+
+    # Mask costs where supply is effectively zero
+    costs = costs.where(supply > 1e-15)
+
+    # Filter to only include commodities owned by the sector (i.e. excludes
+    # environmental commodities)
+    costs = costs.sel(commodity=costs.commodity.isin(commodities))
+
+    # Create a DataFrame from the filtered costs, dropping rows where costs are NaN
+    # (i.e., where supply was zero)
+    result = costs.rename("costs").to_dataframe().reset_index().dropna(subset=["costs"])
     return result

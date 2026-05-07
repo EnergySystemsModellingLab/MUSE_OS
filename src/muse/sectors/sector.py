@@ -10,7 +10,7 @@ from typing import (
 import xarray as xr
 
 from muse.agents import AbstractAgent
-from muse.production import PRODUCTION_SIGNATURE
+from muse.dispatch import PRODUCTION_SIGNATURE
 from muse.readers.toml import read_technodata
 from muse.sectors.abstract import AbstractSector
 from muse.sectors.register import register_sector
@@ -24,9 +24,9 @@ class Sector(AbstractSector):  # type: ignore
 
     @classmethod
     def factory(cls, name: str, settings: Any) -> Sector:
+        from muse.dispatch import factory as pfactory
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory
-        from muse.production import factory as pfactory
 
         # Read sector settings
         sector_settings = getattr(settings.sectors, name)._asdict()
@@ -154,7 +154,7 @@ class Sector(AbstractSector):  # type: ignore
         """Computes production as used to return the supply to the MCA.
 
         It can be anything registered with
-        :py:func:`@register_production<muse.production.register_production>`.
+        :py:func:`@register_production<muse.dispatch.register_production>`.
         """
         self.supply_prod = supply_prod
 
@@ -267,7 +267,9 @@ class Sector(AbstractSector):  # type: ignore
 
     def save_outputs(self, year: int) -> None:
         """Calls the outputs function with the current output data."""
-        self.outputs(self.output_data, self.capacity, year=year)
+        self.outputs(
+            self.output_data, self.capacity, year=year, commodities=self.commodities
+        )
 
     def market_variables(self, market: xr.Dataset, technologies: xr.Dataset) -> Any:
         """Computes resulting market: production, consumption, and costs."""
@@ -284,16 +286,17 @@ class Sector(AbstractSector):  # type: ignore
             technologies, capacity, installed_as_year=True
         )
 
-        # Select relevant investment year prices for each asset
-        prices = broadcast_over_assets(market.prices.isel(year=1), capacity)
-
         # Calculate supply
         supply = self.supply_prod(
-            market=market,
+            demand=market.consumption,
             capacity=capacity,
             technologies=technodata,
             timeslice_level=self.timeslice_level,
+            prices=market.prices,
         )
+
+        # Select relevant prices for each asset
+        prices = broadcast_over_assets(market.prices, capacity, installed_as_year=False)
 
         # Calculate consumption
         consume = consumption(
@@ -312,7 +315,7 @@ class Sector(AbstractSector):  # type: ignore
             timeslice_level=self.timeslice_level,
         )
         lcoe = levelized_cost_of_energy(
-            prices=prices,
+            prices=prices.isel(year=1),
             technologies=technodata,
             capacity=utilized_capacity,
             production=supply.isel(year=1),

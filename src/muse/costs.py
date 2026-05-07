@@ -194,7 +194,8 @@ def running_costs(
 ) -> xr.DataArray:
     """Total annual running costs (excluding capital costs).
 
-    This is the sum of environmental, fuel, material, fixed and variable costs.
+    This is the sum of environmental, fuel, material, variable and (optionally) fixed
+    costs.
 
     .. seealso::
         :py:func:`environmental_costs`
@@ -215,8 +216,8 @@ def running_costs(
         _material_costs = _material_costs.sum("timeslice")
 
     # Costs associated with capacity and production level (annual)
-    _fixed_costs = fixed_costs(technologies, capacity)
     _variable_costs = variable_costs(technologies, production)
+    _fixed_costs = fixed_costs(technologies, capacity)
 
     # Split fixed/variable across timeslices in proportion to production (if required)
     if not aggregate_timeslices:
@@ -493,6 +494,55 @@ def levelized_cost_of_energy(
 
     # LCOE
     result = (_capital_costs + _running_costs) / prod
+    return result
+
+
+@cost
+def marginal_cost(
+    technologies: xr.Dataset,
+    prices: xr.DataArray,
+    production: xr.DataArray,
+    consumption: xr.DataArray,
+) -> xr.DataArray:
+    """Marginal cost of technologies.
+
+    The average cost of producing one unit of output, excluding capital costs and fixed
+    costs.
+
+    Arguments:
+        technologies: xr.Dataset of technology parameters
+        prices: xr.DataArray with commodity prices
+        capacity: xr.DataArray with the capacity of the relevant technologies
+        production: xr.DataArray with commodity production by the relevant technologies
+        consumption: xr.DataArray with commodity consumption by the relevant
+            technologies
+
+    Return:
+        xr.DataArray with marginal costs calculated for the relevant technologies
+    """
+    # Environmental, fuel and material costs
+    env = environmental_costs(technologies, prices, production)
+    fuel = fuel_costs(technologies, prices, consumption)
+    material = material_costs(technologies, prices, consumption)
+
+    # Variable costs
+    tech_activity = production_amplitude(production, technologies)
+    var = broadcast_timeslice(
+        technologies.var_par
+    ) * tech_activity ** broadcast_timeslice(technologies.var_exp)
+
+    # Production
+    products = is_enduse(technologies.comm_usage)
+    prod = (
+        production.where(production > 0.0, 1e-6)
+        .sel(commodity=products)
+        .sum(
+            "commodity"
+        )  # TODO: is this the correct way to deal with multiple products?
+    )
+
+    # Marginal cost
+    result = (env + fuel + material + var) / prod
     return result
 
 
