@@ -282,7 +282,9 @@ def technologies(coords) -> Dataset:
         broadcast_regions(result.flexible_inputs, result.region), result.year
     )
     result["flexible_inputs"] = flex_in * rand(*flex_in.shape)
-    fixed_out = broadcast_regions(result.fixed_outputs, result.region)
+    fixed_out = broadcast_years(
+        broadcast_regions(result.fixed_outputs, result.region), result.year
+    )
     result["fixed_outputs"] = fixed_out * rand(*fixed_out.shape)
 
     result["total_capacity_limit"] = var("technology", "region", "year")

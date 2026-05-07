@@ -430,6 +430,7 @@ def LogisticSigmoid(
 ) -> DataArray:
     """0.001 * (constant * pop + gdp * c / sqrt(1 + (gdp * scale / pop)^2)."""
     from numpy import power
+    from xarray import ones_like
 
     constant = self.coeffs.a
     c = self.coeffs.c
@@ -448,7 +449,7 @@ def LogisticSigmoid(
         # fmt: enable
         scale = self.coeffs.b0.where(years < 2015, self.coeffs.b1)
     else:
-        scale = 1
+        scale = ones_like(self.coeffs.b0)
 
     scale = broadcast_years(scale, gdp.year)
     constant = broadcast_years(constant, gdp.year)
