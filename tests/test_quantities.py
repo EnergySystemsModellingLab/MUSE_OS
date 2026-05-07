@@ -16,6 +16,11 @@ from muse.utilities import broadcast_over_assets
 
 
 @fixture
+def capacity(capacity: xr.DataArray) -> xr.DataArray:
+    return capacity.isel(year=0)
+
+
+@fixture
 def technologies(
     technologies: xr.Dataset, capacity: xr.DataArray, timeslice
 ) -> xr.Dataset:

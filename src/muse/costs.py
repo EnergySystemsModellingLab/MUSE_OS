@@ -55,6 +55,7 @@ import xarray as xr
 from muse.commodities import is_enduse, is_fuel, is_material, is_pollutant
 from muse.quantities import production_amplitude
 from muse.timeslices import broadcast_timeslice, distribute_timeslice, get_level
+from muse.utilities import broadcast_years
 
 
 def cost(func):
@@ -625,10 +626,11 @@ def annual_to_lifetime(costs: xr.DataArray, technologies: xr.Dataset):
     rates = discount_factor(
         years=years,
         interest_rate=technologies.interest_rate,
-        mask=years <= life,
+        mask=years <= broadcast_years(life, years),
     )
     if "timeslice" in costs.dims:
         rates = broadcast_timeslice(rates, level=get_level(costs))
+    costs = broadcast_years(costs, years)
     return (costs * rates).sum("year")
 
 
@@ -648,7 +650,7 @@ def discount_factor(
     assert "year" not in interest_rate.dims
 
     # Calculate discount factor over the years
-    df = 1 / (1 + interest_rate) ** years
+    df = 1 / (1 + broadcast_years(interest_rate, years)) ** years
 
     # Apply mask
     if mask is not None:

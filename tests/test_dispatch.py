@@ -8,6 +8,11 @@ from muse.utilities import broadcast_over_assets
 
 
 @fixture
+def capacity(capacity: xr.DataArray) -> xr.DataArray:
+    return capacity.isel(year=0)
+
+
+@fixture
 def technologies(
     technologies: xr.Dataset, capacity: xr.DataArray, timeslice
 ) -> xr.Dataset:
@@ -29,7 +34,7 @@ def production(
 def prices(
     technologies: xr.Dataset, capacity: xr.DataArray, timeslice: xr.DataArray
 ) -> xr.DataArray:
-    # Make random prices for all commodities/timeslices/years/regions
+    # Make random prices for all commodities/timeslices/regions
     regions = xr.DataArray(
         capacity["region"].to_index().unique(),
         dims="region",
@@ -39,16 +44,14 @@ def prices(
         np.random.rand(
             technologies.sizes["commodity"],
             timeslice.sizes["timeslice"],
-            capacity.sizes["year"],
             regions.size,
         ),
         coords={
             "commodity": technologies.coords["commodity"],
             "timeslice": timeslice.coords["timeslice"],
-            "year": capacity.coords["year"],
             "region": regions,
         },
-        dims=("commodity", "timeslice", "year", "region"),
+        dims=("commodity", "timeslice", "region"),
     )
     return prices_by_region
 

@@ -98,6 +98,15 @@ def patched_broadcast_compat_data(self, other):
             "`broadcast_regions` (see `muse.utilities`)."
         )
 
+    if (isinstance(other, Variable)) and ("year" in self.dims) != (
+        "year" in getattr(other, "dims", [])
+    ):
+        raise ValueError(
+            "Broadcasting along the 'year' dimension is required, but automatic "
+            "broadcasting is disabled. Please handle it explicitly using "
+            "`broadcast_years` (see `muse.utilities`)."
+        )
+
     # The rest of the function is copied directly from
     # xarray.core.variable._broadcast_compat_data
     if all(hasattr(other, attr) for attr in ["dims", "data", "shape", "encoding"]):
