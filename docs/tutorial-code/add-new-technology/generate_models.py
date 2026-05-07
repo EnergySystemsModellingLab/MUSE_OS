@@ -80,7 +80,7 @@ def generate_model_2() -> None:
     # Modify cap_par for solarPV
     technodata_file = model_path / "power/Technodata.csv"
     df = pd.read_csv(technodata_file)
-    df.loc[(df["technology"] == "solarPV") & (df["year"] == 2020), "cap_par"] = 40
+    df.loc[(df["technology"] == "solarPV") & (df["year"] == 2020), "cap_par"] = 100
     df.loc[(df["technology"] == "solarPV") & (df["year"] == 2040), "cap_par"] = 30
     df.to_csv(technodata_file, index=False)
 
