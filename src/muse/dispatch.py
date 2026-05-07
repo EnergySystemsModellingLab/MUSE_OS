@@ -238,7 +238,7 @@ def merit_order_production(
 
     check_dimensions(demand, ["timeslice", "commodity"], optional=["region"])
     check_dimensions(capacity, ["asset"])
-    check_dimensions(technologies, ["asset", "commodity"])
+    check_dimensions(technologies, ["asset", "commodity"], optional=["timeslice"])
     check_dimensions(prices, ["timeslice", "commodity"], optional=["region"])
 
     # Normalise demand/prices dataarrays to ensure they have a region dimension
