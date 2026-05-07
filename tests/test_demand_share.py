@@ -7,7 +7,7 @@ from pytest import approx, fixture
 from muse.commodities import is_enduse
 from muse.quantities import maximum_production
 from muse.timeslices import drop_timeslice
-from muse.utilities import broadcast_over_assets, interpolate_capacity
+from muse.utilities import broadcast_over_assets, broadcast_years, interpolate_capacity
 
 CURRENT_YEAR = 2010
 INVESTMENT_YEAR = 2030
@@ -131,8 +131,9 @@ def _matching_market(technologies, capacity):
     from muse.quantities import consumption as calc_consumption
 
     # Calculate production and consumption
-    production = maximum_production(technologies, capacity)
-    cons = calc_consumption(technologies, production)
+    techs = broadcast_years(technologies, capacity.year)
+    production = maximum_production(techs, capacity)
+    cons = calc_consumption(techs, production)
 
     # Handle regional grouping if needed
     if "region" in production.coords:

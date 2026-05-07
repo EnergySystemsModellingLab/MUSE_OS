@@ -61,10 +61,8 @@ def model_data():
     # Create initial market demand as 80% of maximum production
     market_demand = 0.8 * maximum_production(
         broadcast_over_assets(technologies, assets),
-        assets.capacity,
-    ).sel(year=INVESTMENT_YEAR).groupby("technology").sum("asset").rename(
-        technology="asset"
-    )
+        assets.capacity.sel(year=INVESTMENT_YEAR),
+    ).groupby("technology").sum("asset").rename(technology="asset")
 
     # Remove un-demanded commodities
     market_demand = market_demand.sel(
