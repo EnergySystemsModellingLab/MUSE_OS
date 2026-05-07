@@ -10,6 +10,7 @@ import xarray as xr
 
 from muse.agents.agent import Agent, InvestingAgent
 from muse.errors import AgentShareNotDefined, TechnologyNotDefined
+from muse.utilities import broadcast_years
 
 
 def create_standard_agent(
@@ -252,8 +253,8 @@ def _shared_capacity(
     techs = (existing > 0) & (shares > 0)
     techs = techs.any([u for u in techs.dims if u != "asset"])
     if not any(techs):
-        return (capacity * shares).copy()
-    return (capacity * shares).sel(asset=techs.values).copy()
+        return (capacity * broadcast_years(shares, capacity)).copy()
+    return (capacity * broadcast_years(shares, capacity)).sel(asset=techs.values).copy()
 
 
 def _standardize_inputs(

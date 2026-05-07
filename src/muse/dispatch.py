@@ -49,6 +49,7 @@ import numpy as np
 import xarray as xr
 
 from muse.registration import registrator
+from muse.utilities import check_dimensions
 
 
 class PRODUCTION_SIGNATURE(Protocol):
@@ -141,8 +142,9 @@ def share_based_production(
     from muse.quantities import emission, maximum_production, minimum_production
     from muse.utilities import broadcast_over_assets
 
-    assert "asset" not in demand.dims
-    assert "asset" in capacity.dims
+    check_dimensions(demand, ["timeslice", "commodity"], optional=["region"])
+    check_dimensions(capacity, ["asset"])
+    check_dimensions(technologies, ["asset", "commodity"])
 
     # Maximum and minimum production for each asset
     maxprod = maximum_production(
@@ -234,9 +236,10 @@ def merit_order_production(
     )
     from muse.utilities import broadcast_over_assets
 
-    assert "asset" not in demand.dims
-    assert "asset" in capacity.dims
-    assert "asset" not in prices.dims
+    check_dimensions(demand, ["timeslice", "commodity"], optional=["region"])
+    check_dimensions(capacity, ["asset"])
+    check_dimensions(technologies, ["asset", "commodity"])
+    check_dimensions(prices, ["timeslice", "commodity"], optional=["region"])
 
     # Normalise demand/prices dataarrays to ensure they have a region dimension
     # Multi-region models will already have a region dimension
@@ -283,51 +286,36 @@ def merit_order_production(
     # Initialise result with zeros
     result = xr.zeros_like(maxprod)
 
-    for y in maxprod.year.values:
-        prices_y = prices.sel(year=y)
-        maxprod_y = maxprod.sel(year=y)
-        minprod_y = minprod.sel(year=y)
-        maxcons_y = maxcons.sel(year=y)
+    for region in demand.region.values:
+        # Select data for this region
+        maxprod_region = maxprod.sel(asset=maxprod.asset[maxprod.region == region])
+        techs_region = technologies.sel(
+            asset=technologies.asset[technologies.region == region]
+        )
+        minprod_region = minprod.sel(asset=minprod.asset[minprod.region == region])
+        maxcons_region = maxcons.sel(asset=maxcons.asset[maxcons.region == region])
 
-        for region in demand.region.values:
-            maxprod_region = maxprod_y.sel(
-                asset=maxprod_y.asset[maxprod_y.region == region]
-            )
-            techs_region = technologies.sel(
-                asset=technologies.asset[technologies.region == region]
-            )
-            minprod_region = minprod_y.sel(
-                asset=minprod_y.asset[minprod_y.region == region]
-            )
-            maxcons_region = maxcons_y.sel(
-                asset=maxcons_y.asset[maxcons_y.region == region]
-            )
+        # Calculate timeslice-level costs for each asset assuming full
+        # dispatch. We use LCOE excluding capital costs.
+        technology_costs = marginal_cost(
+            techs_region,
+            prices.sel(region=region),
+            production=maxprod_region,
+            consumption=maxcons_region,
+        )
 
-            # Calculate timeslice-level costs for each asset in this year assuming full
-            # dispatch. We use LCOE excluding capital costs.
-            technology_costs = marginal_cost(
-                techs_region,
-                prices_y.sel(region=region),
-                production=maxprod_region,
-                consumption=maxcons_region,
+        # Calculate production by dispatching assets in order of
+        # increasing cost until demand is met
+        for ts in maxprod.timeslice.values:
+            dispatch = dispatch_by_merit_order(
+                demand=demand.sel(timeslice=ts, region=region),
+                minprod=minprod_region.sel(timeslice=ts),
+                maxprod=maxprod_region.sel(timeslice=ts),
+                technology_costs=technology_costs.sel(timeslice=ts),
             )
-
-            # Calculate production for this year by dispatching assets in order of
-            # increasing cost until demand is met
-            for ts in maxprod_y.timeslice.values:
-                dispatch = dispatch_by_merit_order(
-                    demand=demand.sel(year=y, timeslice=ts, region=region),
-                    minprod=minprod_region.sel(timeslice=ts),
-                    maxprod=maxprod_region.sel(timeslice=ts),
-                    technology_costs=technology_costs.sel(timeslice=ts),
-                )
-                result.loc[
-                    dict(
-                        year=y,
-                        timeslice=ts,
-                        asset=result.asset[result.region == region],
-                    )
-                ] = dispatch
+            result.loc[
+                dict(timeslice=ts, asset=result.asset[result.region == region])
+            ] = dispatch
 
     # Add production of environmental pollutants
     env = is_pollutant(technologies.comm_usage)

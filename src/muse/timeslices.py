@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 from xarray import DataArray
 
-from muse.utilities import broadcast_regions
+from muse.utilities import broadcast_regions, broadcast_years
 
 TIMESLICE: DataArray = None  # type: ignore
 
@@ -160,6 +160,8 @@ def distribute_timeslice(
     timeslice_fractions = ts / broadcast_timeslice(timeslice_sum, ts=ts)
     if "region" in data.dims:
         timeslice_fractions = broadcast_regions(timeslice_fractions, data)
+    if "year" in data.dims:
+        timeslice_fractions = broadcast_years(timeslice_fractions, data)
     return broadcasted * timeslice_fractions
 
 

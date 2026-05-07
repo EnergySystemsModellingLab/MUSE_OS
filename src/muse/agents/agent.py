@@ -8,6 +8,7 @@ from typing import Callable
 import xarray as xr
 
 from muse.timeslices import drop_timeslice
+from muse.utilities import broadcast_years
 
 
 class AbstractAgent(ABC):
@@ -494,7 +495,9 @@ class InvestingAgent(Agent):
             investments = investments.reindex_like(profile, method="ffill")
 
         # Apply the retirement profile to the investments
-        new_assets = (investments * profile).rename(replacement="asset")
+        new_assets = (broadcast_years(investments, profile) * profile).rename(
+            replacement="asset"
+        )
         new_assets["installed"] = "asset", [investment_year] * len(new_assets.asset)
 
         # The new assets have picked up quite a few coordinates along the way.
