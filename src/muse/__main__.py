@@ -89,6 +89,15 @@ def patched_broadcast_compat_data(self, other):
             "`broadcast_timeslice` or `distribute_timeslice` (see `muse.timeslices`)."
         )
 
+    if (isinstance(other, Variable)) and ("region" in self.dims) != (
+        "region" in getattr(other, "dims", [])
+    ):
+        raise ValueError(
+            "Broadcasting along the 'region' dimension is required, but automatic "
+            "broadcasting is disabled. Please handle it explicitly using "
+            "`broadcast_regions` (see `muse.utilities`)."
+        )
+
     # The rest of the function is copied directly from
     # xarray.core.variable._broadcast_compat_data
     if all(hasattr(other, attr) for attr in ["dims", "data", "shape", "encoding"]):

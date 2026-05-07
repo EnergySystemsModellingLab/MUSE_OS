@@ -13,6 +13,7 @@ from xarray import DataArray, Dataset
 
 from muse.__main__ import patched_broadcast_compat_data
 from muse.agents import Agent
+from muse.utilities import broadcast_regions
 
 
 @contextmanager
@@ -241,7 +242,9 @@ def technologies(coords) -> Dataset:
         return dims, (rand(*shape) * factor).astype(type(factor))
 
     result["agent_share"] = var("technology", "region", "year")
-    result["agent_share"] /= sum(result.agent_share)
+    result["agent_share"] /= broadcast_regions(
+        sum(result.agent_share), result.agent_share
+    )
     result["agent_share_zero"] = result["agent_share"] * 0
 
     # first create a mask so each tech will have consistent inputs/outputs across years
@@ -273,12 +276,20 @@ def technologies(coords) -> Dataset:
             fout.loc[{"technology": tech, "commodity": i}] = 1
 
     # expand along year and region, and fill with random numbers
-    ones = (result.year == result.year) * (result.region == result.region)
-    result["fixed_inputs"] = result.fixed_inputs * ones
+    ones = broadcast_regions(result.year == result.year, result.region) * (
+        result.region == result.region
+    )
+    result["fixed_inputs"] = (
+        broadcast_regions(result.fixed_inputs, result.region) * ones
+    )
     result.fixed_inputs[:] *= rand(*result.fixed_inputs.shape)
-    result["flexible_inputs"] = result.flexible_inputs * ones
+    result["flexible_inputs"] = (
+        broadcast_regions(result.flexible_inputs, result.region) * ones
+    )
     result.flexible_inputs[:] *= rand(*result.flexible_inputs.shape)
-    result["fixed_outputs"] = result.fixed_outputs * ones
+    result["fixed_outputs"] = (
+        broadcast_regions(result.fixed_outputs, result.region) * ones
+    )
     result.fixed_outputs[:] *= rand(*result.fixed_outputs.shape)
 
     result["total_capacity_limit"] = var("technology", "region", "year")
