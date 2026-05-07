@@ -33,6 +33,7 @@ global_commodities = '{path}/GlobalCommodities.csv'
 [sectors.residential]
 type = 'default'
 priority = 1
+dispatch_production = "share"
 technodata = '{path}/residential/Technodata.csv'
 commodities_in = '{path}/residential/CommIn.csv'
 commodities_out = '{path}/residential/CommOut.csv'
@@ -44,6 +45,7 @@ existing_capacity = '{path}/residential/ExistingCapacity.csv'
 [sectors.power]
 type = 'default'
 priority = 2
+dispatch_production = "merit-order"
 technodata = '{path}/power/Technodata.csv'
 commodities_in = '{path}/power/CommIn.csv'
 commodities_out = '{path}/power/CommOut.csv'
@@ -55,6 +57,7 @@ existing_capacity = '{path}/power/ExistingCapacity.csv'
 [sectors.gas]
 type = 'default'
 priority = 3
+dispatch_production = "share"
 technodata = '{path}/gas/Technodata.csv'
 commodities_in = '{path}/gas/CommIn.csv'
 commodities_out = '{path}/gas/CommOut.csv'

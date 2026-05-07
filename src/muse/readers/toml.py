@@ -16,6 +16,7 @@ import numpy as np
 import xarray as xr
 
 from muse.defaults import DATA_DIRECTORY
+from muse.utilities import broadcast_years
 
 DEFAULT_SETTINGS_PATH = DATA_DIRECTORY / "default_settings.toml"
 """Default settings path."""
@@ -721,7 +722,9 @@ def read_correlation_consumption(sector_conf: Any) -> xr.Dataset:
     # Split by timeslice
     if sector_conf.timeslice_shares_path is not None:
         shares = read_timeslice_shares(sector_conf.timeslice_shares_path)
-        consumption = broadcast_timeslice(consumption) * shares
+        consumption = broadcast_timeslice(consumption) * broadcast_years(
+            shares, consumption.year
+        )
     else:
         consumption = distribute_timeslice(consumption)
 

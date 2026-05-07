@@ -39,6 +39,7 @@ import xarray as xr
 from muse.mca import MCA
 from muse.sectors import AbstractSector
 from muse.timeslices import drop_timeslice
+from muse.utilities import broadcast_years
 
 __all__ = ["model", "technodata"]
 
@@ -271,6 +272,7 @@ def matching_market(sector: str, model: str = "default") -> xr.Dataset:
 
     market = xr.Dataset()
     techs = broadcast_over_assets(loaded_sector.technologies, assets.capacity)
+    techs = broadcast_years(techs, assets.capacity)
     production = maximum_production(techs, assets.capacity)
     market["supply"] = production.sum("asset")
     if "dst_region" in market.dims:

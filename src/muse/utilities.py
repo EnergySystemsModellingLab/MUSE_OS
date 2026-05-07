@@ -708,3 +708,43 @@ def camel_to_snake(name: str) -> str:
     result = result.replace("n2_o", "N2O")
     result = result.replace("f-gases", "F-gases")
     return result
+
+
+def broadcast_regions(data: xr.DataArray, template: xr.DataArray) -> xr.DataArray:
+    """Convert a non-regional array to a regional array by broadcasting.
+
+    If data is already regioned in the appropriate scheme, it will be returned
+    unchanged.
+
+    Args:
+        data: Array to broadcast.
+        template: Dataarray with region coordinates to broadcast to.
+
+    """
+    # If data already has regions, check that it matches the template regions.
+    if "region" in data.dims:
+        if data.region.equals(template.region):
+            return data
+        raise ValueError("Data is already regioned, but does not match the reference.")
+
+    return data.expand_dims(region=template.region)
+
+
+def broadcast_years(data: xr.DataArray, template: xr.DataArray) -> xr.DataArray:
+    """Convert a non-year array to a year array by broadcasting.
+
+    If data is already yeared in the appropriate scheme, it will be returned
+    unchanged.
+
+    Args:
+        data: Array to broadcast.
+        template: Dataarray with year coordinates to broadcast to.
+
+    """
+    # If data already has years, check that it matches the template years.
+    if "year" in data.dims:
+        if data.year.equals(template.year):
+            return data
+        raise ValueError("Data is already yeared, but does not match the reference.")
+
+    return data.expand_dims(year=template.year)

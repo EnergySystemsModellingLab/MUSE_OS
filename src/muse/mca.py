@@ -15,7 +15,7 @@ from muse.outputs.cache import OutputCache
 from muse.readers import read_initial_market
 from muse.sectors import SECTORS_REGISTERED, AbstractSector, Sector
 from muse.timeslices import broadcast_timeslice, drop_timeslice
-from muse.utilities import future_propagation
+from muse.utilities import broadcast_regions, future_propagation
 
 
 class MCA:
@@ -298,12 +298,14 @@ class MCA:
                 getLogger(__name__).info(
                     f"Updating carbon price for year {investment_year}"
                 )
-                new_price = self.update_carbon_price(new_market)
+                new_price: float = self.update_carbon_price(new_market)
                 future_price = DataArray(new_price, coords=dict(year=investment_year))
                 new_market.prices.loc[dict(commodity=self.carbon_commodities)] = (
                     future_propagation(
                         new_market.prices.sel(commodity=self.carbon_commodities),
-                        broadcast_timeslice(future_price),
+                        broadcast_timeslice(
+                            broadcast_regions(future_price, new_market.region)
+                        ),
                     )
                 )
 
@@ -330,8 +332,13 @@ class MCA:
             self.market.supply.loc[dims] = new_market.supply
             self.market.consumption.loc[dims] = new_market.consumption
 
-            # Update prices
+            # Update prices for the investment year
+            # In the first iteration we also update prices for the first year
             dims = {i: new_market[i] for i in new_market.prices.dims if i != "year"}
+            if year_idx == 0:
+                self.market.prices.loc[{**dims, "year": current_year}] = (
+                    new_market.prices.sel(year=current_year)
+                )
             self.market.prices.loc[dims] = future_propagation(
                 self.market.prices.sel(dims),
                 new_market.prices.sel(year=investment_year),
@@ -378,10 +385,7 @@ def single_year_iteration(
 
     sectors = deepcopy(sectors)
     market = market.copy(deep=True)
-
-    # New prices for the investment year
-    investment_year = market.year[1]
-    updated_prices = market.prices.sel(year=investment_year)
+    updated_prices = market.prices.copy(deep=True)
 
     for sector in sectors:
         # Solve the sector
@@ -398,12 +402,10 @@ def single_year_iteration(
 
         # Update market prices
         # We only do this for the commodities that the sector is in charge of producing
-        # And only for regions/timeslices with >0 production in the investment year
-        supply = sector_market.supply.sel(year=investment_year)
+        # And only for regions/timeslices with >0 production
+        supply = sector_market.supply
         supply = supply.where(supply.commodity.isin(sector.commodities), 0)
-        updated_prices = updated_prices.where(
-            supply == 0, sector_market.costs.sel(year=investment_year)
-        )
+        updated_prices = updated_prices.where(supply == 0, sector_market.costs)
 
     return SingleYearIterationResult(market, sectors, updated_prices)
 
@@ -473,7 +475,7 @@ def find_equilibrium(
             break
 
         # Update prices
-        market["prices"].loc[dict(year=investment_year)] = updated_prices
+        market["prices"].loc[:] = updated_prices
 
         # Check convergence
         converged = check_equilibrium(

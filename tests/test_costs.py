@@ -11,6 +11,7 @@ from muse.costs import (
     fixed_costs,
     fuel_costs,
     levelized_cost_of_energy,
+    marginal_cost,
     material_costs,
     net_present_cost,
     net_present_value,
@@ -149,6 +150,11 @@ def test_levelized_cost_of_energy(
     result = levelized_cost_of_energy(
         _technologies, _prices, _capacity, _production, _consumption, method=method
     )
+    assert set(result.dims) == {"asset", "timeslice"}
+
+
+def test_marginal_cost(_technologies, _prices, _production, _consumption):
+    result = marginal_cost(_technologies, _prices, _production, _consumption)
     assert set(result.dims) == {"asset", "timeslice"}
 
 

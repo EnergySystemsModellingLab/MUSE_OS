@@ -3,6 +3,7 @@ import xarray as xr
 from pytest import approx, fixture
 
 from muse.regressions import Exponential, Linear
+from muse.utilities import broadcast_years
 
 
 def create_dataset(coords, random_vars):
@@ -47,8 +48,10 @@ def test_exponential(regression_params, drivers):
 
     # Calculate expected and actual results
     actual = functor(drivers)
-    factor = 1e6 * drivers.population * rp.a
-    expected = factor * exp(drivers.population / drivers.gdp * rp.b)
+    factor = 1e6 * drivers.population * broadcast_years(rp.a, drivers.year)
+    expected = factor * exp(
+        drivers.population / drivers.gdp * broadcast_years(rp.b, drivers.year)
+    )
     expected, actual = broadcast(expected, actual)
     assert actual.values == approx(expected.values)
 
@@ -68,8 +71,10 @@ def test_linear(regression_params, drivers):
     # Test basic functionality
     actual = functor(drivers, forecast=2)
     offset = drivers.gdp.sel(year=2010) / drivers.population.sel(year=2010)
-    expected = rp.a * drivers.population + rp.b0 * (
-        drivers.gdp - offset * drivers.population
+    expected = broadcast_years(
+        rp.a, drivers.year
+    ) * drivers.population + broadcast_years(rp.b0, drivers.year) * (
+        drivers.gdp - broadcast_years(offset, drivers.year) * drivers.population
     )
     actual, expected = broadcast(actual, expected)
     assert actual.values == approx(expected.values)
@@ -81,7 +86,9 @@ def test_linear(regression_params, drivers):
     )
     population = drivers.population.interp(year=year, method="linear")
     gdp = drivers.gdp.interp(year=year, method="linear")
-    expected = rp.a * population + scale * (gdp - offset * population)
+    expected = broadcast_years(rp.a, population.year) * population + scale * (
+        gdp - broadcast_years(offset, population.year) * population
+    )
     actual = functor(drivers, forecast=2, year=year)
     actual, expected = broadcast(actual, expected)
     assert actual.values == approx(expected.values)

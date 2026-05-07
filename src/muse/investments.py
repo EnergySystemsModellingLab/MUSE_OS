@@ -65,6 +65,7 @@ from muse.errors import GrowthOfCapacityTooConstrained
 from muse.outputs.cache import cache_quantity
 from muse.registration import registrator
 from muse.timeslices import timeslice_max
+from muse.utilities import broadcast_years
 
 INVESTMENT_SIGNATURE = Callable[
     [xr.DataArray, xr.DataArray, xr.Dataset, list[Constraint], KwArg(Any)],
@@ -203,7 +204,7 @@ def cliff_retirement_profile(
         dims="year",
         coords={"year": range(investment_year, max_year + 1)},
     )
-    profile = allyears < (investment_year + technical_life)  # type: ignore
+    profile = allyears < broadcast_years(investment_year + technical_life, allyears)  # type: ignore
 
     # Minimize the number of years needed to represent the profile fully
     # This is done by removing the central year of any three repeating years, ensuring

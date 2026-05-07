@@ -13,6 +13,7 @@ from xarray import DataArray, Dataset
 
 from muse.__main__ import patched_broadcast_compat_data
 from muse.agents import Agent
+from muse.utilities import broadcast_regions, broadcast_years
 
 
 @contextmanager
@@ -224,7 +225,7 @@ def agent_args(coords) -> Mapping:
 @fixture
 def technologies(coords) -> Dataset:
     """Randomly generated technology characteristics."""
-    from numpy import nonzero, sum
+    from numpy import nonzero
     from numpy.random import choice, rand, randint
 
     from muse.commodities import CommodityUsage
@@ -241,7 +242,7 @@ def technologies(coords) -> Dataset:
         return dims, (rand(*shape) * factor).astype(type(factor))
 
     result["agent_share"] = var("technology", "region", "year")
-    result["agent_share"] /= sum(result.agent_share)
+    result["agent_share"] /= result.agent_share.sum("technology")
     result["agent_share_zero"] = result["agent_share"] * 0
 
     # first create a mask so each tech will have consistent inputs/outputs across years
@@ -273,13 +274,18 @@ def technologies(coords) -> Dataset:
             fout.loc[{"technology": tech, "commodity": i}] = 1
 
     # expand along year and region, and fill with random numbers
-    ones = (result.year == result.year) * (result.region == result.region)
-    result["fixed_inputs"] = result.fixed_inputs * ones
-    result.fixed_inputs[:] *= rand(*result.fixed_inputs.shape)
-    result["flexible_inputs"] = result.flexible_inputs * ones
-    result.flexible_inputs[:] *= rand(*result.flexible_inputs.shape)
-    result["fixed_outputs"] = result.fixed_outputs * ones
-    result.fixed_outputs[:] *= rand(*result.fixed_outputs.shape)
+    fixed_in = broadcast_years(
+        broadcast_regions(result.fixed_inputs, result.region), result.year
+    )
+    result["fixed_inputs"] = fixed_in * rand(*fixed_in.shape)
+    flex_in = broadcast_years(
+        broadcast_regions(result.flexible_inputs, result.region), result.year
+    )
+    result["flexible_inputs"] = flex_in * rand(*flex_in.shape)
+    fixed_out = broadcast_years(
+        broadcast_regions(result.fixed_outputs, result.region), result.year
+    )
+    result["fixed_outputs"] = fixed_out * rand(*fixed_out.shape)
 
     result["total_capacity_limit"] = var("technology", "region", "year")
     result.total_capacity_limit.loc[{"year": 2030}] += result.total_capacity_limit.sel(
@@ -566,7 +572,7 @@ def save_registries():
         saveme("muse.hooks", "INITIAL_ASSET_TRANSFORM"),
         saveme("muse.hooks", "FINAL_ASSET_TRANSFORM"),
         saveme("muse.investments", "INVESTMENTS"),
-        saveme("muse.production", "PRODUCTION_METHODS"),
+        saveme("muse.dispatch", "PRODUCTION_METHODS"),
         saveme("muse.outputs.mca", "OUTPUT_QUANTITIES"),
         saveme("muse.outputs.sectors", "OUTPUT_QUANTITIES"),
         saveme("muse.outputs.sinks", "OUTPUT_SINKS"),
