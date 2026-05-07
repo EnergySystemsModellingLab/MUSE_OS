@@ -9,6 +9,8 @@ from typing import Callable, ClassVar
 
 from xarray import DataArray, Dataset
 
+from muse.utilities import broadcast_years
+
 __all__ = [
     "Exponential",
     "ExponentialAdj",
@@ -356,8 +358,9 @@ def Exponential(
 ) -> DataArray:
     from numpy import exp
 
-    factor = 1e6 * self.coeffs.a * population
-    return factor * exp(self.coeffs.b * population / gdp)
+    coeffs = broadcast_years(self.coeffs, gdp.year)
+    factor = 1e6 * coeffs.a * population
+    return factor * exp(coeffs.b * population / gdp)
 
 
 @register_regression
@@ -377,10 +380,11 @@ def ExponentialAdj(
     if year is None:
         year = self.base_year
 
-    factor = 1e6 * self.coeffs.a * population
-    unadjusted = factor * exp(self.coeffs.b * population / gdp)
+    coeffs = broadcast_years(self.coeffs, gdp.year)
+    factor = 1e6 * coeffs.a * population
+    unadjusted = factor * exp(coeffs.b * population / gdp)
     p = power(year + forecast - self.base_year, n)
-    return unadjusted * (1 + self.coeffs.w * p) / (1 + p)
+    return unadjusted * (1 + coeffs.w * p) / (1 + p)
 
 
 @register_regression
@@ -394,7 +398,8 @@ def Logistic(
     """
     from numpy import exp, power
 
-    a, b, c, w = self.coeffs.a, self.coeffs.b, self.coeffs.c, self.coeffs.w
+    coeffs = broadcast_years(self.coeffs, gdp.year)
+    a, b, c, w = coeffs.a, coeffs.b, coeffs.c, coeffs.w
     p = power(forecast, n)
     factor = 1e6 * a * population * (1 + w * p) / (1 + p)
     return factor / (1 + b * exp(gdp * c / population))
@@ -406,8 +411,9 @@ def Loglog(self, gdp: DataArray, population: DataArray, *args, **kwargs) -> Data
     """1e6 * e^a * population * (gpd/population)^b."""
     from numpy import exp, power
 
-    factor = 1e6 * exp(self.coeffs.a) * population
-    return factor * power(gdp / population, self.coeffs.b)
+    coeffs = broadcast_years(self.coeffs, gdp.year)
+    factor = 1e6 * exp(coeffs.a) * population
+    return factor * power(gdp / population, coeffs.b)
 
 
 @register_regression
@@ -424,6 +430,7 @@ def LogisticSigmoid(
 ) -> DataArray:
     """0.001 * (constant * pop + gdp * c / sqrt(1 + (gdp * scale / pop)^2)."""
     from numpy import power
+    from xarray import ones_like
 
     constant = self.coeffs.a
     c = self.coeffs.c
@@ -442,8 +449,11 @@ def LogisticSigmoid(
         # fmt: enable
         scale = self.coeffs.b0.where(years < 2015, self.coeffs.b1)
     else:
-        scale = 1
+        scale = ones_like(self.coeffs.b0)
 
+    scale = broadcast_years(scale, gdp.year)
+    constant = broadcast_years(constant, gdp.year)
+    c = broadcast_years(c, gdp.year)
     p = power(1 + power(gdp * scale / population, 2), 0.5)
     return 0.001 * (constant * population + gdp * c / p)
 
@@ -498,7 +508,10 @@ class Linear(Regression):
 
         if year is not None and "year" in data.dims:
             data = data.interp(year=year, method=self.interpolation)
-        return coeffs.a * data.population + scale * (
+        a = broadcast_years(coeffs.a, data.year)
+        scale = broadcast_years(scale, data.year)
+        gdpcap_offset = broadcast_years(gdpcap_offset, data.year)
+        return a * data.population + scale * (
             data.gdp - gdpcap_offset * data.population
         )
 

@@ -56,10 +56,10 @@ PresetSector
    :members:
 
 
-Production
+Dispatch
 ~~~~~~~~~~
 
-.. automodule:: muse.production
+.. automodule:: muse.dispatch
    :members:
 
 

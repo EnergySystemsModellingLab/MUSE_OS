@@ -194,7 +194,9 @@ def sector_fuel_costs(
 ) -> pd.DataFrame:
     """Sector fuel costs with agent annotations."""
     from muse.commodities import is_fuel
-    from muse.production import supply
+    from muse.dispatch import (
+        share_based_production,
+    )  # TODO: should not have to recalculate supply
     from muse.quantities import consumption
 
     data_sector: list[xr.DataArray] = []
@@ -214,8 +216,8 @@ def sector_fuel_costs(
                 year=year,
             ).fillna(0.0)
 
-            production = supply(
-                agent_market,
+            production = share_based_production(
+                agent_market.consumption,
                 capacity,
                 technologies,
             )
@@ -298,7 +300,9 @@ def sector_emission_costs(
 ) -> pd.DataFrame:
     """Sector emission costs with agent annotations."""
     from muse.commodities import is_enduse, is_pollutant
-    from muse.production import supply
+    from muse.dispatch import (
+        share_based_production,
+    )  # TODO: should not have to recalculate supply
 
     data_sector: list[xr.DataArray] = []
     technologies = getattr(sector, "technologies", [])
@@ -323,8 +327,8 @@ def sector_emission_costs(
             i = (np.where(envs))[0][0]
             red_envs = envs[i].commodity.values
             prices = a.filter_input(market.prices, year=year, commodity=red_envs)
-            production = supply(
-                agent_market,
+            production = share_based_production(
+                agent_market.consumption,
                 capacity,
                 technologies,
             )

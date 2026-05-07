@@ -10,7 +10,7 @@ from typing import (
 import xarray as xr
 
 from muse.agents import AbstractAgent
-from muse.production import PRODUCTION_SIGNATURE
+from muse.dispatch import PRODUCTION_SIGNATURE
 from muse.readers.toml import read_technodata
 from muse.sectors.abstract import AbstractSector
 from muse.sectors.register import register_sector
@@ -24,9 +24,9 @@ class Sector(AbstractSector):  # type: ignore
 
     @classmethod
     def factory(cls, name: str, settings: Any) -> Sector:
+        from muse.dispatch import factory as pfactory
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory
-        from muse.production import factory as pfactory
 
         # Read sector settings
         sector_settings = getattr(settings.sectors, name)._asdict()
@@ -154,7 +154,7 @@ class Sector(AbstractSector):  # type: ignore
         """Computes production as used to return the supply to the MCA.
 
         It can be anything registered with
-        :py:func:`@register_production<muse.production.register_production>`.
+        :py:func:`@register_production<muse.dispatch.register_production>`.
         """
         self.supply_prod = supply_prod
 
@@ -286,44 +286,58 @@ class Sector(AbstractSector):  # type: ignore
             technologies, capacity, installed_as_year=True
         )
 
-        # Select relevant investment year prices for each asset
-        prices = broadcast_over_assets(market.prices.isel(year=1), capacity)
+        # Calculate supply/consumption/costs (one year at a time)
+        supply_list = []
+        consume_list = []
+        costs_list = []
+        for year in capacity.year.values:
+            supply_year = self.supply_prod(
+                demand=market.consumption.sel(year=year),
+                capacity=capacity.sel(year=year),
+                technologies=technodata,
+                timeslice_level=self.timeslice_level,
+                prices=market.prices.sel(year=year),
+            )
 
-        # Calculate supply
-        supply = self.supply_prod(
-            market=market,
-            capacity=capacity,
-            technologies=technodata,
-            timeslice_level=self.timeslice_level,
-        )
+            # Select relevant prices for each asset
+            prices_for_assets = broadcast_over_assets(
+                market.prices.sel(year=year), capacity, installed_as_year=False
+            )
 
-        # Calculate consumption
-        consume = consumption(
-            technologies=technodata,
-            production=supply,
-            prices=prices,
-            timeslice_level=self.timeslice_level,
-        )
+            # Calculate consumption
+            consume_year = consumption(
+                technologies=technodata,
+                production=supply_year,
+                prices=prices_for_assets,
+                timeslice_level=self.timeslice_level,
+            )
 
-        # Calculate LCOE
-        # We select data for the second year, which corresponds to the investment year
-        # We base LCOE only on the portion of capacity that is actually used (#728)
-        utilized_capacity = capacity_to_service_demand(
-            demand=supply.isel(year=1),
-            technologies=technodata,
-            timeslice_level=self.timeslice_level,
-        )
-        lcoe = levelized_cost_of_energy(
-            prices=prices,
-            technologies=technodata,
-            capacity=utilized_capacity,
-            production=supply.isel(year=1),
-            consumption=consume.isel(year=1),
-            method="annual",
-        )
+            # Calculate LCOE
+            # We base LCOE only on the portion of capacity that is actually used (#728)
+            utilized_capacity = capacity_to_service_demand(
+                demand=supply_year,
+                technologies=technodata,
+                timeslice_level=self.timeslice_level,
+            )
+            lcoe = levelized_cost_of_energy(
+                prices=prices_for_assets,
+                technologies=technodata,
+                capacity=utilized_capacity,
+                production=supply_year,
+                consumption=consume_year,
+                method="annual",
+            )
 
-        # Calculate new commodity prices
-        costs = supply_cost(supply, lcoe, asset_dim="asset")
+            # Calculate new commodity prices
+            costs_year = supply_cost(supply_year, lcoe, asset_dim="asset")
+
+            supply_list.append(supply_year.expand_dims(year=[year]))
+            consume_list.append(consume_year.expand_dims(year=[year]))
+            costs_list.append(costs_year.expand_dims(year=[year]))
+
+        supply = xr.concat(supply_list, dim="year")
+        consume = xr.concat(consume_list, dim="year")
+        costs = xr.concat(costs_list, dim="year")
 
         return supply, consume, costs
 
