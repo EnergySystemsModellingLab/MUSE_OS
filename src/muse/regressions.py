@@ -9,6 +9,8 @@ from typing import Callable, ClassVar
 
 from xarray import DataArray, Dataset
 
+from muse.utilities import broadcast_years
+
 __all__ = [
     "Exponential",
     "ExponentialAdj",
@@ -444,6 +446,9 @@ def LogisticSigmoid(
     else:
         scale = 1
 
+    scale = broadcast_years(scale, gdp.year)
+    constant = broadcast_years(constant, gdp.year)
+    c = broadcast_years(c, gdp.year)
     p = power(1 + power(gdp * scale / population, 2), 0.5)
     return 0.001 * (constant * population + gdp * c / p)
 

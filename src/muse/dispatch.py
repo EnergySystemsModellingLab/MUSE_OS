@@ -143,8 +143,10 @@ def share_based_production(
     from muse.utilities import broadcast_over_assets
 
     check_dimensions(demand, ["timeslice", "commodity"], optional=["region"])
-    check_dimensions(capacity, ["asset"])
-    check_dimensions(technologies, ["asset", "commodity"])
+    check_dimensions(capacity, ["asset"], optional=["dst_region"])
+    check_dimensions(
+        technologies, ["asset", "commodity"], optional=["timeslice", "dst_region"]
+    )
 
     # Maximum and minimum production for each asset
     maxprod = maximum_production(
@@ -235,6 +237,11 @@ def merit_order_production(
         minimum_production,
     )
     from muse.utilities import broadcast_over_assets
+
+    if "dst_region" in technologies.dims:
+        raise ValueError(
+            "Merit-order dispatch is not currently compatible with trade models."
+        )
 
     check_dimensions(demand, ["timeslice", "commodity"], optional=["region"])
     check_dimensions(capacity, ["asset"])
