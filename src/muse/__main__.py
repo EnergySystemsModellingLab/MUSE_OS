@@ -95,7 +95,7 @@ def patched_broadcast_compat_data(self, other):
         raise ValueError(
             "Broadcasting along the 'region' dimension is required, but automatic "
             "broadcasting is disabled. Please handle it explicitly using "
-            "`broadcast_region` (see `muse.utilities`)."
+            "`broadcast_regions` (see `muse.utilities`)."
         )
 
     if (isinstance(other, Variable)) and ("year" in self.dims) != (
@@ -104,7 +104,7 @@ def patched_broadcast_compat_data(self, other):
         raise ValueError(
             "Broadcasting along the 'year' dimension is required, but automatic "
             "broadcasting is disabled. Please handle it explicitly using "
-            "`broadcast_year` (see `muse.utilities`)."
+            "`broadcast_years` (see `muse.utilities`)."
         )
 
     # The rest of the function is copied directly from
