@@ -64,6 +64,7 @@ def test_read_technodictionary_csv(model_path):
         "technology",
         "technical_life",
         "fix_par",
+        "growth_seed",
     }
     extra_columns = {
         "agent1",
