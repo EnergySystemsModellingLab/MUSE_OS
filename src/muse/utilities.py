@@ -1,12 +1,7 @@
 """Collection of functions and stand-alone algorithms."""
 
 from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
-from typing import (
-    Any,
-    Callable,
-    NamedTuple,
-    cast,
-)
+from typing import Any, Callable, cast
 
 import numpy as np
 import xarray as xr
@@ -432,7 +427,7 @@ def interpolate_capacity(
     )
 
 
-def nametuple_to_dict(nametup: Mapping | NamedTuple) -> Mapping:
+def nametuple_to_dict(nametup: Mapping | tuple) -> Mapping:
     """Transforms a nametuple of type GenericDict into an OrderDict."""
     from collections import OrderedDict
     from dataclasses import asdict, is_dataclass
