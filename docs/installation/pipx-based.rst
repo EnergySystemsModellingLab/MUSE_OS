@@ -92,7 +92,7 @@ The first thing will be to check if you already have a suitable python version i
 
     python --version
 
-If the output is ``Python 3.Y.X`, where ``X`` is any number and ``Y`` is 11, 12, 13 or 14, then **you have a version of Python compatible with MUSE and you can skip this section altogether**. Move to `Installing pipx`_. In any other case, keep reading.
+If the output is ``Python 3.Y.X``, where ``X`` is any number and ``Y`` is 11, 12, 13 or 14, then **you have a version of Python compatible with MUSE and you can skip this section altogether**. Move to `Installing pipx`_. In any other case, keep reading.
 
 There are multiple ways of installing Python, as well as multiple distributions. Here we have opted for the one that we believe is simplest, requires the smallest downloads and gives the maximum flexibility: using ``pyenv``.
 
