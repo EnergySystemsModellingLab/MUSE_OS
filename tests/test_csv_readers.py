@@ -1,6 +1,5 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
+from typing import Self
 
 import numpy as np
 import xarray as xr
@@ -51,7 +50,7 @@ class DataArraySchema:
     name: str
 
     @classmethod
-    def from_da(cls, data: xr.DataArray) -> DataArraySchema:
+    def from_da(cls, data: xr.DataArray) -> Self:
         """Generate a DataArraySchema from an existing DataArray."""
         return cls(
             dims=set(data.dims),
@@ -79,7 +78,7 @@ class DatasetSchema:
     data_vars: dict[str, str]  # var_name -> dtype
 
     @classmethod
-    def from_ds(cls, data: xr.Dataset) -> DatasetSchema:
+    def from_ds(cls, data: xr.Dataset) -> Self:
         """Generate a DatasetSchema from an existing Dataset."""
         return cls(
             dims=set(data.dims),

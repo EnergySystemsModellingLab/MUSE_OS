@@ -7,8 +7,6 @@ functions are used in different areas of the model.
 Functions for calculating costs (e.g. LCOE, EAC) are in the `costs` module.
 """
 
-from __future__ import annotations
-
 import numpy as np
 import xarray as xr
 

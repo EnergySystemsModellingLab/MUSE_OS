@@ -1,8 +1,6 @@
 """Sector with preset behaviours."""
 
-from __future__ import annotations
-
-from typing import Any
+from typing import Any, Self
 
 from xarray import DataArray, Dataset
 
@@ -14,7 +12,7 @@ class PresetSector(AbstractSector):  # type: ignore
     """Sector with outcomes fixed from the start."""
 
     @classmethod
-    def factory(cls, name: str, settings: Any) -> PresetSector:
+    def factory(cls, name: str, settings: Any) -> Self:
         """Constructs a PresetSectors from input data."""
         from muse.readers.toml import read_presets_sector
 

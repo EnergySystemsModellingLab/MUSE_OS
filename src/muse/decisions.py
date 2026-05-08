@@ -26,8 +26,6 @@ Returns:
     A data array with ranked replacement technologies.
 """
 
-from __future__ import annotations
-
 __all__ = [
     "epsilon_constraints",
     "factory",

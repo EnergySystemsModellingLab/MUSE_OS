@@ -14,8 +14,6 @@ interaction. The second registrator registers the interaction proper: it takes a
 arguments and returns nothing. It is expected to modify the agents in-place.
 """
 
-from __future__ import annotations
-
 __all__ = [
     "factory",
     "new_to_retro_net",

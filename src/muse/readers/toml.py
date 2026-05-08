@@ -1,7 +1,5 @@
 """Ensemble of functions to read MUSE data."""
 
-from __future__ import annotations
-
 __all__ = ["read_settings"]
 
 import importlib.util as implib
@@ -625,7 +623,7 @@ def read_technodata(
         # Drop duplicate data vars before merging
         common_vars = set(technologies.data_vars) & set(trade_data.data_vars)
         technologies = technologies.drop_vars(common_vars)
-        technologies = technologies.merge(trade_data)
+        technologies = technologies.merge(trade_data, join="outer")
 
     technologies = technologies.set_index(commodity="commodity")  # See PR #638
     return technologies

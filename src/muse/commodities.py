@@ -1,7 +1,5 @@
 """Methods and types around commodities."""
 
-from __future__ import annotations
-
 from collections.abc import Sequence
 from enum import IntFlag, auto
 from pathlib import Path

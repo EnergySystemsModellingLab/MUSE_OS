@@ -4,9 +4,8 @@ This module provides utilities to convert MUSE's xarray-based data structures to
 from the format required by scipy's linear programming solver.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
+from typing import Self
 
 import numpy as np
 import pandas as pd
@@ -160,7 +159,7 @@ class ScipyAdapter:
         constraints: list,
         commodities: list[str],
         timeslice_level: str | None = None,
-    ) -> ScipyAdapter:
+    ) -> Self:
         """Creates a ScipyAdapter from MUSE data structures."""
         # Calculate costs for the linear problem
         lpcosts = lp_costs(capacity_costs, commodities, timeslice_level)

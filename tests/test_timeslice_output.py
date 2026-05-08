@@ -93,7 +93,7 @@ def test_zero_utilization_factor_supply_timeslice(
 
     zero_output = power_supply[
         power_supply.timeslice.isin(zero_utilization_indices)
-        & (power_supply.technology == process_names)
+        & power_supply.technology.isin(process_names)
     ]
     assert len(zero_output) == 0
 

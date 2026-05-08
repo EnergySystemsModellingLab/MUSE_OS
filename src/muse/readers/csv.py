@@ -30,8 +30,6 @@ A few other helpers perform common operations on xarrays:
 
 """
 
-from __future__ import annotations
-
 __all__ = [
     "read_agent_parameters",
     "read_attribute_table",
@@ -681,7 +679,7 @@ def process_technologies(
         )
 
     # Merge inputs/outputs with technodata
-    technodata = technodata.merge(outs).merge(ins)
+    technodata = technodata.merge(outs, join="outer").merge(ins, join="outer")
 
     # Merge technodata_timeslices if provided. This will prioritise values defined in
     # technodata_timeslices, and fallback to the non-timesliced technodata for any
@@ -702,7 +700,9 @@ def process_technologies(
     technodata = check_commodities(technodata, fill_missing=False)
 
     # Add info about commodities
-    technodata = technodata.merge(COMMODITIES.sel(commodity=technodata.commodity))
+    technodata = technodata.merge(
+        COMMODITIES.sel(commodity=technodata.commodity), join="outer"
+    )
 
     # Add commodity usage flags
     technodata["comm_usage"] = (

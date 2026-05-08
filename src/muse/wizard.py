@@ -7,8 +7,6 @@ file structure and naming scheme of the example models provided with MUSE, and w
 not necessarily work with models that deviate from this structure.
 """
 
-from __future__ import annotations
-
 from itertools import chain
 from pathlib import Path
 from typing import Callable
