@@ -39,8 +39,6 @@ Returns:
     of newly invested capacity.
 """
 
-from __future__ import annotations
-
 __all__ = [
     "INVESTMENT_SIGNATURE",
     "adhoc_match_demand",

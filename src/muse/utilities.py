@@ -1,7 +1,5 @@
 """Collection of functions and stand-alone algorithms."""
 
-from __future__ import annotations
-
 from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
 from typing import (
     Any,

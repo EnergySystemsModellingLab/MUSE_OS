@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import (
     Any,
     Callable,
     NamedTuple,
+    Self,
     cast,
 )
 
@@ -27,7 +26,7 @@ class MCA:
     """
 
     @classmethod
-    def factory(cls, settings: str | Path | Mapping | Any) -> MCA:
+    def factory(cls, settings: str | Path | Mapping | Any) -> Self:
         """Loads MCA from input settings and input files.
 
         Arguments:
@@ -195,7 +194,7 @@ class MCA:
     def find_equilibrium(
         self,
         market: Dataset,
-    ) -> FindEquilibriumResults:
+    ) -> "FindEquilibriumResults":
         """Specialised version of the find_equilibrium function.
 
         Arguments:

@@ -68,8 +68,6 @@ Returns:
     An initial search space
 """
 
-from __future__ import annotations
-
 __all__ = [
     "compress",
     "currently_existing_tech",

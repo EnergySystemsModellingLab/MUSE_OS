@@ -1,7 +1,5 @@
 """Ensemble of functions to read MUSE data."""
 
-from __future__ import annotations
-
 __all__ = ["read_settings"]
 
 import importlib.util as implib

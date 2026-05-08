@@ -25,8 +25,6 @@ The same models can be instantiated in a python script as follows:
     model.run()
 """
 
-from __future__ import annotations
-
 from logging import getLogger
 from os import mkdir
 from pathlib import Path

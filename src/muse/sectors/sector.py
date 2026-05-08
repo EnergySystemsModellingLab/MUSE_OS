@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 from collections.abc import Iterator, Sequence
 from typing import (
     Any,
     Callable,
+    Self,
     cast,
 )
 
@@ -23,7 +22,7 @@ class Sector(AbstractSector):  # type: ignore
     """Base class for all sectors."""
 
     @classmethod
-    def factory(cls, name: str, settings: Any) -> Sector:
+    def factory(cls, name: str, settings: Any) -> Self:
         from muse.dispatch import factory as pfactory
         from muse.interactions import factory as interaction_factory
         from muse.outputs.sector import factory as ofactory

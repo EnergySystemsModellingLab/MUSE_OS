@@ -19,8 +19,6 @@ technologies in the market. It returns a single xr.DataArray object.
 The function should never modify it's arguments.
 """
 
-from __future__ import annotations
-
 from collections.abc import Mapping, MutableMapping
 from typing import Any, Callable, Union
 

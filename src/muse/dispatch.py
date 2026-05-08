@@ -30,8 +30,6 @@ Returns:
     A `xr.DataArray` with the amount produced for each good from each asset.
 """
 
-from __future__ import annotations
-
 __all__ = [
     "PRODUCTION_SIGNATURE",
     "dispatch_by_merit_order",

@@ -1,7 +1,5 @@
 """Pre and post hooks on agents."""
 
-from __future__ import annotations
-
 __all__ = [
     "asset_merge_factory",
     "clean",

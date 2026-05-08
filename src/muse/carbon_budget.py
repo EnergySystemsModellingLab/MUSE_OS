@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import MutableMapping, Sequence
 from logging import getLogger
 from typing import Callable

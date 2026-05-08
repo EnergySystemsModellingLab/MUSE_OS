@@ -46,8 +46,6 @@ Returns:
     A `timeslice` dimension may also be present.
 """
 
-from __future__ import annotations
-
 __all__ = [
     "capacity_to_service_demand",
     "capital_costs",

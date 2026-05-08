@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 from collections.abc import Sequence
 from typing import (
     Any,
     Callable,
+    Self,
 )
 
 import numpy as np
@@ -120,7 +119,7 @@ class Subsector:
         current_year: int | None = None,
         name: str = "subsector",
         timeslice_level: str | None = None,
-    ) -> Subsector:
+    ) -> Self:
         from muse import constraints as cs
         from muse import demand_share as ds
         from muse import investments as iv

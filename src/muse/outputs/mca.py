@@ -18,8 +18,6 @@ The function should never modify it's arguments. It can return either a pandas d
 or an xarray xr.DataArray.
 """
 
-from __future__ import annotations
-
 from collections.abc import Mapping, MutableMapping
 from operator import attrgetter
 from pathlib import Path

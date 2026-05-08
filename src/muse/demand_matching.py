@@ -43,8 +43,6 @@ on production :math:`\sum_d X_{d, i} \leq M_i`. The algorithms in this module tr
 solve these constrained problems one way or another.
 """
 
-from __future__ import annotations
-
 __all__ = ["demand_matching"]
 
 

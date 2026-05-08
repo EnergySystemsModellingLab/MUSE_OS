@@ -1,11 +1,9 @@
 """Functions and functors to compute macro-drivers."""
 
-from __future__ import annotations
-
 from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Callable, ClassVar
+from typing import Callable, ClassVar, Self
 
 from xarray import DataArray, Dataset
 
@@ -93,7 +91,7 @@ class Regression(Callable):
     ) -> DataArray:
         pass
 
-    def sel(self, **filters) -> Regression:
+    def sel(self, **filters) -> Self:
         """Regression over part of the data only."""
         return self.__class__(
             interpolation=self.interpolation,
@@ -123,7 +121,7 @@ class Regression(Callable):
         interpolation: str = "linear",
         base_year: int = 2010,
         **filters,
-    ) -> Regression:
+    ) -> Self:
         """Creates a regression function from standard muse input."""
         from muse.readers import read_regression_parameters
 

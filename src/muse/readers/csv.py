@@ -30,8 +30,6 @@ A few other helpers perform common operations on xarrays:
 
 """
 
-from __future__ import annotations
-
 __all__ = [
     "read_agent_parameters",
     "read_attribute_table",
