@@ -1,7 +1,5 @@
 """Registrators that allow pluggable data to logic transforms."""
 
-from __future__ import annotations
-
 __all__ = ["registrator"]
 
 from collections.abc import MutableMapping, Sequence

@@ -17,8 +17,6 @@ The signature of a sink is:
         pass
 """
 
-from __future__ import annotations
-
 from collections.abc import Mapping, MutableMapping, Sequence
 from typing import (
     Any,

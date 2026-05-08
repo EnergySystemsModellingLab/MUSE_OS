@@ -91,8 +91,6 @@ technologies:
     Any other parameter.
 """
 
-from __future__ import annotations
-
 from collections.abc import Mapping, MutableMapping, Sequence
 from enum import Enum, auto
 from typing import (

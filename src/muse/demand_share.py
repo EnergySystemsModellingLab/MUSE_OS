@@ -35,8 +35,6 @@ Returns:
     A DataArray of demand shares.
 """
 
-from __future__ import annotations
-
 from collections.abc import Hashable, MutableMapping, Sequence
 from functools import wraps
 from logging import getLogger
