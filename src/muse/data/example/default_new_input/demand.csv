@@ -1,0 +1,8 @@
+commodity_id,region_id,year,demand
+heat,R1,2020,10
+heat,R1,2025,13.3
+heat,R1,2030,16.7
+heat,R1,2035,20
+heat,R1,2040,23.3
+heat,R1,2045,26.7
+heat,R1,2050,30
