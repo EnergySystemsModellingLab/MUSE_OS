@@ -49,7 +49,7 @@ import xarray as xr
 from xarray import DataArray, Dataset
 
 from muse.registration import registrator
-from muse.timeslices import drop_timeslice
+from muse.timeslices import broadcast_timeslice, drop_timeslice
 from muse.utilities import tupled_dimension
 
 PARAMS_TYPE = Sequence[tuple[str, bool, float]]
@@ -351,16 +351,33 @@ def _lexical_comparison(
 
 
 def _epsilon_constraints(
-    objectives: Dataset, optimize: str, mask: Any | None = None, **epsilons
+    objectives: Dataset,
+    optimize: str,
+    mask: Any | None = None,
+    **epsilons,
 ) -> DataArray:
-    """Minimizes one objective subject to constraints on other objectives."""
+    """Selects the best value of a target objective subject to epsilon constraints.
+
+    Each constraint enforces that an objective must be below (or above, after
+    sign handling upstream) a threshold, aggregated over all non-(asset,
+    replacement) dimensions.
+    """
+    # Start with all options feasible
     constraints = True
+
+    # Build feasibility mask from epsilon constraints
     for name, epsilon in epsilons.items():
+        # Reduce over all non-decision dimensions (e.g. timeslice, region)
         reduced_dims = set(objectives[name].dims) - {"asset", "replacement"}
+
+        # All slices must satisfy constraint
         constraints = constraints & (objectives[name] <= epsilon).all(reduced_dims)
 
+    # Default mask = something worse than any feasible objective value
     if mask is None:
         mask = objectives[optimize].max() + 1
+
+    # Return objective values, masking infeasible alternatives
     return objectives[optimize].where(constraints, mask)
 
 
@@ -370,60 +387,79 @@ def epsilon_constraints(
     parameters: PARAMS_TYPE | Sequence[tuple[str, bool, float]],
     mask: Any | None = None,
 ) -> DataArray:
-    r"""Minimizes first objective subject to constraints on other objectives.
+    """Epsilon-constraint optimisation.
 
-    The parameters are a sequence of tuples `(name, minimize, epsilon)`, where
-    `name` is the name of the objective, `minimize` is `True` if minimizing and
-    false if maximizing that objective, and `epsilon` is the constraint. The
-    first objective is the one that will be minimized according to:
+    The first objective is optimised (min or max), while all subsequent
+    objectives are treated as constraints of the form:
 
-    Given objectives :math:`O^{(i)}_t`, with :math:`i \in [|1, N|]` and :math:`t` the
-    replacement technologies, this function computes the ranking with respect to
-    :math:`t`:
+        objective_i <= epsilon_i
 
-    .. math::
-
-        \mathrm{ranking}_{O^{(i)}_t < \epsilon_i} O^{(0)}_t
-
-
-    The first tuple can be restricted to `(name, minimize)`, since `epsilon` is ignored.
-
-    The result is the matrix :math:`O^{(0)}` modified such minimizing over the
-    replacement dimension value would take into account the constraints and the
-    optimization direction (minimize or maximize). In other words, calling
-    `result.rank('replacement')` will yield the expected result.
+    after sign normalization.
     """
-    assert set(objectives.data_vars).issuperset([param[0] for param in parameters])
-    do_minimize = Dataset({k: coeff_sign(v, 1) for k, v, _ in parameters[1:]})
-    do_minimize[parameters[0][0]] = 1 if parameters[0][1] else -1
-    dict_params = {k: v for k, _, v in parameters[1:] if k in objectives.data_vars}
-    constraints = do_minimize * Dataset(dict_params)
+    assert set(objectives.data_vars).issuperset([p[0] for p in parameters])
+
+    # Remove obj_data parameters if present
+    optimize_name, optimize_minimize, _ = parameters[0]
+
+    # Encode optimization direction
+    do_minimize = Dataset({optimize_name: 1 if optimize_minimize else -1})
+
+    # Remaining objectives also get sign encoding
+    for name, minimize, _ in parameters[1:]:
+        do_minimize[name] = coeff_sign(minimize, 1)
+
+    # Extract epsilon constraints
+    epsilons = {
+        name: coeff_sign(minimize, 1) * eps
+        for name, minimize, eps in parameters[1:]
+        if name in objectives.data_vars
+    }
+
+    # Apply sign transformation + constraints
+    if "timeslice" in objectives.indexes:
+        do_minimize = broadcast_timeslice(do_minimize)
     return _epsilon_constraints(
-        objectives * do_minimize, parameters[0][0], mask=mask, **constraints.data_vars
+        objectives * do_minimize,
+        optimize_name,
+        mask=mask,
+        **epsilons,
     )
 
 
 @register_decision(name="retro_epsilon")
 def retro_epsilon_constraints(
-    objectives: Dataset, parameters: PARAMS_TYPE
+    objectives: Dataset,
+    parameters: PARAMS_TYPE,
 ) -> DataArray:
-    """Epsilon constraints where the current tech is included.
+    """Epsilon-constraint optimisation with asset-relative thresholds.
 
-    Modifies the parameters to the function such that the existing technologies are
-    always competitive.
+    Epsilon thresholds are adjusted so that the current technology is always
+    feasible, ensuring it remains in the choice set.
     """
+    # Extract current asset baseline
     asset_objectives = objectives.sel(replacement=objectives.asset)
 
-    def transform(name, minimize, epsilon=None):
+    def adapt_param(name, minimize, epsilon=None):
+        """Adjust epsilon so that current asset is always feasible."""
         if epsilon is None:
             return name, minimize
-        am = getattr(asset_objectives, name)
-        new_eps = am.where(am > epsilon if minimize else am < epsilon, epsilon)
-        return name, minimize, new_eps
 
-    parameters = [
-        transform(*param) for param in parameters if param[0] in objectives.data_vars
-    ]
+        current = asset_objectives[name]
+
+        # Work in the same transformed logic as epsilon_constraints
+        sign = -1 if minimize else 1
+
+        # Ensure current asset is not excluded by its own constraint
+        adjusted = current.where(
+            (sign * current) <= (sign * epsilon),
+            epsilon,
+        )
+
+        return name, minimize, adjusted
+
+    # Filter valid objectives and adapt epsilons
+    parameters = [adapt_param(*p) for p in parameters if p[0] in objectives.data_vars]
+
     return epsilon_constraints(objectives, parameters)
 
 

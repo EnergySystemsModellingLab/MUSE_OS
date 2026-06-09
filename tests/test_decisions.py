@@ -129,19 +129,19 @@ def test_epsilon_constraints(objectives):
 
     # Test case 1: Basic constraints
     expected = objectives.a * (objectives.asset == objectives.asset)
-    params = [("a", True), ("b", True, objectives.b.max() + 1)]
+    params = [("a", True, 1), ("b", True, objectives.b.max() + 1)]
     actual = epsilon_constraints(objectives, params)
     assert actual.values == approx(expected.values)
 
     # Test case 2: Negative constraints
     expected = -objectives.a * (objectives.asset == objectives.asset)
-    params = [("a", False), ("b", True, objectives.b.max() + 1)]
+    params = [("a", False, 1), ("b", True, objectives.b.max() + 1)]
     actual = epsilon_constraints(objectives, params)
     assert actual.values == approx(expected.values)
 
     # Test case 3: Binary choice constraints
     objectives.b[:] = choice((1, 2), objectives.b.size).reshape(objectives.b.shape)
-    params = [("a", True), ("b", True, 1.5)]
+    params = [("a", True, 1), ("b", True, 1.5)]
     expected = objectives.a.where(objectives.b == 1).fillna(-1)
     actual = epsilon_constraints(objectives, params, mask=-1)
     assert actual.values == approx(expected.values)
@@ -149,7 +149,7 @@ def test_epsilon_constraints(objectives):
     # Test case 4: Multiple constraints
     objectives.b[:] = choice((1, 2), objectives.b.size).reshape(objectives.b.shape)
     objectives.c[:] = choice((1, 2, 3), objectives.c.size).reshape(objectives.c.shape)
-    params = [("a", True), ("b", True, 1.5), ("c", False, 1.2)]
+    params = [("a", True, 1), ("b", True, 1.5), ("c", False, 1.2)]
     condition = (objectives.b == 1) & (objectives.c >= 2).all("other")
     expected = objectives.a.where(condition).fillna(-1)
     actual = epsilon_constraints(objectives, params, mask=-1)
