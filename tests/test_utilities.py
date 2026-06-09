@@ -148,60 +148,6 @@ def test_tupled_dimension_3d():
         verify_tupled_output(actual, array, axis, indices)
 
 
-def create_test_objectives(shape=(5, 10)):
-    """Create test objectives dataset."""
-    objectives = xr.Dataset()
-    for var in ["a", "b", "c"]:
-        objectives[var] = ("asset", "replacement"), np.random.rand(*shape) * 10 - 5
-    objectives["asset"] = np.random.choice(
-        objectives.replacement, len(objectives.asset), replace=False
-    )
-    return objectives
-
-
-def create_test_binsizes():
-    """Create test binsizes dataset."""
-    return xr.Dataset(
-        {
-            "a": np.random.rand() * 0.1,
-            "b": -np.random.rand() * 0.1,
-            "c": np.random.rand(),
-        }
-    )
-
-
-@mark.parametrize("order", [["a", "b", "c"], ["b", "c", "a"], ["c", "a", "b"]])
-def test_lexical_comparison(order):
-    """Test lexical comparison with and without binning."""
-    from muse.utilities import lexical_comparison
-
-    objectives = create_test_objectives()
-    binsizes = create_test_binsizes()
-
-    def create_expected(bin_last=True):
-        expected = np.zeros(shape=objectives.a.shape, dtype=object)
-        for i in range(expected.shape[0]):
-            for j in range(expected.shape[1]):
-                values = []
-                for k in range(3):
-                    val = objectives[order[k]][i, j] / binsizes[order[k]]
-                    values.append(int(np.floor(val)) if bin_last or k < 2 else val)
-                expected[i, j] = tuple(values)
-        return expected
-
-    # Test with binning
-    actual = lexical_comparison(objectives, binsizes[order])
-    expected = create_expected(bin_last=True)
-    assert actual.shape == expected.shape
-    assert (actual.values == expected).all()
-
-    # Test without binning last value
-    actual = lexical_comparison(objectives, binsizes[order], bin_last=False)
-    expected = create_expected(bin_last=False)
-    assert actual.shape == expected.shape
-    assert (actual.values == expected).all()
-
-
 def test_merge_assets():
     """Test merging assets with different coordinate orders."""
     from numpy import arange

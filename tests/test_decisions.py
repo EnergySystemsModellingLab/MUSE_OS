@@ -1,8 +1,8 @@
 import numpy as np
+import xarray as xr
 from numpy.random import choice, rand
 from pytest import approx, fixture
 from scipy.stats import rankdata
-from xarray import Dataset
 
 from muse.decisions import (
     epsilon_constraints,
@@ -15,7 +15,7 @@ from muse.decisions import (
 
 @fixture
 def objectives():
-    objectives = Dataset()
+    objectives = xr.Dataset()
     objectives["replacement"] = choice(
         list("abcdefghijklmnopqrstuvwxyz"), 10, replace=False
     )
@@ -96,7 +96,7 @@ def test_lexical():
                 c[i, j] / minc[i],
             )
 
-    objectives = Dataset(
+    objectives = xr.Dataset(
         {
             "a": (("asset", "replacement"), a),
             "b": (("asset", "replacement"), b),

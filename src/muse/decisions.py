@@ -442,7 +442,7 @@ def retro_epsilon_constraints(
     def adapt_param(name, minimize, epsilon=None):
         """Adjust epsilon so that current asset is always feasible."""
         if epsilon is None:
-            return name, minimize
+            return name, minimize, None
 
         current = asset_objectives[name]
 
