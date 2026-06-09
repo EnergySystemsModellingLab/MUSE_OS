@@ -102,8 +102,8 @@ The columns have the following meaning:
 
 
 ``obj_data1``
-   A weight associated with the objective.
-   Whether it is used will depend in large part on the :ref:`decision method <decision_method>`.
+   A value associated with the objective.
+   Its meaning, and whether it is used at all, will depend in large part on the :ref:`decision method <decision_method>`.
 
 
 ``obj_sort1``
@@ -168,23 +168,32 @@ Additional objectives
    decision methods are available with MUSE, as implemented in
    :py:mod:`~muse.decisions`:
 
-   - :py:func:`mean <mean>`: Computes the average across several objectives.
-   - :py:func:`weighted_sum <weighted_sum>`: Computes a weighted average across several
-     objectives.
-   - :py:func:`lexical_comparion <lexical_comparison>`: Compares objectives using a
-     binned lexical comparison operator. Aliased to "lexo". This is a `lexicographic method <https://en.wikipedia.org/wiki/Lexicographic_order>`_ where objectives are compared in a specific order, for example first costs, then environmental emissions.
-   - :py:func:`retro_lexical_comparion <retro_lexical_comparison>`: A binned lexical
-     comparison function where the bin size is adjusted to ensure the current crop of
-     technologies are competitive. Aliased to "retro_lexo".
-   - :py:func:`epsilon_constraints <epsilon_constraints>`: A comparison method which
-     ensures that first selects technologies following constraints on objectives 2 and
-     higher, before actually ranking them using objective 1. Aliased to "epsilon" and
-     "epsilon_con".
-   - :py:func:`retro_epsilon_constraints <retro_epsilon_constraints>`: A variation on
-     epsilon constraints which ensures that the current crop of technologies are not
-     deselected by the constraints. Aliased to "retro_epsilon".
-   - :py:func:`single_objective <single_objective>`: A decision method to allow
-     ranking via a single objective.
+   - :py:func:`mean <mean>`: Computes the arithmetic mean across multiple objectives,
+     treating all objectives as equally important.
+   - :py:func:`weighted_sum <weighted_sum>`: Computes a weighted average across
+     objectives using weights defined in ``obj_data``, where higher weights increase the
+     importance of an objective in the final score.
+   - :py:func:`lexical_comparion <lexical_comparison>`: Ranks technologies using a
+     priority ordering of objectives. The first objective is considered within a
+     tolerance defined by ``obj_data1`` (e.g. 0.1 corresponds to a 10% tolerance), and
+     only distinguishes technologies outside this tolerance. Subsequent objectives
+     (``obj_data2``, ``obj_data3``) are used to break ties. Aliased to "lexo".
+   - :py:func:`retro_lexical_comparion <retro_lexical_comparison>`: A variant of lexical
+     comparison where tolerances are adjusted so that existing technologies remain
+     feasible for comparison. Otherwise, behaviour matches ``lexical_comparison``.
+     Aliased to "retro_lexo".
+   - :py:func:`epsilon_constraints <epsilon_constraints>`: Selects technologies by
+     optimising the first objective while using all remaining objectives as feasibility
+     filters. Each filter applies a threshold defined in ``obj_data2`` and
+     ``obj_data3``, with direction (above or below the threshold) determined by
+     ``obj_sort2`` and ``obj_sort3``. ``obj_data1`` is not used, but must be provided.
+     Aliased to "epsilon" and "epsilon_con".
+   - :py:func:`retro_epsilon_constraints <retro_epsilon_constraints>`: A variant of
+     epsilon constraints where thresholds are adjusted so that existing technologies are
+     never excluded by feasibility conditions. Otherwise behaves identically to
+     epsilon_constraints. Aliased to "retro_epsilon".
+   - :py:func:`single_objective <single_objective>`: Ranks technologies using a single
+     objective without considering additional objectives or constraints.
 
    The functions allow for any number of objectives. However, the format described here
    allows only for three.

@@ -310,47 +310,6 @@ def tupled_dimension(array: np.ndarray, axis: int):
     return result.reshape(*shape[:-1])
 
 
-def lexical_comparison(
-    objectives: xr.Dataset,
-    binsize: xr.Dataset,
-    order: Sequence[Hashable] | None = None,
-    bin_last: bool = True,
-) -> xr.DataArray:
-    """Lexical comparison over the objectives.
-
-    Lexical comparison operates by binning the objectives into bins of width
-    `binsize`. Once binned, dimensions other than `asset` and `technology` are
-    reduced by taking the max, e.g. the largest constraint. Finally, the
-    objectives are ranked lexographically, in the order given by the parameters.
-
-    Arguments:
-        objectives: xr.Dataset containing the objectives to rank
-        binsize: bin size, minimization direction
-            (+ -> minimize, - -> maximize), and (optionally) order of
-            lexicographical comparison. The order is the one given
-            `binsize.data_vars` if the argument `order` is None.
-        order: Optional array indicating the order in which to rank the tuples.
-        bin_last: Whether the last metric should be binned, or whether it
-            should be left as a the type it already is (e.g. no flooring and
-            no turning to integer.)
-
-    Result:
-        An array of tuples which can subsequently be compared lexicographically.
-    """
-    if order is None:
-        order = [u for u in binsize.data_vars]
-
-    assert set(order) == set(binsize.data_vars)
-    assert set(order).issuperset(objectives)
-
-    result = objectives[order]
-    for name in order if bin_last else order[:-1]:
-        result[name] = np.floor(result[name] / binsize[name]).astype(int)
-    if not bin_last:
-        result[order[-1]] = result[order[-1]] / binsize[order[-1]]
-    return result.to_array(dim="variable").reduce(tupled_dimension, dim="variable")
-
-
 def merge_assets(
     capa_a: xr.DataArray,
     capa_b: xr.DataArray,
