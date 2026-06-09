@@ -55,17 +55,38 @@ def test_weighted_sum(objectives):
 def test_lexical():
     """Test lexical comparison against hand-constructed tuples."""
     shape = (5, 10)
+
+    # Three objectives evaluated for each asset/replacement pair.
     a = rand(*shape) * 10 - 5
     b = rand(*shape) * 10 - 5
     c = rand(*shape) * 10 - 5
 
-    parameters = [("b", -rand() * 0.1), ("a", rand() * 0.1), ("c", rand())]
+    # Objectives are compared lexicographically in the order
+    # b -> a -> c. Negative weights indicate maximisation.
+    parameters = [
+        ("b", -rand() * 0.1),
+        ("a", rand() * 0.1),
+        ("c", rand()),
+    ]
     param_dict = dict(parameters)
 
+    # Lexo defines bin widths as
+    #
+    #     w_i = min_j(p_i o_i^j),
+    #
+    # over the replacement dimension. For maximisation objectives,
+    # the sign convention means this becomes the negative of the
+    # largest weighted objective.
     mina = (a * param_dict["a"]).min(1)
     minb = -(b * abs(param_dict["b"])).max(1)
     minc = (c * param_dict["c"]).min(1)
 
+    # Construct the expected lexicographic tuples by hand:
+    #
+    #   1. Bin the first two objectives by flooring after
+    #      normalisation by their bin widths.
+    #   2. Leave the final objective continuous so that it acts
+    #      as a tie-breaker.
     expected = np.zeros(shape=shape, dtype=object)
     for i in range(shape[0]):
         for j in range(shape[1]):
@@ -82,10 +103,19 @@ def test_lexical():
             "c": (("asset", "replacement"), c),
         }
     )
-    objectives["asset"] = choice(objectives.replacement, shape[0], replace=False)
+
+    # Associate each asset with one of the replacement options.
+    objectives["asset"] = choice(
+        objectives.replacement,
+        shape[0],
+        replace=False,
+    )
 
     actual = lexical_comparison(objectives, parameters)
     assert actual.shape == expected.shape
+
+    # The decision function returns the ranks of the lexicographic
+    # tuples along the replacement dimension.
     for i in range(shape[0]):
         assert actual.values[i] == approx(rankdata(expected[i]))
 
